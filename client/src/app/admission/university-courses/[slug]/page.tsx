@@ -39,15 +39,22 @@ export async function generateMetadata({
 
   // Try to fetch from API first, fallback to static data
   let course = null;
+  const staticCourse = getCourseBySlug(slug);
   try {
     course = await getUniversityCourseBySlug(slug);
   } catch (error) {
     console.error("Error fetching course from API:", error);
   }
 
-  // Fallback to static data if API fails
-  if (!course) {
-    course = getCourseBySlug(slug);
+  // Merge API data with static fallback so missing fields are populated
+  if (course && staticCourse) {
+    course = {
+      ...staticCourse,
+      ...course,
+      seo: { ...(staticCourse.seo || {}), ...(course.seo || {}) },
+    };
+  } else if (!course) {
+    course = staticCourse;
   }
 
   if (!course) {
@@ -125,15 +132,22 @@ export default async function UniversityCoursePage({
 
   // Try to fetch from API first, fallback to static data
   let course = null;
+  const staticCourse = getCourseBySlug(slug);
   try {
     course = await getUniversityCourseBySlug(slug);
   } catch (error) {
     console.error("Error fetching course from API:", error);
   }
 
-  // Fallback to static data if API fails
-  if (!course) {
-    course = getCourseBySlug(slug);
+  // Merge API data with static fallback so missing fields are populated
+  if (course && staticCourse) {
+    course = {
+      ...staticCourse,
+      ...course,
+      seo: { ...(staticCourse.seo || {}), ...(course.seo || {}) },
+    };
+  } else if (!course) {
+    course = staticCourse;
   }
 
   if (!course) {

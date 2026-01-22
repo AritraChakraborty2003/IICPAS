@@ -17,6 +17,24 @@ interface UniversityCoursePageClientProps {
 export default function UniversityCoursePageClient({
   course,
 }: UniversityCoursePageClientProps) {
+  const safeCourse: UniversityCourse = {
+    ...course,
+    name: course?.name || "University Course",
+    category: course?.category || "UG Programs",
+    about:
+      course?.about ||
+      "Learn more about this program, its structure, and the opportunities it offers.",
+    description:
+      course?.description ||
+      "Detailed curriculum and career prospects will be published soon.",
+    eligibility: Array.isArray(course?.eligibility) ? course.eligibility : [],
+    highlights: Array.isArray(course?.highlights) ? course.highlights : [],
+    careerProspects: Array.isArray(course?.careerProspects)
+      ? course.careerProspects
+      : [],
+    duration: course?.duration || "Varies",
+  };
+
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
 
   // Modal disabled - using inline form instead
@@ -36,29 +54,29 @@ export default function UniversityCoursePageClient({
     <>
       {/* Hero Section */}
       <UniversityCourseHero
-        courseName={course.name}
-        category={course.category}
+        courseName={safeCourse.name}
+        category={safeCourse.category}
       />
 
       {/* About Section */}
       <CourseAboutSection
-        title={course.name}
-        content={course.about}
+        title={safeCourse.name}
+        content={safeCourse.about}
         imageUrl="/images/about.jpeg"
       />
 
       {/* Eligibility & Highlights Section */}
       <CourseEligibilitySection
-        eligibility={course.eligibility}
-        duration={course.duration}
-        highlights={course.highlights}
+        eligibility={safeCourse.eligibility}
+        duration={safeCourse.duration}
+        highlights={safeCourse.highlights}
       />
 
       {/* Description & Career Prospects Section */}
       <CourseDescriptionSection
-        description={course.description}
-        careerProspects={course.careerProspects}
-        highlights={course.highlights}
+        description={safeCourse.description}
+        careerProspects={safeCourse.careerProspects}
+        highlights={safeCourse.highlights}
       />
 
       {/* Inline Admission Form */}
