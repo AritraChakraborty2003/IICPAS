@@ -512,13 +512,26 @@ export const universityCourses: UniversityCourse[] = [
 ];
 
 // Helper function to get course by slug
+const normalizeSlug = (value = "") =>
+  decodeURIComponent(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[–—−]/g, "-")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 export function getCourseBySlug(slug: string): UniversityCourse | undefined {
-  return universityCourses.find((course) => course.slug === slug);
+  const normalized = normalizeSlug(slug);
+  return universityCourses.find(
+    (course) => normalizeSlug(course.slug) === normalized
+  );
 }
 
 // Helper function to get all course slugs
 export function getAllCourseSlugs(): string[] {
-  return universityCourses.map((course) => course.slug);
+  return universityCourses.map((course) => normalizeSlug(course.slug));
 }
 
 // Helper function to get courses by category

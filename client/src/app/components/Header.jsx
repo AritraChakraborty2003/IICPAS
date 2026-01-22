@@ -86,7 +86,7 @@ const navLinks = [
   { name: "Live Session", href: "/live-session" },
 ];
 
-export default function Header() {
+export default function Header({ showMarquee = true, topOffset }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cartDrawer, setCartDrawer] = useState(false);
@@ -411,12 +411,14 @@ export default function Header() {
     setShowAdmissionModal(true);
   };
 
+  const headerTop = topOffset ?? (showMarquee ? "40px" : "0px");
+
   return (
     <>
-      <AlertMarquee />
+      {showMarquee && <AlertMarquee />}
       <header
         className="fixed left-0 w-full z-40 bg-white shadow-lg"
-        style={{ top: "40px" }}
+        style={{ top: headerTop }}
       >
         <div className="w-full px-2 md:px-6 py-3 flex items-center justify-between">
           {/* Logo */}

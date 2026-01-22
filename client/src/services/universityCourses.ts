@@ -2,6 +2,16 @@ import axios from "axios";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
+const normalizeSlug = (value = "") =>
+  decodeURIComponent(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[–—−]/g, "-")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
 export interface UniversityCourse {
   _id?: string;
   slug: string;
@@ -47,7 +57,10 @@ export async function getUniversityCourseBySlug(
   slug: string
 ): Promise<UniversityCourse | null> {
   try {
-    const response = await axios.get(`${API_BASE}/university-courses/${slug}`);
+    const normalized = normalizeSlug(slug);
+    const response = await axios.get(
+      `${API_BASE}/university-courses/${normalized}`
+    );
     return response.data;
   } catch (error: any) {
     if (error.response?.status === 404) {
@@ -64,7 +77,7 @@ export async function getUniversityCourseBySlug(
 export async function getAllCourseSlugs(): Promise<string[]> {
   try {
     const courses = await getAllUniversityCourses();
-    return courses.map((course) => course.slug);
+    return courses.map((course) => normalizeSlug(course.slug));
   } catch (error) {
     console.error("Error fetching course slugs:", error);
     return [];
