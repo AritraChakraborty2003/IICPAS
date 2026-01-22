@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 
 interface CourseEligibilitySectionProps {
-  eligibility: string[];
+  eligibility?: string[];
   duration?: string;
-  highlights: string[];
+  highlights?: string[];
 }
 
 export default function CourseEligibilitySection({
@@ -29,6 +29,9 @@ export default function CourseEligibilitySection({
     Award,
     CheckCircle,
   ];
+
+  const safeEligibility = Array.isArray(eligibility) ? eligibility : [];
+  const safeHighlights = Array.isArray(highlights) ? highlights : [];
 
   return (
     <section className="relative bg-gray-50 py-16 px-4 md:px-8 lg:px-12 xl:px-16 overflow-hidden">
@@ -76,7 +79,7 @@ export default function CourseEligibilitySection({
             </div>
 
             <ul className="space-y-4">
-              {eligibility.map((item, index) => {
+              {safeEligibility.map((item, index) => {
                 const IconComponent =
                   eligibilityIcons[index % eligibilityIcons.length];
                 return (
@@ -133,7 +136,7 @@ export default function CourseEligibilitySection({
             </div>
 
             <ul className="space-y-4">
-              {highlights.map((item, index) => {
+              {safeHighlights.map((item, index) => {
                 const IconComponent =
                   eligibilityIcons[index % eligibilityIcons.length];
                 return (
