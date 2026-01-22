@@ -122,6 +122,9 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
 
   // TOC generation
   const { tocItems, contentWithAnchors } = useMemo(() => {
+    if (!blogToRender || !blogToRender.content) {
+      return { tocItems: [], contentWithAnchors: "" };
+    }
     const headings = [];
     let content = blogToRender.content || "";
     const headingRegex = /<(h2|h3)>(.*?)<\/\1>/gi;
@@ -141,14 +144,12 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
     return { tocItems: headings, contentWithAnchors: content };
   }, [blogToRender]);
 
-  const categoriesList = useMemo(
-    () =>
-      [...new Set(resolvedAllBlogs.map((b) => b.category).filter(Boolean))].slice(
-        0,
-        10
-      ),
-    [resolvedAllBlogs]
-  );
+  const categoriesList = useMemo(() => {
+    const list = Array.isArray(resolvedAllBlogs)
+      ? resolvedAllBlogs.map((b) => b?.category).filter(Boolean)
+      : [];
+    return [...new Set(list)].slice(0, 10);
+  }, [resolvedAllBlogs]);
 
   // Show fallback
   if (!blogToRender) {
