@@ -5,7 +5,7 @@ import Image from "next/image";
 
 interface CourseAboutSectionProps {
   title: string;
-  content: string;
+  content?: string;
   imageUrl?: string;
   videoUrl?: string;
 }
@@ -16,6 +16,7 @@ export default function CourseAboutSection({
   imageUrl = "/images/course-about.jpg",
   videoUrl,
 }: CourseAboutSectionProps) {
+  const safeContent = content || "";
   return (
     <section className="relative bg-white py-16 px-4 md:px-8 lg:px-12 xl:px-16 text-gray-800 overflow-hidden">
       {/* Background Elements */}
@@ -74,10 +75,12 @@ export default function CourseAboutSection({
               <div
                 className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
                 dangerouslySetInnerHTML={{
-                  __html: content.replace(
-                    /<p>/g,
-                    `<p class="mb-4 text-gray-700 leading-relaxed">`
-                  ),
+                  __html: safeContent
+                    ? safeContent.replace(
+                        /<p>/g,
+                        `<p class="mb-4 text-gray-700 leading-relaxed">`
+                      )
+                    : "",
                 }}
               />
             </div>
