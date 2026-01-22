@@ -11,9 +11,9 @@ import {
 } from "lucide-react";
 
 interface CourseDescriptionSectionProps {
-  description: string;
-  careerProspects: string[];
-  highlights: string[];
+  description?: string;
+  careerProspects?: string[];
+  highlights?: string[];
 }
 
 export default function CourseDescriptionSection({
@@ -22,6 +22,11 @@ export default function CourseDescriptionSection({
   highlights,
 }: CourseDescriptionSectionProps) {
   const careerIcons = [Briefcase, TrendingUp, Users, Target, Lightbulb, Star];
+  const safeDescription = description || "";
+  const safeCareerProspects = Array.isArray(careerProspects)
+    ? careerProspects
+    : [];
+  const safeHighlights = Array.isArray(highlights) ? highlights : [];
 
   return (
     <section className="relative bg-white py-16 px-4 md:px-8 lg:px-12 xl:px-16 overflow-hidden">
@@ -62,10 +67,12 @@ export default function CourseDescriptionSection({
             <div
               className="prose prose-lg max-w-none text-gray-700 leading-relaxed"
               dangerouslySetInnerHTML={{
-                __html: description.replace(
-                  /<p>/g,
-                  `<p class="mb-4 text-gray-700 leading-relaxed">`
-                ),
+                __html: safeDescription
+                  ? safeDescription.replace(
+                      /<p>/g,
+                      `<p class="mb-4 text-gray-700 leading-relaxed">`
+                    )
+                  : "",
               }}
             />
           </div>
@@ -89,7 +96,7 @@ export default function CourseDescriptionSection({
             </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
-              {careerProspects.map((career, index) => {
+              {safeCareerProspects.map((career, index) => {
                 const IconComponent = careerIcons[index % careerIcons.length];
                 return (
                   <motion.div
@@ -125,7 +132,7 @@ export default function CourseDescriptionSection({
             </div>
 
             <ul className="space-y-4">
-              {highlights.map((highlight, index) => {
+              {safeHighlights.map((highlight, index) => {
                 const IconComponent = careerIcons[index % careerIcons.length];
                 return (
                   <motion.li
