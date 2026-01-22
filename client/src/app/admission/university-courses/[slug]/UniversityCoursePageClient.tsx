@@ -82,18 +82,18 @@ export default function UniversityCoursePageClient({
       {/* Inline Admission Form */}
       <div className="bg-gray-50 py-12">
         <div className="container mx-auto px-4">
-          <InlineAdmissionForm selectedCourse={course.name} />
+          <InlineAdmissionForm selectedCourse={safeCourse.name} />
         </div>
       </div>
 
       {/* Contact Section */}
-      <CourseContactSection courseName={course.name} />
+      <CourseContactSection courseName={safeCourse.name} />
 
       {/* Admission Modal */}
       <AdmissionModal
         isOpen={showAdmissionModal}
         onClose={handleCloseModal}
-        selectedCourse={course.name}
+        selectedCourse={safeCourse.name}
       />
     </>
   );
