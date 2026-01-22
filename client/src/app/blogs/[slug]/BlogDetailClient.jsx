@@ -103,6 +103,53 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
     return null;
   }, [isValid, resolvedBlog]);
 
+  const tags = useMemo(() => {
+    if (!blogToRender) return [];
+    const raw =
+      blogToRender.tags ||
+      blogToRender.keywords ||
+      blogToRender.category ||
+      "";
+    if (Array.isArray(raw)) return raw.filter(Boolean).slice(0, 8);
+    if (typeof raw === "string")
+      return raw
+        .split(/[,|]/)
+        .map((t) => t.trim())
+        .filter(Boolean)
+        .slice(0, 8);
+    return [];
+  }, [blogToRender]);
+
+  // TOC generation
+  const { tocItems, contentWithAnchors } = useMemo(() => {
+    const headings = [];
+    let content = blogToRender.content || "";
+    const headingRegex = /<(h2|h3)>(.*?)<\/\1>/gi;
+    let match;
+    while ((match = headingRegex.exec(content)) !== null) {
+      const text = match[2].replace(/<[^>]*>/g, "").trim();
+      if (!text) continue;
+      headings.push({ id: slugify(text), text, level: match[1] });
+    }
+    if (headings.length) {
+      content = content.replace(headingRegex, (_, tag, inner) => {
+        const clean = inner.replace(/<[^>]*>/g, "").trim();
+        const id = slugify(clean);
+        return `<${tag} id="${id}">${inner}</${tag}>`;
+      });
+    }
+    return { tocItems: headings, contentWithAnchors: content };
+  }, [blogToRender]);
+
+  const categoriesList = useMemo(
+    () =>
+      [...new Set(resolvedAllBlogs.map((b) => b.category).filter(Boolean))].slice(
+        0,
+        10
+      ),
+    [resolvedAllBlogs]
+  );
+
   // Show fallback
   if (!blogToRender) {
     return (
@@ -159,52 +206,6 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
         rawImage.startsWith("/") ? rawImage : "/" + rawImage
       }`
     : "/images/blog-default.jpg";
-
-  const tags = useMemo(() => {
-    const raw =
-      blogToRender.tags ||
-      blogToRender.keywords ||
-      blogToRender.category ||
-      "";
-    if (Array.isArray(raw)) return raw.filter(Boolean).slice(0, 8);
-    if (typeof raw === "string")
-      return raw
-        .split(/[,|]/)
-        .map((t) => t.trim())
-        .filter(Boolean)
-        .slice(0, 8);
-    return [];
-  }, [blogToRender]);
-
-  // TOC generation
-  const { tocItems, contentWithAnchors } = useMemo(() => {
-    const headings = [];
-    let content = blogToRender.content || "";
-    const headingRegex = /<(h2|h3)>(.*?)<\/\1>/gi;
-    let match;
-    while ((match = headingRegex.exec(content)) !== null) {
-      const text = match[2].replace(/<[^>]*>/g, "").trim();
-      if (!text) continue;
-      headings.push({ id: slugify(text), text, level: match[1] });
-    }
-    if (headings.length) {
-      content = content.replace(headingRegex, (_, tag, inner) => {
-        const clean = inner.replace(/<[^>]*>/g, "").trim();
-        const id = slugify(clean);
-        return `<${tag} id="${id}">${inner}</${tag}>`;
-      });
-    }
-    return { tocItems: headings, contentWithAnchors: content };
-  }, [blogToRender.content]);
-
-  const categoriesList = useMemo(
-    () =>
-      [...new Set(resolvedAllBlogs.map((b) => b.category).filter(Boolean))].slice(
-        0,
-        10
-      ),
-    [resolvedAllBlogs]
-  );
 
   return (
     <>
@@ -274,7 +275,7 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
                   </span>
                   <span className="inline-flex items-center gap-1">
                     <Clock className="w-4 h-4 text-gray-400" />
-                    {Math.ceil(blogToRender.content.length / 500)} min read
+                    {Math.max(1, Math.ceil((safeContent || "").length / 500))} min read
                   </span>
                   {blogToRender.author && (
                     <span className="inline-flex items-center gap-1">
