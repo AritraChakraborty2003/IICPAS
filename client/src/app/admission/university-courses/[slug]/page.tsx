@@ -57,14 +57,22 @@ export async function generateMetadata({
     };
   }
 
-  return {
-    title: course.seo.title,
-    description: course.seo.description,
-    keywords: course.seo.keywords,
-    openGraph: {
-      title: course.seo.title,
+  const fallbackDescription =
+    course.description || course.about || "University course at IICPA Institute.";
+  const seo = course.seo || {
+    title: `${course.name} - IICPA Institute`,
+    description: fallbackDescription,
+    keywords: course.name,
+  };
 
-      description: course.seo.description,
+  return {
+    title: seo.title || `${course.name} - IICPA Institute`,
+    description: seo.description || fallbackDescription,
+    keywords: seo.keywords || course.name,
+    openGraph: {
+      title: seo.title || course.name,
+
+      description: seo.description || fallbackDescription,
       url: `https://iicpa.in/admission/university-courses/${params.slug}`,
       siteName: "IICPA Institute",
       images: [
@@ -80,8 +88,8 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: course.seo.title,
-      description: course.seo.description,
+      title: seo.title || course.name,
+      description: seo.description || fallbackDescription,
       images: ["https://iicpa.in/images/og-course-default.jpg"],
     },
     alternates: {
