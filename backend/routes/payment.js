@@ -4,15 +4,31 @@ import crypto from "crypto";
 
 const router = express.Router();
 
-// Initialize Razorpay
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+// Initialize Razorpay safely (avoid crashing app when env vars are missing)
+let razorpay = null;
+try {
+  if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+    console.warn("⚠️ Razorpay not configured: set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET");
+  } else {
+    razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
+    });
+  }
+} catch (err) {
+  console.error("❌ Razorpay init failed:", err.message);
+}
 
 // Create order
 router.post("/create-order", async (req, res) => {
   try {
+    if (!razorpay) {
+      return res.status(500).json({
+        success: false,
+        message: "Razorpay not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.",
+      });
+    }
+
     const { amount, currency = "INR", receipt } = req.body;
 
     if (!amount || amount <= 0) {
@@ -54,6 +70,13 @@ router.post("/create-order", async (req, res) => {
 // Verify payment
 router.post("/verify-payment", async (req, res) => {
   try {
+    if (!razorpay) {
+      return res.status(500).json({
+        success: false,
+        message: "Razorpay not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.",
+      });
+    }
+
     const { orderId, paymentId, signature } = req.body;
 
     if (!orderId || !paymentId || !signature) {
@@ -105,6 +128,13 @@ router.post("/verify-payment", async (req, res) => {
 // Get payment details
 router.get("/payment/:paymentId", async (req, res) => {
   try {
+    if (!razorpay) {
+      return res.status(500).json({
+        success: false,
+        message: "Razorpay not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.",
+      });
+    }
+
     const { paymentId } = req.params;
 
     const payment = await razorpay.payments.fetch(paymentId);
@@ -127,6 +157,13 @@ router.get("/payment/:paymentId", async (req, res) => {
 // Refund payment
 router.post("/refund", async (req, res) => {
   try {
+    if (!razorpay) {
+      return res.status(500).json({
+        success: false,
+        message: "Razorpay not configured. Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.",
+      });
+    }
+
     const { paymentId, amount, notes } = req.body;
 
     if (!paymentId) {
