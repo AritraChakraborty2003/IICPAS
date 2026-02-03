@@ -39,7 +39,7 @@ const formatINR = (value: number) =>
     maximumFractionDigits: 0,
   }).format(value);
 
-export default function CheckoutPage() {
+export default function DummyCheckoutPage() {
   const [billing, setBilling] = useState({
     name: "Aarav Sen",
     email: "aarav@example.com",
