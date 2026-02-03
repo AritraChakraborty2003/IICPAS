@@ -33,6 +33,7 @@ export default function CheckoutPage() {
   const [discount, setDiscount] = useState(800);
   const [couponStatus, setCouponStatus] = useState<"applied" | "invalid" | null>("applied");
 
+  // If NEXT_PUBLIC_API_URL is set, use it; otherwise default to same-origin to work with Next.js API proxy or backend running behind the same host.
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const fallbackAmount = 800; // minimum demo payable when cart is empty
   const hasItems = demoCart.length > 0;
@@ -107,7 +108,7 @@ export default function CheckoutPage() {
       }
     } catch (err: any) {
       console.error("Order creation error", err);
-      alert("Could not create payment order. Please try again.");
+      alert(`Could not create payment order. ${err?.message || "Please try again."}`);
       return;
     }
 
