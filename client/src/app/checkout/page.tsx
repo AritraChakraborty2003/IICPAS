@@ -33,9 +33,15 @@ export default function CheckoutPage() {
   const [discount, setDiscount] = useState(800);
   const [couponStatus, setCouponStatus] = useState<"applied" | "invalid" | null>("applied");
 
-  const subtotal = demoCart.reduce((sum, item) => sum + item.price, 0);
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const fallbackAmount = 800; // minimum demo payable when cart is empty
+  const hasItems = demoCart.length > 0;
+  const subtotal = hasItems
+    ? demoCart.reduce((sum, item) => sum + item.price, 0)
+    : fallbackAmount;
   const tax = Math.round(subtotal * 0.18);
-  const total = subtotal + tax - discount;
+  const effectiveDiscount = hasItems ? discount : 0;
+  const total = subtotal + tax - effectiveDiscount;
 
   const handlePlaceOrder = () => {
     setIsSubmitting(true);
@@ -78,7 +84,33 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (total <= 0) {
+      alert("Cart total must be greater than zero before payment.");
+      return;
+    }
+
     const payable = Math.max(total, 100); // Razorpay min amount > 0
+
+    // Create order on backend for proper signature flow
+    let orderId: string | null = null;
+    try {
+      const res = await fetch(`${API_BASE}/api/test-payment/create-order`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: payable, currency: "INR" }),
+      });
+      const data = await res.json();
+      if (data?.data?.orderId) {
+        orderId = data.data.orderId;
+      } else {
+        throw new Error(data?.message || "Order creation failed");
+      }
+    } catch (err: any) {
+      console.error("Order creation error", err);
+      alert("Could not create payment order. Please try again.");
+      return;
+    }
+
     const options = {
       key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_xxxxxxxx",
       amount: payable * 100, // in paisa
@@ -86,6 +118,7 @@ export default function CheckoutPage() {
       name: "IICPA Checkout Demo",
       description: "Dummy Razorpay payment (no real charge)",
       image: "/images/tally.webp",
+      order_id: orderId || undefined,
       handler: () => {
         alert("Dummy Razorpay flow completed (test mode).");
       },
@@ -215,7 +248,9 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          <div className="px-6 pb-3 text-sm text-slate-500">Demo cart intentionally left empty.</div>
+          <div className="px-6 pb-3 text-sm text-slate-500">
+            Demo cart intentionally left empty. A placeholder charge of {formatINR(fallbackAmount)} is used for testing.
+          </div>
 
           <div className="space-y-3 px-6 py-4 text-sm text-slate-700">
             <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
