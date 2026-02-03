@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import Image from "next/image";
+import { useState } from "react";
 
 type CartItem = {
   id: string;
@@ -10,27 +11,7 @@ type CartItem = {
   badge?: string;
 };
 
-const demoCart: CartItem[] = [
-  {
-    id: "tax-masterclass",
-    title: "GST Masterclass 2025",
-    type: "course",
-    price: 3499,
-    badge: "Best value",
-  },
-  {
-    id: "audit-sprint",
-    title: "Internal Audit Sprint",
-    type: "workshop",
-    price: 1499,
-  },
-  {
-    id: "finance-bundle",
-    title: "Finance Pro Bundle",
-    type: "bundle",
-    price: 4999,
-  },
-];
+const demoCart: CartItem[] = [];
 
 const formatINR = (value: number) =>
   new Intl.NumberFormat("en-IN", {
@@ -48,14 +29,13 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [notes, setNotes] = useState("Send me the session recordings and invoice.");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [couponCode, setCouponCode] = useState("SUMMER24");
+  const [discount, setDiscount] = useState(800);
+  const [couponStatus, setCouponStatus] = useState<"applied" | "invalid" | null>("applied");
 
-  const totals = useMemo(() => {
-    const subtotal = demoCart.reduce((sum, item) => sum + item.price, 0);
-    const tax = Math.round(subtotal * 0.18);
-    const discount = 800;
-    const total = subtotal + tax - discount;
-    return { subtotal, tax, discount, total };
-  }, []);
+  const subtotal = demoCart.reduce((sum, item) => sum + item.price, 0);
+  const tax = Math.round(subtotal * 0.18);
+  const total = subtotal + tax - discount;
 
   const handlePlaceOrder = () => {
     setIsSubmitting(true);
@@ -65,13 +45,77 @@ export default function CheckoutPage() {
     }, 900);
   };
 
+  const handleApplyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+    if (code === "SUMMER24") {
+      setDiscount(800);
+      setCouponStatus("applied");
+    } else {
+      setDiscount(0);
+      setCouponStatus("invalid");
+    }
+  };
+
+  const loadRazorpay = () =>
+    new Promise<boolean>((resolve) => {
+      const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
+      if (existing) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.async = true;
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+
+  const openRazorpay = async () => {
+    const ok = await loadRazorpay();
+    if (!ok) {
+      alert("Failed to load Razorpay. Please check your connection.");
+      return;
+    }
+
+    const payable = Math.max(total, 100); // Razorpay min amount > 0
+    const options = {
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_xxxxxxxx",
+      amount: payable * 100, // in paisa
+      currency: "INR",
+      name: "IICPA Checkout Demo",
+      description: "Dummy Razorpay payment (no real charge)",
+      image: "/images/tally.webp",
+      handler: () => {
+        alert("Dummy Razorpay flow completed (test mode).");
+      },
+      prefill: {
+        name: billing.name,
+        email: billing.email,
+        contact: billing.phone.replace(/[^0-9+]/g, ""),
+      },
+      notes: {
+        demo: "true",
+        userNotes: notes,
+      },
+      theme: {
+        color: "#f59e0b",
+      },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 lg:flex-row lg:px-6">
         <div className="flex-1 space-y-6">
           <header className="rounded-2xl bg-white/5 p-6 shadow-xl ring-1 ring-white/10 backdrop-blur">
             <p className="text-sm uppercase tracking-[0.2em] text-amber-300">Preview</p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">Dummy Checkout</h1>
+            <h1 className="mt-2 text-3xl font-semibold text-white">IICPA Checkout</h1>
             <p className="mt-2 text-sm text-slate-200">
               Use this page to demo the flow without touching real payments. Values are pre-filled for speed.
             </p>
@@ -161,38 +205,49 @@ export default function CheckoutPage() {
             <h2 className="text-2xl font-semibold text-slate-900">Review items</h2>
           </div>
 
-          <div className="divide-y divide-slate-200/80">
-            {demoCart.map((item) => (
-              <div key={item.id} className="flex items-start gap-3 px-6 py-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 text-white shadow-inner">
-                  {item.type === "course" ? "📘" : item.type === "bundle" ? "🎁" : "🧑‍💼"}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-semibold text-slate-900">{item.title}</p>
-                    {item.badge && (
-                      <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
-                        {item.badge}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm uppercase tracking-wide text-slate-500">{item.type}</p>
-                </div>
-                <p className="font-semibold text-slate-900">{formatINR(item.price)}</p>
+          <div className="flex items-center justify-between px-6 pt-3 text-sm text-slate-500">
+            <div className="flex items-center gap-3">
+              <Image src="/images/tally.webp" alt="Tally logo" width={56} height={56} className="rounded-xl border border-slate-200" />
+              <div>
+                <p className="font-semibold text-slate-800">Tally-ready invoice</p>
+                <p>Auto-generated after payment</p>
               </div>
-            ))}
+            </div>
           </div>
 
-          <div className="space-y-2 px-6 py-4 text-sm text-slate-700">
-            <div className="flex justify-between"><span>Subtotal</span><span>{formatINR(totals.subtotal)}</span></div>
-            <div className="flex justify-between"><span>GST (18%)</span><span>{formatINR(totals.tax)}</span></div>
+          <div className="px-6 pb-3 text-sm text-slate-500">Demo cart intentionally left empty.</div>
+
+          <div className="space-y-3 px-6 py-4 text-sm text-slate-700">
+            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
+              <input
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="Have a coupon?"
+                className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500"
+              />
+              <button
+                onClick={handleApplyCoupon}
+                className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+              >
+                Apply
+              </button>
+            </div>
+            {couponStatus === "applied" && (
+              <p className="text-xs font-semibold text-emerald-700">Coupon applied: {formatINR(discount)} off</p>
+            )}
+            {couponStatus === "invalid" && (
+              <p className="text-xs font-semibold text-red-600">Invalid code. Try SUMMER24.</p>
+            )}
+
+            <div className="flex justify-between"><span>Subtotal</span><span>{formatINR(subtotal)}</span></div>
+            <div className="flex justify-between"><span>GST (18%)</span><span>{formatINR(tax)}</span></div>
             <div className="flex justify-between text-emerald-700">
-              <span>Promo: SUMMER24</span>
-              <span>-{formatINR(totals.discount)}</span>
+              <span>Promo</span>
+              <span>-{formatINR(discount)}</span>
             </div>
             <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-base font-semibold text-slate-900">
               <span>Payable today</span>
-              <span>{formatINR(totals.total)}</span>
+              <span>{formatINR(total)}</span>
             </div>
             <p className="text-xs text-slate-500">
               You will receive confirmation on {billing.email}. This is a demonstration; nothing is billed.
@@ -206,6 +261,12 @@ export default function CheckoutPage() {
               className="w-full rounded-xl bg-amber-500 px-4 py-3 text-center text-base font-semibold text-slate-900 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? "Placing order..." : "Place dummy order"}
+            </button>
+            <button
+              onClick={openRazorpay}
+              className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-3 text-center text-base font-semibold text-slate-800 transition hover:bg-slate-100"
+            >
+              Open Razorpay (test)
             </button>
             <p className="mt-2 text-center text-xs text-slate-500">
               No payment gateway is contacted. Perfect for demos and QA.
