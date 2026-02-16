@@ -52,7 +52,8 @@ const debounce = (func, wait) => {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
-const STATIC_CDN_BASE = "https://cdn.iicpa.in";
+const STATIC_CDN_BASE =
+  process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
 
 console.log(STATIC_CDN_BASE);
 const joditConfig = {

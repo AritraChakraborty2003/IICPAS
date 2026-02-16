@@ -450,7 +450,7 @@ export default function Header({ showMarquee = true, topOffset }) {
                       />
                     </svg>
                   </button>
-                  <div className="absolute left-0 mt-2 w-48 bg-white shadow-xl rounded-lg opacity-0 group-hover:opacity-100 transform -translate-y-2 group-hover:translate-y-0 transition-all">
+                  <div className="absolute left-0 top-full mt-2 w-48 bg-white shadow-xl rounded-lg opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transform -translate-y-2 group-hover:translate-y-0 transition-all">
                     {item.children.map((child) =>
                       child.isHeader ? (
                         <div
