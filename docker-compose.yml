@@ -1,0 +1,70 @@
+services:
+  mongo:
+    image: mongo:7
+    container_name: iicpas-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: iicpas-backend
+    env_file:
+      - ./backend/.env.docker
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+      - ./backend/uploads:/app/uploads
+    command: npm run dev
+    depends_on:
+      - mongo
+
+  static-backend:
+    build:
+      context: ./static-backend
+      dockerfile: Dockerfile.dev
+    container_name: iicpas-static-backend
+    env_file:
+      - ./static-backend/.env.docker
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./static-backend:/app
+      - static_backend_node_modules:/app/node_modules
+      - ./static-backend/uploads:/app/uploads
+    command: npm run dev
+    depends_on:
+      - mongo
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    container_name: iicpas-client
+    env_file:
+      - ./client/.env.docker
+    environment:
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./client:/app
+      - client_node_modules:/app/node_modules
+      - client_next:/app/.next
+    command: npm run dev -- -H 0.0.0.0 -p 3000
+    depends_on:
+      - backend
+      - static-backend
+
+volumes:
+  mongo_data:
+  backend_node_modules:
+  static_backend_node_modules:
+  client_node_modules:
+  client_next:
