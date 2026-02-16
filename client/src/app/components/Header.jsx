@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
@@ -97,8 +97,10 @@ export default function Header({ showMarquee = true, topOffset }) {
   const [isClient, setIsClient] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
   const [selectedAdmissionCourse, setSelectedAdmissionCourse] = useState("");
+  const dropdownCloseTimeout = useRef(null);
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -263,6 +265,30 @@ export default function Header({ showMarquee = true, topOffset }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showProfileDropdown]);
+
+  useEffect(() => {
+    return () => {
+      if (dropdownCloseTimeout.current) {
+        clearTimeout(dropdownCloseTimeout.current);
+      }
+    };
+  }, []);
+
+  const handleDropdownOpen = (name) => {
+    if (dropdownCloseTimeout.current) {
+      clearTimeout(dropdownCloseTimeout.current);
+    }
+    setActiveDropdown(name);
+  };
+
+  const handleDropdownClose = () => {
+    if (dropdownCloseTimeout.current) {
+      clearTimeout(dropdownCloseTimeout.current);
+    }
+    dropdownCloseTimeout.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 300);
+  };
 
   const handleLogout = async () => {
     try {
@@ -433,24 +459,42 @@ export default function Header({ showMarquee = true, topOffset }) {
           <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
             {navLinks.map((item) =>
               item.children ? (
-                <div key={item.name} className="relative group">
-                  <button className="flex items-center gap-1 py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm">
-                    {item.name}
-                    <svg
-                      className="w-2.5 h-2.5 transition-transform group-hover:rotate-180"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  <div className="absolute left-0 top-full mt-2 w-48 bg-white shadow-xl rounded-lg opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transform -translate-y-2 group-hover:translate-y-0 transition-all">
+                <div
+                  key={item.name}
+                  className="relative"
+                >
+                  <div
+                    onMouseEnter={() => handleDropdownOpen(item.name)}
+                    onMouseLeave={handleDropdownClose}
+                  >
+                    <button className="flex items-center gap-1 py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm">
+                      {item.name}
+                      <svg
+                        className={`w-2.5 h-2.5 transition-transform ${
+                          activeDropdown === item.name ? "rotate-180" : ""
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                  <div
+                    className={`absolute left-0 top-full w-48 bg-white shadow-xl rounded-lg z-50 transition-all duration-200 ${
+                      activeDropdown === item.name
+                        ? "opacity-100 visible pointer-events-auto translate-y-0"
+                        : "opacity-0 invisible pointer-events-none -translate-y-2"
+                    }`}
+                    onMouseEnter={() => handleDropdownOpen(item.name)}
+                    onMouseLeave={handleDropdownClose}
+                  >
                     {item.children.map((child) =>
                       child.isHeader ? (
                         <div
