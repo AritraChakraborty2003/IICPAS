@@ -71,14 +71,7 @@ export async function generateMetadata({ params }) {
     const blogs = extractBlogs(res.data);
     const foundBlog = blogs.find((b) => {
       const candidates = toCandidateSlugs(b);
-      return candidates.some(
-        (c) =>
-          c === slug ||
-          c.replace(/-+/g, "-") === slug ||
-          slug.replace(/-+/g, "-") === c ||
-          c.includes(slug) ||
-          slug.includes(c)
-      );
+      return candidates.includes(slug);
     });
 
     if (!foundBlog || foundBlog.status !== "active") {

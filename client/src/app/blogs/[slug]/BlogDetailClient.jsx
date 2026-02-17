@@ -50,6 +50,11 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
   const [resolvedAllBlogs, setResolvedAllBlogs] = useState(allBlogs || []);
   const [loadingFallback, setLoadingFallback] = useState(false);
 
+  useEffect(() => {
+    setResolvedBlog(blog || null);
+    setResolvedAllBlogs(Array.isArray(allBlogs) ? allBlogs : []);
+  }, [blog, allBlogs, slug]);
+
   const isValid =
     resolvedBlog && resolvedBlog.status && resolvedBlog.status.toLowerCase() === "active";
 
@@ -65,14 +70,7 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
         const blogs = extractBlogs(data);
         const found = blogs.find((b) => {
           const candidates = toCandidateSlugs(b);
-          return candidates.some(
-            (c) =>
-              c === slug ||
-              c.replace(/-+/g, "-") === slug ||
-              slug.replace(/-+/g, "-") === c ||
-              c.includes(slug) ||
-              slug.includes(c)
-          );
+          return candidates.includes(slug);
         });
         if (!cancelled) {
           setResolvedBlog(found || null);
