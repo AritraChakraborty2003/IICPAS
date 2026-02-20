@@ -48,6 +48,14 @@ export const getAllPayments = async (req, res) => {
 export const getStudentPayments = async (req, res) => {
   try {
     const { studentId } = req.params;
+    const authenticatedStudentId = req.user?.id;
+
+    if (!authenticatedStudentId || authenticatedStudentId !== studentId) {
+      return res.status(403).json({
+        message: "Forbidden: You can only access your own payments",
+      });
+    }
+
     const payments = await Payment.find({ student: studentId })
       .populate("course", "title price")
       .sort({ createdAt: -1 });

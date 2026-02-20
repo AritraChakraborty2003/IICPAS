@@ -3,8 +3,57 @@ import Transaction from "../models/Transaction.js";
 import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
 import paymentScreenshotUpload from "../middleware/paymentScreenshotUpload.js";
+import isStudent from "../middleware/isStudent.js";
 
 const router = express.Router();
+
+// Get current student's invoice/transaction history
+router.get("/student", isStudent, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const skip = (page - 1) * limit;
+
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const [transactions, totalCount] = await Promise.all([
+      Transaction.find({ studentId })
+        .populate({
+          path: "courseId",
+          select: "title category price",
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Transaction.countDocuments({ studentId }),
+    ]);
+
+    return res.json({
+      success: true,
+      transactions,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        hasNext: skip + transactions.length < totalCount,
+        hasPrev: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Get student invoice history error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch invoice history",
+      error: error.message,
+    });
+  }
+});
 
 // Submit payment with screenshot
 router.post(

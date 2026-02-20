@@ -72,10 +72,11 @@ export default function StudentInvoicesTab() {
         });
 
         const studentEmail = studentRes.data?.student?.email;
+        const studentId = studentRes.data?.student?._id;
         const endpoints = [
           `${API_BASE}/api/v1/transactions/student`,
+          studentId ? `${API_BASE}/api/v1/payments/student/${studentId}` : null,
           `${API_BASE}/api/v1/transactions/my`,
-          `${API_BASE}/api/v1/payments/student`,
           studentEmail
             ? `${API_BASE}/api/payments/transactions?email=${encodeURIComponent(
                 studentEmail
