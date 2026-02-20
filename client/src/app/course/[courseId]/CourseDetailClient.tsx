@@ -3,6 +3,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronDown,
@@ -16,7 +17,6 @@ import {
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import LoginModal from "../../components/LoginModal";
-import SimpleCheckoutModal from "../../../components/SimpleCheckoutModal";
 import jsPDF from "jspdf";
 
 import LiveSchedule from "../../components/LiveSchedule";
@@ -68,6 +68,7 @@ export default function CourseDetailClient({
   courseId: string;
   initialCourse: Course;
 }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("syllabus");
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
   const [course] = useState<Course>(initialCourse);
@@ -76,7 +77,6 @@ export default function CourseDetailClient({
   const [student, setStudent] = useState<any>(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [pendingCartAction, setPendingCartAction] = useState<{
     courseId: string;
     sessionType: "recorded" | "live";
@@ -754,7 +754,7 @@ export default function CourseDetailClient({
                           </p>
                         </div>
                         <button
-                          onClick={() => setShowCheckoutModal(true)}
+                          onClick={() => router.push("/checkout")}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
                           disabled={cartLoading}
                         >
@@ -842,13 +842,6 @@ export default function CourseDetailClient({
       </div>
 
       <Footer />
-
-      {/* Checkout Modal */}
-      <SimpleCheckoutModal
-        isOpen={showCheckoutModal}
-        onClose={() => setShowCheckoutModal(false)}
-        student={student}
-      />
 
       {/* Login Modal */}
       <LoginModal

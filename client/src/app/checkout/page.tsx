@@ -1,315 +1,472 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useState } from "react";
+import axios from "axios";
+import Header from "../components/Header";
+import { useCart } from "../../hooks/useCart";
 
-type CartItem = {
-  id: string;
-  title: string;
-  type: "course" | "bundle" | "workshop";
-  price: number;
-  badge?: string;
-};
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-const demoCart: CartItem[] = [];
+const getItemPrice = (item: any) => {
+  const course = item?.course;
+  if (!course) return 0;
 
-const formatINR = (value: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(value);
-
-export default function CheckoutPage() {
-  const [billing, setBilling] = useState({
-    name: "Aarav Sen",
-    email: "aarav@example.com",
-    phone: "+91 98765 43210",
-  });
-  const [paymentMethod, setPaymentMethod] = useState("card");
-  const [notes, setNotes] = useState("Send me the session recordings and invoice.");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [couponCode, setCouponCode] = useState("SUMMER24");
-  const [discount, setDiscount] = useState(800);
-  const [couponStatus, setCouponStatus] = useState<"applied" | "invalid" | null>("applied");
-
-  // If NEXT_PUBLIC_API_URL is set, use it; otherwise default to same-origin to work with Next.js API proxy or backend running behind the same host.
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-  const fallbackAmount = 800; // minimum demo payable when cart is empty
-  const hasItems = demoCart.length > 0;
-  const subtotal = hasItems
-    ? demoCart.reduce((sum, item) => sum + item.price, 0)
-    : fallbackAmount;
-  const tax = Math.round(subtotal * 0.18);
-  const effectiveDiscount = hasItems ? discount : 0;
-  const total = subtotal + tax - effectiveDiscount;
-
-  const handlePlaceOrder = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      alert("This is a dummy checkout. No payment was processed.");
-      setIsSubmitting(false);
-    }, 900);
-  };
-
-  const handleApplyCoupon = () => {
-    const code = couponCode.trim().toUpperCase();
-    if (code === "SUMMER24") {
-      setDiscount(800);
-      setCouponStatus("applied");
-    } else {
-      setDiscount(0);
-      setCouponStatus("invalid");
-    }
-  };
-
-  const loadRazorpay = () =>
-    new Promise<boolean>((resolve) => {
-      const existing = document.querySelector<HTMLScriptElement>('script[src="https://checkout.razorpay.com/v1/checkout.js"]');
-      if (existing) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement("script");
-      script.src = "https://checkout.razorpay.com/v1/checkout.js";
-      script.async = true;
-      script.onload = () => resolve(true);
-      script.onerror = () => resolve(false);
-      document.body.appendChild(script);
-    });
-
-  const openRazorpay = async () => {
-    const ok = await loadRazorpay();
-    if (!ok) {
-      alert("Failed to load Razorpay. Please check your connection.");
-      return;
-    }
-
-    if (total <= 0) {
-      alert("Cart total must be greater than zero before payment.");
-      return;
-    }
-
-    const payable = Math.max(total, 100); // Razorpay min amount > 0
-
-    // Create order on backend for proper signature flow
-    let orderId: string | null = null;
-    try {
-      const res = await fetch(`${API_BASE}/api/test-payment/create-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: payable, currency: "INR" }),
-      });
-      const data = await res.json();
-      if (data?.data?.orderId) {
-        orderId = data.data.orderId;
-      } else {
-        throw new Error(data?.message || "Order creation failed");
-      }
-    } catch (err: any) {
-      console.error("Order creation error", err);
-      alert(`Could not create payment order. ${err?.message || "Please try again."}`);
-      return;
-    }
-
-    const options = {
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "rzp_test_xxxxxxxx",
-      amount: payable * 100, // in paisa
-      currency: "INR",
-      name: "IICPA Checkout Demo",
-      description: "Dummy Razorpay payment (no real charge)",
-      image: "/images/tally.webp",
-      order_id: orderId || undefined,
-      handler: () => {
-        alert("Dummy Razorpay flow completed (test mode).");
-      },
-      prefill: {
-        name: billing.name,
-        email: billing.email,
-        contact: billing.phone.replace(/[^0-9+]/g, ""),
-      },
-      notes: {
-        demo: "true",
-        userNotes: notes,
-      },
-      theme: {
-        color: "#f59e0b",
-      },
-    };
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const rzp = new window.Razorpay(options);
-    rzp.open();
-  };
+  if (item.sessionType === "recorded") {
+    return (
+      course?.pricing?.recordedSession?.finalPrice ||
+      course?.pricing?.recordedSession?.price ||
+      course?.price ||
+      0
+    );
+  }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 lg:flex-row lg:px-6">
-        <div className="flex-1 space-y-6">
-          <header className="rounded-2xl bg-white/5 p-6 shadow-xl ring-1 ring-white/10 backdrop-blur">
-            <p className="text-sm uppercase tracking-[0.2em] text-amber-300">Preview</p>
-            <h1 className="mt-2 text-3xl font-semibold text-white">IICPA Checkout</h1>
-            <p className="mt-2 text-sm text-slate-200">
-              Use this page to demo the flow without touching real payments. Values are pre-filled for speed.
-            </p>
-          </header>
+    course?.pricing?.liveSession?.finalPrice ||
+    course?.pricing?.liveSession?.price ||
+    course?.price * (course?.pricing?.liveSession?.priceMultiplier || 1.5) ||
+    0
+  );
+};
 
-          <section className="rounded-2xl bg-white/5 p-6 shadow-xl ring-1 ring-white/10 backdrop-blur">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm uppercase tracking-[0.16em] text-teal-200">Billing</p>
-                <h2 className="text-xl font-semibold text-white">Contact details</h2>
-              </div>
-              <span className="rounded-full bg-teal-400/20 px-4 py-1 text-xs font-semibold text-teal-200 ring-1 ring-teal-300/30">
-                No login required
-              </span>
-            </div>
+export default function CheckoutPage() {
+  const router = useRouter();
+  const [student, setStudent] = useState<any>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="space-y-1 text-sm text-slate-200">
-                <span>Name</span>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-white placeholder:text-slate-400 focus:border-amber-300 focus:outline-none"
-                  value={billing.name}
-                  onChange={(e) => setBilling({ ...billing, name: e.target.value })}
-                />
-              </label>
-              <label className="space-y-1 text-sm text-slate-200">
-                <span>Email</span>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-white placeholder:text-slate-400 focus:border-amber-300 focus:outline-none"
-                  value={billing.email}
-                  onChange={(e) => setBilling({ ...billing, email: e.target.value })}
-                />
-              </label>
-              <label className="space-y-1 text-sm text-slate-200">
-                <span>Phone</span>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-white placeholder:text-slate-400 focus:border-amber-300 focus:outline-none"
-                  value={billing.phone}
-                  onChange={(e) => setBilling({ ...billing, phone: e.target.value })}
-                />
-              </label>
-              <label className="space-y-1 text-sm text-slate-200">
-                <span>Notes</span>
-                <input
-                  className="w-full rounded-lg border border-white/10 bg-white/10 px-3 py-2 text-white placeholder:text-slate-400 focus:border-amber-300 focus:outline-none"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                />
-              </label>
-            </div>
-          </section>
+  const { cartItems, loading, updateQuantity, removeFromCart, fetchCart, getTotalPrice } =
+    useCart(student);
 
-          <section className="rounded-2xl bg-white/5 p-6 shadow-xl ring-1 ring-white/10 backdrop-blur">
-            <p className="text-sm uppercase tracking-[0.16em] text-sky-200">Payment</p>
-            <h2 className="text-xl font-semibold text-white">Choose a method</h2>
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [paymentData, setPaymentData] = useState({
+    utrNumber: "",
+    additionalNotes: "",
+    paymentScreenshot: null as File | null,
+  });
 
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {[
-                { id: "card", label: "Card", detail: "Visa / Mastercard" },
-                { id: "upi", label: "UPI", detail: "GPay / PhonePe" },
-                { id: "netbanking", label: "Netbanking", detail: "All major banks" },
-              ].map((method) => (
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/api/v1/students/isstudent`, {
+          withCredentials: true,
+        });
+
+        if (response.data?.student) {
+          setStudent(response.data.student);
+        } else {
+          router.push("/student-login");
+          return;
+        }
+      } catch {
+        router.push("/student-login");
+        return;
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  const handlePayNow = (item: any) => {
+    const price = getItemPrice(item);
+    setSelectedItem({ ...item, price });
+    setShowPaymentForm(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      alert("Please select a valid image file (JPEG, PNG, GIF, WebP)");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size must be less than 5MB");
+      return;
+    }
+
+    setPaymentData((prev) => ({ ...prev, paymentScreenshot: file }));
+  };
+
+  const handleSubmitPayment = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!selectedItem) return;
+
+    if (!paymentData.utrNumber.trim()) {
+      alert("Please enter UTR number");
+      return;
+    }
+
+    if (!paymentData.paymentScreenshot) {
+      alert("Please upload payment screenshot");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      const formData = new FormData();
+      formData.append("courseId", selectedItem.courseId);
+      formData.append("sessionType", selectedItem.sessionType);
+      formData.append("amount", String(selectedItem.price));
+      formData.append("utrNumber", paymentData.utrNumber.trim());
+      formData.append("additionalNotes", paymentData.additionalNotes);
+      formData.append("paymentScreenshot", paymentData.paymentScreenshot);
+      formData.append("studentId", student?._id || "");
+
+      const response = await axios.post(
+        `${API_BASE}/api/v1/transactions/submit-payment`,
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data?.success) {
+        alert("Payment submitted successfully! It will be reviewed by admin.");
+        setPaymentData({ utrNumber: "", additionalNotes: "", paymentScreenshot: null });
+        setSelectedItem(null);
+        setShowPaymentForm(false);
+        await fetchCart();
+        window.dispatchEvent(new CustomEvent("cartUpdated"));
+      }
+    } catch (error: any) {
+      alert(error?.response?.data?.message || "Failed to submit payment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!authChecked) {
+    return (
+      <div className="min-h-screen bg-gray-100">
+        <Header />
+        <div className="pt-36 text-center text-gray-600">Loading checkout...</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <Header />
+
+      <div className="pt-32 pb-10 px-4">
+        <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="flex items-center justify-between p-6 border-b">
+            <h1 className="text-4xl font-semibold text-gray-800">Checkout</h1>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="text-3xl text-gray-500 hover:text-gray-700"
+            >
+              ×
+            </button>
+          </div>
+
+          <div className="p-6">
+            {cartItems.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 mb-4">Your cart is empty.</p>
                 <button
-                  key={method.id}
-                  onClick={() => setPaymentMethod(method.id)}
-                  className={`rounded-xl border px-4 py-3 text-left transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg hover:shadow-amber-500/10 ${
-                    paymentMethod === method.id
-                      ? "border-amber-300 bg-amber-300/10 text-white"
-                      : "border-white/10 bg-white/5 text-slate-100"
-                  }`}
+                  onClick={() => router.push("/course")}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg"
                 >
-                  <p className="font-semibold">{method.label}</p>
-                  <p className="text-sm text-slate-200">{method.detail}</p>
+                  Continue Shopping
                 </button>
-              ))}
-            </div>
-
-            <div className="mt-6 rounded-lg border border-dashed border-white/10 bg-white/5 p-4 text-sm text-slate-200">
-              This is a sandbox experience. Selecting a method does not trigger any external gateway.
-            </div>
-          </section>
-        </div>
-
-        <aside className="w-full max-w-xl space-y-4 rounded-2xl bg-white text-slate-900 shadow-2xl ring-4 ring-amber-200/60 lg:sticky lg:top-10">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-600">Your cart</p>
-            <h2 className="text-2xl font-semibold text-slate-900">Review items</h2>
-          </div>
-
-          <div className="flex items-center justify-between px-6 pt-3 text-sm text-slate-500">
-            <div className="flex items-center gap-3">
-              <Image src="/images/tally.webp" alt="Tally logo" width={56} height={56} className="rounded-xl border border-slate-200" />
-              <div>
-                <p className="font-semibold text-slate-800">Tally-ready invoice</p>
-                <p>Auto-generated after payment</p>
               </div>
-            </div>
-          </div>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2">
+                  <h2 className="text-4xl font-semibold text-gray-900 mb-4">Your Courses</h2>
 
-          <div className="px-6 pb-3 text-sm text-slate-500">
-            Demo cart intentionally left empty. A placeholder charge of {formatINR(fallbackAmount)} is used for testing.
-          </div>
+                  <div className="space-y-4">
+                    {cartItems.map((item) => {
+                      const course = item.course;
+                      if (!course || !item.courseId) return null;
 
-          <div className="space-y-3 px-6 py-4 text-sm text-slate-700">
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
-              <input
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value)}
-                placeholder="Have a coupon?"
-                className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-500"
-              />
+                      const unitPrice = getItemPrice(item);
+                      const itemTotal = unitPrice * (item.quantity || 1);
+
+                      return (
+                        <div
+                          key={`${item.courseId}-${item.sessionType}`}
+                          className="border border-gray-200 rounded-xl p-4"
+                        >
+                          <div className="flex items-start gap-4">
+                            <Image
+                              src={
+                                course.image
+                                  ? course.image.startsWith("http")
+                                    ? course.image
+                                    : course.image.startsWith("/uploads/")
+                                    ? `${API_BASE}${course.image}`
+                                    : course.image.startsWith("/")
+                                    ? course.image
+                                    : `${API_BASE}/${course.image}`
+                                  : "/images/a1.jpeg"
+                              }
+                              alt={course.title || "Course"}
+                              width={120}
+                              height={80}
+                              className="w-24 h-16 object-cover rounded"
+                            />
+
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-3xl font-semibold text-gray-800 truncate">
+                                {course.title}
+                              </h3>
+                              <p className="text-3xl text-gray-600 mb-1">{course.category || "Accounting"}</p>
+
+                              <span
+                                className={`inline-block text-2xl px-3 py-1 rounded-full font-medium ${
+                                  item.sessionType === "recorded"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-blue-100 text-blue-700"
+                                }`}
+                              >
+                                {item.sessionType === "recorded" ? "Recorded Session" : "Live Session"}
+                              </span>
+
+                              <div className="mt-3 flex items-center gap-3">
+                                <span className="text-3xl text-gray-600">Quantity:</span>
+                                <div className="flex items-center border border-gray-300 rounded-lg">
+                                  <button
+                                    type="button"
+                                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                                    disabled={loading || (item.quantity || 1) <= 1}
+                                    onClick={() =>
+                                      updateQuantity(
+                                        item.courseId,
+                                        item.sessionType,
+                                        Math.max(1, (item.quantity || 1) - 1)
+                                      )
+                                    }
+                                  >
+                                    -
+                                  </button>
+                                  <span className="px-4 py-1 border-x border-gray-300 text-xl">
+                                    {item.quantity || 1}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                                    disabled={loading}
+                                    onClick={() =>
+                                      updateQuantity(
+                                        item.courseId,
+                                        item.sessionType,
+                                        (item.quantity || 1) + 1
+                                      )
+                                    }
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </div>
+
+                              <p className="mt-2 text-3xl text-gray-700">
+                                ₹{unitPrice.toLocaleString()} × {item.quantity || 1} ={" "}
+                                <span className="text-green-600 font-semibold">₹{itemTotal.toLocaleString()}</span>
+                              </p>
+                            </div>
+
+                            <div className="flex flex-col items-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handlePayNow(item)}
+                                disabled={loading}
+                                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold"
+                              >
+                                Pay Now
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeFromCart(item.courseId, item.sessionType)}
+                                disabled={loading}
+                                className="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="bg-gray-50 rounded-xl p-4 sticky top-28 border border-gray-100">
+                    <h3 className="text-4xl font-semibold text-gray-900 mb-4">Order Summary</h3>
+
+                    <div className="space-y-2 mb-4">
+                      {cartItems.map((item) => {
+                        const course = item.course;
+                        if (!course || !item.courseId) return null;
+                        return (
+                          <div key={`${item.courseId}-${item.sessionType}`} className="text-2xl">
+                            <div className="flex justify-between gap-3">
+                              <span className="text-gray-700 truncate">
+                                {course.title} × {item.quantity || 1}
+                              </span>
+                              <span className="font-medium text-gray-900">
+                                ₹{(getItemPrice(item) * (item.quantity || 1)).toLocaleString()}
+                              </span>
+                            </div>
+                            <p className={`text-xl ${item.sessionType === "recorded" ? "text-green-600" : "text-blue-600"}`}>
+                              {item.sessionType === "recorded" ? "Recorded" : "Live"}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className="border-t pt-3 mb-4">
+                      <div className="flex justify-between items-center text-4xl font-semibold">
+                        <span>Total</span>
+                        <span className="text-green-600">₹{getTotalPrice().toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+                      <h4 className="text-3xl text-blue-700 font-semibold mb-2">Payment Instructions</h4>
+                      <ul className="text-2xl text-blue-700 space-y-1">
+                        <li>• Click "Pay Now" for each course individually</li>
+                        <li>• Scan the QR code with any UPI app</li>
+                        <li>• Take a screenshot of your payment confirmation</li>
+                        <li>• Enter the UTR number from your payment receipt</li>
+                        <li>• Upload the payment screenshot</li>
+                        <li>• Your payment will be verified within 24 hours</li>
+                      </ul>
+
+                      <div className="mt-4 pt-3 border-t border-blue-200">
+                        <p className="text-2xl text-blue-700 mb-2">Need help with payment or courses?</p>
+                        <a
+                          href="https://wa.me/+918810380146?text=Hi, I need support with my course checkout or payment process. Please help."
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-medium"
+                        >
+                          WhatsApp Support
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {showPaymentForm && selectedItem && (
+        <div className="fixed inset-0 backdrop-blur-lg bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-3xl rounded-xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b">
+              <h2 className="text-2xl font-semibold text-gray-900">Complete Payment</h2>
               <button
-                onClick={handleApplyCoupon}
-                className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                type="button"
+                onClick={() => {
+                  setShowPaymentForm(false);
+                  setSelectedItem(null);
+                }}
+                className="text-3xl text-gray-500 hover:text-gray-700"
               >
-                Apply
+                ×
               </button>
             </div>
-            {couponStatus === "applied" && (
-              <p className="text-xs font-semibold text-emerald-700">Coupon applied: {formatINR(discount)} off</p>
-            )}
-            {couponStatus === "invalid" && (
-              <p className="text-xs font-semibold text-red-600">Invalid code. Try SUMMER24.</p>
-            )}
 
-            <div className="flex justify-between"><span>Subtotal</span><span>{formatINR(subtotal)}</span></div>
-            <div className="flex justify-between"><span>GST (18%)</span><span>{formatINR(tax)}</span></div>
-            <div className="flex justify-between text-emerald-700">
-              <span>Promo</span>
-              <span>-{formatINR(discount)}</span>
-            </div>
-            <div className="flex items-center justify-between border-t border-slate-200 pt-3 text-base font-semibold text-slate-900">
-              <span>Payable today</span>
-              <span>{formatINR(total)}</span>
-            </div>
-            <p className="text-xs text-slate-500">
-              You will receive confirmation on {billing.email}. This is a demonstration; nothing is billed.
-            </p>
-          </div>
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-3">{selectedItem.course?.title}</h3>
+                <div className="p-4 bg-gray-50 rounded-lg mb-4">
+                  <p className="text-sm text-gray-600 mb-1">
+                    Session: {selectedItem.sessionType === "recorded" ? "Recorded" : "Live"}
+                  </p>
+                  <p className="text-lg font-semibold text-green-600">
+                    ₹{Number(selectedItem.price || 0).toLocaleString()}
+                  </p>
+                </div>
 
-          <div className="border-t border-slate-200 px-6 py-4">
-            <button
-              onClick={handlePlaceOrder}
-              disabled={isSubmitting}
-              className="w-full rounded-xl bg-amber-500 px-4 py-3 text-center text-base font-semibold text-slate-900 transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? "Placing order..." : "Place dummy order"}
-            </button>
-            <button
-              onClick={openRazorpay}
-              className="mt-3 w-full rounded-xl border border-slate-300 px-4 py-3 text-center text-base font-semibold text-slate-800 transition hover:bg-slate-100"
-            >
-              Open Razorpay (test)
-            </button>
-            <p className="mt-2 text-center text-xs text-slate-500">
-              No payment gateway is contacted. Perfect for demos and QA.
-            </p>
+                <div className="text-center">
+                  <h4 className="font-semibold mb-2 text-gray-800">Scan QR Code to Pay</h4>
+                  <Image src="/upi.jpeg" alt="UPI QR" width={250} height={250} className="mx-auto rounded-lg border" />
+                  <p className="text-xs text-gray-500 mt-2">UPI ID: 8810380146@ptaxis</p>
+                </div>
+              </div>
+
+              <div>
+                <form onSubmit={handleSubmitPayment} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">UTR Number *</label>
+                    <input
+                      type="text"
+                      value={paymentData.utrNumber}
+                      onChange={(e) => setPaymentData((prev) => ({ ...prev, utrNumber: e.target.value }))}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                      placeholder="Enter UTR number"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Screenshot *</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
+                    <textarea
+                      value={paymentData.additionalNotes}
+                      onChange={(e) =>
+                        setPaymentData((prev) => ({ ...prev, additionalNotes: e.target.value }))
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                      rows={3}
+                      placeholder="Optional notes"
+                    />
+                  </div>
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowPaymentForm(false);
+                        setSelectedItem(null);
+                      }}
+                      className="flex-1 border border-gray-300 text-gray-700 rounded-lg py-2"
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-2"
+                    >
+                      {submitting ? "Submitting..." : "Submit Payment"}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
-        </aside>
-      </div>
-    </main>
+        </div>
+      )}
+    </div>
   );
 }

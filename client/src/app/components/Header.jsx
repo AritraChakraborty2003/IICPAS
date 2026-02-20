@@ -23,7 +23,6 @@ import "react-modern-drawer/dist/index.css";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import AlertMarquee from "./AlertMarquee";
-import CheckoutModal from "./CheckoutModal";
 import AdmissionModal from "./AdmissionModal";
 
 const MySwal = withReactContent(Swal);
@@ -90,7 +89,6 @@ export default function Header({ showMarquee = true, topOffset }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cartDrawer, setCartDrawer] = useState(false);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [student, setStudent] = useState(null);
   const [cartCourses, setCartCourses] = useState([]);
   const [wishlistCourses, setWishlistCourses] = useState([]);
@@ -394,8 +392,8 @@ export default function Header({ showMarquee = true, topOffset }) {
       });
       return;
     }
-    // Open checkout modal instead of redirecting
-    setShowCheckoutModal(true);
+    setCartDrawer(false);
+    window.location.href = "/checkout";
   };
 
   const handleAdmissionClick = (course) => {
@@ -802,17 +800,6 @@ export default function Header({ showMarquee = true, topOffset }) {
           )}
         </div>
       </Drawer>
-
-      {/* Checkout Modal */}
-      {showCheckoutModal && (
-        <CheckoutModal
-          isOpen={showCheckoutModal}
-          onClose={() => setShowCheckoutModal(false)}
-          cartCourses={cartCourses}
-          student={student}
-          onCartUpdate={fetchStudentAndCart}
-        />
-      )}
 
       {/* Admission Modal */}
       <AdmissionModal
