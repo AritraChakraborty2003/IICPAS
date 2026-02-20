@@ -60,6 +60,7 @@ export default function CheckoutPage() {
 
   const { cartItems, loading, updateQuantity, removeFromCart, fetchCart, getTotalPrice } =
     useCart(student);
+  const safeCartItems = (cartItems as any[]) || [];
 
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
@@ -195,7 +196,7 @@ export default function CheckoutPage() {
   if (!authChecked) {
     return (
       <div className="min-h-screen bg-gray-100">
-        <Header />
+        <Header topOffset={40} />
         <div className="pt-36 text-center text-gray-600">Loading checkout...</div>
       </div>
     );
@@ -203,7 +204,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Header />
+      <Header topOffset={40} />
 
       <div className="pt-32 pb-10 px-4">
         <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -219,7 +220,7 @@ export default function CheckoutPage() {
           </div>
 
           <div className="p-6">
-            {cartItems.length === 0 ? (
+            {safeCartItems.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-600 mb-4">Your cart is empty.</p>
                 <button
@@ -493,7 +494,7 @@ export default function CheckoutPage() {
                     <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Courses</h2>
 
                   <div className="space-y-4">
-                    {cartItems.map((item) => {
+                    {safeCartItems.map((item: any) => {
                       const course = item.course;
                       if (!course || !item.courseId) return null;
 
@@ -613,7 +614,7 @@ export default function CheckoutPage() {
                     <h3 className="text-2xl font-semibold text-gray-900 mb-4">Order Summary</h3>
 
                     <div className="space-y-2 mb-4">
-                      {cartItems.map((item) => {
+                      {safeCartItems.map((item: any) => {
                         const course = item.course;
                         if (!course || !item.courseId) return null;
                         return (
@@ -665,6 +666,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </div>
+                </div>
                 </div>
               </div>
             )}
