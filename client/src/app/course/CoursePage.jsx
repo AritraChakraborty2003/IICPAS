@@ -725,7 +725,7 @@ export default function CoursePage() {
           gap: 1.25rem;
           width: max-content;
           animation: softwareSlide 36s linear infinite;
-          padding-inline: 1.25rem;
+          padding-inline: 0;
         }
 
         .software-marquee:hover .software-track {
@@ -735,13 +735,13 @@ export default function CoursePage() {
         .software-card {
           flex: 0 0 280px;
           border-radius: 1.25rem;
-          border: 1px solid rgba(191, 219, 254, 0.7);
+          border: 1px solid rgba(203, 213, 225, 0.7);
           background: linear-gradient(
             180deg,
             rgba(255, 255, 255, 0.98) 0%,
-            rgba(248, 251, 255, 0.98) 100%
+            rgba(249, 250, 251, 0.98) 100%
           );
-          box-shadow: 0 12px 35px -22px rgba(15, 23, 42, 0.5);
+          box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.35);
           padding: 1rem;
           transition: transform 0.35s ease, box-shadow 0.35s ease;
         }
