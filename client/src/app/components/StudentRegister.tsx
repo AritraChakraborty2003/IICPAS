@@ -160,7 +160,7 @@ export default function StudentRegisterForm() {
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-emerald-50 pt-28 pb-6 px-4 md:pt-32 md:pb-8"
+      className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-emerald-50 px-4 pt-28 pb-8 md:pt-32 md:pb-10 flex items-center"
       style={{ position: "relative", zIndex: 1 }}
     >
       <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-2xl">
