@@ -126,6 +126,28 @@ router.post("/create-order", async (req, res) => {
   try {
     if (!ensureRazorpayConfigured(res)) return;
 
+    // Backward compatibility for legacy generic order creation.
+    if (!req.body?.courseId && Number(req.body?.value) > 0) {
+      const legacyAmount = Number(req.body.value);
+      const legacyOrder = await razorpay.orders.create({
+        amount: Math.round(legacyAmount * 100),
+        currency: req.body.currency || "INR",
+        receipt: req.body.receipt || `legacy_${Date.now()}`,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Order created successfully",
+        data: {
+          orderId: legacyOrder.id,
+          amount: legacyOrder.amount,
+          currency: legacyOrder.currency,
+          receipt: legacyOrder.receipt,
+          key: process.env.RAZORPAY_KEY_ID,
+        },
+      });
+    }
+
     const {
       courseId,
       sessionType,
