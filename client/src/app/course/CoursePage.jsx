@@ -728,8 +728,8 @@ export default function CoursePage() {
           </div>
         </div>
 
-        <div className="px-4 sm:px-6 lg:px-8 mt-14 md:mt-16">
-          <div className="relative max-w-5xl mx-auto overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-6 md:p-10 grid grid-cols-1 lg:grid-cols-5 gap-8 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
+        <div className="px-4 sm:px-6 lg:px-8 mt-14 md:mt-16 min-h-[70vh] flex items-center">
+          <div className="relative w-full max-w-5xl mx-auto overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-6 md:p-10 grid grid-cols-1 lg:grid-cols-5 gap-8 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.09),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(37,99,235,0.08),transparent_48%)]" />
 
             <div className="relative hidden lg:block lg:col-span-2">
