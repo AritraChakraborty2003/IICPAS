@@ -1830,22 +1830,6 @@ function DigitalHubContent() {
                           </div>
                         )}
 
-                        {/* Purchase Button - Always visible in demo mode */}
-                        <div className="flex justify-center">
-                          <button
-                            onClick={() => {
-                              // Redirect to course purchase or payment page
-                              router.push("/course");
-                            }}
-                            className={`px-8 py-3 text-white rounded-lg font-semibold transition-all duration-300 shadow-sm hover:shadow text-lg ${
-                              isDarkMode
-                                ? "bg-emerald-600 hover:bg-emerald-700"
-                                : "bg-blue-600 hover:bg-blue-700"
-                            }`}
-                          >
-                            💳 Subscribe Full Course
-                          </button>
-                        </div>
                       </div>
                     )}
 
@@ -1935,6 +1919,23 @@ function DigitalHubContent() {
                         </div>
                       </div>
                     ) : null}
+
+                    {isDemo && (
+                      <div className="mt-6 flex justify-center">
+                        <button
+                          onClick={() => {
+                            router.push("/course");
+                          }}
+                          className={`px-5 py-2 text-sm text-white rounded-lg font-semibold transition-all duration-300 shadow-sm hover:shadow ${
+                            isDarkMode
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
+                        >
+                          💳 Subscribe Full Course
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : selectedCaseStudy ? (
