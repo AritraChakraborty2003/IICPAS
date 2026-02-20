@@ -162,7 +162,7 @@ export default function TicketTab({ viewerType = "student", authToken }) {
               {errorMessage}
             </div>
           ) : tickets.length === 0 ? (
-            <div className="text-gray-400 text-center mt-24">No tickets</div>
+            <div className="text-gray-400 text-center mt-24">No results found</div>
           ) : (
             tickets.map((ticket) => (
               <div

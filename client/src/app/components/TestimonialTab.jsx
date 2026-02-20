@@ -379,9 +379,7 @@ export default function TestimonialTab({ student }) {
           {testimonials.length === 0 ? (
             <div className="text-center py-12">
               <FaQuoteLeft className="text-4xl text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">
-                No testimonials submitted yet
-              </p>
+              <p className="text-gray-500 text-lg">No results found</p>
               <p className="text-gray-400 text-sm">
                 Share your experience to help others!
               </p>
