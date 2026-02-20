@@ -103,21 +103,11 @@ export default function CoursePage() {
         }
 
         // Update group pricing if API call succeeded
-        console.log("Group pricing response:", groupPricingResponse);
         if (
           groupPricingResponse.status === "fulfilled" &&
           groupPricingResponse.value.data?.length > 0
         ) {
-          console.log(
-            "Setting group pricing data:",
-            groupPricingResponse.value.data
-          );
           setGroupPricing(groupPricingResponse.value.data);
-        } else {
-          console.log(
-            "Group pricing response failed or empty:",
-            groupPricingResponse
-          );
         }
 
         // Update blogs if API call succeeded
@@ -132,7 +122,7 @@ export default function CoursePage() {
           setBlogs(activeBlogs);
         }
       } catch (error) {
-        console.log("API calls failed:", error);
+        console.error("API calls failed:", error);
       } finally {
         setLoading(false);
       }
@@ -146,11 +136,8 @@ export default function CoursePage() {
 
     // Subscribe to wishlist changes
     const unsubscribe = wishlistEventManager.subscribe(
-      ({ studentId, courseId, action }) => {
+      ({ studentId, courseId }) => {
         if (student && student._id === studentId) {
-          console.log(
-            `Wishlist ${action} event received for course ${courseId}`
-          );
           // Refresh wishlist state when other components make changes
           fetchWishlistState();
         }
@@ -188,10 +175,6 @@ export default function CoursePage() {
       }
     } catch (error) {
       console.error("Error fetching wishlist state:", error);
-      // Handle 401 Unauthorized errors gracefully
-      if (error.response?.status === 401) {
-        console.log("User not authenticated, clearing student data");
-      }
       // Don't show error to user for background operations
       // Just log it and continue
       setStudent(null);
@@ -282,31 +265,20 @@ export default function CoursePage() {
       const studentId = student._id;
       const isLiked = wishlistCourseIds.includes(courseId);
 
-      console.log("Toggle wishlist:", {
-        studentId,
-        courseId,
-        isLiked,
-        API_BASE,
-      });
-
       if (isLiked) {
         // Remove from wishlist
-        const response = await axios.post(
+        await axios.post(
           `${API_BASE}/v1/students/remove-wishlist/${studentId}`,
           { courseId },
           { withCredentials: true }
         );
-
-        console.log("Remove wishlist response:", response.data);
       } else {
         // Add to wishlist
-        const response = await axios.post(
+        await axios.post(
           `${API_BASE}/v1/students/add-wishlist/${studentId}`,
           { courseId },
           { withCredentials: true }
         );
-
-        console.log("Add wishlist response:", response.data);
       }
 
       // Refresh wishlist state from backend instead of optimistic update
