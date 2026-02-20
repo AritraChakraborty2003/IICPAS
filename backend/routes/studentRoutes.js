@@ -637,70 +637,69 @@ router.post("/ticket/:id", async (req, res) => {
   }
 });
 
-// Profile update route with image upload support
-router.put(
-  "/profile",
-  uploadStudentImage.single("profileImage"),
-  async (req, res) => {
-    try {
-      console.log("Profile update request received");
-      console.log("Request body:", req.body);
-      console.log("Request file:", req.file);
-      console.log("Request cookies:", req.cookies);
+const updateStudentProfile = async (req, res) => {
+  try {
+    console.log("Profile update request received");
+    console.log("Request body:", req.body);
+    console.log("Request file:", req.file);
+    console.log("Request cookies:", req.cookies);
 
-      const token = req.cookies.token;
-      if (!token) {
-        console.log("No token found in cookies");
-        return res
-          .status(401)
-          .json({ message: "Unauthorized - No token found" });
-      }
-
-      console.log("Token found, verifying...");
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || "default_jwt_secret_for_development"
-      );
-      console.log("Token decoded:", decoded);
-
-      const student = await Student.findById(decoded.id);
-      if (!student) {
-        console.log("Student not found with ID:", decoded.id);
-        return res.status(404).json({ message: "Student not found" });
-      }
-
-      console.log("Student found:", student.name);
-
-      // Handle image upload
-      if (req.file) {
-        console.log("Image file received:", req.file.filename);
-        student.image = req.file.path;
-      } else {
-        console.log("No image file in request");
-      }
-
-      await student.save();
-      console.log("Student saved successfully");
-
-      res.json({
-        message: "Profile updated successfully",
-        student: {
-          id: student._id,
-          name: student.name,
-          email: student.email,
-          phone: student.phone,
-          image: student.image,
-          mode: student.mode,
-          location: student.location,
-          center: student.center,
-        },
-      });
-    } catch (err) {
-      console.error("Profile update error:", err);
-      res.status(500).json({ message: "Update failed", error: err.message });
+    const token = req.cookies.token;
+    if (!token) {
+      console.log("No token found in cookies");
+      return res.status(401).json({ message: "Unauthorized - No token found" });
     }
+
+    console.log("Token found, verifying...");
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "default_jwt_secret_for_development"
+    );
+    console.log("Token decoded:", decoded);
+
+    const student = await Student.findById(decoded.id);
+    if (!student) {
+      console.log("Student not found with ID:", decoded.id);
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    console.log("Student found:", student.name);
+
+    // Handle image upload
+    if (req.file) {
+      console.log("Image file received:", req.file.filename);
+      student.image = req.file.path;
+    } else {
+      console.log("No image file in request");
+    }
+
+    await student.save();
+    console.log("Student saved successfully");
+
+    res.json({
+      message: "Profile updated successfully",
+      student: {
+        id: student._id,
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        image: student.image,
+        mode: student.mode,
+        location: student.location,
+        center: student.center,
+      },
+    });
+  } catch (err) {
+    console.error("Profile update error:", err);
+    res.status(500).json({ message: "Update failed", error: err.message });
   }
-);
+};
+
+// Profile update route with image upload support
+router.put("/profile", uploadStudentImage.single("profileImage"), updateStudentProfile);
+
+// POST alias to avoid CORS preflight issues on some deployments
+router.post("/profile", uploadStudentImage.single("profileImage"), updateStudentProfile);
 
 // Superadmin route to update student profile details (excluding profile image)
 router.put(

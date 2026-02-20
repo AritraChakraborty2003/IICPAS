@@ -189,14 +189,14 @@ export default function ProfileTab({ onImageUpdated }) {
 
       try {
         // Do not set Content-Type manually; browser must attach multipart boundary.
-        const axiosRes = await axios.put(apiUrl, formData, {
+        const axiosRes = await axios.post(apiUrl, formData, {
           withCredentials: true,
         });
         responseData = axiosRes?.data;
       } catch (axiosErr) {
         // Fallback to fetch for environments where axios reports generic network error.
         const fetchRes = await fetch(apiUrl, {
-          method: "PUT",
+          method: "POST",
           credentials: "include",
           body: formData,
         });
