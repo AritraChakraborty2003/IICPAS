@@ -647,36 +647,69 @@ export default function CoursePage() {
               accounting, and business teams.
             </p>
           </motion.div>
+        </div>
 
-          <div className="software-marquee w-full py-2">
-            <div className="software-track">
-              {[...softwareStack, ...softwareStack].map((software, index) => (
-                <div
-                  key={`${software.name}-${index}`}
-                  className="software-card group"
-                >
-                  <div className="h-44 rounded-2xl bg-gradient-to-br from-[#eef8ff] via-[#f0fbf5] to-[#eef8ff] border border-blue-100/70 flex items-center justify-center p-6">
-                    <img
-                      src={software.image}
-                      alt={software.name}
-                      className="w-28 h-28 object-contain transition-transform duration-500 group-hover:scale-110"
-                      loading="lazy"
-                    />
-                  </div>
-
-                  <div className="pt-5 px-1">
-                    <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-                      <span>Software</span>
-                    </span>
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {software.name}
-                    </h3>
-                    <p className="text-sm text-gray-500">
-                      Professional certification course
-                    </p>
-                  </div>
+        <div className="software-marquee w-full py-2">
+          <div className="software-track">
+            {[...softwareStack, ...softwareStack].map((software, index) => (
+              <div
+                key={`${software.name}-${index}`}
+                className="software-card group"
+              >
+                <div className="h-44 rounded-2xl bg-gradient-to-br from-[#eef8ff] via-[#f0fbf5] to-[#eef8ff] border border-blue-100/70 flex items-center justify-center p-6">
+                  <img
+                    src={software.image}
+                    alt={software.name}
+                    className="w-28 h-28 object-contain transition-transform duration-500 group-hover:scale-110"
+                    loading="lazy"
+                  />
                 </div>
-              ))}
+
+                <div className="pt-5 px-1">
+                  <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+                    <span>Software</span>
+                  </span>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {software.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Professional certification course
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 md:mt-14">
+          <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 md:px-8 md:py-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                Contact Us
+              </h3>
+              <p className="text-gray-600">
+                Need guidance choosing the right course? Talk to our team.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 md:justify-end">
+              <a
+                href="tel:+919593330999"
+                className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
+              >
+                +91 9593330999
+              </a>
+              <a
+                href="mailto:iicpaconnect@gmail.com"
+                className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
+              >
+                iicpaconnect@gmail.com
+              </a>
+              <button
+                onClick={() => router.push("/contact")}
+                className="inline-flex items-center rounded-full bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 text-sm font-semibold transition"
+              >
+                Visit Contact Page
+              </button>
             </div>
           </div>
         </div>
