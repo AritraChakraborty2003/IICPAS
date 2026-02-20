@@ -97,7 +97,7 @@ export default function CourseDetailClient({
   useEffect(() => {
     const checkStudentAuth = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/v1/students/isstudent`, {
+        const response = await axios.get(`${API_BASE}/api/v1/students/isstudent`, {
           withCredentials: true,
         });
         setStudent(response.data.student);
@@ -865,7 +865,7 @@ export default function CourseDetailClient({
             // Refresh student data first
             try {
               const response = await axios.get(
-                `${API_BASE}/v1/students/isstudent`,
+                `${API_BASE}/api/v1/students/isstudent`,
                 { withCredentials: true }
               );
               const loggedInStudent = response.data.student;
