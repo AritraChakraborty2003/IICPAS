@@ -398,6 +398,51 @@ export default function ProfileTab({ onImageUpdated }) {
     );
   };
 
+  const getTopicSubtopics = (topic) => {
+    if (!topic) return [];
+    if (Array.isArray(topic.subtopics)) return topic.subtopics;
+    if (Array.isArray(topic.points)) return topic.points;
+    if (Array.isArray(topic.items)) return topic.items;
+    return [];
+  };
+
+  const fetchCourseChapters = async (courseId) => {
+    if (!courseId || courseChaptersByCourse[courseId]) return;
+    try {
+      const response = await axios.get(`${API}/api/chapters/course/${courseId}`);
+      if (response.data?.success) {
+        setCourseChaptersByCourse((prev) => ({
+          ...prev,
+          [courseId]: response.data.chapters || [],
+        }));
+      }
+    } catch (chapterError) {
+      setCourseChaptersByCourse((prev) => ({
+        ...prev,
+        [courseId]: [],
+      }));
+    }
+  };
+
+  const toggleProfileCourse = async (courseId) => {
+    setExpandedProfileCourses((prev) => ({
+      ...prev,
+      [courseId]: !prev[courseId],
+    }));
+
+    if (!expandedProfileCourses[courseId]) {
+      await fetchCourseChapters(courseId);
+    }
+  };
+
+  const toggleProfileChapter = (courseId, chapterId) => {
+    const key = `${courseId}-${chapterId}`;
+    setExpandedProfileChapters((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
   const renderRightContent = () => {
     switch (activeSection) {
       case "invoices":
