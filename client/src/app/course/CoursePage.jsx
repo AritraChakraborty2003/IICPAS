@@ -476,6 +476,7 @@ export default function CoursePage() {
                           src={courseImageSrc}
                           alt={course.title}
                           fill
+                          unoptimized
                           className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
                           sizes="(max-width: 768px) 100vw, 33vw"
                           priority={index < 2}

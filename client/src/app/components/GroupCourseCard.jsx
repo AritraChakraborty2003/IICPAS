@@ -4,8 +4,45 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
+const normalizeImageSrc = (rawImage, apiUrl) => {
+  if (!rawImage || typeof rawImage !== "string") return null;
+
+  const safeApiOrigin = (() => {
+    const fallback = "https://api.iicpa.in";
+    if (!apiUrl || typeof apiUrl !== "string") return fallback;
+    const trimmed = apiUrl.trim();
+    if (!trimmed) return fallback;
+    if (
+      trimmed.includes("localhost") ||
+      trimmed.includes("127.0.0.1") ||
+      trimmed.includes("0.0.0.0")
+    ) {
+      return fallback;
+    }
+    return trimmed.replace(/^http:\/\//i, "https://").replace(/\/+$/, "");
+  })();
+
+  const value = rawImage.trim();
+
+  if (/^https?:\/\//i.test(value)) {
+    return value.replace(/^http:\/\//i, "https://");
+  }
+
+  if (value.startsWith("/uploads/")) {
+    return `${safeApiOrigin}${value}`;
+  }
+
+  if (value.startsWith("/")) return value;
+
+  return `${safeApiOrigin}/${value.replace(/^\/+/, "")}`;
+};
+
 export default function GroupCourseCard({ groupPricing, index }) {
   const router = useRouter();
+  const imageSrc = normalizeImageSrc(
+    groupPricing.image,
+    process.env.NEXT_PUBLIC_API_URL
+  );
 
   const handleClick = () => {
     // Use slug if available, otherwise fall back to ID
@@ -22,30 +59,18 @@ export default function GroupCourseCard({ groupPricing, index }) {
     >
       {/* Banner Image Section */}
       <div className="relative h-48 w-full rounded-t-xl overflow-hidden">
-        {groupPricing.image ? (
+        {imageSrc ? (
           <Image
-            src={
-              groupPricing.image.startsWith("http")
-                ? groupPricing.image
-                : groupPricing.image.startsWith("/uploads/")
-                ? `${
-                    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-                  }${groupPricing.image}`
-                : groupPricing.image.startsWith("/")
-                ? groupPricing.image
-                : `${
-                    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-                  }${groupPricing.image}`
-            }
+            src={imageSrc}
             alt={`${
               groupPricing.groupName || groupPricing.level
             } Group Package`}
             fill
+            unoptimized
             className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 33vw"
             priority={index < 2}
             onError={(e) => {
-              console.log("Group pricing image failed to load:", e);
               e.currentTarget.style.display = "none";
               const placeholder = e.currentTarget.nextElementSibling;
               if (placeholder) {
@@ -58,9 +83,9 @@ export default function GroupCourseCard({ groupPricing, index }) {
         {/* Fallback placeholder */}
         <div
           className={`w-full h-full flex items-center justify-center text-gray-400 bg-gradient-to-br from-green-100 to-blue-100 ${
-            groupPricing.image ? "hidden" : ""
+            imageSrc ? "hidden" : ""
           }`}
-          style={{ display: groupPricing.image ? "none" : "flex" }}
+          style={{ display: imageSrc ? "none" : "flex" }}
         >
           <div className="text-center">
             <div className="text-4xl mb-2">📦</div>
