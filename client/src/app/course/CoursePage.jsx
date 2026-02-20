@@ -775,8 +775,8 @@ export default function CoursePage() {
             </div>
 
             <div className="relative lg:col-span-3 rounded-2xl border border-slate-200/90 bg-white/80 backdrop-blur-sm p-4 sm:p-6 md:p-7 flex items-center">
-              <form onSubmit={handleContactSubmit} className="space-y-5 w-full max-w-2xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <form onSubmit={handleContactSubmit} className="space-y-6 w-full max-w-2xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <input
                     type="text"
                     name="name"
@@ -784,7 +784,7 @@ export default function CoursePage() {
                     onChange={handleContactChange}
                     placeholder="Your name"
                     required
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
                   />
                   <input
                     type="email"
@@ -793,7 +793,7 @@ export default function CoursePage() {
                     onChange={handleContactChange}
                     placeholder="Your email"
                     required
-                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
                   />
                 </div>
 
@@ -804,7 +804,7 @@ export default function CoursePage() {
                   onChange={handleContactChange}
                   placeholder="Phone number"
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
                 />
 
                 <textarea
@@ -814,10 +814,10 @@ export default function CoursePage() {
                   placeholder="Tell us what you need help with"
                   rows={5}
                   required
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 resize-none transition"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 resize-none transition"
                 />
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-4 pt-1">
                   <button
                     type="submit"
                     disabled={contactSubmitting}
