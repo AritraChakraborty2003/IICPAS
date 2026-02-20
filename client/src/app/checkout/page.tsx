@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
@@ -8,6 +8,13 @@ import Header from "../components/Header";
 import { useCart } from "../../hooks/useCart";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
 
 type Coupon = {
   _id?: string;
@@ -63,6 +70,8 @@ const getItemPrice = (item: any) => {
   );
 };
 
+const getCartItemKey = (item: any) => `${item.courseId}-${item.sessionType}`;
+
 export default function CheckoutPage() {
   const router = useRouter();
   const [student, setStudent] = useState<any>(null);
@@ -94,21 +103,15 @@ export default function CheckoutPage() {
   const { cartItems, loading, updateQuantity, removeFromCart, fetchCart } = useCart(student);
   const safeCartItems = (cartItems as any[]) || [];
 
-  const [showPaymentForm, setShowPaymentForm] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [paymentData, setPaymentData] = useState({
-    utrNumber: "",
-    additionalNotes: "",
-    paymentScreenshot: null as File | null,
-  });
+  const [payingItemKey, setPayingItemKey] = useState<string | null>(null);
+  const [razorpayReady, setRazorpayReady] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(true);
   const [couponFetchError, setCouponFetchError] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponMessage, setCouponMessage] = useState("");
-  const [deliveryType, setDeliveryType] = useState("normal");
+  const [payNowTargetKey, setPayNowTargetKey] = useState("");
   const inputClass =
     "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition";
   const cartSubtotal = safeCartItems.reduce(
@@ -148,6 +151,17 @@ export default function CheckoutPage() {
     setAppliedCoupon(matchedCoupon);
     setCouponCode(matchedCoupon.code);
     setCouponMessage(`${matchedCoupon.code} applied successfully.`);
+  };
+
+  const handlePayNowSummary = () => {
+    if (!safeCartItems.length) return;
+    const target =
+      safeCartItems.find((item) => getCartItemKey(item) === payNowTargetKey) ||
+      safeCartItems[0];
+
+    if (target) {
+      handlePayNow(target);
+    }
   };
 
   useEffect(() => {
@@ -192,6 +206,19 @@ export default function CheckoutPage() {
   }, [sameAsBilling, billingAddress]);
 
   useEffect(() => {
+    if (!safeCartItems.length) {
+      setPayNowTargetKey("");
+      return;
+    }
+    setPayNowTargetKey((prev) => {
+      if (prev && safeCartItems.some((item) => getCartItemKey(item) === prev)) {
+        return prev;
+      }
+      return getCartItemKey(safeCartItems[0]);
+    });
+  }, [safeCartItems]);
+
+  useEffect(() => {
     const fetchCoupons = async () => {
       try {
         setCouponsLoading(true);
@@ -221,84 +248,152 @@ export default function CheckoutPage() {
     }
   }, [availableCoupons, appliedCoupon]);
 
-  const handlePayNow = (item: any) => {
-    const price = getItemPrice(item);
-    setSelectedItem({ ...item, price });
-    setShowPaymentForm(true);
+  useEffect(() => {
+    if (window.Razorpay) {
+      setRazorpayReady(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setRazorpayReady(true);
+    script.onerror = () => setRazorpayReady(false);
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const validateAddress = (address: typeof billingAddress) => {
+    return (
+      address.fullName.trim() &&
+      address.email.trim() &&
+      address.phone.trim() &&
+      address.line1.trim() &&
+      address.city.trim() &&
+      address.state.trim() &&
+      address.pincode.trim() &&
+      address.country.trim()
+    );
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const allowedTypes = ["image/jpeg", "image/jpg", "image/png", "image/gif", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
-      alert("Please select a valid image file (JPEG, PNG, GIF, WebP)");
-      return;
+  const openRazorpayCheckout = (orderData: any, item: any) => {
+    if (!window.Razorpay) {
+      throw new Error("Razorpay checkout SDK not loaded");
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert("File size must be less than 5MB");
-      return;
-    }
+    const amountInPaise = Math.round(
+      getItemPrice(item) * (item.quantity || 1) * 100
+    );
 
-    setPaymentData((prev) => ({ ...prev, paymentScreenshot: file }));
+    const rzp = new window.Razorpay({
+      key: RAZORPAY_KEY || orderData?.key,
+      amount: orderData?.amount || amountInPaise,
+      currency: orderData?.currency || "INR",
+      name: "IICPA Institute",
+      description: `${item?.course?.title || "Course"} (${item?.sessionType || "recorded"})`,
+      order_id: orderData?.orderId,
+      prefill: {
+        name: billingAddress.fullName || student?.name || "",
+        email: billingAddress.email || student?.email || "",
+        contact: billingAddress.phone || student?.phone || "",
+      },
+      notes: {
+        courseId: String(item?.courseId || ""),
+        sessionType: String(item?.sessionType || ""),
+      },
+      theme: {
+        color: "#1d4ed8",
+      },
+      modal: {
+        ondismiss: () => {
+          setPayingItemKey(null);
+          alert("Payment was cancelled. You can retry from checkout.");
+        },
+      },
+      handler: async (response: any) => {
+        try {
+          const verifyRes = await axios.post(
+            `${API_BASE}/api/v1/payments/verify-and-capture`,
+            {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              transactionId: orderData?.transactionId,
+            },
+            { withCredentials: true }
+          );
+
+          if (verifyRes.data?.success) {
+            alert("Payment successful. Course enrolled and receipt sent.");
+            await fetchCart();
+            window.dispatchEvent(new CustomEvent("cartUpdated"));
+          } else {
+            alert("Payment verification failed. Please contact support.");
+          }
+        } catch (error: any) {
+          alert(
+            error?.response?.data?.message ||
+              "Payment verification failed. Please contact support."
+          );
+        } finally {
+          setPayingItemKey(null);
+        }
+      },
+    });
+
+    rzp.open();
   };
 
-  const handleSubmitPayment = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    if (!selectedItem) return;
-
-    if (!paymentData.utrNumber.trim()) {
-      alert("Please enter UTR number");
+  const handlePayNow = async (item: any) => {
+    if (!student?._id) {
+      alert("Please login again.");
+      router.push("/student-login");
       return;
     }
 
-    if (!paymentData.paymentScreenshot) {
-      alert("Please upload payment screenshot");
+    if (!validateAddress(billingAddress)) {
+      alert("Please complete your billing address before payment.");
       return;
     }
+
+    if (!sameAsBilling && !validateAddress(shippingAddress)) {
+      alert("Please complete your shipping address before payment.");
+      return;
+    }
+
+    const itemKey = `${item.courseId}-${item.sessionType}`;
 
     try {
-      setSubmitting(true);
-
-      const formData = new FormData();
-      formData.append("courseId", selectedItem.courseId);
-      formData.append("sessionType", selectedItem.sessionType);
-      formData.append("amount", String(selectedItem.price));
-      formData.append("utrNumber", paymentData.utrNumber.trim());
-      formData.append("additionalNotes", paymentData.additionalNotes);
-      formData.append("paymentScreenshot", paymentData.paymentScreenshot);
-      formData.append("studentId", student?._id || "");
-      formData.append("billingAddress", JSON.stringify(billingAddress));
-      formData.append(
-        "shippingAddress",
-        JSON.stringify(sameAsBilling ? billingAddress : shippingAddress)
-      );
-      formData.append("sameAsBilling", String(sameAsBilling));
+      setPayingItemKey(itemKey);
+      const amount = getItemPrice(item) * (item.quantity || 1);
 
       const response = await axios.post(
-        `${API_BASE}/api/v1/transactions/submit-payment`,
-        formData,
+        `${API_BASE}/api/v1/payments/create-order`,
         {
-          headers: { "Content-Type": "multipart/form-data" },
-          withCredentials: true,
-        }
+          courseId: item.courseId,
+          sessionType: item.sessionType,
+          studentId: student._id,
+          amount,
+          quantity: item.quantity || 1,
+          billingAddress,
+          shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
+          sameAsBilling,
+          appliedCouponCode: appliedCoupon?.code || "",
+        },
+        { withCredentials: true }
       );
 
-      if (response.data?.success) {
-        alert("Payment submitted successfully! It will be reviewed by admin.");
-        setPaymentData({ utrNumber: "", additionalNotes: "", paymentScreenshot: null });
-        setSelectedItem(null);
-        setShowPaymentForm(false);
-        await fetchCart();
-        window.dispatchEvent(new CustomEvent("cartUpdated"));
+      if (!response.data?.success || !response.data?.data?.orderId) {
+        throw new Error(response.data?.message || "Unable to create payment order");
       }
+
+      openRazorpayCheckout(response.data.data, item);
     } catch (error: any) {
-      alert(error?.response?.data?.message || "Failed to submit payment");
-    } finally {
-      setSubmitting(false);
+      setPayingItemKey(null);
+      alert(error?.response?.data?.message || error?.message || "Payment failed");
     }
   };
 
@@ -454,14 +549,6 @@ export default function CheckoutPage() {
                               </div>
 
                               <div className="flex flex-col items-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => handlePayNow(item)}
-                                  disabled={loading}
-                                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold shadow-sm"
-                                >
-                                  Pay Now
-                                </button>
                                 <button
                                   type="button"
                                   onClick={() =>
@@ -840,34 +927,6 @@ export default function CheckoutPage() {
                     ) : null}
                   </div>
 
-                  <div className="bg-white border border-gray-200 rounded-xl p-4">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      Delivery Type
-                    </h3>
-                    <div className="space-y-3 text-sm">
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="normal"
-                          checked={deliveryType === "normal"}
-                          onChange={(e) => setDeliveryType(e.target.value)}
-                        />
-                        Normal Delivery
-                      </label>
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="deliveryType"
-                          value="express"
-                          checked={deliveryType === "express"}
-                          onChange={(e) => setDeliveryType(e.target.value)}
-                        />
-                        Express Delivery
-                      </label>
-                    </div>
-                  </div>
-
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm sticky top-28">
                     <h3 className="text-2xl font-semibold text-gray-900 mb-4">
                       Order Summary
@@ -930,12 +989,46 @@ export default function CheckoutPage() {
                       </div>
                     </div>
 
+                    {safeCartItems.length ? (
+                      <div className="space-y-3 mb-4">
+                        <label className="flex flex-col gap-1 text-sm font-medium text-gray-700">
+                          Pay Now for
+                          <select
+                            value={payNowTargetKey}
+                            onChange={(event) => setPayNowTargetKey(event.target.value)}
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition"
+                          >
+                            {safeCartItems.map((item) => {
+                              const key = getCartItemKey(item);
+                              const course = item.course;
+
+                              if (!course) return null;
+
+                              return (
+                                <option key={key} value={key}>
+                                  {course.title} ({item.sessionType === "recorded" ? "Recorded" : "Live"})
+                                </option>
+                              );
+                            })}
+                          </select>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={handlePayNowSummary}
+                          disabled={loading}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white rounded-lg py-3 text-lg font-semibold shadow-sm"
+                        >
+                          Pay Now
+                        </button>
+                      </div>
+                    ) : null}
+
                     <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                       <h4 className="text-lg text-blue-700 font-semibold mb-2">
                         Payment Instructions
                       </h4>
                       <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• Click &quot;Pay Now&quot; for each course individually</li>
+                        <li>• Click the Pay Now button in the order summary</li>
                         <li>• Scan the QR code with any UPI app</li>
                         <li>• Take a screenshot of your payment confirmation</li>
                         <li>• Enter the UTR number from your payment receipt</li>

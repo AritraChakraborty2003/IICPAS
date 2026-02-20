@@ -22,11 +22,40 @@ const TransactionSchema = new mongoose.Schema({
   },
   utrNumber: {
     type: String,
-    required: true,
+    default: "",
   },
   paymentScreenshot: {
     type: String, // File path to uploaded screenshot
-    required: true,
+    default: "",
+  },
+  paymentMethod: {
+    type: String,
+    enum: ["manual", "razorpay"],
+    default: "manual",
+  },
+  razorpayOrderId: {
+    type: String,
+    default: "",
+  },
+  razorpayPaymentId: {
+    type: String,
+    default: "",
+  },
+  razorpaySignature: {
+    type: String,
+    default: "",
+  },
+  billingAddress: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+  shippingAddress: {
+    type: mongoose.Schema.Types.Mixed,
+    default: null,
+  },
+  sameAsBilling: {
+    type: Boolean,
+    default: true,
   },
   additionalNotes: {
     type: String,

@@ -12,8 +12,8 @@ import contactRoutesOld from "./routes/contactRoutes.js";
 import connectDB from "./config/db.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import newCartRoutes from "./routes/newCartRoutes.js";
-import paymentRoutes from "./routes/PaymentRoutes/paymentRoutes.js";
-import testPaymentRoutes from "./routes/payment.js";
+import paymentRoutes from "./routes/payment.js";
+import phonePePaymentRoutes from "./routes/PaymentRoutes/paymentRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
@@ -230,7 +230,7 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/bookings", bookingRoutes);
 
 //Test Payment Routes
-app.use("/api/test-payment", testPaymentRoutes);
+app.use("/api/test-payment", paymentRoutes);
 
 //IP Whitelist Routes
 app.use("/api/ip-whitelist", ipWhitelistRoutes);
@@ -261,6 +261,7 @@ app.use("/api/upload", UploadRoutes);
 
 //Payment Routes
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/phonepe-payments", phonePePaymentRoutes);
 
 //Transaction Routes (Legacy)
 import legacyTransactionRoutes from "./routes/transaction.js";
