@@ -241,6 +241,8 @@ function DigitalHubContent() {
   const [showQuizResults, setShowQuizResults] = useState(false);
   const [progress, setProgress] = useState(0);
   const [points, setPoints] = useState(110);
+  const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
+  const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
 
   // Ticket submission functions
   const handleTicketSubmit = async (e: React.FormEvent) => {
@@ -529,11 +531,14 @@ function DigitalHubContent() {
           chaptersResponse.data.success &&
           chaptersResponse.data.chapters.length > 0
         ) {
-          setCourseChapters(chaptersResponse.data.chapters);
+          const availableChapters = isDemo
+            ? chaptersResponse.data.chapters.slice(0, 1)
+            : chaptersResponse.data.chapters;
+          setCourseChapters(availableChapters);
 
           // If chapterId is provided, select that specific chapter
-          if (chapterId) {
-            const specificChapter = chaptersResponse.data.chapters.find(
+          if (chapterId && !isDemo) {
+            const specificChapter = availableChapters.find(
               (chapter: ChapterData) => chapter._id === chapterId
             );
 
@@ -569,7 +574,7 @@ function DigitalHubContent() {
               }
             } else {
               // Fallback to first chapter if specific chapter not found
-              const firstChapter = chaptersResponse.data.chapters[0];
+              const firstChapter = availableChapters[0];
               setSelectedChapter(firstChapter);
 
               // Fetch case studies and assignments for this chapter
@@ -600,7 +605,7 @@ function DigitalHubContent() {
             }
           } else {
             // No chapterId provided, select first chapter
-            const firstChapter = chaptersResponse.data.chapters[0];
+            const firstChapter = availableChapters[0];
             setSelectedChapter(firstChapter);
 
             // Fetch case studies and assignments for this chapter
@@ -643,11 +648,19 @@ function DigitalHubContent() {
   }, [
     courseId,
     chapterId,
+    isDemo,
     API,
     fetchAssignments,
     fetchCaseStudies,
     loadQuizForTopic,
   ]);
+
+  useEffect(() => {
+    if (!selectedChapter || typeof window === "undefined") return;
+    if (window.innerWidth >= 1024) {
+      setHamburgerOpen(true);
+    }
+  }, [selectedChapter]);
 
   // Initialize Google Translate with enhanced styling
   useEffect(() => {
@@ -1338,8 +1351,8 @@ function DigitalHubContent() {
 
               {chapterDropdownOpen && (
                 <div className="absolute top-full left-0 w-full bg-white border border-stone-200 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
-                  {courseChapters.length > 0 ? (
-                    courseChapters.map((chapter: ChapterData, index) => (
+                  {visibleChapters.length > 0 ? (
+                    visibleChapters.map((chapter: ChapterData, index) => (
                       <button
                         key={chapter._id}
                         onClick={() => {
@@ -1498,7 +1511,7 @@ function DigitalHubContent() {
                       <h3 className="text-sm font-semibold text-slate-500 mb-2">
                         Topics
                       </h3>
-                      {(isDemo ? topics.slice(0, 1) : topics).map(
+                      {visibleTopics.map(
                         (topic: TopicData, index) => (
                           <button
                             key={topic._id}
@@ -1630,7 +1643,11 @@ function DigitalHubContent() {
                 </div>
               ) : selectedTopic ? (
                 <>
-                  <h1 className="text-4xl font-bold text-slate-900 mb-8">
+                  <h1
+                    className={`text-4xl font-bold mb-8 ${
+                      isDarkMode ? "text-slate-100" : "text-slate-900"
+                    }`}
+                  >
                     {selectedTopic.title}
                     {isDemo && (
                       <span className="ml-4 text-sm bg-amber-100 text-amber-800 px-3 py-1 rounded-full border border-amber-200">
