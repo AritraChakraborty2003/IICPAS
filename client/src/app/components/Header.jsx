@@ -490,12 +490,6 @@ export default function Header({ showMarquee = true, topOffset }) {
                       (total, item) => total + (item.quantity || 1),
                       0
                     );
-                    console.log(
-                      "Header cart count:",
-                      count,
-                      "from items:",
-                      cartCourses
-                    );
                     return count;
                   })()}
                 </span>
