@@ -14,9 +14,24 @@ import SimpleScrabbleGame from "./SimpleScrabbleGame";
 const normalizeCourseImageSrc = (rawImage, apiUrl) => {
   if (!rawImage || typeof rawImage !== "string") return null;
 
-  const normalizedApiUrl = (apiUrl || "https://api.iicpa.in")
-    .replace(/^http:\/\//i, "https://")
-    .replace(/\/+$/, "");
+  const safeApiOrigin = (() => {
+    const fallback = "https://api.iicpa.in";
+    if (!apiUrl || typeof apiUrl !== "string") return fallback;
+
+    const trimmed = apiUrl.trim();
+    if (!trimmed) return fallback;
+
+    if (
+      trimmed.includes("localhost") ||
+      trimmed.includes("127.0.0.1") ||
+      trimmed.includes("0.0.0.0")
+    ) {
+      return fallback;
+    }
+
+    return trimmed.replace(/^http:\/\//i, "https://").replace(/\/+$/, "");
+  })();
+
   const value = rawImage.trim();
 
   if (/^https?:\/\//i.test(value)) {
@@ -24,14 +39,14 @@ const normalizeCourseImageSrc = (rawImage, apiUrl) => {
   }
 
   if (value.startsWith("/uploads/")) {
-    return `${normalizedApiUrl}${value}`;
+    return `${safeApiOrigin}${value}`;
   }
 
   if (value.startsWith("/")) {
     return value;
   }
 
-  return `${normalizedApiUrl}/${value.replace(/^\/+/, "")}`;
+  return `${safeApiOrigin}/${value.replace(/^\/+/, "")}`;
 };
 
 export default function CoursePage() {
@@ -45,7 +60,7 @@ export default function CoursePage() {
   const [selectedGroupNames, setSelectedGroupNames] = useState([]);
   const [student, setStudent] = useState(null);
   const [wishlistCourseIds, setWishlistCourseIds] = useState([]);
-  const [loading, setLoading] = useState(false); // Initialize as false to prevent initial blinking
+  const [loading, setLoading] = useState(true);
 
   // Define API_BASE at component level
   const API_BASE =
@@ -202,6 +217,19 @@ export default function CoursePage() {
       selectedGroupNames.includes(group.groupName)
     );
   });
+
+  const hasActiveFilters =
+    search.trim().length > 0 ||
+    selectedCategories.length > 0 ||
+    selectedGroupNames.length > 0;
+
+  const showCourseSkeleton =
+    loading ||
+    (!hasActiveFilters &&
+      allCourses.length === 0 &&
+      groupPricing.length === 0 &&
+      filteredCourses.length === 0 &&
+      filteredGroupPricing.length === 0);
 
   // Handlers
   const toggleCategory = (categoryName) =>
@@ -380,8 +408,28 @@ export default function CoursePage() {
           <main className="w-full lg:w-3/4 xl:w-4/5">
             {/* Unified Display: Show all courses together in a single grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-max">
+              {showCourseSkeleton &&
+                Array.from({ length: 8 }).map((_, index) => (
+                  <div
+                    key={`course-skeleton-${index}`}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden animate-pulse"
+                  >
+                    <div className="h-40 w-full bg-gray-200" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-3 w-24 bg-gray-200 rounded" />
+                      <div className="h-5 w-4/5 bg-gray-200 rounded" />
+                      <div className="h-5 w-3/5 bg-gray-200 rounded" />
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="h-6 w-24 bg-gray-200 rounded" />
+                        <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
               {/* Individual Course Cards */}
-              {filteredCourses.map((course, index) => {
+              {!showCourseSkeleton &&
+                filteredCourses.map((course, index) => {
                 const courseImageSrc = normalizeCourseImageSrc(
                   course.image,
                   process.env.NEXT_PUBLIC_API_URL
@@ -557,7 +605,7 @@ export default function CoursePage() {
               })}
 
               {/* Course Packages Section */}
-              {filteredGroupPricing.length > 0 && (
+              {!showCourseSkeleton && filteredGroupPricing.length > 0 && (
                 <>
                   <div className="col-span-full mb-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -578,7 +626,8 @@ export default function CoursePage() {
               )}
 
               {/* No courses found message */}
-              {filteredCourses.length === 0 &&
+              {!showCourseSkeleton &&
+                filteredCourses.length === 0 &&
                 filteredGroupPricing.length === 0 && (
                   <div className="col-span-full text-gray-500 text-center py-12">
                     <div className="text-4xl mb-4">📚</div>
