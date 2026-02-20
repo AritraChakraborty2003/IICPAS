@@ -28,7 +28,7 @@ import toast from "react-hot-toast";
 import CertificatesTab from "../components/CertificateTab";
 import CoursesTab from "../components/CourseTab";
 import BuyCoursesTab from "../components/BuyCoursesTab";
-import RevisionTab from "./RevisionTab";
+import RevisionTab from "./RevisionTab.tsx";
 import TicketTab from "../components/TicketTab";
 import NewsTab from "./NewsTab";
 import LiveClassTab from "../components/LiveClassTab";
