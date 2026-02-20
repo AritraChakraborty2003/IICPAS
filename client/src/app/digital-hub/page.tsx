@@ -1292,7 +1292,7 @@ function DigitalHubContent() {
                 }`}
               />
               <h1
-                className={`text-xl font-semibold ${
+                className={`text-lg font-semibold ${
                   isDarkMode ? "text-slate-100" : "text-blue-900"
                 }`}
               >
@@ -1319,7 +1319,7 @@ function DigitalHubContent() {
             <div className="relative">
               <button
                 onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
-                className={`flex items-center justify-between px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-sm hover:shadow min-w-[160px] border ${
+                className={`flex items-center justify-between px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 shadow-sm hover:shadow min-w-[160px] border ${
                   isDarkMode
                     ? "bg-slate-900 border-slate-700 text-slate-100 hover:bg-slate-800"
                     : "bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100"
@@ -1360,7 +1360,7 @@ function DigitalHubContent() {
             <div className="relative">
               <button
                 onClick={() => setChapterDropdownOpen(!chapterDropdownOpen)}
-                className={`flex items-center justify-between px-4 py-2 rounded-xl font-medium transition-all duration-300 min-w-[200px] border ${
+                className={`flex items-center justify-between px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 min-w-[200px] border ${
                   isDarkMode
                     ? "bg-slate-900 border-slate-700 text-slate-100 hover:bg-slate-800"
                     : "bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100"
@@ -1422,7 +1422,7 @@ function DigitalHubContent() {
                   : "bg-amber-50 border-amber-300 text-amber-800"
               }`}
             >
-              <span className="text-sm font-medium">Points {points}</span>
+              <span className="text-xs sm:text-sm font-medium">Points {points}</span>
             </div>
           </div>
         </div>
