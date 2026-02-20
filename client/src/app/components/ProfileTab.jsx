@@ -266,37 +266,62 @@ export default function ProfileTab({ onImageUpdated }) {
       const formData = new FormData();
       formData.append("profileImage", profileImage);
 
-      const uploadUrl = "/api/student/profile-image";
+      const uploadUrls = [
+        "/api/student/profile-image",
+        `${API_BASE.replace(/\/+$/, "")}/v1/students/profile`,
+      ];
       let responseData = null;
       const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      for (const method of ["post"]) {
-        for (let attempt = 1; attempt <= 3; attempt += 1) {
-          try {
-            const axiosRes = await axios({
-              method,
-              url: uploadUrl,
-              data: formData,
-              withCredentials: true,
-              timeout: 30000,
-              headers: { Accept: "application/json" },
-            });
-            responseData = axiosRes?.data;
-            break;
-          } catch (axiosErr) {
-            const status = axiosErr?.response?.status;
-            const isNetworkError = !axiosErr?.response;
+      let finalError = null;
 
-            if (isNetworkError && attempt < 3) {
-              await delay(300 * attempt);
-              continue;
+      for (const uploadUrl of uploadUrls) {
+        for (const method of ["post"]) {
+          for (let attempt = 1; attempt <= 3; attempt += 1) {
+            try {
+              const axiosRes = await axios({
+                method,
+                url: uploadUrl,
+                data: formData,
+                withCredentials: true,
+                timeout: 30000,
+                headers: { Accept: "application/json" },
+              });
+              responseData = axiosRes?.data;
+              break;
+            } catch (axiosErr) {
+              finalError = axiosErr;
+              const status = axiosErr?.response?.status;
+              const message = String(
+                axiosErr?.response?.data?.message || axiosErr?.message || ""
+              ).toLowerCase();
+              const isNetworkError = !axiosErr?.response;
+              const isProxyAuthTokenIssue =
+                uploadUrl === "/api/student/profile-image" &&
+                status === 401 &&
+                message.includes("no token");
+
+              if (isProxyAuthTokenIssue) {
+                break;
+              }
+
+              if (isNetworkError && attempt < 3) {
+                await delay(300 * attempt);
+                continue;
+              }
+
+              throw axiosErr;
             }
-
-            throw axiosErr;
           }
+
+          if (responseData) break;
         }
 
         if (responseData) break;
+      }
+
+      if (!responseData && finalError) {
+        throw finalError;
       }
 
       if (responseData?.student?.image) {
@@ -317,6 +342,10 @@ export default function ProfileTab({ onImageUpdated }) {
       console.error("Error response:", err.response?.data);
       console.error("Error status:", err.response?.status);
       const statusCode = err.response?.status;
+      if (statusCode === 401) {
+        setError("Failed to upload image: Please log in again and retry.");
+        return;
+      }
       if (statusCode === 413) {
         setError("Failed to upload image: File too large for server limit. Please choose a smaller image.");
         return;
