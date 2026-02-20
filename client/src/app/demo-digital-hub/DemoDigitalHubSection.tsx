@@ -44,6 +44,7 @@ interface SelectedDemo {
 
 interface Course {
   _id: string;
+  slug?: string;
   title: string;
   description: string;
   image?: string;
@@ -61,6 +62,11 @@ const DemoDigitalHubSection = () => {
   const [showModal, setShowModal] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
+
+  const buildDemoHubPath = (course: Pick<Course, "_id" | "slug">) => {
+    const identifier = course.slug || course._id;
+    return `/digital-hub/demo/${encodeURIComponent(identifier)}`;
+  };
 
   const iconMap = {
     FaPlayCircle: FaPlayCircle,
@@ -330,7 +336,7 @@ const DemoDigitalHubSection = () => {
                         className={`${colorScheme.button} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium`}
                         onClick={() => {
                           // Navigate to digital hub with demo mode enabled using real course ID
-                          router.push(`/digital-hub?courseId=${course._id}&demo=true`);
+                          router.push(buildDemoHubPath(course));
                         }}
                       >
                         Try Demo
@@ -398,8 +404,9 @@ const DemoDigitalHubSection = () => {
                       onClick={() => {
                         closeModal();
                         // Use the first available course for demo
-                        const demoCourseId = courses.length > 0 ? courses[0]._id : "demo-course-1";
-                        router.push(`/digital-hub?courseId=${demoCourseId}&demo=true`);
+                        const demoCourse = courses.length > 0 ? courses[0] : null;
+                        if (!demoCourse) return;
+                        router.push(buildDemoHubPath(demoCourse));
                       }}
                     >
                       View Content
@@ -446,8 +453,9 @@ const DemoDigitalHubSection = () => {
                     onClick={() => {
                       closeModal();
                       // Use the first available course for demo
-                      const demoCourseId = courses.length > 0 ? courses[0]._id : "demo-course-1";
-                      router.push(`/digital-hub?courseId=${demoCourseId}&demo=true`);
+                      const demoCourse = courses.length > 0 ? courses[0] : null;
+                      if (!demoCourse) return;
+                      router.push(buildDemoHubPath(demoCourse));
                     }}
                   >
                     Start Demo Course
