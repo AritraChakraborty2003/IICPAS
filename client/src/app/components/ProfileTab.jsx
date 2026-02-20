@@ -4,24 +4,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Upload, User } from "lucide-react";
-import CoursesTab from "./CourseTab";
-import StudentInvoicesTab from "./StudentInvoicesTab";
-import TestimonialTab from "./TestimonialTab";
-import TicketTab from "./TicketTab";
 
-const studentSectionTabs = [
-  { id: "profile", label: "Profile" },
-  { id: "invoices", label: "Invoices" },
-  { id: "courses", label: "Courses" },
-  { id: "testimonial", label: "Testimonials" },
-  { id: "support", label: "Tickets" },
-];
-
-export default function ProfileTab({
-  onNavigate,
-  activeSection = "profile",
-  studentData = null,
-}) {
+export default function ProfileTab() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [student, setStudent] = useState({
@@ -150,80 +134,6 @@ export default function ProfileTab({
     );
   }
 
-  const renderRightContent = () => {
-    switch (activeSection) {
-      case "invoices":
-        return <StudentInvoicesTab />;
-      case "courses":
-        return <CoursesTab />;
-      case "testimonial":
-        return <TestimonialTab student={studentData || student} />;
-      case "support":
-        return <TicketTab viewerType="student" />;
-      default:
-        return (
-          <div className="space-y-6">
-            <div className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                  Profile Information
-                </h3>
-                <p className="text-sm text-blue-600">
-                  Your profile information is managed by the system. Only your
-                  profile image can be changed.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">
-                    Full Name
-                  </label>
-                  <div className="w-full p-3 border rounded-lg bg-gray-50 text-gray-700">
-                    {student.name}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">
-                    Email Address
-                  </label>
-                  <div className="w-full p-3 border rounded-lg bg-gray-50 text-gray-700">
-                    {student.email}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">
-                    Phone Number
-                  </label>
-                  <div className="w-full p-3 border rounded-lg bg-gray-50 text-gray-700">
-                    {student.phone || "Not provided"}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-600 mb-2">
-                    Student ID
-                  </label>
-                  <div className="w-full p-3 border rounded-lg bg-gray-50 text-gray-700">
-                    {student.id || "Not available"}
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-yellow-800 mb-1">
-                  Need to update your information?
-                </h4>
-                <p className="text-sm text-yellow-700">
-                  Contact the administration team to update your name, email, or
-                  phone number.
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-    }
-  };
-
   return (
     <div className="flex flex-col min-h-screen lg:flex-row gap-6 px-6 pt-4 pb-10 font-sans">
       {/* Left Sidebar */}
@@ -304,33 +214,73 @@ export default function ProfileTab({
       {/* Right Content */}
       <div className="w-full lg:w-3/4 bg-white rounded-xl shadow-md">
         <div className="p-6">
-          <div className="mb-6 border-b border-gray-200">
-            <div className="flex gap-2 overflow-x-auto pb-3">
-              {studentSectionTabs.map((tab) => {
-                const isCurrent = tab.id === activeSection;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      if (!isCurrent && typeof onNavigate === "function") {
-                        onNavigate(tab.id);
-                      }
-                    }}
-                    className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
-                      isCurrent
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+          <div className="space-y-6">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">
+                Profile Information
+              </h3>
+              <p className="text-sm text-blue-600">
+                Your profile information is managed by the system. Only your
+                profile image can be changed.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                  Full Name
+                </label>
+                <div className="w-full p-3 border rounded-lg bg-gray-50 text-gray-700">
+                  {student.name}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                  Email Address
+                </label>
+                <div className="w-full p-3 border rounded-lg bg-gray-50 text-gray-700">
+                  {student.email}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                  Phone Number
+                </label>
+                <div className="w-full p-3 border rounded-lg bg-gray-50 text-gray-700">
+                  {student.phone || "Not provided"}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-600 mb-2">
+                  Student ID
+                </label>
+                <div className="w-full p-3 border rounded-lg bg-gray-50 text-gray-700">
+                  {student.id || "Not available"}
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-800 mb-2">
+                Testimonial Courses
+              </h4>
+              <ul className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
+                <li>Course 1</li>
+                <li>Course 2</li>
+                <li>Course 3</li>
+              </ul>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-yellow-800 mb-1">
+                Need to update your information?
+              </h4>
+              <p className="text-sm text-yellow-700">
+                Contact the administration team to update your name, email, or
+                phone number.
+              </p>
             </div>
           </div>
-
-          {renderRightContent()}
         </div>
       </div>
     </div>

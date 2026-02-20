@@ -23,6 +23,7 @@ import { motion } from "framer-motion";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import BlogsSidebar from "../components/BlogsSidebar";
+import { getBlogSlug } from "../../lib/blogSlug";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
@@ -360,6 +361,8 @@ export default function BlogsPage() {
                               : "/" + blog.imageUrl
                           }`
                         : getFallbackImage(blog.title);
+                      const blogSlug = getBlogSlug(blog);
+                      const blogHref = blogSlug ? `/blogs/${blogSlug}` : "/blogs";
 
                       return viewMode === "grid" ? (
                         <motion.div
@@ -511,9 +514,7 @@ export default function BlogsPage() {
                               }}
                             >
                               <Link
-                                href={`/blogs/${encodeURIComponent(
-                                  blog.title.replace(/\s+/g, "-").toLowerCase()
-                                )}`}
+                                href={blogHref}
                                 className="text-base font-bold leading-tight mb-1 text-gray-900 hover:text-transparent hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 hover:bg-clip-text transition-all duration-300 group-hover:underline decoration-2 underline-offset-4 line-clamp-2"
                               >
                                 {blog.title}
@@ -546,9 +547,7 @@ export default function BlogsPage() {
                               }}
                             >
                               <Link
-                                href={`/blogs/${encodeURIComponent(
-                                  blog.title.replace(/\s+/g, "-").toLowerCase()
-                                )}`}
+                                href={blogHref}
                                 className="group/btn inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                               >
                                 <span>Read Article →</span>
@@ -634,9 +633,7 @@ export default function BlogsPage() {
                               </div>
 
                               <Link
-                                href={`/blogs/${encodeURIComponent(
-                                  blog.title.replace(/\s+/g, "-").toLowerCase()
-                                )}`}
+                                href={blogHref}
                                 className="text-xl md:text-2xl font-bold leading-tight mb-4 text-gray-900 hover:text-transparent hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 hover:bg-clip-text transition-all duration-500 block"
                               >
                                 {blog.title}
@@ -661,11 +658,7 @@ export default function BlogsPage() {
                                 </div>
 
                                 <Link
-                                  href={`/blogs/${encodeURIComponent(
-                                    blog.title
-                                      .replace(/\s+/g, "-")
-                                      .toLowerCase()
-                                  )}`}
+                                  href={blogHref}
                                   className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white px-6 py-2 rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                                 >
                                   <span>Read More</span>
