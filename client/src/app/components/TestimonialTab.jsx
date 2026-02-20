@@ -16,7 +16,7 @@ import StarRating from "./StarRating";
 
 export default function TestimonialTab({ student }) {
   const [testimonials, setTestimonials] = useState([]);
-  const [showForm, setShowForm] = useState(false);
+  const [showForm, setShowForm] = useState(true);
   const [formData, setFormData] = useState({
     name: student?.name || "",
     designation: "",
@@ -35,15 +35,31 @@ export default function TestimonialTab({ student }) {
     fetchTestimonials();
   }, []);
 
+  useEffect(() => {
+    if (student?.name) {
+      setFormData((prev) => ({
+        ...prev,
+        name: prev.name?.trim() ? prev.name : student.name,
+      }));
+    }
+  }, [student]);
+
   const fetchTestimonials = async () => {
     try {
       const response = await axios.get(`${API_BASE}/testimonials/student`, {
         withCredentials: true,
       });
-      setTestimonials(response.data);
+      const studentTestimonials = Array.isArray(response.data)
+        ? response.data
+        : [];
+      setTestimonials(studentTestimonials);
+      if (!studentTestimonials.length) {
+        setShowForm(true);
+      }
     } catch (error) {
       console.error("Error fetching testimonials:", error);
       toast.error("Failed to fetch testimonials");
+      setShowForm(true);
     } finally {
       setLoading(false);
     }
