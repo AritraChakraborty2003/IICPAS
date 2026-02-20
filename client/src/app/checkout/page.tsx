@@ -9,6 +9,55 @@ import { useCart } from "../../hooks/useCart";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+const AVAILABLE_COUPONS = [
+  {
+    code: "STUDENT10",
+    discountType: "percentage",
+    discountValue: 10,
+    expiresAt: "2027-12-31",
+    description: "Flat 10% off for all students",
+  },
+  {
+    code: "IICPA500",
+    discountType: "amount",
+    discountValue: 500,
+    expiresAt: "2027-06-30",
+    description: "Instant Rs 500 off on checkout",
+  },
+  {
+    code: "EXAM20",
+    discountType: "percentage",
+    discountValue: 20,
+    expiresAt: "2026-12-31",
+    description: "Exam season special 20% off",
+  },
+] as const;
+
+type Coupon = (typeof AVAILABLE_COUPONS)[number];
+
+const isCouponExpired = (expiresAt: string) => {
+  const expiry = new Date(`${expiresAt}T23:59:59`);
+  return Number.isNaN(expiry.getTime()) ? true : expiry.getTime() < Date.now();
+};
+
+const getCouponDiscount = (subtotal: number, coupon: Coupon | null) => {
+  if (!coupon || subtotal <= 0 || isCouponExpired(coupon.expiresAt)) return 0;
+
+  const rawDiscount =
+    coupon.discountType === "percentage"
+      ? (subtotal * coupon.discountValue) / 100
+      : coupon.discountValue;
+
+  return Math.min(Math.max(rawDiscount, 0), subtotal);
+};
+
+const formatCouponExpiry = (date: string) =>
+  new Date(`${date}T00:00:00`).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
 const getItemPrice = (item: any) => {
   const course = item?.course;
   if (!course) return 0;
@@ -58,8 +107,7 @@ export default function CheckoutPage() {
     country: "India",
   });
 
-  const { cartItems, loading, updateQuantity, removeFromCart, fetchCart, getTotalPrice } =
-    useCart(student);
+  const { cartItems, loading, updateQuantity, removeFromCart, fetchCart } = useCart(student);
   const safeCartItems = (cartItems as any[]) || [];
 
   const [showPaymentForm, setShowPaymentForm] = useState(false);
@@ -71,9 +119,45 @@ export default function CheckoutPage() {
     paymentScreenshot: null as File | null,
   });
   const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponMessage, setCouponMessage] = useState("");
   const [deliveryType, setDeliveryType] = useState("normal");
   const inputClass =
     "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition";
+  const cartSubtotal = safeCartItems.reduce(
+    (sum: number, item: any) => sum + getItemPrice(item) * (item.quantity || 1),
+    0
+  );
+  const couponDiscount = getCouponDiscount(cartSubtotal, appliedCoupon);
+  const finalTotal = Math.max(0, cartSubtotal - couponDiscount);
+
+  const applyCouponByCode = (codeInput: string) => {
+    const normalizedCode = codeInput.trim().toUpperCase();
+    if (!normalizedCode) {
+      setCouponMessage("Please enter a coupon code.");
+      return;
+    }
+
+    const matchedCoupon = AVAILABLE_COUPONS.find(
+      (coupon) => coupon.code === normalizedCode
+    );
+
+    if (!matchedCoupon) {
+      setAppliedCoupon(null);
+      setCouponMessage("Invalid coupon code.");
+      return;
+    }
+
+    if (isCouponExpired(matchedCoupon.expiresAt)) {
+      setAppliedCoupon(null);
+      setCouponMessage("This coupon has expired.");
+      return;
+    }
+
+    setAppliedCoupon(matchedCoupon);
+    setCouponCode(matchedCoupon.code);
+    setCouponMessage(`${matchedCoupon.code} applied successfully.`);
+  };
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -639,8 +723,60 @@ export default function CheckoutPage() {
                 <aside className="lg:col-span-4 space-y-4">
                   <div className="bg-white border border-gray-200 rounded-xl p-4">
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                      Have a coupon?
+                      Discount Coupons
                     </h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      Select a student coupon and apply it at checkout.
+                    </p>
+
+                    <div className="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
+                      {AVAILABLE_COUPONS.map((coupon) => {
+                        const expired = isCouponExpired(coupon.expiresAt);
+                        const isActive = appliedCoupon?.code === coupon.code;
+
+                        return (
+                          <div
+                            key={coupon.code}
+                            className={`border rounded-lg p-3 ${
+                              isActive
+                                ? "border-green-300 bg-green-50"
+                                : "border-gray-200 bg-gray-50"
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-semibold text-gray-900 text-sm">
+                                  {coupon.code}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1">
+                                  {coupon.description}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                  Expires: {formatCouponExpiry(coupon.expiresAt)}
+                                </p>
+                              </div>
+
+                              <div className="text-right">
+                                <span className="inline-flex text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                                  {coupon.discountType === "percentage"
+                                    ? `${coupon.discountValue}% OFF`
+                                    : `Rs ${coupon.discountValue} OFF`}
+                                </span>
+                                <button
+                                  type="button"
+                                  disabled={expired}
+                                  onClick={() => applyCouponByCode(coupon.code)}
+                                  className="mt-2 block ml-auto text-xs px-3 py-1 rounded-md bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                                >
+                                  {expired ? "Expired" : "Apply"}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -651,11 +787,24 @@ export default function CheckoutPage() {
                       />
                       <button
                         type="button"
+                        onClick={() => applyCouponByCode(couponCode)}
                         className="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-800 text-white"
                       >
                         Apply
                       </button>
                     </div>
+
+                    {couponMessage ? (
+                      <p
+                        className={`mt-2 text-sm ${
+                          appliedCoupon
+                            ? "text-green-700"
+                            : "text-red-600"
+                        }`}
+                      >
+                        {couponMessage}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="bg-white border border-gray-200 rounded-xl p-4">
@@ -728,10 +877,22 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="border-t pt-3 mb-4">
+                      <div className="flex justify-between items-center text-sm mb-1">
+                        <span className="text-gray-700">Subtotal</span>
+                        <span className="font-medium text-gray-900">
+                          Rs {cartSubtotal.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center text-sm mb-2">
+                        <span className="text-gray-700">Coupon Discount</span>
+                        <span className="font-medium text-green-600">
+                          - Rs {couponDiscount.toLocaleString()}
+                        </span>
+                      </div>
                       <div className="flex justify-between items-center text-2xl font-semibold">
                         <span>Total</span>
                         <span className="text-green-600">
-                          ₹{getTotalPrice().toLocaleString()}
+                          Rs {finalTotal.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -741,7 +902,7 @@ export default function CheckoutPage() {
                         Payment Instructions
                       </h4>
                       <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• Click "Pay Now" for each course individually</li>
+                        <li>• Click &quot;Pay Now&quot; for each course individually</li>
                         <li>• Scan the QR code with any UPI app</li>
                         <li>• Take a screenshot of your payment confirmation</li>
                         <li>• Enter the UTR number from your payment receipt</li>
