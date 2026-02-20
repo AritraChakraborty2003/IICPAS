@@ -143,7 +143,9 @@ router.get("/isstudent", async (req, res) => {
       token,
       process.env.JWT_SECRET || "default_jwt_secret_for_development"
     );
-    const student = await Student.findById(decoded.id);
+    const student = await Student.findById(decoded.id).select(
+      "-password -otp -otpExpiry"
+    );
     if (!student) return res.status(404).json({ student: null });
 
     res.json({
