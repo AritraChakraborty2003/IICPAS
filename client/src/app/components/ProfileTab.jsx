@@ -14,6 +14,8 @@ const studentSectionTabs = [
   { id: "support", label: "Tickets" },
 ];
 
+const MAX_PROFILE_IMAGE_BYTES = 900 * 1024;
+
 export default function ProfileTab({ onImageUpdated }) {
   const router = useRouter();
   const API =
@@ -52,6 +54,70 @@ export default function ProfileTab({ onImageUpdated }) {
     const sanitized = imagePath.replace(/\\/g, "/").replace(/^\.\//, "");
     const normalizedPath = sanitized.startsWith("/") ? sanitized : `/${sanitized}`;
     return `${API.replace(/\/+$/, "")}${normalizedPath}`;
+  };
+
+  const readFileAsDataUrl = (file) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Failed to read image"));
+      reader.readAsDataURL(file);
+    });
+
+  const loadImageElement = (src) =>
+    new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = src;
+    });
+
+  const canvasToBlob = (canvas, type, quality) =>
+    new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob), type, quality);
+    });
+
+  const compressProfileImage = async (file) => {
+    if (file.size <= MAX_PROFILE_IMAGE_BYTES) {
+      return file;
+    }
+
+    const imageDataUrl = await readFileAsDataUrl(file);
+    const image = await loadImageElement(imageDataUrl);
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return file;
+    }
+
+    const maxDimension = 1200;
+    const largestSide = Math.max(image.width, image.height);
+    const initialScale = largestSide > maxDimension ? maxDimension / largestSide : 1;
+    let width = Math.max(1, Math.floor(image.width * initialScale));
+    let height = Math.max(1, Math.floor(image.height * initialScale));
+
+    for (let scaleStep = 0; scaleStep < 6; scaleStep += 1) {
+      canvas.width = width;
+      canvas.height = height;
+      context.clearRect(0, 0, width, height);
+      context.drawImage(image, 0, 0, width, height);
+
+      for (let quality = 0.9; quality >= 0.4; quality -= 0.1) {
+        const blob = await canvasToBlob(canvas, "image/jpeg", quality);
+        if (blob && blob.size <= MAX_PROFILE_IMAGE_BYTES) {
+          const baseName = file.name.replace(/\.[^.]+$/, "");
+          return new File([blob], `${baseName}.jpg`, {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
+        }
+      }
+
+      width = Math.max(1, Math.floor(width * 0.82));
+      height = Math.max(1, Math.floor(height * 0.82));
+    }
+
+    throw new Error("Image is too large. Please choose a smaller file.");
   };
 
   // Fetch student data on mount
@@ -162,7 +228,7 @@ export default function ProfileTab({ onImageUpdated }) {
   };
 
   // Handle image change
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
@@ -173,13 +239,15 @@ export default function ProfileTab({ onImageUpdated }) {
         setError("Image size must be 5MB or less");
         return;
       }
-      setError("");
-      setProfileImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      try {
+        setError("");
+        const optimizedFile = await compressProfileImage(file);
+        setProfileImage(optimizedFile);
+        const preview = await readFileAsDataUrl(optimizedFile);
+        setImagePreview(preview);
+      } catch (compressionError) {
+        setError(compressionError.message || "Unable to process selected image");
+      }
     }
   };
 
@@ -248,6 +316,11 @@ export default function ProfileTab({ onImageUpdated }) {
       console.error("Image upload error:", err);
       console.error("Error response:", err.response?.data);
       console.error("Error status:", err.response?.status);
+      const statusCode = err.response?.status;
+      if (statusCode === 413) {
+        setError("Failed to upload image: File too large for server limit. Please choose a smaller image.");
+        return;
+      }
       const serverMessage =
         err.response?.data?.message ||
         err.response?.data?.error ||
