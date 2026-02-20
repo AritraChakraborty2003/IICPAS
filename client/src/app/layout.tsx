@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import DeferredGlobalWidgets from "@/components/DeferredGlobalWidgets";
+import ScrollToTopOnNavigation from "@/components/ScrollToTopOnNavigation";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,7 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning={true}>
         <GoogleAnalytics />
         <AuthProvider>
+          <ScrollToTopOnNavigation />
           {children}
           <DeferredGlobalWidgets />
         </AuthProvider>

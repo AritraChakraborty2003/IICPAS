@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaSearch } from "react-icons/fa";
+import { FaArrowRight, FaEnvelope, FaPhoneAlt, FaSearch } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -726,45 +726,54 @@ export default function CoursePage() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 md:mt-14">
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 md:p-8 grid grid-cols-1 lg:grid-cols-5 gap-6 shadow-sm">
-            <div className="lg:col-span-2">
-              <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 px-3 py-1 text-xs font-semibold mb-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-14 md:mt-16">
+          <div className="relative overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-6 md:p-10 grid grid-cols-1 lg:grid-cols-5 gap-8 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
+            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.09),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(37,99,235,0.08),transparent_48%)]" />
+
+            <div className="relative lg:col-span-2">
+              <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-3 py-1.5 text-xs font-semibold tracking-wide mb-4">
                 Contact Support
               </span>
-              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              <h3 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3 leading-tight">
                 Talk To Our Course Advisors
               </h3>
-              <p className="text-gray-600 mb-5">
+              <p className="text-slate-600 mb-6 text-base md:text-lg leading-relaxed">
                 Get personalized guidance on course selection, pricing, and
                 career outcomes.
               </p>
 
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3 mb-7">
                 <a
                   href="tel:+919593330999"
-                  className="block rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                  className="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3.5 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition"
                 >
-                  Call: +91 9593330999
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                    <FaPhoneAlt className="text-xs" />
+                  </span>
+                  <span>Call: +91 9593330999</span>
                 </a>
                 <a
                   href="mailto:iicpaconnect@gmail.com"
-                  className="block rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition break-all"
+                  className="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3.5 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition break-all"
                 >
-                  Email: iicpaconnect@gmail.com
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                    <FaEnvelope className="text-xs" />
+                  </span>
+                  <span>Email: iicpaconnect@gmail.com</span>
                 </a>
               </div>
 
               <button
                 onClick={() => router.push("/contact")}
-                className="inline-flex items-center rounded-full bg-gray-900 hover:bg-black text-white px-5 py-2.5 text-sm font-semibold transition"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 hover:bg-black text-white px-5 py-2.5 text-sm font-semibold transition"
               >
                 Open Full Contact Page
+                <FaArrowRight className="text-xs" />
               </button>
             </div>
 
-            <div className="lg:col-span-3">
-              <form onSubmit={handleContactSubmit} className="space-y-4">
+            <div className="relative lg:col-span-3 rounded-2xl border border-slate-200/90 bg-white/80 backdrop-blur-sm p-4 sm:p-6 md:p-7">
+              <form onSubmit={handleContactSubmit} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="text"
@@ -773,7 +782,7 @@ export default function CoursePage() {
                     onChange={handleContactChange}
                     placeholder="Your name"
                     required
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
                   />
                   <input
                     type="email"
@@ -782,7 +791,7 @@ export default function CoursePage() {
                     onChange={handleContactChange}
                     placeholder="Your email"
                     required
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
                   />
                 </div>
 
@@ -793,7 +802,7 @@ export default function CoursePage() {
                   onChange={handleContactChange}
                   placeholder="Phone number"
                   required
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
                 />
 
                 <textarea
@@ -803,19 +812,20 @@ export default function CoursePage() {
                   placeholder="Tell us what you need help with"
                   rows={5}
                   required
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 resize-none transition"
                 />
 
                 <div className="flex flex-wrap items-center gap-3">
                   <button
                     type="submit"
                     disabled={contactSubmitting}
-                    className="inline-flex items-center rounded-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 text-sm font-semibold transition"
+                    className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white px-6 py-3 text-sm font-semibold transition shadow-sm hover:shadow"
                   >
                     {contactSubmitting ? "Sending..." : "Submit Inquiry"}
+                    {!contactSubmitting && <FaArrowRight className="text-xs" />}
                   </button>
-                  <span className="text-xs text-gray-500">
-                    We usually respond within 24 hours.
+                  <span className="text-xs text-slate-500">
+                    Response time: usually within 24 hours.
                   </span>
                 </div>
               </form>
