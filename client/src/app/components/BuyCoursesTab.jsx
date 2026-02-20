@@ -170,6 +170,19 @@ const getCoursePath = (course) => {
   return `/course/${id}`;
 };
 
+const stripHtml = (value) => {
+  if (!value) return "";
+  return value
+    .toString()
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 export default function BuyCoursesTab() {
   const router = useRouter();
   const videoRef = useRef(null);
@@ -324,7 +337,7 @@ export default function BuyCoursesTab() {
       const matchesSearch =
         !normalizedSearch ||
         (course.title || "").toLowerCase().includes(normalizedSearch) ||
-        (course.description || "").toLowerCase().includes(normalizedSearch);
+        stripHtml(course.description || "").toLowerCase().includes(normalizedSearch);
 
       const matchesCategory =
         selectedCategories.length === 0 || selectedCategories.includes(course.category);
@@ -814,7 +827,8 @@ export default function BuyCoursesTab() {
                           {course.title || "Untitled Course"}
                         </h3>
                         <p className="mt-2 line-clamp-2 min-h-[2.5rem] text-sm text-slate-600">
-                          {course.description || "Comprehensive curriculum with practical learning outcomes."}
+                          {stripHtml(course.description) ||
+                            "Comprehensive curriculum with practical learning outcomes."}
                         </p>
 
                         <div className="mt-4 flex items-end justify-between">

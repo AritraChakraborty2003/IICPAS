@@ -22,6 +22,7 @@ import {
   FaComments,
   FaBell,
   FaShoppingCart,
+  FaCoins,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -411,15 +412,10 @@ function StudentDashboardContent() {
               </button>
               {/* Desktop buttons */}
               <div className="hidden md:flex items-center gap-3">
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-base font-medium transition-colors">
-                  Digital Hub
+                <button className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                  <FaCoins className="text-yellow-300" />
+                  <span>Digital Hub</span>
                 </button>
-                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-base font-medium transition-colors">
-                  Download App
-                </button>
-                <div className="bg-yellow-400 px-3 py-1 rounded-full font-semibold">
-                  50
-                </div>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium"
