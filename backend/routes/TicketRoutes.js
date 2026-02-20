@@ -72,19 +72,6 @@ const requireTicketActor = async (req, res, next) => {
   }
 };
 
-const requireEmployeeSupportRead = (req, res, next) => {
-  const actor = req.ticketActor;
-  if (!actor || actor.type !== "employee") {
-    return res.status(403).json({ error: "Access denied" });
-  }
-
-  if (!canEmployeeReadSupport(actor)) {
-    return res.status(403).json({ error: "Access denied" });
-  }
-
-  next();
-};
-
 const requireEmployeeSupportUpdate = (req, res, next) => {
   const actor = req.ticketActor;
   if (!actor || actor.type !== "employee") {
@@ -170,28 +157,38 @@ router.get("/:id", requireTicketActor, async (req, res) => {
 });
 
 // UPDATE
-router.put("/:id", requireTicketActor, requireEmployeeSupportUpdate, async (req, res) => {
-  try {
-    const ticket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-    });
-    if (!ticket) return res.status(404).json({ error: "Ticket not found" });
-    res.json(ticket);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+router.put(
+  "/:id",
+  requireTicketActor,
+  requireEmployeeSupportUpdate,
+  async (req, res) => {
+    try {
+      const ticket = await Ticket.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+      });
+      if (!ticket) return res.status(404).json({ error: "Ticket not found" });
+      res.json(ticket);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
   }
-});
+);
 
 // DELETE
-router.delete("/:id", requireTicketActor, requireEmployeeSupportDelete, async (req, res) => {
-  try {
-    const ticket = await Ticket.findByIdAndDelete(req.params.id);
-    if (!ticket) return res.status(404).json({ error: "Ticket not found" });
-    res.json({ message: "Ticket deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+router.delete(
+  "/:id",
+  requireTicketActor,
+  requireEmployeeSupportDelete,
+  async (req, res) => {
+    try {
+      const ticket = await Ticket.findByIdAndDelete(req.params.id);
+      if (!ticket) return res.status(404).json({ error: "Ticket not found" });
+      res.json({ message: "Ticket deleted" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   }
-});
+);
 
 // PATCH only resolve field
 router.patch(
@@ -199,24 +196,25 @@ router.patch(
   requireTicketActor,
   requireEmployeeSupportUpdate,
   async (req, res) => {
-  try {
-    const resolveText = req.body?.resolve;
-    if (typeof resolveText !== "string" || !resolveText.trim()) {
-      return res
-        .status(400)
-        .json({ error: "resolve must be a non-empty string" });
-    }
+    try {
+      const resolveText = req.body?.resolve;
+      if (typeof resolveText !== "string" || !resolveText.trim()) {
+        return res
+          .status(400)
+          .json({ error: "resolve must be a non-empty string" });
+      }
 
-    const ticket = await Ticket.findByIdAndUpdate(
-      req.params.id,
-      { resolve: resolveText.trim() },
-      { new: true }
-    );
-    if (!ticket) return res.status(404).json({ error: "Ticket not found" });
-    res.json(ticket);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
+      const ticket = await Ticket.findByIdAndUpdate(
+        req.params.id,
+        { resolve: resolveText.trim() },
+        { new: true }
+      );
+      if (!ticket) return res.status(404).json({ error: "Ticket not found" });
+      res.json(ticket);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
   }
-});
+);
 
 export default router;
