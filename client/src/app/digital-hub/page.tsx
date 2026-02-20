@@ -1711,7 +1711,11 @@ function DigitalHubContent() {
                         </div>
                         <button
                           onClick={() => router.push("/student-login")}
-                          className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-emerald-700 transition-all duration-300 shadow-sm hover:shadow"
+                          className={`text-white px-6 py-2 rounded-lg font-semibold transition-all duration-300 shadow-sm hover:shadow ${
+                            isDarkMode
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
                         >
                           Get Full Access
                         </button>
@@ -1719,7 +1723,11 @@ function DigitalHubContent() {
                     </div>
                   )}
 
-                  <div className="text-lg leading-relaxed bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-slate-900">
+                  <div
+                    className={`text-lg leading-relaxed bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-slate-900 ${
+                      isDarkMode ? "topic-content-dark" : "topic-content-light"
+                    }`}
+                  >
                     <div
                       dangerouslySetInnerHTML={{
                         __html: topicContent,
@@ -1747,7 +1755,9 @@ function DigitalHubContent() {
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                                 currentPage === 1
                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
+                                  : isDarkMode
+                                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
+                                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow"
                               }`}
                             >
                               ← Previous
@@ -1767,7 +1777,9 @@ function DigitalHubContent() {
                                   }}
                                   className={`w-8 h-8 rounded-full font-medium transition-all duration-300 ${
                                     currentPage === i + 1
-                                      ? "bg-emerald-600 text-white shadow-sm"
+                                      ? isDarkMode
+                                        ? "bg-emerald-600 text-white shadow-sm"
+                                        : "bg-blue-600 text-white shadow-sm"
                                       : "bg-stone-200 text-slate-700 hover:bg-stone-300"
                                   }`}
                                 >
@@ -1794,7 +1806,9 @@ function DigitalHubContent() {
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                                 !isDemo && currentPage === totalPages
                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
+                                  : isDarkMode
+                                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
+                                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow"
                               }`}
                             >
                               {isDemo ? "Purchase Course →" : "Next →"}
@@ -1809,7 +1823,11 @@ function DigitalHubContent() {
                               // Redirect to course purchase or payment page
                               router.push("/course");
                             }}
-                            className="px-8 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-all duration-300 shadow-sm hover:shadow text-lg"
+                            className={`px-8 py-3 text-white rounded-lg font-semibold transition-all duration-300 shadow-sm hover:shadow text-lg ${
+                              isDarkMode
+                                ? "bg-emerald-600 hover:bg-emerald-700"
+                                : "bg-blue-600 hover:bg-blue-700"
+                            }`}
                           >
                             💳 Subscribe Full Course
                           </button>
@@ -2784,6 +2802,40 @@ function DigitalHubContent() {
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        .topic-content-light h1,
+        .topic-content-light h2,
+        .topic-content-light h3,
+        .topic-content-light h4,
+        .topic-content-light h5,
+        .topic-content-light h6 {
+          color: #1d4ed8 !important;
+        }
+
+        .topic-content-light ul li::marker,
+        .topic-content-light ol li::marker {
+          color: #f59e0b !important;
+          font-weight: 700;
+        }
+
+        .topic-content-light .bg-green-500 {
+          background-color: #fbbf24 !important;
+        }
+
+        .topic-content-light .text-green-800,
+        .topic-content-light .text-green-700 {
+          color: #1d4ed8 !important;
+        }
+
+        .topic-content-light .bg-green-50 {
+          background-color: #eff6ff !important;
+        }
+
+        .topic-content-light .border-green-200 {
+          border-color: #bfdbfe !important;
+        }
+      `}</style>
     </div>
   );
 }
