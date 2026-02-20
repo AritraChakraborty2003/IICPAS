@@ -60,6 +60,8 @@ export default function HeroSection() {
   const router = useRouter();
   const [heroData, setHeroData] = useState<HeroData>(defaultHeroData);
   const [enableVideo, setEnableVideo] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
 
   useEffect(() => {
     const fetchHeroData = async () => {
@@ -137,32 +139,41 @@ export default function HeroSection() {
     [heroData.videoFile, heroData.videoUrl]
   );
 
-  const posterSrc = heroData.poster || "/images/video-poster.jpg";
+  const posterSrc = "/images/bg-image.png";
 
   return (
     <section className="relative overflow-hidden h-screen mt-18 bg-gray-900">
       <div className="absolute inset-0 w-full h-full">
-        {enableVideo ? (
+        <img
+          src={posterSrc}
+          alt="IICPA learning platform"
+          className={`w-full h-full object-cover transition-opacity duration-500 ${
+            videoReady && !videoFailed ? "opacity-0" : "opacity-100"
+          }`}
+          loading="eager"
+          fetchPriority="high"
+        />
+
+        {enableVideo && !videoFailed ? (
           <video
             autoPlay
             muted
             loop
             playsInline
             preload="none"
-            className="w-full h-full object-cover"
+            onCanPlay={() => setVideoReady(true)}
+            onError={() => {
+              setVideoFailed(true);
+              setVideoReady(false);
+            }}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+              videoReady ? "opacity-100" : "opacity-0"
+            }`}
           >
             <source src={videoSrc} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
-        ) : (
-          <img
-            src={posterSrc}
-            alt="IICPA learning platform"
-            className="w-full h-full object-cover"
-            loading="eager"
-            fetchPriority="high"
-          />
-        )}
+        ) : null}
 
         <div className="absolute inset-0 bg-black/30"></div>
       </div>
