@@ -118,7 +118,11 @@ export default function LoginModal({
 
   return (
     <div className="fixed inset-0  backdrop-blur-lg bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div
+        className={`bg-white rounded-lg shadow-xl w-full ${
+          mode === "register" ? "max-w-3xl" : "max-w-md"
+        } max-h-[calc(100vh-2rem)] md:max-h-none overflow-y-auto md:overflow-visible`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-bold text-gray-900">
@@ -222,7 +226,7 @@ export default function LoginModal({
 
           {/* Register Form */}
           {mode === "register" && (
-            <form onSubmit={handleRegister} className="space-y-4">
+            <form onSubmit={handleRegister} className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Full Name
@@ -384,13 +388,15 @@ export default function LoginModal({
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? "Creating Account..." : "Create Account"}
-              </button>
+              <div className="md:col-span-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? "Creating Account..." : "Create Account"}
+                </button>
+              </div>
             </form>
           )}
 
