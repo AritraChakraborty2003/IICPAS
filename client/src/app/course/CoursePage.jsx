@@ -766,16 +766,16 @@ export default function CoursePage() {
               </div>
 
               <button
-                onClick={() => router.push("/contact")}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900 hover:bg-black text-white px-5 py-2.5 text-sm font-semibold transition"
+                onClick={() => router.push("/course")}
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-sm font-semibold transition"
               >
-                Open Full Contact Page
+                Explore Our Course
                 <FaArrowRight className="text-xs" />
               </button>
             </div>
 
-            <div className="relative lg:col-span-3 rounded-2xl border border-slate-200/90 bg-white/80 backdrop-blur-sm p-4 sm:p-6 md:p-7">
-              <form onSubmit={handleContactSubmit} className="space-y-5">
+            <div className="relative lg:col-span-3 rounded-2xl border border-slate-200/90 bg-white/80 backdrop-blur-sm p-4 sm:p-6 md:p-7 flex items-center">
+              <form onSubmit={handleContactSubmit} className="space-y-5 w-full max-w-2xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="text"
