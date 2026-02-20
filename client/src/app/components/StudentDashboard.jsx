@@ -43,6 +43,7 @@ function StudentDashboardContent() {
   const [activeTab, setActiveTab] = useState("buy-courses"); // Default to Buy Courses for new students
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [student, setStudent] = useState(null);
+  const [studentCoins, setStudentCoins] = useState(0);
   const [checkingAuth, setCheckingAuth] = useState(false); // Initialize as false to prevent initial blinking
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -57,6 +58,7 @@ function StudentDashboardContent() {
   const [submitting, setSubmitting] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const getCoinsStorageKey = (studentId) => `student_coins_${studentId}`;
 
   // Sidebar tabs
   const tabs = [
@@ -118,13 +120,28 @@ function StudentDashboardContent() {
         );
         // Authenticated: set student
         if (res.data && res.data.student) {
-          setStudent(res.data.student);
+          const currentStudent = res.data.student;
+          setStudent(currentStudent);
+
+          if (currentStudent?._id && typeof window !== "undefined") {
+            const storageKey = getCoinsStorageKey(currentStudent._id);
+            const storedCoins = localStorage.getItem(storageKey);
+            const parsedCoins =
+              storedCoins !== null ? Number(storedCoins) : NaN;
+
+            if (Number.isFinite(parsedCoins) && parsedCoins >= 0) {
+              setStudentCoins(parsedCoins);
+            } else {
+              setStudentCoins(0);
+              localStorage.setItem(storageKey, "0");
+            }
+          }
 
           // Update ticket form with student data
           setTicketForm({
-            name: res.data.student.name || "",
-            email: res.data.student.email || "",
-            phone: res.data.student.phone || "",
+            name: currentStudent.name || "",
+            email: currentStudent.email || "",
+            phone: currentStudent.phone || "",
             message: "",
           });
         } else {
@@ -412,9 +429,22 @@ function StudentDashboardContent() {
               </button>
               {/* Desktop buttons */}
               <div className="hidden md:flex items-center gap-3">
-                <button className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700">
-                  <FaCoins className="text-yellow-300" />
-                  <span>Digital Hub</span>
+                <button className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700">
+                  Digital Hub
+                </button>
+                <div
+                  className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700"
+                  title="Your coins"
+                >
+                  <FaCoins className="text-amber-500" />
+                  <span>{studentCoins}</span>
+                </div>
+                <button
+                  type="button"
+                  className="md:hidden p-2 bg-amber-100 text-amber-700 rounded-lg transition-colors"
+                  title={`Coins: ${studentCoins}`}
+                >
+                  <FaCoins />
                 </button>
                 <button
                   onClick={handleLogout}
