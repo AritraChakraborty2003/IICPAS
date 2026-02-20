@@ -70,6 +70,8 @@ export default function CheckoutPage() {
     additionalNotes: "",
     paymentScreenshot: null as File | null,
   });
+  const [couponCode, setCouponCode] = useState("");
+  const [deliveryType, setDeliveryType] = useState("normal");
   const inputClass =
     "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition";
 
@@ -238,156 +240,158 @@ export default function CheckoutPage() {
                 </button>
               </div>
             ) : (
-              <div className="space-y-6">
-                <div className="border border-gray-200 rounded-xl p-5 bg-white">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Billing & Shipping Address
-                  </h2>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div className="lg:col-span-8 space-y-6">
+                  <div className="border border-gray-200 rounded-xl p-5 bg-white">
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+                      Order Items
+                    </h2>
+                    <div className="space-y-4">
+                      {safeCartItems.map((item: any) => {
+                        const course = item.course;
+                        if (!course || !item.courseId) return null;
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div>
-                      <h3 className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                        Billing Address
-                      </h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          placeholder="Full name"
-                          value={billingAddress.fullName}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              fullName: e.target.value,
-                            }))
-                          }
-                          className={inputClass}
-                        />
-                        <input
-                          type="email"
-                          placeholder="Email"
-                          value={billingAddress.email}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              email: e.target.value,
-                            }))
-                          }
-                          className={inputClass}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Phone"
-                          value={billingAddress.phone}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              phone: e.target.value,
-                            }))
-                          }
-                          className={inputClass}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Pincode"
-                          value={billingAddress.pincode}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              pincode: e.target.value,
-                            }))
-                          }
-                          className={inputClass}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Address line 1"
-                          value={billingAddress.line1}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              line1: e.target.value,
-                            }))
-                          }
-                          className={`md:col-span-2 ${inputClass}`}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Address line 2 (optional)"
-                          value={billingAddress.line2}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              line2: e.target.value,
-                            }))
-                          }
-                          className={`md:col-span-2 ${inputClass}`}
-                        />
-                        <input
-                          type="text"
-                          placeholder="City"
-                          value={billingAddress.city}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              city: e.target.value,
-                            }))
-                          }
-                          className={inputClass}
-                        />
-                        <input
-                          type="text"
-                          placeholder="State"
-                          value={billingAddress.state}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              state: e.target.value,
-                            }))
-                          }
-                          className={inputClass}
-                        />
-                        <input
-                          type="text"
-                          placeholder="Country"
-                          value={billingAddress.country}
-                          onChange={(e) =>
-                            setBillingAddress((prev) => ({
-                              ...prev,
-                              country: e.target.value,
-                            }))
-                          }
-                          className={`md:col-span-2 ${inputClass}`}
-                        />
-                      </div>
+                        const unitPrice = getItemPrice(item);
+                        const itemTotal = unitPrice * (item.quantity || 1);
+
+                        return (
+                          <div
+                            key={`${item.courseId}-${item.sessionType}`}
+                            className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm"
+                          >
+                            <div className="flex items-start gap-4">
+                              <Image
+                                src={
+                                  course.image
+                                    ? course.image.startsWith("http")
+                                      ? course.image
+                                      : course.image.startsWith("/uploads/")
+                                      ? `${API_BASE}${course.image}`
+                                      : course.image.startsWith("/")
+                                      ? course.image
+                                      : `${API_BASE}/${course.image}`
+                                    : "/images/a1.jpeg"
+                                }
+                                alt={course.title || "Course"}
+                                width={120}
+                                height={80}
+                                className="w-24 h-16 object-cover rounded"
+                              />
+
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-xl font-semibold text-gray-800 truncate">
+                                  {course.title}
+                                </h3>
+                                <p className="text-sm text-gray-600 mb-1">
+                                  {course.category || "Accounting"}
+                                </p>
+
+                                <span
+                                  className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${
+                                    item.sessionType === "recorded"
+                                      ? "bg-green-100 text-green-700"
+                                      : "bg-blue-100 text-blue-700"
+                                  }`}
+                                >
+                                  {item.sessionType === "recorded"
+                                    ? "Recorded Session"
+                                    : "Live Session"}
+                                </span>
+
+                                <div className="mt-3 flex items-center gap-3">
+                                  <span className="text-sm text-gray-600">
+                                    Quantity:
+                                  </span>
+                                  <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+                                    <button
+                                      type="button"
+                                      className="px-3 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                                      disabled={
+                                        loading || (item.quantity || 1) <= 1
+                                      }
+                                      onClick={() =>
+                                        updateQuantity(
+                                          item.courseId,
+                                          item.sessionType,
+                                          Math.max(1, (item.quantity || 1) - 1)
+                                        )
+                                      }
+                                    >
+                                      -
+                                    </button>
+                                    <span className="px-4 py-1 border-x border-gray-300 text-xl">
+                                      {item.quantity || 1}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      className="px-3 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40"
+                                      disabled={loading}
+                                      onClick={() =>
+                                        updateQuantity(
+                                          item.courseId,
+                                          item.sessionType,
+                                          (item.quantity || 1) + 1
+                                        )
+                                      }
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <p className="mt-2 text-lg text-gray-700">
+                                  ₹{unitPrice.toLocaleString()} ×{" "}
+                                  {item.quantity || 1} ={" "}
+                                  <span className="text-green-600 font-semibold">
+                                    ₹{itemTotal.toLocaleString()}
+                                  </span>
+                                </p>
+                              </div>
+
+                              <div className="flex flex-col items-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handlePayNow(item)}
+                                  disabled={loading}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold shadow-sm"
+                                >
+                                  Pay Now
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    removeFromCart(item.courseId, item.sessionType)
+                                  }
+                                  disabled={loading}
+                                  className="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
+                  </div>
 
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-base font-semibold text-gray-800">
-                          Shipping Address
+                  <div className="border border-gray-200 rounded-xl p-5 bg-white">
+                    <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                      Billing & Shipping Address
+                    </h2>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <h3 className="text-base font-semibold text-gray-800 mb-3">
+                          Billing Address
                         </h3>
-                        <label className="flex items-center gap-2 text-sm text-gray-700 font-medium">
-                          <input
-                            type="checkbox"
-                            checked={sameAsBilling}
-                            onChange={(e) => setSameAsBilling(e.target.checked)}
-                          />
-                          Same as billing
-                        </label>
-                      </div>
-
-                      {sameAsBilling ? (
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-700">
-                          Shipping address will use the same details as billing.
-                        </div>
-                      ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <input
                             type="text"
                             placeholder="Full name"
-                            value={shippingAddress.fullName}
+                            value={billingAddress.fullName}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 fullName: e.target.value,
                               }))
@@ -397,9 +401,9 @@ export default function CheckoutPage() {
                           <input
                             type="email"
                             placeholder="Email"
-                            value={shippingAddress.email}
+                            value={billingAddress.email}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 email: e.target.value,
                               }))
@@ -409,9 +413,9 @@ export default function CheckoutPage() {
                           <input
                             type="text"
                             placeholder="Phone"
-                            value={shippingAddress.phone}
+                            value={billingAddress.phone}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 phone: e.target.value,
                               }))
@@ -421,9 +425,9 @@ export default function CheckoutPage() {
                           <input
                             type="text"
                             placeholder="Pincode"
-                            value={shippingAddress.pincode}
+                            value={billingAddress.pincode}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 pincode: e.target.value,
                               }))
@@ -433,9 +437,9 @@ export default function CheckoutPage() {
                           <input
                             type="text"
                             placeholder="Address line 1"
-                            value={shippingAddress.line1}
+                            value={billingAddress.line1}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 line1: e.target.value,
                               }))
@@ -445,9 +449,9 @@ export default function CheckoutPage() {
                           <input
                             type="text"
                             placeholder="Address line 2 (optional)"
-                            value={shippingAddress.line2}
+                            value={billingAddress.line2}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 line2: e.target.value,
                               }))
@@ -457,9 +461,9 @@ export default function CheckoutPage() {
                           <input
                             type="text"
                             placeholder="City"
-                            value={shippingAddress.city}
+                            value={billingAddress.city}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 city: e.target.value,
                               }))
@@ -469,9 +473,9 @@ export default function CheckoutPage() {
                           <input
                             type="text"
                             placeholder="State"
-                            value={shippingAddress.state}
+                            value={billingAddress.state}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 state: e.target.value,
                               }))
@@ -481,9 +485,9 @@ export default function CheckoutPage() {
                           <input
                             type="text"
                             placeholder="Country"
-                            value={shippingAddress.country}
+                            value={billingAddress.country}
                             onChange={(e) =>
-                              setShippingAddress((prev) => ({
+                              setBillingAddress((prev) => ({
                                 ...prev,
                                 country: e.target.value,
                               }))
@@ -491,151 +495,232 @@ export default function CheckoutPage() {
                             className={`md:col-span-2 ${inputClass}`}
                           />
                         </div>
-                      )}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-base font-semibold text-gray-800">
+                            Shipping Address
+                          </h3>
+                          <label className="flex items-center gap-2 text-sm text-gray-700 font-medium">
+                            <input
+                              type="checkbox"
+                              checked={sameAsBilling}
+                              onChange={(e) =>
+                                setSameAsBilling(e.target.checked)
+                              }
+                            />
+                            Same as billing
+                          </label>
+                        </div>
+
+                        {sameAsBilling ? (
+                          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-700">
+                            Shipping address will use the same details as
+                            billing.
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input
+                              type="text"
+                              placeholder="Full name"
+                              value={shippingAddress.fullName}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  fullName: e.target.value,
+                                }))
+                              }
+                              className={inputClass}
+                            />
+                            <input
+                              type="email"
+                              placeholder="Email"
+                              value={shippingAddress.email}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  email: e.target.value,
+                                }))
+                              }
+                              className={inputClass}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Phone"
+                              value={shippingAddress.phone}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  phone: e.target.value,
+                                }))
+                              }
+                              className={inputClass}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Pincode"
+                              value={shippingAddress.pincode}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  pincode: e.target.value,
+                                }))
+                              }
+                              className={inputClass}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Address line 1"
+                              value={shippingAddress.line1}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  line1: e.target.value,
+                                }))
+                              }
+                              className={`md:col-span-2 ${inputClass}`}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Address line 2 (optional)"
+                              value={shippingAddress.line2}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  line2: e.target.value,
+                                }))
+                              }
+                              className={`md:col-span-2 ${inputClass}`}
+                            />
+                            <input
+                              type="text"
+                              placeholder="City"
+                              value={shippingAddress.city}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  city: e.target.value,
+                                }))
+                              }
+                              className={inputClass}
+                            />
+                            <input
+                              type="text"
+                              placeholder="State"
+                              value={shippingAddress.state}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  state: e.target.value,
+                                }))
+                              }
+                              className={inputClass}
+                            />
+                            <input
+                              type="text"
+                              placeholder="Country"
+                              value={shippingAddress.country}
+                              onChange={(e) =>
+                                setShippingAddress((prev) => ({
+                                  ...prev,
+                                  country: e.target.value,
+                                }))
+                              }
+                              className={`md:col-span-2 ${inputClass}`}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="lg:col-span-2">
-                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Courses</h2>
-
-                  <div className="space-y-4">
-                    {safeCartItems.map((item: any) => {
-                      const course = item.course;
-                      if (!course || !item.courseId) return null;
-
-                      const unitPrice = getItemPrice(item);
-                      const itemTotal = unitPrice * (item.quantity || 1);
-
-                      return (
-                        <div
-                          key={`${item.courseId}-${item.sessionType}`}
-                          className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm"
-                        >
-                          <div className="flex items-start gap-4">
-                            <Image
-                              src={
-                                course.image
-                                  ? course.image.startsWith("http")
-                                    ? course.image
-                                    : course.image.startsWith("/uploads/")
-                                    ? `${API_BASE}${course.image}`
-                                    : course.image.startsWith("/")
-                                    ? course.image
-                                    : `${API_BASE}/${course.image}`
-                                  : "/images/a1.jpeg"
-                              }
-                              alt={course.title || "Course"}
-                              width={120}
-                              height={80}
-                              className="w-24 h-16 object-cover rounded"
-                            />
-
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-xl font-semibold text-gray-800 truncate">
-                                {course.title}
-                              </h3>
-                              <p className="text-sm text-gray-600 mb-1">{course.category || "Accounting"}</p>
-
-                              <span
-                                className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${
-                                  item.sessionType === "recorded"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-blue-100 text-blue-700"
-                                }`}
-                              >
-                                {item.sessionType === "recorded" ? "Recorded Session" : "Live Session"}
-                              </span>
-
-                              <div className="mt-3 flex items-center gap-3">
-                                <span className="text-sm text-gray-600">Quantity:</span>
-                                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                                  <button
-                                    type="button"
-                                    className="px-3 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40"
-                                    disabled={loading || (item.quantity || 1) <= 1}
-                                    onClick={() =>
-                                      updateQuantity(
-                                        item.courseId,
-                                        item.sessionType,
-                                        Math.max(1, (item.quantity || 1) - 1)
-                                      )
-                                    }
-                                  >
-                                    -
-                                  </button>
-                                  <span className="px-4 py-1 border-x border-gray-300 text-xl">
-                                    {item.quantity || 1}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    className="px-3 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40"
-                                    disabled={loading}
-                                    onClick={() =>
-                                      updateQuantity(
-                                        item.courseId,
-                                        item.sessionType,
-                                        (item.quantity || 1) + 1
-                                      )
-                                    }
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              </div>
-
-                              <p className="mt-2 text-lg text-gray-700">
-                                ₹{unitPrice.toLocaleString()} × {item.quantity || 1} ={" "}
-                                <span className="text-green-600 font-semibold">₹{itemTotal.toLocaleString()}</span>
-                              </p>
-                            </div>
-
-                            <div className="flex flex-col items-end gap-2">
-                              <button
-                                type="button"
-                                onClick={() => handlePayNow(item)}
-                                disabled={loading}
-                                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold shadow-sm"
-                              >
-                                Pay Now
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeFromCart(item.courseId, item.sessionType)}
-                                disabled={loading}
-                                className="text-red-600 hover:bg-red-50 px-3 py-1 rounded-lg"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                <aside className="lg:col-span-4 space-y-4">
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                      Have a coupon?
+                    </h3>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="ENTER COUPON CODE"
+                        className={`${inputClass} uppercase`}
+                      />
+                      <button
+                        type="button"
+                        className="px-5 py-2 rounded-lg bg-gray-700 hover:bg-gray-800 text-white"
+                      >
+                        Apply
+                      </button>
+                    </div>
                   </div>
-                </div>
 
-                <div>
-                  <div className="bg-gray-50 rounded-xl p-4 sticky top-28 border border-gray-200 shadow-sm">
-                    <h3 className="text-2xl font-semibold text-gray-900 mb-4">Order Summary</h3>
+                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                      Delivery Type
+                    </h3>
+                    <div className="space-y-3 text-sm">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="deliveryType"
+                          value="normal"
+                          checked={deliveryType === "normal"}
+                          onChange={(e) => setDeliveryType(e.target.value)}
+                        />
+                        Normal Delivery
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="deliveryType"
+                          value="express"
+                          checked={deliveryType === "express"}
+                          onChange={(e) => setDeliveryType(e.target.value)}
+                        />
+                        Express Delivery
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm sticky top-28">
+                    <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+                      Order Summary
+                    </h3>
 
                     <div className="space-y-2 mb-4">
                       {safeCartItems.map((item: any) => {
                         const course = item.course;
                         if (!course || !item.courseId) return null;
                         return (
-                          <div key={`${item.courseId}-${item.sessionType}`} className="text-sm">
+                          <div
+                            key={`${item.courseId}-${item.sessionType}`}
+                            className="text-sm"
+                          >
                             <div className="flex justify-between gap-3">
                               <span className="text-gray-700 truncate">
                                 {course.title} × {item.quantity || 1}
                               </span>
                               <span className="font-medium text-gray-900">
-                                ₹{(getItemPrice(item) * (item.quantity || 1)).toLocaleString()}
+                                ₹
+                                {(
+                                  getItemPrice(item) * (item.quantity || 1)
+                                ).toLocaleString()}
                               </span>
                             </div>
-                            <p className={`text-xs ${item.sessionType === "recorded" ? "text-green-600" : "text-blue-600"}`}>
-                              {item.sessionType === "recorded" ? "Recorded" : "Live"}
+                            <p
+                              className={`text-xs ${
+                                item.sessionType === "recorded"
+                                  ? "text-green-600"
+                                  : "text-blue-600"
+                              }`}
+                            >
+                              {item.sessionType === "recorded"
+                                ? "Recorded"
+                                : "Live"}
                             </p>
                           </div>
                         );
@@ -645,23 +730,28 @@ export default function CheckoutPage() {
                     <div className="border-t pt-3 mb-4">
                       <div className="flex justify-between items-center text-2xl font-semibold">
                         <span>Total</span>
-                        <span className="text-green-600">₹{getTotalPrice().toLocaleString()}</span>
+                        <span className="text-green-600">
+                          ₹{getTotalPrice().toLocaleString()}
+                        </span>
                       </div>
                     </div>
 
                     <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                      <h4 className="text-lg text-blue-700 font-semibold mb-2">Payment Instructions</h4>
+                      <h4 className="text-lg text-blue-700 font-semibold mb-2">
+                        Payment Instructions
+                      </h4>
                       <ul className="text-sm text-blue-700 space-y-1">
                         <li>• Click "Pay Now" for each course individually</li>
                         <li>• Scan the QR code with any UPI app</li>
                         <li>• Take a screenshot of your payment confirmation</li>
                         <li>• Enter the UTR number from your payment receipt</li>
                         <li>• Upload the payment screenshot</li>
-                        <li>• Your payment will be verified within 24 hours</li>
                       </ul>
 
                       <div className="mt-4 pt-3 border-t border-blue-200">
-                        <p className="text-sm text-blue-700 mb-2">Need help with payment or courses?</p>
+                        <p className="text-sm text-blue-700 mb-2">
+                          Need help with payment or courses?
+                        </p>
                         <a
                           href="https://wa.me/+918810380146?text=Hi, I need support with my course checkout or payment process. Please help."
                           target="_blank"
@@ -673,8 +763,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                   </div>
-                </div>
-                </div>
+                </aside>
               </div>
             )}
           </div>
