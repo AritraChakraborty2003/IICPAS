@@ -101,10 +101,8 @@ export default function CheckoutPage() {
   });
 
   const { cartItems, loading, updateQuantity, removeFromCart, fetchCart } = useCart(student);
-  const safeCartItems = (cartItems as any[]) || [];
+  const safeCartItems = useMemo(() => (cartItems as any[]) || [], [cartItems]);
 
-  const [payingItemKey, setPayingItemKey] = useState<string | null>(null);
-  const [razorpayReady, setRazorpayReady] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [couponsLoading, setCouponsLoading] = useState(true);
@@ -250,15 +248,12 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (window.Razorpay) {
-      setRazorpayReady(true);
       return;
     }
 
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
-    script.onload = () => setRazorpayReady(true);
-    script.onerror = () => setRazorpayReady(false);
     document.body.appendChild(script);
 
     return () => {
@@ -309,7 +304,6 @@ export default function CheckoutPage() {
       },
       modal: {
         ondismiss: () => {
-          setPayingItemKey(null);
           alert("Payment was cancelled. You can retry from checkout.");
         },
       },
@@ -338,8 +332,6 @@ export default function CheckoutPage() {
             error?.response?.data?.message ||
               "Payment verification failed. Please contact support."
           );
-        } finally {
-          setPayingItemKey(null);
         }
       },
     });
@@ -364,10 +356,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    const itemKey = `${item.courseId}-${item.sessionType}`;
-
     try {
-      setPayingItemKey(itemKey);
       const amount = getItemPrice(item) * (item.quantity || 1);
 
       const response = await axios.post(
@@ -392,7 +381,6 @@ export default function CheckoutPage() {
 
       openRazorpayCheckout(response.data.data, item);
     } catch (error: any) {
-      setPayingItemKey(null);
       alert(error?.response?.data?.message || error?.message || "Payment failed");
     }
   };
@@ -410,9 +398,9 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-gray-100">
       <Header topOffset={40} />
 
-      <div className="pt-32 pb-10 px-4">
-        <div className="w-full bg-white rounded-none shadow-none border-none overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b">
+      <div className="pt-24 pb-8 px-4">
+        <div className="mx-auto max-w-4xl bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-4 border-b">
             <div>
               <h1 className="text-3xl font-semibold text-gray-800">Checkout</h1>
               <p className="text-sm text-gray-500 mt-1">
@@ -442,7 +430,7 @@ export default function CheckoutPage() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div className="lg:col-span-8 space-y-6">
-                  <div className="border border-gray-200 rounded-xl p-5 bg-white">
+                  <div className="border border-gray-200 rounded-xl p-4 bg-white">
                     <h2 className="text-2xl font-semibold text-gray-900 mb-4">
                       Order Items
                     </h2>
@@ -551,6 +539,20 @@ export default function CheckoutPage() {
                               <div className="flex flex-col items-end gap-2">
                                 <button
                                   type="button"
+                                  onClick={() => handlePayNow(item)}
+                                  disabled={
+                                    loading ||
+                                    !razorpayReady ||
+                                    Boolean(payingItemKey)
+                                  }
+                                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold shadow-sm disabled:opacity-50"
+                                >
+                                  {payingItemKey === getCartItemKey(item)
+                                    ? "Processing..."
+                                    : "Pay Now"}
+                                </button>
+                                <button
+                                  type="button"
                                   onClick={() =>
                                     removeFromCart(item.courseId, item.sessionType)
                                   }
@@ -572,7 +574,7 @@ export default function CheckoutPage() {
                       Billing & Shipping Address
                     </h2>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       <div>
                         <h3 className="text-base font-semibold text-gray-800 mb-3">
                           Billing Address
@@ -829,7 +831,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <aside className="lg:col-span-4 space-y-4">
-                  <div className="bg-white border border-gray-200 rounded-xl p-4">
+                <div className="bg-white border border-gray-200 rounded-xl p-3">
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">
                       Discount Coupons
                     </h3>
@@ -927,7 +929,7 @@ export default function CheckoutPage() {
                     ) : null}
                   </div>
 
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 shadow-sm sticky top-28">
+                  <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 shadow-sm sticky top-20">
                     <h3 className="text-2xl font-semibold text-gray-900 mb-4">
                       Order Summary
                     </h3>
@@ -1015,11 +1017,16 @@ export default function CheckoutPage() {
                         <button
                           type="button"
                           onClick={handlePayNowSummary}
-                          disabled={loading}
+                          disabled={loading || !razorpayReady || Boolean(payingItemKey)}
                           className="w-full bg-green-600 hover:bg-green-700 text-white rounded-lg py-3 text-lg font-semibold shadow-sm"
                         >
-                          Pay Now
+                          {payingItemKey ? "Processing..." : "Pay with Razorpay"}
                         </button>
+                        {!RAZORPAY_KEY ? (
+                          <p className="text-xs text-red-600">
+                            Razorpay key is missing. Set `NEXT_PUBLIC_RAZORPAY_KEY_ID`.
+                          </p>
+                        ) : null}
                       </div>
                     ) : null}
 
@@ -1028,11 +1035,11 @@ export default function CheckoutPage() {
                         Payment Instructions
                       </h4>
                       <ul className="text-sm text-blue-700 space-y-1">
-                        <li>• Click the Pay Now button in the order summary</li>
-                        <li>• Scan the QR code with any UPI app</li>
-                        <li>• Take a screenshot of your payment confirmation</li>
-                        <li>• Enter the UTR number from your payment receipt</li>
-                        <li>• Upload the payment screenshot</li>
+                        <li>• Select your course and click &quot;Pay with Razorpay&quot;</li>
+                        <li>• Complete payment in Razorpay secure checkout</li>
+                        <li>• On success, enrollment is activated automatically</li>
+                        <li>• Invoice receipt is sent to your registered email</li>
+                        <li>• If payment is cancelled, you can retry anytime</li>
                       </ul>
 
                       <div className="mt-4 pt-3 border-t border-blue-200">
@@ -1057,105 +1064,6 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      {showPaymentForm && selectedItem && (
-        <div className="fixed inset-0 backdrop-blur-lg bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-3xl rounded-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b">
-              <h2 className="text-2xl font-semibold text-gray-900">Complete Payment</h2>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPaymentForm(false);
-                  setSelectedItem(null);
-                }}
-                className="text-2xl text-gray-500 hover:text-gray-700"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-3">{selectedItem.course?.title}</h3>
-                <div className="p-4 bg-gray-50 rounded-lg mb-4">
-                  <p className="text-sm text-gray-600 mb-1">
-                    Session: {selectedItem.sessionType === "recorded" ? "Recorded" : "Live"}
-                  </p>
-                  <p className="text-lg font-semibold text-green-600">
-                    ₹{Number(selectedItem.price || 0).toLocaleString()}
-                  </p>
-                </div>
-
-                <div className="text-center">
-                  <h4 className="font-semibold mb-2 text-gray-800">Scan QR Code to Pay</h4>
-                  <Image src="/upi.jpeg" alt="UPI QR" width={250} height={250} className="mx-auto rounded-lg border" />
-                  <p className="text-xs text-gray-500 mt-2">UPI ID: 8810380146@ptaxis</p>
-                </div>
-              </div>
-
-              <div>
-                <form onSubmit={handleSubmitPayment} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">UTR Number *</label>
-                    <input
-                      type="text"
-                      value={paymentData.utrNumber}
-                      onChange={(e) => setPaymentData((prev) => ({ ...prev, utrNumber: e.target.value }))}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      placeholder="Enter UTR number"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Payment Screenshot *</label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Additional Notes</label>
-                    <textarea
-                      value={paymentData.additionalNotes}
-                      onChange={(e) =>
-                        setPaymentData((prev) => ({ ...prev, additionalNotes: e.target.value }))
-                      }
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                      rows={3}
-                      placeholder="Optional notes"
-                    />
-                  </div>
-
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowPaymentForm(false);
-                        setSelectedItem(null);
-                      }}
-                      className="flex-1 border border-gray-300 text-gray-700 rounded-lg py-2"
-                    >
-                      Back
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="flex-1 bg-green-600 hover:bg-green-700 text-white rounded-lg py-2"
-                    >
-                      {submitting ? "Submitting..." : "Submit Payment"}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
