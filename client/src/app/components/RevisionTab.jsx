@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Swal from "sweetalert2";
 import {
   Button,
@@ -33,6 +33,10 @@ export default function RevisionTab() {
   const [quizStarted, setQuizStarted] = useState(false);
   const [totalMarks, setTotalMarks] = useState(0);
   const [showResults, setShowResults] = useState(false);
+  const totalTests = useMemo(
+    () => courses.reduce((count, course) => count + course.tests.length, 0),
+    [courses]
+  );
 
   useEffect(() => {
     fetchRevisionTests();
@@ -249,92 +253,173 @@ export default function RevisionTab() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <Typography variant="h4" component="h1" gutterBottom>
-          Prepare
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Choose a topic and take tests. Measure your skills and get detailed
-          information on improving your skills.
-        </Typography>
+    <div className="p-3 md:p-6">
+      <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-blue-50 p-4 md:p-6 shadow-sm">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">
+              Assessment Center
+            </p>
+            <h1 className="mt-2 text-3xl md:text-4xl font-bold text-slate-900">
+              Prepare
+            </h1>
+            <p className="mt-3 text-sm md:text-base text-slate-600 max-w-3xl leading-relaxed">
+              Choose a topic and take tests. Track level-wise performance and
+              build exam readiness with timed assessments.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:w-[320px]">
+            <div className="rounded-2xl bg-white/90 border border-blue-100 px-4 py-3 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Courses
+              </p>
+              <p className="text-2xl font-bold text-slate-900">{courses.length}</p>
+            </div>
+            <div className="rounded-2xl bg-white/90 border border-blue-100 px-4 py-3 shadow-sm">
+              <p className="text-xs uppercase tracking-wide text-slate-500">
+                Tests
+              </p>
+              <p className="text-2xl font-bold text-slate-900">{totalTests}</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Soft Skills Banner */}
-      <Card sx={{ mb: 6, bgcolor: "#3b82f6", color: "white" }}>
-        <CardContent className="flex justify-between items-center">
+      <Card
+        sx={{
+          mt: 4,
+          mb: 4,
+          background: "linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%)",
+          color: "white",
+          borderRadius: "20px",
+        }}
+      >
+        <CardContent className="flex justify-between items-center gap-3 p-5 md:p-6">
           <div>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
               Upgrade your Soft Skills!
             </Typography>
-            <Typography variant="body2">
+            <Typography variant="body2" sx={{ opacity: 0.9 }}>
               Watch our Videos on Skill Development!
             </Typography>
           </div>
-          <IconButton sx={{ color: "white" }}>
+          <IconButton
+            sx={{
+              color: "white",
+              bgcolor: "rgba(255,255,255,0.12)",
+              "&:hover": { bgcolor: "rgba(255,255,255,0.24)" },
+            }}
+          >
             <PlayArrowIcon />
           </IconButton>
         </CardContent>
       </Card>
 
       {/* Course Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
         {courses.map((course) => (
-          <Card key={course._id} sx={{ border: "1px solid #e5e7eb" }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
+          <Card
+            key={course._id}
+            sx={{
+              border: "1px solid #dbe3f0",
+              borderRadius: "20px",
+              boxShadow: "0 10px 30px rgba(15, 23, 42, 0.08)",
+            }}
+          >
+            <CardContent className="p-5 md:p-6">
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
                 {course.title}
               </Typography>
-              
+
               {/* Course Info */}
-              <div className="mb-3">
-                <Typography variant="body2" color="text.secondary" gutterBottom>
-                  {course.category} • {course.level}
+              <div className="mb-4 flex flex-wrap items-center gap-2">
+                <Typography
+                  variant="body2"
+                  sx={{
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: "999px",
+                    bgcolor: "#eef2ff",
+                    color: "#1e40af",
+                    fontWeight: 600,
+                  }}
+                >
+                  {course.category}
                 </Typography>
-                <Typography variant="body2" color="primary" fontWeight="bold">
-                  Tests Available: {course.tests.length}
+                <Typography
+                  variant="body2"
+                  sx={{
+                    px: 1.5,
+                    py: 0.5,
+                    borderRadius: "999px",
+                    bgcolor: "#f8fafc",
+                    color: "#334155",
+                    border: "1px solid #e2e8f0",
+                  }}
+                >
+                  {course.level}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    ml: "auto",
+                    color: "#1e3a8a",
+                    fontWeight: 700,
+                  }}
+                >
+                  {course.tests.length} tests
                 </Typography>
               </div>
 
               {/* Level Badges - Dynamically show only available test levels */}
-              <div className="flex flex-wrap gap-3 mt-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
                 {course.tests.map((test) => {
                   const isCompleted = false; // TODO: Add completion tracking
                   const difficulty = test?.difficulty || "Normal";
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={test._id}
-                      className="flex flex-col items-center cursor-pointer relative"
+                      className="relative rounded-2xl border border-slate-200 bg-white px-3 py-4 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md"
                       onClick={() => startQuiz(test)}
                     >
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                        style={{
-                          backgroundColor: getLevelColor(test.level, difficulty),
-                          opacity: 1,
-                        }}
-                      >
-                        {getLevelIcon(test.level)}
+                      <div className="flex flex-col items-center justify-center gap-2">
+                        <div
+                          className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm"
+                          style={{
+                            backgroundColor: getLevelColor(test.level, difficulty),
+                            opacity: 1,
+                          }}
+                        >
+                          {getLevelIcon(test.level)}
+                        </div>
+                        <Typography
+                          variant="caption"
+                          className="text-center !font-semibold !text-slate-900"
+                        >
+                          {test.level}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          className="text-xs text-slate-500 text-center"
+                        >
+                          {getDifficultyLabel(test.level, difficulty)}
+                        </Typography>
                       </div>
-                      <Typography variant="caption" className="mt-1 text-center">
-                        {test.level}
-                      </Typography>
-                      <Typography variant="caption" className="text-xs text-gray-600 text-center">
-                        {getDifficultyLabel(test.level, difficulty)}
-                      </Typography>
                       {isCompleted && (
                         <CheckCircleIcon
                           sx={{
                             fontSize: 16,
                             color: "green",
                             position: "absolute",
-                            top: -5,
-                            right: -5,
+                            top: 8,
+                            right: 8,
                           }}
                         />
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
