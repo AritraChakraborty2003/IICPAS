@@ -11,6 +11,29 @@ import wishlistEventManager from "../../utils/wishlistEventManager";
 import GroupCourseCard from "../components/GroupCourseCard";
 import SimpleScrabbleGame from "./SimpleScrabbleGame";
 
+const normalizeCourseImageSrc = (rawImage, apiUrl) => {
+  if (!rawImage || typeof rawImage !== "string") return null;
+
+  const normalizedApiUrl = (apiUrl || "https://api.iicpa.in")
+    .replace(/^http:\/\//i, "https://")
+    .replace(/\/+$/, "");
+  const value = rawImage.trim();
+
+  if (/^https?:\/\//i.test(value)) {
+    return value.replace(/^http:\/\//i, "https://");
+  }
+
+  if (value.startsWith("/uploads/")) {
+    return `${normalizedApiUrl}${value}`;
+  }
+
+  if (value.startsWith("/")) {
+    return value;
+  }
+
+  return `${normalizedApiUrl}/${value.replace(/^\/+/, "")}`;
+};
+
 export default function CoursePage() {
   const router = useRouter();
   const [allCourses, setAllCourses] = useState([]);
@@ -359,6 +382,11 @@ export default function CoursePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-max">
               {/* Individual Course Cards */}
               {filteredCourses.map((course, index) => {
+                const courseImageSrc = normalizeCourseImageSrc(
+                  course.image,
+                  process.env.NEXT_PUBLIC_API_URL
+                );
+
                 // Use recorded session pricing if available, otherwise fall back to legacy pricing
                 const recordedPrice =
                   course.pricing?.recordedSession?.finalPrice ||
@@ -395,25 +423,15 @@ export default function CoursePage() {
                   >
                     {/* Image Section */}
                     <div className="relative h-40 w-full rounded-t-xl overflow-hidden">
-                      {course.image ? (
+                      {courseImageSrc ? (
                         <Image
-                          src={
-                            course.image.startsWith("http")
-                              ? course.image
-                              : course.image.startsWith("/uploads/")
-                              ? `${process.env.NEXT_PUBLIC_API_URL}${course.image}`
-                              : course.image.startsWith("/")
-                              ? course.image
-                              : `${process.env.NEXT_PUBLIC_API_URL}${course.image}`
-                          }
+                          src={courseImageSrc}
                           alt={course.title}
                           fill
                           className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
                           sizes="(max-width: 768px) 100vw, 33vw"
                           priority={index < 2}
                           onError={(e) => {
-                            console.log("Image failed to load:", e);
-                            console.log("Image src was:", e.currentTarget.src);
                             // Fallback to placeholder
                             e.currentTarget.style.display = "none";
                             const placeholder =
@@ -428,10 +446,10 @@ export default function CoursePage() {
                       {/* Fallback placeholder - always present but hidden when image loads */}
                       <div
                         className={`w-full h-full flex items-center justify-center text-gray-400 bg-gray-200 ${
-                          course.image ? "hidden" : ""
+                          courseImageSrc ? "hidden" : ""
                         }`}
                         style={{
-                          display: course.image ? "none" : "flex",
+                          display: courseImageSrc ? "none" : "flex",
                         }}
                       >
                         <div className="text-center">
