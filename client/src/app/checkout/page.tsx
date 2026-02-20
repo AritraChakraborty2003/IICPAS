@@ -34,6 +34,29 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [student, setStudent] = useState<any>(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [sameAsBilling, setSameAsBilling] = useState(true);
+  const [billingAddress, setBillingAddress] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    pincode: "",
+    country: "India",
+  });
+  const [shippingAddress, setShippingAddress] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    pincode: "",
+    country: "India",
+  });
 
   const { cartItems, loading, updateQuantity, removeFromCart, fetchCart, getTotalPrice } =
     useCart(student);
@@ -70,6 +93,23 @@ export default function CheckoutPage() {
 
     checkAuth();
   }, [router]);
+
+  useEffect(() => {
+    if (student) {
+      setBillingAddress((prev) => ({
+        ...prev,
+        fullName: prev.fullName || student?.name || "",
+        email: prev.email || student?.email || "",
+        phone: prev.phone || student?.phone || "",
+      }));
+    }
+  }, [student]);
+
+  useEffect(() => {
+    if (sameAsBilling) {
+      setShippingAddress(billingAddress);
+    }
+  }, [sameAsBilling, billingAddress]);
 
   const handlePayNow = (item: any) => {
     const price = getItemPrice(item);
@@ -121,6 +161,12 @@ export default function CheckoutPage() {
       formData.append("additionalNotes", paymentData.additionalNotes);
       formData.append("paymentScreenshot", paymentData.paymentScreenshot);
       formData.append("studentId", student?._id || "");
+      formData.append("billingAddress", JSON.stringify(billingAddress));
+      formData.append(
+        "shippingAddress",
+        JSON.stringify(sameAsBilling ? billingAddress : shippingAddress)
+      );
+      formData.append("sameAsBilling", String(sameAsBilling));
 
       const response = await axios.post(
         `${API_BASE}/api/v1/transactions/submit-payment`,
@@ -184,9 +230,267 @@ export default function CheckoutPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
-                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Courses</h2>
+              <div className="space-y-6">
+                <div className="border border-gray-200 rounded-xl p-4">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                    Billing & Shipping Address
+                  </h2>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="text-base font-semibold text-gray-800 mb-3">
+                        Billing Address
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <input
+                          type="text"
+                          placeholder="Full name"
+                          value={billingAddress.fullName}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              fullName: e.target.value,
+                            }))
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="email"
+                          placeholder="Email"
+                          value={billingAddress.email}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              email: e.target.value,
+                            }))
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Phone"
+                          value={billingAddress.phone}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              phone: e.target.value,
+                            }))
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Pincode"
+                          value={billingAddress.pincode}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              pincode: e.target.value,
+                            }))
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Address line 1"
+                          value={billingAddress.line1}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              line1: e.target.value,
+                            }))
+                          }
+                          className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Address line 2 (optional)"
+                          value={billingAddress.line2}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              line2: e.target.value,
+                            }))
+                          }
+                          className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="City"
+                          value={billingAddress.city}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              city: e.target.value,
+                            }))
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="State"
+                          value={billingAddress.state}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              state: e.target.value,
+                            }))
+                          }
+                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Country"
+                          value={billingAddress.country}
+                          onChange={(e) =>
+                            setBillingAddress((prev) => ({
+                              ...prev,
+                              country: e.target.value,
+                            }))
+                          }
+                          className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-base font-semibold text-gray-800">
+                          Shipping Address
+                        </h3>
+                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                          <input
+                            type="checkbox"
+                            checked={sameAsBilling}
+                            onChange={(e) => setSameAsBilling(e.target.checked)}
+                          />
+                          Same as billing
+                        </label>
+                      </div>
+
+                      {sameAsBilling ? (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
+                          Shipping address will use the same details as billing.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <input
+                            type="text"
+                            placeholder="Full name"
+                            value={shippingAddress.fullName}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                fullName: e.target.value,
+                              }))
+                            }
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="email"
+                            placeholder="Email"
+                            value={shippingAddress.email}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                email: e.target.value,
+                              }))
+                            }
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Phone"
+                            value={shippingAddress.phone}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                phone: e.target.value,
+                              }))
+                            }
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Pincode"
+                            value={shippingAddress.pincode}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                pincode: e.target.value,
+                              }))
+                            }
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Address line 1"
+                            value={shippingAddress.line1}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                line1: e.target.value,
+                              }))
+                            }
+                            className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Address line 2 (optional)"
+                            value={shippingAddress.line2}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                line2: e.target.value,
+                              }))
+                            }
+                            className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="City"
+                            value={shippingAddress.city}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                city: e.target.value,
+                              }))
+                            }
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="State"
+                            value={shippingAddress.state}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                state: e.target.value,
+                              }))
+                            }
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Country"
+                            value={shippingAddress.country}
+                            onChange={(e) =>
+                              setShippingAddress((prev) => ({
+                                ...prev,
+                                country: e.target.value,
+                              }))
+                            }
+                            className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2">
+                    <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Courses</h2>
 
                   <div className="space-y-4">
                     {cartItems.map((item) => {
