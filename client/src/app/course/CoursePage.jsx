@@ -627,21 +627,16 @@ export default function CoursePage() {
       </div>
 
       {/* Softwares We Teach Section */}
-      <section className="relative py-24 bg-gradient-to-b from-[#f6f9ff] via-[#f9fcff] to-[#eef5ff] overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-[#3cd664]/15 blur-3xl" />
-          <div className="absolute top-16 right-0 w-80 h-80 rounded-full bg-[#3b82f6]/10 blur-3xl" />
-        </div>
-
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-12"
+            className="text-center mb-10 md:mb-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 border border-blue-100 text-blue-700 px-4 py-1.5 text-xs font-semibold tracking-wide shadow-sm mb-5">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white border border-gray-200 text-blue-700 px-4 py-1.5 text-xs font-semibold tracking-wide mb-5">
               <span>Software Ecosystem</span>
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
@@ -653,7 +648,7 @@ export default function CoursePage() {
             </p>
           </motion.div>
 
-          <div className="software-marquee rounded-3xl border border-blue-100/70 bg-white/80 backdrop-blur-sm shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] py-8">
+          <div className="software-marquee w-full py-2">
             <div className="software-track">
               {[...softwareStack, ...softwareStack].map((software, index) => (
                 <div
