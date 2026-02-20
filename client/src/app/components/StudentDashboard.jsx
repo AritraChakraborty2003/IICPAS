@@ -145,9 +145,11 @@ function StudentDashboardContent() {
             message: "",
           });
         } else {
+          setStudentCoins(0);
           router.replace("/student-login");
         }
       } catch (err) {
+        setStudentCoins(0);
         router.replace("/student-login");
       }
       // Remove finally block to prevent loading state changes
@@ -419,6 +421,14 @@ function StudentDashboardContent() {
               className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <div className="flex items-center gap-2 md:gap-3 ml-4">
+              {/* Mobile coins button */}
+              <button
+                type="button"
+                className="md:hidden p-2 bg-amber-100 text-amber-700 rounded-lg transition-colors"
+                title={`Coins: ${studentCoins}`}
+              >
+                <FaCoins />
+              </button>
               {/* Mobile logout button */}
               <button
                 onClick={handleLogout}
@@ -439,13 +449,6 @@ function StudentDashboardContent() {
                   <FaCoins className="text-amber-500" />
                   <span>{studentCoins}</span>
                 </div>
-                <button
-                  type="button"
-                  className="md:hidden p-2 bg-amber-100 text-amber-700 rounded-lg transition-colors"
-                  title={`Coins: ${studentCoins}`}
-                >
-                  <FaCoins />
-                </button>
                 <button
                   onClick={handleLogout}
                   className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium"
