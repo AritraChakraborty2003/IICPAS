@@ -650,7 +650,7 @@ export default function BuyCoursesTab() {
   }
 
   return (
-    <section className="min-h-screen bg-slate-50 text-slate-900">
+    <section className="bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <div className="relative mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-sm">
           <video

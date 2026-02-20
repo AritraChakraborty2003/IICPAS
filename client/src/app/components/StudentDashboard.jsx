@@ -361,21 +361,19 @@ function StudentDashboardContent() {
 
   return (
     <div
-      className={`bg-gray-50 min-h-screen sidebar-layout ${
-        sidebarCollapsed ? "sidebar-collapsed" : "sidebar-expanded"
-      }`}
+      className="bg-gray-50 min-h-screen lg:flex"
     >
       {/* Desktop Sidebar */}
       <aside
         className={`hidden lg:block ${
           sidebarCollapsed ? "w-16" : "w-64"
-        } h-screen fixed left-0 top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-y-auto custom-scrollbar z-50 transition-all duration-300 relative`}
+        } h-screen sticky top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-y-auto custom-scrollbar z-30 transition-all duration-300 relative shrink-0`}
       >
         <SidebarContent />
         <button
           type="button"
           onClick={() => setSidebarCollapsed((prev) => !prev)}
-          className="absolute top-1/2 -right-3 -translate-y-1/2 h-9 w-9 rounded-full border border-blue-200 bg-white text-blue-600 shadow-md hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-center"
+          className="absolute top-20 -right-3 h-9 w-9 rounded-full border border-blue-200 bg-white text-blue-600 shadow-md hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-center"
           title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
@@ -397,7 +395,7 @@ function StudentDashboardContent() {
         </div>
       </Drawer>
       {/* Main Content */}
-      <main className="main-content bg-[#f5f6fa] min-h-screen lg:h-screen overflow-y-auto thin-scrollbar">
+      <main className="main-content flex-1 min-w-0 bg-[#f5f6fa] min-h-screen overflow-x-hidden thin-scrollbar">
         {/* Fixed Header */}
         <div className="sticky top-0 z-40 bg-[#f5f6fa] border-b border-gray-200 p-2 md:p-3">
           <div className="flex justify-between items-center">
