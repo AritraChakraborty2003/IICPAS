@@ -14,7 +14,7 @@ const studentSectionTabs = [
   { id: "support", label: "Tickets" },
 ];
 
-export default function ProfileTab() {
+export default function ProfileTab({ onImageUpdated }) {
   const router = useRouter();
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
@@ -151,6 +151,15 @@ export default function ProfileTab() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        setError("Please select a valid image file");
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError("Image size must be 5MB or less");
+        return;
+      }
+      setError("");
       setProfileImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -176,23 +185,45 @@ export default function ProfileTab() {
       formData.append("profileImage", profileImage);
 
       const apiUrl = `${API}/api/v1/students/profile`;
-      console.log("FormData:", formData);
-      console.log("Profile image file:", profileImage);
+      let responseData = null;
 
-      const res = await axios.put(apiUrl, formData, {
-        withCredentials: true,
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      try {
+        // Do not set Content-Type manually; browser must attach multipart boundary.
+        const axiosRes = await axios.put(apiUrl, formData, {
+          withCredentials: true,
+        });
+        responseData = axiosRes?.data;
+      } catch (axiosErr) {
+        // Fallback to fetch for environments where axios reports generic network error.
+        const fetchRes = await fetch(apiUrl, {
+          method: "PUT",
+          credentials: "include",
+          body: formData,
+        });
+        const fetchData = await fetchRes.json().catch(() => ({}));
+        if (!fetchRes.ok) {
+          throw {
+            response: {
+              data: fetchData,
+              status: fetchRes.status,
+            },
+            message: fetchData?.message || "Upload failed",
+          };
+        }
+        responseData = fetchData;
+      }
 
-      console.log("Upload response:", res.data);
-
-      if (res.data.student.image) {
-        setStudent((prev) => ({ ...prev, image: res.data.student.image }));
+      if (responseData?.student?.image) {
+        setStudent((prev) => ({ ...prev, image: responseData.student.image }));
+        if (typeof onImageUpdated === "function") {
+          onImageUpdated(responseData.student.image);
+        }
         setImagePreview(null);
         setProfileImage(null);
         setMessage("Profile image updated successfully!");
+        setTimeout(() => setMessage(""), 3000);
+      } else {
+        setMessage(responseData?.message || "Profile image updated successfully!");
         setTimeout(() => setMessage(""), 3000);
       }
     } catch (err) {

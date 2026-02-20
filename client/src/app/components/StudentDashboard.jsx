@@ -59,6 +59,17 @@ function StudentDashboardContent() {
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+  const getStudentImageUrl = (imagePath) => {
+    if (!imagePath || typeof imagePath !== "string") return "";
+    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+      return imagePath;
+    }
+    const normalizedPath = imagePath.startsWith("/")
+      ? imagePath
+      : `/${imagePath}`;
+    return `${API}${normalizedPath}`;
+  };
+
   const fetchStudentCoins = async (studentId) => {
     try {
       const response = await axios.get(`${API}/api/v1/students/coins/${studentId}`, {
@@ -226,7 +237,14 @@ function StudentDashboardContent() {
       case "news":
         return <NewsTab />;
       case "profile":
-        return <ProfileTab />;
+        return (
+          <ProfileTab
+            onImageUpdated={(newImage) => {
+              if (!newImage) return;
+              setStudent((prev) => (prev ? { ...prev, image: newImage } : prev));
+            }}
+          />
+        );
       case "invoices":
         return <StudentInvoicesTab />;
       case "testimonial":
@@ -277,13 +295,13 @@ function StudentDashboardContent() {
                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
                   {student.image ? (
                     <img
-                      src={`${API}/${student.image}`}
+                      src={getStudentImageUrl(student.image)}
                       alt="Profile"
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         console.log(
                           "Sidebar profile image failed to load:",
-                          `${API}/${student.image}`
+                          getStudentImageUrl(student.image)
                         );
                         e.target.style.display = "none";
                         e.target.nextElementSibling.style.display = "flex";
@@ -314,13 +332,13 @@ function StudentDashboardContent() {
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
                 {student.image ? (
                   <img
-                    src={`${API}/${student.image}`}
+                    src={getStudentImageUrl(student.image)}
                     alt="Profile"
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       console.log(
                         "Sidebar profile image failed to load:",
-                        `${API}`
+                        getStudentImageUrl(student.image)
                       );
                       e.target.style.display = "none";
                       e.target.nextElementSibling.style.display = "flex";

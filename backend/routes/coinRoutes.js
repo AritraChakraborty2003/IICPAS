@@ -1,6 +1,4 @@
 import express from "express";
-import { requireAuth } from "../middleware/requireAuth.js";
-import { isAdmin } from "../middleware/isAdmin.js";
 import {
   getCoinSettings,
   updateCoinSettings,
@@ -8,7 +6,8 @@ import {
 
 const router = express.Router();
 
-router.get("/settings", requireAuth, isAdmin, getCoinSettings);
-router.post("/settings", requireAuth, isAdmin, updateCoinSettings);
+router.get("/settings", getCoinSettings);
+router.post("/settings", updateCoinSettings);
+router.patch("/settings", updateCoinSettings);
 
 export default router;
