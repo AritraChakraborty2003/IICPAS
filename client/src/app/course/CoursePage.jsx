@@ -365,11 +365,11 @@ export default function CoursePage() {
 
   return (
     <section className="bg-gradient-to-br from-[#f5fcfa] via-white to-[#eef7fc] min-h-screen text-[#0b1224]">
-      <div className="max-w-full mx-auto px-4 pb-8 mr-4">
+      <div className="max-w-full mx-auto px-3 sm:px-4 pb-8 mr-0 lg:mr-4">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Sidebar */}
-          <aside className="w-full lg:w-1/4 xl:w-1/5 lg:sticky lg:top-24 lg:max-h-screen lg:overflow-y-auto ml-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+          <aside className="w-full lg:w-1/4 xl:w-1/5 lg:sticky lg:top-24 lg:max-h-screen lg:overflow-y-auto ml-0 lg:ml-8">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6">
               <h2 className="text-xl font-bold mb-4">Find by Course Name</h2>
               <div className="relative">
                 <input
@@ -383,7 +383,7 @@ export default function CoursePage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6">
               <h3 className="text-lg font-semibold mb-3">Categories</h3>
               {categories.length === 0 && (
                 <div className="text-gray-400 text-sm">No categories</div>
@@ -404,7 +404,7 @@ export default function CoursePage() {
               ))}
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6">
               <h3 className="text-lg font-semibold mb-3">
                 Course Combinations
               </h3>
@@ -428,8 +428,10 @@ export default function CoursePage() {
               )}
             </div>
 
-            {/* Mini Scrabble Game */}
-            <SimpleScrabbleGame />
+            {/* Mini Scrabble Game (desktop only) */}
+            <div className="hidden lg:block">
+              <SimpleScrabbleGame />
+            </div>
           </aside>
 
           {/* Course Cards */}
