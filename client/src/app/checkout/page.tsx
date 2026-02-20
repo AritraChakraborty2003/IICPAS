@@ -9,31 +9,15 @@ import { useCart } from "../../hooks/useCart";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-const AVAILABLE_COUPONS = [
-  {
-    code: "STUDENT10",
-    discountType: "percentage",
-    discountValue: 10,
-    expiresAt: "2027-12-31",
-    description: "Flat 10% off for all students",
-  },
-  {
-    code: "IICPA500",
-    discountType: "amount",
-    discountValue: 500,
-    expiresAt: "2027-06-30",
-    description: "Instant Rs 500 off on checkout",
-  },
-  {
-    code: "EXAM20",
-    discountType: "percentage",
-    discountValue: 20,
-    expiresAt: "2026-12-31",
-    description: "Exam season special 20% off",
-  },
-] as const;
-
-type Coupon = (typeof AVAILABLE_COUPONS)[number];
+type Coupon = {
+  _id?: string;
+  code: string;
+  discountType: "amount" | "percentage";
+  discountValue: number;
+  expiresAt: string;
+  description?: string;
+  isActive?: boolean;
+};
 
 const isCouponExpired = (expiresAt: string) => {
   const expiry = new Date(`${expiresAt}T23:59:59`);
@@ -119,6 +103,9 @@ export default function CheckoutPage() {
     paymentScreenshot: null as File | null,
   });
   const [couponCode, setCouponCode] = useState("");
+  const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
+  const [couponsLoading, setCouponsLoading] = useState(true);
+  const [couponFetchError, setCouponFetchError] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponMessage, setCouponMessage] = useState("");
   const [deliveryType, setDeliveryType] = useState("normal");
@@ -137,8 +124,12 @@ export default function CheckoutPage() {
       setCouponMessage("Please enter a coupon code.");
       return;
     }
+    if (couponsLoading) {
+      setCouponMessage("Coupons are still loading. Please wait a moment.");
+      return;
+    }
 
-    const matchedCoupon = AVAILABLE_COUPONS.find(
+    const matchedCoupon = availableCoupons.find(
       (coupon) => coupon.code === normalizedCode
     );
 
@@ -199,6 +190,36 @@ export default function CheckoutPage() {
       setShippingAddress(billingAddress);
     }
   }, [sameAsBilling, billingAddress]);
+
+  useEffect(() => {
+    const fetchCoupons = async () => {
+      try {
+        setCouponsLoading(true);
+        setCouponFetchError("");
+        const response = await axios.get(`${API_BASE}/api/coupons/active`, {
+          withCredentials: false,
+        });
+        setAvailableCoupons(response.data?.data || []);
+      } catch (error) {
+        console.error("Failed to load coupons", error);
+        setCouponFetchError("Unable to load coupons right now.");
+      } finally {
+        setCouponsLoading(false);
+      }
+    };
+
+    fetchCoupons();
+  }, []);
+
+  useEffect(() => {
+    if (
+      appliedCoupon &&
+      !availableCoupons.some((coupon) => coupon.code === appliedCoupon.code)
+    ) {
+      setAppliedCoupon(null);
+      setCouponMessage("Previously applied coupon is no longer available.");
+    }
+  }, [availableCoupons, appliedCoupon]);
 
   const handlePayNow = (item: any) => {
     const price = getItemPrice(item);
@@ -730,51 +751,63 @@ export default function CheckoutPage() {
                     </p>
 
                     <div className="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
-                      {AVAILABLE_COUPONS.map((coupon) => {
-                        const expired = isCouponExpired(coupon.expiresAt);
-                        const isActive = appliedCoupon?.code === coupon.code;
+                      {couponsLoading ? (
+                        <p className="text-sm text-gray-500">Loading coupons...</p>
+                      ) : availableCoupons.length ? (
+                        availableCoupons.map((coupon) => {
+                          const expired = isCouponExpired(coupon.expiresAt);
+                          const isActive = appliedCoupon?.code === coupon.code;
 
-                        return (
-                          <div
-                            key={coupon.code}
-                            className={`border rounded-lg p-3 ${
-                              isActive
-                                ? "border-green-300 bg-green-50"
-                                : "border-gray-200 bg-gray-50"
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <p className="font-semibold text-gray-900 text-sm">
-                                  {coupon.code}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1">
-                                  {coupon.description}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                  Expires: {formatCouponExpiry(coupon.expiresAt)}
-                                </p>
-                              </div>
+                          return (
+                            <div
+                              key={coupon.code}
+                              className={`border rounded-lg p-3 ${
+                                isActive
+                                  ? "border-green-300 bg-green-50"
+                                  : "border-gray-200 bg-gray-50"
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <p className="font-semibold text-gray-900 text-sm">
+                                    {coupon.code}
+                                  </p>
+                                  {coupon.description ? (
+                                    <p className="text-xs text-gray-600 mt-1">
+                                      {coupon.description}
+                                    </p>
+                                  ) : null}
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Expires: {formatCouponExpiry(coupon.expiresAt)}
+                                  </p>
+                                </div>
 
-                              <div className="text-right">
-                                <span className="inline-flex text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-                                  {coupon.discountType === "percentage"
-                                    ? `${coupon.discountValue}% OFF`
-                                    : `Rs ${coupon.discountValue} OFF`}
-                                </span>
-                                <button
-                                  type="button"
-                                  disabled={expired}
-                                  onClick={() => applyCouponByCode(coupon.code)}
-                                  className="mt-2 block ml-auto text-xs px-3 py-1 rounded-md bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed"
-                                >
-                                  {expired ? "Expired" : "Apply"}
-                                </button>
+                                <div className="text-right">
+                                  <span className="inline-flex text-xs font-semibold px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                                    {coupon.discountType === "percentage"
+                                      ? `${coupon.discountValue}% OFF`
+                                      : `Rs ${coupon.discountValue} OFF`}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    disabled={expired}
+                                    onClick={() => applyCouponByCode(coupon.code)}
+                                    className="mt-2 block ml-auto text-xs px-3 py-1 rounded-md bg-gray-800 text-white hover:bg-gray-900 disabled:opacity-40 disabled:cursor-not-allowed"
+                                  >
+                                    {expired ? "Expired" : "Apply"}
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          {couponFetchError
+                            ? couponFetchError
+                            : "No coupons available right now."}
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex gap-2">
