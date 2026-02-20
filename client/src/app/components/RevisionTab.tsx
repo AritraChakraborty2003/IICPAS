@@ -215,6 +215,34 @@ const RevisionTab: React.FC = () => {
 
     setQuizStarted(false);
 
+    const reportQuizCompletion = async () => {
+      try {
+        if (!currentTest?._id) return;
+
+        const studentRes = await axios.get(`${API}/v1/students/isstudent`, {
+          withCredentials: true,
+        });
+        const studentId = studentRes.data?.student?._id;
+        if (!studentId) return;
+
+        await axios.post(
+          `${API}/v1/students/revision-tests/${studentId}/complete`,
+          {
+            testId: currentTest._id,
+            score: calculatedScore,
+            totalQuestions: currentTest.questions.length,
+          },
+          { withCredentials: true }
+        );
+
+        window.dispatchEvent(new Event("coins:updated"));
+      } catch (error) {
+        console.error("Failed to report quiz completion:", error);
+      }
+    };
+
+    reportQuizCompletion();
+
     setTimeout(() => {
       Swal.fire({
         title: "Quiz Completed!",

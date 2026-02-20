@@ -71,6 +71,7 @@ import {
   FaChevronLeft,
   FaClipboardList,
   FaGraduationCap,
+  FaCoins,
 } from "react-icons/fa";
 import CompanyTab from "./CompanyTab";
 import CourseArea from "./CourseBuilder";
@@ -110,6 +111,7 @@ import TransactionsTab from "./TransactionsTab";
 import IndividualRequestsTab from "./IndividualRequestsTab";
 import AdmissionManagementTab from "./AdmissionManagementTab";
 import UniversityCourseManagementTab from "./UniversityCourseManagementTab";
+import CoinsTab from "./CoinsTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -353,6 +355,7 @@ const NAVIGATION_GROUPS = [
     items: [
       { id: "payments", label: "Payments", icon: <FaCreditCard /> },
       { id: "transactions", label: "Transactions", icon: <FaCreditCard /> },
+      { id: "coins", label: "Coins", icon: <FaCoins /> },
       { id: "tickets", label: "Tickets", icon: <FaComments /> },
       { id: "audit", label: "IP Logs", icon: <FaShieldAlt /> },
       { id: "ip-whitelist", label: "IP Whitelisting", icon: <FaShieldAlt /> },
@@ -734,6 +737,8 @@ function AdminDashboardContent() {
           <PaymentsTab />
         ) : activeTab === "transactions" ? (
           <TransactionsTab />
+        ) : activeTab === "coins" ? (
+          <CoinsTab />
         ) : activeTab === "jobs" ? (
           <JobsAdminPanel />
         ) : activeTab === "jobs-post-management" ? (

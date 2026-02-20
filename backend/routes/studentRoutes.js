@@ -18,6 +18,11 @@ import Course from "../models/Content/Course.js";
 import fs from "fs-extra";
 import nodemailer from "nodemailer";
 import express from "express";
+import {
+  awardCoins,
+  getCoinSettings,
+  getStudentCoinSummary,
+} from "../services/coinService.js";
 
 dotenv.config();
 
@@ -32,6 +37,14 @@ const createToken = (student) => {
 };
 
 const router = express.Router();
+
+const ensureAuthorizedStudent = (req, res) => {
+  if (!req.user?.id || req.user.id !== req.params.id) {
+    res.status(403).json({ message: "Forbidden" });
+    return false;
+  }
+  return true;
+};
 
 //Register Student
 router.post("/register", async (req, res) => {
@@ -133,9 +146,88 @@ router.get("/isstudent", async (req, res) => {
     const student = await Student.findById(decoded.id);
     if (!student) return res.status(404).json({ student: null });
 
-    res.json({ student });
+    res.json({
+      student: {
+        ...student.toObject(),
+        coinBalance: student.coinBalance ?? 0,
+      },
+    });
   } catch {
     res.status(401).json({ student: null });
+  }
+});
+
+// GET /api/v1/students/coins/:id - Get student's coin balance and recent transactions
+router.get("/coins/:id", isStudent, async (req, res) => {
+  try {
+    if (!ensureAuthorizedStudent(req, res)) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid student ID format" });
+    }
+
+    const summary = await getStudentCoinSummary(req.params.id);
+    if (!summary) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    return res.json(summary);
+  } catch (error) {
+    console.error("Error fetching student coin summary:", error);
+    return res.status(500).json({
+      message: "Failed to fetch coin summary",
+      error: error.message,
+    });
+  }
+});
+
+// POST /api/v1/students/revision-tests/:id/complete - Complete a revision test and earn coins once
+router.post("/revision-tests/:id/complete", isStudent, async (req, res) => {
+  try {
+    if (!ensureAuthorizedStudent(req, res)) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid student ID format" });
+    }
+
+    const { testId, score, totalQuestions } = req.body;
+    if (!testId) {
+      return res.status(400).json({ message: "testId is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(testId)) {
+      return res.status(400).json({ message: "Invalid test ID format" });
+    }
+
+    const settings = await getCoinSettings();
+    const idempotencyKey = `quiz:${req.params.id}:${testId}`;
+    const awardResult = await awardCoins({
+      studentId: req.params.id,
+      eventType: "QUIZ_COMPLETE",
+      coins: settings.quizCompleteCoins,
+      metadata: {
+        testId,
+        score,
+        totalQuestions,
+      },
+      idempotencyKey,
+    });
+
+    return res.json({
+      message:
+        awardResult.awarded
+          ? "Quiz completed and coins awarded"
+          : "Quiz already rewarded",
+      status: awardResult.awarded ? "awarded" : "already_awarded",
+      coinBalance: awardResult.coinBalance ?? 0,
+      coinsAwarded: awardResult.awarded ? settings.quizCompleteCoins : 0,
+    });
+  } catch (error) {
+    console.error("Error completing revision test:", error);
+    return res.status(500).json({
+      message: "Failed to complete revision test",
+      error: error.message,
+    });
   }
 });
 
@@ -341,6 +433,26 @@ router.post("/verify-buy/:id", async (req, res) => {
     // Save receipt
     student.receipts.push({ id: receiptId, file: pdfPath });
     await student.save();
+
+    // Non-blocking coin award on purchase success
+    try {
+      const settings = await getCoinSettings();
+      const merchantTransactionId =
+        req.body?.data?.merchantTransactionId || receiptId;
+      await awardCoins({
+        studentId: student._id.toString(),
+        eventType: "PURCHASE_SUCCESS",
+        coins: settings.purchaseSuccessCoins,
+        metadata: {
+          courseId: course._id.toString(),
+          receiptId,
+          merchantTransactionId,
+        },
+        idempotencyKey: `purchase:${student._id}:${course._id}:${merchantTransactionId}`,
+      });
+    } catch (coinError) {
+      console.error("Purchase coin reward failed:", coinError);
+    }
 
     res.redirect("/payment-success"); // Or res.json({ message: "Verified" });
   } catch (err) {

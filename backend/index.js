@@ -86,6 +86,7 @@ import contactFormRoutes from "./routes/contactFormRoutes.js";
 
 //University Course Routes
 import universityCourseRoutes from "./routes/universityCourseRoutes.js";
+import coinRoutes from "./routes/coinRoutes.js";
 
 //App Configuration
 dotenv.config();
@@ -242,6 +243,7 @@ app.use("/api/apply/jobs-external", ExternalJobApplicationRoutes);
 
 //Student Routes
 app.use("/api/v1/students", studentRoutes);
+app.use("/api/coins", coinRoutes);
 
 //New Cart Routes
 app.use("/api/v1/cart", newCartRoutes);

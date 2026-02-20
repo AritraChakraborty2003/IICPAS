@@ -60,7 +60,17 @@ function StudentDashboardContent() {
   const [submitting, setSubmitting] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-  const getCoinsStorageKey = (studentId) => `student_coins_${studentId}`;
+
+  const fetchStudentCoins = async (studentId) => {
+    try {
+      const response = await axios.get(`${API}/api/v1/students/coins/${studentId}`, {
+        withCredentials: true,
+      });
+      setStudentCoins(response.data?.coinBalance ?? 0);
+    } catch (error) {
+      setStudentCoins(0);
+    }
+  };
 
   // Sidebar tabs
   const tabs = [
@@ -115,19 +125,8 @@ function StudentDashboardContent() {
         if (res.data && res.data.student) {
           const currentStudent = res.data.student;
           setStudent(currentStudent);
-
-          if (currentStudent?._id && typeof window !== "undefined") {
-            const storageKey = getCoinsStorageKey(currentStudent._id);
-            const storedCoins = localStorage.getItem(storageKey);
-            const parsedCoins =
-              storedCoins !== null ? Number(storedCoins) : NaN;
-
-            if (Number.isFinite(parsedCoins) && parsedCoins >= 0) {
-              setStudentCoins(parsedCoins);
-            } else {
-              setStudentCoins(0);
-              localStorage.setItem(storageKey, "0");
-            }
+          if (currentStudent?._id) {
+            await fetchStudentCoins(currentStudent._id);
           }
 
           // Update ticket form with student data
@@ -149,6 +148,19 @@ function StudentDashboardContent() {
     };
     fetchStudent();
   }, [router]);
+
+  useEffect(() => {
+    if (!student?._id) return undefined;
+
+    const handleCoinUpdate = () => {
+      fetchStudentCoins(student._id);
+    };
+
+    window.addEventListener("coins:updated", handleCoinUpdate);
+    return () => {
+      window.removeEventListener("coins:updated", handleCoinUpdate);
+    };
+  }, [student?._id]);
 
   // Handle ticket submission
   const handleTicketSubmit = async (e) => {
