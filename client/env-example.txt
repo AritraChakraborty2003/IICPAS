@@ -3,6 +3,7 @@ NEXT_PUBLIC_API_BASE=http://localhost:8080/api
 
 # Razorpay Configuration
 NEXT_PUBLIC_RAZORPAY_KEY_ID=rzp_test_your_key_id_here
+# NOTE: This is public key only. Keep RAZORPAY_KEY_SECRET in backend env only.
 
 # Other configurations
 NEXT_PUBLIC_API_URL=http://localhost:8080
