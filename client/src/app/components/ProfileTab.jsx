@@ -16,8 +16,13 @@ const studentSectionTabs = [
 
 export default function ProfileTab({ onImageUpdated }) {
   const router = useRouter();
-  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  const API =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE?.replace(/\/api\/?$/, "") ||
+    "http://localhost:8080";
+  const API_BASE =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    `${API.replace(/\/+$/, "")}/api`;
   const [activeSection, setActiveSection] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [coursesLoading, setCoursesLoading] = useState(true);
@@ -39,6 +44,15 @@ export default function ProfileTab({ onImageUpdated }) {
   const [imageLoading, setImageLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const getStudentImageUrl = (imagePath) => {
+    if (!imagePath || typeof imagePath !== "string") return "";
+    if (/^https?:\/\//i.test(imagePath)) {
+      return imagePath.replace(/^http:\/\//i, "https://");
+    }
+    const sanitized = imagePath.replace(/\\/g, "/").replace(/^\.\//, "");
+    const normalizedPath = sanitized.startsWith("/") ? sanitized : `/${sanitized}`;
+    return `${API.replace(/\/+$/, "")}${normalizedPath}`;
+  };
 
   // Fetch student data on mount
   useEffect(() => {
@@ -184,33 +198,30 @@ export default function ProfileTab({ onImageUpdated }) {
       const formData = new FormData();
       formData.append("profileImage", profileImage);
 
-      const apiUrl = `${API}/api/v1/students/profile`;
+      const uploadUrl = `${API_BASE.replace(/\/+$/, "")}/v1/students/profile`;
       let responseData = null;
+      let lastError = null;
 
-      try {
-        // Do not set Content-Type manually; browser must attach multipart boundary.
-        const axiosRes = await axios.post(apiUrl, formData, {
-          withCredentials: true,
-        });
-        responseData = axiosRes?.data;
-      } catch (axiosErr) {
-        // Fallback to fetch for environments where axios reports generic network error.
-        const fetchRes = await fetch(apiUrl, {
-          method: "POST",
-          credentials: "include",
-          body: formData,
-        });
-        const fetchData = await fetchRes.json().catch(() => ({}));
-        if (!fetchRes.ok) {
-          throw {
-            response: {
-              data: fetchData,
-              status: fetchRes.status,
-            },
-            message: fetchData?.message || "Upload failed",
-          };
+      for (const method of ["put", "post"]) {
+        try {
+          const axiosRes = await axios({
+            method,
+            url: uploadUrl,
+            data: formData,
+            withCredentials: true,
+            timeout: 30000,
+            headers: { Accept: "application/json" },
+          });
+          responseData = axiosRes?.data;
+          break;
+        } catch (axiosErr) {
+          lastError = axiosErr;
+          const status = axiosErr?.response?.status;
+          const shouldTryNextMethod = status === 404 || status === 405;
+          if (!shouldTryNextMethod || method === "post") {
+            throw axiosErr;
+          }
         }
-        responseData = fetchData;
       }
 
       if (responseData?.student?.image) {
@@ -230,8 +241,19 @@ export default function ProfileTab({ onImageUpdated }) {
       console.error("Image upload error:", err);
       console.error("Error response:", err.response?.data);
       console.error("Error status:", err.response?.status);
+      const serverMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Upload failed";
+      const isNetworkError =
+        err.code === "ERR_NETWORK" ||
+        String(serverMessage).toLowerCase().includes("failed to fetch") ||
+        String(serverMessage).toLowerCase().includes("network error");
       setError(
-        `Failed to upload image: ${err.response?.data?.message || err.message}`
+        isNetworkError
+          ? "Failed to upload image: Network request failed. Check API URL/CORS/HTTPS configuration."
+          : `Failed to upload image: ${serverMessage}`
       );
     } finally {
       setImageLoading(false);
@@ -377,7 +399,7 @@ export default function ProfileTab({ onImageUpdated }) {
                 />
               ) : student.image ? (
                 <img
-                  src={`${API}/${student.image}`}
+                  src={getStudentImageUrl(student.image)}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
