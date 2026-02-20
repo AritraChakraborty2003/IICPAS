@@ -202,6 +202,15 @@ export default function BuyCoursesTab() {
   const [showDiscountOnly, setShowDiscountOnly] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 0 });
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+  const getWishlistIds = (wishlist) =>
+    (Array.isArray(wishlist) ? wishlist : [])
+      .map((item) => {
+        if (!item) return null;
+        if (typeof item === "string") return item;
+        if (typeof item === "object") return item._id || item.id || null;
+        return null;
+      })
+      .filter(Boolean);
 
   const fetchWishlistState = useCallback(async () => {
     try {
@@ -219,7 +228,7 @@ export default function BuyCoursesTab() {
           { withCredentials: true }
         );
 
-        setWishlistCourseIds(wishlistRes.data?.wishlist || []);
+        setWishlistCourseIds(getWishlistIds(wishlistRes.data?.wishlist));
       } else {
         setStudent(null);
         studentRef.current = null;
@@ -489,13 +498,14 @@ export default function BuyCoursesTab() {
       const isLiked = wishlistCourseIds.includes(courseId);
 
       if (isLiked) {
-        await axios.delete(
-          `${API_BASE}/api/v1/students/remove-from-wishlist/${studentId}/${courseId}`,
+        await axios.post(
+          `${API_BASE}/api/v1/students/remove-wishlist/${studentId}`,
+          { courseId },
           { withCredentials: true }
         );
       } else {
         await axios.post(
-          `${API_BASE}/api/v1/students/add-to-wishlist/${studentId}`,
+          `${API_BASE}/api/v1/students/add-wishlist/${studentId}`,
           { courseId },
           { withCredentials: true }
         );

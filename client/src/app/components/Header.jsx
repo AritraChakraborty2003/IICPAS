@@ -212,13 +212,23 @@ export default function Header({ showMarquee = true, topOffset }) {
 
   // Listen for cart update events
   useEffect(() => {
-    const handleCartUpdate = () => {
+    const handleCartUpdate = (event) => {
       fetchStudentAndCart();
+      if (event?.detail?.openDrawer) {
+        setCartDrawer(true);
+      }
+    };
+
+    const handleOpenCartDrawer = () => {
+      fetchStudentAndCart();
+      setCartDrawer(true);
     };
 
     window.addEventListener("cartUpdated", handleCartUpdate);
+    window.addEventListener("openCartDrawer", handleOpenCartDrawer);
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate);
+      window.removeEventListener("openCartDrawer", handleOpenCartDrawer);
     };
   }, []);
 

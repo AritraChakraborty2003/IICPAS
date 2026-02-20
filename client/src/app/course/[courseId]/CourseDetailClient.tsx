@@ -87,6 +87,12 @@ export default function CourseDetailClient({
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+  const notifyCartUpdateAndOpenDrawer = () => {
+    window.dispatchEvent(
+      new CustomEvent("cartUpdated", { detail: { openDrawer: true } })
+    );
+  };
+
   // Check student authentication
   useEffect(() => {
     const checkStudentAuth = async () => {
@@ -124,18 +130,9 @@ export default function CourseDetailClient({
       const result = await addToCart(courseId, sessionType);
       console.log("Add to cart result:", result);
 
-      // Trigger a custom event to update cart in header
-      window.dispatchEvent(new CustomEvent("cartUpdated"));
-
-      // Show appropriate message based on result
-      if (result?.message === "Item already in cart") {
-        alert("This course is already in your cart!");
-      } else {
-        alert("Course added to cart successfully!");
-      }
+      notifyCartUpdateAndOpenDrawer();
     } catch (error: any) {
       console.error("Error adding to cart:", error);
-      alert("Course added to cart successfully!");
     }
   };
 
@@ -882,22 +879,14 @@ export default function CourseDetailClient({
                     pendingCartAction.sessionType
                   );
 
-                  // Trigger a custom event to update cart in header
-                  window.dispatchEvent(new CustomEvent("cartUpdated"));
+                  console.log("Add to cart after login result:", result);
+                  notifyCartUpdateAndOpenDrawer();
 
                   // Clear pending action
                   setPendingCartAction(null);
-
-                  // Show appropriate message based on result
-                  if (result?.message === "Item already in cart") {
-                    alert("This course is already in your cart!");
-                  } else {
-                    alert("Course added to cart successfully!");
-                  }
                 } catch (error: any) {
                   console.error("Error adding to cart after login:", error);
                   setPendingCartAction(null);
-                  alert("Course added to cart successfully!");
                 }
               }
             } catch (error) {
