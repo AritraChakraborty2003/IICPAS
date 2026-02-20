@@ -1283,17 +1283,17 @@ function DigitalHubContent() {
               className={`flex items-center space-x-2 px-4 py-2 rounded-xl border ${
                 isDarkMode
                   ? "bg-slate-900 border-slate-700"
-                  : "bg-white border-stone-300"
+                  : "bg-blue-50 border-blue-200"
               }`}
             >
               <CheckCircle
                 className={`w-5 h-5 ${
-                  isDarkMode ? "text-slate-300" : "text-slate-600"
+                  isDarkMode ? "text-slate-300" : "text-blue-600"
                 }`}
               />
               <h1
                 className={`text-xl font-semibold ${
-                  isDarkMode ? "text-slate-100" : "text-slate-800"
+                  isDarkMode ? "text-slate-100" : "text-blue-900"
                 }`}
               >
                 Digital Hub
@@ -1306,7 +1306,9 @@ function DigitalHubContent() {
             <div className="flex items-center space-x-2">
               <div className="w-32 bg-stone-200 rounded-full h-2">
                 <div
-                  className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    isDarkMode ? "bg-emerald-600" : "bg-blue-600"
+                  }`}
                   style={{ width: `${progress}%` } as React.CSSProperties}
                 ></div>
               </div>
@@ -1317,10 +1319,18 @@ function DigitalHubContent() {
             <div className="relative">
               <button
                 onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
-                className="flex items-center justify-between bg-white text-slate-800 border border-stone-300 px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-sm hover:border-emerald-300 hover:shadow min-w-[160px]"
+                className={`flex items-center justify-between px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-sm hover:shadow min-w-[160px] border ${
+                  isDarkMode
+                    ? "bg-slate-900 border-slate-700 text-slate-100 hover:bg-slate-800"
+                    : "bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100"
+                }`}
               >
                 <div className="flex items-center space-x-3">
-                  <Globe className="w-4 h-4 text-emerald-600" />
+                  <Globe
+                    className={`w-4 h-4 ${
+                      isDarkMode ? "text-emerald-400" : "text-blue-600"
+                    }`}
+                  />
                   <span className="truncate">{selectedLanguage}</span>
                 </div>
                 <ChevronDown
@@ -1336,7 +1346,7 @@ function DigitalHubContent() {
                     <button
                       key={language.code}
                       onClick={() => handleLanguageSelect(language)}
-                      className="w-full text-left px-4 py-3 hover:bg-emerald-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
+                      className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
                     >
                       <span className="text-lg">{language.flag}</span>
                       <span className="font-medium">{language.name}</span>
@@ -1353,13 +1363,13 @@ function DigitalHubContent() {
                 className={`flex items-center justify-between px-4 py-2 rounded-xl font-medium transition-all duration-300 min-w-[200px] border ${
                   isDarkMode
                     ? "bg-slate-900 border-slate-700 text-slate-100 hover:bg-slate-800"
-                    : "bg-white border-stone-300 text-slate-800 hover:bg-stone-100"
+                    : "bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100"
                 }`}
               >
                 <div className="flex items-center space-x-3">
                   <BookOpen
                     className={`w-4 h-4 ${
-                      isDarkMode ? "text-slate-300" : "text-slate-600"
+                      isDarkMode ? "text-slate-300" : "text-blue-600"
                     }`}
                   />
                   <span className="truncate">
@@ -1383,9 +1393,13 @@ function DigitalHubContent() {
                           setChapterDropdownOpen(false);
                           handleChapterSelect(chapter);
                         }}
-                        className="w-full text-left px-4 py-3 hover:bg-emerald-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
-                      >
-                        <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                      className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
+                    >
+                        <div
+                          className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-medium ${
+                            isDarkMode ? "bg-emerald-600" : "bg-amber-500"
+                          }`}
+                        >
                           {index + 1}
                         </div>
                         <span className="font-medium">{chapter.title}</span>
@@ -1405,7 +1419,7 @@ function DigitalHubContent() {
               className={`flex items-center px-3 py-1.5 rounded-full border ${
                 isDarkMode
                   ? "bg-slate-900 border-slate-700 text-slate-200"
-                  : "bg-white border-stone-300 text-slate-700"
+                  : "bg-amber-50 border-amber-300 text-amber-800"
               }`}
             >
               <span className="text-sm font-medium">Points {points}</span>
@@ -1676,7 +1690,7 @@ function DigitalHubContent() {
                 <>
                   <h1
                     className={`text-4xl font-bold mb-8 ${
-                      isDarkMode ? "text-slate-100" : "text-slate-900"
+                      isDarkMode ? "text-slate-100" : "text-blue-700"
                     }`}
                   >
                     {selectedTopic.title}
