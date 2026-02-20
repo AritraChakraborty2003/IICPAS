@@ -97,18 +97,37 @@ const app = express();
 app.set("trust proxy", 1);
 
 // CORS configuration
+const allowedOrigins = new Set([
+  process.env.CLIENT_URL || "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+  "https://www.iicpa.in",
+  "https://iicpa.in",
+]);
 
-app.use(
-  cors({
-    origin: [
-      process.env.CLIENT_URL || "http://localhost:3000",
-      "http://localhost:3001",
-      "http://localhost:3002",
-      "https://www.iicpa.in",
-    ], // your frontend URL
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin(origin, callback) {
+    // Allow non-browser clients (no Origin header)
+    if (!origin) return callback(null, true);
+
+    // Explicit allowlist + any iicpa.in subdomain in production
+    if (
+      allowedOrigins.has(origin) ||
+      /^https:\/\/([a-z0-9-]+\.)?iicpa\.in$/i.test(origin)
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.get("/", (req, res) => {
   res.json({ message: "OK", status: 200 });
