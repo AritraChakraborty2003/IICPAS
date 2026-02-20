@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
@@ -24,7 +25,9 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning={true}>
         <GoogleAnalytics />
         <AuthProvider>
-          <ScrollToTopOnNavigation />
+          <Suspense fallback={null}>
+            <ScrollToTopOnNavigation />
+          </Suspense>
           {children}
           <DeferredGlobalWidgets />
         </AuthProvider>
