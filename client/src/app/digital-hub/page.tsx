@@ -670,6 +670,7 @@ function DigitalHubContent() {
 
     // Add enhanced CSS for Google Translate styling
     const style = document.createElement("style");
+    style.setAttribute("data-google-translate", "true");
     style.textContent = `
       .goog-te-banner-frame {
         display: none !important;
@@ -690,15 +691,15 @@ function DigitalHubContent() {
       .goog-te-gadget {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
         font-size: 14px !important;
-        color: #374151 !important;
+        color: #334155 !important;
       }
       
       .goog-te-gadget-simple {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: none !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
         border-radius: 12px !important;
         padding: 8px 16px !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
         transition: all 0.3s ease !important;
         display: flex !important;
         align-items: center !important;
@@ -707,12 +708,12 @@ function DigitalHubContent() {
       }
       
       .goog-te-gadget-simple:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+        border-color: #10b981 !important;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12) !important;
       }
       
       .goog-te-gadget-simple .goog-te-menu-value {
-        color: white !important;
+        color: #0f172a !important;
         font-weight: 500 !important;
         font-size: 14px !important;
         text-decoration: none !important;
@@ -722,19 +723,19 @@ function DigitalHubContent() {
       }
       
       .goog-te-gadget-simple .goog-te-menu-value span {
-        color: white !important;
+        color: #0f172a !important;
         font-weight: 500 !important;
       }
       
       .goog-te-gadget-simple .goog-te-menu-value span:first-child {
-        color: white !important;
+        color: #0f172a !important;
         font-weight: 500 !important;
       }
       
       /* Custom dropdown arrow */
       .goog-te-gadget-simple .goog-te-menu-value::after {
         content: '▼' !important;
-        color: white !important;
+        color: #10b981 !important;
         font-size: 10px !important;
         margin-left: auto !important;
         transition: transform 0.2s ease !important;
@@ -774,24 +775,17 @@ function DigitalHubContent() {
         display: none !important;
       }
       
-      /* Progress indicator */
-      .goog-te-gadget-simple::before {
-        content: '🌐' !important;
-        font-size: 16px !important;
-        margin-right: 6px !important;
-      }
-      
       /* Enhanced Simple Dropdown Styling */
       .goog-te-combo {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: none !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
         border-radius: 12px !important;
         padding: 10px 16px !important;
-        color: white !important;
+        color: #0f172a !important;
         font-weight: 500 !important;
         font-size: 14px !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
         outline: none !important;
@@ -799,7 +793,7 @@ function DigitalHubContent() {
         appearance: none !important;
         -webkit-appearance: none !important;
         -moz-appearance: none !important;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2310b981' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
         background-repeat: no-repeat !important;
         background-position: right 12px center !important;
         background-size: 16px !important;
@@ -807,13 +801,12 @@ function DigitalHubContent() {
       }
       
       .goog-te-combo:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+        border-color: #10b981 !important;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12) !important;
       }
       
       .goog-te-combo:focus {
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
       }
       
       .goog-te-combo option {
@@ -831,15 +824,15 @@ function DigitalHubContent() {
       
       /* Alternative simple styling for different Google Translate versions */
       .goog-te-gadget .goog-te-combo {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border: none !important;
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
         border-radius: 12px !important;
         padding: 10px 16px !important;
-        color: white !important;
+        color: #0f172a !important;
         font-weight: 500 !important;
         font-size: 14px !important;
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
         outline: none !important;
@@ -847,7 +840,7 @@ function DigitalHubContent() {
         appearance: none !important;
         -webkit-appearance: none !important;
         -moz-appearance: none !important;
-        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2310b981' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e") !important;
         background-repeat: no-repeat !important;
         background-position: right 12px center !important;
         background-size: 16px !important;
@@ -855,13 +848,12 @@ function DigitalHubContent() {
       }
       
       .goog-te-gadget .goog-te-combo:hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%) !important;
+        border-color: #10b981 !important;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12) !important;
       }
       
       .goog-te-gadget .goog-te-combo:focus {
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3) !important;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
       }
       
       .goog-te-gadget .goog-te-combo option {
@@ -1261,20 +1253,20 @@ function DigitalHubContent() {
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${
-        isDarkMode ? "bg-gray-900 text-white" : "bg-white text-gray-900"
+        isDarkMode ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-slate-900"
       }`}
     >
       {/* Enhanced Header with Chapters Dropdown */}
       <div
         className={`border-b transition-colors duration-300 ${
           isDarkMode
-            ? "border-gray-700 bg-gray-800"
-            : "border-gray-200 bg-white"
-        } p-4 shadow-sm`}
+            ? "border-slate-800 bg-slate-900/95"
+            : "border-stone-200 bg-white/90"
+        } p-4 shadow-sm backdrop-blur`}
       >
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 bg-green-500 px-3 py-2 rounded-lg">
+            <div className="flex items-center space-x-2 bg-emerald-600 px-4 py-2 rounded-xl shadow-sm">
               <CheckCircle className="w-5 h-5 text-white" />
               <h1 className="text-xl font-semibold text-white">Digital Hub</h1>
             </div>
@@ -1283,9 +1275,9 @@ function DigitalHubContent() {
           <div className="flex items-center space-x-6">
             {/* Progress Bar */}
             <div className="flex items-center space-x-2">
-              <div className="w-32 bg-gray-200 rounded-full h-2">
+              <div className="w-32 bg-stone-200 rounded-full h-2">
                 <div
-                  className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all duration-300"
+                  className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
                   style={{ width: `${progress}%` } as React.CSSProperties}
                 ></div>
               </div>
@@ -1296,10 +1288,10 @@ function DigitalHubContent() {
             <div className="relative">
               <button
                 onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
-                className="flex items-center justify-between bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-md hover:shadow-lg min-w-[160px]"
+                className="flex items-center justify-between bg-white text-slate-800 border border-stone-300 px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-sm hover:border-emerald-300 hover:shadow min-w-[160px]"
               >
                 <div className="flex items-center space-x-3">
-                  <Globe className="w-4 h-4 text-white" />
+                  <Globe className="w-4 h-4 text-emerald-600" />
                   <span className="truncate">{selectedLanguage}</span>
                 </div>
                 <ChevronDown
@@ -1310,12 +1302,12 @@ function DigitalHubContent() {
               </button>
 
               {languageDropdownOpen && (
-                <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-lg shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 w-full bg-white border border-stone-200 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
                   {languages.map((language) => (
                     <button
                       key={language.code}
                       onClick={() => handleLanguageSelect(language)}
-                      className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-gray-700 border-b border-gray-200 last:border-b-0 flex items-center space-x-3"
+                      className="w-full text-left px-4 py-3 hover:bg-emerald-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
                     >
                       <span className="text-lg">{language.flag}</span>
                       <span className="font-medium">{language.name}</span>
@@ -1329,7 +1321,7 @@ function DigitalHubContent() {
             <div className="relative">
               <button
                 onClick={() => setChapterDropdownOpen(!chapterDropdownOpen)}
-                className="flex items-center justify-between bg-gradient-to-r from-green-500 to-green-600 text-white px-4 py-2 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-md hover:shadow-lg min-w-[200px]"
+                className="flex items-center justify-between bg-emerald-600 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-sm hover:bg-emerald-700 min-w-[200px]"
               >
                 <div className="flex items-center space-x-3">
                   <BookOpen className="w-4 h-4 text-white" />
@@ -1345,7 +1337,7 @@ function DigitalHubContent() {
               </button>
 
               {chapterDropdownOpen && (
-                <div className="absolute top-full left-0 w-full bg-white border border-gray-300 rounded-lg shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
+                <div className="absolute top-full left-0 w-full bg-white border border-stone-200 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
                   {courseChapters.length > 0 ? (
                     courseChapters.map((chapter: ChapterData, index) => (
                       <button
@@ -1354,9 +1346,9 @@ function DigitalHubContent() {
                           setChapterDropdownOpen(false);
                           handleChapterSelect(chapter);
                         }}
-                        className="w-full text-left px-4 py-3 hover:bg-green-50 transition-colors text-gray-700 border-b border-gray-200 last:border-b-0 flex items-center space-x-3"
+                        className="w-full text-left px-4 py-3 hover:bg-emerald-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
                       >
-                        <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-xs font-medium">
+                        <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
                           {index + 1}
                         </div>
                         <span className="font-medium">{chapter.title}</span>
@@ -1372,9 +1364,9 @@ function DigitalHubContent() {
             </div>
 
             {/* Points Badge */}
-            <div className="flex items-center space-x-1 bg-yellow-100 px-3 py-1 rounded-full">
-              <div className="w-4 h-4 bg-yellow-400 rounded-full"></div>
-              <span className="text-sm font-semibold text-yellow-800">
+            <div className="flex items-center space-x-1 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
+              <div className="w-4 h-4 bg-amber-400 rounded-full"></div>
+              <span className="text-sm font-semibold text-amber-800">
                 {points}
               </span>
             </div>
@@ -1387,8 +1379,8 @@ function DigitalHubContent() {
         <div
           className={`w-16 transition-colors duration-300 ${
             isDarkMode
-              ? "bg-orange-500 border-orange-400"
-              : "bg-blue-50 border-blue-200"
+              ? "bg-slate-900 border-slate-800"
+              : "bg-stone-100 border-stone-200"
           } border-r min-h-screen flex flex-col items-center py-4`}
         >
           {/* Navigation Icons */}
@@ -1396,26 +1388,26 @@ function DigitalHubContent() {
             <button
               onClick={() => setHamburgerOpen(!hamburgerOpen)}
               className={`p-2 rounded-lg transition-colors ${
-                isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
+                isDarkMode ? "hover:bg-slate-800" : "hover:bg-stone-200"
               }`}
               aria-label="Toggle menu"
             >
               <Menu
                 className={`w-5 h-5 ${
-                  isDarkMode ? "text-white" : "text-black"
+                  isDarkMode ? "text-slate-200" : "text-slate-700"
                 }`}
               />
             </button>
             <button
               onClick={() => router.push("/student-dashboard")}
               className={`p-2 rounded-lg transition-colors ${
-                isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
+                isDarkMode ? "hover:bg-slate-800" : "hover:bg-stone-200"
               }`}
               aria-label="Go to dashboard"
             >
               <ArrowLeft
                 className={`w-5 h-5 ${
-                  isDarkMode ? "text-white" : "text-black"
+                  isDarkMode ? "text-slate-200" : "text-slate-700"
                 }`}
               />
             </button>
@@ -1423,17 +1415,17 @@ function DigitalHubContent() {
               onClick={toggleDarkMode}
               className={`p-2 rounded-lg transition-colors ${
                 isDarkMode
-                  ? "hover:bg-gray-700 bg-gray-700"
-                  : "hover:bg-gray-200"
+                  ? "hover:bg-slate-800 bg-slate-800"
+                  : "hover:bg-stone-200"
               }`}
               title={
                 isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"
               }
             >
               {isDarkMode ? (
-                <Sun className="w-5 h-5 text-white" />
+                <Sun className="w-5 h-5 text-slate-100" />
               ) : (
-                <Moon className="w-5 h-5 text-black" />
+                <Moon className="w-5 h-5 text-slate-700" />
               )}
             </button>
           </div>
@@ -1443,23 +1435,23 @@ function DigitalHubContent() {
             <button
               onClick={() => setIsModalOpen(true)}
               className={`p-2 rounded-lg transition-colors ${
-                isDarkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
+                isDarkMode ? "hover:bg-slate-800" : "hover:bg-stone-200"
               }`}
               title="Submit a ticket"
             >
               <AlertTriangle
                 className={`w-5 h-5 ${
-                  isDarkMode ? "text-white" : "text-black"
+                  isDarkMode ? "text-slate-200" : "text-slate-700"
                 }`}
               />
             </button>
             <button
-              className="p-2 rounded-lg hover:bg-gray-200 transition-colors"
+              className="p-2 rounded-lg hover:bg-stone-200 transition-colors"
               aria-label="Go back"
             >
               <ArrowLeft
                 className={`w-5 h-5 ${
-                  isDarkMode ? "text-white" : "text-black"
+                  isDarkMode ? "text-slate-200" : "text-slate-700"
                 }`}
               />
             </button>
@@ -1471,26 +1463,28 @@ function DigitalHubContent() {
           className={`transition-all duration-300 ease-in-out ${
             hamburgerOpen ? "w-80" : "w-0"
           } overflow-hidden ${
-            isDarkMode ? "bg-white border-gray-600" : "bg-white border-gray-200"
+            isDarkMode
+              ? "bg-slate-900 border-slate-800"
+              : "bg-white border-stone-200"
           } border-r`}
         >
           <div className="w-80 p-4">
             <div className="flex items-center justify-between mb-4">
               <h2
                 className={`text-lg font-semibold ${
-                  isDarkMode ? "text-black" : "text-gray-800"
+                  isDarkMode ? "text-slate-100" : "text-slate-800"
                 }`}
               >
                 Topics
               </h2>
               <button
                 onClick={() => setHamburgerOpen(false)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
                 aria-label="Close menu"
               >
                 <X
                   className={`w-5 h-5 ${
-                    isDarkMode ? "text-black" : "text-gray-500"
+                    isDarkMode ? "text-slate-300" : "text-slate-500"
                   }`}
                 />
               </button>
@@ -1501,7 +1495,7 @@ function DigitalHubContent() {
                   {/* Topics Section */}
                   {topics.length > 0 && (
                     <>
-                      <h3 className="text-sm font-semibold text-gray-600 mb-2">
+                      <h3 className="text-sm font-semibold text-slate-500 mb-2">
                         Topics
                       </h3>
                       {(isDemo ? topics.slice(0, 1) : topics).map(
@@ -1512,14 +1506,14 @@ function DigitalHubContent() {
                               setHamburgerOpen(false);
                               handleTopicSelect(topic);
                             }}
-                            className={`w-full text-left p-3 rounded-lg hover:bg-green-50 hover:text-black transition-colors border border-gray-600 ${
+                            className={`w-full text-left p-3 rounded-xl hover:bg-emerald-50 hover:text-slate-900 transition-colors border border-stone-200 ${
                               selectedTopic?._id === topic._id
-                                ? "bg-gray-100 border-gray-600"
+                                ? "bg-emerald-50 border-emerald-300"
                                 : ""
-                            } ${isDarkMode ? "text-black" : "text-gray-700"}`}
+                            } ${isDarkMode ? "text-slate-100" : "text-slate-700"}`}
                           >
                             <div className="flex items-center space-x-3">
-                              <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                              <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
                                 {index + 1}
                               </div>
                               <span className="font-medium">{topic.title}</span>
@@ -1533,7 +1527,7 @@ function DigitalHubContent() {
                   {/* Case Studies Section */}
                   {caseStudies.length > 0 && (
                     <>
-                      <h3 className="text-sm font-semibold text-gray-600 mb-2 mt-4">
+                      <h3 className="text-sm font-semibold text-slate-500 mb-2 mt-4">
                         Simulations
                       </h3>
                       {caseStudies
@@ -1545,14 +1539,14 @@ function DigitalHubContent() {
                               setHamburgerOpen(false);
                               handleCaseStudySelect(caseStudy);
                             }}
-                            className={`w-full text-left p-3 rounded-lg hover:bg-blue-50 hover:text-black transition-colors border border-gray-600 ${
+                            className={`w-full text-left p-3 rounded-xl hover:bg-emerald-50 hover:text-slate-900 transition-colors border border-stone-200 ${
                               selectedCaseStudy?._id === caseStudy._id
-                                ? "bg-gray-100 border-gray-600"
+                                ? "bg-emerald-50 border-emerald-300"
                                 : ""
-                            } ${isDarkMode ? "text-black" : "text-gray-700"}`}
+                            } ${isDarkMode ? "text-slate-100" : "text-slate-700"}`}
                           >
                             <div className="flex items-center space-x-3">
-                              <div className="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                              <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
                                 S{index + 1}
                               </div>
                               <span className="font-medium">
@@ -1567,7 +1561,7 @@ function DigitalHubContent() {
                   {/* Assignments Section */}
                   {assignments.length > 0 && (
                     <>
-                      <h3 className="text-sm font-semibold text-gray-600 mb-2 mt-4">
+                      <h3 className="text-sm font-semibold text-slate-500 mb-2 mt-4">
                         Assessments
                       </h3>
                       {assignments
@@ -1579,14 +1573,14 @@ function DigitalHubContent() {
                               setHamburgerOpen(false);
                               handleAssignmentSelect(assignment);
                             }}
-                            className={`w-full text-left p-3 rounded-lg hover:bg-purple-50 hover:text-black transition-colors border border-gray-600 ${
+                            className={`w-full text-left p-3 rounded-xl hover:bg-emerald-50 hover:text-slate-900 transition-colors border border-stone-200 ${
                               selectedAssignment?._id === assignment._id
-                                ? "bg-gray-100 border-gray-600"
+                                ? "bg-emerald-50 border-emerald-300"
                                 : ""
-                            } ${isDarkMode ? "text-black" : "text-gray-700"}`}
+                            } ${isDarkMode ? "text-slate-100" : "text-slate-700"}`}
                           >
                             <div className="flex items-center space-x-3">
-                              <div className="w-6 h-6 bg-purple-500 text-white rounded-full flex items-center justify-center text-sm font-medium">
+                              <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
                                 A{index + 1}
                               </div>
                               <span className="font-medium">
@@ -1622,7 +1616,7 @@ function DigitalHubContent() {
         {/* Main Content */}
         <div
           className={`flex-1 p-8 transition-colors duration-300 ${
-            isDarkMode ? "bg-gray-900" : "bg-white"
+            isDarkMode ? "bg-slate-950" : "bg-stone-50"
           }`}
         >
           <div className="w-full">
@@ -1636,10 +1630,10 @@ function DigitalHubContent() {
                 </div>
               ) : selectedTopic ? (
                 <>
-                  <h1 className="text-4xl font-bold text-green-600 mb-8">
+                  <h1 className="text-4xl font-bold text-slate-900 mb-8">
                     {selectedTopic.title}
                     {isDemo && (
-                      <span className="ml-4 text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full">
+                      <span className="ml-4 text-sm bg-amber-100 text-amber-800 px-3 py-1 rounded-full border border-amber-200">
                         DEMO MODE
                       </span>
                     )}
@@ -1647,20 +1641,21 @@ function DigitalHubContent() {
 
                   {/* Demo Limit Banner */}
                   {isDemo && showDemoLimit && (
-                    <div className="mb-6 p-4 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg">
+                    <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
-                            <span className="text-yellow-800 font-bold text-sm">
+                          <div className="w-8 h-8 bg-amber-300 rounded-full flex items-center justify-center">
+                            <span className="text-amber-900 font-bold text-sm">
                               !
                             </span>
                           </div>
                           <div>
-                            <h3 className="text-lg font-semibold text-yellow-800">
+                            <h3 className="text-lg font-semibold text-amber-900">
                               Demo Content - Page {currentPage} of {totalPages}
                             </h3>
-                            <p className="text-yellow-700 text-sm">
-                              You're viewing a preview of this course content.
+                            <p className="text-amber-800 text-sm">
+                              You&apos;re viewing a preview of this course
+                              content.
                               {totalPages > 1 &&
                                 ` Only the first ${totalPages} pages are available in demo mode.`}
                             </p>
@@ -1668,7 +1663,7 @@ function DigitalHubContent() {
                         </div>
                         <button
                           onClick={() => router.push("/student-login")}
-                          className="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-md hover:shadow-lg"
+                          className="bg-emerald-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-emerald-700 transition-all duration-300 shadow-sm hover:shadow"
                         >
                           Get Full Access
                         </button>
@@ -1676,7 +1671,7 @@ function DigitalHubContent() {
                     </div>
                   )}
 
-                  <div className="text-lg leading-relaxed bg-white border border-gray-200 rounded-lg p-8 shadow-sm text-gray-900">
+                  <div className="text-lg leading-relaxed bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-slate-900">
                     <div
                       dangerouslySetInnerHTML={{
                         __html: topicContent,
@@ -1704,7 +1699,7 @@ function DigitalHubContent() {
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                                 currentPage === 1
                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg"
+                                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
                               }`}
                             >
                               ← Previous
@@ -1724,8 +1719,8 @@ function DigitalHubContent() {
                                   }}
                                   className={`w-8 h-8 rounded-full font-medium transition-all duration-300 ${
                                     currentPage === i + 1
-                                      ? "bg-blue-500 text-white shadow-md"
-                                      : "bg-gray-200 text-gray-600 hover:bg-gray-300"
+                                      ? "bg-emerald-600 text-white shadow-sm"
+                                      : "bg-stone-200 text-slate-700 hover:bg-stone-300"
                                   }`}
                                 >
                                   {i + 1}
@@ -1751,7 +1746,7 @@ function DigitalHubContent() {
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                                 !isDemo && currentPage === totalPages
                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                  : "bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg"
+                                  : "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
                               }`}
                             >
                               {isDemo ? "Purchase Course →" : "Next →"}
@@ -1766,7 +1761,7 @@ function DigitalHubContent() {
                               // Redirect to course purchase or payment page
                               router.push("/course");
                             }}
-                            className="px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg font-semibold hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-md hover:shadow-lg text-lg"
+                            className="px-8 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-all duration-300 shadow-sm hover:shadow text-lg"
                           >
                             💳 Subscribe Full Course
                           </button>
@@ -1864,9 +1859,9 @@ function DigitalHubContent() {
                 </>
               ) : selectedCaseStudy ? (
                 <>
-                  <div className="text-lg leading-relaxed bg-white border border-gray-200 rounded-lg p-8 shadow-sm text-gray-900">
+                  <div className="text-lg leading-relaxed bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-slate-900">
                     <div className="mb-6">
-                      <p className="text-gray-700">
+                      <p className="text-slate-700">
                         {selectedCaseStudy.description}
                       </p>
                     </div>
@@ -1874,8 +1869,8 @@ function DigitalHubContent() {
                     {/* Task Instructions */}
                     {selectedCaseStudy.tasks &&
                       selectedCaseStudy.tasks.length > 0 && (
-                        <div className="mb-8 p-6 bg-pink-50 border border-pink-200 rounded-lg">
-                          <p className="text-pink-700">
+                        <div className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-xl">
+                          <p className="text-amber-800">
                             {selectedCaseStudy.tasks[0].instructions}
                           </p>
                         </div>
@@ -1889,12 +1884,12 @@ function DigitalHubContent() {
                           (simulation: Simulation, index: number) => (
                             <div
                               key={simulation._id}
-                              className="bg-blue-50 border border-blue-200 rounded-lg p-6"
+                              className="bg-stone-50 border border-stone-200 rounded-lg p-6"
                             >
-                              <h3 className="text-lg font-semibold text-blue-800 mb-4">
+                              <h3 className="text-lg font-semibold text-slate-800 mb-4">
                                 {simulation.title}
                               </h3>
-                              <p className="text-blue-700 mb-4">
+                              <p className="text-slate-700 mb-4">
                                 {simulation.description}
                               </p>
 
@@ -1937,11 +1932,11 @@ function DigitalHubContent() {
                         )
                       ) : (
                         /* Mock Simulation when no simulations exist */
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                          <h3 className="text-lg font-semibold text-blue-800 mb-4">
+                        <div className="bg-stone-50 border border-stone-200 rounded-lg p-6">
+                          <h3 className="text-lg font-semibold text-slate-800 mb-4">
                             Mock Simulation
                           </h3>
-                          <p className="text-blue-700 mb-4">
+                          <p className="text-slate-700 mb-4">
                             This is a mock simulation to demonstrate the
                             AccountingExperimentCard component.
                           </p>
@@ -1979,56 +1974,16 @@ function DigitalHubContent() {
                       )}
                     </div>
 
-                    {/* Debug: Always show AccountingExperimentCard */}
-                    <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <h3 className="text-lg font-semibold text-yellow-800 mb-4">
-                        🚀 Debug: AccountingExperimentCard Test
-                      </h3>
-                      <p className="text-yellow-700 mb-4">
-                        This section always shows the AccountingExperimentCard
-                        component for testing.
-                      </p>
-                      <AccountingExperimentCard
-                        experimentNumber={999}
-                        statement="Debug transaction: Cash sale of goods worth Rs.50000 to Mr. Test Customer."
-                        correctEntries={[
-                          {
-                            id: "debug1",
-                            date: "01/01/2025",
-                            type: "Debit",
-                            particulars: "Cash A/c",
-                            debit: "50000",
-                            credit: "",
-                          },
-                          {
-                            id: "debug2",
-                            date: "01/01/2025",
-                            type: "Credit",
-                            particulars: "Sales A/c",
-                            debit: "",
-                            credit: "50000",
-                          },
-                        ]}
-                        onComplete={(isCorrect) => {
-                          console.log("Debug experiment completed:", isCorrect);
-                          alert(
-                            `Debug experiment completed: ${
-                              isCorrect ? "Correct!" : "Incorrect!"
-                            }`
-                          );
-                        }}
-                      />
-                    </div>
                   </div>
                 </>
               ) : selectedAssignment ? (
                 <>
-                  <h1 className="text-4xl font-bold text-purple-600 mb-8">
+                  <h1 className="text-4xl font-bold text-emerald-600 mb-8">
                     {selectedAssignment.title}
                   </h1>
-                  <div className="text-lg leading-relaxed bg-white border border-gray-200 rounded-lg p-8 shadow-sm text-gray-900">
+                  <div className="text-lg leading-relaxed bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-slate-900">
                     <div className="mb-6">
-                      <p className="text-gray-700">
+                      <p className="text-slate-700">
                         {selectedAssignment.description}
                       </p>
                     </div>
@@ -2037,19 +1992,19 @@ function DigitalHubContent() {
                     {selectedAssignment.tasks &&
                       selectedAssignment.tasks.length > 0 && (
                         <div className="mb-8">
-                          <h3 className="text-xl font-semibold text-purple-800 mb-4">
+                          <h3 className="text-xl font-semibold text-emerald-800 mb-4">
                             Tasks ({selectedAssignment.tasks.length})
                           </h3>
                           <div className="space-y-4">
                             {selectedAssignment.tasks.map((task, index) => (
                               <div
                                 key={task._id || index}
-                                className="p-6 bg-purple-50 border border-purple-200 rounded-lg"
+                                className="p-6 bg-emerald-50 border border-emerald-200 rounded-lg"
                               >
-                                <h4 className="text-lg font-semibold text-purple-800 mb-2">
+                                <h4 className="text-lg font-semibold text-emerald-800 mb-2">
                                   Task {index + 1}: {task.taskName}
                                 </h4>
-                                <p className="text-purple-700">
+                                <p className="text-emerald-700">
                                   {task.instructions}
                                 </p>
                               </div>
@@ -2062,7 +2017,7 @@ function DigitalHubContent() {
                     {selectedAssignment.content &&
                       selectedAssignment.content.length > 0 && (
                         <div className="mb-8">
-                          <h3 className="text-xl font-semibold text-purple-800 mb-4">
+                          <h3 className="text-xl font-semibold text-emerald-800 mb-4">
                             Content ({selectedAssignment.content.length})
                           </h3>
                           <div className="space-y-4">
@@ -2070,9 +2025,9 @@ function DigitalHubContent() {
                               (content, index) => (
                                 <div
                                   key={content._id || index}
-                                  className="p-6 bg-blue-50 border border-blue-200 rounded-lg"
+                                  className="p-6 bg-stone-50 border border-stone-200 rounded-lg"
                                 >
-                                  <h4 className="text-lg font-semibold text-blue-800 mb-2">
+                                  <h4 className="text-lg font-semibold text-slate-800 mb-2">
                                     Content {index + 1} - {content.type}
                                   </h4>
                                   {content.type === "video" &&
@@ -2093,14 +2048,14 @@ function DigitalHubContent() {
                                     )}
                                   {content.type === "text" &&
                                     content.textContent && (
-                                      <div className="text-blue-700 whitespace-pre-wrap">
+                                      <div className="text-slate-700 whitespace-pre-wrap">
                                         {content.textContent}
                                       </div>
                                     )}
                                   {content.type === "rich" &&
                                     content.richTextContent && (
                                       <div
-                                        className="text-blue-700"
+                                        className="text-slate-700"
                                         dangerouslySetInnerHTML={{
                                           __html: content.richTextContent,
                                         }}
@@ -2117,7 +2072,7 @@ function DigitalHubContent() {
                     {selectedAssignment.simulations &&
                       selectedAssignment.simulations.length > 0 && (
                         <div className="mb-8">
-                          <h3 className="text-xl font-semibold text-purple-800 mb-4">
+                          <h3 className="text-xl font-semibold text-emerald-800 mb-4">
                             Simulations ({selectedAssignment.simulations.length}
                             )
                           </h3>
@@ -2163,18 +2118,18 @@ function DigitalHubContent() {
                           (questionSet: QuestionSet, index: number) => (
                             <div
                               key={questionSet._id}
-                              className="bg-purple-50 border border-purple-200 rounded-lg p-6"
+                              className="bg-emerald-50 border border-emerald-200 rounded-lg p-6"
                             >
-                              <h3 className="text-lg font-semibold text-purple-800 mb-4">
+                              <h3 className="text-lg font-semibold text-emerald-800 mb-4">
                                 {questionSet.name}
                               </h3>
-                              <p className="text-purple-700 mb-4">
+                              <p className="text-emerald-700 mb-4">
                                 {questionSet.description}
                               </p>
 
                               {/* Dynamic Questions */}
                               <div className="bg-white border border-gray-200 rounded-lg p-6">
-                                <h4 className="text-lg font-semibold text-purple-800 mb-6">
+                                <h4 className="text-lg font-semibold text-emerald-800 mb-6">
                                   Assessment Questions
                                 </h4>
 
@@ -2205,7 +2160,7 @@ function DigitalHubContent() {
                                                   >
                                                     <input
                                                       type="checkbox"
-                                                      className="w-4 h-4 text-purple-600 rounded"
+                                                      className="w-4 h-4 text-emerald-600 rounded"
                                                     />
                                                     <span className="text-gray-700">
                                                       {option}
@@ -2215,8 +2170,8 @@ function DigitalHubContent() {
                                               )}
                                           </div>
                                           {question.explanation && (
-                                            <div className="mt-3 p-3 bg-blue-50 rounded border-l-4 border-blue-400">
-                                              <p className="text-sm text-blue-800">
+                                            <div className="mt-3 p-3 bg-stone-50 rounded border-l-4 border-emerald-400">
+                                              <p className="text-sm text-slate-800">
                                                 <strong>Explanation:</strong>{" "}
                                                 {question.explanation}
                                               </p>
@@ -2227,43 +2182,43 @@ function DigitalHubContent() {
                                     )}
 
                                     {/* Question Set Info */}
-                                    <div className="mt-6 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                                    <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
                                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                                         {questionSet.totalQuestions && (
                                           <div>
-                                            <span className="font-semibold text-purple-800">
+                                            <span className="font-semibold text-emerald-800">
                                               Total Questions:
                                             </span>
-                                            <span className="ml-2 text-purple-700">
+                                            <span className="ml-2 text-emerald-700">
                                               {questionSet.totalQuestions}
                                             </span>
                                           </div>
                                         )}
                                         {questionSet.timeLimit && (
                                           <div>
-                                            <span className="font-semibold text-purple-800">
+                                            <span className="font-semibold text-emerald-800">
                                               Time Limit:
                                             </span>
-                                            <span className="ml-2 text-purple-700">
+                                            <span className="ml-2 text-emerald-700">
                                               {questionSet.timeLimit} minutes
                                             </span>
                                           </div>
                                         )}
                                         {questionSet.passingScore && (
                                           <div>
-                                            <span className="font-semibold text-purple-800">
+                                            <span className="font-semibold text-emerald-800">
                                               Passing Score:
                                             </span>
-                                            <span className="ml-2 text-purple-700">
+                                            <span className="ml-2 text-emerald-700">
                                               {questionSet.passingScore}%
                                             </span>
                                           </div>
                                         )}
                                         <div>
-                                          <span className="font-semibold text-purple-800">
+                                          <span className="font-semibold text-emerald-800">
                                             Questions:
                                           </span>
-                                          <span className="ml-2 text-purple-700">
+                                          <span className="ml-2 text-emerald-700">
                                             {questionSet.questions.length}
                                           </span>
                                         </div>
@@ -2272,7 +2227,7 @@ function DigitalHubContent() {
 
                                     {/* Submit Button */}
                                     <div className="text-center mt-6">
-                                      <button className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                                      <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
                                         Submit Assessment
                                       </button>
                                     </div>
@@ -2296,7 +2251,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Cash
@@ -2305,7 +2260,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Party
@@ -2314,7 +2269,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Bank
@@ -2323,7 +2278,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         None of the above
@@ -2342,7 +2297,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Equipment (Debit) & Cash (Credit)
@@ -2351,7 +2306,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Equipment (Debit) & Accounts Payable
@@ -2361,7 +2316,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Cash (Debit) & Equipment (Credit)
@@ -2370,7 +2325,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Accounts Payable (Debit) & Equipment
@@ -2390,7 +2345,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Salary Advance (Debit) & Cash (Credit)
@@ -2399,7 +2354,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Cash (Debit) & Salary Advance (Credit)
@@ -2408,7 +2363,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Salary Expense (Debit) & Cash (Credit)
@@ -2417,7 +2372,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Employee Advance (Debit) & Bank (Credit)
@@ -2437,7 +2392,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Service Revenue (Credit) & Cash (Debit)
@@ -2447,7 +2402,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Cash (Credit) & Service Revenue (Debit)
@@ -2456,7 +2411,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Accounts Receivable (Credit) & Service
@@ -2466,7 +2421,7 @@ function DigitalHubContent() {
                                     <label className="flex items-center space-x-3 cursor-pointer">
                                       <input
                                         type="checkbox"
-                                        className="w-4 h-4 text-purple-600 rounded"
+                                        className="w-4 h-4 text-emerald-600 rounded"
                                       />
                                       <span className="text-gray-700">
                                         Service Expense (Debit) & Cash (Credit)
@@ -2477,7 +2432,7 @@ function DigitalHubContent() {
 
                                 {/* Submit Button */}
                                 <div className="text-center">
-                                  <button className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                                  <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
                                     Submit Assessment
                                   </button>
                                 </div>
@@ -2488,7 +2443,7 @@ function DigitalHubContent() {
                       </div>
                     ) : (
                       <div className="bg-white border border-gray-200 rounded-lg p-6">
-                        <h4 className="text-lg font-semibold text-purple-800 mb-6">
+                        <h4 className="text-lg font-semibold text-emerald-800 mb-6">
                           Assessment Questions
                         </h4>
                         <div className="text-center py-8 text-gray-500">
@@ -2656,9 +2611,9 @@ function DigitalHubContent() {
               </div>
 
               <div className="mb-6">
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-4 mb-4">
+                <div className="bg-emerald-50 rounded-lg p-4 mb-4 border border-emerald-100">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-full flex items-center justify-center">
                       <svg
                         className="w-6 h-6 text-white"
                         fill="none"
@@ -2772,7 +2727,7 @@ function DigitalHubContent() {
                     setShowPurchasePopup(false);
                     router.push("/student-login");
                   }}
-                  className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-medium shadow-md hover:shadow-lg"
+                  className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 transition-all duration-300 font-medium shadow-md hover:shadow-lg"
                 >
                   Purchase Now
                 </button>

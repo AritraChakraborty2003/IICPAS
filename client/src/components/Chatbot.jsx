@@ -2,241 +2,196 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  FaRobot,
-  FaTimes,
-  FaPaperPlane,
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-} from "react-icons/fa";
-import { v4 as uuidv4 } from 'uuid';
+import { FaTimes, FaPaperPlane, FaUser, FaEnvelope, FaPhone } from "react-icons/fa";
+import { v4 as uuidv4 } from "uuid";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showSurvey, setShowSurvey] = useState(false);
-  const [surveyData, setSurveyData] = useState({
+  const [leadFormVisible, setLeadFormVisible] = useState(true);
+  const [hasLead, setHasLead] = useState(false);
+  const [leadData, setLeadData] = useState({
     name: "",
     email: "",
     phone: "",
   });
-  const [surveyErrors, setSurveyErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userDetailsProvided, setUserDetailsProvided] = useState(false);
-  const [currentDetailStep, setCurrentDetailStep] = useState(0); // 0: name, 1: email, 2: phone
-  const [collectedDetails, setCollectedDetails] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [leadErrors, setLeadErrors] = useState({});
+  const [isLeadSubmitting, setIsLeadSubmitting] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [chatbotSettings, setChatbotSettings] = useState({
     assistantName: "Neha Singh",
-    profilePicture: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-    welcomeMessage: "Hi! I'm your course assistant. To provide you with personalized assistance, I'll need a few details from you.\n\nLet's start with your **Full Name** please:",
-    status: "Online"
+    profilePicture:
+      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
+    welcomeMessage:
+      "Hi! I'm your course assistant. I'm here to help you with course details, pricing, and enrollment.",
+    status: "Online",
   });
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll function to scroll to bottom of messages
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Simple markdown renderer for basic formatting
   const renderMarkdown = (text) => {
-    if (!text) return '';
-    
-    // Convert **bold text** to <strong>bold text</strong>
-    const boldText = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    
-    // Convert *italic text* to <em>italic text</em>
-    const italicText = boldText.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    
-    // Convert line breaks to <br> tags
-    const withLineBreaks = italicText.replace(/\n/g, '<br>');
-    
-    return withLineBreaks;
+    if (!text) return "";
+
+    const boldText = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    const italicText = boldText.replace(/\*(.*?)\*/g, "<em>$1</em>");
+    return italicText.replace(/\n/g, "<br>");
   };
 
-  // Initialize session ID and save initial message
+  const normalizePhone = (value = "") => value.replace(/\D/g, "");
+
+  const validateLeadForm = () => {
+    const errors = {};
+    const trimmedName = leadData.name.trim();
+    const normalizedPhone = normalizePhone(leadData.phone);
+    const trimmedEmail = leadData.email.trim();
+
+    if (trimmedName.length < 2) {
+      errors.name = "Name must be at least 2 characters";
+    }
+
+    if (!/^\d{10}$/.test(normalizedPhone)) {
+      errors.phone = "Please enter a valid 10-digit phone number";
+    }
+
+    if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      errors.email = "Please enter a valid email address";
+    }
+
+    return errors;
+  };
+
   useEffect(() => {
     if (!sessionId) {
-      const newSessionId = uuidv4();
-      setSessionId(newSessionId);
+      setSessionId(uuidv4());
     }
-  }, []);
+  }, [sessionId]);
 
-  // Fetch chatbot settings on component mount
   useEffect(() => {
     const fetchChatbotSettings = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/chatbot/settings`);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setChatbotSettings(data.settings);
-            // Initialize messages with the welcome message from settings
-            setMessages([
-              {
-                id: 1,
-                text: data.settings.welcomeMessage,
-                isBot: true,
-                timestamp: new Date(),
-              },
-            ]);
-          }
+        const response = await fetch(`${API_BASE}/api/chatbot/settings`);
+        if (!response.ok) return;
+
+        const data = await response.json();
+        if (data.success) {
+          setChatbotSettings(data.settings);
         }
       } catch (error) {
         console.error("Error fetching chatbot settings:", error);
-        // Use default settings if API fails
-        setMessages([
-          {
-            id: 1,
-            text: chatbotSettings.welcomeMessage,
-            isBot: true,
-            timestamp: new Date(),
-          },
-        ]);
       }
     };
 
     fetchChatbotSettings();
   }, []);
 
-  // Save initial bot message when sessionId is ready
-  useEffect(() => {
-    if (sessionId && messages.length === 1) {
-      // Save the initial bot message
-      saveChatMessage(messages[0], {});
-    }
-  }, [sessionId]);
-
-  // Auto-scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Function to save chat message to backend
   const saveChatMessage = async (message, userDetails = null) => {
-    // Don't save if sessionId is not ready
-    if (!sessionId) {
-      console.warn("SessionId not ready, skipping message save");
-      return;
-    }
+    if (!sessionId) return;
 
     try {
-      console.log("Saving chat message:", { sessionId, message, userDetails });
-      
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/chat/save-message`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            sessionId,
-            message,
-            userDetails,
-            userAgent: navigator.userAgent,
-            ipAddress: null // Will be handled by backend
-          }),
-        }
-      );
+      await fetch(`${API_BASE}/api/chat/save-message`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          sessionId,
+          message,
+          userDetails,
+          userAgent: navigator.userAgent,
+          ipAddress: null,
+        }),
+      });
+    } catch (error) {
+      console.error("Error saving chat message:", error);
+    }
+  };
+
+  const startChatWithLead = (details, saveFailed = false) => {
+    const welcomeText =
+      `Hi ${details.name}! I'm your course assistant. How can I help you with our courses today?`;
+
+    const botMessage = {
+      id: Date.now(),
+      text: welcomeText,
+      isBot: true,
+      timestamp: new Date(),
+    };
+
+    setHasLead(true);
+    setLeadFormVisible(false);
+    setMessages((prev) => (prev.length ? prev : [botMessage]));
+
+    if (messages.length === 0) {
+      saveChatMessage(botMessage, details);
+    }
+
+    if (saveFailed) {
+      console.warn("Lead save failed, chat unlocked with local lead data.");
+    }
+  };
+
+  const handleLeadInputChange = (field, value) => {
+    setLeadData((prev) => ({ ...prev, [field]: value }));
+    if (leadErrors[field]) {
+      setLeadErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  const handleLeadSubmit = async (e) => {
+    e.preventDefault();
+
+    const errors = validateLeadForm();
+    setLeadErrors(errors);
+
+    if (Object.keys(errors).length > 0) return;
+
+    const preparedLead = {
+      name: leadData.name.trim(),
+      phone: normalizePhone(leadData.phone),
+      email: leadData.email.trim(),
+    };
+
+    setIsLeadSubmitting(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/v1/chatbot-leads`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...preparedLead,
+          source: "chatbot",
+          sessionId,
+          message: "Lead captured from chatbot pre-chat form",
+        }),
+      });
 
       if (!response.ok) {
-        console.error("Failed to save chat message. Status:", response.status);
         const responseText = await response.text();
-        console.error("Response:", responseText);
-      } else {
-        console.log("✅ Chat message saved successfully");
+        throw new Error(responseText || "Failed to save chatbot lead");
       }
+
+      setLeadData(preparedLead);
+      startChatWithLead(preparedLead, false);
     } catch (error) {
-      console.error("❌ Error saving chat message:", error);
+      console.error("Failed to save chatbot lead:", error);
+      setLeadData(preparedLead);
+      startChatWithLead(preparedLead, true);
+    } finally {
+      setIsLeadSubmitting(false);
     }
   };
-
-  // Extract single detail based on current step
-  const extractSingleDetail = (message, step) => {
-    const trimmedMessage = message.trim();
-    
-    switch (step) {
-      case 0: // Name
-        // Remove common prefixes and extract name
-        const nameText = trimmedMessage
-          .replace(/^(my name is|i am|name is|i'm|im)\s*/i, '')
-          .replace(/^(hi|hello|hey)\s*/i, '')
-          .trim();
-        
-        // Take first 2-3 words as name
-        const nameWords = nameText.split(/\s+/).filter(word => 
-          word.length > 1 && !/^\d+$/.test(word) && !word.includes('@')
-        );
-        
-        if (nameWords.length >= 2) {
-          return nameWords.slice(0, 2).join(' ');
-        } else if (nameWords.length === 1) {
-          return nameWords[0];
-        }
-        return nameText;
-        
-      case 1: // Email
-        const emailMatch = trimmedMessage.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
-        return emailMatch ? emailMatch[1] : trimmedMessage;
-        
-      case 2: // Phone
-        const phoneMatch = trimmedMessage.match(/(\d{10})/);
-        return phoneMatch ? phoneMatch[1] : trimmedMessage.replace(/\D/g, '');
-        
-      default:
-        return trimmedMessage;
-    }
-  };
-
-  // Validate single detail
-  const validateSingleDetail = (value, step) => {
-    if (!value || !value.trim()) {
-      return false;
-    }
-    
-    switch (step) {
-      case 0: // Name
-        return value.trim().length >= 2;
-      case 1: // Email
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
-      case 2: // Phone
-        return /^[0-9]{10}$/.test(value.replace(/\D/g, ""));
-      default:
-        return false;
-    }
-  };
-
-  // Validation function
-  const validateForm = () => {
-    const errors = {};
-
-    if (!surveyData.name.trim()) {
-      errors.name = "Name is required";
-    }
-
-    if (!surveyData.email.trim()) {
-      errors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(surveyData.email)) {
-      errors.email = "Please enter a valid email address";
-    }
-
-    if (!surveyData.phone.trim()) {
-      errors.phone = "Phone number is required";
-    } else if (!/^[0-9]{10}$/.test(surveyData.phone.replace(/\D/g, ""))) {
-      errors.phone = "Please enter a valid 10-digit phone number";
-    }
-
-    return errors;
-  };
-
 
   const responses = {
     "what courses do you offer?":
@@ -255,8 +210,14 @@ const Chatbot = () => {
       "I'm here to help with course-related questions! You can ask about our courses, pricing, enrollment process, certificates, or any other queries. Feel free to browse the courses on this page or ask me anything!",
   };
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = () => {
+    if (!hasLead || !inputMessage.trim()) return;
+
+    const activeUserDetails = {
+      name: leadData.name,
+      email: leadData.email,
+      phone: leadData.phone,
+    };
 
     const userMessage = {
       id: messages.length + 1,
@@ -266,150 +227,32 @@ const Chatbot = () => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    
-    // Save user message to backend
-    saveChatMessage(userMessage, collectedDetails);
+    saveChatMessage(userMessage, activeUserDetails);
 
-    // Check if user details are still being collected
-    if (!userDetailsProvided) {
-      const extractedValue = extractSingleDetail(inputMessage, currentDetailStep);
-      const isValid = validateSingleDetail(extractedValue, currentDetailStep);
-      
-      if (isValid) {
-        // Update collected details
-        const updatedDetails = { ...collectedDetails };
-        const fieldNames = ['name', 'email', 'phone'];
-        updatedDetails[fieldNames[currentDetailStep]] = extractedValue;
-        setCollectedDetails(updatedDetails);
-        
-        // Move to next step or complete
-        if (currentDetailStep < 2) {
-          // Ask for next detail
-          const nextStep = currentDetailStep + 1;
-          setCurrentDetailStep(nextStep);
-          
-          const nextFieldNames = ['Email Address', 'Phone Number'];
-          const botResponse = {
-            id: messages.length + 2,
-            text: `Great! Thank you for your name. Now, please provide your **${nextFieldNames[nextStep - 1]}**:`,
-            isBot: true,
-            timestamp: new Date(),
-          };
-          
-          setTimeout(() => {
-            setMessages((prev) => [...prev, botResponse]);
-            // Save bot response to backend
-            saveChatMessage(botResponse, collectedDetails);
-          }, 1000);
-        } else {
-          // All details collected, store them
-          setUserDetailsProvided(true);
-          setSurveyData(updatedDetails);
-          
-          // Store in backend
-          try {
-            const response = await fetch(
-              `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/contact`,
-              {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  name: updatedDetails.name,
-                  email: updatedDetails.email,
-                  phone: updatedDetails.phone,
-                  message: "User details provided through chatbot",
-                }),
-              }
-            );
+    const botResponse = {
+      id: messages.length + 2,
+      text: responses[inputMessage.toLowerCase()] || responses.default,
+      isBot: true,
+      timestamp: new Date(),
+    };
 
-            if (response.ok) {
-              const botResponse = {
-                id: messages.length + 2,
-                text: `Perfect! Thank you ${updatedDetails.name}! I've received all your details. Now, how can I help you with our courses?`,
-                isBot: true,
-                timestamp: new Date(),
-              };
-              
-              setTimeout(() => {
-                setMessages((prev) => [...prev, botResponse]);
-                // Save bot response to backend
-                saveChatMessage(botResponse, updatedDetails);
-              }, 1000);
-            } else {
-              throw new Error("Failed to store details");
-            }
-          } catch (error) {
-            console.error("Error storing user details:", error);
-            const botResponse = {
-              id: messages.length + 2,
-              text: "Thank you for your details! Now, how can I help you with our courses?",
-              isBot: true,
-              timestamp: new Date(),
-            };
-            
-            setTimeout(() => {
-              setMessages((prev) => [...prev, botResponse]);
-              // Save bot response to backend
-              saveChatMessage(botResponse, updatedDetails);
-            }, 1000);
-          }
-        }
-      } else {
-        // Invalid input, ask again
-        const fieldNames = ['Full Name', 'Email Address', 'Phone Number'];
-        const currentFieldName = fieldNames[currentDetailStep];
-        
-        let errorMessage = `Please provide a valid **${currentFieldName}**:`;
-        
-        if (currentDetailStep === 1) {
-          errorMessage += "\n\nExample: john@example.com";
-        } else if (currentDetailStep === 2) {
-          errorMessage += "\n\nExample: 9876543210";
-        }
-        
-        const botResponse = {
-          id: messages.length + 2,
-          text: errorMessage,
-          isBot: true,
-          timestamp: new Date(),
-        };
-        
-        setTimeout(() => {
-          setMessages((prev) => [...prev, botResponse]);
-          // Save bot response to backend
-          saveChatMessage(botResponse, collectedDetails);
-        }, 1000);
-      }
-    } else {
-      // User details already provided, handle normal chat
-      const botResponse = {
-        id: messages.length + 2,
-        text: responses[inputMessage.toLowerCase()] || responses.default,
-        isBot: true,
-        timestamp: new Date(),
-      };
-
-      setTimeout(() => {
-        setMessages((prev) => [...prev, botResponse]);
-        // Save bot response to backend
-        saveChatMessage(botResponse, collectedDetails);
-      }, 1000);
-    }
+    setTimeout(() => {
+      setMessages((prev) => [...prev, botResponse]);
+      saveChatMessage(botResponse, activeUserDetails);
+    }, 1000);
 
     setInputMessage("");
   };
 
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
+      e.preventDefault();
       handleSendMessage();
     }
   };
 
   return (
     <>
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -418,17 +261,16 @@ const Chatbot = () => {
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
             className="fixed bottom-20 right-4 z-40 bg-white rounded-2xl shadow-2xl border border-gray-200 w-96 h-[500px] flex flex-col overflow-hidden"
           >
-            {/* Header */}
             <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-white bg-opacity-20 flex items-center justify-center">
-                  <img 
-                    src={chatbotSettings.profilePicture} 
-                    alt="Assistant" 
+                  <img
+                    src={chatbotSettings.profilePicture}
+                    alt="Assistant"
                     className="w-full h-full object-cover"
                     onError={(e) => {
-                      e.target.style.display = 'none';
-                      e.target.nextElementSibling.style.display = 'flex';
+                      e.target.style.display = "none";
+                      e.target.nextElementSibling.style.display = "flex";
                     }}
                   />
                   <FaUser className="text-sm hidden" />
@@ -446,64 +288,137 @@ const Chatbot = () => {
               </button>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
-              {messages.map((message) => (
-                <motion.div
-                  key={message.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`flex ${
-                    message.isBot ? "justify-start" : "justify-end"
-                  }`}
-                >
-                  <div
-                    className={`max-w-[85%] p-4 rounded-2xl ${
-                      message.isBot
-                        ? "bg-gray-100 text-gray-800"
-                        : "bg-green-500 text-white"
-                    }`}
-                  >
-                    <div 
-                      className="text-base leading-relaxed"
-                      dangerouslySetInnerHTML={{ __html: renderMarkdown(message.text) }}
-                    />
-                    <p className="text-xs opacity-70 mt-2">
-                      {message.timestamp.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
+            {leadFormVisible && !hasLead ? (
+              <div className="flex-1 p-6 overflow-y-auto">
+                <div className="bg-gray-100 rounded-2xl p-4 mb-4 text-gray-800 text-sm leading-relaxed">
+                  Hi! I&apos;m your course assistant. Please share your details to start the chat.
+                </div>
 
-            {/* Input */}
-            <div className="p-4 border-t border-gray-200">
-              <div className="flex items-center space-x-2">
-                <input
-                  type="text"
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  placeholder="Ask me anything..."
-                  className="flex-1 border border-gray-300 rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors"
-                >
-                  <FaPaperPlane className="text-xs" />
-                </button>
+                <form className="space-y-4" onSubmit={handleLeadSubmit}>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <FaUser className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="text"
+                        value={leadData.name}
+                        onChange={(e) => handleLeadInputChange("name", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Enter your full name"
+                      />
+                    </div>
+                    {leadErrors.name && (
+                      <p className="text-xs text-red-500 mt-1">{leadErrors.name}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Phone <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <FaPhone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="tel"
+                        value={leadData.phone}
+                        onChange={(e) => handleLeadInputChange("phone", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Enter your 10-digit phone"
+                        maxLength={14}
+                      />
+                    </div>
+                    {leadErrors.phone && (
+                      <p className="text-xs text-red-500 mt-1">{leadErrors.phone}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email (optional)
+                    </label>
+                    <div className="relative">
+                      <FaEnvelope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                      <input
+                        type="email"
+                        value={leadData.email}
+                        onChange={(e) => handleLeadInputChange("email", e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                        placeholder="Enter your email"
+                      />
+                    </div>
+                    {leadErrors.email && (
+                      <p className="text-xs text-red-500 mt-1">{leadErrors.email}</p>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLeadSubmitting}
+                    className="w-full bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white py-2.5 rounded-lg text-sm font-semibold transition-colors"
+                  >
+                    {isLeadSubmitting ? "Starting chat..." : "Start Chat"}
+                  </button>
+                </form>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
+                  {messages.map((message) => (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${message.isBot ? "justify-start" : "justify-end"}`}
+                    >
+                      <div
+                        className={`max-w-[85%] p-4 rounded-2xl ${
+                          message.isBot
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-green-500 text-white"
+                        }`}
+                      >
+                        <div
+                          className="text-base leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: renderMarkdown(message.text) }}
+                        />
+                        <p className="text-xs opacity-70 mt-2">
+                          {message.timestamp.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                <div className="p-4 border-t border-gray-200">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder="Ask me anything..."
+                      className="flex-1 border border-gray-300 rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={handleSendMessage}
+                      className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-full transition-colors"
+                    >
+                      <FaPaperPlane className="text-xs" />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Chat Button - Fixed Position */}
       <div
         className="fixed bottom-4 right-4 z-50"
         style={{
@@ -520,13 +435,13 @@ const Chatbot = () => {
           className="bg-gradient-to-r from-green-500 to-green-600 text-white p-1 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden"
         >
           <div className="w-12 h-12 rounded-full overflow-hidden bg-white bg-opacity-20 flex items-center justify-center">
-            <img 
-              src={chatbotSettings.profilePicture} 
-              alt="Assistant" 
+            <img
+              src={chatbotSettings.profilePicture}
+              alt="Assistant"
               className="w-full h-full object-cover"
               onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.nextElementSibling.style.display = 'flex';
+                e.target.style.display = "none";
+                e.target.nextElementSibling.style.display = "flex";
               }}
             />
             <FaUser className="text-xl hidden" />

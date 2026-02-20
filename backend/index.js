@@ -22,6 +22,7 @@ import JobApplyRoutes from "./routes/JobApplyRoutes.js";
 import alertRoutes from "./routes/alertRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
+import chatbotLeadRoutes from "./routes/chatbotLeadRoutes.js";
 
 //Import Routes For Content
 import testimonialRoutes from "./routes/TestimonialRoutes.js";
@@ -276,6 +277,7 @@ app.use("/api/v1/kit-orders", kitOrderRoutes);
 
 //Teacher Routes
 app.use("/api/v1/teachers", teacherRoutes);
+app.use("/api/v1/chatbot-leads", chatbotLeadRoutes);
 
 // Use employee routes
 app.use("/api/employees", employeeRoutes);

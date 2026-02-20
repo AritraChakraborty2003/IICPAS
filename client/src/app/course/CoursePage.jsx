@@ -61,6 +61,13 @@ export default function CoursePage() {
   const [student, setStudent] = useState(null);
   const [wishlistCourseIds, setWishlistCourseIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [contactSubmitting, setContactSubmitting] = useState(false);
 
   // Define API_BASE at component level
   const API_BASE =
@@ -315,6 +322,44 @@ export default function CoursePage() {
         confirmButtonText: "OK",
         confirmButtonColor: "#d33",
       });
+    }
+  };
+
+  const handleContactChange = (e) => {
+    const { name, value } = e.target;
+    setContactForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    if (contactSubmitting) return;
+
+    try {
+      setContactSubmitting(true);
+      await axios.post(`${API_BASE}/contact`, contactForm);
+      await Swal.fire({
+        title: "Request Sent",
+        text: "Our team will contact you shortly.",
+        icon: "success",
+        confirmButtonColor: "#16a34a",
+      });
+      setContactForm({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+      });
+    } catch (error) {
+      await Swal.fire({
+        title: "Submission Failed",
+        text:
+          error?.response?.data?.error ||
+          "Unable to submit right now. Please try again.",
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+      });
+    } finally {
+      setContactSubmitting(false);
     }
   };
 
@@ -682,34 +727,98 @@ export default function CoursePage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 md:mt-14">
-          <div className="rounded-2xl border border-gray-200 bg-white px-6 py-6 md:px-8 md:py-7 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                Contact Us
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 md:p-8 grid grid-cols-1 lg:grid-cols-5 gap-6 shadow-sm">
+            <div className="lg:col-span-2">
+              <span className="inline-flex items-center rounded-full bg-green-50 text-green-700 px-3 py-1 text-xs font-semibold mb-3">
+                Contact Support
+              </span>
+              <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                Talk To Our Course Advisors
               </h3>
-              <p className="text-gray-600">
-                Need guidance choosing the right course? Talk to our team.
+              <p className="text-gray-600 mb-5">
+                Get personalized guidance on course selection, pricing, and
+                career outcomes.
               </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3 md:justify-end">
-              <a
-                href="tel:+919593330999"
-                className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
-              >
-                +91 9593330999
-              </a>
-              <a
-                href="mailto:iicpaconnect@gmail.com"
-                className="inline-flex items-center rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100 transition"
-              >
-                iicpaconnect@gmail.com
-              </a>
+
+              <div className="space-y-3 mb-6">
+                <a
+                  href="tel:+919593330999"
+                  className="block rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+                >
+                  Call: +91 9593330999
+                </a>
+                <a
+                  href="mailto:iicpaconnect@gmail.com"
+                  className="block rounded-xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition break-all"
+                >
+                  Email: iicpaconnect@gmail.com
+                </a>
+              </div>
+
               <button
                 onClick={() => router.push("/contact")}
-                className="inline-flex items-center rounded-full bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 text-sm font-semibold transition"
+                className="inline-flex items-center rounded-full bg-gray-900 hover:bg-black text-white px-5 py-2.5 text-sm font-semibold transition"
               >
-                Visit Contact Page
+                Open Full Contact Page
               </button>
+            </div>
+
+            <div className="lg:col-span-3">
+              <form onSubmit={handleContactSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <input
+                    type="text"
+                    name="name"
+                    value={contactForm.name}
+                    onChange={handleContactChange}
+                    placeholder="Your name"
+                    required
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    value={contactForm.email}
+                    onChange={handleContactChange}
+                    placeholder="Your email"
+                    required
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+
+                <input
+                  type="tel"
+                  name="phone"
+                  value={contactForm.phone}
+                  onChange={handleContactChange}
+                  placeholder="Phone number"
+                  required
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                />
+
+                <textarea
+                  name="message"
+                  value={contactForm.message}
+                  onChange={handleContactChange}
+                  placeholder="Tell us what you need help with"
+                  rows={5}
+                  required
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                />
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <button
+                    type="submit"
+                    disabled={contactSubmitting}
+                    className="inline-flex items-center rounded-full bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white px-6 py-3 text-sm font-semibold transition"
+                  >
+                    {contactSubmitting ? "Sending..." : "Submit Inquiry"}
+                  </button>
+                  <span className="text-xs text-gray-500">
+                    We usually respond within 24 hours.
+                  </span>
+                </div>
+              </form>
             </div>
           </div>
         </div>

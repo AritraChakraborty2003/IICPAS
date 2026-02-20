@@ -31,6 +31,7 @@ const SOURCE_OPTIONS = [
   "Website",
   "Email",
   "Cold Call",
+  "chatbot",
 ];
 
 export default function LeadsTab() {

@@ -432,7 +432,8 @@ export default function Header({ showMarquee = true, topOffset }) {
                       />
                     </svg>
                   </button>
-                  <div className="absolute left-0 top-full mt-2 w-48 bg-white shadow-xl rounded-lg opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transform -translate-y-2 group-hover:translate-y-0 transition-all">
+                  <div className="absolute left-0 top-full w-56 pt-2 z-50 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all">
+                    <div className="bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden">
                     {item.children.map((child) =>
                       child.isHeader ? (
                         <div
@@ -445,7 +446,7 @@ export default function Header({ showMarquee = true, topOffset }) {
                         <Link
                           key={child.name}
                           href={child.href}
-                          className="block px-3 py-2 text-xs hover:bg-green-50"
+                          className="block px-3 py-2.5 text-xs hover:bg-green-50"
                         >
                           {child.name}
                         </Link>
@@ -453,12 +454,13 @@ export default function Header({ showMarquee = true, topOffset }) {
                         <Link
                           key={child.name}
                           href={child.href}
-                          className="block px-3 py-2 text-xs hover:bg-green-50"
+                          className="block px-3 py-2.5 text-xs hover:bg-green-50"
                         >
                           {child.name}
                         </Link>
                       )
                     )}
+                    </div>
                   </div>
                 </div>
               ) : (
