@@ -2058,7 +2058,7 @@ function DigitalHubContent() {
                 </>
               ) : selectedAssignment ? (
                 <>
-                  <h1 className="text-4xl font-bold text-emerald-600 mb-8">
+                  <h1 className="text-4xl font-bold text-orange-500 mb-8">
                     {selectedAssignment.title}
                   </h1>
                   <div className="text-lg leading-relaxed bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-slate-900">
