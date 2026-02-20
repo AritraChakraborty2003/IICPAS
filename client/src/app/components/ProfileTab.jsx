@@ -450,8 +450,148 @@ export default function ProfileTab({ onImageUpdated }) {
       case "courses":
         return (
           <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h4 className="text-sm font-semibold text-gray-800 mb-2">Courses</h4>
-            {renderSimpleList(coursesLoading, profileCourses, (course) => course?.title || "Untitled Course")}
+            <h4 className="text-sm font-semibold text-gray-800 mb-3">Courses</h4>
+            {coursesLoading ? (
+              <p className="text-sm text-gray-500">Loading...</p>
+            ) : !Array.isArray(profileCourses) || profileCourses.length === 0 ? (
+              <p className="text-sm text-gray-500">No purchased courses found</p>
+            ) : (
+              <div className="space-y-3">
+                {profileCourses.map((course, index) => {
+                  const courseId = course?._id || `course-${index}`;
+                  const chapters = courseChaptersByCourse[courseId] || [];
+                  const isExpanded = Boolean(expandedProfileCourses[courseId]);
+                  const digitalHubPath = `/digital-hub/${encodeURIComponent(
+                    course?.slug || courseId
+                  )}`;
+
+                  return (
+                    <div
+                      key={courseId}
+                      className="border border-gray-200 rounded-xl overflow-hidden"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleProfileCourse(courseId)}
+                        className="w-full text-left p-4 bg-gray-50 hover:bg-gray-100 transition"
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="font-semibold text-gray-900">
+                              {course?.title || "Untitled Course"}
+                            </p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {course?.category || "Course"} | {course?.level || "Level not set"} | Rs{" "}
+                              {Number(course?.price || 0).toLocaleString("en-IN")}
+                            </p>
+                          </div>
+                          <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                            {chapters.length} chapters
+                          </span>
+                        </div>
+                      </button>
+
+                      {isExpanded ? (
+                        <div className="p-4 bg-white border-t border-gray-200">
+                          <div className="flex items-center justify-between mb-3">
+                            <p className="text-sm font-semibold text-gray-700">
+                              Chapters & Topics
+                            </p>
+                            <button
+                              type="button"
+                              onClick={() => router.push(digitalHubPath)}
+                              className="text-xs rounded-md bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700"
+                            >
+                              Open in Digital Hub
+                            </button>
+                          </div>
+
+                          {chapters.length === 0 ? (
+                            <p className="text-sm text-gray-500">
+                              No chapter details available.
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {chapters.map((chapter, chapterIndex) => {
+                                const chapterId = chapter?._id || chapterIndex;
+                                const chapterKey = `${courseId}-${chapterId}`;
+                                const chapterExpanded = Boolean(
+                                  expandedProfileChapters[chapterKey]
+                                );
+
+                                return (
+                                  <div
+                                    key={chapterId}
+                                    className="border border-gray-200 rounded-lg"
+                                  >
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        toggleProfileChapter(courseId, chapterId)
+                                      }
+                                      className="w-full text-left px-3 py-2 text-sm font-medium text-gray-800 bg-gray-50 hover:bg-gray-100"
+                                    >
+                                      {chapter?.title || `Chapter ${chapterIndex + 1}`}
+                                    </button>
+
+                                    {chapterExpanded ? (
+                                      <div className="p-3 space-y-2">
+                                        {Array.isArray(chapter?.topics) &&
+                                        chapter.topics.length > 0 ? (
+                                          chapter.topics.map((topic, topicIndex) => {
+                                            const subtopics = getTopicSubtopics(topic);
+                                            return (
+                                              <div
+                                                key={
+                                                  topic?._id ||
+                                                  `${chapterId}-topic-${topicIndex}`
+                                                }
+                                                className="rounded-md border border-gray-100 bg-gray-50 p-2"
+                                              >
+                                                <p className="text-sm font-semibold text-gray-800">
+                                                  {topic?.title || `Topic ${topicIndex + 1}`}
+                                                </p>
+                                                {subtopics.length ? (
+                                                  <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                                                    {subtopics.map(
+                                                      (subtopic, subtopicIndex) => (
+                                                        <li key={`sub-${subtopicIndex}`}>
+                                                          {typeof subtopic === "string"
+                                                            ? subtopic
+                                                            : subtopic?.title ||
+                                                              subtopic?.name ||
+                                                              `Subtopic ${subtopicIndex + 1}`}
+                                                        </li>
+                                                      )
+                                                    )}
+                                                  </ul>
+                                                ) : (
+                                                  <p className="text-xs text-gray-500 mt-1">
+                                                    No subtopics
+                                                  </p>
+                                                )}
+                                              </div>
+                                            );
+                                          })
+                                        ) : (
+                                          <p className="text-xs text-gray-500">
+                                            No topics available for this chapter.
+                                          </p>
+                                        )}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         );
       case "testimonial":
