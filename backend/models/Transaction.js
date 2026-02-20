@@ -57,6 +57,33 @@ const TransactionSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  bundleItems: {
+    type: [
+      {
+        courseId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Course",
+        },
+        sessionType: {
+          type: String,
+          enum: ["recorded", "live"],
+        },
+        quantity: {
+          type: Number,
+          default: 1,
+        },
+        title: {
+          type: String,
+          default: "",
+        },
+        unitPrice: {
+          type: Number,
+          default: 0,
+        },
+      },
+    ],
+    default: [],
+  },
   additionalNotes: {
     type: String,
     default: "",
