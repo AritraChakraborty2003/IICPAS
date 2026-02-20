@@ -1279,9 +1279,25 @@ function DigitalHubContent() {
       >
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2 bg-emerald-600 px-4 py-2 rounded-xl shadow-sm">
-              <CheckCircle className="w-5 h-5 text-white" />
-              <h1 className="text-xl font-semibold text-white">Digital Hub</h1>
+            <div
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl border ${
+                isDarkMode
+                  ? "bg-slate-900 border-slate-700"
+                  : "bg-white border-stone-300"
+              }`}
+            >
+              <CheckCircle
+                className={`w-5 h-5 ${
+                  isDarkMode ? "text-slate-300" : "text-slate-600"
+                }`}
+              />
+              <h1
+                className={`text-xl font-semibold ${
+                  isDarkMode ? "text-slate-100" : "text-slate-800"
+                }`}
+              >
+                Digital Hub
+              </h1>
             </div>
           </div>
 
@@ -1334,10 +1350,18 @@ function DigitalHubContent() {
             <div className="relative">
               <button
                 onClick={() => setChapterDropdownOpen(!chapterDropdownOpen)}
-                className="flex items-center justify-between bg-emerald-600 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 shadow-sm hover:bg-emerald-700 min-w-[200px]"
+                className={`flex items-center justify-between px-4 py-2 rounded-xl font-medium transition-all duration-300 min-w-[200px] border ${
+                  isDarkMode
+                    ? "bg-slate-900 border-slate-700 text-slate-100 hover:bg-slate-800"
+                    : "bg-white border-stone-300 text-slate-800 hover:bg-stone-100"
+                }`}
               >
                 <div className="flex items-center space-x-3">
-                  <BookOpen className="w-4 h-4 text-white" />
+                  <BookOpen
+                    className={`w-4 h-4 ${
+                      isDarkMode ? "text-slate-300" : "text-slate-600"
+                    }`}
+                  />
                   <span className="truncate">
                     {selectedChapter ? selectedChapter.title : "Select Chapter"}
                   </span>
@@ -1377,11 +1401,14 @@ function DigitalHubContent() {
             </div>
 
             {/* Points Badge */}
-            <div className="flex items-center space-x-1 bg-amber-100 px-3 py-1 rounded-full border border-amber-200">
-              <div className="w-4 h-4 bg-amber-400 rounded-full"></div>
-              <span className="text-sm font-semibold text-amber-800">
-                {points}
-              </span>
+            <div
+              className={`flex items-center px-3 py-1.5 rounded-full border ${
+                isDarkMode
+                  ? "bg-slate-900 border-slate-700 text-slate-200"
+                  : "bg-white border-stone-300 text-slate-700"
+              }`}
+            >
+              <span className="text-sm font-medium">Points {points}</span>
             </div>
           </div>
         </div>
@@ -1519,11 +1546,15 @@ function DigitalHubContent() {
                               setHamburgerOpen(false);
                               handleTopicSelect(topic);
                             }}
-                            className={`w-full text-left p-3 rounded-xl hover:bg-emerald-50 hover:text-slate-900 transition-colors border border-stone-200 ${
-                              selectedTopic?._id === topic._id
-                                ? "bg-emerald-50 border-emerald-300"
-                                : ""
-                            } ${isDarkMode ? "text-slate-100" : "text-slate-700"}`}
+                            className={`w-full text-left p-3 rounded-xl transition-colors border ${
+                              isDarkMode
+                                ? selectedTopic?._id === topic._id
+                                  ? "bg-slate-800 border-slate-600 text-slate-100"
+                                  : "bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800"
+                                : selectedTopic?._id === topic._id
+                                  ? "bg-emerald-50 border-emerald-300 text-slate-900"
+                                  : "border-stone-200 text-slate-700 hover:bg-emerald-50 hover:text-slate-900"
+                            }`}
                           >
                             <div className="flex items-center space-x-3">
                               <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
