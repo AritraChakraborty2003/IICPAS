@@ -139,7 +139,7 @@ export default function HeroSection() {
     [heroData.videoFile, heroData.videoUrl]
   );
 
-  const posterSrc = "/images/bg-image.png";
+  const posterSrc = "/images/bg-imag.webp";
 
   return (
     <section className="relative overflow-hidden h-screen mt-18 bg-gray-900">
