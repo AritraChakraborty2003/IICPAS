@@ -231,6 +231,17 @@ export default function CoursePage() {
       filteredCourses.length === 0 &&
       filteredGroupPricing.length === 0);
 
+  const softwareStack = [
+    { name: "Power BI", image: "/softwares/PowerBI.jpeg" },
+    { name: "Share Trading", image: "/softwares/share-trading.jpg" },
+    { name: "Zoho", image: "/softwares/zoho.png" },
+    { name: "PowerPoint", image: "/softwares/powerpoint.svg" },
+    { name: "QuickBooks", image: "/softwares/quickbooks.png" },
+    { name: "SAP", image: "/softwares/sap.webp" },
+    { name: "Tally Prime", image: "/softwares/tally-prime.png" },
+    { name: "Microsoft Excel", image: "/softwares/microsoft-excel-icon.webp" },
+  ];
+
   // Handlers
   const toggleCategory = (categoryName) =>
     setSelectedCategories((prev) =>
@@ -643,95 +654,124 @@ export default function CoursePage() {
         </div>
       </div>
 
-      {/* Softwares We Teach Carousel Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="w-full">
+      {/* Softwares We Teach Section */}
+      <section className="relative py-24 bg-gradient-to-b from-[#f6f9ff] via-[#f9fcff] to-[#eef5ff] overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute -top-20 -left-20 w-72 h-72 rounded-full bg-[#3cd664]/15 blur-3xl" />
+          <div className="absolute top-16 right-0 w-80 h-80 rounded-full bg-[#3b82f6]/10 blur-3xl" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-16 px-4"
+            className="text-center mb-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 border border-blue-100 text-blue-700 px-4 py-1.5 text-xs font-semibold tracking-wide shadow-sm mb-5">
+              <span>Software Ecosystem</span>
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
               Softwares We Teach
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-              Master industry-leading software tools and technologies
+            <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg">
+              Master industry-leading tools used by modern finance,
+              accounting, and business teams.
             </p>
           </motion.div>
 
-          {/* Moving Cards Container */}
-          <div
-            className="relative overflow-hidden bg-white py-8"
-            style={{ width: "95vw" }}
-          >
-            <motion.div
-              className="flex gap-8"
-              animate={{
-                x: [0, -100 * 8],
-              }}
-              transition={{
-                duration: 20,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              style={{
-                width: `${8 * 360}px`,
-              }}
-            >
-              {/* Software data */}
-              {(() => {
-                const softwares = [
-                  { name: "Power BI", image: "/softwares/PowerBI.jpeg" },
-                  {
-                    name: "Share Trading",
-                    image: "/softwares/share-trading.jpg",
-                  },
-                  { name: "Zoho", image: "/softwares/zoho.png" },
-                  { name: "PowerPoint", image: "/softwares/powerpoint.svg" },
-                  { name: "QuickBooks", image: "/softwares/quickbooks.png" },
-                  { name: "SAP", image: "/softwares/sap.webp" },
-                  { name: "Tally Prime", image: "/softwares/tally-prime.png" },
-                  {
-                    name: "Microsoft Excel",
-                    image: "/softwares/microsoft-excel-icon.webp",
-                  },
-                ];
+          <div className="software-marquee rounded-3xl border border-blue-100/70 bg-white/80 backdrop-blur-sm shadow-[0_20px_60px_-35px_rgba(15,23,42,0.35)] py-8">
+            <div className="software-track">
+              {[...softwareStack, ...softwareStack].map((software, index) => (
+                <div
+                  key={`${software.name}-${index}`}
+                  className="software-card group"
+                >
+                  <div className="h-44 rounded-2xl bg-gradient-to-br from-[#eef8ff] via-[#f0fbf5] to-[#eef8ff] border border-blue-100/70 flex items-center justify-center p-6">
+                    <img
+                      src={software.image}
+                      alt={software.name}
+                      className="w-28 h-28 object-contain transition-transform duration-500 group-hover:scale-110"
+                      loading="lazy"
+                    />
+                  </div>
 
-                // Duplicate cards for seamless loop
-                return [...softwares, ...softwares].map((software, index) => (
-                  <motion.div
-                    key={`${software.name}-${index}`}
-                    className="flex-shrink-0 w-80 bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 hover:scale-105 mx-4"
-                    whileHover={{ y: -8 }}
-                  >
-                    <div className="h-56 overflow-hidden rounded-t-3xl bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
-                      <img
-                        src={software.image}
-                        alt={software.name}
-                        className="w-32 h-32 object-contain hover:scale-110 transition-transform duration-700"
-                      />
-                    </div>
-                    <div className="p-8">
-                      <div className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium mb-4">
-                        <span>💻</span>
-                        <span>Software</span>
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2 mb-3">
-                        {software.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        Professional certification course
-                      </p>
-                    </div>
-                  </motion.div>
-                ));
-              })()}
-            </motion.div>
+                  <div className="pt-5 px-1">
+                    <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+                      <span>Software</span>
+                    </span>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">
+                      {software.name}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Professional certification course
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
+      <style jsx>{`
+        .software-marquee {
+          overflow: hidden;
+          position: relative;
+        }
+
+        .software-track {
+          display: flex;
+          gap: 1.25rem;
+          width: max-content;
+          animation: softwareSlide 36s linear infinite;
+          padding-inline: 1.25rem;
+        }
+
+        .software-marquee:hover .software-track {
+          animation-play-state: paused;
+        }
+
+        .software-card {
+          flex: 0 0 280px;
+          border-radius: 1.25rem;
+          border: 1px solid rgba(191, 219, 254, 0.7);
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.98) 0%,
+            rgba(248, 251, 255, 0.98) 100%
+          );
+          box-shadow: 0 12px 35px -22px rgba(15, 23, 42, 0.5);
+          padding: 1rem;
+          transition: transform 0.35s ease, box-shadow 0.35s ease;
+        }
+
+        .software-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 22px 45px -20px rgba(15, 23, 42, 0.45);
+        }
+
+        @keyframes softwareSlide {
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(-50%);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .software-track {
+            animation-duration: 26s;
+            padding-inline: 0.75rem;
+            gap: 0.9rem;
+          }
+
+          .software-card {
+            flex-basis: 240px;
+          }
+        }
+      `}</style>
     </section>
   );
 }
