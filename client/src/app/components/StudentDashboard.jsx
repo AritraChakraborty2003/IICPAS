@@ -38,6 +38,7 @@ import LiveClassTab from "../components/LiveClassTab";
 import RecordedSessionTab from "./RecordedSessionTab";
 import ProfileTab from "../components/ProfileTab";
 import TestimonialTab from "./TestimonialTab";
+import StudentInvoicesTab from "./StudentInvoicesTab";
 
 function StudentDashboardContent() {
   const router = useRouter();
@@ -107,6 +108,7 @@ function StudentDashboardContent() {
         "support",
         "certificates",
         "profile",
+        "invoices",
       ].includes(tab)
     ) {
       setActiveTab(tab);
@@ -227,7 +229,9 @@ function StudentDashboardContent() {
       case "news":
         return <NewsTab />;
       case "profile":
-        return <ProfileTab student={student} />;
+        return <ProfileTab onNavigate={setActiveTab} />;
+      case "invoices":
+        return <StudentInvoicesTab />;
       case "testimonial":
         return <TestimonialTab student={student} />;
       case "support":

@@ -5,12 +5,16 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Upload, User } from "lucide-react";
 
-export default function ProfileTab() {
+const studentSectionTabs = [
+  { id: "profile", label: "Profile" },
+  { id: "invoices", label: "Invoices" },
+  { id: "courses", label: "Courses" },
+  { id: "testimonial", label: "Testimonials" },
+  { id: "support", label: "Tickets" },
+];
+
+export default function ProfileTab({ onNavigate }) {
   const router = useRouter();
-
-  const tabs = ["Basic Profile"];
-
-  const [activeTab, setActiveTab] = useState("Basic Profile");
   const [loading, setLoading] = useState(true);
   const [student, setStudent] = useState({
     name: "",
@@ -213,8 +217,33 @@ export default function ProfileTab() {
 
       {/* Right Content */}
       <div className="w-full lg:w-3/4 bg-white rounded-xl shadow-md">
-        {/* Content */}
         <div className="p-6">
+          <div className="mb-6 border-b border-gray-200">
+            <div className="flex gap-2 overflow-x-auto pb-3">
+              {studentSectionTabs.map((tab) => {
+                const isCurrent = tab.id === "profile";
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      if (!isCurrent && typeof onNavigate === "function") {
+                        onNavigate(tab.id);
+                      }
+                    }}
+                    className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                      isCurrent
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="space-y-6">
             <div className="space-y-6">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
