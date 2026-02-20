@@ -4,10 +4,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Upload, User } from "lucide-react";
-import CoursesTab from "./CourseTab";
 import StudentInvoicesTab from "./StudentInvoicesTab";
-import TestimonialTab from "./TestimonialTab";
-import TicketTab from "./TicketTab";
 
 const studentSectionTabs = [
   { id: "profile", label: "Profile" },
@@ -17,16 +14,18 @@ const studentSectionTabs = [
   { id: "support", label: "Tickets" },
 ];
 
-export default function ProfileTab({
-  onNavigate,
-  activeSection = "profile",
-  studentData = null,
-}) {
+export default function ProfileTab() {
   const router = useRouter();
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  const [activeSection, setActiveSection] = useState("profile");
   const [loading, setLoading] = useState(true);
   const [coursesLoading, setCoursesLoading] = useState(true);
-  const [testimonialCourses, setTestimonialCourses] = useState([]);
+  const [testimonialsLoading, setTestimonialsLoading] = useState(true);
+  const [ticketsLoading, setTicketsLoading] = useState(true);
+  const [profileCourses, setProfileCourses] = useState([]);
+  const [profileTestimonials, setProfileTestimonials] = useState([]);
+  const [profileTickets, setProfileTickets] = useState([]);
   const [student, setStudent] = useState({
     _id: "",
     id: "",
@@ -43,7 +42,7 @@ export default function ProfileTab({
 
   // Fetch student data on mount
   useEffect(() => {
-    const fetchTestimonialCourses = async (studentId) => {
+    const fetchProfileCourses = async (studentId) => {
       try {
         const response = await axios.get(
           `${API}/api/courses/student-courses/${studentId}`,
@@ -58,11 +57,39 @@ export default function ProfileTab({
           ? response.data
           : [];
 
-        setTestimonialCourses(courses);
+        setProfileCourses(courses);
       } catch (error) {
-        setTestimonialCourses([]);
+        setProfileCourses([]);
       } finally {
         setCoursesLoading(false);
+      }
+    };
+
+    const fetchProfileTestimonials = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/testimonials/student`, {
+          withCredentials: true,
+        });
+        const testimonials = Array.isArray(response.data) ? response.data : [];
+        setProfileTestimonials(testimonials);
+      } catch (error) {
+        setProfileTestimonials([]);
+      } finally {
+        setTestimonialsLoading(false);
+      }
+    };
+
+    const fetchProfileTickets = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/tickets`, {
+          withCredentials: true,
+        });
+        const tickets = Array.isArray(response.data) ? response.data : [];
+        setProfileTickets(tickets);
+      } catch (error) {
+        setProfileTickets([]);
+      } finally {
+        setTicketsLoading(false);
       }
     };
 
@@ -84,14 +111,18 @@ export default function ProfileTab({
           image: currentStudent.image || "",
         });
         if (currentStudent?._id) {
-          fetchTestimonialCourses(currentStudent._id);
+          fetchProfileCourses(currentStudent._id);
         } else {
           setCoursesLoading(false);
-          setTestimonialCourses([]);
+          setProfileCourses([]);
         }
+        fetchProfileTestimonials();
+        fetchProfileTickets();
       } catch (err) {
         console.error("Auth check failed:", err);
         setCoursesLoading(false);
+        setTestimonialsLoading(false);
+        setTicketsLoading(false);
         router.push("/student-login");
       } finally {
         setLoading(false);
@@ -184,16 +215,59 @@ export default function ProfileTab({
     );
   }
 
+  const renderSimpleList = (loadingState, items, getLabel) => {
+    if (loadingState) {
+      return <p className="text-sm text-gray-500">Loading...</p>;
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return <p className="text-sm text-gray-500">No results found</p>;
+    }
+
+    return (
+      <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
+        {items.map((item, index) => (
+          <li key={item?._id || `item-${index}`}>{getLabel(item, index)}</li>
+        ))}
+      </ol>
+    );
+  };
+
   const renderRightContent = () => {
     switch (activeSection) {
       case "invoices":
         return <StudentInvoicesTab />;
       case "courses":
-        return <CoursesTab />;
+        return (
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-800 mb-2">Courses</h4>
+            {renderSimpleList(coursesLoading, profileCourses, (course) => course?.title || "Untitled Course")}
+          </div>
+        );
       case "testimonial":
-        return <TestimonialTab student={studentData || student} />;
+        return (
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-800 mb-2">Testimonials</h4>
+            {renderSimpleList(
+              testimonialsLoading,
+              profileTestimonials,
+              (testimonial) =>
+                testimonial?.message?.trim() || testimonial?.name || "Testimonial"
+            )}
+          </div>
+        );
       case "support":
-        return <TicketTab viewerType="student" />;
+        return (
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="text-sm font-semibold text-gray-800 mb-2">Tickets</h4>
+            {renderSimpleList(
+              ticketsLoading,
+              profileTickets,
+              (ticket) =>
+                ticket?.message?.trim() || `${ticket?.name || "Ticket"} (${ticket?.email || "No email"})`
+            )}
+          </div>
+        );
       default:
         return (
           <div className="space-y-6">
@@ -240,25 +314,6 @@ export default function ProfileTab({
                   {student.id || "Not available"}
                 </div>
               </div>
-            </div>
-
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <h4 className="text-sm font-semibold text-gray-800 mb-2">
-                Testimonial Courses
-              </h4>
-              {coursesLoading ? (
-                <p className="text-sm text-gray-500">Loading courses...</p>
-              ) : testimonialCourses.length === 0 ? (
-                <p className="text-sm text-gray-500">No results found</p>
-              ) : (
-                <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
-                  {testimonialCourses.map((course, index) => (
-                    <li key={course?._id || `${course?.title || "course"}-${index}`}>
-                      {course?.title || "Untitled Course"}
-                    </li>
-                  ))}
-                </ol>
-              )}
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -364,8 +419,8 @@ export default function ProfileTab({
                     key={tab.id}
                     type="button"
                     onClick={() => {
-                      if (!isCurrent && typeof onNavigate === "function") {
-                        onNavigate(tab.id);
+                      if (!isCurrent) {
+                        setActiveSection(tab.id);
                       }
                     }}
                     className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${

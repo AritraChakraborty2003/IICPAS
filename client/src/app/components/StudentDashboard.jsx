@@ -26,12 +26,16 @@ import {
 import toast from "react-hot-toast";
 
 import CertificatesTab from "../components/CertificateTab";
+import CoursesTab from "../components/CourseTab";
 import BuyCoursesTab from "../components/BuyCoursesTab";
 import RevisionTab from "./RevisionTab.tsx";
+import TicketTab from "../components/TicketTab";
 import NewsTab from "./NewsTab";
 import LiveClassTab from "../components/LiveClassTab";
 import RecordedSessionTab from "./RecordedSessionTab";
 import ProfileTab from "../components/ProfileTab";
+import TestimonialTab from "./TestimonialTab";
+import StudentInvoicesTab from "./StudentInvoicesTab";
 
 function StudentDashboardContent() {
   const router = useRouter();
@@ -208,23 +212,11 @@ function StudentDashboardContent() {
 
   // Tab rendering with memoization to prevent re-renders
   const renderTabContent = useMemo(() => {
-    if (
-      ["profile", "invoices", "courses", "testimonial", "support"].includes(
-        activeTab
-      )
-    ) {
-      return (
-        <ProfileTab
-          onNavigate={setActiveTab}
-          activeSection={activeTab}
-          studentData={student}
-        />
-      );
-    }
-
     switch (activeTab) {
       case "buy-courses":
         return <BuyCoursesTab />;
+      case "courses":
+        return <CoursesTab />;
       case "revision":
         return <RevisionTab />;
       case "live":
@@ -233,6 +225,14 @@ function StudentDashboardContent() {
         return <RecordedSessionTab />;
       case "news":
         return <NewsTab />;
+      case "profile":
+        return <ProfileTab />;
+      case "invoices":
+        return <StudentInvoicesTab />;
+      case "testimonial":
+        return <TestimonialTab student={student} />;
+      case "support":
+        return <TicketTab viewerType="student" />;
       case "certificates":
         return <CertificatesTab />;
       default:
