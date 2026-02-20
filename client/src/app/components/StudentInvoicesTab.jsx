@@ -145,7 +145,7 @@ export default function StudentInvoicesTab() {
         </div>
       ) : !hasInvoices ? (
         <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-8 text-center text-gray-600">
-          No invoices found for your account yet.
+          No results found
         </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200">

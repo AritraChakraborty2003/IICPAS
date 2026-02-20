@@ -55,8 +55,8 @@ export default function CourseTab() {
 
   // Fetch student courses from database
   const fetchStudentCourses = async () => {
+    setLoading(true);
     try {
-      // Don't set loading to true initially to prevent blinking
       const response = await axios.get(`${API}/api/v1/students/isstudent`, {
         withCredentials: true,
       });
@@ -113,92 +113,28 @@ export default function CourseTab() {
           if (purchasedCoursesData.length > 0) {
             setSelectedCourse(purchasedCoursesData[0]);
             setLastAccessedCourse(purchasedCoursesData[0]);
+          } else {
+            setSelectedCourse(null);
+            setLastAccessedCourse(null);
           }
         }
+      } else {
+        setCourses([]);
+        setPurchasedCourses([]);
+        setAvailableCourses([]);
+        setSelectedCourse(null);
+        setLastAccessedCourse(null);
       }
     } catch (error) {
       console.error("Error fetching courses:", error);
-      // Fallback to demo data if API fails
-      showDemoData();
+      setCourses([]);
+      setPurchasedCourses([]);
+      setAvailableCourses([]);
+      setSelectedCourse(null);
+      setLastAccessedCourse(null);
+    } finally {
+      setLoading(false);
     }
-    // Remove finally block to prevent loading state changes
-  };
-
-  // Mock data for demonstration (fallback)
-  const showDemoData = () => {
-    const demoCourses = [
-      {
-        _id: "1",
-        title: "Basic Accounting & Tally Foundation",
-        description:
-          "Comprehensive accounting course covering all aspects of modern accounting practices.",
-        image: "/images/a1.jpeg",
-        status: "Active",
-        level: "Foundation",
-        price: 999,
-        overallProgress: 75,
-        totalChapters: 8,
-        totalAssignments: 12,
-        totalExperiments: 6,
-        totalTests: 5,
-        chapters: [
-          { id: 1, name: "Basic Accounting", completion: 100 },
-          { id: 2, name: "Company Creation", completion: 100 },
-          { id: 3, name: "Voucher Entries", completion: 100 },
-          { id: 4, name: "Accounting Methods", completion: 60 },
-          { id: 5, name: "Ledger Balances", completion: 45 },
-          { id: 6, name: "Bank Reconciliation", completion: 30 },
-          { id: 7, name: "Advanced Topics", completion: 20 },
-          { id: 8, name: "Final Assessment", completion: 10 },
-        ],
-        assignments: [
-          { id: 1, name: "Assignment 1: Basic Principles" },
-          { id: 2, name: "Assignment 2: Company Setup" },
-          { id: 3, name: "Assignment 3: Voucher Entries" },
-          { id: 4, name: "Assignment 4: Ledger Management" },
-          { id: 5, name: "Assignment 5: Final Project" },
-        ],
-        experiments: [
-          { id: 1, name: "Experiment 1: Ledger Creation" },
-          { id: 2, name: "Experiment 2: Balance Sheet" },
-          { id: 3, name: "Experiment 3: Income Statement" },
-          { id: 4, name: "Experiment 4: Cash Flow" },
-        ],
-        tests: [
-          {
-            id: 1,
-            name: "Basic Accounting Test",
-            status: "Coming Soon",
-          },
-          {
-            id: 2,
-            name: "Voucher Entries Test",
-            status: "Coming Soon",
-          },
-          {
-            id: 3,
-            name: "Ledger Management Test",
-            status: "Coming Soon",
-          },
-          {
-            id: 4,
-            name: "Final Assessment Test",
-            status: "Coming Soon",
-          },
-          {
-            id: 5,
-            name: "Comprehensive Test",
-            status: "Coming Soon",
-          },
-        ],
-      },
-    ];
-    setCourses(demoCourses);
-    setPurchasedCourses(demoCourses); // Demo data represents purchased courses
-    setAvailableCourses([]); // No additional available courses in demo
-    setSelectedCourse(demoCourses[0]);
-    setLastAccessedCourse(demoCourses[0]);
-    setLoading(false);
   };
 
   useEffect(() => {
@@ -220,8 +156,7 @@ export default function CourseTab() {
 
   // Check if course is completed (simplified logic - you can enhance this)
   const isCourseCompleted = (course) => {
-    // For demo purposes, consider course completed if progress > 80%
-    // In real implementation, you'd check if all chapters, assignments, and tests are completed
+    // Consider course completed if progress > 80%.
     return course.overallProgress >= 80;
   };
 
@@ -809,8 +744,13 @@ export default function CourseTab() {
 
       {/* Course Display with State Switching */}
       <div className="px-6 pb-6 space-y-6">
-        {courses.map((course) => (
-          <div key={course._id} className="group relative">
+        {courses.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-gray-600">
+            No results found
+          </div>
+        ) : (
+          courses.map((course) => (
+            <div key={course._id} className="group relative">
             {viewModes[course._id] !== "detailed" ? (
               // State 1: Modern Course Overview Card
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
@@ -1140,9 +1080,10 @@ export default function CourseTab() {
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          ))
+        )}
       </div>
 
       {/* Form Modal */}
