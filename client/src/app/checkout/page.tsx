@@ -162,11 +162,11 @@ export default function CheckoutPage() {
       <div className="pt-32 pb-10 px-4">
         <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b">
-            <h1 className="text-4xl font-semibold text-gray-800">Checkout</h1>
+            <h1 className="text-3xl font-semibold text-gray-800">Checkout</h1>
             <button
               type="button"
               onClick={() => router.back()}
-              className="text-3xl text-gray-500 hover:text-gray-700"
+              className="text-2xl text-gray-500 hover:text-gray-700"
             >
               ×
             </button>
@@ -186,7 +186,7 @@ export default function CheckoutPage() {
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2">
-                  <h2 className="text-4xl font-semibold text-gray-900 mb-4">Your Courses</h2>
+                  <h2 className="text-2xl font-semibold text-gray-900 mb-4">Your Courses</h2>
 
                   <div className="space-y-4">
                     {cartItems.map((item) => {
@@ -221,13 +221,13 @@ export default function CheckoutPage() {
                             />
 
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-3xl font-semibold text-gray-800 truncate">
+                              <h3 className="text-xl font-semibold text-gray-800 truncate">
                                 {course.title}
                               </h3>
-                              <p className="text-3xl text-gray-600 mb-1">{course.category || "Accounting"}</p>
+                              <p className="text-sm text-gray-600 mb-1">{course.category || "Accounting"}</p>
 
                               <span
-                                className={`inline-block text-2xl px-3 py-1 rounded-full font-medium ${
+                                className={`inline-block text-xs px-3 py-1 rounded-full font-medium ${
                                   item.sessionType === "recorded"
                                     ? "bg-green-100 text-green-700"
                                     : "bg-blue-100 text-blue-700"
@@ -237,7 +237,7 @@ export default function CheckoutPage() {
                               </span>
 
                               <div className="mt-3 flex items-center gap-3">
-                                <span className="text-3xl text-gray-600">Quantity:</span>
+                                <span className="text-sm text-gray-600">Quantity:</span>
                                 <div className="flex items-center border border-gray-300 rounded-lg">
                                   <button
                                     type="button"
@@ -273,7 +273,7 @@ export default function CheckoutPage() {
                                 </div>
                               </div>
 
-                              <p className="mt-2 text-3xl text-gray-700">
+                              <p className="mt-2 text-lg text-gray-700">
                                 ₹{unitPrice.toLocaleString()} × {item.quantity || 1} ={" "}
                                 <span className="text-green-600 font-semibold">₹{itemTotal.toLocaleString()}</span>
                               </p>
@@ -306,14 +306,14 @@ export default function CheckoutPage() {
 
                 <div>
                   <div className="bg-gray-50 rounded-xl p-4 sticky top-28 border border-gray-100">
-                    <h3 className="text-4xl font-semibold text-gray-900 mb-4">Order Summary</h3>
+                    <h3 className="text-2xl font-semibold text-gray-900 mb-4">Order Summary</h3>
 
                     <div className="space-y-2 mb-4">
                       {cartItems.map((item) => {
                         const course = item.course;
                         if (!course || !item.courseId) return null;
                         return (
-                          <div key={`${item.courseId}-${item.sessionType}`} className="text-2xl">
+                          <div key={`${item.courseId}-${item.sessionType}`} className="text-sm">
                             <div className="flex justify-between gap-3">
                               <span className="text-gray-700 truncate">
                                 {course.title} × {item.quantity || 1}
@@ -322,7 +322,7 @@ export default function CheckoutPage() {
                                 ₹{(getItemPrice(item) * (item.quantity || 1)).toLocaleString()}
                               </span>
                             </div>
-                            <p className={`text-xl ${item.sessionType === "recorded" ? "text-green-600" : "text-blue-600"}`}>
+                            <p className={`text-xs ${item.sessionType === "recorded" ? "text-green-600" : "text-blue-600"}`}>
                               {item.sessionType === "recorded" ? "Recorded" : "Live"}
                             </p>
                           </div>
@@ -331,15 +331,15 @@ export default function CheckoutPage() {
                     </div>
 
                     <div className="border-t pt-3 mb-4">
-                      <div className="flex justify-between items-center text-4xl font-semibold">
+                      <div className="flex justify-between items-center text-2xl font-semibold">
                         <span>Total</span>
                         <span className="text-green-600">₹{getTotalPrice().toLocaleString()}</span>
                       </div>
                     </div>
 
                     <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-                      <h4 className="text-3xl text-blue-700 font-semibold mb-2">Payment Instructions</h4>
-                      <ul className="text-2xl text-blue-700 space-y-1">
+                      <h4 className="text-lg text-blue-700 font-semibold mb-2">Payment Instructions</h4>
+                      <ul className="text-sm text-blue-700 space-y-1">
                         <li>• Click "Pay Now" for each course individually</li>
                         <li>• Scan the QR code with any UPI app</li>
                         <li>• Take a screenshot of your payment confirmation</li>
@@ -349,7 +349,7 @@ export default function CheckoutPage() {
                       </ul>
 
                       <div className="mt-4 pt-3 border-t border-blue-200">
-                        <p className="text-2xl text-blue-700 mb-2">Need help with payment or courses?</p>
+                        <p className="text-sm text-blue-700 mb-2">Need help with payment or courses?</p>
                         <a
                           href="https://wa.me/+918810380146?text=Hi, I need support with my course checkout or payment process. Please help."
                           target="_blank"
@@ -379,7 +379,7 @@ export default function CheckoutPage() {
                   setShowPaymentForm(false);
                   setSelectedItem(null);
                 }}
-                className="text-3xl text-gray-500 hover:text-gray-700"
+                className="text-2xl text-gray-500 hover:text-gray-700"
               >
                 ×
               </button>
