@@ -50,6 +50,7 @@ export default function CourseTab() {
   const [review, setReview] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
   const [courseRatings, setCourseRatings] = useState({}); // Store existing ratings
+  const [expandedChapterKeys, setExpandedChapterKeys] = useState({});
   const router = useRouter();
   const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -248,9 +249,28 @@ export default function CourseTab() {
   };
 
   const handleChapterClick = (chapterName) => {
-    // Navigate to digital-hub when any chapter is clicked
     if (!selectedCourse) return;
-    router.push(buildDigitalHubPath(selectedCourse));
+    const chapterKey = `${selectedCourse._id}-${chapterName || "chapter"}`;
+    setExpandedChapterKeys((prev) => ({
+      ...prev,
+      [chapterKey]: !prev[chapterKey],
+    }));
+  };
+
+  const toggleDetailedChapter = (courseId, chapterId) => {
+    const key = `${courseId}-${chapterId}`;
+    setExpandedChapterKeys((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const getTopicSubtopics = (topic) => {
+    if (!topic) return [];
+    if (Array.isArray(topic.subtopics)) return topic.subtopics;
+    if (Array.isArray(topic.points)) return topic.points;
+    if (Array.isArray(topic.items)) return topic.items;
+    return [];
   };
 
   const handleAddNew = (type) => {
@@ -995,12 +1015,7 @@ export default function CourseTab() {
                             courseChapters[course._id].map((chapter, index) => (
                               <div
                                 key={chapter._id || index}
-                                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:border-blue-300"
-                                onClick={() =>
-                                  router.push(
-                                    buildDigitalHubPath(course, chapter._id)
-                                  )
-                                }
+                                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300"
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-6">
@@ -1009,7 +1024,16 @@ export default function CourseTab() {
                                         {index + 1}
                                       </span>
                                     </div>
-                                    <div className="flex-1">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        toggleDetailedChapter(
+                                          course._id,
+                                          chapter._id || index
+                                        )
+                                      }
+                                      className="text-left flex-1"
+                                    >
                                       <p className="font-bold text-gray-800 text-xl mb-2">
                                         {chapter.title || chapter.name}
                                       </p>
@@ -1018,7 +1042,7 @@ export default function CourseTab() {
                                           {chapter.description}
                                         </p>
                                       )}
-                                    </div>
+                                    </button>
                                   </div>
                                   <div className="flex items-center gap-4">
                                     <div className="w-32 bg-gray-200 rounded-full h-4">
@@ -1046,8 +1070,76 @@ export default function CourseTab() {
                                     >
                                       {chapter.completion || 0}%
                                     </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        router.push(
+                                          buildDigitalHubPath(course, chapter._id)
+                                        )
+                                      }
+                                      className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                                    >
+                                      Open in Digital Hub
+                                    </button>
                                   </div>
                                 </div>
+
+                                {expandedChapterKeys[
+                                  `${course._id}-${chapter._id || index}`
+                                ] ? (
+                                  <div className="mt-5 border-t pt-4">
+                                    <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                                      Topics
+                                    </h4>
+                                    {Array.isArray(chapter.topics) &&
+                                    chapter.topics.length > 0 ? (
+                                      <div className="space-y-3">
+                                        {chapter.topics.map((topic, topicIndex) => {
+                                          const subtopics = getTopicSubtopics(topic);
+                                          return (
+                                            <div
+                                              key={topic?._id || `${chapter._id}-topic-${topicIndex}`}
+                                              className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                                            >
+                                              <p className="font-medium text-gray-800">
+                                                {topic?.title || `Topic ${topicIndex + 1}`}
+                                              </p>
+                                              {topic?.content ? (
+                                                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                                  {String(topic.content).replace(/<[^>]*>/g, "")}
+                                                </p>
+                                              ) : null}
+                                              <div className="mt-2">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                  Subtopics
+                                                </p>
+                                                {subtopics.length > 0 ? (
+                                                  <ul className="mt-1 list-disc pl-5 text-sm text-gray-700 space-y-1">
+                                                    {subtopics.map((subtopic, subtopicIndex) => (
+                                                      <li key={`subtopic-${subtopicIndex}`}>
+                                                        {typeof subtopic === "string"
+                                                          ? subtopic
+                                                          : subtopic?.title || subtopic?.name || `Subtopic ${subtopicIndex + 1}`}
+                                                      </li>
+                                                    ))}
+                                                  </ul>
+                                                ) : (
+                                                  <p className="text-sm text-gray-500 mt-1">
+                                                    No subtopics
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm text-gray-500">
+                                        No topics available for this chapter.
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : null}
                               </div>
                             ))
                           ) : (
