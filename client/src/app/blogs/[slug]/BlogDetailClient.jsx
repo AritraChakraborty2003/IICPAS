@@ -6,6 +6,7 @@ import { Calendar, Clock, User, Tag, ArrowLeft, Share2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useMemo } from "react";
+import { getBlogSlug } from "../../../lib/blogSlug";
 
 const slugify = (value = "") =>
   decodeURIComponent(value)
@@ -247,7 +248,7 @@ export default function BlogDetailClient({ blog, allBlogs }) {
                       .map((post) => (
                         <Link
                           key={post._id}
-                          href={`/blogs/${slugify(post.slug || post.title)}`}
+                          href={`/blogs/${getBlogSlug(post)}`}
                           className="text-sm text-gray-700 hover:text-purple-700 line-clamp-2"
                         >
                           {post.title}

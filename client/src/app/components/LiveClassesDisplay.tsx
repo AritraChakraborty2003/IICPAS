@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { Video, Clock, User, Play, CheckCircle } from "lucide-react";
 import axios from "axios";
+import { getBlogSlug } from "../../lib/blogSlug";
 
 interface LiveClass {
   _id: string;
@@ -457,10 +458,10 @@ export default function LiveClassesDisplay() {
                         className="flex-shrink-0 w-80 bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 hover:scale-105"
                         whileHover={{ y: -8 }}
                         onClick={() => {
-                          const blogSlug = blog.title
-                            .replace(/\s+/g, "-")
-                            .toLowerCase();
-                          window.location.href = `/blogs/${blogSlug}`;
+                          const blogSlug = getBlogSlug(blog);
+                          window.location.href = blogSlug
+                            ? `/blogs/${blogSlug}`
+                            : "/blogs";
                         }}
                       >
                         <div className="h-56 overflow-hidden rounded-t-3xl">

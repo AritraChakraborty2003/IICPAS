@@ -7,7 +7,10 @@ import { Upload, User } from "lucide-react";
 
 export default function ProfileTab() {
   const router = useRouter();
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
   const [loading, setLoading] = useState(true);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [testimonialCourses, setTestimonialCourses] = useState([]);
   const [student, setStudent] = useState({
     _id: "",
     id: "",
@@ -24,24 +27,55 @@ export default function ProfileTab() {
 
   // Fetch student data on mount
   useEffect(() => {
+    const fetchTestimonialCourses = async (studentId) => {
+      try {
+        const response = await axios.get(
+          `${API}/api/courses/student-courses/${studentId}`,
+          {
+            withCredentials: true,
+          }
+        );
+
+        const courses = Array.isArray(response.data?.courses)
+          ? response.data.courses
+          : Array.isArray(response.data)
+          ? response.data
+          : [];
+
+        setTestimonialCourses(courses);
+      } catch (error) {
+        setTestimonialCourses([]);
+      } finally {
+        setCoursesLoading(false);
+      }
+    };
+
     const fetchStudent = async () => {
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/isstudent`,
+          `${API}/api/v1/students/isstudent`,
           { withCredentials: true }
         );
 
         console.log(res);
+        const currentStudent = res.data.student;
         setStudent({
-          _id: res.data.student._id || "",
-          id: res.data.student.id || "",
-          name: res.data.student.name,
-          email: res.data.student.email,
-          phone: res.data.student.phone || "",
-          image: res.data.student.image || "",
+          _id: currentStudent._id || "",
+          id: currentStudent.id || "",
+          name: currentStudent.name,
+          email: currentStudent.email,
+          phone: currentStudent.phone || "",
+          image: currentStudent.image || "",
         });
+        if (currentStudent?._id) {
+          fetchTestimonialCourses(currentStudent._id);
+        } else {
+          setCoursesLoading(false);
+          setTestimonialCourses([]);
+        }
       } catch (err) {
         console.error("Auth check failed:", err);
+        setCoursesLoading(false);
         router.push("/student-login");
       } finally {
         setLoading(false);
@@ -49,12 +83,12 @@ export default function ProfileTab() {
     };
 
     fetchStudent();
-  }, []);
+  }, [API, router]);
 
   const handleLogout = async () => {
     try {
       await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/logout`,
+        `${API}/api/v1/students/logout`,
         {
           withCredentials: true,
         }
@@ -94,7 +128,7 @@ export default function ProfileTab() {
       const formData = new FormData();
       formData.append("profileImage", profileImage);
 
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/profile`;
+      const apiUrl = `${API}/api/v1/students/profile`;
       console.log("FormData:", formData);
       console.log("Profile image file:", profileImage);
 
@@ -150,7 +184,7 @@ export default function ProfileTab() {
                 />
               ) : student.image ? (
                 <img
-                  src={`${process.env.NEXT_PUBLIC_API_URL}/${student.image}`}
+                  src={`${API}/${student.image}`}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
@@ -264,11 +298,19 @@ export default function ProfileTab() {
               <h4 className="text-sm font-semibold text-gray-800 mb-2">
                 Testimonial Courses
               </h4>
-              <ul className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
-                <li>Course 1</li>
-                <li>Course 2</li>
-                <li>Course 3</li>
-              </ul>
+              {coursesLoading ? (
+                <p className="text-sm text-gray-500">Loading courses...</p>
+              ) : testimonialCourses.length === 0 ? (
+                <p className="text-sm text-gray-500">No results found</p>
+              ) : (
+                <ol className="list-decimal pl-5 text-sm text-gray-700 space-y-1">
+                  {testimonialCourses.map((course, index) => (
+                    <li key={course?._id || `${course?.title || "course"}-${index}`}>
+                      {course?.title || "Untitled Course"}
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">

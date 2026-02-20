@@ -1,30 +1,15 @@
 import { cache } from "react";
 import BlogDetailClient from "./BlogDetailClient";
+import { getBlogSlug, normalizeBlogSlug } from "../../../lib/blogSlug";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
 export const revalidate = 600;
 
-const slugify = (value = "") =>
-  decodeURIComponent(value)
-    .trim()
-    .toLowerCase()
-    .replace(/[–—−]/g, "-")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
 const toCandidateSlugs = (blog = {}) => {
-  const rawSlug = (blog.slug || "").toString();
-  const rawTitle = (blog.title || "").toString();
-  const candidates = [
-    slugify(rawSlug),
-    slugify(rawTitle),
-    rawSlug.trim().toLowerCase(),
-    rawTitle.trim().toLowerCase().replace(/\s+/g, "-"),
-  ].filter(Boolean);
-  return Array.from(new Set(candidates));
+  const normalizedSlug = normalizeBlogSlug(blog?.slug || "");
+  const normalizedTitle = normalizeBlogSlug(blog?.title || "");
+  return Array.from(new Set([normalizedSlug, normalizedTitle].filter(Boolean)));
 };
 
 const extractBlogs = (payload) => {
@@ -50,23 +35,14 @@ const getBlogs = cache(async () => {
 const findBlogBySlug = (blogs, slug) => {
   return blogs.find((blog) => {
     const candidates = toCandidateSlugs(blog);
-    return candidates.some(
-      (candidate) =>
-        candidate === slug ||
-        candidate.replace(/-+/g, "-") === slug ||
-        slug.replace(/-+/g, "-") === candidate ||
-        candidate.includes(slug) ||
-        slug.includes(candidate)
-    );
+    return candidates.some((candidate) => candidate === slug);
   });
 };
 
 export async function generateStaticParams() {
   try {
     const blogs = await getBlogs();
-    const slugs = blogs
-      .map((blog) => slugify(blog.slug || blog.title || ""))
-      .filter(Boolean);
+    const slugs = blogs.map((blog) => getBlogSlug(blog)).filter(Boolean);
 
     return slugs.map((slug) => ({ slug }));
   } catch (error) {
@@ -76,7 +52,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
-  const slug = slugify(params.slug || "");
+  const slug = normalizeBlogSlug(params.slug || "");
 
   try {
     const blogs = await getBlogs();
@@ -137,12 +113,17 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogDetail({ params }) {
-  const slug = slugify(params.slug || "");
+  const slug = normalizeBlogSlug(params.slug || "");
 
   try {
     const blogs = await getBlogs();
     const foundBlog = findBlogBySlug(blogs, slug);
     const activeBlogs = blogs.filter((blog) => blog.status === "active");
+    if (!foundBlog && process.env.NODE_ENV !== "production") {
+      console.info(
+        `[blogs] No exact slug match for "${slug}" among ${blogs.length} blogs`
+      );
+    }
 
     return (
       <BlogDetailClient blog={foundBlog} allBlogs={activeBlogs} slug={slug} />
