@@ -697,7 +697,7 @@ function AdminDashboardContent() {
         ) : activeTab === "enquiries" ? (
           <EnquiriesTab />
         ) : activeTab === "support" ? (
-          <TicketTab />
+          <TicketTab viewerType="admin" />
         ) : activeTab === "calendar" ? (
           <CalendarTab />
         ) : activeTab === "companies" ? (

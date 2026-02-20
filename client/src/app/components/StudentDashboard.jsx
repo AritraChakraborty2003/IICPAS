@@ -23,6 +23,8 @@ import {
   FaBell,
   FaShoppingCart,
   FaCoins,
+  FaChevronLeft,
+  FaChevronRight,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -76,15 +78,6 @@ function StudentDashboardContent() {
       label: "Certificates",
       dot: true,
       dotColor: "green",
-    },
-    {
-      id: "collapse",
-      icon: (
-        <span className="font-bold text-lg">
-          {sidebarCollapsed ? "⟶" : "⟵"}
-        </span>
-      ),
-      label: sidebarCollapsed ? "Expand" : "Collapse",
     },
   ];
 
@@ -226,20 +219,13 @@ function StudentDashboardContent() {
       case "testimonial":
         return <TestimonialTab student={student} />;
       case "support":
-        return <TicketTab />;
+        return <TicketTab viewerType="student" />;
       case "certificates":
         return <CertificatesTab />;
-      case "collapse":
-        // Handle collapse action - only on desktop
-        if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-          setSidebarCollapsed(!sidebarCollapsed);
-          setActiveTab("buy-courses"); // Switch back to buy-courses tab
-        }
-        return <BuyCoursesTab />;
       default:
         return <BuyCoursesTab />;
     }
-  }, [activeTab, student, sidebarCollapsed]);
+  }, [activeTab, student]);
 
   const SidebarContent = () => (
     <div className="h-full flex flex-col">
@@ -346,10 +332,7 @@ function StudentDashboardContent() {
         } custom-scrollbar`}
       >
         {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            className={tab.id === "collapse" ? "hidden lg:block" : ""}
-          >
+          <div key={tab.id}>
             <NavItem
               icon={tab.icon}
               label={sidebarCollapsed ? "" : tab.label}
@@ -386,9 +369,18 @@ function StudentDashboardContent() {
       <aside
         className={`hidden lg:block ${
           sidebarCollapsed ? "w-16" : "w-64"
-        } h-screen fixed left-0 top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-y-auto custom-scrollbar z-50 transition-all duration-300`}
+        } h-screen fixed left-0 top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-y-auto custom-scrollbar z-50 transition-all duration-300 relative`}
       >
         <SidebarContent />
+        <button
+          type="button"
+          onClick={() => setSidebarCollapsed((prev) => !prev)}
+          className="absolute top-1/2 -right-3 -translate-y-1/2 h-9 w-9 rounded-full border border-blue-200 bg-white text-blue-600 shadow-md hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-center"
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? <FaChevronRight size={14} /> : <FaChevronLeft size={14} />}
+        </button>
       </aside>
       {/* Mobile Drawer */}
       <Drawer

@@ -1,21 +1,79 @@
 "use client";
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
-export default function TicketTab() {
+export default function TicketTab({ viewerType = "student", authToken }) {
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [resolveText, setResolveText] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const isAdminViewer = viewerType === "admin";
+  const token =
+    authToken ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("adminToken")
+      : null);
+
+  const getRequestOptions = (method = "GET", body = null) => {
+    const options = {
+      method,
+      headers: {},
+    };
+
+    if (isAdminViewer && token) {
+      options.headers.Authorization = `Bearer ${token}`;
+    }
+
+    if (!isAdminViewer) {
+      options.credentials = "include";
+    }
+
+    if (body !== null) {
+      options.headers["Content-Type"] = "application/json";
+      options.body = JSON.stringify(body);
+    }
+
+    return options;
+  };
+
+  const handleApiError = (status, fallback) => {
+    if (status === 401) {
+      setErrorMessage("Unauthorized. Please log in again.");
+      return;
+    }
+
+    if (status === 403) {
+      setErrorMessage("You do not have permission to access support chats.");
+      return;
+    }
+
+    setErrorMessage(fallback);
+  };
 
   // Fetch tickets on mount
   useEffect(() => {
-    fetch(`${BASE_URL}/tickets`)
-      .then((res) => res.json())
-      .then(setTickets);
-  }, []);
+    const fetchTickets = async () => {
+      setErrorMessage("");
+      try {
+        const res = await fetch(`${BASE_URL}/tickets`, getRequestOptions());
+        if (!res.ok) {
+          handleApiError(res.status, "Failed to load tickets.");
+          return;
+        }
+        const data = await res.json();
+        setTickets(Array.isArray(data) ? data : []);
+      } catch (error) {
+        setErrorMessage("Failed to load tickets.");
+      }
+    };
+
+    fetchTickets();
+  }, [viewerType, token]);
 
   useEffect(() => {
     setResolveText(selectedTicket?.resolve || "");
@@ -24,28 +82,71 @@ export default function TicketTab() {
   // Select a ticket and load fresh data
   async function handleSelect(ticket) {
     setLoading(true);
-    const res = await fetch(`${BASE_URL}/tickets/${ticket._id}`);
-    const data = await res.json();
-    setSelectedTicket(data);
-    setLoading(false);
+    try {
+      const res = await fetch(
+        `${BASE_URL}/tickets/${ticket._id}`,
+        getRequestOptions()
+      );
+      if (!res.ok) {
+        handleApiError(res.status, "Failed to load ticket details.");
+        return;
+      }
+      const data = await res.json();
+      setSelectedTicket(data);
+    } catch (error) {
+      setErrorMessage("Failed to load ticket details.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   // Update resolve field (admin reply)
   async function handleReply(e) {
     e.preventDefault();
+
+    if (!isAdminViewer) {
+      toast.error("Only admin can reply to tickets.");
+      return;
+    }
+
+    if (!resolveText.trim()) {
+      toast.error("Reply cannot be empty.");
+      return;
+    }
+
+    if (!selectedTicket?._id) {
+      toast.error("Please select a ticket first.");
+      return;
+    }
+
     setLoading(true);
-    const res = await fetch(
-      `${BASE_URL}/tickets/${selectedTicket._id}/resolve`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resolve: resolveText }),
+    setErrorMessage("");
+    try {
+      const res = await fetch(
+        `${BASE_URL}/tickets/${selectedTicket._id}/resolve`,
+        getRequestOptions("PATCH", { resolve: resolveText })
+      );
+
+      if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+          handleApiError(res.status, "Unauthorized action.");
+        } else if (res.status === 400) {
+          toast.error("Reply must be a non-empty message.");
+        } else {
+          toast.error("Failed to update reply.");
+        }
+        return;
       }
-    );
-    const data = await res.json();
-    setTickets(tickets.map((t) => (t._id === data._id ? data : t)));
-    setSelectedTicket(data);
-    setLoading(false);
+
+      const data = await res.json();
+      setTickets((prev) => prev.map((t) => (t._id === data._id ? data : t)));
+      setSelectedTicket(data);
+      toast.success("Reply saved.");
+    } catch (error) {
+      toast.error("Failed to update reply.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -56,7 +157,11 @@ export default function TicketTab() {
           Tickets
         </div>
         <div className="flex-1 overflow-y-auto">
-          {tickets.length === 0 ? (
+          {errorMessage ? (
+            <div className="text-red-500 text-center mt-24 px-4">
+              {errorMessage}
+            </div>
+          ) : tickets.length === 0 ? (
             <div className="text-gray-400 text-center mt-24">No tickets</div>
           ) : (
             tickets.map((ticket) => (
@@ -106,7 +211,7 @@ export default function TicketTab() {
               {selectedTicket.resolve && (
                 <div className="max-w-[600px] ml-auto mb-7">
                   <div className="text-right mb-2 text-green-600 text-sm font-semibold">
-                    Your Reply
+                    Admin Reply
                   </div>
                   <div className="bg-green-50 text-right rounded-tl-3xl rounded-tr-3xl rounded-bl-3xl rounded-br-lg p-5 text-green-800 text-[16px] shadow">
                     {selectedTicket.resolve}
@@ -114,33 +219,35 @@ export default function TicketTab() {
                 </div>
               )}
             </div>
-            {/* Reply area */}
-            <form
-              onSubmit={handleReply}
-              className="flex gap-4 p-8 border-t border-gray-300 bg-gray-200"
-            >
-              <textarea
-                value={resolveText}
-                onChange={(e) => setResolveText(e.target.value)}
-                placeholder="Type your reply or update here..."
-                rows={2}
-                disabled={loading}
-                className="flex-1 rounded-lg bg-white border border-gray-400 px-4 py-3 text-gray-900 resize-none focus:outline-none focus:border-blue-400 text-[15px]"
-              />
-              <button
-                type="submit"
-                disabled={loading || !resolveText.trim()}
-                className={`rounded-lg px-7 py-3 text-white font-bold text-lg transition
+
+            {isAdminViewer && (
+              <form
+                onSubmit={handleReply}
+                className="flex gap-4 p-8 border-t border-gray-300 bg-gray-200"
+              >
+                <textarea
+                  value={resolveText}
+                  onChange={(e) => setResolveText(e.target.value)}
+                  placeholder="Type your reply or update here..."
+                  rows={2}
+                  disabled={loading}
+                  className="flex-1 rounded-lg bg-white border border-gray-400 px-4 py-3 text-gray-900 resize-none focus:outline-none focus:border-blue-400 text-[15px]"
+                />
+                <button
+                  type="submit"
+                  disabled={loading || !resolveText.trim()}
+                  className={`rounded-lg px-7 py-3 text-white font-bold text-lg transition
               ${
                 loading || !resolveText.trim()
                   ? "bg-gray-400 cursor-not-allowed"
                   : "bg-gradient-to-r from-blue-500 to-cyan-400 hover:opacity-90"
               }
             `}
-              >
-                {selectedTicket.resolve ? "Update" : "Reply"}
-              </button>
-            </form>
+                >
+                  {selectedTicket.resolve ? "Update" : "Reply"}
+                </button>
+              </form>
+            )}
           </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-400 text-2xl font-semibold">
