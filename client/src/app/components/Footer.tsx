@@ -100,20 +100,17 @@ export default function Footer() {
   // Track component mount
   useEffect(() => {
     setMounted(true);
-    console.log("🎯 Footer component mounted!");
   }, []);
 
   // Fetch footer data from API
   useEffect(() => {
     // Only run on client side and after component is mounted
     if (typeof window === "undefined" || !mounted) {
-      console.log("🚫 Footer useEffect skipped - not ready");
       setLoading(false);
       return;
     }
 
     console.log("🚀 Footer useEffect running on client side..."); // Debug log
-    console.log("🌐 Current window location:", window.location.href);
     const fetchFooterData = async () => {
       try {
         const API_BASE =
@@ -180,8 +177,6 @@ export default function Footer() {
           };
 
           setFooterData(cleanedData);
-          console.log("✅ Footer data updated successfully!");
-          console.log("📊 Updated company name:", cleanedData.companyInfo.name);
           console.log(
             "📚 Updated general links:",
             cleanedData.footerLinks.generalLinks.length,

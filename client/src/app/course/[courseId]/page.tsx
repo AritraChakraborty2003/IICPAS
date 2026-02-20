@@ -1,23 +1,61 @@
 import React from "react";
 import { Metadata } from "next";
 import CourseDetailClient from "./CourseDetailClient";
+import CourseNotFound from "./CourseNotFound";
 
-// Function to fetch course data for metadata generation
-async function getCourseData(courseId: string) {
+interface CourseData {
+  _id?: string;
+  title?: string;
+  description?: string;
+  image?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  seoKeywords?: string;
+  category?: string;
+  level?: string;
+  [key: string]: unknown;
+}
+
+interface CourseFetchResult {
+  course: CourseData | null;
+  status: number;
+}
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+const sanitizeCourseId = (rawCourseId: string) => {
   try {
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    const response = await fetch(`${API_BASE}/api/courses/${courseId}`, {
-      cache: "no-store", // Ensure fresh data for metadata
-    });
+    return decodeURIComponent(rawCourseId).trim();
+  } catch {
+    return rawCourseId.trim();
+  }
+};
+
+async function getCourseBySlug(rawCourseId: string): Promise<CourseFetchResult> {
+  const normalizedCourseId = sanitizeCourseId(rawCourseId);
+  if (!normalizedCourseId) {
+    return { course: null, status: 400 };
+  }
+
+  try {
+    const url = `${API_BASE.replace(/\/$/, "")}/api/courses/${encodeURIComponent(
+      normalizedCourseId
+    )}`;
+    const response = await fetch(url, { cache: "no-store" });
 
     if (!response.ok) {
-      throw new Error("Course not found");
+      return { course: null, status: response.status };
     }
 
-    return await response.json();
+    const payload = await response.json();
+    if (!payload || typeof payload !== "object") {
+      return { course: null, status: 502 };
+    }
+
+    return { course: payload as CourseData, status: 200 };
   } catch (error) {
-    console.error("Error fetching course data for metadata:", error);
-    return null;
+    console.error("Error fetching course data:", error);
+    return { course: null, status: 500 };
   }
 }
 
@@ -28,7 +66,8 @@ export async function generateMetadata({
   params: Promise<{ courseId: string }>;
 }): Promise<Metadata> {
   const resolvedParams = await params;
-  const course = await getCourseData(resolvedParams.courseId);
+  const normalizedCourseId = sanitizeCourseId(resolvedParams.courseId);
+  const { course } = await getCourseBySlug(normalizedCourseId);
 
   // Fallback metadata if course not found
   if (!course) {
@@ -84,7 +123,9 @@ export async function generateMetadata({
   // Use admin meta fields with fallbacks
   const metaTitle = course.metaTitle || `${courseTitle} - IICPA Institute`;
   const metaDescription = course.metaDescription || courseDescription;
-  const courseUrl = `https://iicpa.in/course/${resolvedParams.courseId}`;
+  const courseUrl = `https://iicpa.in/course/${encodeURIComponent(
+    normalizedCourseId
+  )}`;
 
   return {
     title: metaTitle,
@@ -124,10 +165,33 @@ export async function generateMetadata({
     },
   };
 }
-export default function CourseDetailPage({
+export default async function CourseDetailPage({
   params,
 }: {
   params: Promise<{ courseId: string }>;
 }) {
-  return <CourseDetailClient params={params} />;
+  const resolvedParams = await params;
+  const normalizedCourseId = sanitizeCourseId(resolvedParams.courseId);
+  const { course, status } = await getCourseBySlug(normalizedCourseId);
+
+  if (!course) {
+    if (status === 404 || status === 400) {
+      return <CourseNotFound courseId={normalizedCourseId} />;
+    }
+
+    return (
+      <CourseNotFound
+        courseId={normalizedCourseId}
+        title="Unable to Load Course"
+        description="We couldn't load this course right now. Please try again in a moment."
+      />
+    );
+  }
+
+  return (
+    <CourseDetailClient
+      courseId={normalizedCourseId}
+      initialCourse={course}
+    />
+  );
 }

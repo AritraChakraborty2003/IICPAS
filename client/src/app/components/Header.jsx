@@ -123,7 +123,6 @@ export default function Header({ showMarquee = true, topOffset }) {
         withCredentials: true,
       });
       const studentData = res.data.student;
-      console.log("Student data:", studentData);
 
       // Check if student data exists before proceeding
       if (!studentData) {
@@ -134,17 +133,13 @@ export default function Header({ showMarquee = true, topOffset }) {
       }
 
       setStudent(studentData);
-
-      console.log("Making cart request for student ID:", studentData._id);
       const cartRes = await axios.get(
         `${API}/api/v1/cart/get/${studentData._id}`,
         {
           withCredentials: true,
         }
       );
-      console.log("Header cart response:", cartRes.data);
       const cartItems = cartRes.data.cart || [];
-      console.log("Cart items from API:", cartItems);
 
       const wishlistRes = await axios.get(
         `${API}/api/v1/students/get-wishlist/${studentData._id}`,
@@ -158,19 +153,13 @@ export default function Header({ showMarquee = true, topOffset }) {
       // Process cart courses using new cart structure
       const processedCartCourses = cartItems
         .map((cartItem) => {
-          console.log("Header processing cart item:", cartItem);
 
           // New cart API returns: { courseId, course, sessionType, quantity }
           const course = cartItem.course;
           const sessionType = cartItem.sessionType || "recorded";
           const quantity = cartItem.quantity || 1;
 
-          console.log("Course object:", course);
-          console.log("Session type:", sessionType);
-          console.log("Quantity:", quantity);
-
           if (!course) {
-            console.log("No course found for cart item");
             return null;
           }
 
@@ -191,21 +180,15 @@ export default function Header({ showMarquee = true, topOffset }) {
               0;
           }
 
-          console.log("Display price:", displayPrice);
-
           const processedItem = {
             ...course,
             sessionType,
             quantity,
             price: displayPrice, // Override the price with the correct one
           };
-
-          console.log("Processed cart item:", processedItem);
           return processedItem;
         })
         .filter(Boolean); // Remove null entries
-
-      console.log("Header processed cart courses:", processedCartCourses);
       setCartCourses(processedCartCourses);
       setWishlistCourses(courseList.filter((c) => wishlistIDs.includes(c._id)));
     } catch (error) {
@@ -214,7 +197,6 @@ export default function Header({ showMarquee = true, topOffset }) {
 
       // Handle 401 Unauthorized errors gracefully
       if (error.response?.status === 401) {
-        console.log("User not authenticated, clearing student data");
       }
 
       setStudent(null);
@@ -752,7 +734,6 @@ export default function Header({ showMarquee = true, topOffset }) {
                         alt={course.title}
                         className="w-16 h-16 object-cover rounded"
                         onError={(e) => {
-                          console.log("Cart image failed to load:", e);
                           e.currentTarget.src = "/images/a1.jpeg";
                         }}
                       />

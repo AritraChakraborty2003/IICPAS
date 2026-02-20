@@ -2,19 +2,10 @@
 
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import {
-  Calendar,
-  Clock,
-  User,
-  Tag,
-  ArrowLeft,
-  Share2,
-} from "lucide-react";
+import { Calendar, Clock, User, Tag, ArrowLeft, Share2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+import Image from "next/image";
+import { useMemo } from "react";
 
 const slugify = (value = "") =>
   decodeURIComponent(value)
@@ -26,81 +17,19 @@ const slugify = (value = "") =>
     .replace(/-+/g, "-")
     .replace(/^-+|-+$/g, "");
 
-const toCandidateSlugs = (item = {}) => {
-  const rawSlug = (item.slug || "").toString();
-  const rawTitle = (item.title || "").toString();
-  const candidates = [
-    slugify(rawSlug),
-    slugify(rawTitle),
-    rawSlug.trim().toLowerCase(),
-    rawTitle.trim().toLowerCase().replace(/\s+/g, "-"),
-  ].filter(Boolean);
-  return Array.from(new Set(candidates));
-};
-
-const extractBlogs = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload?.blogs)) return payload.blogs;
-  return [];
-};
-
-export default function BlogDetailClient({ blog, allBlogs, slug }) {
-  const [resolvedBlog, setResolvedBlog] = useState(blog);
-  const [resolvedAllBlogs, setResolvedAllBlogs] = useState(allBlogs || []);
-  const [loadingFallback, setLoadingFallback] = useState(false);
-
-  const isValid =
-    resolvedBlog && resolvedBlog.status && resolvedBlog.status.toLowerCase() === "active";
-
-  // Client-side fallback: re-fetch if SSR miss
-  useEffect(() => {
-    if (isValid) return;
-    let cancelled = false;
-    const fetchBlogs = async () => {
-      try {
-        setLoadingFallback(true);
-        const res = await fetch(`${API_BASE}/blogs`, { cache: "no-store" });
-        const data = await res.json();
-        const blogs = extractBlogs(data);
-        const found = blogs.find((b) => {
-          const candidates = toCandidateSlugs(b);
-          return candidates.some(
-            (c) =>
-              c === slug ||
-              c.replace(/-+/g, "-") === slug ||
-              slug.replace(/-+/g, "-") === c ||
-              c.includes(slug) ||
-              slug.includes(c)
-          );
-        });
-        if (!cancelled) {
-          setResolvedBlog(found || null);
-          setResolvedAllBlogs(
-            blogs.filter(
-              (b) => b.status && b.status.toString().trim().toLowerCase() === "active"
-            )
-          );
-        }
-      } catch (err) {
-        console.error("Client fallback fetch failed:", err);
-        if (!cancelled) setResolvedBlog(null);
-      } finally {
-        if (!cancelled) setLoadingFallback(false);
-      }
-    };
-    fetchBlogs();
-    return () => {
-      cancelled = true;
-    };
-  }, [isValid, slug]);
-
+export default function BlogDetailClient({ blog, allBlogs }) {
   const blogToRender = useMemo(() => {
-    if (isValid) return resolvedBlog;
-    if (resolvedBlog && resolvedBlog.status?.toLowerCase() === "active")
-      return resolvedBlog;
-    return null;
-  }, [isValid, resolvedBlog]);
+    if (!blog) return null;
+    if (!blog.status) return null;
+    return blog.status.toLowerCase() === "active" ? blog : null;
+  }, [blog]);
+
+  const resolvedAllBlogs = useMemo(() => {
+    if (!Array.isArray(allBlogs)) return [];
+    return allBlogs.filter(
+      (item) => item?.status && item.status.toString().trim().toLowerCase() === "active"
+    );
+  }, [allBlogs]);
 
   const tags = useMemo(() => {
     if (!blogToRender) return [];
@@ -109,86 +38,77 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
       blogToRender.keywords ||
       blogToRender.category ||
       "";
+
     if (Array.isArray(raw)) return raw.filter(Boolean).slice(0, 8);
-    if (typeof raw === "string")
+
+    if (typeof raw === "string") {
       return raw
         .split(/[,|]/)
-        .map((t) => t.trim())
+        .map((tag) => tag.trim())
         .filter(Boolean)
         .slice(0, 8);
+    }
+
     return [];
   }, [blogToRender]);
 
-  // TOC generation
   const { contentWithAnchors } = useMemo(() => {
     if (!blogToRender || !blogToRender.content) {
       return { contentWithAnchors: "" };
     }
-    const headings = [];
+
     let content = blogToRender.content || "";
     const headingRegex = /<(h2|h3)>(.*?)<\/\1>/gi;
+    const headings = [];
+
     let match;
     while ((match = headingRegex.exec(content)) !== null) {
       const text = match[2].replace(/<[^>]*>/g, "").trim();
       if (!text) continue;
       headings.push({ id: slugify(text), text, level: match[1] });
     }
+
     if (headings.length) {
       content = content.replace(headingRegex, (_, tag, inner) => {
         const clean = inner.replace(/<[^>]*>/g, "").trim();
         const id = slugify(clean);
-        return `<${tag} id="${id}">${inner}</${tag}>`;
+        return `<${tag} id=\"${id}\">${inner}</${tag}>`;
       });
     }
+
     return { contentWithAnchors: content };
   }, [blogToRender]);
 
   const categoriesList = useMemo(() => {
-    const list = Array.isArray(resolvedAllBlogs)
-      ? resolvedAllBlogs.map((b) => b?.category).filter(Boolean)
-      : [];
+    const list = resolvedAllBlogs.map((item) => item?.category).filter(Boolean);
     return [...new Set(list)].slice(0, 10);
   }, [resolvedAllBlogs]);
 
-  // Show fallback
   if (!blogToRender) {
     return (
       <>
         <Header />
         <div className="min-h-screen bg-white flex items-center justify-center">
-          {loadingFallback ? (
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading article...</p>
-            </div>
-          ) : (
-            <div className="text-center">
-              <div className="text-6xl mb-6">📝</div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                Article Not Found
-              </h1>
-              <p className="text-gray-600 mb-8">
-                The blog post you're looking for doesn't exist or has been
-                removed.
-              </p>
-              <Link
-                href="/blogs"
-                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
-              >
-                <ArrowLeft className="w-5 h-5" />
-                Back to Blogs
-              </Link>
-            </div>
-          )}
+          <div className="text-center">
+            <div className="text-6xl mb-6">📝</div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">Article Not Found</h1>
+            <p className="text-gray-600 mb-8">
+              The blog post you&apos;re looking for doesn&apos;t exist or has been removed.
+            </p>
+            <Link
+              href="/blogs"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Back to Blogs
+            </Link>
+          </div>
         </div>
         <Footer />
       </>
     );
   }
 
-  // Helper data with defensive coercion
-  const safeTitle = blogToRender.title || "Untitled Article";
-  const safeAuthor = blogToRender.author || "";
   const rawContent = blogToRender.content;
   const safeContent =
     typeof rawContent === "string"
@@ -196,14 +116,13 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
       : rawContent != null
       ? String(rawContent)
       : "";
-  const rawImage = blogToRender.imageUrl
-    ? String(blogToRender.imageUrl)
-    : "";
+
+  const rawImage = blogToRender.imageUrl ? String(blogToRender.imageUrl) : "";
   const imageUrl = rawImage.startsWith("http")
     ? rawImage
     : rawImage
     ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${
-        rawImage.startsWith("/") ? rawImage : "/" + rawImage
+        rawImage.startsWith("/") ? rawImage : `/${rawImage}`
       }`
     : "/images/blog-default.jpg";
 
@@ -225,7 +144,6 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr,280px] gap-6">
-            {/* Main content */}
             <div>
               <div className="bg-white rounded-3xl shadow-md border border-gray-100 p-6 sm:p-8">
                 <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-gray-600 mb-4">
@@ -279,11 +197,13 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
                 )}
 
                 <div className="rounded-2xl overflow-hidden mb-8 border border-gray-100">
-                  <img
+                  <Image
                     src={imageUrl}
                     alt={blogToRender.title}
+                    width={1200}
+                    height={700}
                     className="w-full max-h-[520px] object-cover"
-                    loading="eager"
+                    sizes="(max-width: 1024px) 100vw, 900px"
                   />
                 </div>
 
@@ -296,7 +216,6 @@ export default function BlogDetailClient({ blog, allBlogs, slug }) {
               </div>
             </div>
 
-            {/* Right sidebar */}
             <div className="hidden lg:flex flex-col gap-6">
               <div className="sticky top-28 flex flex-col gap-6">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
