@@ -31,6 +31,9 @@ export default function ProfileTab({ onImageUpdated }) {
   const [testimonialsLoading, setTestimonialsLoading] = useState(true);
   const [ticketsLoading, setTicketsLoading] = useState(true);
   const [profileCourses, setProfileCourses] = useState([]);
+  const [courseChaptersByCourse, setCourseChaptersByCourse] = useState({});
+  const [expandedProfileCourses, setExpandedProfileCourses] = useState({});
+  const [expandedProfileChapters, setExpandedProfileChapters] = useState({});
   const [profileTestimonials, setProfileTestimonials] = useState([]);
   const [profileTickets, setProfileTickets] = useState([]);
   const [student, setStudent] = useState({

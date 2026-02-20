@@ -248,15 +248,6 @@ export default function CourseTab() {
     return `${basePath}/${encodeURIComponent(chapterId)}`;
   };
 
-  const handleChapterClick = (chapterName) => {
-    if (!selectedCourse) return;
-    const chapterKey = `${selectedCourse._id}-${chapterName || "chapter"}`;
-    setExpandedChapterKeys((prev) => ({
-      ...prev,
-      [chapterKey]: !prev[chapterKey],
-    }));
-  };
-
   const toggleDetailedChapter = (courseId, chapterId) => {
     const key = `${courseId}-${chapterId}`;
     setExpandedChapterKeys((prev) => ({
