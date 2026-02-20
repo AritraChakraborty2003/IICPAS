@@ -70,6 +70,8 @@ export default function CheckoutPage() {
     additionalNotes: "",
     paymentScreenshot: null as File | null,
   });
+  const inputClass =
+    "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition";
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -203,13 +205,18 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-gray-100">
       <Header topOffset={40} />
 
       <div className="pt-32 pb-10 px-4">
-        <div className="max-w-6xl mx-auto bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b">
-            <h1 className="text-3xl font-semibold text-gray-800">Checkout</h1>
+            <div>
+              <h1 className="text-3xl font-semibold text-gray-800">Checkout</h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Complete your purchase securely
+              </p>
+            </div>
             <button
               type="button"
               onClick={() => router.back()}
@@ -232,14 +239,14 @@ export default function CheckoutPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="border border-gray-200 rounded-xl p-4">
+                <div className="border border-gray-200 rounded-xl p-5 bg-white">
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">
                     Billing & Shipping Address
                   </h2>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div>
-                      <h3 className="text-base font-semibold text-gray-800 mb-3">
+                      <h3 className="text-base font-semibold text-gray-800 mb-3 flex items-center gap-2">
                         Billing Address
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -253,7 +260,7 @@ export default function CheckoutPage() {
                               fullName: e.target.value,
                             }))
                           }
-                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={inputClass}
                         />
                         <input
                           type="email"
@@ -265,7 +272,7 @@ export default function CheckoutPage() {
                               email: e.target.value,
                             }))
                           }
-                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={inputClass}
                         />
                         <input
                           type="text"
@@ -277,7 +284,7 @@ export default function CheckoutPage() {
                               phone: e.target.value,
                             }))
                           }
-                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={inputClass}
                         />
                         <input
                           type="text"
@@ -289,7 +296,7 @@ export default function CheckoutPage() {
                               pincode: e.target.value,
                             }))
                           }
-                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={inputClass}
                         />
                         <input
                           type="text"
@@ -301,7 +308,7 @@ export default function CheckoutPage() {
                               line1: e.target.value,
                             }))
                           }
-                          className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={`md:col-span-2 ${inputClass}`}
                         />
                         <input
                           type="text"
@@ -313,7 +320,7 @@ export default function CheckoutPage() {
                               line2: e.target.value,
                             }))
                           }
-                          className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={`md:col-span-2 ${inputClass}`}
                         />
                         <input
                           type="text"
@@ -325,7 +332,7 @@ export default function CheckoutPage() {
                               city: e.target.value,
                             }))
                           }
-                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={inputClass}
                         />
                         <input
                           type="text"
@@ -337,7 +344,7 @@ export default function CheckoutPage() {
                               state: e.target.value,
                             }))
                           }
-                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={inputClass}
                         />
                         <input
                           type="text"
@@ -349,7 +356,7 @@ export default function CheckoutPage() {
                               country: e.target.value,
                             }))
                           }
-                          className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                          className={`md:col-span-2 ${inputClass}`}
                         />
                       </div>
                     </div>
@@ -359,7 +366,7 @@ export default function CheckoutPage() {
                         <h3 className="text-base font-semibold text-gray-800">
                           Shipping Address
                         </h3>
-                        <label className="flex items-center gap-2 text-sm text-gray-700">
+                        <label className="flex items-center gap-2 text-sm text-gray-700 font-medium">
                           <input
                             type="checkbox"
                             checked={sameAsBilling}
@@ -370,7 +377,7 @@ export default function CheckoutPage() {
                       </div>
 
                       {sameAsBilling ? (
-                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700">
+                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-sm text-blue-700">
                           Shipping address will use the same details as billing.
                         </div>
                       ) : (
@@ -385,7 +392,7 @@ export default function CheckoutPage() {
                                 fullName: e.target.value,
                               }))
                             }
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={inputClass}
                           />
                           <input
                             type="email"
@@ -397,7 +404,7 @@ export default function CheckoutPage() {
                                 email: e.target.value,
                               }))
                             }
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={inputClass}
                           />
                           <input
                             type="text"
@@ -409,7 +416,7 @@ export default function CheckoutPage() {
                                 phone: e.target.value,
                               }))
                             }
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={inputClass}
                           />
                           <input
                             type="text"
@@ -421,7 +428,7 @@ export default function CheckoutPage() {
                                 pincode: e.target.value,
                               }))
                             }
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={inputClass}
                           />
                           <input
                             type="text"
@@ -433,7 +440,7 @@ export default function CheckoutPage() {
                                 line1: e.target.value,
                               }))
                             }
-                            className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={`md:col-span-2 ${inputClass}`}
                           />
                           <input
                             type="text"
@@ -445,7 +452,7 @@ export default function CheckoutPage() {
                                 line2: e.target.value,
                               }))
                             }
-                            className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={`md:col-span-2 ${inputClass}`}
                           />
                           <input
                             type="text"
@@ -457,7 +464,7 @@ export default function CheckoutPage() {
                                 city: e.target.value,
                               }))
                             }
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={inputClass}
                           />
                           <input
                             type="text"
@@ -469,7 +476,7 @@ export default function CheckoutPage() {
                                 state: e.target.value,
                               }))
                             }
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={inputClass}
                           />
                           <input
                             type="text"
@@ -481,7 +488,7 @@ export default function CheckoutPage() {
                                 country: e.target.value,
                               }))
                             }
-                            className="md:col-span-2 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                            className={`md:col-span-2 ${inputClass}`}
                           />
                         </div>
                       )}
@@ -504,7 +511,7 @@ export default function CheckoutPage() {
                       return (
                         <div
                           key={`${item.courseId}-${item.sessionType}`}
-                          className="border border-gray-200 rounded-xl p-4"
+                          className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm"
                         >
                           <div className="flex items-start gap-4">
                             <Image
@@ -543,10 +550,10 @@ export default function CheckoutPage() {
 
                               <div className="mt-3 flex items-center gap-3">
                                 <span className="text-sm text-gray-600">Quantity:</span>
-                                <div className="flex items-center border border-gray-300 rounded-lg">
+                                <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
                                   <button
                                     type="button"
-                                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                                    className="px-3 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40"
                                     disabled={loading || (item.quantity || 1) <= 1}
                                     onClick={() =>
                                       updateQuantity(
@@ -563,7 +570,7 @@ export default function CheckoutPage() {
                                   </span>
                                   <button
                                     type="button"
-                                    className="px-3 py-1 text-gray-600 hover:bg-gray-100"
+                                    className="px-3 py-1 text-gray-600 hover:bg-gray-100 disabled:opacity-40"
                                     disabled={loading}
                                     onClick={() =>
                                       updateQuantity(
@@ -589,7 +596,7 @@ export default function CheckoutPage() {
                                 type="button"
                                 onClick={() => handlePayNow(item)}
                                 disabled={loading}
-                                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold"
+                                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-semibold shadow-sm"
                               >
                                 Pay Now
                               </button>
@@ -610,7 +617,7 @@ export default function CheckoutPage() {
                 </div>
 
                 <div>
-                  <div className="bg-gray-50 rounded-xl p-4 sticky top-28 border border-gray-100">
+                  <div className="bg-gray-50 rounded-xl p-4 sticky top-28 border border-gray-200 shadow-sm">
                     <h3 className="text-2xl font-semibold text-gray-900 mb-4">Order Summary</h3>
 
                     <div className="space-y-2 mb-4">
@@ -659,7 +666,7 @@ export default function CheckoutPage() {
                           href="https://wa.me/+918810380146?text=Hi, I need support with my course checkout or payment process. Please help."
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-medium"
+                          className="inline-flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-medium shadow-sm"
                         >
                           WhatsApp Support
                         </a>
