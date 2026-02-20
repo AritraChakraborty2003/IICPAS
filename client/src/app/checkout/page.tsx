@@ -110,6 +110,8 @@ export default function CheckoutPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponMessage, setCouponMessage] = useState("");
   const [payNowTargetKey, setPayNowTargetKey] = useState("");
+  const [payingItemKey, setPayingItemKey] = useState<string | null>(null);
+  const [razorpayReady, setRazorpayReady] = useState(false);
   const inputClass =
     "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition";
   const cartSubtotal = safeCartItems.reduce(
@@ -248,12 +250,15 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (window.Razorpay) {
+      setRazorpayReady(true);
       return;
     }
 
     const script = document.createElement("script");
     script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
+    script.onload = () => setRazorpayReady(true);
+    script.onerror = () => setRazorpayReady(false);
     document.body.appendChild(script);
 
     return () => {
@@ -304,6 +309,7 @@ export default function CheckoutPage() {
       },
       modal: {
         ondismiss: () => {
+          setPayingItemKey(null);
           alert("Payment was cancelled. You can retry from checkout.");
         },
       },
@@ -332,6 +338,8 @@ export default function CheckoutPage() {
             error?.response?.data?.message ||
               "Payment verification failed. Please contact support."
           );
+        } finally {
+          setPayingItemKey(null);
         }
       },
     });
@@ -356,7 +364,10 @@ export default function CheckoutPage() {
       return;
     }
 
+    const itemKey = getCartItemKey(item);
+
     try {
+      setPayingItemKey(itemKey);
       const amount = getItemPrice(item) * (item.quantity || 1);
 
       const response = await axios.post(
@@ -381,6 +392,7 @@ export default function CheckoutPage() {
 
       openRazorpayCheckout(response.data.data, item);
     } catch (error: any) {
+      setPayingItemKey(null);
       alert(error?.response?.data?.message || error?.message || "Payment failed");
     }
   };
