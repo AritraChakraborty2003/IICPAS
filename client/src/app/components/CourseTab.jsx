@@ -304,9 +304,18 @@ export default function CourseTab() {
     }));
   };
 
+  const buildDigitalHubPath = (course, chapterId) => {
+    if (!course?._id && !course?.slug) return "/digital-hub";
+    const identifier = encodeURIComponent(course?.slug || course?._id);
+    const basePath = `/digital-hub/${identifier}`;
+    if (!chapterId) return basePath;
+    return `${basePath}/${encodeURIComponent(chapterId)}`;
+  };
+
   const handleChapterClick = (chapterName) => {
     // Navigate to digital-hub when any chapter is clicked
-    router.push("/digital-hub");
+    if (!selectedCourse) return;
+    router.push(buildDigitalHubPath(selectedCourse));
   };
 
   const handleAddNew = (type) => {
@@ -1049,7 +1058,7 @@ export default function CourseTab() {
                                 className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:border-blue-300"
                                 onClick={() =>
                                   router.push(
-                                    `/digital-hub?courseId=${course._id}&chapterId=${chapter._id}`
+                                    buildDigitalHubPath(course, chapter._id)
                                   )
                                 }
                               >

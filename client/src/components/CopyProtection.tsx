@@ -1,18 +1,35 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import toast from "react-hot-toast";
 
+const AUTH_ROUTES = new Set([
+  "/login",
+  "/register",
+  "/student-login",
+  "/teacher-login",
+  "/teacher-register",
+  "/center-login",
+  "/center-register",
+]);
+
 export default function CopyProtection() {
+  const pathname = usePathname();
+
   useEffect(() => {
     // Check if we're on an admin dashboard page
     const isAdminDashboard = () => {
-      if (typeof window === "undefined") return false;
-      return window.location.pathname.includes("/admin-dashboard");
+      return pathname?.includes("/admin-dashboard") ?? false;
     };
 
-    // Skip protection if on admin dashboard
-    if (isAdminDashboard()) {
+    // Check if we're on an auth page
+    const isAuthPage = () => {
+      return Boolean(pathname && AUTH_ROUTES.has(pathname));
+    };
+
+    // Skip protection on admin dashboard and auth pages
+    if (isAdminDashboard() || isAuthPage()) {
       return;
     }
 
@@ -118,7 +135,7 @@ export default function CopyProtection() {
       document.removeEventListener("selectstart", handleSelectStart);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [pathname]);
 
   // This component doesn't render anything
   return null;

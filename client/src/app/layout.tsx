@@ -7,6 +7,7 @@ import { Toaster } from "react-hot-toast";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import DeferredGlobalWidgets from "@/components/DeferredGlobalWidgets";
 import ScrollToTopOnNavigation from "@/components/ScrollToTopOnNavigation";
+import AuthRouteMarker from "@/components/AuthRouteMarker";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,6 +26,7 @@ export default function RootLayout({
       <body className={inter.className} suppressHydrationWarning={true}>
         <GoogleAnalytics />
         <AuthProvider>
+          <AuthRouteMarker />
           <Suspense fallback={null}>
             <ScrollToTopOnNavigation />
           </Suspense>
