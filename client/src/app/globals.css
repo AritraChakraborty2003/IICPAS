@@ -22,6 +22,15 @@
   -webkit-touch-callout: default !important;
 }
 
+/* Allow copy/paste/selection on auth pages */
+body.auth-page * {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
+
 /* Allow text highlighting in Admin Dashboard */
 .admin-dashboard *::selection,
 [data-admin-dashboard] *::selection {
@@ -30,6 +39,15 @@
 
 .admin-dashboard *::-moz-selection,
 [data-admin-dashboard] *::-moz-selection {
+  background: rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Allow text highlighting on auth pages */
+body.auth-page *::selection {
+  background: rgba(59, 130, 246, 0.3) !important;
+}
+
+body.auth-page *::-moz-selection {
   background: rgba(59, 130, 246, 0.3) !important;
 }
 

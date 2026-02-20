@@ -74,7 +74,7 @@ export default function RecordedSessionTab() {
 
   const handleWatchSession = (courseId) => {
     // Navigate to digital hub with course ID
-    window.open(`/digital-hub?courseId=${courseId}`, "_blank");
+    window.open(`/digital-hub/${encodeURIComponent(courseId)}`, "_blank");
   };
 
   if (loading) {
