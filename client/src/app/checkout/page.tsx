@@ -316,7 +316,7 @@ export default function CheckoutPage() {
       <Header topOffset={40} />
 
       <div className="pt-32 pb-10 px-4">
-        <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+        <div className="w-full bg-white rounded-none shadow-none border-none overflow-hidden">
           <div className="flex items-center justify-between p-6 border-b">
             <div>
               <h1 className="text-3xl font-semibold text-gray-800">Checkout</h1>
