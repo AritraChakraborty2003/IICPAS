@@ -198,11 +198,11 @@ export default function ProfileTab({ onImageUpdated }) {
       const formData = new FormData();
       formData.append("profileImage", profileImage);
 
-      const uploadUrl = `${API_BASE.replace(/\/+$/, "")}/v1/students/profile`;
+      const uploadUrl = "/api/student/profile-image";
       let responseData = null;
       const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-      for (const method of ["put", "post"]) {
+      for (const method of ["post"]) {
         for (let attempt = 1; attempt <= 3; attempt += 1) {
           try {
             const axiosRes = await axios({
@@ -222,11 +222,6 @@ export default function ProfileTab({ onImageUpdated }) {
             if (isNetworkError && attempt < 3) {
               await delay(300 * attempt);
               continue;
-            }
-
-            const shouldTryNextMethod = status === 404 || status === 405;
-            if (shouldTryNextMethod && method === "put") {
-              break;
             }
 
             throw axiosErr;
