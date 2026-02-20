@@ -62,6 +62,7 @@ const RevisionTab: React.FC = () => {
   const [quizStarted, setQuizStarted] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  const totalTests = courses.reduce((sum, course) => sum + course.tests.length, 0);
 
   useEffect(() => {
     fetchRevisionTests();
@@ -262,59 +263,84 @@ const RevisionTab: React.FC = () => {
   // Show full-screen quiz interface
   if (quizStarted && currentTest) {
     return (
-      <div className="min-h-screen bg-white text-gray-800 p-6 pt-12">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-gray-800 p-4 md:p-6 pt-8 md:pt-10">
         {/* Quiz Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={closeQuiz}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                <FaArrowLeft />
-                <span>Back to Tests</span>
-              </button>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-red-600 px-4 py-2 rounded-lg">
-                <FaClock className="text-white" />
-                <span className="font-bold text-white">
-                  Time Left: {formatTime(timeLeft)}
-                </span>
+        <div className="mb-6 md:mb-8">
+          <div className="rounded-3xl bg-gradient-to-r from-slate-900 via-blue-900 to-blue-700 p-5 md:p-6 shadow-[0_20px_45px_rgba(15,23,42,0.28)]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={closeQuiz}
+                  className="flex items-center gap-2 text-slate-200 hover:text-white transition-colors bg-white/10 border border-white/20 px-3 py-2 rounded-lg"
+                >
+                  <FaArrowLeft />
+                  <span>Back to Tests</span>
+                </button>
               </div>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-red-600 px-4 py-2 rounded-lg shadow-md">
+                  <FaClock className="text-white" />
+                  <span className="font-bold text-white">
+                    Time Left: {formatTime(timeLeft)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <Typography variant="h3" className="font-bold !text-white mb-2">
+                {currentTest.course.title}
+              </Typography>
+              <Typography variant="body1" className="!text-blue-100">
+                {currentTest.questions.length} questions • 10 marks each
+              </Typography>
             </div>
           </div>
 
-          <div className="mb-6">
-            <Typography variant="h3" className="font-bold text-gray-800 mb-2">
-              {currentTest.course.title}
+          <div className="mt-4 rounded-2xl bg-white border border-slate-200 px-4 py-3 shadow-sm flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Typography variant="body2" className="!font-semibold !text-slate-700">
+                Attempted: {Object.keys(selectedAnswers).length}/{currentTest.questions.length}
+              </Typography>
+            </div>
+            <Typography variant="body2" className="!font-semibold !text-blue-700">
+              Marks: {totalMarks}
             </Typography>
           </div>
         </div>
 
         {/* Questions */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {currentTest.questions.map((question, questionIndex) => (
             <Card
               key={questionIndex}
-              className="bg-gray-50 border border-gray-300 rounded-xl shadow-sm"
+              className="bg-white border border-slate-200 rounded-2xl shadow-[0_10px_28px_rgba(15,23,42,0.08)] overflow-hidden"
             >
-              <CardContent className="p-6">
+              <CardContent className="p-0">
+                <div className="px-5 md:px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-blue-50">
+                  <Typography
+                    variant="h6"
+                    className="!text-slate-800 !font-semibold"
+                  >
+                    Question {questionIndex + 1}
+                  </Typography>
+                </div>
+                <div className="px-5 md:px-6 py-5">
                 <Typography
-                  variant="h6"
-                  className="text-gray-800 font-semibold mb-8"
+                  variant="body1"
+                  className="text-slate-800 font-semibold mb-6 text-lg"
                 >
-                  {questionIndex + 1}. {question.question}
+                  {question.question}
                 </Typography>
 
-                <div className="mt-8 pl-4">
+                <div className="pl-0">
                   <FormControl component="fieldset" className="w-full">
                     <RadioGroup
                       value={selectedAnswers[questionIndex] || ""}
                       onChange={(e) =>
                         handleAnswerSelect(questionIndex, e.target.value)
                       }
-                      className="grid grid-cols-2 gap-4"
+                      className="grid grid-cols-1 md:grid-cols-2 gap-3"
                     >
                       {question.options.map((option, optionIndex) => (
                         <FormControlLabel
@@ -322,15 +348,16 @@ const RevisionTab: React.FC = () => {
                           value={option}
                           control={<Radio className="text-blue-600" />}
                           label={option}
-                          className={`p-4 rounded-lg border-2 transition-all duration-200 cursor-pointer ${
+                          className={`mx-0 rounded-xl border-2 transition-all duration-200 cursor-pointer px-3 py-2 ${
                             selectedAnswers[questionIndex] === option
-                              ? "border-blue-500 bg-blue-50"
-                              : "border-gray-300 hover:border-gray-400 bg-white"
+                              ? "border-blue-500 bg-blue-50 shadow-sm"
+                              : "border-slate-200 hover:border-blue-300 bg-white hover:bg-blue-50/30"
                           }`}
                         />
                       ))}
                     </RadioGroup>
                   </FormControl>
+                </div>
                 </div>
               </CardContent>
             </Card>
@@ -338,11 +365,11 @@ const RevisionTab: React.FC = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center pb-6">
           <Button
             variant="contained"
             onClick={handleSubmitQuiz}
-            className="px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-bold text-lg rounded-lg"
+            className="!px-8 !py-3 !bg-emerald-600 hover:!bg-emerald-700 !text-white !font-bold !text-lg !rounded-xl !shadow-lg"
           >
             Submit Quiz
           </Button>
@@ -353,16 +380,41 @@ const RevisionTab: React.FC = () => {
 
   // Show course selection interface
   return (
-    <div className="min-h-screen bg-white text-gray-800 p-6 pt-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 text-gray-800 p-4 md:p-6 pt-8 md:pt-10">
       {/* Header */}
-      <div className="mb-8">
-        <Typography variant="h3" className="font-bold text-gray-800 mb-4">
-          Prepare
-        </Typography>
-        <Typography variant="body1" className="text-gray-600 text-lg">
-          Choose a topic and take tests. Measure your skills and get detailed
-          information on improving your skills.
-        </Typography>
+      <div className="mb-7 rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-sky-50 p-5 md:p-7 shadow-[0_20px_55px_rgba(15,23,42,0.08)]">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-blue-700">
+              Assessment Center
+            </p>
+            <Typography variant="h3" className="!font-bold !text-slate-900 !mt-2 !mb-3">
+              Prepare
+            </Typography>
+            <Typography variant="body1" className="!text-slate-600 !text-base">
+              Choose a topic and take tests. Measure your skills and get
+              detailed information on improving your skills.
+            </Typography>
+          </div>
+          <div className="grid grid-cols-2 gap-3 md:w-[340px]">
+            <div className="rounded-2xl bg-white border border-slate-200 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                Courses
+              </p>
+              <p className="text-3xl font-bold text-slate-900 leading-none mt-2">
+                {courses.length}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white border border-slate-200 px-4 py-3 shadow-[0_10px_24px_rgba(15,23,42,0.06)]">
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                Tests
+              </p>
+              <p className="text-3xl font-bold text-slate-900 leading-none mt-2">
+                {totalTests}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Revision Tests Grid */}
@@ -370,32 +422,38 @@ const RevisionTab: React.FC = () => {
         {courses.map((course) => (
           <Card
             key={course._id}
-            className="bg-white border-2 border-black rounded-xl overflow-hidden shadow-sm"
+            className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-[0_14px_34px_rgba(15,23,42,0.08)]"
           >
             <CardContent className="p-6">
-              <div className="mb-6">
+              <div className="mb-5">
                 <Typography
                   variant="h5"
-                  className="font-bold text-gray-800 mb-4"
+                  className="font-bold text-slate-800 mb-4"
                 >
                   {course.title}
                 </Typography>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mt-2">
-                  <span>Category: {course.category}</span>
-                  <span>Level: {course.level}</span>
-                  <span>Tests Available: {course.tests.length}</span>
+                <div className="flex items-center gap-3 text-sm text-gray-600 mt-2 flex-wrap">
+                  <span className="px-2.5 py-1 rounded-full bg-sky-100 text-sky-800 font-medium">
+                    Category: {course.category}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 font-medium">
+                    Level: {course.level}
+                  </span>
+                  <span className="ml-auto font-semibold text-blue-900">
+                    Tests Available: {course.tests.length}
+                  </span>
                 </div>
               </div>
 
-              <div className="border-t-2 border-gray-300 pt-6">
-                <div className="grid grid-cols-4 gap-4">
+              <div className="border-t border-slate-200 pt-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {sortTestsByLevel(course.tests).map((test) => (
                     <div key={test._id} className="text-center">
                       <button
                         onClick={() => startQuiz(test)}
                         className={`w-20 h-20 rounded-full ${getLevelColor(
                           test.level
-                        )} text-white font-bold text-xl flex items-center justify-center hover:opacity-80 transition-opacity mb-2 mx-auto`}
+                        )} text-white font-bold text-xl flex items-center justify-center hover:scale-105 transition-all duration-200 mb-2 mx-auto shadow-md`}
                       >
                         {getLevelNumber(test.level)}
                       </button>
