@@ -170,7 +170,9 @@ export default function RecordedSessionTab() {
                   </div>
 
                   <button
-                    onClick={() => handleWatchSession(course._id)}
+                    onClick={() =>
+                      handleWatchSession(course.slug || course._id)
+                    }
                     className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
                   >
                     <PlayCircleIcon className="w-4 h-4" />

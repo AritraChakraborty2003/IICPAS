@@ -1,17 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Select from "react-select";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
 
 export default function StudentAuthForm() {
-  // Mode: register | login | forgot
   const [mode, setMode] = useState<"register" | "login" | "forgot">("login");
 
-  // --- Register form state
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -24,13 +23,10 @@ export default function StudentAuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-
-  // --- Login form state
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
 
-  // --- Forgot password state
   const [forgotStep, setForgotStep] = useState<"email" | "otp">("email");
   const [forgotEmail, setForgotEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -38,39 +34,30 @@ export default function StudentAuthForm() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // --- Register handlers
   const handleChange = (e: any) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleCenterChange = (selected: any) => {
     setForm((prev) => ({ ...prev, center: selected.value }));
   };
+
   const handleRegister = async (e: any) => {
     e.preventDefault();
-    const {
-      name,
-      email,
-      phone,
-      password,
-      confirmPassword,
-      location,
-      center,
-    } = form;
-    if (!name || !email || !phone || !password || !confirmPassword)
+    const { name, email, phone, password, confirmPassword, location, center } = form;
+
+    if (!name || !email || !phone || !password || !confirmPassword) {
       return toast.success("All fields required");
-    if (password !== confirmPassword) return toast.error("Passwords do not match!");
+    }
+    if (password !== confirmPassword) {
+      return toast.error("Passwords do not match!");
+    }
+
     try {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/register`,
-        {
-          name,
-          email,
-          phone,
-          password,
-          location,
-          center,
-        },
+        { name, email, phone, password, location, center },
         { withCredentials: true }
       );
       toast.success("Registration successful!");
@@ -80,11 +67,12 @@ export default function StudentAuthForm() {
     }
   };
 
-  // --- Login handlers
   const handleLogin = async (e: any) => {
     e.preventDefault();
-    if (!loginEmail || !loginPassword)
+    if (!loginEmail || !loginPassword) {
       return toast.error("Email and password required");
+    }
+
     try {
       await axios.post(
         `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/login`,
@@ -93,18 +81,13 @@ export default function StudentAuthForm() {
       );
       toast.success("Login successful");
 
-      // Small delay to ensure login state is set
       setTimeout(() => {
-        // Check if user came from wishlist page
         const urlParams = new URLSearchParams(window.location.search);
         const redirectTo = urlParams.get("redirect");
-
-        // Also check if user was on wishlist page before
         const referrer = document.referrer;
         const wasOnWishlist = referrer.includes("/wishlist");
 
         if (redirectTo === "wishlist" || wasOnWishlist) {
-          // Force a hard reload to refresh the wishlist page state
           window.location.replace("/wishlist");
         } else {
           window.location.href = "/student-dashboard";
@@ -115,10 +98,10 @@ export default function StudentAuthForm() {
     }
   };
 
-  // --- Forgot password handlers
   const handleSendOtp = async (e: any) => {
     e.preventDefault();
     if (!forgotEmail) return alert("Enter your email");
+
     setLoading(true);
     try {
       await axios.post(
@@ -132,9 +115,11 @@ export default function StudentAuthForm() {
     }
     setLoading(false);
   };
+
   const handleResetPassword = async (e: any) => {
     e.preventDefault();
     if (!otp || !newPassword) return toast.error("All fields required");
+
     setLoading(true);
     try {
       await axios.post(
@@ -155,259 +140,271 @@ export default function StudentAuthForm() {
 
   const centerOptions = [{ label: "Greater Noida", value: "Greater Noida" }];
 
+  const compactSelectStyles = {
+    control: (base: any, state: any) => ({
+      ...base,
+      minHeight: 40,
+      borderRadius: 10,
+      borderColor: state.isFocused ? "#34d399" : "#d1d5db",
+      boxShadow: state.isFocused ? "0 0 0 2px rgba(16,185,129,0.2)" : "none",
+      ":hover": { borderColor: "#34d399" },
+    }),
+    valueContainer: (base: any) => ({ ...base, padding: "0 12px" }),
+    indicatorsContainer: (base: any) => ({ ...base, height: 40 }),
+    menu: (base: any) => ({ ...base, zIndex: 30 }),
+  };
 
-  // --- Render ---
   return (
-    <div className="pt-36 flex justify-center items-center bg-gray-50 p-4 min-h-screen">
-      <div className="w-full max-w-lg bg-white rounded-xl shadow p-5 overflow-hidden">
-        <div className="flex justify-center items-center">
-          <h2 className="text-2xl font-bold text-center mb-6">
-            <Image
-              src="/images/logo.png"
-              height={100}
-              width={120}
-              alt="LMS Logo"
-            />
-          </h2>
-        </div>
-        {/* REGISTER */}
-        {mode === "register" && (
-          <form
-            onSubmit={handleRegister}
-            className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4"
-          >
-            <Input
-              label="Full Name"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-            />
-            <Input
-              label="Phone"
-              name="phone"
-              value={form.phone}
-              onChange={handleChange}
-            />
-            <SelectDropdown
-              label="Location"
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              options={["Greater Noida"]}
-            />
-            <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Center
-              </label>
-              <Select
-                options={centerOptions}
-                value={centerOptions.find((opt) => opt.value === form.center)}
-                onChange={handleCenterChange}
-                placeholder="Select center"
-                aria-label="Center selection"
-              />
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-white to-emerald-50 pt-28 pb-6 px-4 md:pt-32 md:pb-8">
+      <div className="mx-auto w-full max-w-5xl overflow-hidden rounded-3xl border border-slate-200 bg-white/95 shadow-2xl">
+        <div className="grid md:grid-cols-[0.92fr_1.08fr]">
+          <div className="relative hidden bg-gradient-to-br from-emerald-700 via-emerald-600 to-teal-600 p-7 text-white md:flex md:flex-col md:justify-between">
+            <div>
+              <Image src="/images/logo.png" height={72} width={120} alt="IICPA" className="mb-5 rounded bg-white p-2" />
+              <h2 className="text-2xl font-bold leading-tight">Learn Smarter With IICPA</h2>
+              <p className="mt-3 text-sm text-emerald-50/90">
+                Access classes, practicals, and progress tools from one student dashboard.
+              </p>
+            </div>
+            <ul className="space-y-2 text-sm text-emerald-50/95">
+              <li>Fast onboarding</li>
+              <li>Structured practical training</li>
+              <li>Single account for all learning tools</li>
+            </ul>
+          </div>
+
+          <div className="p-4 sm:p-5 md:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h1 className="text-xl font-semibold text-slate-900">
+                  {mode === "register" ? "Create your account" : mode === "forgot" ? "Reset your password" : "Welcome back"}
+                </h1>
+                <p className="text-xs text-slate-500">
+                  {mode === "register"
+                    ? "Complete your details to get started"
+                    : mode === "forgot"
+                    ? "Enter your email and OTP to continue"
+                    : "Login to continue your learning"}
+                </p>
+              </div>
+              {mode !== "forgot" && (
+                <div className="inline-flex rounded-xl bg-slate-100 p-1 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className={`rounded-lg px-3 py-1.5 transition ${
+                      mode === "login" ? "bg-white font-semibold text-emerald-700 shadow-sm" : "text-slate-600"
+                    }`}
+                  >
+                    Login
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode("register")}
+                    className={`rounded-lg px-3 py-1.5 transition ${
+                      mode === "register" ? "bg-white font-semibold text-emerald-700 shadow-sm" : "text-slate-600"
+                    }`}
+                  >
+                    Register
+                  </button>
+                </div>
+              )}
             </div>
 
-            <Input
-              label="Email"
-              name="email"
-              type="email"
-              value={form.email}
-              onChange={handleChange}
-            />
-            <PasswordInput
-              label="Password"
-              name="password"
-              value={form.password}
-              onChange={handleChange}
-              show={showPassword}
-              toggle={() => setShowPassword(!showPassword)}
-            />
-            <div className="md:col-span-2">
-              <PasswordInput
-                label="Confirm Password"
-                name="confirmPassword"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                show={showConfirm}
-                toggle={() => setShowConfirm(!showConfirm)}
-              />
-            </div>
-            <button
-              type="submit"
-              className="md:col-span-2 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded"
-            >
-              Register
-            </button>
-            <div className="md:col-span-2 text-center mt-2 text-sm text-gray-700">
-              Already have an account?{" "}
-              <button
-                type="button"
-                className="text-green-600 font-semibold hover:underline"
-                onClick={() => setMode("login")}
-              >
-                Login
-              </button>
-            </div>
-          </form>
-        )}
+            {mode === "register" && (
+              <form onSubmit={handleRegister} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Input label="Full Name" name="name" value={form.name} onChange={handleChange} />
+                <Input label="Phone" name="phone" value={form.phone} onChange={handleChange} />
 
-        {/* LOGIN */}
-        {mode === "login" && (
-          <form
-            onSubmit={handleLogin}
-            className="space-y-6 w-full max-w-md mx-auto px-4"
-          >
-            <Input
-              label="Email"
-              name="loginEmail"
-              type="email"
-              value={loginEmail}
-              onChange={(e: any) => setLoginEmail(e.target.value)}
-            />
-            <PasswordInput
-              label="Password"
-              name="loginPassword"
-              value={loginPassword}
-              onChange={(e: any) => setLoginPassword(e.target.value)}
-              show={showLoginPassword}
-              toggle={() => setShowLoginPassword(!showLoginPassword)}
-            />
-            <button
-              type="submit"
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded"
-            >
-              Login
-            </button>
-            <div className="text-center text-sm mt-2">
-              <button
-                type="button"
-                className="text-green-600 hover:underline"
-                onClick={() => setMode("forgot")}
-              >
-                Forgot password?
-              </button>
-            </div>
-            <div className="text-center text-sm mt-2">
-              Don&apos;t have an account?{" "}
-              <button
-                type="button"
-                className="text-green-600 font-semibold hover:underline"
-                onClick={() => setMode("register")}
-              >
-                Register
-              </button>
-            </div>
-          </form>
-        )}
+                <SelectDropdown
+                  label="Location"
+                  name="location"
+                  value={form.location}
+                  onChange={handleChange}
+                  options={["Greater Noida"]}
+                />
 
-        {/* FORGOT PASSWORD */}
-        {mode === "forgot" && (
-          <form
-            onSubmit={
-              forgotStep === "email" ? handleSendOtp : handleResetPassword
-            }
-            className="space-y-6 w-full max-w-sm mx-auto px-4"
-          >
-            {forgotStep === "email" && (
-              <Input
-                label="Email"
-                type="email"
-                value={forgotEmail}
-                onChange={(e: any) => setForgotEmail(e.target.value)}
-              />
-            )}
-            {forgotStep === "otp" && (
-              <>
-                <Input
-                  label="Enter OTP"
-                  value={otp}
-                  onChange={(e: any) => setOtp(e.target.value)}
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">Center</label>
+                  <Select
+                    options={centerOptions}
+                    value={centerOptions.find((opt) => opt.value === form.center)}
+                    onChange={handleCenterChange}
+                    placeholder="Select center"
+                    aria-label="Center selection"
+                    styles={compactSelectStyles}
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} />
+                </div>
+
+                <PasswordInput
+                  label="Password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  show={showPassword}
+                  toggle={() => setShowPassword(!showPassword)}
                 />
                 <PasswordInput
-                  label="New Password"
-                  value={newPassword}
-                  onChange={(e: any) => setNewPassword(e.target.value)}
-                  show={showForgotPassword}
-                  toggle={() => setShowForgotPassword(!showForgotPassword)}
+                  label="Confirm Password"
+                  name="confirmPassword"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  show={showConfirm}
+                  toggle={() => setShowConfirm(!showConfirm)}
                 />
-              </>
+
+                <button
+                  type="submit"
+                  className="sm:col-span-2 mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Register
+                </button>
+
+                <div className="sm:col-span-2 text-center text-sm text-slate-600">
+                  Already have an account?{" "}
+                  <button type="button" className="font-semibold text-emerald-700 hover:underline" onClick={() => setMode("login")}>
+                    Login
+                  </button>
+                </div>
+              </form>
             )}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded"
-            >
-              {loading
-                ? "Processing..."
-                : forgotStep === "email"
-                ? "Send OTP"
-                : "Reset Password"}
-            </button>
-            {forgotStep === "otp" && (
-              <div className="text-sm mt-2">
+
+            {mode === "login" && (
+              <form onSubmit={handleLogin} className="mx-auto flex w-full max-w-md flex-col gap-3">
+                <Input
+                  label="Email"
+                  name="loginEmail"
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e: any) => setLoginEmail(e.target.value)}
+                />
+                <PasswordInput
+                  label="Password"
+                  name="loginPassword"
+                  value={loginPassword}
+                  onChange={(e: any) => setLoginPassword(e.target.value)}
+                  show={showLoginPassword}
+                  toggle={() => setShowLoginPassword(!showLoginPassword)}
+                />
+
+                <button
+                  type="submit"
+                  className="mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                >
+                  Login
+                </button>
+
                 <button
                   type="button"
-                  onClick={() => {
-                    setForgotStep("email");
-                    setOtp("");
-                    setNewPassword("");
-                  }}
-                  className="text-green-600 hover:underline"
+                  className="text-center text-sm text-emerald-700 hover:underline"
+                  onClick={() => setMode("forgot")}
                 >
-                  Back to Email
+                  Forgot password?
                 </button>
-              </div>
+
+                <div className="text-center text-sm text-slate-600">
+                  Don&apos;t have an account?{" "}
+                  <button type="button" className="font-semibold text-emerald-700 hover:underline" onClick={() => setMode("register")}>
+                    Register
+                  </button>
+                </div>
+              </form>
             )}
-            <div className="text-center text-sm mt-4">
-              Remembered your password?{" "}
-              <button
-                type="button"
-                className="text-green-600 font-semibold hover:underline"
-                onClick={() => setMode("login")}
+
+            {mode === "forgot" && (
+              <form
+                onSubmit={forgotStep === "email" ? handleSendOtp : handleResetPassword}
+                className="mx-auto flex w-full max-w-md flex-col gap-3"
               >
-                Login
-              </button>
-            </div>
-          </form>
-        )}
+                {forgotStep === "email" && (
+                  <Input
+                    label="Email"
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e: any) => setForgotEmail(e.target.value)}
+                  />
+                )}
+
+                {forgotStep === "otp" && (
+                  <>
+                    <Input label="Enter OTP" value={otp} onChange={(e: any) => setOtp(e.target.value)} />
+                    <PasswordInput
+                      label="New Password"
+                      value={newPassword}
+                      onChange={(e: any) => setNewPassword(e.target.value)}
+                      show={showForgotPassword}
+                      toggle={() => setShowForgotPassword(!showForgotPassword)}
+                    />
+                  </>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {loading ? "Processing..." : forgotStep === "email" ? "Send OTP" : "Reset Password"}
+                </button>
+
+                {forgotStep === "otp" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setForgotStep("email");
+                      setOtp("");
+                      setNewPassword("");
+                    }}
+                    className="text-left text-sm text-emerald-700 hover:underline"
+                  >
+                    Back to Email
+                  </button>
+                )}
+
+                <div className="text-center text-sm text-slate-600">
+                  Remembered your password?{" "}
+                  <button type="button" className="font-semibold text-emerald-700 hover:underline" onClick={() => setMode("login")}>
+                    Login
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// --- Input field ---
 function Input({ label, name, value, onChange, type = "text" }: any) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-1">
-        {label}
-      </label>
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</label>
       <input
         type={type}
         name={name}
         value={value}
         onChange={onChange}
         placeholder={label}
-        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-400 outline-none"
+        className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
       />
     </div>
   );
 }
 
-// --- Select Dropdown ---
 function SelectDropdown({ label, name, value, onChange, options }: any) {
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700 mb-1">
-        {label}
-      </label>
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</label>
       <select
         name={name}
         value={value}
         onChange={onChange}
         title={label}
-        className="w-full px-4 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-green-400 outline-none"
+        className="h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
       >
         {options.map((opt: string) => (
           <option key={opt} value={opt}>
@@ -419,25 +416,22 @@ function SelectDropdown({ label, name, value, onChange, options }: any) {
   );
 }
 
-// --- Password field with eye icon ---
 function PasswordInput({ label, name, value, onChange, show, toggle }: any) {
   return (
     <div className="relative">
-      <label className="block text-sm font-semibold text-gray-700 mb-1">
-        {label}
-      </label>
+      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">{label}</label>
       <input
         type={show ? "text" : "password"}
         name={name}
         value={value}
         onChange={onChange}
         placeholder={label}
-        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-400 outline-none pr-10"
+        className="h-10 w-full rounded-xl border border-slate-300 px-3 pr-10 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
       />
       <button
         type="button"
         onClick={toggle}
-        className="absolute right-3 top-9 text-gray-500"
+        className="absolute right-3 top-[33px] text-slate-500"
         tabIndex={-1}
       >
         {show ? <FaEyeSlash /> : <FaEye />}
