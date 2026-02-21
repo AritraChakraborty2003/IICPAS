@@ -5,6 +5,7 @@ import Transaction from "../models/Transaction.js";
 import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
 import Coupon from "../models/Coupon.js";
+import { awardCoins, getCoinSettings } from "../services/coinService.js";
 
 const router = express.Router();
 
@@ -674,16 +675,6 @@ router.post("/verify-and-capture", async (req, res) => {
       (txn) =>
         txn.status === "approved" && txn.razorpayPaymentId === razorpay_payment_id
     );
-    if (alreadyApproved) {
-      return res.status(200).json({
-        success: true,
-        message: "Payment already verified",
-        data: {
-          transactionIds: transactions.map((txn) => txn._id),
-          status: "approved",
-        },
-      });
-    }
 
     const mismatchedOrder = transactions.some(
       (txn) => txn.razorpayOrderId && txn.razorpayOrderId !== razorpay_order_id
@@ -728,31 +719,33 @@ router.post("/verify-and-capture", async (req, res) => {
     const failedTransactionIds = [];
     let sentReceipts = 0;
 
-    for (const txn of transactions) {
-      try {
-        if (txn.status !== "approved") {
-          txn.status = "approved";
-          txn.razorpayOrderId = razorpay_order_id;
-          txn.razorpayPaymentId = razorpay_payment_id;
-          txn.razorpaySignature = razorpay_signature;
-          txn.utrNumber = razorpay_payment_id;
-          await txn.save();
-        }
-
-        await syncStudentEnrollment(txn);
-
+    if (!alreadyApproved) {
+      for (const txn of transactions) {
         try {
-          const receiptStatus = await sendReceiptForApprovedTransaction(txn._id);
-          if (receiptStatus?.sent) sentReceipts += 1;
-        } catch (receiptError) {
-          console.error(
-            "Receipt send failed after payment verification:",
-            receiptError
-          );
+          if (txn.status !== "approved") {
+            txn.status = "approved";
+            txn.razorpayOrderId = razorpay_order_id;
+            txn.razorpayPaymentId = razorpay_payment_id;
+            txn.razorpaySignature = razorpay_signature;
+            txn.utrNumber = razorpay_payment_id;
+            await txn.save();
+          }
+
+          await syncStudentEnrollment(txn);
+
+          try {
+            const receiptStatus = await sendReceiptForApprovedTransaction(txn._id);
+            if (receiptStatus?.sent) sentReceipts += 1;
+          } catch (receiptError) {
+            console.error(
+              "Receipt send failed after payment verification:",
+              receiptError
+            );
+          }
+        } catch (txnError) {
+          console.error("Transaction post-verify processing failed:", txnError);
+          failedTransactionIds.push(String(txn._id));
         }
-      } catch (txnError) {
-        console.error("Transaction post-verify processing failed:", txnError);
-        failedTransactionIds.push(String(txn._id));
       }
     }
 
@@ -767,14 +760,66 @@ router.post("/verify-and-capture", async (req, res) => {
       });
     }
 
+    let coinAwarded = false;
+    let coinsAwarded = 0;
+    let coinBalance;
+    let coinAwardReason = "";
+
+    try {
+      const settings = await getCoinSettings();
+      const purchaseCoins = Number(settings?.purchaseSuccessCoins || 0);
+
+      if (purchaseCoins > 0) {
+        const coinResult = await awardCoins({
+          studentId: String(transactions[0].studentId),
+          eventType: "PURCHASE_SUCCESS",
+          coins: purchaseCoins,
+          metadata: {
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
+            transactionIds: transactions.map((txn) => String(txn._id)),
+            coinRule: "per_checkout",
+          },
+          idempotencyKey: `purchase_checkout:${String(
+            transactions[0].studentId
+          )}:${razorpay_order_id}:${razorpay_payment_id}`,
+        });
+
+        coinAwarded = Boolean(coinResult?.awarded);
+        coinsAwarded = coinResult?.awarded ? purchaseCoins : 0;
+        if (typeof coinResult?.coinBalance === "number") {
+          coinBalance = coinResult.coinBalance;
+        }
+        if (!coinResult?.awarded && coinResult?.reason) {
+          coinAwardReason = String(coinResult.reason);
+        }
+      } else {
+        coinAwardReason = "purchase_coins_disabled";
+      }
+    } catch (coinError) {
+      coinAwardReason = "coin_award_failed";
+      console.error("Purchase coin award failed:", {
+        studentId: String(transactions[0].studentId),
+        razorpayOrderId: razorpay_order_id,
+        razorpayPaymentId: razorpay_payment_id,
+        error: coinError?.message || coinError,
+      });
+    }
+
     return res.status(200).json({
       success: true,
-      message: "Payment verified and enrollment completed",
+      message: alreadyApproved
+        ? "Payment already verified"
+        : "Payment verified and enrollment completed",
       data: {
         transactionIds: transactions.map((txn) => txn._id),
         studentId: transactions[0].studentId,
         status: "approved",
         receiptSentCount: sentReceipts,
+        coinAwarded,
+        coinsAwarded,
+        ...(typeof coinBalance === "number" ? { coinBalance } : {}),
+        ...(coinAwardReason ? { coinAwardReason } : {}),
       },
     });
   } catch (error) {

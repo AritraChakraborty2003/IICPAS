@@ -307,6 +307,7 @@ export default function CheckoutPage() {
             alert("Payment successful. All selected courses are now enrolled.");
             await fetchCart();
             window.dispatchEvent(new CustomEvent("cartUpdated"));
+            window.dispatchEvent(new Event("coins:updated"));
           } else {
             alert("Payment verification failed. Please contact support.");
           }
