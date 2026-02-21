@@ -56,7 +56,7 @@ const page = () => {
   return (
     <>
       <ScrollbarController />
-      <div className="pt-10">
+      <div>
         <Header />
         <HeroSection />
         <AboutUsSection />

@@ -443,7 +443,7 @@ export default function Header({ showMarquee = true, topOffset }) {
     <>
       {showMarquee && <AlertMarquee />}
       <header
-        className="fixed left-0 w-full z-40 bg-white shadow-lg"
+        className="fixed left-0 w-full z-40 bg-white border-b border-gray-100 shadow-none"
         style={{ top: headerTop }}
       >
         <div className="w-full px-2 md:px-6 py-3 flex items-center justify-between">

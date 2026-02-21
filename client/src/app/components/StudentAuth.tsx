@@ -8,6 +8,8 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 export default function StudentAuthForm() {
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
   // Mode: register | login | forgot
   const [mode, setMode] = useState<"register" | "login" | "forgot">("login");
 
@@ -62,7 +64,7 @@ export default function StudentAuthForm() {
     if (password !== confirmPassword) return toast.error("Passwords do not match!");
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/register`,
+        `${API}/api/v1/students/register`,
         {
           name,
           email,
@@ -87,7 +89,7 @@ export default function StudentAuthForm() {
       return toast.error("Email and password required");
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/login`,
+        `${API}/api/v1/students/login`,
         { email: loginEmail, password: loginPassword },
         { withCredentials: true }
       );
@@ -122,7 +124,7 @@ export default function StudentAuthForm() {
     setLoading(true);
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/forgot-password`,
+        `${API}/api/v1/students/forgot-password`,
         { email: forgotEmail }
       );
       toast.success("OTP sent to your email.");
@@ -138,7 +140,7 @@ export default function StudentAuthForm() {
     setLoading(true);
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/reset-password`,
+        `${API}/api/v1/students/reset-password`,
         { email: forgotEmail, otp, newPassword }
       );
       toast.success("Password reset successful");

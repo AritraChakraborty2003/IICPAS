@@ -78,7 +78,7 @@ export default function HeroSection() {
 
   if (loading) {
     return (
-      <section className="relative overflow-hidden h-screen mt-18 bg-gray-900">
+      <section className="relative overflow-hidden h-screen bg-gray-900">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
         </div>
@@ -87,7 +87,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section className="relative overflow-hidden h-screen mt-18">
+    <section className="relative overflow-hidden h-screen">
       {/* Video Background */}
       <div className="absolute inset-0 w-full h-full">
         <video

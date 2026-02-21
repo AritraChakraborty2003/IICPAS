@@ -20,16 +20,39 @@ import {
 } from "@mui/icons-material";
 import {
   FaStar,
-  FaClock,
-  FaGraduationCap,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaShoppingCart,
 } from "react-icons/fa";
 import StarRating from "./StarRating";
 import { toast } from "react-hot-toast";
 
 export default function CourseTab() {
+  const QA_DUMMY_COURSE = {
+    _id: "qa-dummy-course-2026",
+    slug: "qa-dummy-course-2026",
+    title: "QA Dummy Course (UI Testing)",
+    category: "Testing",
+    description: "Dummy course for testing dashboard UI and navigation flow.",
+    image: "/images/a1.jpeg",
+    status: "Active",
+    level: "Executive Level",
+    price: 5200,
+    overallProgress: 35,
+    totalChapters: 3,
+    totalAssignments: 2,
+    totalExperiments: 1,
+    totalTests: 1,
+    chapters: [
+      { id: 1, name: "Dummy Chapter 1", completion: 100 },
+      { id: 2, name: "Dummy Chapter 2", completion: 40 },
+      { id: 3, name: "Dummy Chapter 3", completion: 0 },
+    ],
+    assignments: [
+      { id: 1, name: "Dummy Assignment 1" },
+      { id: 2, name: "Dummy Assignment 2" },
+    ],
+    experiments: [{ id: 1, name: "Dummy Experiment 1" }],
+    tests: [{ id: 1, name: "Dummy Test 1", status: "Coming Soon" }],
+  };
+
   const [studentId, setStudentId] = useState(null);
   const [courses, setCourses] = useState([]);
   const [purchasedCourses, setPurchasedCourses] = useState([]); // Student's purchased courses
@@ -51,7 +74,7 @@ export default function CourseTab() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [courseRatings, setCourseRatings] = useState({}); // Store existing ratings
   const router = useRouter();
-  const API = process.env.NEXT_PUBLIC_API_URL;
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   // Fetch student courses from database
   const fetchStudentCourses = async () => {
@@ -96,23 +119,38 @@ export default function CourseTab() {
             (course) => !purchasedCourseIds.includes(course._id)
           );
 
-          // Combine purchased courses and available courses
-          const combinedCourses = [
-            ...purchasedCoursesData,
-            ...filteredAvailableCourses,
-          ];
-          setCourses(combinedCourses);
+          const purchasedWithDummy = purchasedCoursesData.some(
+            (course) => course._id === QA_DUMMY_COURSE._id
+          )
+            ? purchasedCoursesData
+            : [QA_DUMMY_COURSE, ...purchasedCoursesData];
 
+          setPurchasedCourses(purchasedWithDummy);
+
+          // Combine purchased courses and available courses
+          const combinedCourses = [...purchasedWithDummy, ...filteredAvailableCourses];
           if (combinedCourses.length > 0) {
+            setCourses(combinedCourses);
             setSelectedCourse(combinedCourses[0]);
             setLastAccessedCourse(combinedCourses[0]);
+          } else {
+            showDemoData();
           }
         } else {
-          // If no courses at all, just set purchased courses
-          setCourses(purchasedCoursesData);
-          if (purchasedCoursesData.length > 0) {
-            setSelectedCourse(purchasedCoursesData[0]);
-            setLastAccessedCourse(purchasedCoursesData[0]);
+          // If no courses at all, fall back to demo courses
+          const purchasedWithDummy = purchasedCoursesData.some(
+            (course) => course._id === QA_DUMMY_COURSE._id
+          )
+            ? purchasedCoursesData
+            : [QA_DUMMY_COURSE, ...purchasedCoursesData];
+
+          if (purchasedWithDummy.length > 0) {
+            setPurchasedCourses(purchasedWithDummy);
+            setCourses(purchasedWithDummy);
+            setSelectedCourse(purchasedWithDummy[0]);
+            setLastAccessedCourse(purchasedWithDummy[0]);
+          } else {
+            showDemoData();
           }
         }
       }
@@ -192,10 +230,78 @@ export default function CourseTab() {
           },
         ],
       },
+      {
+        _id: "2",
+        title: "GST Return Filing Practical",
+        description:
+          "Hands-on GST practical training with return filing and compliance workflow.",
+        image: "/images/a2.jpeg",
+        status: "Active",
+        level: "Intermediate",
+        price: 1499,
+        overallProgress: 52,
+        totalChapters: 10,
+        totalAssignments: 8,
+        totalExperiments: 5,
+        totalTests: 4,
+        chapters: [
+          { id: 1, name: "GST Basics", completion: 100 },
+          { id: 2, name: "Registration", completion: 100 },
+          { id: 3, name: "Invoicing", completion: 80 },
+          { id: 4, name: "Returns", completion: 40 },
+        ],
+        assignments: [
+          { id: 1, name: "GST Registration Form Practice" },
+          { id: 2, name: "Invoice Data Preparation" },
+        ],
+        experiments: [{ id: 1, name: "GSTR-1 Upload Simulation" }],
+        tests: [{ id: 1, name: "GST Mid-Term Test", status: "Coming Soon" }],
+      },
+      {
+        _id: "3",
+        title: "Income Tax with TDS",
+        description:
+          "Learn TDS calculations, return filing, and income tax compliance end to end.",
+        image: "/images/a3.jpeg",
+        status: "New Batch",
+        level: "Advanced",
+        price: 1999,
+        overallProgress: 0,
+        totalChapters: 12,
+        totalAssignments: 10,
+        totalExperiments: 6,
+        totalTests: 5,
+        chapters: [
+          { id: 1, name: "TDS Introduction", completion: 0 },
+          { id: 2, name: "Sections and Rates", completion: 0 },
+        ],
+        assignments: [{ id: 1, name: "TDS Calculation Sheet" }],
+        experiments: [{ id: 1, name: "Form 26Q Upload Flow" }],
+        tests: [{ id: 1, name: "Tax Fundamentals Test", status: "Coming Soon" }],
+      },
+      {
+        _id: "4",
+        title: "Payroll & PF/ESI Masterclass",
+        description:
+          "Complete payroll processing with PF, ESI, bonus and statutory deductions.",
+        image: "/images/a4.jpeg",
+        status: "Upcoming",
+        level: "Professional",
+        price: 1799,
+        overallProgress: 0,
+        totalChapters: 9,
+        totalAssignments: 7,
+        totalExperiments: 4,
+        totalTests: 3,
+        chapters: [{ id: 1, name: "Payroll Setup", completion: 0 }],
+        assignments: [{ id: 1, name: "Monthly Payroll Sheet" }],
+        experiments: [{ id: 1, name: "PF/ESI Challan Simulation" }],
+        tests: [{ id: 1, name: "Payroll Compliance Test", status: "Coming Soon" }],
+      },
     ];
     setCourses(demoCourses);
-    setPurchasedCourses(demoCourses); // Demo data represents purchased courses
-    setAvailableCourses([]); // No additional available courses in demo
+    setPurchasedCourses(demoCourses.slice(0, 2)); // Show first 2 as enrolled
+    setAvailableCourses(demoCourses.slice(2)); // Remaining as buyable
     setSelectedCourse(demoCourses[0]);
     setLastAccessedCourse(demoCourses[0]);
     setLoading(false);
@@ -369,6 +475,40 @@ export default function CourseTab() {
       fetchChaptersForCourse(courseId);
     }
   };
+
+  const getCourseImageSrc = (course) => {
+    if (!course?.image) return "/images/a1.jpeg";
+    if (course.image.startsWith("http")) return course.image;
+    if (course.image.startsWith("/uploads/")) return `${API}${course.image}`;
+    if (course.image.startsWith("/")) return course.image;
+    return `${API}/${course.image}`;
+  };
+
+  const getCourseCategory = (course) => course?.category || "General";
+
+  const getCurrentPrice = (course) => {
+    const price =
+      course?.pricing?.recordedSession?.finalPrice ||
+      course?.pricing?.recordedSession?.price ||
+      course?.price ||
+      0;
+    return Number(price) || 0;
+  };
+
+  const getOriginalPrice = (course, currentPrice) => {
+    const recorded = course?.pricing?.recordedSession;
+    const basePrice = Number(recorded?.price || course?.price || 0);
+    const discount = Number(recorded?.discount || course?.discount || 0);
+
+    if (basePrice > currentPrice) return basePrice;
+    if (discount > 0 && currentPrice > 0) {
+      return Math.round(currentPrice / (1 - discount / 100));
+    }
+    return currentPrice;
+  };
+
+  const formatPrice = (value) =>
+    new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
 
   const getTabIcon = (tabName) => {
     switch (tabName) {
@@ -799,179 +939,103 @@ export default function CourseTab() {
       </div>
 
       {/* Course Display with State Switching */}
-      <div className="px-6 pb-6 space-y-6">
+      <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         {courses.map((course) => (
-          <div key={course._id} className="group relative">
+          <div
+            key={course._id}
+            className={`group relative ${
+              viewModes[course._id] === "detailed" ? "md:col-span-2 xl:col-span-4" : ""
+            }`}
+          >
             {viewModes[course._id] !== "detailed" ? (
-              // State 1: Modern Course Overview Card
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
-                {/* Course Header with Gradient */}
-                <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 p-2 text-white relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black opacity-10"></div>
-                  <div className="relative z-10">
-                    <h2 className="text-lg font-bold mb-2">{course.title}</h2>
-                  </div>
-                  {/* Decorative elements */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-16 translate-x-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full translate-y-12 -translate-x-12"></div>
+              // State 1: Compact Course Card (ss3 style)
+              <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div className="relative h-44 bg-gray-100">
+                  <img
+                    src={getCourseImageSrc(course)}
+                    alt={course.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.src = "/images/a1.jpeg";
+                    }}
+                  />
                 </div>
 
-                <div className="p-3">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
-                    {/* Left Side - Course Image with Modern Styling */}
-                    <div className="lg:col-span-1">
-                      <div className="relative group">
-                        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-100 to-gray-200">
-                          <img
-                            src={
-                              course.image
-                                ? `${API}${course.image}`
-                                : "/images/a1.jpeg"
-                            }
-                            alt={course.title}
-                            className="w-full h-32 object-cover transform transition-transform duration-500 group-hover:scale-110"
-                            onError={(e) => {
-                              e.target.src = "/images/a1.jpeg";
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Side - Course Stats with Modern Cards */}
-                    <div className="lg:col-span-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
-                        {/* Status Card */}
-                        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                              <FaCheckCircle className="text-emerald-600 text-sm" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 font-medium">
-                                Status
-                              </p>
-                              <p className="text-sm font-bold text-emerald-700">
-                                {course.status}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Level Card */}
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <FaGraduationCap className="text-blue-600 text-sm" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 font-medium">
-                                Level
-                              </p>
-                              <p className="text-sm font-bold text-blue-700">
-                                {course.level}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Price Card */}
-                        <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                              <FaStar className="text-purple-600 text-sm" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 font-medium">
-                                Price
-                              </p>
-                              <p className="text-sm font-bold text-purple-700">
-                                ₹{course.price}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Duration Card */}
-                        <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                              <FaClock className="text-orange-600 text-sm" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 font-medium">
-                                Duration
-                              </p>
-                              <p className="text-sm font-bold text-orange-700">
-                                8 Weeks
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-4 pb-2">
-                        {/* Show different button based on purchase status */}
-                        {isCoursePurchased(course._id) ? (
-                          // Purchased course - show "View Course Details"
-                          <button
-                            onClick={() => handleDetailedToggle(course._id)}
-                            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:from-blue-700 hover:to-purple-700"
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              <Book className="text-xl" />
-                              View Course Details
-                            </span>
-                          </button>
-                        ) : (
-                          // Available course - show "Buy Now"
-                          <button
-                            onClick={() => handleBuyNow(course)}
-                            className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2 px-4 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-700 hover:to-emerald-700"
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              <FaShoppingCart className="text-xl" />
-                              Buy Now
-                            </span>
-                          </button>
-                        )}
-
-                        {/* Rating Button - Show only for purchased courses that are completed and not already rated */}
-                        {isCoursePurchased(course._id) &&
-                          isCourseCompleted(course) &&
-                          !courseRatings[course._id] && (
-                            <button
-                              onClick={() => {
-                                setCourseToRate(course);
-                                setShowRatingModal(true);
-                              }}
-                              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 px-4 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:from-yellow-600 hover:to-orange-600"
-                            >
-                              <span className="flex items-center justify-center gap-2">
-                                <FaStar className="text-xl" />
-                                Rate Course
-                              </span>
-                            </button>
-                          )}
-
-                        {/* Show rating status if already rated */}
-                        {courseRatings[course._id] && (
-                          <div className="flex items-center justify-center px-6 py-4 bg-gray-100 rounded-xl">
-                            <span className="text-gray-600 font-medium">
-                              {courseRatings[course._id].status === "pending"
-                                ? "Rating Pending"
-                                : courseRatings[course._id].status ===
-                                  "approved"
-                                ? "Rating Approved"
-                                : "Rating Rejected"}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-gray-500 font-medium">
+                      {getCourseCategory(course)}
+                    </p>
+                    <FaStar className="text-yellow-500 text-lg" />
                   </div>
+
+                  <h2 className="text-4xl leading-8 font-bold text-slate-900 min-h-[64px] mb-3">
+                    {course.title}
+                  </h2>
+
+                  <div className="flex items-end justify-between gap-3">
+                    <div>
+                      {(() => {
+                        const currentPrice = getCurrentPrice(course);
+                        const originalPrice = getOriginalPrice(
+                          course,
+                          currentPrice
+                        );
+                        return (
+                          <>
+                            <p className="text-4xl leading-none font-bold text-emerald-600">
+                              &#8377;{formatPrice(currentPrice)}
+                            </p>
+                            {originalPrice > currentPrice && (
+                              <p className="text-2xl text-gray-400 line-through mt-1">
+                                &#8377;{formatPrice(originalPrice)}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    {isCoursePurchased(course._id) ? (
+                      <button
+                        onClick={() => handleDetailedToggle(course._id)}
+                        className="bg-slate-900 text-white px-5 py-2.5 rounded-2xl font-semibold text-base hover:bg-slate-800 transition-colors"
+                      >
+                        View Details &#8594;
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleBuyNow(course)}
+                        className="bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-semibold text-base hover:bg-slate-800 transition-colors"
+                      >
+                        Enroll &#8594;
+                      </button>
+                    )}
+                  </div>
+
+                  {isCoursePurchased(course._id) &&
+                    isCourseCompleted(course) &&
+                    !courseRatings[course._id] && (
+                      <button
+                        onClick={() => {
+                          setCourseToRate(course);
+                          setShowRatingModal(true);
+                        }}
+                        className="mt-3 text-sm font-semibold text-amber-600 hover:text-amber-700"
+                      >
+                        Rate Course
+                      </button>
+                    )}
+
+                  {courseRatings[course._id] && (
+                    <p className="mt-3 text-sm text-gray-600">
+                      {courseRatings[course._id].status === "pending"
+                        ? "Rating Pending"
+                        : courseRatings[course._id].status === "approved"
+                        ? "Rating Approved"
+                        : "Rating Rejected"}
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (

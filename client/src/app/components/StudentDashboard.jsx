@@ -112,7 +112,7 @@ export default function StudentDashboard() {
     const fetchStudent = async () => {
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/isstudent`,
+          `${API}/api/v1/students/isstudent`,
           { withCredentials: true }
         );
         // Authenticated: set student
@@ -150,7 +150,7 @@ export default function StudentDashboard() {
     try {
       console.log("Ticket data:", { name, email, phone, message });
 
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/tickets`, {
+      await axios.post(`${API}/api/tickets`, {
         name,
         email,
         phone,
@@ -174,7 +174,7 @@ export default function StudentDashboard() {
   const handleLogout = async () => {
     try {
       await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/logout`,
+        `${API}/api/v1/students/logout`,
         {
           withCredentials: true,
         }

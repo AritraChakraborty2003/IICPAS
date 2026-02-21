@@ -1,23 +1,42 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import toast from "react-hot-toast";
 
 export default function CopyProtection() {
+  const pathname = usePathname();
+
   useEffect(() => {
-    // Check if we're on an admin dashboard page
-    const isAdminDashboard = () => {
-      if (typeof window === "undefined") return false;
-      return window.location.pathname.includes("/admin-dashboard");
+    const isProtectionDisabledPage = () => {
+      const disabledPaths = [
+        "/admin-dashboard",
+        "/student-login",
+        "/student-dashboard",
+        "/center-login",
+        "/center-dashboard",
+        "/teacher-login",
+        "/teacher-dashboard",
+      ];
+      return disabledPaths.some((path) =>
+        pathname?.includes(path)
+      );
     };
 
-    // Skip protection if on admin dashboard
-    if (isAdminDashboard()) {
+    // Skip protection for auth/dashboard pages.
+    if (isProtectionDisabledPage()) {
+      document.body.removeAttribute("data-copy-protected");
       return;
     }
 
-    // Function to show protection message
+    document.body.setAttribute("data-copy-protected", "true");
+
+    let lastToastAt = 0;
     const showProtectionMessage = () => {
+      const now = Date.now();
+      if (now - lastToastAt < 1500) return;
+      lastToastAt = now;
+
       toast.error("Content is protected and cannot be copied.", {
         duration: 3000,
         style: {
@@ -54,8 +73,21 @@ export default function CopyProtection() {
       return false;
     };
 
-    // Block keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, Cmd+C, Cmd+X, Cmd+V, Cmd+A)
+    const isEditableTarget = (target: EventTarget | null) => {
+      const element = target as HTMLElement | null;
+      if (!element) return false;
+      const tagName = element.tagName;
+      return (
+        tagName === "INPUT" ||
+        tagName === "TEXTAREA" ||
+        element.isContentEditable
+      );
+    };
+
+    // Block keyboard shortcuts (Ctrl/Cmd + C/X/V/A/U)
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
+
       // Check for Ctrl or Cmd key
       if (e.ctrlKey || e.metaKey) {
         // Block Ctrl/Cmd + C (Copy)
@@ -89,7 +121,7 @@ export default function CopyProtection() {
           return false;
         }
         // Block Ctrl/Cmd + Shift + I (Developer Tools)
-        if (e.key === "I" && e.shiftKey) {
+        if ((e.key === "i" || e.key === "I") && e.shiftKey) {
           e.preventDefault();
           showProtectionMessage();
           return false;
@@ -112,13 +144,14 @@ export default function CopyProtection() {
 
     // Cleanup event listeners on unmount
     return () => {
+      document.body.removeAttribute("data-copy-protected");
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("cut", handleCut);
       document.removeEventListener("selectstart", handleSelectStart);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [pathname]);
 
   // This component doesn't render anything
   return null;
