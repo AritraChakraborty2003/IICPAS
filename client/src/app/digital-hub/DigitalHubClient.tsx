@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
@@ -212,6 +212,11 @@ export default function DigitalHubClient({
   // Language dropdown state
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const translateWidgetRef = useRef<{
+    translatePage: (languageCode: string) => void;
+  } | null>(null);
+  const [isTranslateReady, setIsTranslateReady] = useState(false);
+  const pendingLanguageRef = useRef<string | null>(null);
 
   // New state for dynamic content
   const [courseChapters, setCourseChapters] = useState<ChapterData[]>([]);
@@ -510,7 +515,11 @@ export default function DigitalHubClient({
     setLanguageDropdownOpen(false);
 
     // Here you can add logic to actually translate the content
-    // For now, we'll just show a toast message
+    if (isTranslateReady && translateWidgetRef.current) {
+      translateWidgetRef.current.translatePage(language.code);
+    } else {
+      pendingLanguageRef.current = language.code;
+    }
     setToastMessage(`Language changed to ${language.name}`);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 3000);
@@ -708,6 +717,14 @@ export default function DigitalHubClient({
         },
         "google_translate_element"
       );
+      const instance =
+        window.google.translate.TranslateElement.getInstance?.() ?? null;
+      translateWidgetRef.current = instance;
+      setIsTranslateReady(true);
+      if (pendingLanguageRef.current && instance) {
+        instance.translatePage(pendingLanguageRef.current);
+        pendingLanguageRef.current = null;
+      }
     };
 
     // Add enhanced CSS for Google Translate styling
@@ -915,6 +932,13 @@ export default function DigitalHubClient({
 
     return () => {
       // Clean up script if component unmounts
+      if (translateWidgetRef.current) {
+        translateWidgetRef.current.translatePage("en");
+      }
+      translateWidgetRef.current = null;
+      pendingLanguageRef.current = null;
+      setIsTranslateReady(false);
+
       const existingScript = document.querySelector(
         'script[src*="translate.google.com"]'
       );
@@ -1298,6 +1322,11 @@ export default function DigitalHubClient({
         isDarkMode ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-slate-900"
       }`}
     >
+      <div
+        id="google_translate_element"
+        className="hidden"
+        aria-hidden="true"
+      ></div>
       {/* Enhanced Header with Chapters Dropdown */}
       <div
         className={`border-b transition-colors duration-300 ${
