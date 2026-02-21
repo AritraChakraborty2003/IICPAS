@@ -4,6 +4,7 @@ import crypto from "crypto";
 import Transaction from "../models/Transaction.js";
 import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
+import Coupon from "../models/Coupon.js";
 
 const router = express.Router();
 
@@ -53,6 +54,9 @@ const buildRazorpayReceipt = (studentId) => {
     .slice(-8);
   return `c_${timestamp}_${studentSuffix}`.slice(0, 40);
 };
+
+const toPaise = (amount) => Math.max(0, Math.round(Number(amount || 0) * 100));
+const fromPaise = (amountPaise) => Number((amountPaise / 100).toFixed(2));
 
 const syncStudentEnrollment = async (transaction) => {
   const student = await Student.findById(transaction.studentId);
@@ -194,7 +198,243 @@ router.post("/create-order", async (req, res) => {
       shippingAddress = null,
       sameAsBilling = true,
       quantity = 1,
+      cartItems = [],
+      appliedCouponCode = "",
     } = req.body;
+
+    const isCartMode = Array.isArray(cartItems) && cartItems.length > 0;
+
+    if (isCartMode) {
+      if (!studentId) {
+        return res.status(400).json({
+          success: false,
+          message: "studentId is required",
+        });
+      }
+
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.status(404).json({
+          success: false,
+          message: "Student not found",
+        });
+      }
+
+      const normalizedCartItems = cartItems
+        .map((item) => ({
+          courseId: item?.courseId,
+          sessionType: item?.sessionType,
+          quantity: Math.max(1, parseInt(item?.quantity, 10) || 1),
+        }))
+        .filter((item) => item.courseId && ["recorded", "live"].includes(item.sessionType));
+
+      if (!normalizedCartItems.length) {
+        return res.status(400).json({
+          success: false,
+          message: "cartItems must include valid courseId, sessionType, and quantity",
+        });
+      }
+
+      const uniqueCourseIds = [...new Set(normalizedCartItems.map((item) => String(item.courseId)))];
+      const courses = await Course.find({ _id: { $in: uniqueCourseIds } });
+      const courseMap = new Map(courses.map((course) => [String(course._id), course]));
+
+      const resolvedItems = [];
+      for (const item of normalizedCartItems) {
+        const course = courseMap.get(String(item.courseId));
+        if (!course) {
+          return res.status(404).json({
+            success: false,
+            message: `Course not found for id ${item.courseId}`,
+          });
+        }
+
+        const alreadyPurchased = student.course.some((id) =>
+          objectIdEquals(id, item.courseId)
+        );
+        if (alreadyPurchased) {
+          return res.status(409).json({
+            success: false,
+            message: `${course.title} is already purchased`,
+          });
+        }
+
+        const unitPrice = getCourseSessionAmount(course, item.sessionType);
+        const lineSubtotalPaise = toPaise(unitPrice * item.quantity);
+        if (lineSubtotalPaise <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: `Invalid amount for course ${course.title}`,
+          });
+        }
+
+        resolvedItems.push({
+          courseId: course._id,
+          sessionType: item.sessionType,
+          quantity: item.quantity,
+          title: course.title,
+          unitPrice,
+          lineSubtotalPaise,
+        });
+      }
+
+      const subtotalPaise = resolvedItems.reduce(
+        (sum, item) => sum + item.lineSubtotalPaise,
+        0
+      );
+
+      let appliedCoupon = null;
+      let couponDiscountPaise = 0;
+      const normalizedCouponCode = String(appliedCouponCode || "")
+        .trim()
+        .toUpperCase();
+
+      if (normalizedCouponCode) {
+        const coupon = await Coupon.findOne({
+          code: normalizedCouponCode,
+          isActive: true,
+          expiresAt: { $gt: new Date() },
+        });
+
+        if (!coupon) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid or expired coupon code",
+          });
+        }
+
+        if (coupon.discountType === "percentage") {
+          couponDiscountPaise = Math.round(
+            (subtotalPaise * Number(coupon.discountValue || 0)) / 100
+          );
+        } else {
+          couponDiscountPaise = toPaise(coupon.discountValue);
+        }
+
+        couponDiscountPaise = Math.min(Math.max(couponDiscountPaise, 0), subtotalPaise);
+        appliedCoupon = coupon;
+      }
+
+      const finalTotalPaise = subtotalPaise - couponDiscountPaise;
+      if (finalTotalPaise <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Final amount must be greater than 0",
+        });
+      }
+
+      const perItemDiscountPaise = resolvedItems.map(() => 0);
+      if (couponDiscountPaise > 0 && subtotalPaise > 0) {
+        let allocated = 0;
+        for (let index = 0; index < resolvedItems.length; index += 1) {
+          if (index === resolvedItems.length - 1) {
+            perItemDiscountPaise[index] = couponDiscountPaise - allocated;
+          } else {
+            const share = Math.floor(
+              (couponDiscountPaise * resolvedItems[index].lineSubtotalPaise) / subtotalPaise
+            );
+            perItemDiscountPaise[index] = share;
+            allocated += share;
+          }
+        }
+      }
+
+      const amountInPaise = finalTotalPaise;
+      const normalizedCurrency = String(currency || "INR").trim().toUpperCase();
+      const receipt = buildRazorpayReceipt(studentId);
+
+      if (!Number.isInteger(amountInPaise) || amountInPaise <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Amount must be a valid positive value",
+        });
+      }
+
+      if (!normalizedCurrency) {
+        return res.status(400).json({
+          success: false,
+          message: "Currency is required",
+        });
+      }
+
+      if (receipt.length > 40) {
+        return res.status(400).json({
+          success: false,
+          message: "Receipt must be 40 characters or fewer",
+        });
+      }
+
+      const checkoutBatchId = `chk_${Date.now()}_${String(studentId).slice(-6)}`;
+
+      console.info("Creating Razorpay order", {
+        studentId: String(studentId),
+        courseCount: resolvedItems.length,
+        amountInPaise,
+        currency: normalizedCurrency,
+        receiptLength: receipt.length,
+      });
+
+      const order = await razorpay.orders.create({
+        amount: amountInPaise,
+        currency: normalizedCurrency,
+        receipt,
+        notes: {
+          studentId: studentId.toString(),
+          checkoutBatchId,
+          itemCount: String(resolvedItems.length),
+        },
+      });
+
+      const createdTransactions = await Promise.all(
+        resolvedItems.map((item, index) => {
+          const itemDiscountPaise = perItemDiscountPaise[index] || 0;
+          const itemFinalPaise = Math.max(0, item.lineSubtotalPaise - itemDiscountPaise);
+          const itemAmount = fromPaise(itemFinalPaise);
+
+          return new Transaction({
+            studentId,
+            courseId: item.courseId,
+            sessionType: item.sessionType,
+            amount: itemAmount,
+            paymentMethod: "razorpay",
+            razorpayOrderId: order.id,
+            billingAddress,
+            shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
+            sameAsBilling: Boolean(sameAsBilling),
+            bundleItems: resolvedItems.map((bundleItem) => ({
+              courseId: bundleItem.courseId,
+              sessionType: bundleItem.sessionType,
+              quantity: bundleItem.quantity,
+              title: bundleItem.title,
+              unitPrice: bundleItem.unitPrice,
+            })),
+            additionalNotes: JSON.stringify({
+              checkoutBatchId,
+              couponCode: appliedCoupon?.code || "",
+              itemDiscount: fromPaise(itemDiscountPaise),
+            }),
+          }).save();
+        })
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Order created successfully",
+        data: {
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+          receipt: order.receipt,
+          transactionIds: createdTransactions.map((transaction) => transaction._id),
+          key: process.env.RAZORPAY_KEY_ID,
+          totals: {
+            subtotal: fromPaise(subtotalPaise),
+            couponDiscount: fromPaise(couponDiscountPaise),
+            finalTotal: fromPaise(finalTotalPaise),
+          },
+        },
+      });
+    }
 
     if (!courseId || !sessionType || !studentId) {
       return res.status(400).json({
@@ -344,6 +584,7 @@ router.post("/create-order", async (req, res) => {
         currency: order.currency,
         receipt: order.receipt,
         transactionId: transaction._id,
+        transactionIds: [transaction._id],
         key: process.env.RAZORPAY_KEY_ID,
       },
     });
@@ -381,51 +622,76 @@ router.post("/verify-and-capture", async (req, res) => {
       razorpay_payment_id,
       razorpay_signature,
       transactionId,
+      transactionIds,
     } = req.body;
+
+    const transactionIdList = Array.from(
+      new Set(
+        [
+          ...(Array.isArray(transactionIds) ? transactionIds : []),
+          ...(transactionId ? [transactionId] : []),
+        ]
+          .map((id) => String(id || "").trim())
+          .filter(Boolean)
+      )
+    );
 
     if (
       !razorpay_order_id ||
       !razorpay_payment_id ||
       !razorpay_signature ||
-      !transactionId
+      !transactionIdList.length
     ) {
       return res.status(400).json({
         success: false,
         message:
-          "razorpay_order_id, razorpay_payment_id, razorpay_signature, transactionId are required",
+          "razorpay_order_id, razorpay_payment_id, razorpay_signature, and transactionId or transactionIds are required",
       });
     }
 
-    const transaction = await Transaction.findById(transactionId);
-    if (!transaction) {
+    const transactions = await Transaction.find({
+      _id: { $in: transactionIdList },
+    });
+    if (transactions.length !== transactionIdList.length) {
       return res.status(404).json({
         success: false,
-        message: "Transaction not found",
+        message: "One or more transactions were not found",
       });
     }
 
-    if (
-      transaction.status === "approved" &&
-      transaction.razorpayPaymentId === razorpay_payment_id
-    ) {
+    const firstStudentId = String(transactions[0].studentId);
+    const mismatchedStudent = transactions.some(
+      (txn) => String(txn.studentId) !== firstStudentId
+    );
+    if (mismatchedStudent) {
+      return res.status(400).json({
+        success: false,
+        message: "Transactions belong to different students",
+      });
+    }
+
+    const alreadyApproved = transactions.every(
+      (txn) =>
+        txn.status === "approved" && txn.razorpayPaymentId === razorpay_payment_id
+    );
+    if (alreadyApproved) {
       return res.status(200).json({
         success: true,
         message: "Payment already verified",
         data: {
-          transactionId: transaction._id,
-          courseId: transaction.courseId,
-          status: transaction.status,
+          transactionIds: transactions.map((txn) => txn._id),
+          status: "approved",
         },
       });
     }
 
-    if (
-      transaction.razorpayOrderId &&
-      transaction.razorpayOrderId !== razorpay_order_id
-    ) {
+    const mismatchedOrder = transactions.some(
+      (txn) => txn.razorpayOrderId && txn.razorpayOrderId !== razorpay_order_id
+    );
+    if (mismatchedOrder) {
       return res.status(400).json({
         success: false,
-        message: "Order mismatch for transaction",
+        message: "Order mismatch for one or more transactions",
       });
     }
 
@@ -442,11 +708,16 @@ router.post("/verify-and-capture", async (req, res) => {
       crypto.timingSafeEqual(expectedBuffer, providedBuffer);
 
     if (!isValidSignature) {
-      transaction.status = "rejected";
-      transaction.adminNotes = "Razorpay signature mismatch";
-      transaction.razorpayPaymentId = razorpay_payment_id;
-      transaction.razorpaySignature = razorpay_signature;
-      await transaction.save();
+      await Promise.all(
+        transactions.map(async (txn) => {
+          if (txn.status === "approved") return;
+          txn.status = "rejected";
+          txn.adminNotes = "Razorpay signature mismatch";
+          txn.razorpayPaymentId = razorpay_payment_id;
+          txn.razorpaySignature = razorpay_signature;
+          await txn.save();
+        })
+      );
 
       return res.status(400).json({
         success: false,
@@ -454,31 +725,56 @@ router.post("/verify-and-capture", async (req, res) => {
       });
     }
 
-    transaction.status = "approved";
-    transaction.razorpayOrderId = razorpay_order_id;
-    transaction.razorpayPaymentId = razorpay_payment_id;
-    transaction.razorpaySignature = razorpay_signature;
-    transaction.utrNumber = razorpay_payment_id;
-    await transaction.save();
+    const failedTransactionIds = [];
+    let sentReceipts = 0;
 
-    await syncStudentEnrollment(transaction);
+    for (const txn of transactions) {
+      try {
+        if (txn.status !== "approved") {
+          txn.status = "approved";
+          txn.razorpayOrderId = razorpay_order_id;
+          txn.razorpayPaymentId = razorpay_payment_id;
+          txn.razorpaySignature = razorpay_signature;
+          txn.utrNumber = razorpay_payment_id;
+          await txn.save();
+        }
 
-    let receiptStatus = { sent: false };
-    try {
-      receiptStatus = await sendReceiptForApprovedTransaction(transaction._id);
-    } catch (receiptError) {
-      console.error("Receipt send failed after payment verification:", receiptError);
+        await syncStudentEnrollment(txn);
+
+        try {
+          const receiptStatus = await sendReceiptForApprovedTransaction(txn._id);
+          if (receiptStatus?.sent) sentReceipts += 1;
+        } catch (receiptError) {
+          console.error(
+            "Receipt send failed after payment verification:",
+            receiptError
+          );
+        }
+      } catch (txnError) {
+        console.error("Transaction post-verify processing failed:", txnError);
+        failedTransactionIds.push(String(txn._id));
+      }
+    }
+
+    if (failedTransactionIds.length) {
+      return res.status(207).json({
+        success: false,
+        message: "Payment captured but some enrollments need retry",
+        data: {
+          failedTransactionIds,
+          transactionIds: transactions.map((txn) => txn._id),
+        },
+      });
     }
 
     return res.status(200).json({
       success: true,
       message: "Payment verified and enrollment completed",
       data: {
-        transactionId: transaction._id,
-        courseId: transaction.courseId,
-        studentId: transaction.studentId,
-        status: transaction.status,
-        receiptSent: Boolean(receiptStatus.sent),
+        transactionIds: transactions.map((txn) => txn._id),
+        studentId: transactions[0].studentId,
+        status: "approved",
+        receiptSentCount: sentReceipts,
       },
     });
   } catch (error) {
