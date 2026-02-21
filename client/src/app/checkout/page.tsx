@@ -397,12 +397,12 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <Header topOffset={40} />
 
-      <div className="pt-24 pb-10 px-4">
-        <div className="mx-auto w-full max-w-[1400px] bg-white/95 rounded-3xl shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)] border border-slate-200 overflow-hidden backdrop-blur">
+      <div className="pt-24 pb-10 px-2 md:px-4">
+        <div className="mx-auto w-full max-w-none bg-white/95 rounded-3xl shadow-[0_20px_80px_-40px_rgba(15,23,42,0.45)] border border-slate-200 overflow-hidden backdrop-blur text-sm">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200 bg-gradient-to-r from-white to-slate-50">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900">Secure Checkout</h1>
-              <p className="text-sm text-slate-500 mt-1">
+              <h1 className="text-2xl font-bold text-slate-900">Secure Checkout</h1>
+              <p className="text-xs text-slate-500 mt-1">
                 One payment for all courses in your cart
               </p>
             </div>
@@ -430,7 +430,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-7">
                 <div className="lg:col-span-8 space-y-6">
                   <div className="border border-slate-200 rounded-2xl p-5 bg-white shadow-sm">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-4">
+                    <h2 className="text-xl font-bold text-slate-900 mb-4">
                       Order Items
                     </h2>
                     <div className="space-y-4">
@@ -466,15 +466,15 @@ export default function CheckoutPage() {
                               />
 
                               <div className="flex-1 min-w-0">
-                                <h3 className="text-xl font-semibold text-slate-800 truncate">
+                                <h3 className="text-lg font-semibold text-slate-800 truncate">
                                   {course.title}
                                 </h3>
-                                <p className="text-sm text-slate-600 mb-2">
+                                <p className="text-xs text-slate-600 mb-2">
                                   {course.category || "Accounting"}
                                 </p>
 
                                 <span
-                                  className={`inline-flex text-xs px-3 py-1 rounded-full font-semibold ${
+                                  className={`inline-flex text-[11px] px-3 py-1 rounded-full font-semibold ${
                                     item.sessionType === "recorded"
                                       ? "bg-emerald-100 text-emerald-700"
                                       : "bg-blue-100 text-blue-700"
@@ -486,7 +486,7 @@ export default function CheckoutPage() {
                                 </span>
 
                                 <div className="mt-4 flex items-center gap-3">
-                                  <span className="text-sm text-slate-600">
+                                  <span className="text-xs text-slate-600">
                                     Quantity:
                                   </span>
                                   <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white">
@@ -506,7 +506,7 @@ export default function CheckoutPage() {
                                     >
                                       -
                                     </button>
-                                    <span className="px-4 py-1 border-x border-slate-300 text-lg font-semibold text-slate-800">
+                                    <span className="px-4 py-1 border-x border-slate-300 text-base font-semibold text-slate-800">
                                       {item.quantity || 1}
                                     </span>
                                     <button
@@ -526,7 +526,7 @@ export default function CheckoutPage() {
                                   </div>
                                 </div>
 
-                                <p className="mt-3 text-lg text-slate-700">
+                                <p className="mt-3 text-base text-slate-700">
                                   ₹{unitPrice.toLocaleString()} ×{" "}
                                   {item.quantity || 1} ={" "}
                                   <span className="text-emerald-600 font-bold">
@@ -555,7 +555,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="border border-slate-200 rounded-2xl p-5 md:p-6 bg-white shadow-sm">
-                    <h2 className="text-xl font-bold text-slate-900 mb-4">
+                    <h2 className="text-lg font-bold text-slate-900 mb-4">
                       Billing & Shipping Address
                     </h2>
 
@@ -817,7 +817,7 @@ export default function CheckoutPage() {
 
                 <aside className="lg:col-span-4 space-y-4">
                 <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-                    <h3 className="text-xl font-bold text-slate-900 mb-3">
+                    <h3 className="text-lg font-bold text-slate-900 mb-3">
                       Discount Coupons
                     </h3>
                     <p className="text-sm text-gray-600 mb-3">
@@ -915,7 +915,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div className="bg-gradient-to-b from-white to-slate-50 rounded-2xl p-4 border border-slate-200 shadow-sm sticky top-20">
-                    <h3 className="text-2xl font-bold text-slate-900 mb-4">
+                    <h3 className="text-xl font-bold text-slate-900 mb-4">
                       Order Summary
                     </h3>
 
@@ -968,7 +968,7 @@ export default function CheckoutPage() {
                           - Rs {couponDiscount.toLocaleString()}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-2xl font-semibold">
+                      <div className="flex justify-between items-center text-xl font-semibold">
                         <span>Total</span>
                         <span className="text-green-600">
                           Rs {finalTotal.toLocaleString()}
@@ -986,7 +986,7 @@ export default function CheckoutPage() {
                         >
                           {isPaying
                             ? "Processing..."
-                            : `Pay Securely for All Courses (Rs ${finalTotal.toLocaleString()})`}
+                            : `Pay Now for All Courses (Rs ${finalTotal.toLocaleString()})`}
                         </button>
                         {!RAZORPAY_KEY ? (
                           <p className="text-xs text-red-600">
