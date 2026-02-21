@@ -826,15 +826,9 @@ export default function CourseTab() {
             {viewModes[course._id] !== "detailed" ? (
               // State 1: Modern Course Overview Card
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
-                {/* Course Header with Gradient */}
-                <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 p-2 text-white relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black opacity-10"></div>
-                  <div className="relative z-10">
-                    <h2 className="text-lg font-bold mb-2">{course.title}</h2>
-                  </div>
-                  {/* Decorative elements */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-16 translate-x-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full translate-y-12 -translate-x-12"></div>
+                {/* Course Header */}
+                <div className="bg-blue-600 px-3 py-2 text-white">
+                  <h2 className="text-lg font-bold">{course.title}</h2>
                 </div>
 
                 <div className="p-3">
