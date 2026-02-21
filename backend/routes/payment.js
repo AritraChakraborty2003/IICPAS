@@ -46,6 +46,14 @@ const getCourseSessionAmount = (course, sessionType) => {
   );
 };
 
+const buildRazorpayReceipt = (studentId) => {
+  const timestamp = Date.now().toString();
+  const studentSuffix = String(studentId || "student")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .slice(-8);
+  return `c_${timestamp}_${studentSuffix}`.slice(0, 40);
+};
+
 const syncStudentEnrollment = async (transaction) => {
   const student = await Student.findById(transaction.studentId);
   if (!student) return null;
@@ -129,10 +137,38 @@ router.post("/create-order", async (req, res) => {
     // Backward compatibility for legacy generic order creation.
     if (!req.body?.courseId && Number(req.body?.value) > 0) {
       const legacyAmount = Number(req.body.value);
+      const legacyAmountPaise = Math.round(legacyAmount * 100);
+      const legacyCurrency = String(req.body.currency || "INR").trim().toUpperCase();
+      const legacyReceipt = String(req.body.receipt || `legacy_${Date.now()}`).slice(
+        0,
+        40
+      );
+
+      if (!Number.isInteger(legacyAmountPaise) || legacyAmountPaise <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Amount must be a valid positive value",
+        });
+      }
+
+      if (!legacyCurrency) {
+        return res.status(400).json({
+          success: false,
+          message: "Currency is required",
+        });
+      }
+
+      if (legacyReceipt.length > 40) {
+        return res.status(400).json({
+          success: false,
+          message: "Receipt must be 40 characters or fewer",
+        });
+      }
+
       const legacyOrder = await razorpay.orders.create({
-        amount: Math.round(legacyAmount * 100),
-        currency: req.body.currency || "INR",
-        receipt: req.body.receipt || `legacy_${Date.now()}`,
+        amount: legacyAmountPaise,
+        currency: legacyCurrency,
+        receipt: legacyReceipt,
       });
 
       return res.status(200).json({
@@ -239,10 +275,44 @@ router.post("/create-order", async (req, res) => {
       });
     }
 
+    const amountInPaise = Math.round(finalAmount * 100);
+    const normalizedCurrency = String(currency || "INR").trim().toUpperCase();
+    const receipt = buildRazorpayReceipt(studentId);
+
+    if (!Number.isInteger(amountInPaise) || amountInPaise <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Amount must be a valid positive value",
+      });
+    }
+
+    if (!normalizedCurrency) {
+      return res.status(400).json({
+        success: false,
+        message: "Currency is required",
+      });
+    }
+
+    if (receipt.length > 40) {
+      return res.status(400).json({
+        success: false,
+        message: "Receipt must be 40 characters or fewer",
+      });
+    }
+
+    console.info("Creating Razorpay order", {
+      studentId: String(studentId),
+      courseId: String(courseId),
+      sessionType,
+      amountInPaise,
+      currency: normalizedCurrency,
+      receiptLength: receipt.length,
+    });
+
     const order = await razorpay.orders.create({
-      amount: Math.round(finalAmount * 100),
-      currency,
-      receipt: `course_${studentId}_${Date.now()}`,
+      amount: amountInPaise,
+      currency: normalizedCurrency,
+      receipt,
       notes: {
         studentId: studentId.toString(),
         courseId: courseId.toString(),
@@ -279,10 +349,25 @@ router.post("/create-order", async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating Razorpay order:", error);
-    return res.status(500).json({
+    const description = error?.error?.description || error?.description || "";
+    const code = error?.error?.code || error?.code || "";
+    const field = error?.error?.field || error?.field || "";
+    const statusCode =
+      Number.isInteger(error?.statusCode) && error.statusCode >= 400
+        ? error.statusCode
+        : 500;
+
+    return res.status(statusCode).json({
       success: false,
-      message: "Failed to create order",
+      message: description
+        ? `Failed to create order: ${description}`
+        : "Failed to create order",
       error: error.message,
+      details: {
+        ...(code ? { code } : {}),
+        ...(field ? { field } : {}),
+        ...(description ? { description } : {}),
+      },
     });
   }
 });

@@ -393,7 +393,11 @@ export default function CheckoutPage() {
       openRazorpayCheckout(response.data.data, item);
     } catch (error: any) {
       setPayingItemKey(null);
-      alert(error?.response?.data?.message || error?.message || "Payment failed");
+      const apiMessage = error?.response?.data?.message;
+      const apiError = error?.response?.data?.error;
+      const apiDescription = error?.response?.data?.details?.description;
+      const fallbackMessage = error?.message || "Payment failed";
+      alert(apiMessage || apiError || apiDescription || fallbackMessage);
     }
   };
 
