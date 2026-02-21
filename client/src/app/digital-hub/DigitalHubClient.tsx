@@ -104,7 +104,7 @@ declare global {
       translate: {
         TranslateElement: {
           new (options: Record<string, unknown>, elementId: string): unknown;
-          getInstance(): {
+          getInstance?: () => {
             translatePage: (languageCode: string) => void;
           };
           InlineLayout: {
@@ -217,6 +217,21 @@ export default function DigitalHubClient({
   } | null>(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
   const pendingLanguageRef = useRef<string | null>(null);
+
+  const applyLanguageToGoogleWidget = useCallback((languageCode: string) => {
+    if (typeof document === "undefined") return false;
+
+    // Google Translate checks this cookie while applying the selected target language.
+    document.cookie = `googtrans=/en/${languageCode};path=/`;
+    const combo = document.querySelector(
+      ".goog-te-combo"
+    ) as HTMLSelectElement | null;
+    if (!combo) return false;
+
+    combo.value = languageCode;
+    combo.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  }, []);
 
   // New state for dynamic content
   const [courseChapters, setCourseChapters] = useState<ChapterData[]>([]);
@@ -509,13 +524,14 @@ export default function DigitalHubClient({
   const handleLanguageSelect = (language: {
     code: string;
     name: string;
-    flag: string;
   }) => {
     setSelectedLanguage(language.name);
     setLanguageDropdownOpen(false);
 
-    // Here you can add logic to actually translate the content
-    if (isTranslateReady && translateWidgetRef.current) {
+    const changedFromWidget = applyLanguageToGoogleWidget(language.code);
+    if (changedFromWidget) {
+      pendingLanguageRef.current = null;
+    } else if (isTranslateReady && translateWidgetRef.current) {
       translateWidgetRef.current.translatePage(language.code);
     } else {
       pendingLanguageRef.current = language.code;
@@ -721,9 +737,15 @@ export default function DigitalHubClient({
         window.google.translate.TranslateElement.getInstance?.() ?? null;
       translateWidgetRef.current = instance;
       setIsTranslateReady(true);
-      if (pendingLanguageRef.current && instance) {
-        instance.translatePage(pendingLanguageRef.current);
-        pendingLanguageRef.current = null;
+      if (pendingLanguageRef.current) {
+        const pendingLanguage = pendingLanguageRef.current;
+        const changedFromWidget = applyLanguageToGoogleWidget(pendingLanguage);
+        if (changedFromWidget) {
+          pendingLanguageRef.current = null;
+        } else if (instance) {
+          instance.translatePage(pendingLanguage);
+          pendingLanguageRef.current = null;
+        }
       }
     };
 
@@ -978,7 +1000,7 @@ export default function DigitalHubClient({
         document.head.removeChild(existingStyle);
       }
     };
-  }, []);
+  }, [applyLanguageToGoogleWidget]);
 
   const chapters = [
     "Basic Accounting",
@@ -1319,28 +1341,28 @@ export default function DigitalHubClient({
 
   // Language options
   const languages = [
-    { code: "en", name: "English", flag: "🇺🇸" },
-    { code: "es", name: "Spanish", flag: "🇪🇸" },
-    { code: "fr", name: "French", flag: "🇫🇷" },
-    { code: "de", name: "German", flag: "🇩🇪" },
-    { code: "it", name: "Italian", flag: "🇮🇹" },
-    { code: "pt", name: "Portuguese", flag: "🇵🇹" },
-    { code: "ru", name: "Russian", flag: "🇷🇺" },
-    { code: "ja", name: "Japanese", flag: "🇯🇵" },
-    { code: "ko", name: "Korean", flag: "🇰🇷" },
-    { code: "zh", name: "Chinese", flag: "🇨🇳" },
-    { code: "ar", name: "Arabic", flag: "🇸🇦" },
-    { code: "hi", name: "Hindi", flag: "🇮🇳" },
-    { code: "bn", name: "Bengali", flag: "🇧🇩" },
-    { code: "gu", name: "Gujarati", flag: "🇮🇳" },
-    { code: "mr", name: "Marathi", flag: "🇮🇳" },
-    { code: "ur", name: "Urdu", flag: "🇵🇰" },
-    { code: "tr", name: "Turkish", flag: "🇹🇷" },
-    { code: "nl", name: "Dutch", flag: "🇳🇱" },
-    { code: "sv", name: "Swedish", flag: "🇸🇪" },
-    { code: "no", name: "Norwegian", flag: "🇳🇴" },
-    { code: "da", name: "Danish", flag: "🇩🇰" },
-    { code: "fi", name: "Finnish", flag: "🇫🇮" },
+    { code: "en", name: "English" },
+    { code: "es", name: "Spanish" },
+    { code: "fr", name: "French" },
+    { code: "de", name: "German" },
+    { code: "it", name: "Italian" },
+    { code: "pt", name: "Portuguese" },
+    { code: "ru", name: "Russian" },
+    { code: "ja", name: "Japanese" },
+    { code: "ko", name: "Korean" },
+    { code: "zh", name: "Chinese" },
+    { code: "ar", name: "Arabic" },
+    { code: "hi", name: "Hindi" },
+    { code: "bn", name: "Bengali" },
+    { code: "gu", name: "Gujarati" },
+    { code: "mr", name: "Marathi" },
+    { code: "ur", name: "Urdu" },
+    { code: "tr", name: "Turkish" },
+    { code: "nl", name: "Dutch" },
+    { code: "sv", name: "Swedish" },
+    { code: "no", name: "Norwegian" },
+    { code: "da", name: "Danish" },
+    { code: "fi", name: "Finnish" },
   ];
 
   return (
@@ -1433,9 +1455,8 @@ export default function DigitalHubClient({
                       type="button"
                       key={language.code}
                       onClick={() => handleLanguageSelect(language)}
-                      className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
+                      className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0"
                     >
-                      <span className="text-lg">{language.flag}</span>
                       <span className="font-medium">{language.name}</span>
                     </button>
                   ))}
