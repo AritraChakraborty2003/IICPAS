@@ -996,21 +996,19 @@ export default function CourseTab() {
                 </div>
               </div>
             ) : (
-              // State 2: Course Detailed View with Modern Design
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                {/* Course Header with Gradient */}
-                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 text-white relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black opacity-10"></div>
-                  <div className="relative z-10 flex items-center justify-between">
+              // State 2: Course Detailed View (Compact Professional)
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                {/* Course Header */}
+                <div className="bg-slate-50 border-b border-slate-200 p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold mb-2">
+                      <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-1">
                         {course.title}
                       </h2>
-                      <p className="text-indigo-100 text-sm opacity-90">
+                      <p className="text-xs text-slate-600">
                         Explore chapters, assignments, and assessments
                       </p>
                     </div>
-                    {/* Small Back Arrow Icon */}
                     <button
                       onClick={() =>
                         setViewModes((prev) => ({
@@ -1018,22 +1016,19 @@ export default function CourseTab() {
                           [course._id]: "overview",
                         }))
                       }
-                      className="bg-white/20 backdrop-blur-sm hover:bg-white/30 p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/30"
+                      className="h-9 w-9 rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center"
                     >
-                      <ArrowBack className="text-white text-xl" />
+                      <ArrowBack className="text-base" />
                     </button>
                   </div>
-                  {/* Decorative elements */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-16 translate-x-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full translate-y-12 -translate-x-12"></div>
                 </div>
 
-                <div className="p-6">
+                <div className="p-4 sm:p-5">
                   {/* Full Width Content Area - No Image */}
                   <div className="w-full">
-                    {/* Modern Tab Navigation - Full Width */}
-                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 rounded-xl mb-6 border border-gray-200">
-                      <div className="flex gap-3 justify-center">
+                    {/* Compact Tab Navigation */}
+                    <div className="bg-slate-50 p-2 rounded-lg mb-4 border border-slate-200">
+                      <div className="flex flex-wrap gap-2 justify-center">
                         {[
                           "chapters",
                           "assignments",
@@ -1043,14 +1038,14 @@ export default function CourseTab() {
                           <div
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`flex items-center gap-3 px-6 py-4 rounded-xl cursor-pointer transition-all duration-300 min-w-[120px] justify-center border-2 font-semibold text-lg ${
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors min-w-[110px] justify-center border text-sm font-medium ${
                               activeTab === tab
-                                ? "bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg text-white border-transparent transform scale-105"
-                                : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-gray-200 hover:border-gray-300 hover:shadow-md"
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white text-slate-700 hover:bg-slate-100 border-slate-200"
                             }`}
                           >
                             {getTabIcon(tab)}
-                            <span className="font-semibold">
+                            <span>
                               {getTabLabel(tab)}
                             </span>
                           </div>
@@ -1058,21 +1053,21 @@ export default function CourseTab() {
                       </div>
                     </div>
 
-                    {/* Tab Content with Modern Styling - Full Width */}
-                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 h-[500px] overflow-y-auto border border-gray-200 shadow-inner">
+                    {/* Tab Content */}
+                    <div className="bg-slate-50 rounded-lg p-4 h-[500px] overflow-y-auto border border-slate-200">
                       {activeTab === "chapters" ? (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {courseChapters[course._id] &&
                           courseChapters[course._id].length > 0 ? (
                             courseChapters[course._id].map((chapter, index) => (
                               <div
                                 key={chapter._id || index}
-                                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 hover:border-blue-300"
+                                className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
                               >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-6">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                                      <span className="font-bold text-white text-lg">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-4 min-w-0">
+                                    <div className="w-10 h-10 bg-blue-600 rounded-md flex items-center justify-center shrink-0">
+                                      <span className="font-semibold text-white text-sm">
                                         {index + 1}
                                       </span>
                                     </div>
@@ -1084,29 +1079,29 @@ export default function CourseTab() {
                                           chapter._id || index
                                         )
                                       }
-                                      className="text-left flex-1"
+                                      className="text-left flex-1 min-w-0"
                                     >
-                                      <p className="font-bold text-gray-800 text-xl mb-2">
+                                      <p className="font-semibold text-slate-800 text-base mb-1 truncate">
                                         {chapter.title || chapter.name}
                                       </p>
                                       {chapter.description && (
-                                        <p className="text-gray-600 text-base leading-relaxed">
+                                        <p className="text-slate-600 text-sm leading-relaxed line-clamp-2">
                                           {chapter.description}
                                         </p>
                                       )}
                                     </button>
                                   </div>
-                                  <div className="flex items-center gap-4">
-                                    <div className="w-32 bg-gray-200 rounded-full h-4">
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <div className="w-24 bg-slate-200 rounded-full h-2.5">
                                       <div
-                                        className={`h-4 rounded-full transition-all duration-500 ${
+                                        className={`h-2.5 rounded-full transition-all duration-500 ${
                                           chapter.completion === 100
-                                            ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                                            ? "bg-emerald-500"
                                             : chapter.completion >= 70
-                                            ? "bg-gradient-to-r from-blue-500 to-purple-500"
+                                            ? "bg-blue-500"
                                             : chapter.completion >= 40
-                                            ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                                            : "bg-gradient-to-r from-gray-400 to-gray-500"
+                                            ? "bg-amber-500"
+                                            : "bg-slate-400"
                                         }`}
                                         style={{
                                           width: `${chapter.completion || 0}%`,
@@ -1114,10 +1109,10 @@ export default function CourseTab() {
                                       />
                                     </div>
                                     <span
-                                      className={`px-4 py-2 rounded-full text-sm font-bold ${
+                                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                                         (chapter.completion || 0) === 100
-                                          ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800"
-                                          : "bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800"
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : "bg-blue-100 text-blue-700"
                                       }`}
                                     >
                                       {chapter.completion || 0}%
@@ -1129,7 +1124,7 @@ export default function CourseTab() {
                                           buildDigitalHubPath(course, chapter._id)
                                         )
                                       }
-                                      className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                                      className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
                                     >
                                       Open in Digital Hub
                                     </button>
@@ -1139,34 +1134,34 @@ export default function CourseTab() {
                                 {expandedChapterKeys[
                                   `${course._id}-${chapter._id || index}`
                                 ] ? (
-                                  <div className="mt-5 border-t pt-4">
-                                    <h4 className="text-sm font-semibold text-gray-800 mb-3">
+                                  <div className="mt-4 border-t border-slate-200 pt-3">
+                                    <h4 className="text-sm font-semibold text-slate-800 mb-2">
                                       Topics
                                     </h4>
                                     {Array.isArray(chapter.topics) &&
                                     chapter.topics.length > 0 ? (
-                                      <div className="space-y-3">
+                                      <div className="space-y-2">
                                         {chapter.topics.map((topic, topicIndex) => {
                                           const subtopics = getTopicSubtopics(topic);
                                           return (
                                             <div
                                               key={topic?._id || `${chapter._id}-topic-${topicIndex}`}
-                                              className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                                              className="rounded-md border border-slate-200 bg-slate-50 p-2.5"
                                             >
-                                              <p className="font-medium text-gray-800">
+                                              <p className="text-sm font-medium text-slate-800">
                                                 {topic?.title || `Topic ${topicIndex + 1}`}
                                               </p>
                                               {topic?.content ? (
-                                                <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                                <p className="text-xs text-slate-600 mt-1 line-clamp-2">
                                                   {String(topic.content).replace(/<[^>]*>/g, "")}
                                                 </p>
                                               ) : null}
                                               <div className="mt-2">
-                                                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                                                   Subtopics
                                                 </p>
                                                 {subtopics.length > 0 ? (
-                                                  <ul className="mt-1 list-disc pl-5 text-sm text-gray-700 space-y-1">
+                                                  <ul className="mt-1 list-disc pl-5 text-xs text-slate-700 space-y-1">
                                                     {subtopics.map((subtopic, subtopicIndex) => (
                                                       <li key={`subtopic-${subtopicIndex}`}>
                                                         {typeof subtopic === "string"
@@ -1176,7 +1171,7 @@ export default function CourseTab() {
                                                     ))}
                                                   </ul>
                                                 ) : (
-                                                  <p className="text-sm text-gray-500 mt-1">
+                                                  <p className="text-xs text-slate-500 mt-1">
                                                     No subtopics
                                                   </p>
                                                 )}
@@ -1186,7 +1181,7 @@ export default function CourseTab() {
                                         })}
                                       </div>
                                     ) : (
-                                      <p className="text-sm text-gray-500">
+                                      <p className="text-sm text-slate-500">
                                         No topics available for this chapter.
                                       </p>
                                     )}
@@ -1195,9 +1190,9 @@ export default function CourseTab() {
                               </div>
                             ))
                           ) : (
-                            <div className="text-center py-12 text-gray-500">
-                              <Book className="mx-auto mb-4 text-6xl text-gray-300" />
-                              <p className="text-lg font-medium">
+                            <div className="text-center py-10 text-slate-500">
+                              <Book className="mx-auto mb-3 text-5xl text-slate-300" />
+                              <p className="text-base font-medium">
                                 No chapters available for this course.
                               </p>
                             </div>
@@ -1208,7 +1203,7 @@ export default function CourseTab() {
                       )}
                     </div>
 
-                    {/* Back Button with Modern Styling */}
+                    {/* Back Button */}
                     <button
                       onClick={() =>
                         setViewModes((prev) => ({
@@ -1216,9 +1211,9 @@ export default function CourseTab() {
                           [course._id]: "overview",
                         }))
                       }
-                      className="w-full mt-6 bg-gradient-to-r from-gray-600 to-gray-700 text-white py-4 px-6 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 hover:from-gray-700 hover:to-gray-800 flex items-center justify-center gap-3"
+                      className="w-full mt-4 bg-slate-700 text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                     >
-                      <ArrowBack />
+                      <ArrowBack className="text-base" />
                       Back to Course Overview
                     </button>
                   </div>
