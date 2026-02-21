@@ -217,6 +217,9 @@ export default function DigitalHubClient({
   } | null>(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
   const pendingLanguageRef = useRef<string | null>(null);
+  const googleTranslateScriptRef = useRef<HTMLScriptElement | null>(null);
+  const googleTranslateStyleRef = useRef<HTMLStyleElement | null>(null);
+  const isTranslateTeardownDoneRef = useRef(false);
 
   const applyLanguageToGoogleWidget = useCallback((languageCode: string) => {
     if (typeof document === "undefined") return false;
@@ -232,6 +235,67 @@ export default function DigitalHubClient({
     combo.dispatchEvent(new Event("change", { bubbles: true }));
     return true;
   }, []);
+
+  const resetGoogleTranslateState = useCallback(() => {
+    if (typeof document === "undefined") return;
+    if (isTranslateTeardownDoneRef.current) return;
+    isTranslateTeardownDoneRef.current = true;
+
+    // Reset Google Translate language cookie to English and clear stale values.
+    document.cookie = "googtrans=;path=/;expires=Thu, 01 Jan 1970 00:00:00 GMT";
+    document.cookie = "googtrans=/en/en;path=/";
+
+    const hostname = window.location.hostname;
+    if (hostname) {
+      document.cookie = `googtrans=;path=/;domain=.${hostname};expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+      document.cookie = `googtrans=/en/en;path=/;domain=.${hostname}`;
+    }
+
+    pendingLanguageRef.current = null;
+    translateWidgetRef.current = null;
+    setIsTranslateReady(false);
+
+    const cleanupSelectors = [
+      ".goog-te-banner-frame",
+      ".goog-te-balloon-frame",
+      ".goog-te-spinner-pos",
+      ".skiptranslate",
+      "#goog-gt-tt",
+      ".goog-tooltip",
+      ".goog-text-highlight",
+    ];
+
+    cleanupSelectors.forEach((selector) => {
+      document.querySelectorAll(selector).forEach((node) => {
+        node.parentNode?.removeChild(node);
+      });
+    });
+
+    if (googleTranslateScriptRef.current) {
+      googleTranslateScriptRef.current.parentNode?.removeChild(
+        googleTranslateScriptRef.current
+      );
+      googleTranslateScriptRef.current = null;
+    }
+
+    if (googleTranslateStyleRef.current) {
+      googleTranslateStyleRef.current.parentNode?.removeChild(
+        googleTranslateStyleRef.current
+      );
+      googleTranslateStyleRef.current = null;
+    }
+  }, []);
+
+  const handleBackNavigation = useCallback(() => {
+    resetGoogleTranslateState();
+
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+
+    router.push("/student-dashboard");
+  }, [resetGoogleTranslateState, router]);
 
   // New state for dynamic content
   const [courseChapters, setCourseChapters] = useState<ChapterData[]>([]);
@@ -718,15 +782,10 @@ export default function DigitalHubClient({
 
   // Initialize Google Translate with enhanced styling
   useEffect(() => {
-    // Initialize Google Translate
-    const script = document.createElement("script");
-    script.src =
-      "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-    script.async = true;
-    document.head.appendChild(script);
+    isTranslateTeardownDoneRef.current = false;
 
-    // Define the callback function
-    window.googleTranslateElementInit = function () {
+    const initializeGoogleTranslateWidget = () => {
+      if (!window.google?.translate?.TranslateElement) return;
       new window.google.translate.TranslateElement(
         {
           pageLanguage: "en",
@@ -748,6 +807,25 @@ export default function DigitalHubClient({
         }
       }
     };
+
+    // Define the callback function
+    window.googleTranslateElementInit = initializeGoogleTranslateWidget;
+
+    const existingScript = document.querySelector(
+      'script[src*="translate.google.com/translate_a/element.js"]'
+    ) as HTMLScriptElement | null;
+
+    if (existingScript) {
+      googleTranslateScriptRef.current = existingScript;
+      initializeGoogleTranslateWidget();
+    } else {
+      const script = document.createElement("script");
+      script.src =
+        "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      script.async = true;
+      googleTranslateScriptRef.current = script;
+      document.head.appendChild(script);
+    }
 
     // Add enhanced CSS for Google Translate styling
     const style = document.createElement("style");
@@ -975,32 +1053,14 @@ export default function DigitalHubClient({
         color: #1f2937 !important;
       }
     `;
+    googleTranslateStyleRef.current = style;
     document.head.appendChild(style);
 
     return () => {
-      // Clean up script if component unmounts
-      if (translateWidgetRef.current) {
-        translateWidgetRef.current.translatePage("en");
-      }
-      translateWidgetRef.current = null;
-      pendingLanguageRef.current = null;
-      setIsTranslateReady(false);
-
-      const existingScript = document.querySelector(
-        'script[src*="translate.google.com"]'
-      );
-      if (existingScript) {
-        document.head.removeChild(existingScript);
-      }
-      // Remove custom styles
-      const existingStyle = document.querySelector(
-        "style[data-google-translate]"
-      );
-      if (existingStyle) {
-        document.head.removeChild(existingStyle);
-      }
+      resetGoogleTranslateState();
+      window.googleTranslateElementInit = () => {};
     };
-  }, [applyLanguageToGoogleWidget]);
+  }, [applyLanguageToGoogleWidget, resetGoogleTranslateState]);
 
   const chapters = [
     "Basic Accounting",
@@ -1565,7 +1625,7 @@ export default function DigitalHubClient({
               />
             </button>
             <button
-              onClick={() => router.push("/student-dashboard")}
+              onClick={handleBackNavigation}
               className={`p-2 rounded-lg transition-colors ${
                 isDarkMode ? "hover:bg-slate-800" : "hover:bg-stone-200"
               }`}
@@ -1612,6 +1672,7 @@ export default function DigitalHubClient({
               />
             </button>
             <button
+              onClick={handleBackNavigation}
               className="p-2 rounded-lg hover:bg-stone-200 transition-colors"
               aria-label="Go back"
             >
