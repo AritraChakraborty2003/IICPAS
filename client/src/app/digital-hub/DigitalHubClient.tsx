@@ -734,11 +734,36 @@ export default function DigitalHubClient({
       .goog-te-banner-frame {
         display: none !important;
       }
+
+      .skiptranslate iframe,
+      iframe.goog-te-banner-frame,
+      .goog-te-banner,
+      .goog-logo-link,
+      .goog-te-gadget span,
+      #goog-gt-tt,
+      .goog-te-balloon-frame,
+      .goog-tooltip,
+      .goog-tooltip:hover,
+      .goog-text-highlight {
+        display: none !important;
+      }
+
+      body {
+        top: 0 !important;
+      }
+
+      body > .skiptranslate {
+        display: none !important;
+      }
       
       /* Enhanced Google Translate Container */
       #google_translate_element {
-        position: relative;
-        display: inline-block;
+        position: fixed;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
       }
       
       /* Hide default Google Translate elements */
