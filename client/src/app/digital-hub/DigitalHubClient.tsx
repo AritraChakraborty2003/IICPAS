@@ -1332,6 +1332,8 @@ export default function DigitalHubClient({
     { code: "ar", name: "Arabic", flag: "🇸🇦" },
     { code: "hi", name: "Hindi", flag: "🇮🇳" },
     { code: "bn", name: "Bengali", flag: "🇧🇩" },
+    { code: "gu", name: "Gujarati", flag: "🇮🇳" },
+    { code: "mr", name: "Marathi", flag: "🇮🇳" },
     { code: "ur", name: "Urdu", flag: "🇵🇰" },
     { code: "tr", name: "Turkish", flag: "🇹🇷" },
     { code: "nl", name: "Dutch", flag: "🇳🇱" },
@@ -1399,8 +1401,9 @@ export default function DigitalHubClient({
             </div>
 
             {/* Custom Language Dropdown */}
-            <div className="relative">
+            <div className="relative notranslate" translate="no">
               <button
+                type="button"
                 onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
                 className={`flex items-center justify-between px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 shadow-sm hover:shadow min-w-[160px] border ${
                   isDarkMode
@@ -1427,6 +1430,7 @@ export default function DigitalHubClient({
                 <div className="absolute top-full left-0 w-full bg-white border border-stone-200 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
                   {languages.map((language) => (
                     <button
+                      type="button"
                       key={language.code}
                       onClick={() => handleLanguageSelect(language)}
                       className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
