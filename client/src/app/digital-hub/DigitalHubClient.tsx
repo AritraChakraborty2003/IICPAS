@@ -1607,7 +1607,8 @@ export default function DigitalHubClient({
             isDarkMode
               ? "bg-slate-900 border-slate-800"
               : "bg-stone-100 border-stone-200"
-          } border-r min-h-screen flex flex-col items-center py-4`}
+          } border-r min-h-screen flex flex-col items-center py-4 notranslate`}
+          translate="no"
         >
           {/* Navigation Icons */}
           <div className="flex flex-col items-center space-y-6">
@@ -1693,7 +1694,8 @@ export default function DigitalHubClient({
             isDarkMode
               ? "bg-slate-900 border-slate-800"
               : "bg-white border-stone-200"
-          } border-r`}
+          } border-r notranslate`}
+          translate="no"
         >
           <div className="w-80 p-4">
             <div className="flex items-center justify-between mb-4">
