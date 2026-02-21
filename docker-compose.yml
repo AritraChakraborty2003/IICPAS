@@ -62,6 +62,15 @@ services:
       - backend
       - static-backend
 
+  translator:
+    build:
+      context: ./Translator
+      dockerfile: Dockerfile
+    container_name: iicpas-translator
+    volumes:
+      - ./Translator:/app
+    command: tail -f /dev/null
+
 volumes:
   mongo_data:
   backend_node_modules:

@@ -15,3 +15,17 @@ python translator/translate.py --input path/to/content.html
 ```
 
 Use `-l`/`--languages` to override the default four languages if needed. The script prints each language’s translation to stdout.
+
+### Docker
+
+Build the translator image:
+```bash
+docker build -t iicpa-translator translator/
+```
+
+Mount a local directory containing the source file and run:
+```bash
+docker run --rm -v "$(pwd)/translator:/workspace" iicpa-translator --input /workspace/sample.html
+```
+
+Any additional CLI flags supported by `translate.py` can be passed after the image name.
