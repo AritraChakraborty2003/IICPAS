@@ -15,6 +15,7 @@ import { isAdmin } from "../middleware/isAdmin.js";
 //FOR PDF Import
 import PDFDocument from "pdfkit";
 import Course from "../models/Content/Course.js";
+import Quiz from "../models/Content/Quiz.js";
 import fs from "fs-extra";
 import nodemailer from "nodemailer";
 import express from "express";
@@ -228,6 +229,114 @@ router.post("/revision-tests/:id/complete", isStudent, async (req, res) => {
     console.error("Error completing revision test:", error);
     return res.status(500).json({
       message: "Failed to complete revision test",
+      error: error.message,
+    });
+  }
+});
+
+// POST /api/v1/students/digital-hub-quizzes/:id/complete - Award coins per correct answer
+router.post("/digital-hub-quizzes/:id/complete", isStudent, async (req, res) => {
+  try {
+    if (!ensureAuthorizedStudent(req, res)) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid student ID format" });
+    }
+
+    const { quizId, topicId, selectedAnswers, totalQuestions } = req.body || {};
+    if (!quizId || !mongoose.Types.ObjectId.isValid(quizId)) {
+      return res.status(400).json({ message: "Valid quizId is required" });
+    }
+
+    if (!selectedAnswers || typeof selectedAnswers !== "object") {
+      return res
+        .status(400)
+        .json({ message: "selectedAnswers map is required" });
+    }
+
+    const quiz = await Quiz.findById(quizId).select("topic questions");
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    const normalizedSelectedAnswers = selectedAnswers || {};
+    const correctQuestionIds = (quiz.questions || [])
+      .filter((question) => {
+        const selected = normalizedSelectedAnswers[String(question._id)];
+        return typeof selected === "string" && selected === question.answer;
+      })
+      .map((question) => String(question._id));
+
+    if (correctQuestionIds.length === 0) {
+      const summary = await getStudentCoinSummary(req.params.id, 1);
+      return res.json({
+        message: "No correct answers in this attempt",
+        status: "no_correct_answers",
+        coinAwarded: false,
+        coinsAwarded: 0,
+        correctAnswers: 0,
+        totalQuestions: Number(totalQuestions) || quiz.questions.length || 0,
+        coinBalance: summary?.coinBalance ?? 0,
+      });
+    }
+
+    const settings = await getCoinSettings();
+    const coinsPerCorrect = Number(settings?.quizCompleteCoins || 0);
+    if (!Number.isFinite(coinsPerCorrect) || coinsPerCorrect <= 0) {
+      const summary = await getStudentCoinSummary(req.params.id, 1);
+      return res.json({
+        message: "Quiz coins are disabled in settings",
+        status: "coins_disabled",
+        coinAwarded: false,
+        coinsAwarded: 0,
+        correctAnswers: correctQuestionIds.length,
+        totalQuestions: Number(totalQuestions) || quiz.questions.length || 0,
+        coinBalance: summary?.coinBalance ?? 0,
+      });
+    }
+
+    let awardedCount = 0;
+    let latestBalance = 0;
+
+    for (const questionId of correctQuestionIds) {
+      const awardResult = await awardCoins({
+        studentId: req.params.id,
+        eventType: "QUIZ_COMPLETE",
+        coins: coinsPerCorrect,
+        metadata: {
+          quizId,
+          topicId: topicId || String(quiz.topic),
+          questionId,
+          coinRule: "per_correct_answer",
+          totalQuestions: Number(totalQuestions) || quiz.questions.length || 0,
+        },
+        idempotencyKey: `quiz_correct:${req.params.id}:${quizId}:${questionId}`,
+      });
+
+      if (awardResult.awarded) {
+        awardedCount += 1;
+      }
+      latestBalance = awardResult.coinBalance ?? latestBalance;
+    }
+
+    return res.json({
+      message:
+        awardedCount > 0
+          ? "Coins awarded for correct answers"
+          : "Correct answers already rewarded",
+      status: awardedCount > 0 ? "awarded" : "already_awarded",
+      coinAwarded: awardedCount > 0,
+      coinsAwarded: awardedCount * coinsPerCorrect,
+      coinsPerCorrect,
+      awardedCorrectAnswers: awardedCount,
+      correctAnswers: correctQuestionIds.length,
+      totalQuestions: Number(totalQuestions) || quiz.questions.length || 0,
+      coinBalance: latestBalance,
+    });
+  } catch (error) {
+    console.error("Error completing digital hub quiz:", error);
+    return res.status(500).json({
+      message: "Failed to process quiz rewards",
       error: error.message,
     });
   }

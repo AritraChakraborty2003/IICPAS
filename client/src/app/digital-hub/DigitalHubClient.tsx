@@ -181,6 +181,12 @@ interface QuizData {
   updatedAt: string;
 }
 
+interface QuizRewardSummary {
+  correctAnswers: number;
+  totalQuestions: number;
+  coinsAwarded: number;
+}
+
 interface DigitalHubClientProps {
   courseSlugOrId: string;
   chapterId?: string;
@@ -330,10 +336,28 @@ export default function DigitalHubClient({
   }>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [showQuizResults, setShowQuizResults] = useState(false);
+  const [quizRewardSummary, setQuizRewardSummary] =
+    useState<QuizRewardSummary | null>(null);
   const [progress, setProgress] = useState(0);
-  const [points, setPoints] = useState(110);
+  const [points, setPoints] = useState(0);
+  const [studentId, setStudentId] = useState<string | null>(null);
   const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
   const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
+
+  const fetchStudentCoins = useCallback(
+    async (currentStudentId: string) => {
+      try {
+        const response = await axios.get(
+          `${API}/api/v1/students/coins/${currentStudentId}`,
+          { withCredentials: true }
+        );
+        setPoints(response.data?.coinBalance ?? 0);
+      } catch {
+        setPoints(0);
+      }
+    },
+    [API]
+  );
 
   // Ticket submission functions
   const handleTicketSubmit = async (e: React.FormEvent) => {
@@ -552,6 +576,7 @@ export default function DigitalHubClient({
         setSelectedAnswers({});
         setShowQuizResults(false);
         setQuizSubmitted(false);
+        setQuizRewardSummary(null);
 
         const response = await axios.get(`${API}/api/quizzes/topic/${topicId}`);
         console.log("Quiz API response:", response.data);
@@ -582,7 +607,120 @@ export default function DigitalHubClient({
     }));
   };
 
-  // Submit quiz
+  const playCelebrationSound = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    const audioContext = new AudioContextClass();
+    const notes = [523.25, 659.25, 783.99];
+    notes.forEach((frequency, index) => {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.type = "triangle";
+      oscillator.frequency.value = frequency;
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      const startTime = audioContext.currentTime + index * 0.08;
+      gainNode.gain.setValueAtTime(0.0001, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.08, startTime + 0.03);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.22);
+      oscillator.start(startTime);
+      oscillator.stop(startTime + 0.22);
+    });
+  }, []);
+
+  const handleQuizSubmit = useCallback(async () => {
+    if (!quizData || quizSubmitted) return;
+
+    const totalQuestions = quizData.questions.length;
+    if (totalQuestions === 0) return;
+
+    const unansweredQuestions = quizData.questions.filter(
+      (question) => !selectedAnswers[question._id]
+    );
+    if (unansweredQuestions.length > 0) {
+      setToastMessage("Please answer all questions before submitting.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+
+    const correctAnswers = quizData.questions.filter(
+      (question) => selectedAnswers[question._id] === question.answer
+    ).length;
+
+    setQuizSubmitted(true);
+    setShowQuizResults(true);
+    setQuizRewardSummary({
+      correctAnswers,
+      totalQuestions,
+      coinsAwarded: 0,
+    });
+
+    if (!studentId) {
+      setToastMessage("Quiz submitted. Login to earn coins.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        `${API}/api/v1/students/digital-hub-quizzes/${studentId}/complete`,
+        {
+          quizId: quizData._id,
+          topicId: selectedTopic?._id,
+          selectedAnswers,
+          totalQuestions,
+        },
+        { withCredentials: true }
+      );
+
+      const coinsAwarded = Number(response.data?.coinsAwarded || 0);
+      const awarded = Boolean(response.data?.coinAwarded);
+
+      setQuizRewardSummary({
+        correctAnswers,
+        totalQuestions,
+        coinsAwarded,
+      });
+
+      if (awarded && coinsAwarded > 0) {
+        playCelebrationSound();
+        window.dispatchEvent(new Event("coins:updated"));
+      }
+
+      const awardedMessage =
+        awarded && coinsAwarded > 0
+          ? `Great job! You earned ${coinsAwarded} coins.`
+          : response.data?.message || "Quiz submitted successfully.";
+      setToastMessage(awardedMessage);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+    } catch (error) {
+      const message =
+        axios.isAxiosError(error) &&
+        (error.response?.data?.message || error.response?.data?.error)
+          ? error.response?.data?.message || error.response?.data?.error
+          : "Quiz submitted, but coin update failed.";
+      setToastMessage(message);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+    }
+  }, [
+    API,
+    playCelebrationSound,
+    quizData,
+    quizSubmitted,
+    selectedAnswers,
+    selectedTopic?._id,
+    studentId,
+  ]);
 
   // Handle language selection
   const handleLanguageSelect = (language: {
@@ -779,6 +917,41 @@ export default function DigitalHubClient({
       setHamburgerOpen(true);
     }
   }, [selectedChapter]);
+
+  useEffect(() => {
+    const fetchStudentContext = async () => {
+      try {
+        const response = await axios.get(`${API}/api/v1/students/isstudent`, {
+          withCredentials: true,
+        });
+        const currentStudentId = response.data?.student?._id;
+        if (currentStudentId) {
+          setStudentId(currentStudentId);
+          await fetchStudentCoins(currentStudentId);
+          return;
+        }
+      } catch {
+        // Keep points as 0 when user isn't authenticated in demo/public access.
+      }
+      setStudentId(null);
+      setPoints(0);
+    };
+
+    fetchStudentContext();
+  }, [API, fetchStudentCoins]);
+
+  useEffect(() => {
+    if (!studentId || typeof window === "undefined") return undefined;
+
+    const handleCoinUpdate = () => {
+      fetchStudentCoins(studentId);
+    };
+
+    window.addEventListener("coins:updated", handleCoinUpdate);
+    return () => {
+      window.removeEventListener("coins:updated", handleCoinUpdate);
+    };
+  }, [fetchStudentCoins, studentId]);
 
   // Initialize Google Translate with enhanced styling
   useEffect(() => {
@@ -2090,6 +2263,32 @@ export default function DigitalHubClient({
                                 </div>
                               </div>
                             )
+                          )}
+                        </div>
+                        <div className="mt-6 flex flex-wrap items-center gap-4">
+                          <button
+                            onClick={handleQuizSubmit}
+                            disabled={quizSubmitted}
+                            className={`px-5 py-2 text-sm font-semibold rounded-lg transition-all ${
+                              quizSubmitted
+                                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                : isDarkMode
+                                ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                : "bg-blue-600 text-white hover:bg-blue-700"
+                            }`}
+                          >
+                            {quizSubmitted ? "Quiz Submitted" : "Submit Quiz"}
+                          </button>
+                          {showQuizResults && quizRewardSummary && (
+                            <div className="text-sm font-medium text-slate-700 bg-slate-100 border border-slate-200 rounded-lg px-3 py-2">
+                              Score {quizRewardSummary.correctAnswers}/
+                              {quizRewardSummary.totalQuestions}
+                              {quizRewardSummary.coinsAwarded > 0 && (
+                                <span className="ml-2 text-green-700">
+                                  +{quizRewardSummary.coinsAwarded} coins
+                                </span>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
