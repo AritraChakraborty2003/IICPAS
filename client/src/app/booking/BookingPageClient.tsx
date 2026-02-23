@@ -454,15 +454,6 @@ export default function BookingPageClient({
               <BookingSkeletonGrid count={9} showFilterSkeleton={loading && courses.length === 0} />
             ) : (
               <div id="booking-courses-grid" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {filteredCourses.map((course) => (
-                  <BookingCourseCard
-                    key={course.id}
-                    course={course}
-                    onBookNow={handleBookNow}
-                    isBooking={bookingCourseId === course.id}
-                  />
-                ))}
-
                 {filteredGroupPricing.length > 0 && (
                   <>
                     <div className="col-span-full pt-4">
@@ -478,6 +469,15 @@ export default function BookingPageClient({
                     ))}
                   </>
                 )}
+
+                {filteredCourses.map((course) => (
+                  <BookingCourseCard
+                    key={course.id}
+                    course={course}
+                    onBookNow={handleBookNow}
+                    isBooking={bookingCourseId === course.id}
+                  />
+                ))}
 
                 {filteredCourses.length === 0 && filteredGroupPricing.length === 0 && (
                   <div className="col-span-full rounded-2xl border border-slate-200 bg-white py-14 px-6 text-center">
@@ -504,4 +504,3 @@ export default function BookingPageClient({
     </main>
   );
 }
-
