@@ -27,14 +27,56 @@ async function getInitialCourses(): Promise<BookingCourse[]> {
   }
 }
 
+async function getInitialGroupPricing(): Promise<Array<Record<string, unknown>>> {
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
+  try {
+    const response = await fetch(`${API_BASE}/group-pricing`, {
+      next: { revalidate: 300 },
+    });
+    if (!response.ok) return [];
+    const payload = await response.json();
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.groupPricing)) return payload.groupPricing;
+    return [];
+  } catch (error) {
+    console.error("Failed to load group pricing on server:", error);
+    return [];
+  }
+}
+
+async function getInitialCategories(): Promise<Array<{ _id?: string; category?: string }>> {
+  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
+  try {
+    const response = await fetch(`${API_BASE}/categories`, {
+      next: { revalidate: 300 },
+    });
+    if (!response.ok) return [];
+    const payload = await response.json();
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.categories)) return payload.categories;
+    return [];
+  } catch (error) {
+    console.error("Failed to load categories on server:", error);
+    return [];
+  }
+}
+
 export default async function BookingPage() {
-  const initialCourses = await getInitialCourses();
+  const [initialCourses, initialGroupPricing, initialCategories] = await Promise.all([
+    getInitialCourses(),
+    getInitialGroupPricing(),
+    getInitialCategories(),
+  ]);
 
   return (
     <div>
       <Header />
       <ThinHeroSection title="Register & Pre-Book Courses" breadcrumb="Home > Book Course" />
-      <BookingPageClient initialCourses={initialCourses} />
+      <BookingPageClient
+        initialCourses={initialCourses}
+        initialGroupPricing={initialGroupPricing}
+        initialCategories={initialCategories}
+      />
       <Footer />
     </div>
   );
