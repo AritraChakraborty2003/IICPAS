@@ -29,7 +29,6 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
   const [error, setError] = useState<string | null>(null);
   const [bookingCourseId, setBookingCourseId] = useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const deferredSearch = useDeferredValue(filters.search);
 
   const priceBounds = useMemo(() => getPriceBounds(courses), [courses]);
 
@@ -40,6 +39,7 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
     maxPrice: priceBounds.max,
     sortBy: "relevance",
   });
+  const deferredSearch = useDeferredValue(filters.search);
 
   useEffect(() => {
     setFilters((prev) => {
