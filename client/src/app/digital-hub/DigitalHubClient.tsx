@@ -338,6 +338,7 @@ export default function DigitalHubClient({
   const [showQuizResults, setShowQuizResults] = useState(false);
   const [quizRewardSummary, setQuizRewardSummary] =
     useState<QuizRewardSummary | null>(null);
+  const [quizCoinsPerCorrect, setQuizCoinsPerCorrect] = useState(0);
   const [progress, setProgress] = useState(0);
   const [points, setPoints] = useState(0);
   const [studentId, setStudentId] = useState<string | null>(null);
@@ -917,6 +918,24 @@ export default function DigitalHubClient({
       setHamburgerOpen(true);
     }
   }, [selectedChapter]);
+
+  useEffect(() => {
+    const fetchCoinSettings = async () => {
+      try {
+        const response = await axios.get(`${API}/api/coins/settings`);
+        const configuredCoins = Number(response.data?.settings?.quizCompleteCoins);
+        setQuizCoinsPerCorrect(
+          Number.isFinite(configuredCoins) && configuredCoins > 0
+            ? configuredCoins
+            : 0
+        );
+      } catch {
+        setQuizCoinsPerCorrect(0);
+      }
+    };
+
+    fetchCoinSettings();
+  }, [API]);
 
   useEffect(() => {
     const fetchStudentContext = async () => {
@@ -1602,6 +1621,16 @@ export default function DigitalHubClient({
     { code: "fi", name: "Finnish" },
   ];
 
+  const liveCorrectAnswers =
+    quizData?.questions?.reduce(
+      (count, question) =>
+        selectedAnswers[question._id] === question.answer ? count + 1 : count,
+      0
+    ) ?? 0;
+  const pendingQuizPoints =
+    studentId && !quizSubmitted ? liveCorrectAnswers * quizCoinsPerCorrect : 0;
+  const visiblePoints = points + pendingQuizPoints;
+
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${
@@ -1615,7 +1644,7 @@ export default function DigitalHubClient({
       ></div>
       {/* Enhanced Header with Chapters Dropdown */}
       <div
-        className={`border-b transition-colors duration-300 ${
+        className={`sticky top-0 z-40 border-b transition-colors duration-300 ${
           isDarkMode
             ? "border-slate-800 bg-slate-900/95"
             : "border-stone-200 bg-white/90"
@@ -1767,7 +1796,9 @@ export default function DigitalHubClient({
                   : "bg-amber-50 border-amber-300 text-amber-800"
               }`}
             >
-              <span className="text-xs sm:text-sm font-medium">Points {points}</span>
+              <span className="text-xs sm:text-sm font-medium">
+                Points {visiblePoints}
+              </span>
             </div>
           </div>
         </div>
@@ -2288,6 +2319,12 @@ export default function DigitalHubClient({
                                   +{quizRewardSummary.coinsAwarded} coins
                                 </span>
                               )}
+                            </div>
+                          )}
+                          {!quizSubmitted && studentId && quizCoinsPerCorrect > 0 && (
+                            <div className="text-sm font-medium text-slate-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                              Correct: {liveCorrectAnswers}/{quizData.questions.length} |
+                              Potential +{pendingQuizPoints} points
                             </div>
                           )}
                         </div>
