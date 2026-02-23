@@ -460,7 +460,7 @@ export default function Header({ showMarquee = true, topOffset }) {
           </nav>
 
           {/* Right side - Desktop Only */}
-          <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
+	          <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
             {/* Cart Icon - Show for all users */}
             <button
               onClick={() => setCartDrawer(true)}
@@ -478,11 +478,20 @@ export default function Header({ showMarquee = true, topOffset }) {
                   })()}
                 </span>
               )}
-            </button>
+	            </button>
 
-            {isAdmin ? (
-              <Link
-                href="/admin-dashboard"
+	            {!isAdmin && (
+	              <Link
+	                href="/booking"
+	                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
+	              >
+	                Book Now
+	              </Link>
+	            )}
+
+	            {isAdmin ? (
+	              <Link
+	                href="/admin-dashboard"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm"
               >
                 Admin Dashboard
@@ -523,17 +532,11 @@ export default function Header({ showMarquee = true, topOffset }) {
                   </div>
                 )}
               </div>
-            ) : (
-              <>
-                <Link
-                  href="/booking"
-                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
-                >
-                  Book Now
-                </Link>
-                <Link
-                  href="/student-login"
-                  className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm"
+	            ) : !student ? (
+	              <>
+	                <Link
+	                  href="/student-login"
+	                  className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm"
                 >
                   Digital Hub
                 </Link>
@@ -637,11 +640,18 @@ export default function Header({ showMarquee = true, topOffset }) {
               >
                 Admin Dashboard
               </Link>
-            ) : student ? (
-              <>
-                <Link
-                  href="/student-dashboard"
-                  onClick={() => setDrawerOpen(false)}
+	            ) : student ? (
+	              <>
+	                <Link
+	                  href="/booking"
+	                  onClick={() => setDrawerOpen(false)}
+	                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
+	                >
+	                  Book Now
+	                </Link>
+	                <Link
+	                  href="/student-dashboard"
+	                  onClick={() => setDrawerOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm"
                 >
                   <User size={16} />
