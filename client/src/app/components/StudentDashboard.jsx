@@ -20,6 +20,7 @@ import {
   FaBell,
   FaShoppingCart,
   FaCoins,
+  FaWallet,
   FaChevronLeft,
   FaChevronRight,
   FaFileAlt,
@@ -46,6 +47,7 @@ function StudentDashboardContent() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [student, setStudent] = useState(null);
   const [studentCoins, setStudentCoins] = useState(0);
+  const [walletPaidAmount, setWalletPaidAmount] = useState(0);
   const [checkingAuth, setCheckingAuth] = useState(false); // Initialize as false to prevent initial blinking
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -80,6 +82,22 @@ function StudentDashboardContent() {
       setStudentCoins(response.data?.coinBalance ?? 0);
     } catch (error) {
       setStudentCoins(0);
+    }
+  };
+
+  const fetchWalletPaidAmount = async () => {
+    try {
+      const response = await axios.get(`${API}/api/v1/course-bookings/student`, {
+        withCredentials: true,
+      });
+      const bookings = Array.isArray(response.data?.bookings) ? response.data.bookings : [];
+      const totalPaid = bookings.reduce(
+        (sum, entry) => sum + Number(entry?.paidAmount || 0),
+        0
+      );
+      setWalletPaidAmount(totalPaid);
+    } catch {
+      setWalletPaidAmount(0);
     }
   };
 
@@ -141,6 +159,7 @@ function StudentDashboardContent() {
           setStudent(currentStudent);
           if (currentStudent?._id) {
             await fetchStudentCoins(currentStudent._id);
+            await fetchWalletPaidAmount();
           }
 
           // Update ticket form with student data
@@ -175,6 +194,12 @@ function StudentDashboardContent() {
       window.removeEventListener("coins:updated", handleCoinUpdate);
     };
   }, [student?._id]);
+
+  useEffect(() => {
+    if (!student?._id) return;
+    if (activeTab !== "bookings") return;
+    fetchWalletPaidAmount();
+  }, [activeTab, student?._id]);
 
   // Handle ticket submission
   const handleTicketSubmit = async (e) => {
@@ -469,6 +494,13 @@ function StudentDashboardContent() {
                 <button className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700">
                   Digital Hub
                 </button>
+                <div
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700"
+                  title="Total paid amount in bookings"
+                >
+                  <FaWallet className="text-emerald-600" />
+                  <span>Wallet ₹{Number(walletPaidAmount || 0).toLocaleString("en-IN")}</span>
+                </div>
                 <div
                   className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700"
                   title="Your coins"
