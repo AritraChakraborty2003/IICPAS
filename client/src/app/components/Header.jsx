@@ -496,8 +496,8 @@ export default function Header({ showMarquee = true, topOffset }) {
               >
                 Admin Dashboard
               </Link>
-            ) : student ? (
-              <div className="relative profile-dropdown">
+	            ) : student ? (
+	              <div className="relative profile-dropdown">
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                   className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md text-sm"
@@ -532,7 +532,7 @@ export default function Header({ showMarquee = true, topOffset }) {
                   </div>
                 )}
               </div>
-	            ) : !student ? (
+	            ) : (
 	              <>
 	                <Link
 	                  href="/student-login"
