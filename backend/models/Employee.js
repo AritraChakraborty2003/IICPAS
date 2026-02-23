@@ -205,6 +205,13 @@ const employeeSchema = new mongoose.Schema(
         delete: { type: Boolean, default: false },
         active: { type: Boolean, default: false },
       },
+      "invoice-company-settings": {
+        add: { type: Boolean, default: false },
+        read: { type: Boolean, default: false },
+        update: { type: Boolean, default: false },
+        delete: { type: Boolean, default: false },
+        active: { type: Boolean, default: false },
+      },
       bookings: {
         add: { type: Boolean, default: false },
         read: { type: Boolean, default: false },
