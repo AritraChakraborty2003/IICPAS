@@ -2,148 +2,377 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import axios from "axios";
+import Drawer from "react-modern-drawer";
+import "react-modern-drawer/dist/index.css";
+import toast from "react-hot-toast";
+import BookingFilterBar from "./BookingFilterBar";
+import BookingCourseCard from "./BookingCourseCard";
+import BookingSkeletonGrid from "./BookingSkeletonGrid";
+import { getDefaultSessionType, getPriceBounds, normalizeCoursesPayload } from "./courseUtils";
+import { BookingCourse, BookingFilterState } from "./types";
 
-type ApiCourse = {
-  _id: string;
-  title?: string;
-  slug?: string;
-  image?: string;
-  category?: string;
-  description?: string;
-  price?: number;
-  status?: string;
-  pricing?: {
-    recordedSession?: {
-      price?: number;
-      finalPrice?: number;
-    };
-  };
+type BookingPageClientProps = {
+  initialCourses: BookingCourse[];
 };
 
-const normalizeImage = (image?: string) => {
-  if (!image) return "/images/a1.jpeg";
-  if (image.startsWith("http")) return image;
-  if (image.startsWith("/uploads/")) return `https://api.iicpa.in${image}`;
-  if (image.startsWith("/")) return image;
-  return `https://api.iicpa.in/${image}`;
-};
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-const toPrice = (course: ApiCourse) =>
-  course.pricing?.recordedSession?.finalPrice ||
-  course.pricing?.recordedSession?.price ||
-  course.price ||
-  0;
-
-export default function BookingPageClient() {
+export default function BookingPageClient({ initialCourses }: BookingPageClientProps) {
   const router = useRouter();
-  const [courses, setCourses] = useState<ApiCourse[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [courses, setCourses] = useState<BookingCourse[]>(initialCourses);
+  const [loading, setLoading] = useState(initialCourses.length === 0);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [bookingCourseId, setBookingCourseId] = useState<string | null>(null);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const priceBounds = useMemo(() => getPriceBounds(courses), [courses]);
+
+  const [filters, setFilters] = useState<BookingFilterState>({
+    search: "",
+    categories: [],
+    minPrice: priceBounds.min,
+    maxPrice: priceBounds.max,
+    sortBy: "relevance",
+  });
 
   useEffect(() => {
-    const fetchCourses = async () => {
-      try {
-        const API_BASE =
-          process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
-        const response = await fetch(`${API_BASE}/courses`, {
-          cache: "no-store",
-        });
-        const data = await response.json();
-        const courseList = Array.isArray(data) ? data : data?.courses || [];
-        const activeCourses = courseList.filter(
-          (course: ApiCourse) => !course.status || course.status === "Active"
-        );
-        setCourses(activeCourses);
-      } catch (error) {
-        console.error("Failed to fetch courses for booking page:", error);
-        setCourses([]);
-      } finally {
-        setLoading(false);
+    setFilters((prev) => {
+      const isFirstInit = prev.minPrice === 0 && prev.maxPrice === 0;
+      if (isFirstInit) {
+        return { ...prev, minPrice: priceBounds.min, maxPrice: priceBounds.max };
       }
-    };
 
-    fetchCourses();
-  }, []);
+      const clampedMin = Math.max(priceBounds.min, prev.minPrice);
+      const clampedMax = Math.min(priceBounds.max || prev.maxPrice, prev.maxPrice);
+      return {
+        ...prev,
+        minPrice: clampedMin,
+        maxPrice: clampedMax >= clampedMin ? clampedMax : clampedMin,
+      };
+    });
+  }, [priceBounds.min, priceBounds.max]);
 
-  const filteredCourses = useMemo(() => {
-    if (!search.trim()) return courses;
-    const query = search.toLowerCase();
-    return courses.filter((course) =>
-      (course.title || "").toLowerCase().includes(query)
-    );
-  }, [courses, search]);
+  const categories = useMemo(
+    () => Array.from(new Set(courses.map((course) => course.category))).sort((a, b) => a.localeCompare(b)),
+    [courses]
+  );
 
-  const handleBookNow = (course: ApiCourse) => {
-    const courseId = course.slug || course._id;
-    router.push(`/course/${encodeURIComponent(courseId)}`);
+  const fetchLatestCourses = async ({ showLoader = false }: { showLoader?: boolean } = {}) => {
+    if (showLoader) setLoading(true);
+    setIsRefreshing(true);
+    setError(null);
+    try {
+      const response = await fetch(`${API_BASE}/courses`, { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(`Failed to load courses (${response.status})`);
+      }
+      const payload = await response.json();
+      const normalized = normalizeCoursesPayload(payload);
+      setCourses(normalized);
+    } catch (fetchError) {
+      console.error(fetchError);
+      setError("Unable to refresh courses right now. Please try again.");
+    } finally {
+      setLoading(false);
+      setIsRefreshing(false);
+    }
   };
 
+  useEffect(() => {
+    fetchLatestCourses({ showLoader: initialCourses.length === 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    setIsFiltering(true);
+    const timeout = setTimeout(() => setIsFiltering(false), 120);
+    return () => clearTimeout(timeout);
+  }, [filters.search, filters.categories, filters.minPrice, filters.maxPrice, filters.sortBy, loading]);
+
+  const filteredCourses = useMemo(() => {
+    const searchTerm = filters.search.trim().toLowerCase();
+
+    const list = courses.filter((course) => {
+      const matchesSearch = !searchTerm || course.title.toLowerCase().includes(searchTerm);
+      const matchesCategory =
+        filters.categories.length === 0 || filters.categories.includes(course.category);
+      const matchesPrice =
+        course.effectivePrice >= filters.minPrice && course.effectivePrice <= filters.maxPrice;
+      return matchesSearch && matchesCategory && matchesPrice;
+    });
+
+    if (filters.sortBy === "price-low-high") {
+      list.sort((a, b) => a.effectivePrice - b.effectivePrice);
+    } else if (filters.sortBy === "price-high-low") {
+      list.sort((a, b) => b.effectivePrice - a.effectivePrice);
+    } else if (filters.sortBy === "newest") {
+      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    }
+
+    return list;
+  }, [courses, filters]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.search.trim()) count += 1;
+    count += filters.categories.length;
+    if (filters.minPrice > priceBounds.min || filters.maxPrice < priceBounds.max) count += 1;
+    return count;
+  }, [filters.search, filters.categories.length, filters.minPrice, filters.maxPrice, priceBounds.min, priceBounds.max]);
+
+  const clearAllFilters = () => {
+    setFilters({
+      search: "",
+      categories: [],
+      minPrice: priceBounds.min,
+      maxPrice: priceBounds.max,
+      sortBy: "relevance",
+    });
+  };
+
+  const toggleCategory = (category: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      categories: prev.categories.includes(category)
+        ? prev.categories.filter((entry) => entry !== category)
+        : [...prev.categories, category],
+    }));
+  };
+
+  const setPriceRange = (minPrice: number, maxPrice: number) => {
+    const validMin = Number.isFinite(minPrice) ? minPrice : priceBounds.min;
+    const validMax = Number.isFinite(maxPrice) ? maxPrice : priceBounds.max;
+    const clampedMin = Math.max(priceBounds.min, Math.min(validMin, priceBounds.max));
+    const clampedMax = Math.max(clampedMin, Math.min(validMax, priceBounds.max));
+
+    setFilters((prev) => ({
+      ...prev,
+      minPrice: clampedMin,
+      maxPrice: clampedMax,
+    }));
+  };
+
+  const handleBookNow = async (course: BookingCourse) => {
+    const sessionType = getDefaultSessionType(course);
+    setBookingCourseId(course.id);
+
+    try {
+      const studentResponse = await axios.get(`${API_URL}/api/v1/students/isstudent`, {
+        withCredentials: true,
+      });
+      const student = studentResponse.data?.student;
+
+      if (!student?._id) {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(
+            "booking_intent",
+            JSON.stringify({ courseId: course.id, sessionType })
+          );
+        }
+        router.push(
+          `/student-login?redirect=${encodeURIComponent(
+            "/booking"
+          )}&courseId=${encodeURIComponent(course.id)}&sessionType=${encodeURIComponent(sessionType)}`
+        );
+        return;
+      }
+
+      await axios.post(
+        `${API_URL}/api/v1/cart/add/${student._id}`,
+        { courseId: course.id, sessionType },
+        { withCredentials: true }
+      );
+
+      window.dispatchEvent(new CustomEvent("cartUpdated", { detail: { openDrawer: false } }));
+      toast.success("Course added. Redirecting to checkout...");
+      router.push("/checkout");
+    } catch (bookingError) {
+      console.error("Booking failed:", bookingError);
+      toast.error("Unable to book this course right now. Please try again.");
+    } finally {
+      setBookingCourseId(null);
+    }
+  };
+
+  const showSkeleton = loading || (isFiltering && courses.length > 0);
+
   return (
-    <main className="bg-slate-50 min-h-screen">
-      <section className="max-w-7xl mx-auto px-4 md:px-6 py-10 md:py-14">
-        <div className="mb-8 md:mb-10">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-            Book Your Course
-          </h1>
-          <p className="text-slate-600 mt-2">
-            Browse all available courses and book instantly.
+    <main className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
+      <section className="max-w-7xl mx-auto px-4 md:px-6 pb-14">
+        <div className="mb-6">
+          <p className="text-slate-600 pt-4 md:pt-6">
+            Browse and book from our latest courses.
           </p>
         </div>
 
-        <div className="mb-8">
-          <input
-            type="text"
-            placeholder="Search courses..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="w-full md:w-[420px] rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
-          />
+        {error && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 flex items-center justify-between gap-3">
+            <p className="text-sm text-red-700">{error}</p>
+            <button
+              type="button"
+              onClick={() => fetchLatestCourses({ showLoader: true })}
+              className="rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        <BookingFilterBar
+          filters={filters}
+          categories={categories}
+          minBound={priceBounds.min}
+          maxBound={priceBounds.max}
+          activeFilterCount={activeFilterCount}
+          onSearchChange={(value) => setFilters((prev) => ({ ...prev, search: value }))}
+          onSortChange={(value) => setFilters((prev) => ({ ...prev, sortBy: value }))}
+          onToggleCategory={toggleCategory}
+          onPriceChange={setPriceRange}
+          onOpenMobileFilters={() => setMobileFiltersOpen(true)}
+          onClearAll={clearAllFilters}
+          onRemoveSearch={() => setFilters((prev) => ({ ...prev, search: "" }))}
+          onRemoveCategory={(value) =>
+            setFilters((prev) => ({
+              ...prev,
+              categories: prev.categories.filter((entry) => entry !== value),
+            }))
+          }
+          onRemovePrice={() =>
+            setFilters((prev) => ({
+              ...prev,
+              minPrice: priceBounds.min,
+              maxPrice: priceBounds.max,
+            }))
+          }
+        />
+
+        <Drawer
+          open={mobileFiltersOpen}
+          onClose={() => setMobileFiltersOpen(false)}
+          direction="right"
+          className="md:hidden"
+          size={320}
+        >
+          <div className="h-full bg-white p-4">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Filters</h3>
+
+            <div className="mb-4">
+              <label className="text-sm font-medium text-slate-700">Sort By</label>
+              <select
+                value={filters.sortBy}
+                onChange={(event) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    sortBy: event.target.value as BookingFilterState["sortBy"],
+                  }))
+                }
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
+              >
+                <option value="relevance">Relevance</option>
+                <option value="price-low-high">Price low-high</option>
+                <option value="price-high-low">Price high-low</option>
+                <option value="newest">Newest</option>
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm font-medium text-slate-700 mb-2">Categories</p>
+              <div className="max-h-48 overflow-auto rounded-lg border border-slate-200 p-3">
+                {categories.map((category) => (
+                  <label key={category} className="flex items-center gap-2 py-1 text-sm text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={filters.categories.includes(category)}
+                      onChange={() => toggleCategory(category)}
+                      className="accent-emerald-600"
+                    />
+                    <span>{category}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-6 grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-sm font-medium text-slate-700">Min price</label>
+                <input
+                  type="number"
+                  min={priceBounds.min}
+                  max={priceBounds.max}
+                  value={filters.minPrice}
+                  onChange={(event) => setPriceRange(Number(event.target.value), filters.maxPrice)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-slate-700">Max price</label>
+                <input
+                  type="number"
+                  min={priceBounds.min}
+                  max={priceBounds.max}
+                  value={filters.maxPrice}
+                  onChange={(event) => setPriceRange(filters.minPrice, Number(event.target.value))}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  clearAllFilters();
+                  setMobileFiltersOpen(false);
+                }}
+                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700"
+              >
+                Clear all
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileFiltersOpen(false)}
+                className="w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white"
+              >
+                Apply filters
+              </button>
+            </div>
+          </div>
+        </Drawer>
+
+        <div className="mt-6 mb-4 flex items-center justify-between">
+          <p className="text-sm font-medium text-slate-600">
+            {isRefreshing ? "Refreshing courses..." : `${filteredCourses.length} course(s) found`}
+          </p>
         </div>
 
-        {loading ? (
-          <p className="text-slate-600">Loading courses...</p>
+        {showSkeleton ? (
+          <BookingSkeletonGrid count={9} showFilterSkeleton={loading && courses.length === 0} />
         ) : filteredCourses.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white p-8 text-center">
-            <p className="text-slate-700 font-semibold">No courses found.</p>
+          <div className="rounded-2xl border border-slate-200 bg-white py-14 px-6 text-center">
+            <h3 className="text-xl font-bold text-slate-900">No courses match your filters</h3>
+            <p className="mt-2 text-slate-600">Try changing filters or reset to view all courses.</p>
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="mt-4 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
+            >
+              Reset filters
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
-              <article
-                key={course._id}
-                className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md"
-              >
-                <div className="h-44 w-full bg-slate-100">
-                  <img
-                    src={normalizeImage(course.image)}
-                    alt={course.title || "Course image"}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-
-                <div className="p-5">
-                  <div className="mb-2">
-                    <span className="inline-flex rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">
-                      {course.category || "General"}
-                    </span>
-                  </div>
-
-                  <h2 className="text-lg font-bold text-slate-900 line-clamp-2 min-h-[56px]">
-                    {course.title || "Untitled Course"}
-                  </h2>
-
-                  <p className="text-green-700 font-bold text-xl mt-3">
-                    Rs {toPrice(course).toLocaleString()}
-                  </p>
-
-                  <button
-                    onClick={() => handleBookNow(course)}
-                    className="mt-4 w-full rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700"
-                  >
-                    Book Now
-                  </button>
-                </div>
-              </article>
+              <BookingCourseCard
+                key={course.id}
+                course={course}
+                onBookNow={handleBookNow}
+                isBooking={bookingCourseId === course.id}
+              />
             ))}
           </div>
         )}
@@ -151,3 +380,4 @@ export default function BookingPageClient() {
     </main>
   );
 }
+
