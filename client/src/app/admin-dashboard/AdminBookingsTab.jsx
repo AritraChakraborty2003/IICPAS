@@ -97,7 +97,18 @@ export default function AdminBookingsTab() {
       a.remove();
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      toast.error("Failed to download invoice");
+      const blob = error?.response?.data;
+      if (blob instanceof Blob) {
+        try {
+          const text = await blob.text();
+          const parsed = JSON.parse(text);
+          toast.error(parsed?.message || "Failed to download invoice");
+          return;
+        } catch {
+          // fall through to generic error
+        }
+      }
+      toast.error(error?.response?.data?.message || "Failed to download invoice");
     }
   };
 

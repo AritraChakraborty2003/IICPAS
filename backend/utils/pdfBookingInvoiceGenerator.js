@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import PDFDocument from "pdfkit";
 import InvoiceCompanySettings from "../models/InvoiceCompanySettings.js";
 
 const formatCurrency = (amount) =>
@@ -28,6 +29,103 @@ const escapeHtml = (value) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+
+const generateFallbackInvoicePDF = ({
+  booking,
+  payment,
+  invoiceNumber,
+  paymentType,
+  itemTypeLabel,
+  companySettings,
+  companyAddress,
+}) =>
+  new Promise((resolve, reject) => {
+    const doc = new PDFDocument({
+      size: "A4",
+      margin: 40,
+      info: {
+        Title: `Booking Invoice ${invoiceNumber}`,
+        Author: companySettings?.companyName || "IICPA Institute",
+      },
+    });
+    const chunks = [];
+
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+
+    doc.fontSize(18).fillColor("#111827").text(
+      `${companySettings?.companyName || "IICPA Institute"} Booking Invoice`,
+      { align: "left" }
+    );
+    doc.moveDown(0.25);
+    doc.fontSize(11).fillColor("#4B5563").text(`Invoice: ${invoiceNumber}`);
+    doc.moveDown(0.6);
+
+    doc.fontSize(12).fillColor("#111827").text("Billed By");
+    if (companySettings?.legalName) {
+      doc.fontSize(10).fillColor("#374151").text(companySettings.legalName);
+    }
+    if (companyAddress) {
+      doc.fontSize(10).fillColor("#374151").text(companyAddress);
+    }
+    if (companySettings?.gstin) {
+      doc.fontSize(10).fillColor("#374151").text(`GSTIN: ${companySettings.gstin}`);
+    }
+    if (companySettings?.cin) {
+      doc.fontSize(10).fillColor("#374151").text(`CIN: ${companySettings.cin}`);
+    }
+    if (companySettings?.pan) {
+      doc.fontSize(10).fillColor("#374151").text(`PAN: ${companySettings.pan}`);
+    }
+    if (companySettings?.email) {
+      doc.fontSize(10).fillColor("#374151").text(`Email: ${companySettings.email}`);
+    }
+    if (companySettings?.phone) {
+      doc.fontSize(10).fillColor("#374151").text(`Phone: ${companySettings.phone}`);
+    }
+
+    doc.moveDown(0.8);
+    doc.fontSize(12).fillColor("#111827").text("Booking Details");
+    doc.fontSize(10).fillColor("#374151").text(
+      `Student: ${booking?.studentId?.name || "Student"}`
+    );
+    doc.text(
+      `Student Email: ${booking?.studentEmail || booking?.studentId?.email || "N/A"}`
+    );
+    doc.text(`Item Type: ${itemTypeLabel}`);
+    doc.text(`Course/Package: ${booking?.itemTitle || "N/A"}`);
+    doc.text(`Session Type: ${booking?.sessionType || "N/A"}`);
+    doc.text(`Payment Type: ${paymentType}`);
+    doc.text(`Payment Date: ${formatDateTime(payment?.paidAt || new Date())}`);
+    doc.text(`Razorpay Order ID: ${payment?.razorpayOrderId || "N/A"}`);
+    doc.text(`Razorpay Payment ID: ${payment?.razorpayPaymentId || "N/A"}`);
+
+    doc.moveDown(0.8);
+    doc.fontSize(12).fillColor("#111827").text("Amounts");
+    doc.fontSize(10).fillColor("#374151").text(
+      `Base Amount: ${formatCurrency(booking?.baseAmount)}`
+    );
+    doc.text(
+      `Booking Percent: ${Number(booking?.bookingPercent || 0).toFixed(2)}%`
+    );
+    doc.text(
+      `Required Booking Amount: ${formatCurrency(booking?.bookingAmount)}`
+    );
+    doc.text(
+      `${paymentType} (Current Transaction): ${formatCurrency(payment?.amount || 0)}`
+    );
+    doc.text(`Total Paid: ${formatCurrency(booking?.paidAmount)}`);
+    doc.text(`Remaining: ${formatCurrency(booking?.remainingAmount)}`);
+
+    if (companySettings?.invoiceNotes) {
+      doc.moveDown(0.8);
+      doc.fontSize(11).fillColor("#111827").text("Notes");
+      doc.fontSize(10).fillColor("#374151").text(companySettings.invoiceNotes);
+    }
+
+    doc.end();
+  });
 
 export const generateBookingInvoicePDF = async (booking, payment = null) => {
   let companySettings = null;
@@ -184,6 +282,17 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
       format: "A4",
       printBackground: true,
       margin: { top: "16mm", right: "12mm", bottom: "16mm", left: "12mm" },
+    });
+  } catch (browserError) {
+    console.error("Puppeteer invoice generation failed, using PDFKit fallback:", browserError.message);
+    return generateFallbackInvoicePDF({
+      booking,
+      payment,
+      invoiceNumber,
+      paymentType,
+      itemTypeLabel,
+      companySettings,
+      companyAddress,
     });
   } finally {
     if (browser) {

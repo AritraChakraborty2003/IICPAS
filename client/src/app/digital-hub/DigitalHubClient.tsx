@@ -221,6 +221,7 @@ export default function DigitalHubClient({
   const translateWidgetRef = useRef<{
     translatePage: (languageCode: string) => void;
   } | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
   const pendingLanguageRef = useRef<string | null>(null);
   const googleTranslateScriptRef = useRef<HTMLScriptElement | null>(null);
@@ -601,6 +602,15 @@ export default function DigitalHubClient({
   // Handle answer selection
   const handleAnswerSelect = (questionId: string, selectedAnswer: string) => {
     if (quizSubmitted) return; // Don't allow changes after submission
+    if (selectedAnswers[questionId] === selectedAnswer) return;
+
+    const currentQuestion = quizData?.questions.find(
+      (question) => question._id === questionId
+    );
+    if (currentQuestion) {
+      const isCorrect = selectedAnswer === currentQuestion.answer;
+      playAnswerFeedbackSound(isCorrect);
+    }
 
     setSelectedAnswers((prev) => ({
       ...prev,
@@ -608,15 +618,64 @@ export default function DigitalHubClient({
     }));
   };
 
-  const playCelebrationSound = useCallback(() => {
-    if (typeof window === "undefined") return;
+  const getAudioContext = useCallback(() => {
+    if (typeof window === "undefined") return null;
     const AudioContextClass =
       window.AudioContext ||
       (window as typeof window & { webkitAudioContext?: typeof AudioContext })
         .webkitAudioContext;
-    if (!AudioContextClass) return;
+    if (!AudioContextClass) return null;
 
-    const audioContext = new AudioContextClass();
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextClass();
+    }
+
+    const context = audioContextRef.current;
+    if (context.state === "suspended") {
+      context.resume().catch(() => {
+        // Ignore resume errors; playback simply won't occur.
+      });
+    }
+
+    return context;
+  }, []);
+
+  const playAnswerFeedbackSound = useCallback(
+    (isCorrect: boolean) => {
+      const audioContext = getAudioContext();
+      if (!audioContext) return;
+
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.type = isCorrect ? "triangle" : "sawtooth";
+      oscillator.frequency.setValueAtTime(
+        isCorrect ? 740 : 220,
+        audioContext.currentTime
+      );
+      if (!isCorrect) {
+        oscillator.frequency.exponentialRampToValueAtTime(
+          160,
+          audioContext.currentTime + 0.15
+        );
+      }
+
+      const now = audioContext.currentTime;
+      gainNode.gain.setValueAtTime(0.0001, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.09, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+
+      oscillator.start(now);
+      oscillator.stop(now + 0.18);
+    },
+    [getAudioContext]
+  );
+
+  const playCelebrationSound = useCallback(() => {
+    const audioContext = getAudioContext();
+    if (!audioContext) return;
     const notes = [523.25, 659.25, 783.99];
     notes.forEach((frequency, index) => {
       const oscillator = audioContext.createOscillator();
@@ -633,6 +692,16 @@ export default function DigitalHubClient({
       oscillator.start(startTime);
       oscillator.stop(startTime + 0.22);
     });
+  }, [getAudioContext]);
+
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(() => {
+          // Ignore close errors during teardown.
+        });
+      }
+    };
   }, []);
 
   const handleQuizSubmit = useCallback(async () => {
