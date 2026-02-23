@@ -436,16 +436,7 @@ export default function BookingPageClient({
       }
       const student = await ensureStudent();
       if (!student?._id) {
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(
-            "booking_intent",
-            JSON.stringify({
-              itemType: "group_package",
-              groupPackageId: groupId,
-            })
-          );
-        }
-        router.push(`/student-login?redirect=${encodeURIComponent("/booking")}`);
+        openAuthModalForBooking({ type: "group_package", group });
         return;
       }
 
@@ -504,7 +495,7 @@ export default function BookingPageClient({
       if (axios.isAxiosError(bookingError)) {
         if (bookingError.response?.status === 401 || bookingError.response?.status === 403) {
           toast.error("Please login to continue booking.");
-          router.push(`/student-login?redirect=${encodeURIComponent("/booking")}`);
+          openAuthModalForBooking({ type: "group_package", group });
         } else if (bookingError.response?.status === 409) {
           toast.error(bookingError.response?.data?.message || "Booking already exists");
           router.push("/student-dashboard?tab=bookings");
@@ -521,8 +512,9 @@ export default function BookingPageClient({
   const showSkeleton = loading || (isFiltering && (courses.length > 0 || groupPricing.length > 0));
 
   return (
-    <main className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
-      <section className="max-w-full mx-auto px-3 sm:px-4 pb-14 mr-0 lg:mr-4">
+    <>
+      <main className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
+        <section className="max-w-full mx-auto px-3 sm:px-4 pb-14 mr-0 lg:mr-4">
         {error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 flex items-center justify-between gap-3">
             <p className="text-sm text-red-700">{error}</p>
@@ -714,7 +706,30 @@ export default function BookingPageClient({
             )}
           </main>
         </div>
-      </section>
-    </main>
+        </section>
+      </main>
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => {
+          setShowLoginModal(false);
+          setPendingBookingAction(null);
+        }}
+        onLoginSuccess={async () => {
+          const pendingAction = pendingBookingAction;
+          setShowLoginModal(false);
+          setPendingBookingAction(null);
+
+          if (!pendingAction) return;
+
+          if (pendingAction.type === "single_course") {
+            await handleBookNow(pendingAction.course);
+            return;
+          }
+
+          await handleGroupBookNow(pendingAction.group);
+        }}
+      />
+    </>
   );
 }
