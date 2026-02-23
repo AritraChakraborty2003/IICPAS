@@ -22,6 +22,7 @@ import {
   FaCoins,
   FaChevronLeft,
   FaChevronRight,
+  FaFileAlt,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -36,6 +37,7 @@ import RecordedSessionTab from "./RecordedSessionTab";
 import ProfileTab from "../components/ProfileTab";
 import TestimonialTab from "./TestimonialTab";
 import StudentInvoicesTab from "./StudentInvoicesTab";
+import StudentBookingsTab from "./StudentBookingsTab";
 
 function StudentDashboardContent() {
   const router = useRouter();
@@ -90,6 +92,7 @@ function StudentDashboardContent() {
     { id: "recorded", icon: <FaPlay />, label: "Recorded Sessions", dot: true },
     { id: "news", icon: <FaNewspaper />, label: "News" },
     { id: "testimonial", icon: <FaQuoteLeft />, label: "Testimonial" },
+    { id: "bookings", icon: <FaFileAlt />, label: "Bookings" },
     { id: "support", icon: <FaHeadset />, label: "Support" },
     {
       id: "certificates",
@@ -113,6 +116,7 @@ function StudentDashboardContent() {
         "recorded",
         "news",
         "testimonial",
+        "bookings",
         "support",
         "certificates",
         "profile",
@@ -247,6 +251,8 @@ function StudentDashboardContent() {
         );
       case "invoices":
         return <StudentInvoicesTab />;
+      case "bookings":
+        return <StudentBookingsTab />;
       case "testimonial":
         return <TestimonialTab student={student} />;
       case "support":
