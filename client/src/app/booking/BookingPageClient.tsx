@@ -4,7 +4,6 @@ import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { ArrowRight, Sparkles } from "lucide-react";
 import GroupCourseCard from "../components/GroupCourseCard";
 import BookingCourseCard from "./BookingCourseCard";
 import BookingSkeletonGrid from "./BookingSkeletonGrid";
@@ -270,48 +269,6 @@ export default function BookingPageClient({
   return (
     <main className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       <section className="max-w-full mx-auto px-3 sm:px-4 pb-14 mr-0 lg:mr-4">
-        <div className="pt-4 md:pt-6 mb-6">
-          <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-5 md:p-7 text-white shadow-lg">
-            <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-            <div className="absolute -left-10 -bottom-16 h-40 w-40 rounded-full bg-black/10 blur-2xl" />
-            <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-wide">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Fast Admissions
-                </p>
-                <h2 className="mt-3 text-2xl md:text-3xl font-extrabold leading-tight">
-                  Register and Pre-Book Courses
-                </h2>
-                <p className="mt-2 text-sm md:text-base text-white/90">
-                  Reserve your seat now, complete checkout in seconds, and start learning faster.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => router.push("/register")}
-                  className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
-                >
-                  Register Now
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const element = document.getElementById("booking-courses-grid");
-                    if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/20"
-                >
-                  Pre-Book Courses
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {error && (
           <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 flex items-center justify-between gap-3">
             <p className="text-sm text-red-700">{error}</p>
