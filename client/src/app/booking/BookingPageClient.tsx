@@ -19,6 +19,12 @@ type BookingPageClientProps = {
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
+
 export default function BookingPageClient({
   initialCourses,
   initialGroupPricing,
@@ -36,7 +42,9 @@ export default function BookingPageClient({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bookingCourseId, setBookingCourseId] = useState<string | null>(null);
+  const [bookingGroupId, setBookingGroupId] = useState<string | null>(null);
   const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([]);
+  const [razorpayReady, setRazorpayReady] = useState(false);
 
   const priceBounds = useMemo(() => getPriceBounds(courses), [courses]);
 
@@ -127,6 +135,25 @@ export default function BookingPageClient({
   useEffect(() => {
     fetchLatestData({ showLoader: initialCourses.length === 0 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (window.Razorpay) {
+      setRazorpayReady(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setRazorpayReady(true);
+    script.onerror = () => setRazorpayReady(false);
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -222,21 +249,65 @@ export default function BookingPageClient({
     }));
   };
 
+  const ensureStudent = async () => {
+    const studentResponse = await axios.get(`${API_URL}/api/v1/students/isstudent`, {
+      withCredentials: true,
+    });
+    return studentResponse.data?.student;
+  };
+
+  const openRazorpay = ({
+    order,
+    description,
+    prefill,
+    onSuccess,
+    onClose,
+  }: {
+    order: any;
+    description: string;
+    prefill: { name?: string; email?: string; contact?: string };
+    onSuccess: (response: any) => Promise<void>;
+    onClose: () => void;
+  }) => {
+    if (!window.Razorpay) {
+      throw new Error("Razorpay checkout SDK not loaded");
+    }
+    const rzp = new window.Razorpay({
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || order?.key,
+      amount: order?.amount,
+      currency: order?.currency || "INR",
+      name: "IICPA Institute",
+      description,
+      order_id: order?.orderId,
+      prefill,
+      theme: { color: "#059669" },
+      modal: { ondismiss: onClose },
+      handler: async (response: any) => {
+        await onSuccess(response);
+      },
+    });
+    rzp.open();
+  };
+
   const handleBookNow = async (course: BookingCourse) => {
     const sessionType = getDefaultSessionType(course);
     setBookingCourseId(course.id);
-
     try {
-      const studentResponse = await axios.get(`${API_URL}/api/v1/students/isstudent`, {
-        withCredentials: true,
-      });
-      const student = studentResponse.data?.student;
+      if (!razorpayReady) {
+        toast.error("Payment gateway is loading. Please retry.");
+        return;
+      }
+      const student = await ensureStudent();
 
       if (!student?._id) {
         if (typeof window !== "undefined") {
           window.localStorage.setItem(
             "booking_intent",
-            JSON.stringify({ courseId: course.id, sessionType })
+            JSON.stringify({
+              itemType: "single_course",
+              courseId: course.id,
+              sessionType,
+            })
           );
         }
         router.push(
@@ -247,20 +318,142 @@ export default function BookingPageClient({
         return;
       }
 
-      await axios.post(
-        `${API_URL}/api/v1/cart/add/${student._id}`,
-        { courseId: course.id, sessionType },
+      const orderResponse = await axios.post(
+        `${API_URL}/api/v1/course-bookings/create-order`,
+        { itemType: "single_course", courseId: course.id, sessionType },
+        { withCredentials: true }
+      );
+      const orderData = orderResponse.data?.data;
+      if (!orderData?.orderId) throw new Error("Order creation failed");
+
+      openRazorpay({
+        order: orderData,
+        description: `Pre-book ${course.title}`,
+        prefill: {
+          name: student.name || "",
+          email: student.email || "",
+          contact: student.phone || "",
+        },
+        onClose: () => setBookingCourseId(null),
+        onSuccess: async (response) => {
+          try {
+            const verifyResponse = await axios.post(
+              `${API_URL}/api/v1/course-bookings/verify-payment`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              { withCredentials: true }
+            );
+            if (verifyResponse.data?.success) {
+              toast.success("Booking successful");
+              router.push("/student-dashboard?tab=bookings");
+            } else {
+              toast.error("Payment verification failed");
+            }
+          } catch (verifyError: any) {
+            toast.error(
+              verifyError?.response?.data?.message || "Unable to verify payment"
+            );
+          } finally {
+            setBookingCourseId(null);
+          }
+        },
+      });
+    } catch (bookingError) {
+      console.error("Booking failed:", bookingError);
+      if (axios.isAxiosError(bookingError) && bookingError.response?.status === 409) {
+        const existingBookingId = bookingError.response?.data?.data?.bookingId;
+        toast.error(bookingError.response?.data?.message || "Booking already exists");
+        if (existingBookingId) {
+          router.push("/student-dashboard?tab=bookings");
+        }
+      } else {
+        toast.error("Unable to book this course right now. Please try again.");
+      }
+      setBookingCourseId(null);
+    }
+  };
+
+  const handleGroupBookNow = async (group: Record<string, unknown>) => {
+    const groupId = String(group._id || "");
+    setBookingGroupId(groupId);
+    try {
+      if (!razorpayReady) {
+        toast.error("Payment gateway is loading. Please retry.");
+        return;
+      }
+      const student = await ensureStudent();
+      if (!student?._id) {
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(
+            "booking_intent",
+            JSON.stringify({
+              itemType: "group_package",
+              groupPackageId: groupId,
+            })
+          );
+        }
+        router.push(`/student-login?redirect=${encodeURIComponent("/booking")}`);
+        return;
+      }
+
+      const orderResponse = await axios.post(
+        `${API_URL}/api/v1/course-bookings/create-order`,
+        {
+          itemType: "group_package",
+          groupPackageId: groupId,
+        },
         { withCredentials: true }
       );
 
-      window.dispatchEvent(new CustomEvent("cartUpdated", { detail: { openDrawer: false } }));
-      toast.success("Pre-booking started. Redirecting to checkout...");
-      router.push("/checkout");
+      const orderData = orderResponse.data?.data;
+      if (!orderData?.orderId) throw new Error("Order creation failed");
+
+      openRazorpay({
+        order: orderData,
+        description: `Pre-book ${String(group.groupName || group.level || "Package")}`,
+        prefill: {
+          name: student.name || "",
+          email: student.email || "",
+          contact: student.phone || "",
+        },
+        onClose: () => setBookingGroupId(null),
+        onSuccess: async (response) => {
+          try {
+            const verifyResponse = await axios.post(
+              `${API_URL}/api/v1/course-bookings/verify-payment`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              { withCredentials: true }
+            );
+            if (verifyResponse.data?.success) {
+              toast.success("Package booking successful");
+              router.push("/student-dashboard?tab=bookings");
+            } else {
+              toast.error("Payment verification failed");
+            }
+          } catch (verifyError: any) {
+            toast.error(
+              verifyError?.response?.data?.message || "Unable to verify payment"
+            );
+          } finally {
+            setBookingGroupId(null);
+          }
+        },
+      });
     } catch (bookingError) {
-      console.error("Booking failed:", bookingError);
-      toast.error("Unable to book this course right now. Please try again.");
-    } finally {
-      setBookingCourseId(null);
+      if (axios.isAxiosError(bookingError) && bookingError.response?.status === 409) {
+        toast.error(bookingError.response?.data?.message || "Booking already exists");
+        router.push("/student-dashboard?tab=bookings");
+      } else {
+        toast.error("Unable to pre-book this package right now.");
+      }
+      setBookingGroupId(null);
     }
   };
 
@@ -422,6 +615,9 @@ export default function BookingPageClient({
                         key={String(group._id || `group-${index}`)}
                         groupPricing={group}
                         index={index}
+                        ctaLabel="Pre-Book Now"
+                        onPrimaryAction={handleGroupBookNow}
+                        isLoading={bookingGroupId === String(group._id || "")}
                       />
                     ))}
                   </>

@@ -37,7 +37,13 @@ const normalizeImageSrc = (rawImage, apiUrl) => {
   return `${safeApiOrigin}/${value.replace(/^\/+/, "")}`;
 };
 
-export default function GroupCourseCard({ groupPricing, index }) {
+export default function GroupCourseCard({
+  groupPricing,
+  index,
+  onPrimaryAction = null,
+  ctaLabel = "Enroll →",
+  isLoading = false,
+}) {
   const router = useRouter();
   const imageSrc = normalizeImageSrc(
     groupPricing.image,
@@ -186,15 +192,19 @@ export default function GroupCourseCard({ groupPricing, index }) {
 
           {/* Enroll Button */}
           <button
-            className="bg-gray-900 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex-shrink-0"
+            className="bg-gray-900 hover:bg-green-600 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex-shrink-0"
+            disabled={isLoading}
             onClick={(e) => {
               e.stopPropagation();
-              // Navigate to group package detail page for enrollment using slug or ID fallback
+              if (onPrimaryAction) {
+                onPrimaryAction(groupPricing);
+                return;
+              }
               const identifier = groupPricing.slug || groupPricing._id;
               router.push(`/group-package/${identifier}`);
             }}
           >
-            Enroll →
+            {isLoading ? "Processing..." : ctaLabel}
           </button>
         </div>
       </div>
