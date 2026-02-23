@@ -19,9 +19,39 @@ type BookingPageClientProps = {
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+type RazorpayOrderData = {
+  orderId: string;
+  amount: number;
+  currency?: string;
+  key?: string;
+};
+
+type RazorpayHandlerResponse = {
+  razorpay_order_id: string;
+  razorpay_payment_id: string;
+  razorpay_signature: string;
+};
+
+type RazorpayCheckoutOptions = {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: { name?: string; email?: string; contact?: string };
+  theme: { color: string };
+  modal: { ondismiss: () => void };
+  handler: (response: RazorpayHandlerResponse) => void;
+};
+
+type RazorpayInstance = {
+  open: () => void;
+};
+
 declare global {
   interface Window {
-    Razorpay?: any;
+    Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayInstance;
   }
 }
 
@@ -263,10 +293,10 @@ export default function BookingPageClient({
     onSuccess,
     onClose,
   }: {
-    order: any;
+    order: RazorpayOrderData;
     description: string;
     prefill: { name?: string; email?: string; contact?: string };
-    onSuccess: (response: any) => Promise<void>;
+    onSuccess: (response: RazorpayHandlerResponse) => Promise<void>;
     onClose: () => void;
   }) => {
     if (!window.Razorpay) {
@@ -282,7 +312,7 @@ export default function BookingPageClient({
       prefill,
       theme: { color: "#059669" },
       modal: { ondismiss: onClose },
-      handler: async (response: any) => {
+      handler: async (response: RazorpayHandlerResponse) => {
         await onSuccess(response);
       },
     });
@@ -352,10 +382,13 @@ export default function BookingPageClient({
             } else {
               toast.error("Payment verification failed");
             }
-          } catch (verifyError: any) {
-            toast.error(
-              verifyError?.response?.data?.message || "Unable to verify payment"
-            );
+          } catch (verifyError) {
+            const message =
+              axios.isAxiosError(verifyError) &&
+              typeof verifyError.response?.data?.message === "string"
+                ? verifyError.response.data.message
+                : "Unable to verify payment";
+            toast.error(message);
           } finally {
             setBookingCourseId(null);
           }
@@ -437,10 +470,13 @@ export default function BookingPageClient({
             } else {
               toast.error("Payment verification failed");
             }
-          } catch (verifyError: any) {
-            toast.error(
-              verifyError?.response?.data?.message || "Unable to verify payment"
-            );
+          } catch (verifyError) {
+            const message =
+              axios.isAxiosError(verifyError) &&
+              typeof verifyError.response?.data?.message === "string"
+                ? verifyError.response.data.message
+                : "Unable to verify payment";
+            toast.error(message);
           } finally {
             setBookingGroupId(null);
           }
