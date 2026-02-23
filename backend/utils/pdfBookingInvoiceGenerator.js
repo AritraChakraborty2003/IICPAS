@@ -1,4 +1,5 @@
 import puppeteer from "puppeteer";
+import InvoiceCompanySettings from "../models/InvoiceCompanySettings.js";
 
 const formatCurrency = (amount) =>
   Number(amount || 0).toLocaleString("en-IN", {
@@ -29,11 +30,42 @@ const escapeHtml = (value) =>
     .replace(/'/g, "&#39;");
 
 export const generateBookingInvoicePDF = async (booking, payment = null) => {
-  const invoiceNumber = `BK-${String(booking?._id || "").slice(-8).toUpperCase()}`;
+  let companySettings = null;
+  try {
+    companySettings = await InvoiceCompanySettings.getSettings();
+  } catch (error) {
+    companySettings = null;
+  }
+
+  const invoicePrefix =
+    String(companySettings?.invoicePrefix || "BK").trim().toUpperCase() || "BK";
+  const invoiceNumber = `${invoicePrefix}-${String(booking?._id || "")
+    .slice(-8)
+    .toUpperCase()}`;
   const paymentAmount = Number(payment?.amount || 0);
   const paymentType = payment?.paymentType === "balance" ? "Balance Payment" : "Booking Payment";
   const itemTypeLabel =
     booking?.itemType === "group_package" ? "Group Package" : "Single Course";
+  const companyAddress = [
+    companySettings?.addressLine1,
+    companySettings?.addressLine2,
+    companySettings?.city,
+    companySettings?.state,
+    companySettings?.pincode,
+    companySettings?.country,
+  ]
+    .filter((part) => String(part || "").trim() !== "")
+    .join(", ");
+  const companyLines = [
+    companySettings?.legalName,
+    companyAddress,
+    companySettings?.gstin ? `GSTIN: ${companySettings.gstin}` : "",
+    companySettings?.cin ? `CIN: ${companySettings.cin}` : "",
+    companySettings?.pan ? `PAN: ${companySettings.pan}` : "",
+    companySettings?.email ? `Email: ${companySettings.email}` : "",
+    companySettings?.phone ? `Phone: ${companySettings.phone}` : "",
+    companySettings?.website ? `Website: ${companySettings.website}` : "",
+  ].filter((line) => String(line || "").trim() !== "");
   const html = `
     <!doctype html>
     <html>
@@ -55,13 +87,20 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
           .muted { color: #6b7280; }
           .green { color: #047857; font-weight: 700; }
           .red { color: #b91c1c; font-weight: 700; }
+          .small { font-size: 12px; color: #374151; margin: 2px 0; }
         </style>
       </head>
       <body>
         <div class="card">
           <div class="header">
-            <h1>IICPA Booking Invoice</h1>
+            <h1>${escapeHtml(companySettings?.companyName || "IICPA Institute")} Booking Invoice</h1>
             <p>Invoice ${escapeHtml(invoiceNumber)}</p>
+          </div>
+          <div class="section">
+            <div class="label">Billed By</div>
+            ${companyLines
+              .map((line) => `<div class="small">${escapeHtml(line)}</div>`)
+              .join("")}
           </div>
           <div class="section">
             <div class="grid">
@@ -120,6 +159,13 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             <div class="totals-row"><span class="muted">Remaining</span><span class="red">${formatCurrency(
               booking?.remainingAmount
             )}</span></div>
+            ${
+              companySettings?.invoiceNotes
+                ? `<div style="margin-top:10px;" class="small"><strong>Notes:</strong> ${escapeHtml(
+                    companySettings.invoiceNotes
+                  )}</div>`
+                : ""
+            }
           </div>
         </div>
       </body>
