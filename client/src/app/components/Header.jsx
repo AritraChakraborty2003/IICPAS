@@ -526,7 +526,7 @@ export default function Header({ showMarquee = true, topOffset }) {
             ) : (
               <>
                 <Link
-                  href="/register"
+                  href="/booking"
                   className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
                 >
                   Book Now
@@ -661,7 +661,7 @@ export default function Header({ showMarquee = true, topOffset }) {
             ) : (
               <>
                 <Link
-                  href="/register"
+                  href="/booking"
                   onClick={() => setDrawerOpen(false)}
                   className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
                 >
