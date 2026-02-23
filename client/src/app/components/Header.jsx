@@ -31,32 +31,6 @@ const navLinks = [
   { name: "Home", href: "/" },
   { name: "Courses", href: "/course" },
   {
-    name: "University Courses",
-    children: [
-      { name: "UG Programs", isHeader: true },
-      {
-        name: "B.Tech (All Specializations)",
-        href: "/admission/university-courses/b-tech-all-specializations",
-      },
-      { name: "BBA", href: "/admission/university-courses/bba" },
-      { name: "BCA", href: "/admission/university-courses/bca" },
-      { name: "B.Pharma", href: "/admission/university-courses/b-pharm" },
-      { name: "D.Pharma", href: "/admission/university-courses/d-pharm" },
-      { name: "LLB", href: "/admission/university-courses/llb" },
-      { name: "BA LLB", href: "/admission/university-courses/ba-llb" },
-      { name: "BBA LLB", href: "/admission/university-courses/bba-llb" },
-      { name: "B.Ed", href: "/admission/university-courses/b-ed" },
-      { name: "PG Programs", isHeader: true },
-      { name: "MBA", href: "/admission/university-courses/mba" },
-      { name: "LLM", href: "/admission/university-courses/llm" },
-      { name: "Ph.D Programs", isHeader: true },
-      {
-        name: "Ph.D (All Specializations)",
-        href: "/admission/university-courses/phd-all-specializations",
-      },
-    ],
-  },
-  {
     name: "Placement",
     children: [
       { name: "Hire from us", href: "/placements/hire" },
@@ -550,12 +524,20 @@ export default function Header({ showMarquee = true, topOffset }) {
                 )}
               </div>
             ) : (
-              <Link
-                href="/student-login"
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
-              >
-                Digital Hub
-              </Link>
+              <>
+                <Link
+                  href="/register"
+                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
+                >
+                  Register Now
+                </Link>
+                <Link
+                  href="/student-login"
+                  className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm"
+                >
+                  Digital Hub
+                </Link>
+              </>
             )}
           </div>
 
@@ -677,13 +659,22 @@ export default function Header({ showMarquee = true, topOffset }) {
                 </button>
               </>
             ) : (
-              <Link
-                href="/student-login"
-                onClick={() => setDrawerOpen(false)}
-                className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
-              >
-                Digital Hub
-              </Link>
+              <>
+                <Link
+                  href="/register"
+                  onClick={() => setDrawerOpen(false)}
+                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
+                >
+                  Register Now
+                </Link>
+                <Link
+                  href="/student-login"
+                  onClick={() => setDrawerOpen(false)}
+                  className="block w-full border border-green-600 text-green-600 hover:bg-green-50 px-4 py-2 rounded-lg text-center text-sm"
+                >
+                  Digital Hub
+                </Link>
+              </>
             )}
           </div>
         </div>
