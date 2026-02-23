@@ -114,6 +114,7 @@ import UniversityCourseManagementTab from "./UniversityCourseManagementTab";
 import CoinsTab from "./CoinsTab";
 import BookingSettingsTab from "./BookingSettingsTab";
 import AdminBookingsTab from "./AdminBookingsTab";
+import InvoiceCompanySettingsTab from "./InvoiceCompanySettingsTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -358,6 +359,11 @@ const NAVIGATION_GROUPS = [
       { id: "payments", label: "Payments", icon: <FaCreditCard /> },
       { id: "transactions", label: "Transactions", icon: <FaCreditCard /> },
       { id: "coins", label: "Coins", icon: <FaCoins /> },
+      {
+        id: "invoice-company-settings",
+        label: "Invoice Company Settings",
+        icon: <FaFileAlt />,
+      },
       { id: "tickets", label: "Tickets", icon: <FaComments /> },
       { id: "audit", label: "IP Logs", icon: <FaShieldAlt /> },
       { id: "ip-whitelist", label: "IP Whitelisting", icon: <FaShieldAlt /> },
@@ -759,6 +765,8 @@ function AdminDashboardContent() {
           <TransactionsTab />
         ) : activeTab === "coins" ? (
           <CoinsTab />
+        ) : activeTab === "invoice-company-settings" ? (
+          <InvoiceCompanySettingsTab />
         ) : activeTab === "booking-settings" ? (
           <BookingSettingsTab />
         ) : activeTab === "bookings" ? (

@@ -49,6 +49,11 @@ const MODULES = [
   { id: "study-material", name: "Study Material", icon: "📚" },
   { id: "faq", name: "FAQ", icon: "❓" },
   { id: "booking-settings", name: "Booking Settings", icon: "⚙️" },
+  {
+    id: "invoice-company-settings",
+    name: "Invoice Company Settings",
+    icon: "🧾",
+  },
   { id: "bookings", name: "Bookings", icon: "🧾" },
 ];
 
