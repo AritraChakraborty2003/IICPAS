@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Drawer from "react-modern-drawer";
 import "react-modern-drawer/dist/index.css";
 import toast from "react-hot-toast";
+import { ArrowRight, Sparkles } from "lucide-react";
 import BookingFilterBar from "./BookingFilterBar";
 import BookingCourseCard from "./BookingCourseCard";
 import BookingSkeletonGrid from "./BookingSkeletonGrid";
@@ -28,6 +29,7 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
   const [error, setError] = useState<string | null>(null);
   const [bookingCourseId, setBookingCourseId] = useState<string | null>(null);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const deferredSearch = useDeferredValue(filters.search);
 
   const priceBounds = useMemo(() => getPriceBounds(courses), [courses]);
 
@@ -95,7 +97,7 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
   }, [filters.search, filters.categories, filters.minPrice, filters.maxPrice, filters.sortBy, loading]);
 
   const filteredCourses = useMemo(() => {
-    const searchTerm = filters.search.trim().toLowerCase();
+    const searchTerm = deferredSearch.trim().toLowerCase();
 
     const list = courses.filter((course) => {
       const matchesSearch = !searchTerm || course.title.toLowerCase().includes(searchTerm);
@@ -115,7 +117,7 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
     }
 
     return list;
-  }, [courses, filters]);
+  }, [courses, deferredSearch, filters.categories, filters.minPrice, filters.maxPrice, filters.sortBy]);
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -189,7 +191,7 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
       );
 
       window.dispatchEvent(new CustomEvent("cartUpdated", { detail: { openDrawer: false } }));
-      toast.success("Course added. Redirecting to checkout...");
+      toast.success("Pre-booking started. Redirecting to checkout...");
       router.push("/checkout");
     } catch (bookingError) {
       console.error("Booking failed:", bookingError);
@@ -204,10 +206,46 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
   return (
     <main className="bg-gradient-to-br from-slate-50 via-white to-emerald-50/30 min-h-screen">
       <section className="max-w-7xl mx-auto px-4 md:px-6 pb-14">
-        <div className="mb-6">
-          <p className="text-slate-600 pt-4 md:pt-6">
-            Browse and book from our latest courses.
-          </p>
+        <div className="pt-4 md:pt-6 mb-6">
+          <div className="relative overflow-hidden rounded-2xl border border-emerald-100 bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 p-5 md:p-7 text-white shadow-lg">
+            <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+            <div className="absolute -left-10 -bottom-16 h-40 w-40 rounded-full bg-black/10 blur-2xl" />
+            <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-wide">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Fast Admissions
+                </p>
+                <h2 className="mt-3 text-2xl md:text-3xl font-extrabold leading-tight">
+                  Register and Pre-Book Courses
+                </h2>
+                <p className="mt-2 text-sm md:text-base text-white/90">
+                  Reserve your seat now, complete checkout in seconds, and start learning faster.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => router.push("/register")}
+                  className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2.5 text-sm font-semibold text-emerald-700 hover:bg-emerald-50"
+                >
+                  Register Now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const element = document.getElementById("booking-courses-grid");
+                    if (element) element.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/40 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/20"
+                >
+                  Pre-Book Courses
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {error && (
@@ -348,6 +386,9 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
           <p className="text-sm font-medium text-slate-600">
             {isRefreshing ? "Refreshing courses..." : `${filteredCourses.length} course(s) found`}
           </p>
+          <p className="hidden md:block text-xs text-slate-500">
+            Efficient filtering with instant results
+          </p>
         </div>
 
         {showSkeleton ? (
@@ -365,7 +406,7 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div id="booking-courses-grid" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredCourses.map((course) => (
               <BookingCourseCard
                 key={course.id}
@@ -380,4 +421,3 @@ export default function BookingPageClient({ initialCourses }: BookingPageClientP
     </main>
   );
 }
-
