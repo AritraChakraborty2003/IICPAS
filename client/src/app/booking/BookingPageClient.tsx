@@ -280,10 +280,20 @@ export default function BookingPageClient({
   };
 
   const ensureStudent = async () => {
-    const studentResponse = await axios.get(`${API_URL}/api/v1/students/isstudent`, {
-      withCredentials: true,
-    });
-    return studentResponse.data?.student;
+    try {
+      const studentResponse = await axios.get(`${API_URL}/api/v1/students/isstudent`, {
+        withCredentials: true,
+      });
+      return studentResponse.data?.student ?? null;
+    } catch (error) {
+      if (
+        axios.isAxiosError(error) &&
+        (error.response?.status === 401 || error.response?.status === 403)
+      ) {
+        return null;
+      }
+      throw error;
+    }
   };
 
   const openRazorpay = ({
@@ -396,11 +406,18 @@ export default function BookingPageClient({
       });
     } catch (bookingError) {
       console.error("Booking failed:", bookingError);
-      if (axios.isAxiosError(bookingError) && bookingError.response?.status === 409) {
-        const existingBookingId = bookingError.response?.data?.data?.bookingId;
-        toast.error(bookingError.response?.data?.message || "Booking already exists");
-        if (existingBookingId) {
-          router.push("/student-dashboard?tab=bookings");
+      if (axios.isAxiosError(bookingError)) {
+        if (bookingError.response?.status === 401 || bookingError.response?.status === 403) {
+          toast.error("Please login to continue booking.");
+          router.push(`/student-login?redirect=${encodeURIComponent("/booking")}`);
+        } else if (bookingError.response?.status === 409) {
+          const existingBookingId = bookingError.response?.data?.data?.bookingId;
+          toast.error(bookingError.response?.data?.message || "Booking already exists");
+          if (existingBookingId) {
+            router.push("/student-dashboard?tab=bookings");
+          }
+        } else {
+          toast.error("Unable to book this course right now. Please try again.");
         }
       } else {
         toast.error("Unable to book this course right now. Please try again.");
@@ -483,9 +500,17 @@ export default function BookingPageClient({
         },
       });
     } catch (bookingError) {
-      if (axios.isAxiosError(bookingError) && bookingError.response?.status === 409) {
-        toast.error(bookingError.response?.data?.message || "Booking already exists");
-        router.push("/student-dashboard?tab=bookings");
+      console.error("Group booking failed:", bookingError);
+      if (axios.isAxiosError(bookingError)) {
+        if (bookingError.response?.status === 401 || bookingError.response?.status === 403) {
+          toast.error("Please login to continue booking.");
+          router.push(`/student-login?redirect=${encodeURIComponent("/booking")}`);
+        } else if (bookingError.response?.status === 409) {
+          toast.error(bookingError.response?.data?.message || "Booking already exists");
+          router.push("/student-dashboard?tab=bookings");
+        } else {
+          toast.error("Unable to pre-book this package right now.");
+        }
       } else {
         toast.error("Unable to pre-book this package right now.");
       }
