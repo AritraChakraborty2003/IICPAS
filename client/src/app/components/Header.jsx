@@ -529,7 +529,7 @@ export default function Header({ showMarquee = true, topOffset }) {
                   href="/register"
                   className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
                 >
-                  Register Now
+                  Book Now
                 </Link>
                 <Link
                   href="/student-login"
@@ -665,7 +665,7 @@ export default function Header({ showMarquee = true, topOffset }) {
                   onClick={() => setDrawerOpen(false)}
                   className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
                 >
-                  Register Now
+                  Book Now
                 </Link>
                 <Link
                   href="/student-login"
