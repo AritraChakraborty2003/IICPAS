@@ -7,9 +7,9 @@ import { normalizeCoursesPayload } from "./courseUtils";
 import { BookingCourse } from "./types";
 
 export const metadata: Metadata = {
-  title: "Book Courses - IICPA Institute",
+  title: "Register & Pre-Book Courses - IICPA Institute",
   description:
-    "Browse all IICPA courses and book the one that matches your career goals.",
+    "Register and pre-book IICPA courses with a modern, fast booking experience.",
 };
 
 async function getInitialCourses(): Promise<BookingCourse[]> {
@@ -33,7 +33,7 @@ export default async function BookingPage() {
   return (
     <div>
       <Header />
-      <ThinHeroSection title="Book Your Course" breadcrumb="Home > Book Course" />
+      <ThinHeroSection title="Register & Pre-Book Courses" breadcrumb="Home > Book Course" />
       <BookingPageClient initialCourses={initialCourses} />
       <Footer />
     </div>
