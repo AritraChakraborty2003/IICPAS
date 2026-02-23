@@ -48,6 +48,8 @@ const MODULES = [
   { id: "ip-whitelist", name: "IP Whitelisting", icon: "🔒" },
   { id: "study-material", name: "Study Material", icon: "📚" },
   { id: "faq", name: "FAQ", icon: "❓" },
+  { id: "booking-settings", name: "Booking Settings", icon: "⚙️" },
+  { id: "bookings", name: "Bookings", icon: "🧾" },
 ];
 
 const PERMISSIONS = [

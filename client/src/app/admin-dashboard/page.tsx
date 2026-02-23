@@ -112,6 +112,8 @@ import IndividualRequestsTab from "./IndividualRequestsTab";
 import AdmissionManagementTab from "./AdmissionManagementTab";
 import UniversityCourseManagementTab from "./UniversityCourseManagementTab";
 import CoinsTab from "./CoinsTab";
+import BookingSettingsTab from "./BookingSettingsTab";
+import AdminBookingsTab from "./AdminBookingsTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -381,6 +383,23 @@ const NAVIGATION_GROUPS = [
       },
     ],
   },
+  {
+    id: "booking-operations",
+    label: "Booking Operations",
+    icon: <FaCreditCard />,
+    items: [
+      {
+        id: "booking-settings",
+        label: "Booking Settings",
+        icon: <FaCog />,
+      },
+      {
+        id: "bookings",
+        label: "Bookings",
+        icon: <FaClipboardList />,
+      },
+    ],
+  },
 ];
 
 function AdminDashboardContent() {
@@ -398,6 +417,7 @@ function AdminDashboardContent() {
       communication: false,
       "system-management": false,
       "admission-management": false,
+      "booking-operations": false,
     }
   );
   const router = useRouter();
@@ -739,6 +759,10 @@ function AdminDashboardContent() {
           <TransactionsTab />
         ) : activeTab === "coins" ? (
           <CoinsTab />
+        ) : activeTab === "booking-settings" ? (
+          <BookingSettingsTab />
+        ) : activeTab === "bookings" ? (
+          <AdminBookingsTab />
         ) : activeTab === "jobs" ? (
           <JobsAdminPanel />
         ) : activeTab === "jobs-post-management" ? (

@@ -92,6 +92,8 @@ const registerInitialAdmin = async (req, res) => {
       topics: { add: true, read: true, update: true, delete: true, active: true },
       revision: { add: true, read: true, update: true, delete: true, active: true },
       support: { add: true, read: true, update: true, delete: true, active: true },
+      "booking-settings": { add: true, read: true, update: true, delete: true, active: true },
+      bookings: { add: true, read: true, update: true, delete: true, active: true },
     };
 
     const admin = await Employee.create({
