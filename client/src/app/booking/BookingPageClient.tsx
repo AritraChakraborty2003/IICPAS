@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import toast from "react-hot-toast";
 import GroupCourseCard from "../components/GroupCourseCard";
+import LoginModal from "../components/LoginModal";
 import BookingCourseCard from "./BookingCourseCard";
 import BookingSkeletonGrid from "./BookingSkeletonGrid";
 import { getDefaultSessionType, getPriceBounds, normalizeCoursesPayload } from "./courseUtils";
@@ -49,6 +50,11 @@ type RazorpayInstance = {
   open: () => void;
 };
 
+type PendingBookingAction =
+  | { type: "single_course"; course: BookingCourse }
+  | { type: "group_package"; group: Record<string, unknown> }
+  | null;
+
 declare global {
   interface Window {
     Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayInstance;
@@ -75,6 +81,9 @@ export default function BookingPageClient({
   const [bookingGroupId, setBookingGroupId] = useState<string | null>(null);
   const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([]);
   const [razorpayReady, setRazorpayReady] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingBookingAction, setPendingBookingAction] =
+    useState<PendingBookingAction>(null);
 
   const priceBounds = useMemo(() => getPriceBounds(courses), [courses]);
 
@@ -296,6 +305,11 @@ export default function BookingPageClient({
     }
   };
 
+  const openAuthModalForBooking = (action: Exclude<PendingBookingAction, null>) => {
+    setPendingBookingAction(action);
+    setShowLoginModal(true);
+  };
+
   const openRazorpay = ({
     order,
     description,
@@ -313,7 +327,7 @@ export default function BookingPageClient({
       throw new Error("Razorpay checkout SDK not loaded");
     }
     const rzp = new window.Razorpay({
-      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || order?.key,
+      key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || order?.key || "",
       amount: order?.amount,
       currency: order?.currency || "INR",
       name: "IICPA Institute",
@@ -340,21 +354,7 @@ export default function BookingPageClient({
       const student = await ensureStudent();
 
       if (!student?._id) {
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(
-            "booking_intent",
-            JSON.stringify({
-              itemType: "single_course",
-              courseId: course.id,
-              sessionType,
-            })
-          );
-        }
-        router.push(
-          `/student-login?redirect=${encodeURIComponent(
-            "/booking"
-          )}&courseId=${encodeURIComponent(course.id)}&sessionType=${encodeURIComponent(sessionType)}`
-        );
+        openAuthModalForBooking({ type: "single_course", course });
         return;
       }
 
@@ -409,7 +409,7 @@ export default function BookingPageClient({
       if (axios.isAxiosError(bookingError)) {
         if (bookingError.response?.status === 401 || bookingError.response?.status === 403) {
           toast.error("Please login to continue booking.");
-          router.push(`/student-login?redirect=${encodeURIComponent("/booking")}`);
+          openAuthModalForBooking({ type: "single_course", course });
         } else if (bookingError.response?.status === 409) {
           const existingBookingId = bookingError.response?.data?.data?.bookingId;
           toast.error(bookingError.response?.data?.message || "Booking already exists");
