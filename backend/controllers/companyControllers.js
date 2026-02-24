@@ -3,12 +3,19 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
 
 dotenv.config();
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "default_jwt_secret_for_development";
 const isProd = process.env.NODE_ENV === "production";
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -69,6 +76,15 @@ export const loginCompany = async (req, res) => {
       }
     );
 
+    await recordLogin({
+      role: "company",
+      actorModel: "Company",
+      actorId: company._id,
+      displayName: company.fullName,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
+
     // Set token in HttpOnly cookie
     res.cookie("token", token, {
       httpOnly: true,
@@ -94,13 +110,40 @@ export const loginCompany = async (req, res) => {
 };
 
 export const logoutCompany = (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-  });
+  const doLogout = async () => {
+    const token = req.cookies.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded?.id) {
+          const company = await Company.findById(decoded.id).select("_id fullName");
+          if (company) {
+            await recordLogout({
+              role: "company",
+              actorModel: "Company",
+              actorId: company._id,
+              displayName: company.fullName,
+              req,
+            });
+          }
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
 
-  res.status(200).json({ message: "Logout successful" });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    });
+
+    res.status(200).json({ message: "Logout successful" });
+  };
+
+  doLogout().catch(() => {
+    res.status(200).json({ message: "Logout successful" });
+  });
 };
 
 // Forgot password — send OTP

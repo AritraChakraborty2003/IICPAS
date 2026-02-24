@@ -24,6 +24,7 @@ import {
   getCoinSettings,
   getStudentCoinSummary,
 } from "../services/coinService.js";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
 
 dotenv.config();
 
@@ -35,6 +36,12 @@ const createToken = (student) => {
       expiresIn: "7d",
     }
   );
+};
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
 };
 
 const router = express.Router();
@@ -112,6 +119,15 @@ router.post("/login", async (req, res) => {
     if (!match) return res.status(401).json({ message: "Wrong password" });
     const token = createToken(student);
 
+    await recordLogin({
+      role: "student",
+      actorModel: "Student",
+      actorId: student._id,
+      displayName: student.name,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
+
     res
       .cookie("token", token, {
         httpOnly: true,
@@ -124,14 +140,42 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+router.get("/logout", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || "default_jwt_secret_for_development"
+        );
+        if (decoded?.id) {
+          const student = await Student.findById(decoded.id).select("_id name");
+          if (student) {
+            await recordLogout({
+              role: "student",
+              actorModel: "Student",
+              actorId: student._id,
+              displayName: student.name,
+              req,
+            });
+          }
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
 
-  res.status(200).json({ message: "Logged out successfully" });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch {
+    res.status(200).json({ message: "Logged out successfully" });
+  }
 });
 
 // isStudent

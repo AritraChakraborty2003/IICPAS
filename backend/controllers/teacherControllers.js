@@ -2,9 +2,16 @@
 import Teacher from "../models/Teacher.js";
 import jwt from "jsonwebtoken";
 import { signJwt, cookieOptions } from "../utils/auth.js";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "default_jwt_secret_for_development";
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
 
 // Teacher registration
 export const teacherRegister = async (req, res) => {
@@ -37,6 +44,14 @@ export const teacherRegister = async (req, res) => {
     });
 
     const token = signJwt(teacher._id, teacher.email, teacher.name);
+    await recordLogin({
+      role: "teacher",
+      actorModel: "Teacher",
+      actorId: teacher._id,
+      displayName: teacher.name,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
     res.cookie("jwt", token, cookieOptions);
 
     res.status(201).json({
@@ -56,6 +71,36 @@ export const teacherRegister = async (req, res) => {
     res
       .status(500)
       .json({ message: "Error registering teacher", error: err.message });
+  }
+};
+
+export const teacherLogout = async (req, res) => {
+  try {
+    const token = req.cookies.jwt;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded?._id) {
+          const teacher = await Teacher.findById(decoded._id).select("_id name");
+          if (teacher) {
+            await recordLogout({
+              role: "teacher",
+              actorModel: "Teacher",
+              actorId: teacher._id,
+              displayName: teacher.name,
+              req,
+            });
+          }
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
+
+    res.clearCookie("jwt", cookieOptions);
+    res.status(200).json({ message: "Teacher logged out successfully" });
+  } catch {
+    res.status(200).json({ message: "Teacher logged out successfully" });
   }
 };
 

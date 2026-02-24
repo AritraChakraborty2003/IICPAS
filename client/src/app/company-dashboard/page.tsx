@@ -28,6 +28,7 @@ import ScheduleBookingTab from "./ScheduleBookingTab";
 import JobManagerTab from "./JobListTab";
 import CompanyDashboardOverview from "./Dashboard";
 import CompanyProfile from "./CompanyProfile";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
 
@@ -47,6 +48,11 @@ const CompanyDashboardPage = () => {
     message: "",
   });
   const [submitting, setSubmitting] = useState(false);
+
+  useAuthHeartbeat({
+    enabled: !!company,
+    heartbeatUrl: `${API}/auth/heartbeat`,
+  });
 
   useEffect(() => {
     const verifyCompany = async () => {

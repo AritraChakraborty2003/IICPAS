@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 // Type definitions
 interface Task {
@@ -343,6 +344,12 @@ export default function DigitalHubClient({
   const [progress, setProgress] = useState(0);
   const [points, setPoints] = useState(0);
   const [studentId, setStudentId] = useState<string | null>(null);
+
+  useAuthHeartbeat({
+    enabled: !!studentId,
+    heartbeatUrl: `${API}/api/auth/heartbeat`,
+  });
+
   const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
   const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
 

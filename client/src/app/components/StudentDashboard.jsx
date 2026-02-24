@@ -39,6 +39,7 @@ import ProfileTab from "../components/ProfileTab";
 import TestimonialTab from "./TestimonialTab";
 import StudentInvoicesTab from "./StudentInvoicesTab";
 import StudentBookingsTab from "./StudentBookingsTab";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 function StudentDashboardContent() {
   const router = useRouter();
@@ -62,6 +63,11 @@ function StudentDashboardContent() {
   const [submitting, setSubmitting] = useState(false);
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+  useAuthHeartbeat({
+    enabled: !!student,
+    heartbeatUrl: `${API}/api/auth/heartbeat`,
+  });
 
   const getStudentImageUrl = (imagePath) => {
     if (!imagePath || typeof imagePath !== "string") return "";

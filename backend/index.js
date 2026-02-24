@@ -16,6 +16,7 @@ import paymentRoutes from "./routes/payment.js";
 import phonePePaymentRoutes from "./routes/PaymentRoutes/paymentRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import authAuditRoutes from "./routes/authAuditRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import JobAdminRoutes from "./routes/JobAdminRoutes.js";
 import JobApplyRoutes from "./routes/JobApplyRoutes.js";
@@ -150,6 +151,7 @@ const contactLimiter = rateLimit({
 // Routes
 app.use("/api/college", collegeRoutes);
 app.use("/api/admin", authRoutes);
+app.use("/api", authAuditRoutes);
 // Apply rate limiting to contact routes only
 app.use("/api/contact-old", contactLimiter, contactRoutesOld);
 app.use("/api/companies", companyRoutes);

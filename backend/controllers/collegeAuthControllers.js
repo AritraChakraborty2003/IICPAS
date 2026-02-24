@@ -3,8 +3,15 @@ import jwt from "jsonwebtoken";
 import College from "../models/College.js";
 import { generateToken } from "../utils/generateToken.js";
 import dotenv from "dotenv";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
 
 dotenv.config();
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
 export const sendCollegeOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -44,6 +51,14 @@ export const collegeSignup = async (req, res) => {
     });
 
     const token = generateToken(college);
+    await recordLogin({
+      role: "college",
+      actorModel: "College",
+      actorId: college._id,
+      displayName: college.name,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -81,9 +96,37 @@ export const collegeLogin = async (req, res) => {
   }
 };
 
-export const collegeLogout = (req, res) => {
-  res.clearCookie("token");
-  res.status(200).json({ message: "Logged out successfully" });
+export const collegeLogout = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || "default_jwt_secret_for_development"
+        );
+        if (decoded?.id) {
+          const college = await College.findById(decoded.id).select("_id name");
+          if (college) {
+            await recordLogout({
+              role: "college",
+              actorModel: "College",
+              actorId: college._id,
+              displayName: college.name,
+              req,
+            });
+          }
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
+
+    res.clearCookie("token");
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch {
+    res.status(200).json({ message: "Logged out successfully" });
+  }
 };
 
 export const isCollegeLoggedIn = (req, res) => {

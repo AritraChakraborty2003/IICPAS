@@ -4,9 +4,20 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Individual from "../models/Individual.js";
 import { signJwt, cookieOptions } from "../utils/auth.js";
+import {
+  recordLogin,
+  recordLogout,
+  resolveActorFromRequest,
+} from "../services/authAuditService.js";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "default_jwt_secret_for_development";
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
 
 export const register = async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -38,6 +49,14 @@ export const login = async (req, res) => {
       JWT_SECRET,
       { expiresIn: "1d" }
     );
+    await recordLogin({
+      role: "admin",
+      actorModel: "Admin",
+      actorId: admin._id,
+      displayName: admin.name,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
 
     // Return complete admin data with all fields
     res.status(200).json({
@@ -107,8 +126,29 @@ export const login = async (req, res) => {
 };
 
 export const logout = (req, res) => {
-  res.clearCookie("jwt", cookieOptions);
-  res.json({ message: "Logged out" });
+  const handleLogout = async () => {
+    try {
+      const actor = await resolveActorFromRequest(req);
+      if (actor) {
+        await recordLogout({
+          role: actor.role,
+          actorModel: actor.actorModel,
+          actorId: actor.actorId,
+          displayName: actor.displayName,
+          req,
+        });
+      }
+    } catch {
+      // Continue logout even if audit logging fails.
+    }
+    res.clearCookie("jwt", cookieOptions);
+    res.json({ message: "Logged out" });
+  };
+
+  handleLogout().catch(() => {
+    res.clearCookie("jwt", cookieOptions);
+    res.json({ message: "Logged out" });
+  });
 };
 
 // User (Individual) signup
@@ -119,6 +159,14 @@ export const userSignup = async (req, res) => {
     if (exists) return res.status(400).json({ message: "User already exists" });
     const user = await Individual.create({ name, email, password, phone });
     const token = signJwt(user._id, user.email, user.name);
+    await recordLogin({
+      role: "individual",
+      actorModel: "Individual",
+      actorId: user._id,
+      displayName: user.name,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
     res.cookie("jwt", token, cookieOptions);
     res.status(201).json({
       message: "Registered",

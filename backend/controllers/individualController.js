@@ -5,8 +5,15 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
 
 dotenv.config();
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
 
 // ========================
 
@@ -83,6 +90,14 @@ export const signup = async (req, res) => {
 
     const user = await Individual.create(userData);
     const token = signJwt(user._id, user.email, user.name, user.image);
+    await recordLogin({
+      role: "individual",
+      actorModel: "Individual",
+      actorId: user._id,
+      displayName: user.name,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
     res.cookie("jwt", token, cookieOptions);
     res.status(201).json({
       user: {
@@ -130,9 +145,34 @@ export const login = async (req, res) => {
 // ========================
 // ✅ Logout
 // ========================
-export const logout = (req, res) => {
-  res.clearCookie("jwt", cookieOptions);
-  res.json({ message: "Logged out" });
+export const logout = async (req, res) => {
+  try {
+    const token = req.cookies.jwt;
+    if (token) {
+      try {
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || "default_jwt_secret_for_development"
+        );
+        const user = await Individual.findById(decoded._id).select("_id name");
+        if (user) {
+          await recordLogout({
+            role: "individual",
+            actorModel: "Individual",
+            actorId: user._id,
+            displayName: user.name,
+            req,
+          });
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
+    res.clearCookie("jwt", cookieOptions);
+    res.json({ message: "Logged out" });
+  } catch {
+    res.json({ message: "Logged out" });
+  }
 };
 
 // ========================

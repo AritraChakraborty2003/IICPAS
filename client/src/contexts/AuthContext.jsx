@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { useAuthHeartbeat } from "../lib/useAuthHeartbeat";
 
 const AuthContext = createContext();
 
@@ -20,6 +21,18 @@ export const AuthProvider = ({ children }) => {
 
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+
+  const getHeartbeatHeaders = useCallback(() => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) return {};
+    return { Authorization: `Bearer ${token}` };
+  }, []);
+
+  useAuthHeartbeat({
+    enabled: !!user,
+    heartbeatUrl: `${API_BASE}/auth/heartbeat`,
+    getHeaders: getHeartbeatHeaders,
+  });
 
   // Check if user has permission for specific module and action
   const hasPermission = (module, action) => {
@@ -81,7 +94,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // Call logout endpoint if needed
       await axios.post(
-        `${API_BASE}/logout`,
+        `${API_BASE}/employees/logout`,
         {},
         {
           headers: {

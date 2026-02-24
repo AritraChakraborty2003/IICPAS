@@ -42,6 +42,7 @@ import CalendarTab from "./CalendarTab";
 import TicketTab from "./TicketTab";
 import ProfileTab from "./ProfileTab";
 import Header from "./Header";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 // Sidebar tabs config (icon for each)
 const tabs = [
@@ -116,6 +117,11 @@ export default function CenterDashboard() {
   const [center, setCenter] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+
+  useAuthHeartbeat({
+    enabled: !!center,
+    heartbeatUrl: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/heartbeat`,
+  });
 
   useEffect(() => {
     // Check if center is authenticated

@@ -3,6 +3,7 @@ import {
   registerEmployee,
   registerInitialAdmin,
   loginEmployee,
+  logoutEmployee,
   getEmployees,
   getEmployeeById,
   updateEmployee,
@@ -21,6 +22,7 @@ router.post("/register-admin", registerInitialAdmin); // Public admin registrati
 
 // Protected routes
 router.use(requireAuth);
+router.post("/logout", logoutEmployee);
 
 // Employee management routes (Admin only)
 router.post("/", requirePermission("staff", "add"), registerEmployee);

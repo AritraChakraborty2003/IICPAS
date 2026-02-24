@@ -18,6 +18,7 @@ import BookingCalendar from "./BookingCalendar";
 import TicketRaise from "./IndividualTicketRaiseAndList";
 import IndividualProfile from "./IndividualProfile";
 import DashboardOverview from "./DashboardOverview";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
 
@@ -37,6 +38,11 @@ const IndividualDashboardPage = () => {
     message: "",
   });
   const [submitting, setSubmitting] = useState(false);
+
+  useAuthHeartbeat({
+    enabled: !!user,
+    heartbeatUrl: `${API}/auth/heartbeat`,
+  });
 
   useEffect(() => {
     const verifyIndividual = async () => {
