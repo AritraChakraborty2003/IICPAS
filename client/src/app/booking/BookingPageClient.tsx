@@ -361,6 +361,9 @@ export default function BookingPageClient({
     bookingType: PendingCheckout["bookingType"];
     successMessage: string;
   }) => {
+    if (!orderData?.orderId) {
+      throw new Error("Order data missing for payment flow");
+    }
     const bookingPreview = orderData.bookingPreview || {};
     const fallbackBookingAmount = toSafeAmount(Number(orderData.amount || 0) / 100, 0);
     const bookingAmountRaw = toSafeAmount(
@@ -495,7 +498,7 @@ export default function BookingPageClient({
       if (!orderData?.orderId) throw new Error("Order creation failed");
 
       queueDisclaimerBeforePayment({
-        order: orderData,
+        orderData,
         description: `Register for ${course.title}`,
         prefill: {
           name: student.name || "",
@@ -519,10 +522,17 @@ export default function BookingPageClient({
             router.push("/student-dashboard?tab=bookings");
           }
         } else {
-          toast.error("Unable to book this course right now. Please try again.");
+          toast.error(
+            bookingError.response?.data?.message ||
+              "Unable to book this course right now. Please try again."
+          );
         }
       } else {
-        toast.error("Unable to book this course right now. Please try again.");
+        toast.error(
+          bookingError instanceof Error
+            ? bookingError.message
+            : "Unable to book this course right now. Please try again."
+        );
       }
       setBookingCourseId(null);
     }
@@ -555,7 +565,7 @@ export default function BookingPageClient({
       if (!orderData?.orderId) throw new Error("Order creation failed");
 
       queueDisclaimerBeforePayment({
-        order: orderData,
+        orderData,
         description: `Register for ${String(group.groupName || group.level || "Package")}`,
         prefill: {
           name: student.name || "",
@@ -576,10 +586,16 @@ export default function BookingPageClient({
           toast.error(bookingError.response?.data?.message || "Booking already exists");
           router.push("/student-dashboard?tab=bookings");
         } else {
-          toast.error("Unable to register this package right now.");
+          toast.error(
+            bookingError.response?.data?.message || "Unable to register this package right now."
+          );
         }
       } else {
-        toast.error("Unable to register this package right now.");
+        toast.error(
+          bookingError instanceof Error
+            ? bookingError.message
+            : "Unable to register this package right now."
+        );
       }
       setBookingGroupId(null);
     }
