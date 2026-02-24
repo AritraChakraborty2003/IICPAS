@@ -310,9 +310,19 @@ export default function AddOrEditTopicForm({
       ]);
 
       if (imagesRes.data.success && videosRes.data.success) {
+        const normalizeFiles = (files = []) =>
+          files.map((file) => ({
+            ...file,
+            id:
+              file.id ||
+              (typeof file._id === "string"
+                ? file._id
+                : file._id?.$oid || file.filename),
+          }));
+
         setUploadedFiles({
-          images: imagesRes.data.data || [],
-          videos: videosRes.data.data || [],
+          images: normalizeFiles(imagesRes.data.data),
+          videos: normalizeFiles(videosRes.data.data),
         });
       }
     } catch (error) {
@@ -325,6 +335,11 @@ export default function AddOrEditTopicForm({
 
   // Delete uploaded file
   const handleDeleteFile = async (fileId, fileType) => {
+    if (!fileId) {
+      Swal.fire("Error", "Invalid file id. Refresh files and try again.", "error");
+      return;
+    }
+
     try {
       await axios.delete(`${STATIC_CDN_BASE}/files/${fileId}`);
 
@@ -1108,7 +1123,7 @@ export default function AddOrEditTopicForm({
                 <Stack spacing={1}>
                   {uploadedFiles.videos.map((file) => (
                     <Box
-                      key={file.id}
+                      key={file.id || file.filename}
                       sx={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -1187,7 +1202,9 @@ export default function AddOrEditTopicForm({
                           size="small"
                           variant="outlined"
                           color="error"
-                          onClick={() => handleDeleteFile(file.id, "videos")}
+                          onClick={() =>
+                            handleDeleteFile(file.id || file._id, "videos")
+                          }
                         >
                           Delete
                         </Button>
@@ -1394,7 +1411,7 @@ export default function AddOrEditTopicForm({
                 <Stack spacing={1}>
                   {uploadedFiles.images.map((file) => (
                     <Box
-                      key={file.id}
+                      key={file.id || file.filename}
                       sx={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -1487,7 +1504,9 @@ export default function AddOrEditTopicForm({
                           size="small"
                           variant="outlined"
                           color="error"
-                          onClick={() => handleDeleteFile(file.id, "images")}
+                          onClick={() =>
+                            handleDeleteFile(file.id || file._id, "images")
+                          }
                         >
                           Delete
                         </Button>

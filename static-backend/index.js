@@ -42,6 +42,11 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 let db;
 let filesCollection;
 
+const serializeFileDoc = (fileDoc) => ({
+  ...fileDoc,
+  id: fileDoc._id?.toString?.() || fileDoc.id,
+});
+
 const connectToMongoDB = async () => {
   try {
     const client = new MongoClient(
@@ -494,7 +499,7 @@ app.get("/files", async (req, res) => {
       .find({})
       .sort({ upload_date: -1 })
       .toArray();
-    res.json({ success: true, data: files });
+    res.json({ success: true, data: files.map(serializeFileDoc) });
   } catch (error) {
     console.error("Error fetching files:", error);
     res.status(500).json({ error: "Failed to fetch files" });
@@ -511,13 +516,13 @@ app.get("/files/:type", async (req, res) => {
         .find({ file_type: { $regex: /^image\// } })
         .sort({ upload_date: -1 })
         .toArray();
-      res.json({ success: true, data: images });
+      res.json({ success: true, data: images.map(serializeFileDoc) });
     } else if (type === "videos") {
       const videos = await filesCollection
         .find({ file_type: { $regex: /^video\// } })
         .sort({ upload_date: -1 })
         .toArray();
-      res.json({ success: true, data: videos });
+      res.json({ success: true, data: videos.map(serializeFileDoc) });
     } else {
       res
         .status(400)
