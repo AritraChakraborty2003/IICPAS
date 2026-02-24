@@ -10,7 +10,7 @@ const router = express.Router();
 router.use(requireMasterApiKey);
 
 // API-key protected public endpoints (no session login required)
-router.get("/public/login-access/users", listLoginAccessUsers);
-router.patch("/public/login-access/users/:role/:userId", updateSingleLoginStatus);
+router.get("/users", listLoginAccessUsers);
+router.patch("/users/:role/:userId", updateSingleLoginStatus);
 
 export default router;

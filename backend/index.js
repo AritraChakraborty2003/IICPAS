@@ -299,7 +299,7 @@ app.use("/api/v1/chatbot-leads", chatbotLeadRoutes);
 // Use employee routes
 app.use("/api/employees", employeeRoutes);
 app.use("/api/master/login-access", masterLoginAccessRoutes);
-app.use("/api", publicLoginAccessRoutes);
+app.use("/api/public/login-access", publicLoginAccessRoutes);
 
 // Course Rating Routes
 import courseRatingRoutes from "./routes/courseRatingRoutes.js";
