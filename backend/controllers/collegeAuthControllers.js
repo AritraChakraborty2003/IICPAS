@@ -226,6 +226,52 @@ export const approveCollege = async (req, res) => {
   }
 };
 
+// Toggle college status between approved and inactive
+export const toggleCollegeStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const college = await College.findById(id);
+    if (!college) return res.status(404).json({ message: "College not found" });
+
+    const current = String(college.status || "").toLowerCase();
+    if (current === "approved") {
+      college.status = "inactive";
+    } else if (current === "inactive") {
+      college.status = "approved";
+    } else {
+      return res.status(400).json({
+        message:
+          "Only approved/inactive colleges can be toggled. Approve this college first.",
+      });
+    }
+
+    await college.save();
+    res.status(200).json({
+      message: `College marked as ${college.status}`,
+      college,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to toggle college status", error: err.message });
+  }
+};
+
+// Delete college by ID
+export const deleteCollege = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const college = await College.findByIdAndDelete(id);
+    if (!college) return res.status(404).json({ message: "College not found" });
+
+    res.status(200).json({ message: "College deleted successfully" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to delete college", error: err.message });
+  }
+};
+
 // Update college profile
 export const updateCollegeProfile = async (req, res) => {
   try {

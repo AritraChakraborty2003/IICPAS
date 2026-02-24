@@ -7,6 +7,8 @@ import {
   resetPassword,
   getAllCompanies,
   approveCompany,
+  toggleCompanyStatus,
+  deleteCompany,
   logoutCompany,
   updateCompanyProfile,
   getCompanyDocuments,
@@ -64,5 +66,7 @@ router.post("/documents", isCompany, getCompanyDocuments);
 // Admin routes
 router.get("/", getAllCompanies);
 router.put("/approve/:id", approveCompany);
+router.patch("/toggle-status/:id", toggleCompanyStatus);
+router.delete("/:id", deleteCompany);
 
 export default router;

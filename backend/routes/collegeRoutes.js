@@ -7,6 +7,8 @@ import {
   sendCollegeOTP,
   resetCollegePassword,
   updateCollegeProfile,
+  toggleCollegeStatus,
+  deleteCollege,
 } from "../controllers/collegeAuthControllers.js";
 
 import { uploadCollegeDoc } from "../middleware/upload.js";
@@ -18,6 +20,8 @@ const router = express.Router();
 
 router.get("/", getAllColleges); // GET all colleges
 router.patch("/approve-college/:id", approveCollege);
+router.patch("/toggle-status/:id", toggleCollegeStatus);
+router.delete("/:id", deleteCollege);
 
 /**
  * @route   POST /api/college/signup

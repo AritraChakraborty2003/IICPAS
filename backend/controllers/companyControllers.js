@@ -201,12 +201,68 @@ export const getAllCompanies = async (_, res) => {
 
 // Admin: Approve company
 export const approveCompany = async (req, res) => {
-  const company = await Company.findByIdAndUpdate(
-    req.params.id,
-    { status: "approved" },
-    { new: true }
-  );
-  res.json({ message: "Approved", company });
+  try {
+    const company = await Company.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved" },
+      { new: true }
+    );
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    res.json({ message: "Approved", company });
+  } catch (error) {
+    res.status(500).json({ message: "Approval failed", error: error.message });
+  }
+};
+
+// Admin: Toggle company status between approved and inactive
+export const toggleCompanyStatus = async (req, res) => {
+  try {
+    const company = await Company.findById(req.params.id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const current = String(company.status || "").toLowerCase();
+    if (current === "approved") {
+      company.status = "inactive";
+    } else if (current === "inactive") {
+      company.status = "approved";
+    } else {
+      return res.status(400).json({
+        message:
+          "Only approved/inactive companies can be toggled. Approve this company first.",
+      });
+    }
+
+    await company.save();
+    res.status(200).json({
+      message: `Company marked as ${company.status}`,
+      company,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to toggle company status",
+      error: error.message,
+    });
+  }
+};
+
+// Admin: Delete company
+export const deleteCompany = async (req, res) => {
+  try {
+    const company = await Company.findByIdAndDelete(req.params.id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    res.status(200).json({ message: "Company deleted successfully" });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete company",
+      error: error.message,
+    });
+  }
 };
 
 // Update company profile
