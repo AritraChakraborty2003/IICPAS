@@ -58,6 +58,36 @@ export default function CollegeTab() {
     }
   };
 
+  const handleToggleCollegeStatus = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to toggle active/inactive status for this college?"
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await axios.patch(`${API}/college/toggle-status/${id}`);
+      toast.success(res.data?.message || "College status updated");
+      fetchColleges();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to update college status");
+    }
+  };
+
+  const handleDeleteCollege = async (id) => {
+    const confirmed = window.confirm(
+      "Delete this college permanently? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await axios.delete(`${API}/college/${id}`);
+      toast.success(res.data?.message || "College deleted");
+      fetchColleges();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to delete college");
+    }
+  };
+
   // Activate Certification Request
   const handleActivateCert = async (id) => {
     try {
@@ -148,21 +178,64 @@ export default function CollegeTab() {
                         )}
                       </td>
                       <td className="border px-4 py-2 capitalize">
-                        {college.status}
+                        {(() => {
+                          const normalizedStatus = String(college.status || "").toLowerCase();
+                          if (normalizedStatus === "approved") {
+                            return (
+                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold text-xs">
+                                active
+                              </span>
+                            );
+                          }
+                          if (normalizedStatus === "inactive") {
+                            return (
+                              <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded-full font-bold text-xs">
+                                inactive
+                              </span>
+                            );
+                          }
+                          return (
+                            <span className="bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full font-bold text-xs">
+                              {college.status}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="border px-4 py-2">
-                        {college.status === "not approved" ? (
+                        <div className="flex items-center justify-center gap-2 flex-wrap">
+                          {String(college.status || "").toLowerCase() ===
+                            "not approved" && (
+                            <button
+                              onClick={() => handleApproveCollege(college._id)}
+                              className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                            >
+                              Approve
+                            </button>
+                          )}
+                          {(String(college.status || "").toLowerCase() === "approved" ||
+                            String(college.status || "").toLowerCase() === "inactive") && (
+                            <button
+                              onClick={() => handleToggleCollegeStatus(college._id)}
+                              className={`text-white px-3 py-1 rounded ${
+                                String(college.status || "").toLowerCase() ===
+                                "approved"
+                                  ? "bg-yellow-600 hover:bg-yellow-700"
+                                  : "bg-blue-600 hover:bg-blue-700"
+                              }`}
+                            >
+                              {String(college.status || "").toLowerCase() ===
+                              "approved"
+                                ? "Set Inactive"
+                                : "Set Active"}
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleApproveCollege(college._id)}
-                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                            onClick={() => handleDeleteCollege(college._id)}
+                            className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700"
                           >
-                            Approve
+                            Delete
                           </button>
-                        ) : (
-                          <span className="text-green-600 font-medium">
-                            Approved
-                          </span>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   ))}
