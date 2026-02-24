@@ -480,14 +480,14 @@ export default function Header({ showMarquee = true, topOffset }) {
               )}
 	            </button>
 
-	            {!isAdmin && (
-	              <Link
-	                href="/booking"
-	                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
-	              >
-	                Book Now
-	              </Link>
-	            )}
+		            {!isAdmin && (
+		              <Link
+		                href="/booking"
+		                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
+		              >
+		                Register Now
+		              </Link>
+		            )}
 
 	            {isAdmin ? (
 	              <Link
@@ -642,13 +642,13 @@ export default function Header({ showMarquee = true, topOffset }) {
               </Link>
 	            ) : student ? (
 	              <>
-	                <Link
-	                  href="/booking"
-	                  onClick={() => setDrawerOpen(false)}
-	                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
-	                >
-	                  Book Now
-	                </Link>
+		                <Link
+		                  href="/booking"
+		                  onClick={() => setDrawerOpen(false)}
+		                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
+		                >
+		                  Register Now
+		                </Link>
 	                <Link
 	                  href="/student-dashboard"
 	                  onClick={() => setDrawerOpen(false)}
@@ -670,13 +670,13 @@ export default function Header({ showMarquee = true, topOffset }) {
               </>
             ) : (
               <>
-                <Link
-                  href="/booking"
-                  onClick={() => setDrawerOpen(false)}
-                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
-                >
-                  Book Now
-                </Link>
+	                <Link
+	                  href="/booking"
+	                  onClick={() => setDrawerOpen(false)}
+	                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
+	                >
+	                  Register Now
+	                </Link>
                 <Link
                   href="/student-login"
                   onClick={() => setDrawerOpen(false)}

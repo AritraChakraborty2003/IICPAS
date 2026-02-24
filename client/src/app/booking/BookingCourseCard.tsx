@@ -54,7 +54,7 @@ export default function BookingCourseCard({
           disabled={isBooking}
           className="mt-4 w-full rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
         >
-          {isBooking ? "Processing..." : "Pre-Book Now"}
+          {isBooking ? "Processing..." : "Register Now"}
         </button>
       </div>
     </article>

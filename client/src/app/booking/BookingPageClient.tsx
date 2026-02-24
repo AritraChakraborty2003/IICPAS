@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import GroupCourseCard from "../components/GroupCourseCard";
 import LoginModal from "../components/LoginModal";
 import BookingCourseCard from "./BookingCourseCard";
+import BookingDisclaimerModal from "./BookingDisclaimerModal";
 import BookingSkeletonGrid from "./BookingSkeletonGrid";
 import { getDefaultSessionType, getPriceBounds, normalizeCoursesPayload } from "./courseUtils";
 import { BookingCourse, BookingFilterState } from "./types";
@@ -55,6 +56,26 @@ type PendingBookingAction =
   | { type: "group_package"; group: Record<string, unknown> }
   | null;
 
+type BookingPreview = {
+  itemTitle?: string;
+  baseAmount?: number;
+  bookingPercent?: number;
+  bookingAmount?: number;
+};
+
+type PendingCheckout = {
+  order: RazorpayOrderData;
+  description: string;
+  prefill: { name?: string; email?: string; contact?: string };
+  itemTitle: string;
+  baseAmount: number;
+  bookingPercent: number;
+  bookingAmount: number;
+  remainingAmount: number;
+  bookingType: "single_course" | "group_package";
+  successMessage: string;
+};
+
 declare global {
   interface Window {
     Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayInstance;
@@ -84,6 +105,7 @@ export default function BookingPageClient({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingBookingAction, setPendingBookingAction] =
     useState<PendingBookingAction>(null);
+  const [pendingCheckout, setPendingCheckout] = useState<PendingCheckout | null>(null);
 
   const priceBounds = useMemo(() => getPriceBounds(courses), [courses]);
 
@@ -310,6 +332,112 @@ export default function BookingPageClient({
     setShowLoginModal(true);
   };
 
+  const toSafeAmount = (value: unknown, fallback = 0) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed)) return Number(fallback.toFixed(2));
+    return Number(Math.max(parsed, 0).toFixed(2));
+  };
+
+  const clearBookingLoader = (bookingType: PendingCheckout["bookingType"]) => {
+    if (bookingType === "single_course") {
+      setBookingCourseId(null);
+      return;
+    }
+    setBookingGroupId(null);
+  };
+
+  const queueDisclaimerBeforePayment = ({
+    orderData,
+    description,
+    prefill,
+    fallbackItemTitle,
+    bookingType,
+    successMessage,
+  }: {
+    orderData: RazorpayOrderData & { bookingPreview?: BookingPreview };
+    description: string;
+    prefill: { name?: string; email?: string; contact?: string };
+    fallbackItemTitle: string;
+    bookingType: PendingCheckout["bookingType"];
+    successMessage: string;
+  }) => {
+    const bookingPreview = orderData.bookingPreview || {};
+    const fallbackBookingAmount = toSafeAmount(Number(orderData.amount || 0) / 100, 0);
+    const bookingAmountRaw = toSafeAmount(
+      bookingPreview.bookingAmount,
+      fallbackBookingAmount
+    );
+    const bookingAmount = bookingAmountRaw > 0 ? bookingAmountRaw : fallbackBookingAmount;
+    const baseAmountRaw = toSafeAmount(bookingPreview.baseAmount, bookingAmount);
+    const baseAmount = baseAmountRaw > 0 ? baseAmountRaw : bookingAmount;
+    const bookingPercent = toSafeAmount(bookingPreview.bookingPercent, 0);
+    const remainingAmount = toSafeAmount(Math.max(baseAmount - bookingAmount, 0), 0);
+
+    setPendingCheckout({
+      order: orderData,
+      description,
+      prefill,
+      itemTitle: bookingPreview.itemTitle || fallbackItemTitle,
+      baseAmount,
+      bookingPercent,
+      bookingAmount,
+      remainingAmount,
+      bookingType,
+      successMessage,
+    });
+  };
+
+  const handleCloseDisclaimer = () => {
+    if (pendingCheckout) {
+      clearBookingLoader(pendingCheckout.bookingType);
+    }
+    setPendingCheckout(null);
+  };
+
+  const handleProceedToPayment = () => {
+    if (!pendingCheckout) return;
+
+    const checkoutData = pendingCheckout;
+    setPendingCheckout(null);
+
+    openRazorpay({
+      order: checkoutData.order,
+      description: checkoutData.description,
+      prefill: checkoutData.prefill,
+      onClose: () => {
+        clearBookingLoader(checkoutData.bookingType);
+      },
+      onSuccess: async (response) => {
+        try {
+          const verifyResponse = await axios.post(
+            `${API_URL}/api/v1/course-bookings/verify-payment`,
+            {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            },
+            { withCredentials: true }
+          );
+          if (verifyResponse.data?.success) {
+            toast.success(checkoutData.successMessage);
+            router.push("/student-dashboard?tab=bookings");
+          } else {
+            toast.error("Payment verification failed");
+          }
+        } catch (verifyError) {
+          const message =
+            axios.isAxiosError(verifyError) &&
+            typeof verifyError.response?.data?.message === "string"
+              ? verifyError.response.data.message
+              : "Unable to verify payment";
+          toast.error(message);
+        } finally {
+          clearBookingLoader(checkoutData.bookingType);
+        }
+      },
+    });
+  };
+
   const openRazorpay = ({
     order,
     description,
@@ -366,43 +494,17 @@ export default function BookingPageClient({
       const orderData = orderResponse.data?.data;
       if (!orderData?.orderId) throw new Error("Order creation failed");
 
-      openRazorpay({
+      queueDisclaimerBeforePayment({
         order: orderData,
-        description: `Pre-book ${course.title}`,
+        description: `Register for ${course.title}`,
         prefill: {
           name: student.name || "",
           email: student.email || "",
           contact: student.phone || "",
         },
-        onClose: () => setBookingCourseId(null),
-        onSuccess: async (response) => {
-          try {
-            const verifyResponse = await axios.post(
-              `${API_URL}/api/v1/course-bookings/verify-payment`,
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              },
-              { withCredentials: true }
-            );
-            if (verifyResponse.data?.success) {
-              toast.success("Booking successful");
-              router.push("/student-dashboard?tab=bookings");
-            } else {
-              toast.error("Payment verification failed");
-            }
-          } catch (verifyError) {
-            const message =
-              axios.isAxiosError(verifyError) &&
-              typeof verifyError.response?.data?.message === "string"
-                ? verifyError.response.data.message
-                : "Unable to verify payment";
-            toast.error(message);
-          } finally {
-            setBookingCourseId(null);
-          }
-        },
+        fallbackItemTitle: course.title,
+        bookingType: "single_course",
+        successMessage: "Booking successful",
       });
     } catch (bookingError) {
       console.error("Booking failed:", bookingError);
@@ -452,43 +554,17 @@ export default function BookingPageClient({
       const orderData = orderResponse.data?.data;
       if (!orderData?.orderId) throw new Error("Order creation failed");
 
-      openRazorpay({
+      queueDisclaimerBeforePayment({
         order: orderData,
-        description: `Pre-book ${String(group.groupName || group.level || "Package")}`,
+        description: `Register for ${String(group.groupName || group.level || "Package")}`,
         prefill: {
           name: student.name || "",
           email: student.email || "",
           contact: student.phone || "",
         },
-        onClose: () => setBookingGroupId(null),
-        onSuccess: async (response) => {
-          try {
-            const verifyResponse = await axios.post(
-              `${API_URL}/api/v1/course-bookings/verify-payment`,
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              },
-              { withCredentials: true }
-            );
-            if (verifyResponse.data?.success) {
-              toast.success("Package booking successful");
-              router.push("/student-dashboard?tab=bookings");
-            } else {
-              toast.error("Payment verification failed");
-            }
-          } catch (verifyError) {
-            const message =
-              axios.isAxiosError(verifyError) &&
-              typeof verifyError.response?.data?.message === "string"
-                ? verifyError.response.data.message
-                : "Unable to verify payment";
-            toast.error(message);
-          } finally {
-            setBookingGroupId(null);
-          }
-        },
+        fallbackItemTitle: String(group.groupName || group.level || "Package"),
+        bookingType: "group_package",
+        successMessage: "Package booking successful",
       });
     } catch (bookingError) {
       console.error("Group booking failed:", bookingError);
@@ -500,10 +576,10 @@ export default function BookingPageClient({
           toast.error(bookingError.response?.data?.message || "Booking already exists");
           router.push("/student-dashboard?tab=bookings");
         } else {
-          toast.error("Unable to pre-book this package right now.");
+          toast.error("Unable to register this package right now.");
         }
       } else {
-        toast.error("Unable to pre-book this package right now.");
+        toast.error("Unable to register this package right now.");
       }
       setBookingGroupId(null);
     }
@@ -668,7 +744,7 @@ export default function BookingPageClient({
                         key={String(group._id || `group-${index}`)}
                         groupPricing={group}
                         index={index}
-                        ctaLabel="Pre-Book Now"
+                        ctaLabel="Register Now"
                         onPrimaryAction={handleGroupBookNow}
                         isLoading={bookingGroupId === String(group._id || "")}
                       />
@@ -729,6 +805,16 @@ export default function BookingPageClient({
 
           await handleGroupBookNow(pendingAction.group);
         }}
+      />
+      <BookingDisclaimerModal
+        isOpen={Boolean(pendingCheckout)}
+        itemTitle={pendingCheckout?.itemTitle || "Course"}
+        bookingPercent={pendingCheckout?.bookingPercent || 0}
+        bookingAmount={pendingCheckout?.bookingAmount || 0}
+        baseAmount={pendingCheckout?.baseAmount || 0}
+        remainingAmount={pendingCheckout?.remainingAmount || 0}
+        onClose={handleCloseDisclaimer}
+        onProceed={handleProceedToPayment}
       />
     </>
   );
