@@ -24,8 +24,8 @@ export default function TeamLogin() {
     try {
       const result = await login(email, password);
       if (result.success) {
-        // Use role-based redirect from AuthContext
-        router.push(result.redirectUrl || "/team-dashboard");
+        // Team users should open the admin dashboard with permission-filtered modules.
+        router.push(result.redirectUrl || "/admin-dashboard");
       } else {
         setError(result.message);
       }

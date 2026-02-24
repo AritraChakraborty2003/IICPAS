@@ -75,9 +75,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("adminToken", userData.token);
       localStorage.setItem("adminUser", JSON.stringify(userData));
 
-      // Return redirect URL based on role
-      const redirectUrl =
-        userData.role === "Admin" ? "/admin-dashboard" : "/team-dashboard";
+      // Route both admin and team users into the same admin dashboard shell.
+      // Module visibility is controlled by permissions from Staff Management.
+      const redirectUrl = "/admin-dashboard";
 
       return { success: true, redirectUrl };
     } catch (error) {
