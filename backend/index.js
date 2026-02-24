@@ -113,6 +113,7 @@ app.use(
       "http://localhost:3002",
       "https://www.iicpa.in",
       "https://admin-master.iicpa.in",
+      "https://www.admin-master.comu",
     ], // your frontend URL
     credentials: true,
   })
