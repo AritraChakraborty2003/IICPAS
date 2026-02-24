@@ -80,6 +80,7 @@ import teacherRoutes from "./routes/teacherRoutes.js";
 //Import employee routes
 import employeeRoutes from "./routes/employeeRoutes.js";
 import masterLoginAccessRoutes from "./routes/masterLoginAccessRoutes.js";
+import publicLoginAccessRoutes from "./routes/publicLoginAccessRoutes.js";
 
 //Contact Info Routes
 import contactInfoRoutes from "./routes/contactInfoRoutes.js";
@@ -296,6 +297,7 @@ app.use("/api/v1/chatbot-leads", chatbotLeadRoutes);
 // Use employee routes
 app.use("/api/employees", employeeRoutes);
 app.use("/api/master/login-access", masterLoginAccessRoutes);
+app.use("/api", publicLoginAccessRoutes);
 
 // Course Rating Routes
 import courseRatingRoutes from "./routes/courseRatingRoutes.js";
