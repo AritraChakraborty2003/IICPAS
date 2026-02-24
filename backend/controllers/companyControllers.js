@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
 
@@ -60,6 +61,10 @@ export const loginCompany = async (req, res) => {
     const isMatch = await bcrypt.compare(password, company.password);
     if (!isMatch)
       return res.status(401).json({ message: "Invalid credentials" });
+    const allowed = await isLoginAllowed("company", company._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
 
     console.log(JWT_SECRET);
     const token = jwt.sign(

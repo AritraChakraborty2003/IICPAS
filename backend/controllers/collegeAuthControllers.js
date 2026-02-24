@@ -4,6 +4,7 @@ import College from "../models/College.js";
 import { generateToken } from "../utils/generateToken.js";
 import dotenv from "dotenv";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
 
@@ -78,6 +79,10 @@ export const collegeLogin = async (req, res) => {
     const { email, password } = req.body;
     const college = await College.findOne({ email });
     if (!college) return res.status(404).json({ message: "College not found" });
+    const allowed = await isLoginAllowed("college", college._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
 
     const isMatch = await bcrypt.compare(password, college.password);
     if (!isMatch)

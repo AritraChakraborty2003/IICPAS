@@ -1,6 +1,7 @@
 import Student from "../models/Students.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -43,6 +44,10 @@ export const loginStudent = async (req, res) => {
     const isMatch = await bcrypt.compare(password, student.password);
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
+    const allowed = await isLoginAllowed("student", student._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
 
     const token = jwt.sign(
       {

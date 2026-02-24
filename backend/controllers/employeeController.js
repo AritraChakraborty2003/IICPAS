@@ -1,6 +1,7 @@
 import Employee from "../models/Employee.js";
 import jwt from "jsonwebtoken";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 // Create JWT token
 const generateToken = (id) => {
@@ -156,6 +157,10 @@ const loginEmployee = async (req, res) => {
     const isMatch = await employee.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const allowed = await isLoginAllowed("employee", employee._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
     }
 
     const token = generateToken(employee._id);

@@ -6,6 +6,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
 
@@ -125,6 +126,10 @@ export const login = async (req, res) => {
     const user = await Individual.findOne({ email }).select("+password");
     if (!user || !(await user.comparePassword(password)))
       return res.status(400).json({ error: "Invalid credentials" });
+    const allowed = await isLoginAllowed("individual", user._id);
+    if (!allowed) {
+      return res.status(403).json({ error: "Account is inactive" });
+    }
 
     const token = signJwt(user._id, user.email, user.name, user.image);
     res.cookie("jwt", token, cookieOptions);

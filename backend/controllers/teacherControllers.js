@@ -3,6 +3,7 @@ import Teacher from "../models/Teacher.js";
 import jwt from "jsonwebtoken";
 import { signJwt, cookieOptions } from "../utils/auth.js";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "default_jwt_secret_for_development";
@@ -119,6 +120,10 @@ export const teacherLogin = async (req, res) => {
     const isMatch = await teacher.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
+    const allowed = await isLoginAllowed("teacher", teacher._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
     }
 
     const token = signJwt(teacher._id, teacher.email, teacher.name);

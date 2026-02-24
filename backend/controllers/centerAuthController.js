@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import Center from "../models/Center.js";
 import dotenv from "dotenv";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
 
@@ -135,6 +136,13 @@ export const loginCenter = async (req, res) => {
       return res.status(403).json({ 
         success: false,
         message: "Your account has been rejected" 
+      });
+    }
+    const allowed = await isLoginAllowed("center", center._id);
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is inactive",
       });
     }
 

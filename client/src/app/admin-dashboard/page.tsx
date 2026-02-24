@@ -115,6 +115,7 @@ import CoinsTab from "./CoinsTab";
 import BookingSettingsTab from "./BookingSettingsTab";
 import AdminBookingsTab from "./AdminBookingsTab";
 import InvoiceCompanySettingsTab from "./InvoiceCompanySettingsTab";
+import LoginAccessControlTab from "./LoginAccessControlTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -370,6 +371,11 @@ const NAVIGATION_GROUPS = [
       { id: "meta", label: "Manage Metatags", icon: <FaTags /> },
       { id: "special-offers", label: "Special Offers", icon: <FaStar /> },
       { id: "support", label: "Support Requests", icon: <FaEnvelope /> },
+      {
+        id: "master-login-access",
+        label: "Master Login Access",
+        icon: <FaShieldAlt />,
+      },
     ],
   },
   {
@@ -926,6 +932,8 @@ function AdminDashboardContent() {
           <AdminProfileTab />
         ) : activeTab === "individual-requests" ? (
           <IndividualRequestsTab />
+        ) : activeTab === "master-login-access" ? (
+          <LoginAccessControlTab />
         ) : activeTab === "admission-leads" ? (
           <AdmissionManagementTab />
         ) : activeTab === "university-course-management" ? (

@@ -9,6 +9,7 @@ import {
   recordLogout,
   resolveActorFromRequest,
 } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "default_jwt_secret_for_development";
@@ -40,6 +41,11 @@ export const login = async (req, res) => {
   try {
     const admin = await Admin.findOne({ email });
     if (!admin) return res.status(404).json({ message: "Admin not found" });
+
+    const allowed = await isLoginAllowed("admin", admin._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
 
     const match = await bcrypt.compare(password, admin.password);
     if (!match) return res.status(401).json({ message: "Invalid credentials" });
@@ -192,6 +198,10 @@ export const userLogin = async (req, res) => {
     const user = await Individual.findOne({ email }).select("+password");
     if (!user || !(await user.comparePassword(password)))
       return res.status(400).json({ message: "Invalid credentials" });
+    const allowed = await isLoginAllowed("individual", user._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
     const token = signJwt(user._id, user.email, user.name);
     res.cookie("jwt", token, cookieOptions);
     res.json({

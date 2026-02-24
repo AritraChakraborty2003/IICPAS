@@ -25,6 +25,7 @@ import {
   getStudentCoinSummary,
 } from "../services/coinService.js";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
 
@@ -117,6 +118,8 @@ router.post("/login", async (req, res) => {
 
     const match = await bcrypt.compare(password, student.password);
     if (!match) return res.status(401).json({ message: "Wrong password" });
+    const allowed = await isLoginAllowed("student", student._id);
+    if (!allowed) return res.status(403).json({ message: "Account is inactive" });
     const token = createToken(student);
 
     await recordLogin({
