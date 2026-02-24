@@ -264,6 +264,28 @@ const GroupPricingTab = ({ onBack }) => {
       return;
     }
 
+    if (!editingItem) {
+      const existingAtLevel = groupPricing.find(
+        (item) =>
+          item?.level === formData.level &&
+          String(item?.status || "Active").toLowerCase() === "active"
+      );
+
+      if (existingAtLevel) {
+        toast.error(
+          `Group pricing for ${formData.level} already exists. Please edit the existing record instead.`,
+          {
+            style: {
+              zIndex: 9999,
+              position: "top-center",
+            },
+          }
+        );
+        handleEdit(existingAtLevel);
+        return;
+      }
+    }
+
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("groupName", formData.groupName);
@@ -336,7 +358,13 @@ const GroupPricingTab = ({ onBack }) => {
       fetchGroupPricing();
     } catch (error) {
       console.error("Error saving group pricing:", error);
-      toast.error("Failed to save group pricing", {
+
+      const apiMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message;
+
+      toast.error(apiMessage || "Failed to save group pricing", {
         style: {
           zIndex: 9999,
           position: "top-center",
