@@ -49,6 +49,7 @@ export const teacherRegister = async (req, res) => {
       actorModel: "Teacher",
       actorId: teacher._id,
       displayName: teacher.name,
+      email: teacher.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });
@@ -81,13 +82,14 @@ export const teacherLogout = async (req, res) => {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         if (decoded?._id) {
-          const teacher = await Teacher.findById(decoded._id).select("_id name");
+          const teacher = await Teacher.findById(decoded._id).select("_id name email");
           if (teacher) {
             await recordLogout({
               role: "teacher",
               actorModel: "Teacher",
               actorId: teacher._id,
               displayName: teacher.name,
+              email: teacher.email,
               req,
             });
           }

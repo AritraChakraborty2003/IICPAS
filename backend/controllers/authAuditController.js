@@ -40,15 +40,24 @@ export const getPublicAuditLogs = async (req, res) => {
         .sort({ occurredAt: -1 })
         .skip(skip)
         .limit(limit)
-        .select("role displayName eventType occurredAt -_id"),
+        .select("actorId email role displayName eventType occurredAt -_id"),
     ]);
+
+    const items = rows.map((row) => ({
+      user_id: row.actorId,
+      email: row.email || "",
+      role: row.role,
+      displayName: row.displayName,
+      eventType: row.eventType,
+      occurredAt: row.occurredAt,
+    }));
 
     return res.status(200).json({
       page,
       limit,
       total,
       totalPages: Math.max(Math.ceil(total / limit), 1),
-      items: rows,
+      items,
     });
   } catch (error) {
     return res.status(500).json({
@@ -59,6 +68,8 @@ export const getPublicAuditLogs = async (req, res) => {
 };
 
 const toPublicSession = (item) => ({
+  user_id: item.actorId,
+  email: item.email || "",
   role: item.role,
   displayName: item.displayName,
   loginAt: item.loginAt,
@@ -105,7 +116,7 @@ export const getPublicLoggedInUsers = async (req, res) => {
           .sort({ isOnline: -1, lastSeenAt: -1 })
           .skip(skip)
           .limit(limit)
-          .select("role displayName loginAt lastSeenAt isOnline -_id"),
+          .select("actorId email role displayName loginAt lastSeenAt isOnline -_id"),
       ]);
 
       return res.status(200).json({
@@ -126,7 +137,7 @@ export const getPublicLoggedInUsers = async (req, res) => {
     );
     const rows = await AuthActiveSession.find({})
       .sort({ isOnline: -1, lastSeenAt: -1 })
-      .select("role displayName loginAt lastSeenAt isOnline -_id");
+      .select("actorId email role displayName loginAt lastSeenAt isOnline -_id");
 
     const grouped = {};
     for (const role of ALLOWED_ROLES) {

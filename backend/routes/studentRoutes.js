@@ -124,6 +124,7 @@ router.post("/login", async (req, res) => {
       actorModel: "Student",
       actorId: student._id,
       displayName: student.name,
+      email: student.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });
@@ -150,13 +151,14 @@ router.get("/logout", async (req, res) => {
           process.env.JWT_SECRET || "default_jwt_secret_for_development"
         );
         if (decoded?.id) {
-          const student = await Student.findById(decoded.id).select("_id name");
+          const student = await Student.findById(decoded.id).select("_id name email");
           if (student) {
             await recordLogout({
               role: "student",
               actorModel: "Student",
               actorId: student._id,
               displayName: student.name,
+              email: student.email,
               req,
             });
           }

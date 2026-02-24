@@ -54,6 +54,7 @@ export const login = async (req, res) => {
       actorModel: "Admin",
       actorId: admin._id,
       displayName: admin.name,
+      email: admin.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });
@@ -135,6 +136,7 @@ export const logout = (req, res) => {
           actorModel: actor.actorModel,
           actorId: actor.actorId,
           displayName: actor.displayName,
+          email: actor.email,
           req,
         });
       }
@@ -164,6 +166,7 @@ export const userSignup = async (req, res) => {
       actorModel: "Individual",
       actorId: user._id,
       displayName: user.name,
+      email: user.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });

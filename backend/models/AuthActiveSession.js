@@ -39,6 +39,12 @@ const authActiveSessionSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    email: {
+      type: String,
+      default: "",
+      trim: true,
+      lowercase: true,
+    },
     isOnline: {
       type: Boolean,
       default: false,

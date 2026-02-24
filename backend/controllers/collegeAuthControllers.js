@@ -56,6 +56,7 @@ export const collegeSignup = async (req, res) => {
       actorModel: "College",
       actorId: college._id,
       displayName: college.name,
+      email: college.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });
@@ -106,13 +107,14 @@ export const collegeLogout = async (req, res) => {
           process.env.JWT_SECRET || "default_jwt_secret_for_development"
         );
         if (decoded?.id) {
-          const college = await College.findById(decoded.id).select("_id name");
+          const college = await College.findById(decoded.id).select("_id name email");
           if (college) {
             await recordLogout({
               role: "college",
               actorModel: "College",
               actorId: college._id,
               displayName: college.name,
+              email: college.email,
               req,
             });
           }

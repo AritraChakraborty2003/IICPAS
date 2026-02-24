@@ -40,42 +40,42 @@ const normalizeObjectId = (id) => {
 const modelFetchers = {
   employee: {
     modelName: "Employee",
-    findById: (id) => Employee.findById(id).select("_id name role"),
+    findById: (id) => Employee.findById(id).select("_id name email role"),
     displayName: (doc) => doc?.name || "Employee",
   },
   admin: {
     modelName: "Admin",
-    findById: (id) => Admin.findById(id).select("_id name role"),
+    findById: (id) => Admin.findById(id).select("_id name email role"),
     displayName: (doc) => doc?.name || "Admin",
   },
   student: {
     modelName: "Student",
-    findById: (id) => Student.findById(id).select("_id name"),
+    findById: (id) => Student.findById(id).select("_id name email"),
     displayName: (doc) => doc?.name || "Student",
   },
   individual: {
     modelName: "Individual",
-    findById: (id) => Individual.findById(id).select("_id name"),
+    findById: (id) => Individual.findById(id).select("_id name email"),
     displayName: (doc) => doc?.name || "Individual",
   },
   center: {
     modelName: "Center",
-    findById: (id) => Center.findById(id).select("_id name"),
+    findById: (id) => Center.findById(id).select("_id name email"),
     displayName: (doc) => doc?.name || "Center",
   },
   company: {
     modelName: "Company",
-    findById: (id) => Company.findById(id).select("_id fullName"),
+    findById: (id) => Company.findById(id).select("_id fullName email"),
     displayName: (doc) => doc?.fullName || "Company",
   },
   college: {
     modelName: "College",
-    findById: (id) => College.findById(id).select("_id name"),
+    findById: (id) => College.findById(id).select("_id name email"),
     displayName: (doc) => doc?.name || "College",
   },
   teacher: {
     modelName: "Teacher",
-    findById: (id) => Teacher.findById(id).select("_id name"),
+    findById: (id) => Teacher.findById(id).select("_id name email"),
     displayName: (doc) => doc?.name || "Teacher",
   },
 };
@@ -85,6 +85,7 @@ export const recordLogin = async ({
   actorModel,
   actorId,
   displayName,
+  email,
   req,
   sessionExpiresAt = null,
 }) => {
@@ -97,6 +98,7 @@ export const recordLogin = async ({
     actorModel,
     actorId: normalizedId,
     displayName: displayName || "User",
+    email: email || "",
   };
 
   await Promise.all([
@@ -129,6 +131,7 @@ export const recordLogout = async ({
   actorModel,
   actorId,
   displayName,
+  email,
   req,
 }) => {
   const normalizedId = normalizeObjectId(actorId);
@@ -140,6 +143,7 @@ export const recordLogout = async ({
     actorModel,
     actorId: normalizedId,
     displayName: displayName || "User",
+    email: email || "",
   };
 
   await Promise.all([
@@ -223,6 +227,7 @@ const resolveFromBearer = async (req) => {
         actorModel: "Employee",
         actorId: employee._id,
         displayName: employee.name,
+        email: employee.email || "",
         token,
       };
     }
@@ -234,6 +239,7 @@ const resolveFromBearer = async (req) => {
         actorModel: "Admin",
         actorId: admin._id,
         displayName: admin.name,
+        email: admin.email || "",
         token,
       };
     }
@@ -262,6 +268,7 @@ const resolveFromTokenCookie = async (req) => {
         actorModel: config.modelName,
         actorId: user._id,
         displayName: config.displayName(user),
+        email: user.email || "",
         token,
       };
     }
@@ -273,6 +280,7 @@ const resolveFromTokenCookie = async (req) => {
         actorModel: "Student",
         actorId: student._id,
         displayName: student.name,
+        email: student.email || "",
         token,
       };
     }
@@ -298,6 +306,7 @@ const resolveFromJwtCookie = async (req) => {
         actorModel: "Teacher",
         actorId: teacher._id,
         displayName: teacher.name,
+        email: teacher.email || "",
         token,
       };
     }
@@ -309,6 +318,7 @@ const resolveFromJwtCookie = async (req) => {
         actorModel: "Individual",
         actorId: individual._id,
         displayName: individual.name,
+        email: individual.email || "",
         token,
       };
     }

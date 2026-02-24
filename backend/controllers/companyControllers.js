@@ -81,6 +81,7 @@ export const loginCompany = async (req, res) => {
       actorModel: "Company",
       actorId: company._id,
       displayName: company.fullName,
+      email: company.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });
@@ -116,13 +117,14 @@ export const logoutCompany = (req, res) => {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         if (decoded?.id) {
-          const company = await Company.findById(decoded.id).select("_id fullName");
+          const company = await Company.findById(decoded.id).select("_id fullName email");
           if (company) {
             await recordLogout({
               role: "company",
               actorModel: "Company",
               actorId: company._id,
               displayName: company.fullName,
+              email: company.email,
               req,
             });
           }

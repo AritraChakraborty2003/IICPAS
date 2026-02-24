@@ -154,6 +154,7 @@ export const loginCenter = async (req, res) => {
       actorModel: "Center",
       actorId: center._id,
       displayName: center.name,
+      email: center.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });
@@ -200,13 +201,14 @@ export const logoutCenter = async (req, res) => {
       try {
         const decoded = jwt.verify(token, JWT_SECRET);
         if (decoded?.id) {
-          const center = await Center.findById(decoded.id).select("_id name");
+          const center = await Center.findById(decoded.id).select("_id name email");
           if (center) {
             await recordLogout({
               role: "center",
               actorModel: "Center",
               actorId: center._id,
               displayName: center.name,
+              email: center.email,
               req,
             });
           }

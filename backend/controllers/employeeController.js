@@ -164,6 +164,7 @@ const loginEmployee = async (req, res) => {
       actorModel: "Employee",
       actorId: employee._id,
       displayName: employee.name,
+      email: employee.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });
@@ -193,6 +194,7 @@ const logoutEmployee = async (req, res) => {
       actorModel: "Employee",
       actorId: req.user._id,
       displayName: req.user.name,
+      email: req.user.email,
       req,
     });
 

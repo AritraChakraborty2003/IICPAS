@@ -95,6 +95,7 @@ export const signup = async (req, res) => {
       actorModel: "Individual",
       actorId: user._id,
       displayName: user.name,
+      email: user.email,
       req,
       sessionExpiresAt: getTokenExpiry(token),
     });
@@ -154,13 +155,14 @@ export const logout = async (req, res) => {
           token,
           process.env.JWT_SECRET || "default_jwt_secret_for_development"
         );
-        const user = await Individual.findById(decoded._id).select("_id name");
+        const user = await Individual.findById(decoded._id).select("_id name email");
         if (user) {
           await recordLogout({
             role: "individual",
             actorModel: "Individual",
             actorId: user._id,
             displayName: user.name,
+            email: user.email,
             req,
           });
         }
