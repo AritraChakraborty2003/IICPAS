@@ -777,6 +777,14 @@ function AdminDashboardContent() {
           <JobsAdminPanel />
         ) : activeTab === "staff" ? (
           <StaffManagementTab />
+        ) : activeTab === "team" ? (
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-4">Our Team</h2>
+            <p className="text-gray-600">
+              Team management view is not wired in this dashboard yet. You can
+              grant and manage access for this module from Staff Management.
+            </p>
+          </div>
         ) : activeTab === "alert" ? (
           <AlertsTab />
         ) : activeTab === "ip-whitelist" ? (
