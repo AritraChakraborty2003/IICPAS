@@ -39,6 +39,20 @@ const findBlogBySlug = (blogs, slug) => {
   });
 };
 
+const resolveSlugFromParams = async (paramsInput) => {
+  const resolvedParams = await Promise.resolve(paramsInput);
+  const rawSlug =
+    resolvedParams &&
+    typeof resolvedParams === "object" &&
+    "slug" in resolvedParams
+      ? resolvedParams.slug
+      : "";
+
+  const slugValue =
+    typeof rawSlug === "string" ? rawSlug : String(rawSlug ?? "");
+  return normalizeBlogSlug(slugValue);
+};
+
 export async function generateStaticParams() {
   try {
     const blogs = await getBlogs();
@@ -52,7 +66,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }) {
-  const slug = normalizeBlogSlug(params.slug || "");
+  const slug = await resolveSlugFromParams(params);
 
   try {
     const blogs = await getBlogs();
@@ -113,7 +127,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogDetail({ params }) {
-  const slug = normalizeBlogSlug(params.slug || "");
+  const slug = await resolveSlugFromParams(params);
 
   try {
     const blogs = await getBlogs();

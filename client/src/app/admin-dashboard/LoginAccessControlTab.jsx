@@ -195,7 +195,7 @@ export default function LoginAccessControlTab() {
                 <th className="text-left p-2 border-b">Base</th>
                 <th className="text-left p-2 border-b">Override</th>
                 <th className="text-left p-2 border-b">Effective</th>
-                <th className="text-left p-2 border-b">Action</th>
+                <th className="text-left p-2 border-b">Toggle</th>
               </tr>
             </thead>
             <tbody>
@@ -209,23 +209,44 @@ export default function LoginAccessControlTab() {
                   <td className="p-2">{item.overrideStatus}</td>
                   <td className="p-2 font-semibold">{item.effectiveStatus}</td>
                   <td className="p-2">
-                    {item.overrideStatus === "active" ? (
-                      <button
-                        onClick={() => updateSingle(item, "inactive")}
-                        disabled={updatingId === item.user_id}
-                        className="px-3 py-1 rounded bg-red-600 text-white text-xs disabled:opacity-60"
-                      >
-                        Inactivate
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => updateSingle(item, "active")}
-                        disabled={updatingId === item.user_id}
-                        className="px-3 py-1 rounded bg-green-600 text-white text-xs disabled:opacity-60"
-                      >
-                        Activate
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={item.overrideStatus === "active"}
+                      onClick={() =>
+                        updateSingle(
+                          item,
+                          item.overrideStatus === "active" ? "inactive" : "active"
+                        )
+                      }
+                      disabled={updatingId === item.user_id}
+                      className={`relative inline-flex h-6 w-12 items-center rounded-full transition-colors disabled:opacity-60 ${
+                        item.overrideStatus === "active"
+                          ? "bg-green-600"
+                          : "bg-gray-400"
+                      }`}
+                      title={
+                        item.overrideStatus === "active"
+                          ? "Click to set inactive"
+                          : "Click to set active"
+                      }
+                    >
+                      <span className="sr-only">
+                        {item.overrideStatus === "active"
+                          ? "Set inactive"
+                          : "Set active"}
+                      </span>
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                          item.overrideStatus === "active"
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                    <span className="ml-2 text-xs font-medium capitalize">
+                      {item.overrideStatus === "active" ? "On" : "Off"}
+                    </span>
                   </td>
                 </tr>
               ))}
