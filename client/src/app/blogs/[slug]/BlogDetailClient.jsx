@@ -181,7 +181,7 @@ export default function BlogDetailClient({ blog, allBlogs }) {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
-            <article className="mt-4 lg:mt-8 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-5 sm:p-8 lg:p-10">
+            <article className="mt-10 lg:mt-14 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-5 sm:p-8 lg:p-10">
               <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-600 mb-5">
                 <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 font-medium">
                   <Tag className="w-3 h-3" />
