@@ -2,15 +2,19 @@ import { Metadata } from "next";
 
 export interface CourseIntroContent {
   title: string;
+  eyebrow: string;
   subtitle: string;
   description: string;
   duration: string;
   level: string;
   mode: string;
+  certification: string;
+  admissionsNote: string;
   intro: string;
   highlights: string[];
   outcomes: string[];
   audience: string[];
+  admissionsPoints: string[];
   metaTitle: string;
   metaDescription: string;
   keywords: string;
@@ -19,98 +23,125 @@ export interface CourseIntroContent {
 export const courseIntroPages: Record<string, CourseIntroContent> = {
   "basic-accounting-and-tally-certification-course": {
     title: "Basic Accounting and Tally Certification Course",
+    eyebrow: "Admissions Open Across India",
     subtitle:
-      "Start with accounting fundamentals and move into practical Tally workflows used in day-to-day business operations.",
+      "Build job-ready accounting skills with practical Tally training, GST-oriented entries, and real office workflow exposure designed for the Indian job market.",
     description:
-      "An introductory course for learners who want clear exposure to bookkeeping, accounting basics, voucher entries, inventory handling, and Tally-based business processes.",
+      "A practical admission-focused course for students and job seekers who want to start in accounts, billing, GST support, and Tally-based office work.",
     duration: "6-8 weeks",
     level: "Beginner",
-    mode: "Practical + Instructor-led",
+    mode: "Practical Classroom + Guided Learning",
+    certification: "Industry-Oriented Certificate from IICPA",
+    admissionsNote:
+      "Ideal for freshers, commerce students, and candidates looking for entry-level jobs in accounts and back-office operations.",
     intro:
-      "This page introduces the Basic Accounting and Tally Certification Course for students, job seekers, and working professionals who want a structured starting point in accounting software and foundational financial records.",
+      "The Basic Accounting and Tally Certification Course is positioned as a strong starting point for students, graduates, and working learners who want to enter the accounts domain with practical software knowledge and confidence in daily bookkeeping work.",
     highlights: [
-      "Covers accounting basics from journal entries to ledgers and final accounts.",
-      "Introduces Tally interface, company creation, vouchers, GST basics, and reports.",
-      "Built for practical understanding with business-oriented examples.",
+      "Covers journal entries, ledger posting, trial balance, final accounts, and day-to-day bookkeeping practice.",
+      "Introduces Tally workflows including company creation, voucher entries, inventory handling, GST basics, and reporting.",
+      "Focused on practical office use cases commonly seen in Indian SMEs, traders, and service businesses.",
     ],
     outcomes: [
-      "Understand the purpose of core accounting records and workflows.",
-      "Create and manage routine transactions in Tally with confidence.",
-      "Build a stronger base for accounting, GST, and office finance roles.",
+      "Develop confidence in routine accounting records and business transaction flow.",
+      "Work on Tally-based entry processes relevant for accounts assistant and billing support roles.",
+      "Create a stronger foundation for further study in GST, taxation, payroll, and office accounting.",
     ],
     audience: [
-      "Students starting an accounting or commerce track.",
-      "Job seekers targeting entry-level accounts roles.",
-      "Business owners or staff handling day-to-day bookkeeping.",
+      "Commerce students, B.Com learners, and beginners starting their accounting journey.",
+      "Job seekers applying for accounts assistant, billing executive, and tally operator roles.",
+      "Small business owners and office staff managing day-to-day books and records.",
+    ],
+    admissionsPoints: [
+      "Admission-oriented page built for candidates evaluating a practical skill course before enrollment.",
+      "Suitable for learners from Kolkata and other Indian cities seeking employability-focused accounting training.",
+      "Useful for candidates who want a short-term certification with direct relevance to entry-level hiring needs.",
     ],
     metaTitle:
       "Basic Accounting and Tally Certification Course - IICPA Institute",
     metaDescription:
-      "Explore the Basic Accounting and Tally Certification Course at IICPA. Learn accounting fundamentals, bookkeeping, voucher entries, and practical Tally workflows.",
+      "Take admission in IICPA's Basic Accounting and Tally Certification Course. Learn bookkeeping, accounting fundamentals, Tally workflows, and practical office skills.",
     keywords:
       "basic accounting and tally certification course, tally course, accounting basics, bookkeeping training, tally prime, IICPA",
   },
   "income-tax-certification-course": {
     title: "Income Tax Certification Course",
+    eyebrow: "Admissions Open Across India",
     subtitle:
-      "Learn the fundamentals of income tax structure, filing concepts, deductions, and compliance in a practical way.",
+      "Prepare for practical tax work with hands-on exposure to Indian income tax concepts, return filing structure, deductions, and compliance-oriented processes.",
     description:
-      "A focused introductory course designed to help learners understand income tax concepts for individuals and business contexts with process-oriented clarity.",
+      "A career-focused admission page for students and professionals who want to build practical understanding of Indian income tax and job-relevant compliance work.",
     duration: "6-8 weeks",
     level: "Beginner to Intermediate",
-    mode: "Concept + Compliance Oriented",
+    mode: "Tax Concepts + Practical Filing Orientation",
+    certification: "Professional Certificate from IICPA",
+    admissionsNote:
+      "Designed for learners seeking careers in tax support, accounting, return preparation, and compliance assistance.",
     intro:
-      "This page introduces the Income Tax Certification Course for learners aiming to build practical knowledge around tax computation, return filing concepts, deductions, and real-world compliance requirements.",
+      "The Income Tax Certification Course is created for Indian learners who want admission into a practical tax program that connects theory with real filing structure, deduction logic, tax documentation, and compliance responsibilities seen in offices and consultancy environments.",
     highlights: [
-      "Introduces tax basics, residential status, heads of income, and deductions.",
-      "Covers return filing concepts, tax planning basics, and compliance flow.",
-      "Structured for learners who need job-ready tax fundamentals.",
+      "Introduces residential status, heads of income, deductions, exemptions, and tax computation logic in the Indian system.",
+      "Explains ITR-oriented workflow, filing concepts, documentation, tax planning basics, and compliance sequence.",
+      "Built for candidates who want stronger admission value and employability in taxation support roles.",
     ],
     outcomes: [
-      "Understand the structure and logic of income tax computation.",
-      "Identify common deductions, filing processes, and documentation needs.",
-      "Develop a stronger base for tax assistant, accounting, and compliance roles.",
+      "Understand how income tax is structured and applied in real Indian filing scenarios.",
+      "Identify common deductions, proofs, documentation needs, and return-related workflow.",
+      "Build practical readiness for tax assistant, accounts executive, and compliance support roles.",
     ],
     audience: [
-      "Commerce students and fresh graduates entering tax roles.",
-      "Accounts executives expanding into tax work.",
-      "Individuals seeking practical tax knowledge for career growth.",
+      "Commerce students, graduates, and freshers targeting taxation and finance jobs.",
+      "Accounts executives who want to move into direct tax and return support work.",
+      "Working professionals and aspirants seeking a short-term professional certification in taxation.",
+    ],
+    admissionsPoints: [
+      "Admission-focused content for candidates comparing tax training before enrolling.",
+      "Suitable for learners looking for practical exposure aligned with Indian compliance expectations.",
+      "Positioned as a strong skill-building course for employability, office work, and career growth in taxation.",
     ],
     metaTitle: "Income Tax Certification Course - IICPA Institute",
     metaDescription:
-      "Explore the Income Tax Certification Course at IICPA. Build practical knowledge of income tax concepts, deductions, filing processes, and compliance basics.",
+      "Take admission in IICPA's Income Tax Certification Course. Learn Indian income tax concepts, deductions, filing workflow, and compliance-oriented tax practice.",
     keywords:
       "income tax certification course, tax filing course, income tax training, tax compliance course, IICPA",
   },
   "individual-gst-return-filing": {
     title: "Individual GST Return Filing",
+    eyebrow: "Admissions Open Across India",
     subtitle:
-      "Get introduced to GST return filing concepts, records, reconciliations, and submission workflows for practical compliance handling.",
+      "Learn practical GST return filing workflow with Indian compliance context, reconciliation exposure, and filing-ready documentation understanding.",
     description:
-      "An introductory page for learners who want a practical overview of GST return filing steps, return types, data checks, and routine compliance work.",
+      "A practical admission page for candidates who want GST-focused skill development for accounts, taxation, and indirect tax support roles.",
     duration: "4-6 weeks",
     level: "Beginner to Intermediate",
-    mode: "Practical Compliance Training",
+    mode: "GST Compliance + Filing Practice",
+    certification: "Practical GST Certificate from IICPA",
+    admissionsNote:
+      "Useful for learners targeting GST filing assistance, accounts support, and indirect tax compliance roles in Indian businesses.",
     intro:
-      "This page introduces the Individual GST Return Filing course for learners and professionals who want direct exposure to GST return processes, working papers, and filing readiness.",
+      "The Individual GST Return Filing course is built for Indian learners who want admission into a short-term practical program covering GST returns, data checks, reconciliations, timelines, and routine compliance support expected in business and consultancy settings.",
     highlights: [
-      "Explains GST return structure, filing timelines, and record requirements.",
-      "Covers practical return preparation, reconciliation, and common compliance checks.",
-      "Suitable for learners moving into GST support and filing assistance work.",
+      "Explains GST return structure, filing due dates, sales and purchase record needs, and return preparation flow.",
+      "Covers practical reconciliation logic, return review points, and common compliance checks used in Indian filing work.",
+      "Designed for learners who want fast-track practical relevance for GST support and filing assistance roles.",
     ],
     outcomes: [
-      "Understand the flow of GST data from records to final return filing.",
-      "Recognize common filing requirements, reconciliations, and reporting steps.",
-      "Prepare for operational GST compliance responsibilities with more confidence.",
+      "Understand how GST data moves from books and invoices to return-ready reporting.",
+      "Recognize routine filing requirements, reconciliations, and compliance-sensitive checkpoints.",
+      "Gain more confidence for GST executive, accounts support, and indirect tax assistance work.",
     ],
     audience: [
-      "Learners starting out in GST and indirect tax work.",
-      "Accounts staff supporting GST records and return preparation.",
-      "Freelancers and professionals offering filing support services.",
+      "Beginners and commerce learners starting out in GST and indirect taxation.",
+      "Accounts staff handling invoicing, purchase records, and GST return support.",
+      "Freelancers and professionals offering return filing assistance to clients.",
+    ],
+    admissionsPoints: [
+      "Admission-driven page for candidates evaluating a practical GST skill course.",
+      "Useful for learners seeking short-term training with strong relevance to Indian business compliance.",
+      "A strong fit for candidates aiming to improve employability in accounts and taxation support functions.",
     ],
     metaTitle: "Individual GST Return Filing - IICPA Institute",
     metaDescription:
-      "Explore Individual GST Return Filing at IICPA. Learn GST return concepts, reconciliations, filing workflows, and practical compliance basics.",
+      "Take admission in IICPA's Individual GST Return Filing course. Learn GST return workflow, reconciliation, compliance checks, and practical filing concepts.",
     keywords:
       "individual gst return filing, gst return filing course, gst compliance training, indirect tax course, IICPA",
   },
