@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   PlayArrow,
   Visibility,
@@ -52,6 +52,7 @@ export default function CourseTab() {
   const [courseRatings, setCourseRatings] = useState({}); // Store existing ratings
   const [expandedChapterKeys, setExpandedChapterKeys] = useState({});
   const router = useRouter();
+  const searchParams = useSearchParams();
   const API = process.env.NEXT_PUBLIC_API_URL;
 
   // Fetch student courses from database
@@ -141,6 +142,31 @@ export default function CourseTab() {
   useEffect(() => {
     fetchStudentCourses();
   }, []);
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    const requestedCourseId = searchParams.get("courseId");
+    const requestedView = searchParams.get("view");
+
+    if (requestedTab !== "courses" || !requestedCourseId || courses.length === 0) {
+      return;
+    }
+
+    const matchedCourse = courses.find((course) => course._id === requestedCourseId);
+    if (!matchedCourse) {
+      return;
+    }
+
+    setSelectedCourse(matchedCourse);
+    setLastAccessedCourse(matchedCourse);
+
+    if (requestedView === "detailed" && isCoursePurchased(matchedCourse._id)) {
+      setViewModes((prev) => ({ ...prev, [matchedCourse._id]: "detailed" }));
+      if (!courseChapters[matchedCourse._id]) {
+        fetchChaptersForCourse(matchedCourse._id);
+      }
+    }
+  }, [searchParams, courses, courseChapters]);
 
   // Helper function to check if a course is purchased
 
@@ -318,6 +344,11 @@ export default function CourseTab() {
     }
 
     setViewModes((prev) => ({ ...prev, [courseId]: "detailed" }));
+    const selected = courses.find((course) => course._id === courseId);
+    if (selected) {
+      setSelectedCourse(selected);
+      setLastAccessedCourse(selected);
+    }
 
     // Fetch chapters if cache data available
     if (!courseChapters[courseId]) {

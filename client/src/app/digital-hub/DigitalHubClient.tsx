@@ -296,14 +296,17 @@ export default function DigitalHubClient({
 
   const handleBackNavigation = useCallback(() => {
     resetGoogleTranslateState();
-
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back();
+    const courseIdentifier = resolvedCourseId || courseSlugOrId;
+    if (courseIdentifier) {
+      router.push(
+        `/student-dashboard?tab=courses&courseId=${encodeURIComponent(
+          courseIdentifier
+        )}&view=detailed`
+      );
       return;
     }
-
-    router.push("/student-dashboard");
-  }, [resetGoogleTranslateState, router]);
+    router.push("/student-dashboard?tab=courses");
+  }, [courseSlugOrId, resetGoogleTranslateState, resolvedCourseId, router]);
 
   // New state for dynamic content
   const [courseChapters, setCourseChapters] = useState<ChapterData[]>([]);
