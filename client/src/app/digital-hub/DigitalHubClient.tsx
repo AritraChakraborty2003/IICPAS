@@ -2459,7 +2459,7 @@ export default function DigitalHubClient({
                               : "bg-blue-600 hover:bg-blue-700"
                           }`}
                         >
-                          <span>Next Topic</span>
+                          <span>Next</span>
                           <span className="max-w-[220px] truncate">
                             {nextTopic.title}
                           </span>
