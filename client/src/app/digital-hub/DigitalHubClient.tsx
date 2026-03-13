@@ -1709,6 +1709,13 @@ export default function DigitalHubClient({
   const pendingQuizPoints =
     studentId && !quizSubmitted ? liveCorrectAnswers * quizCoinsPerCorrect : 0;
   const visiblePoints = points + pendingQuizPoints;
+  const currentTopicIndex = selectedTopic
+    ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
+    : -1;
+  const nextTopic =
+    currentTopicIndex >= 0 && currentTopicIndex < visibleTopics.length - 1
+      ? visibleTopics[currentTopicIndex + 1]
+      : null;
 
   return (
     <div
@@ -2435,6 +2442,28 @@ export default function DigitalHubClient({
                           }`}
                         >
                           💳 Subscribe Full Course
+                        </button>
+                      </div>
+                    )}
+
+                    {nextTopic && (
+                      <div className="mt-8 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleTopicSelect(nextTopic);
+                          }}
+                          className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
+                            isDarkMode
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
+                        >
+                          <span>Next Topic</span>
+                          <span className="max-w-[220px] truncate">
+                            {nextTopic.title}
+                          </span>
+                          <span aria-hidden="true">→</span>
                         </button>
                       </div>
                     )}
