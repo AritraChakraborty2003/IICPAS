@@ -321,44 +321,6 @@ function StudentDashboardContent() {
             />
           </div>
         </div>
-        {/* User Info */}
-        {student && !sidebarCollapsed && (
-          <div className="text-center mb-4 p-3 bg-blue-50 rounded-lg">
-            <div
-              onClick={() => setActiveTab("profile")}
-              className="cursor-pointer hover:bg-blue-100 p-2 rounded-md transition-colors duration-200"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
-                  {student.image ? (
-                    <img
-                      src={getStudentImageUrl(student.image)}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        console.log(
-                          "Sidebar profile image failed to load:",
-                          getStudentImageUrl(student.image)
-                        );
-                        e.target.style.display = "none";
-                        e.target.nextElementSibling.style.display = "flex";
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className={`w-full h-full flex items-center justify-center ${
-                      student.image ? "hidden" : ""
-                    }`}
-                  >
-                    <FaUser size={16} className="text-white" />
-                  </div>
-                </div>
-                <p className="font-semibold text-blue-800">{student.name}</p>
-              </div>
-              <p className="text-sm text-blue-600 mt-1">Student</p>
-            </div>
-          </div>
-        )}
         {!sidebarCollapsed && (
           <button
             type="button"
