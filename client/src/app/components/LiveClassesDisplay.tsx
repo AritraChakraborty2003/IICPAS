@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Video, Clock, User, Play, CheckCircle } from "lucide-react";
+import { Video, Clock, User, Play, CheckCircle, X } from "lucide-react";
 import axios from "axios";
 import { getBlogSlug } from "../../lib/blogSlug";
 
@@ -41,6 +41,15 @@ export default function LiveClassesDisplay() {
   >("upcoming");
   const [user, setUser] = useState<User | null>(null);
   const [blogs, setBlogs] = useState<any[]>([]);
+  const [selectedSession, setSelectedSession] = useState<LiveClass | null>(null);
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [isSubmittingEnrollment, setIsSubmittingEnrollment] = useState(false);
+  const [enrollmentSuccessMessage, setEnrollmentSuccessMessage] = useState("");
+  const [enrollmentForm, setEnrollmentForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+  });
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -254,6 +263,66 @@ export default function LiveClassesDisplay() {
     return session.status === selectedTab;
   });
 
+  const openEnrollmentModal = (session: LiveClass) => {
+    setSelectedSession(session);
+    setEnrollmentSuccessMessage("");
+    setEnrollmentForm({
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: "",
+    });
+    setShowEnrollModal(true);
+  };
+
+  const closeEnrollmentModal = () => {
+    setShowEnrollModal(false);
+    setSelectedSession(null);
+    setIsSubmittingEnrollment(false);
+    setEnrollmentSuccessMessage("");
+  };
+
+  const handleEnrollmentInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setEnrollmentForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleEnrollmentSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    if (!selectedSession) return;
+
+    setIsSubmittingEnrollment(true);
+    try {
+      await axios.post(`${API}/api/leads`, {
+        name: enrollmentForm.name.trim(),
+        email: enrollmentForm.email.trim(),
+        phone: enrollmentForm.phone.trim(),
+        course: selectedSession.title,
+        message: `Live session enrollment request for ${selectedSession.title}`,
+        type: "live-session-enrollment",
+      });
+
+      setEnrollmentSuccessMessage("Your enrollment is successfully stored.");
+      setEnrollmentForm((prev) => ({
+        ...prev,
+        phone: "",
+      }));
+    } catch (error) {
+      console.error("Failed to store enrollment:", error);
+      setEnrollmentSuccessMessage(
+        "Failed to store enrollment. Please try again."
+      );
+    } finally {
+      setIsSubmittingEnrollment(false);
+    }
+  };
+
   return (
     <div className="py-8 px-4">
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit mx-auto mb-8">
@@ -355,7 +424,23 @@ export default function LiveClassesDisplay() {
               )}
 
               <div className="pt-3 border-t border-gray-100">
-                <button className="w-full bg-[#3cd664] text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-[#33bb58] transition-colors duration-200 flex items-center justify-center space-x-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (session.status === "live" && session.meetingLink) {
+                      window.open(session.meetingLink, "_blank", "noopener,noreferrer");
+                      return;
+                    }
+                    if (session.isEnrolled) return;
+                    openEnrollmentModal(session);
+                  }}
+                  disabled={session.isEnrolled}
+                  className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-1 ${
+                    session.isEnrolled
+                      ? "bg-green-100 text-green-700 cursor-not-allowed"
+                      : "bg-[#3cd664] text-white hover:bg-[#33bb58]"
+                  }`}
+                >
                   {session.status === "live" ? (
                     <>
                       <Video className="w-3 h-3" />
@@ -519,6 +604,112 @@ export default function LiveClassesDisplay() {
             </div>
           </div>
         </section>
+      )}
+
+      {showEnrollModal && selectedSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Enroll in Live Session
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  {selectedSession.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEnrollmentModal}
+                className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close enrollment modal"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5">
+              {enrollmentSuccessMessage ? (
+                <div
+                  className={`rounded-xl border px-4 py-4 text-sm font-medium ${
+                    enrollmentSuccessMessage.includes("successfully")
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {enrollmentSuccessMessage}
+                </div>
+              ) : null}
+
+              <form onSubmit={handleEnrollmentSubmit} className="mt-4 space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={enrollmentForm.name}
+                    onChange={handleEnrollmentInputChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={enrollmentForm.phone}
+                    onChange={handleEnrollmentInputChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                    placeholder="Enter your phone number"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={enrollmentForm.email}
+                    onChange={handleEnrollmentInputChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                    placeholder="Enter your email address"
+                  />
+                </div>
+
+                <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                  Session Date: {formatDate(selectedSession.date)}
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeEnrollmentModal}
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingEnrollment}
+                    className="flex-1 rounded-lg bg-[#3cd664] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#33bb58] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isSubmittingEnrollment ? "Submitting..." : "Enroll Now"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
