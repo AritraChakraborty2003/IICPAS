@@ -1715,6 +1715,8 @@ export default function DigitalHubClient({
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
+  const previousTopic =
+    currentTopicIndex > 0 ? visibleTopics[currentTopicIndex - 1] : null;
   const nextTopic =
     currentTopicIndex >= 0 && currentTopicIndex < visibleTopics.length - 1
       ? visibleTopics[currentTopicIndex + 1]
@@ -2449,25 +2451,45 @@ export default function DigitalHubClient({
                       </div>
                     )}
 
-                    {nextTopic && (
-                      <div className="mt-8 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            handleTopicSelect(nextTopic);
-                          }}
-                          className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
-                            isDarkMode
-                              ? "bg-emerald-600 hover:bg-emerald-700"
-                              : "bg-blue-600 hover:bg-blue-700"
-                          }`}
-                        >
-                          <span>Next</span>
-                          <span className="max-w-[220px] truncate">
-                            {nextTopic.title}
-                          </span>
-                          <span aria-hidden="true">→</span>
-                        </button>
+                    {(previousTopic || nextTopic) && (
+                      <div className="mt-8 flex items-center justify-between gap-4">
+                        <div>
+                          {previousTopic ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleTopicSelect(previousTopic);
+                              }}
+                              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
+                                isDarkMode
+                                  ? "bg-slate-700 hover:bg-slate-600"
+                                  : "bg-slate-700 hover:bg-slate-800"
+                              }`}
+                            >
+                              <span aria-hidden="true">←</span>
+                              <span>Previous</span>
+                            </button>
+                          ) : null}
+                        </div>
+
+                        <div>
+                          {nextTopic ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleTopicSelect(nextTopic);
+                              }}
+                              className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
+                                isDarkMode
+                                  ? "bg-emerald-600 hover:bg-emerald-700"
+                                  : "bg-blue-600 hover:bg-blue-700"
+                              }`}
+                            >
+                              <span>Next</span>
+                              <span aria-hidden="true">→</span>
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                     )}
                   </div>
