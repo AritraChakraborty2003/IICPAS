@@ -1709,7 +1709,7 @@ export default function DigitalHubClient({
 
   return (
     <div
-      className={`min-h-screen transition-colors duration-300 ${
+      className={`h-screen overflow-hidden transition-colors duration-300 ${
         isDarkMode ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-slate-900"
       }`}
     >
@@ -1724,12 +1724,12 @@ export default function DigitalHubClient({
           isDarkMode
             ? "border-slate-800 bg-slate-900/95"
             : "border-stone-200 bg-white/90"
-        } p-4 shadow-sm backdrop-blur`}
+        } px-2 py-3 shadow-sm backdrop-blur sm:px-3 lg:px-4`}
       >
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center space-x-4">
+        <div className="flex w-full items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center">
             <div
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl border ${
+              className={`flex items-center gap-2 rounded-xl border px-3 py-2 sm:px-4 ${
                 isDarkMode
                   ? "bg-slate-900 border-slate-700"
                   : "bg-blue-50 border-blue-200"
@@ -1750,10 +1750,10 @@ export default function DigitalHubClient({
             </div>
           </div>
 
-          <div className="flex items-center space-x-6">
+          <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3 lg:gap-4">
             {/* Progress Bar */}
-            <div className="flex items-center space-x-2">
-              <div className="w-32 bg-stone-200 rounded-full h-2">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-20 rounded-full bg-stone-200 sm:w-24 lg:w-32">
                 <div
                   className={`h-2 rounded-full transition-all duration-300 ${
                     isDarkMode ? "bg-emerald-600" : "bg-blue-600"
@@ -1765,17 +1765,17 @@ export default function DigitalHubClient({
             </div>
 
             {/* Custom Language Dropdown */}
-            <div className="relative notranslate" translate="no">
+            <div className="relative shrink-0 notranslate" translate="no">
               <button
                 type="button"
                 onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
-                className={`flex items-center justify-between px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 shadow-sm hover:shadow min-w-[160px] border ${
+                className={`flex min-w-[132px] items-center justify-between rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-300 shadow-sm hover:shadow sm:min-w-[148px] lg:min-w-[160px] ${
                   isDarkMode
                     ? "bg-slate-900 border-slate-700 text-slate-100 hover:bg-slate-800"
                     : "bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100"
                 }`}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                   <Globe
                     className={`w-4 h-4 ${
                       isDarkMode ? "text-emerald-400" : "text-blue-600"
@@ -1807,16 +1807,16 @@ export default function DigitalHubClient({
             </div>
 
             {/* Chapters Dropdown - Moved to Header */}
-            <div className="relative">
+            <div className="relative min-w-0 shrink">
               <button
                 onClick={() => setChapterDropdownOpen(!chapterDropdownOpen)}
-                className={`flex items-center justify-between px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 min-w-[200px] border ${
+                className={`flex min-w-[180px] max-w-[220px] items-center justify-between rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-300 sm:min-w-[220px] sm:max-w-[260px] lg:min-w-[260px] lg:max-w-[320px] ${
                   isDarkMode
                     ? "bg-slate-900 border-slate-700 text-slate-100 hover:bg-slate-800"
                     : "bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100"
                 }`}
               >
-                <div className="flex items-center space-x-3">
+                <div className="flex min-w-0 items-center gap-2 sm:gap-3">
                   <BookOpen
                     className={`w-4 h-4 ${
                       isDarkMode ? "text-slate-300" : "text-blue-600"
@@ -1866,7 +1866,7 @@ export default function DigitalHubClient({
 
             {/* Points Badge */}
             <div
-              className={`flex items-center px-3 py-1.5 rounded-full border ${
+              className={`flex shrink-0 items-center rounded-full border px-3 py-1.5 ${
                 isDarkMode
                   ? "bg-slate-900 border-slate-700 text-slate-200"
                   : "bg-amber-50 border-amber-300 text-amber-800"
@@ -1880,14 +1880,14 @@ export default function DigitalHubClient({
         </div>
       </div>
 
-      <div className="flex">
+      <div className="flex h-[calc(100vh-89px)] min-h-0">
         {/* Narrow Left Sidebar */}
         <div
           className={`w-16 transition-colors duration-300 ${
             isDarkMode
               ? "bg-slate-900 border-slate-800"
               : "bg-stone-100 border-stone-200"
-          } border-r min-h-screen flex flex-col items-center py-4 notranslate`}
+          } border-r h-full shrink-0 flex flex-col items-center py-4 notranslate`}
           translate="no"
         >
           {/* Navigation Icons */}
@@ -1974,10 +1974,10 @@ export default function DigitalHubClient({
             isDarkMode
               ? "bg-slate-900 border-slate-800"
               : "bg-white border-stone-200"
-          } border-r notranslate`}
+          } border-r h-full shrink-0 notranslate`}
           translate="no"
         >
-          <div className="w-80 p-4">
+          <div className="h-full w-80 overflow-y-auto p-4">
             <div className="flex items-center justify-between mb-4">
               <h2
                 className={`text-lg font-semibold ${
@@ -2128,7 +2128,7 @@ export default function DigitalHubClient({
 
         {/* Main Content */}
         <div
-          className={`flex-1 p-8 transition-colors duration-300 ${
+          className={`flex-1 min-w-0 overflow-y-auto p-8 transition-colors duration-300 ${
             isDarkMode ? "bg-slate-950" : "bg-stone-50"
           }`}
         >

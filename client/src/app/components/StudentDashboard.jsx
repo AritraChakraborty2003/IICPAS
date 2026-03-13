@@ -359,6 +359,19 @@ function StudentDashboardContent() {
             </div>
           </div>
         )}
+        {!sidebarCollapsed && (
+          <button
+            type="button"
+            onClick={() => {
+              router.push("/digital-hub");
+              setIsDrawerOpen(false);
+            }}
+            className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800"
+          >
+            <FaBook />
+            <span>Digital Hub</span>
+          </button>
+        )}
         {/* Collapsed user profile */}
         {student && sidebarCollapsed && (
           <div className="flex justify-center mb-4">
@@ -391,6 +404,22 @@ function StudentDashboardContent() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="mb-4 flex justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                router.push("/digital-hub");
+                setIsDrawerOpen(false);
+              }}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-md transition hover:bg-blue-700"
+              title="Digital Hub"
+              aria-label="Digital Hub"
+            >
+              <FaBook size={16} />
+            </button>
           </div>
         )}
       </div>
@@ -497,9 +526,15 @@ function StudentDashboardContent() {
               </button>
               {/* Desktop buttons */}
               <div className="hidden md:flex items-center gap-3">
-                <button className="inline-flex items-center rounded-lg border border-blue-200 bg-blue-600 px-4 py-2 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700">
-                  Digital Hub
-                </button>
+                {student?.name ? (
+                  <div
+                    className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-700"
+                    title={student.name}
+                  >
+                    <FaUser className="text-blue-600" />
+                    <span>Hi, {student.name}</span>
+                  </div>
+                ) : null}
                 <div
                   className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700"
                   title="Total paid amount in bookings"
