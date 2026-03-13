@@ -344,6 +344,7 @@ export default function DigitalHubClient({
   const [progress, setProgress] = useState(0);
   const [points, setPoints] = useState(0);
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [studentName, setStudentName] = useState("");
 
   useAuthHeartbeat({
     enabled: !!studentId,
@@ -1022,6 +1023,7 @@ export default function DigitalHubClient({
         const currentStudentId = response.data?.student?._id;
         if (currentStudentId) {
           setStudentId(currentStudentId);
+          setStudentName(response.data?.student?.name || "");
           await fetchStudentCoins(currentStudentId);
           return;
         }
@@ -1029,6 +1031,7 @@ export default function DigitalHubClient({
         // Keep points as 0 when user isn't authenticated in demo/public access.
       }
       setStudentId(null);
+      setStudentName("");
       setPoints(0);
     };
 
@@ -1727,7 +1730,7 @@ export default function DigitalHubClient({
         } px-2 py-3 shadow-sm backdrop-blur sm:px-3 lg:px-4`}
       >
         <div className="flex w-full items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <div
               className={`flex items-center gap-2 rounded-xl border px-3 py-2 sm:px-4 ${
                 isDarkMode
@@ -1748,6 +1751,18 @@ export default function DigitalHubClient({
                 Digital Hub
               </h1>
             </div>
+            {studentName ? (
+              <div
+                className={`max-w-[220px] truncate rounded-xl border px-3 py-2 text-sm font-semibold sm:max-w-[260px] ${
+                  isDarkMode
+                    ? "border-slate-700 bg-slate-900 text-slate-100"
+                    : "border-blue-200 bg-white text-blue-900"
+                }`}
+                title={studentName}
+              >
+                Hi, {studentName}
+              </div>
+            ) : null}
           </div>
 
           <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3 lg:gap-4">
