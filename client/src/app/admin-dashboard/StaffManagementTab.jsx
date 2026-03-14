@@ -16,6 +16,7 @@ const MODULES = [
   { id: "course", name: "Course", icon: "🎓" },
   { id: "course-display", name: "Course Display", icon: "👁️" },
   { id: "live-session", name: "Live Session", icon: "📺" },
+  { id: "live-bookings", name: "Live Bookings", icon: "🧾" },
   { id: "blogs", name: "Blogs", icon: "📝" },
   { id: "testimonials", name: "Testimonials", icon: "💬" },
   { id: "about", name: "About Us", icon: "ℹ️" },

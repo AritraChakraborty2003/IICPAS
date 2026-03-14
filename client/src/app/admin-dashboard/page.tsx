@@ -117,6 +117,7 @@ import AdminBookingsTab from "./AdminBookingsTab";
 import InvoiceCompanySettingsTab from "./InvoiceCompanySettingsTab";
 import LoginAccessControlTab from "./LoginAccessControlTab";
 import JobSidebarMarqueeTab from "./JobSidebarMarqueeTab";
+import LiveBookingsTab from "./LiveBookingsTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -258,6 +259,11 @@ const NAVIGATION_GROUPS = [
     icon: <FaCalendarAlt />,
     items: [
       { id: "live-session", label: "Live Session", icon: <FaCalendarAlt /> },
+      {
+        id: "live-bookings",
+        label: "Live Bookings",
+        icon: <FaClipboardList />,
+      },
       { id: "calendar", label: "Calendar", icon: <FaCalendarAlt /> },
     ],
   },
@@ -735,6 +741,8 @@ function AdminDashboardContent() {
         {/* Permission-based content rendering */}
         {activeTab === "live-session" ? (
           <LiveSessionAdmin />
+        ) : activeTab === "live-bookings" ? (
+          <LiveBookingsTab />
         ) : activeTab === "enquiries" ? (
           <EnquiriesTab />
         ) : activeTab === "support" ? (
