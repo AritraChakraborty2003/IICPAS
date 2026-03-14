@@ -6,7 +6,10 @@ import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
 import Coupon from "../models/Coupon.js";
 import Booking from "../models/Booking.js";
+import LiveSession from "../models/LiveSession/LiveSession.js";
 import { awardCoins, getCoinSettings } from "../services/coinService.js";
+import { generateLiveSessionReceiptPDF } from "../utils/pdfLiveSessionReceiptGenerator.js";
+import { sendLiveSessionReceiptEmail } from "../utils/liveSessionEmailService.js";
 
 const router = express.Router();
 
@@ -137,6 +140,7 @@ const ensureRazorpayConfigured = (res) => {
 };
 
 const LEGACY_BOOKING_PAYMENT_PURPOSE = "legacy_training_booking";
+const LIVE_SESSION_PAYMENT_PURPOSE = "live_session_enrollment";
 const LEGACY_BOOKING_CATEGORIES = ["recorded", "live", "onsite"];
 const LEGACY_BOOKING_TYPES = ["company", "individual", "college"];
 
@@ -150,6 +154,10 @@ const normalizeLegacyBookingType = (value) => {
   return LEGACY_BOOKING_TYPES.includes(normalized) ? normalized : "individual";
 };
 
+const isLiveSessionOrderPayload = (body) =>
+  Boolean(body?.liveSessionId && body?.email && body?.name) &&
+  Number(body?.price) > 0;
+
 const normalizeLegacyBookingReceipt = (booking) => {
   if (!booking) return null;
   return {
@@ -162,6 +170,45 @@ const normalizeLegacyBookingReceipt = (booking) => {
     paidAt: booking.paymentVerifiedAt || booking.updatedAt || booking.createdAt,
     receiptLink: null,
   };
+};
+
+const normalizeLiveSessionReceipt = (booking) => {
+  if (!booking) return null;
+  return {
+    bookingId: booking._id,
+    liveSessionId: booking.liveSessionId || null,
+    title: booking.title,
+    amount: booking.paymentAmount || 0,
+    paymentMethod: booking.paymentMethod || "manual",
+    paymentStatus: booking.paymentStatus || "pending",
+    razorpay_order_id: booking.razorpayOrderId || "",
+    razorpay_payment_id: booking.razorpayPaymentId || "",
+    paidAt: booking.paymentVerifiedAt || booking.updatedAt || booking.createdAt,
+    email: booking.by || "",
+    phone: booking.phone || "",
+    whatsappNumber: booking.whatsappNumber || booking.phone || "",
+  };
+};
+
+const sendReceiptForLiveSessionBooking = async (bookingId) => {
+  const booking = await Booking.findById(bookingId).lean();
+  if (!booking || booking.paymentStatus !== "paid") {
+    return { sent: false, reason: "Booking missing or not paid" };
+  }
+
+  if (booking.receiptSent) {
+    return { sent: true, skipped: true };
+  }
+
+  const pdfBuffer = await generateLiveSessionReceiptPDF(booking);
+  await sendLiveSessionReceiptEmail(booking, pdfBuffer);
+
+  await Booking.findByIdAndUpdate(bookingId, {
+    receiptSent: true,
+    receiptSentAt: new Date(),
+  });
+
+  return { sent: true, skipped: false };
 };
 
 const verifyRazorpaySignature = ({
@@ -236,6 +283,89 @@ const createLegacyBookingFromOrder = async ({
     razorpaySignature: razorpay_signature,
     paymentVerifiedAt: new Date(),
     paymentSource: String(notes.paymentSource || "dashboard").trim(),
+  });
+
+  return { booking, alreadyExists: false };
+};
+
+const createLiveSessionBookingFromOrder = async ({
+  order,
+  razorpay_order_id,
+  razorpay_payment_id,
+  razorpay_signature,
+}) => {
+  const notes = order?.notes || {};
+  const liveSessionId = String(notes.liveSessionId || "").trim();
+  const email = String(notes.email || "").trim().toLowerCase();
+
+  const existingBooking = await Booking.findOne({
+    $or: [
+      ...(razorpay_payment_id ? [{ razorpayPaymentId: razorpay_payment_id }] : []),
+      ...(razorpay_order_id ? [{ razorpayOrderId: razorpay_order_id }] : []),
+      ...(liveSessionId && email
+        ? [
+            {
+              liveSessionId,
+              by: email,
+              paymentStatus: "paid",
+            },
+          ]
+        : []),
+    ],
+  }).sort({ createdAt: -1 });
+
+  if (existingBooking) {
+    let changed = false;
+    if (!existingBooking.razorpayPaymentId && razorpay_payment_id) {
+      existingBooking.razorpayPaymentId = razorpay_payment_id;
+      changed = true;
+    }
+    if (!existingBooking.razorpaySignature && razorpay_signature) {
+      existingBooking.razorpaySignature = razorpay_signature;
+      changed = true;
+    }
+    if (!existingBooking.paymentVerifiedAt) {
+      existingBooking.paymentVerifiedAt = new Date();
+      changed = true;
+    }
+    if (existingBooking.paymentStatus !== "paid") {
+      existingBooking.paymentStatus = "paid";
+      changed = true;
+    }
+    if (existingBooking.status !== "booked") {
+      existingBooking.status = "booked";
+      changed = true;
+    }
+    if (changed) await existingBooking.save();
+    return { booking: existingBooking, alreadyExists: true };
+  }
+
+  const liveSession = await LiveSession.findById(liveSessionId).lean();
+  if (!liveSession) {
+    throw new Error("Live session not found while creating booking");
+  }
+
+  const amount = fromPaise(Number(order?.amount || 0));
+  const booking = await Booking.create({
+    liveSessionId,
+    by: email,
+    requesterName: String(notes.name || "").trim(),
+    phone: String(notes.phone || "").trim(),
+    whatsappNumber: String(notes.whatsappNumber || notes.phone || "").trim(),
+    title: String(notes.sessionTitle || liveSession.title || "").trim(),
+    hrs: Math.max(1, Math.ceil(Number(liveSession.duration || 60) / 60)),
+    type: "individual",
+    category: "live",
+    status: "booked",
+    date: liveSession.date,
+    paymentMethod: "razorpay",
+    paymentAmount: amount,
+    razorpayOrderId: razorpay_order_id,
+    razorpayPaymentId: razorpay_payment_id,
+    razorpaySignature: razorpay_signature,
+    paymentVerifiedAt: new Date(),
+    paymentStatus: "paid",
+    paymentSource: String(notes.paymentSource || "live-session-page").trim(),
   });
 
   return { booking, alreadyExists: false };
@@ -371,6 +501,93 @@ router.post("/create-order", async (req, res) => {
             category,
             hrs,
             bookingType,
+          },
+        },
+      });
+    }
+
+    if (isLiveSessionOrderPayload(req.body)) {
+      const liveSessionId = String(req.body.liveSessionId || "").trim();
+      const email = String(req.body.email || "").trim().toLowerCase();
+      const name = String(req.body.name || "").trim();
+      const phone = String(req.body.phone || "").trim();
+      const whatsappNumber = String(
+        req.body.whatsappNumber || req.body.phone || ""
+      ).trim();
+      const paymentSource = String(
+        req.body.paymentSource || "live-session-page"
+      ).trim();
+      const amountValue = Number(req.body.price);
+
+      if (!liveSessionId || !email || !name || !phone) {
+        return res.status(400).json({
+          success: false,
+          message: "liveSessionId, name, email, phone, and price are required",
+        });
+      }
+
+      const liveSession = await LiveSession.findById(liveSessionId).lean();
+      if (!liveSession) {
+        return res.status(404).json({
+          success: false,
+          message: "Live session not found",
+        });
+      }
+
+      const existingPaidBooking = await Booking.findOne({
+        liveSessionId,
+        by: email,
+        paymentStatus: "paid",
+      }).lean();
+
+      if (existingPaidBooking) {
+        return res.status(409).json({
+          success: false,
+          message: "This email is already booked for the selected live session",
+          data: {
+            bookingId: existingPaidBooking._id,
+          },
+        });
+      }
+
+      const amountInPaise = Math.round(amountValue * 100);
+      if (!Number.isInteger(amountInPaise) || amountInPaise <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Amount must be a valid positive value",
+        });
+      }
+
+      const order = await razorpay.orders.create({
+        amount: amountInPaise,
+        currency: "INR",
+        receipt: String(`ls_${Date.now()}_${liveSessionId}`).slice(0, 40),
+        notes: {
+          paymentPurpose: LIVE_SESSION_PAYMENT_PURPOSE,
+          liveSessionId,
+          email,
+          name,
+          phone,
+          whatsappNumber,
+          sessionTitle: String(liveSession.title || "").trim(),
+          paymentSource,
+        },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Live session payment order created successfully",
+        data: {
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+          receipt: order.receipt,
+          key: process.env.RAZORPAY_KEY_ID,
+          bookingPreview: {
+            liveSessionId,
+            sessionTitle: liveSession.title,
+            sessionDate: liveSession.date,
+            amount: amountValue,
           },
         },
       });
@@ -836,7 +1053,12 @@ const verifyAndCaptureHandler = async (req, res) => {
       const order = await razorpay.orders.fetch(razorpay_order_id);
       const orderNotes = order?.notes || {};
 
-      if (orderNotes.paymentPurpose !== LEGACY_BOOKING_PAYMENT_PURPOSE) {
+      if (
+        ![
+          LEGACY_BOOKING_PAYMENT_PURPOSE,
+          LIVE_SESSION_PAYMENT_PURPOSE,
+        ].includes(orderNotes.paymentPurpose)
+      ) {
         return res.status(400).json({
           success: false,
           message:
@@ -855,6 +1077,36 @@ const verifyAndCaptureHandler = async (req, res) => {
         return res.status(400).json({
           success: false,
           message: "Invalid payment signature",
+        });
+      }
+
+      if (orderNotes.paymentPurpose === LIVE_SESSION_PAYMENT_PURPOSE) {
+        const { booking, alreadyExists } = await createLiveSessionBookingFromOrder({
+          order,
+          razorpay_order_id,
+          razorpay_payment_id,
+          razorpay_signature,
+        });
+
+        try {
+          await sendReceiptForLiveSessionBooking(booking._id);
+        } catch (receiptError) {
+          console.error(
+            "Live session receipt send failed after payment verification:",
+            receiptError
+          );
+        }
+
+        return res.status(200).json({
+          success: true,
+          message: alreadyExists
+            ? "Payment already verified"
+            : "Payment verified and live session booked",
+          data: {
+            bookingId: booking._id,
+            status: booking.status,
+            receipt: normalizeLiveSessionReceipt(booking),
+          },
         });
       }
 
@@ -1115,7 +1367,11 @@ router.get("/receipts/booking/:bookingId", async (req, res) => {
       });
     }
 
-    return res.status(200).json(normalizeLegacyBookingReceipt(booking));
+    const payload = booking.liveSessionId
+      ? normalizeLiveSessionReceipt(booking)
+      : normalizeLegacyBookingReceipt(booking);
+
+    return res.status(200).json(payload);
   } catch (error) {
     console.error("Error fetching booking receipt:", error);
     return res.status(500).json({
@@ -1144,7 +1400,11 @@ router.get("/receipts", async (req, res) => {
 
     return res.status(200).json(
       bookings
-        .map((booking) => normalizeLegacyBookingReceipt(booking))
+        .map((booking) =>
+          booking.liveSessionId
+            ? normalizeLiveSessionReceipt(booking)
+            : normalizeLegacyBookingReceipt(booking)
+        )
         .filter(Boolean)
     );
   } catch (error) {
