@@ -18,6 +18,28 @@ export default function CopyProtection() {
   const pathname = usePathname();
 
   useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      const editableRoot = target.closest(
+        'input, textarea, [contenteditable="true"], [contenteditable=""], [data-allow-copy]'
+      );
+
+      if (!editableRoot) {
+        return false;
+      }
+
+      if (editableRoot instanceof HTMLInputElement) {
+        return !["button", "submit", "reset", "checkbox", "radio", "file"].includes(
+          editableRoot.type
+        );
+      }
+
+      return true;
+    };
+
     // Check if we're on an admin dashboard page
     const isAdminDashboard = () => {
       return pathname?.includes("/admin-dashboard") ?? false;
@@ -46,6 +68,10 @@ export default function CopyProtection() {
 
     // Prevent right-click context menu
     const handleContextMenu = (e: MouseEvent) => {
+      if (isEditableTarget(e.target)) {
+        return true;
+      }
+
       e.preventDefault();
       showProtectionMessage();
       return false;
@@ -53,6 +79,10 @@ export default function CopyProtection() {
 
     // Prevent copy operations
     const handleCopy = (e: ClipboardEvent) => {
+      if (isEditableTarget(e.target)) {
+        return true;
+      }
+
       e.preventDefault();
       showProtectionMessage();
       return false;
@@ -60,6 +90,10 @@ export default function CopyProtection() {
 
     // Prevent cut operations
     const handleCut = (e: ClipboardEvent) => {
+      if (isEditableTarget(e.target)) {
+        return true;
+      }
+
       e.preventDefault();
       showProtectionMessage();
       return false;
@@ -67,34 +101,40 @@ export default function CopyProtection() {
 
     // Prevent text selection
     const handleSelectStart = (e: Event) => {
+      if (isEditableTarget(e.target)) {
+        return true;
+      }
+
       e.preventDefault();
       return false;
     };
 
     // Block keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, Cmd+C, Cmd+X, Cmd+V, Cmd+A)
     const handleKeyDown = (e: KeyboardEvent) => {
+      const editableTarget = isEditableTarget(e.target);
+
       // Check for Ctrl or Cmd key
       if (e.ctrlKey || e.metaKey) {
         // Block Ctrl/Cmd + C (Copy)
-        if (e.key === "c" || e.key === "C") {
+        if ((e.key === "c" || e.key === "C") && !editableTarget) {
           e.preventDefault();
           showProtectionMessage();
           return false;
         }
         // Block Ctrl/Cmd + X (Cut)
-        if (e.key === "x" || e.key === "X") {
+        if ((e.key === "x" || e.key === "X") && !editableTarget) {
           e.preventDefault();
           showProtectionMessage();
           return false;
         }
         // Block Ctrl/Cmd + V (Paste)
-        if (e.key === "v" || e.key === "V") {
+        if ((e.key === "v" || e.key === "V") && !editableTarget) {
           e.preventDefault();
           showProtectionMessage();
           return false;
         }
         // Block Ctrl/Cmd + A (Select All)
-        if (e.key === "a" || e.key === "A") {
+        if ((e.key === "a" || e.key === "A") && !editableTarget) {
           e.preventDefault();
           showProtectionMessage();
           return false;

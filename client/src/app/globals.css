@@ -31,6 +31,24 @@ body.auth-page * {
   -webkit-touch-callout: default !important;
 }
 
+/* Allow text entry, selection, and paste in editable controls */
+input,
+textarea,
+select,
+[contenteditable="true"],
+[contenteditable=""] {
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  -webkit-user-drag: auto !important;
+  -khtml-user-drag: auto !important;
+  -moz-user-drag: auto !important;
+  -o-user-drag: auto !important;
+  user-drag: auto !important;
+}
+
 /* Allow text highlighting in Admin Dashboard */
 .admin-dashboard *::selection,
 [data-admin-dashboard] *::selection {
@@ -48,6 +66,22 @@ body.auth-page *::selection {
 }
 
 body.auth-page *::-moz-selection {
+  background: rgba(59, 130, 246, 0.3) !important;
+}
+
+input::selection,
+textarea::selection,
+select::selection,
+[contenteditable="true"]::selection,
+[contenteditable=""]::selection {
+  background: rgba(59, 130, 246, 0.3) !important;
+}
+
+input::-moz-selection,
+textarea::-moz-selection,
+select::-moz-selection,
+[contenteditable="true"]::-moz-selection,
+[contenteditable=""]::-moz-selection {
   background: rgba(59, 130, 246, 0.3) !important;
 }
 
