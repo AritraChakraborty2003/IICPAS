@@ -117,45 +117,54 @@ router.post("/applications/:id/shortlist", async (req, res) => {
     if (app.shortlisted) {
       return res.status(200).json({ message: "Already shortlisted." });
     }
-
-    // Send Email
-    const transporter = nodemailer.createTransport({
-      service: "Gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: app.email,
-      subject: "Shortlisted for Job",
-      html: `
-        <p>Dear ${app.name},</p>
-        <p>Congratulations! 🎉</p>
-        <p>You’ve been <strong>shortlisted</strong> for the job you applied to at IICPA Institute.</p>
-        <p>Our team will be in touch with the next steps soon.</p>
-        <br/>
-        <p>Regards,<br/>IICPA HR Team</p>
-      `,
-    });
-
-    // ✅ Update shortlisted status
     app.shortlisted = true;
     await app.save();
 
-    res.json({ message: "Shortlist email sent and application updated." });
+    const canSendEmail = process.env.EMAIL_USER && process.env.EMAIL_PASS && app.email;
+
+    if (!canSendEmail) {
+      return res.json({
+        message: "Application shortlisted successfully.",
+        emailSent: false,
+      });
+    }
+
+    try {
+      const transporter = nodemailer.createTransport({
+        service: "Gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      await transporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: app.email,
+        subject: "Shortlisted for Job",
+        html: `
+          <p>Dear ${app.name},</p>
+          <p>Congratulations!</p>
+          <p>You’ve been <strong>shortlisted</strong> for the job you applied to at IICPA Institute.</p>
+          <p>Our team will be in touch with the next steps soon.</p>
+          <br/>
+          <p>Regards,<br/>IICPA HR Team</p>
+        `,
+      });
+
+      return res.json({
+        message: "Application shortlisted and email sent successfully.",
+        emailSent: true,
+      });
+    } catch (emailError) {
+      console.error("Shortlist email error:", emailError);
+      return res.json({
+        message: "Application shortlisted successfully, but email could not be sent.",
+        emailSent: false,
+      });
+    }
   } catch (err) {
     console.error("Shortlist error:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Send Shortlist Email
-router.post("/applications/:id/shortlist", async (req, res) => {
-  try {
-  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 const BookingSchema = new mongoose.Schema(
   {
+    liveSessionId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "LiveSession",
+      default: null,
+      index: true,
+    },
     by: { type: String, required: true }, // email of requester
     title: { type: String, required: true }, // purpose/title
     hrs: { type: Number, required: true }, // number of hours requested
@@ -27,6 +33,16 @@ const BookingSchema = new mongoose.Schema(
       type: String,
     },
     requesterName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    phone: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    whatsappNumber: {
       type: String,
       default: "",
       trim: true,
@@ -58,10 +74,24 @@ const BookingSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "failed", "refunded", "free"],
+      default: "pending",
+      index: true,
+    },
     paymentSource: {
       type: String,
       default: "",
       trim: true,
+    },
+    receiptSent: {
+      type: Boolean,
+      default: false,
+    },
+    receiptSentAt: {
+      type: Date,
+      default: null,
     },
     createdAt: { type: Date, default: Date.now },
   },
