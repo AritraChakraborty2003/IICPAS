@@ -165,13 +165,64 @@ export const approveAndBook = async (req, res) => {
 // GET /api/bookings or /api/bookings?status=booked&by=email
 export const getAllBookings = async (req, res) => {
   try {
-    const { status, by } = req.query;
+    const { status, by, category, liveSessionId, hasLiveSession, paymentStatus } =
+      req.query;
     const filter = {};
     if (status) filter.status = status;
     if (by) filter.by = by;
-    const bookings = await Booking.find(filter).sort({ start: 1 });
+    if (category) filter.category = category;
+    if (paymentStatus) filter.paymentStatus = paymentStatus;
+    if (liveSessionId) filter.liveSessionId = liveSessionId;
+    if (String(hasLiveSession).toLowerCase() === "true") {
+      filter.liveSessionId = { $ne: null };
+    }
+    const bookings = await Booking.find(filter)
+      .populate("liveSessionId", "title date time price")
+      .sort({ createdAt: -1, start: 1 });
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const updateBooking = async (req, res) => {
+  try {
+    const allowedUpdates = [
+      "requesterName",
+      "by",
+      "phone",
+      "whatsappNumber",
+      "status",
+      "paymentStatus",
+      "date",
+    ];
+    const updateData = Object.fromEntries(
+      Object.entries(req.body || {}).filter(([key]) => allowedUpdates.includes(key))
+    );
+
+    const booking = await Booking.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    }).populate("liveSessionId", "title date time price");
+
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    return res.json({ success: true, booking });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const deleteBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndDelete(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 };

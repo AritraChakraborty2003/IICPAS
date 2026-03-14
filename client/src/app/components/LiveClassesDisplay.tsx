@@ -2,7 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Video, Clock, User, Play, CheckCircle, X } from "lucide-react";
+import {
+  Video,
+  Clock,
+  User,
+  Play,
+  CheckCircle,
+  X,
+  AlertOctagon,
+} from "lucide-react";
 import axios from "axios";
 import { getBlogSlug } from "../../lib/blogSlug";
 
@@ -44,11 +52,13 @@ export default function LiveClassesDisplay() {
   const [selectedSession, setSelectedSession] = useState<LiveClass | null>(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
   const [isSubmittingEnrollment, setIsSubmittingEnrollment] = useState(false);
+  const [isRazorpayReady, setIsRazorpayReady] = useState(false);
   const [enrollmentSuccessMessage, setEnrollmentSuccessMessage] = useState("");
   const [enrollmentForm, setEnrollmentForm] = useState({
     name: "",
     email: "",
     phone: "",
+    whatsappNumber: "",
   });
 
   const API = process.env.NEXT_PUBLIC_API_URL;
@@ -69,6 +79,26 @@ export default function LiveClassesDisplay() {
       return null;
     }
   }, [API]);
+
+  useEffect(() => {
+    if ((window as any).Razorpay) {
+      setIsRazorpayReady(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setIsRazorpayReady(true);
+    script.onerror = () => setIsRazorpayReady(false);
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -270,6 +300,7 @@ export default function LiveClassesDisplay() {
       name: user?.name || "",
       email: user?.email || "",
       phone: "",
+      whatsappNumber: "",
     });
     setShowEnrollModal(true);
   };
@@ -296,30 +327,140 @@ export default function LiveClassesDisplay() {
   ) => {
     e.preventDefault();
     if (!selectedSession) return;
+    if (!enrollmentForm.name.trim() || !enrollmentForm.email.trim() || !enrollmentForm.phone.trim()) {
+      setEnrollmentSuccessMessage("Please fill in name, email, and phone.");
+      return;
+    }
 
     setIsSubmittingEnrollment(true);
     try {
-      await axios.post(`${API}/api/leads`, {
-        name: enrollmentForm.name.trim(),
-        email: enrollmentForm.email.trim(),
+      if (selectedSession.price > 0) {
+        if (!isRazorpayReady || !(window as any).Razorpay) {
+          throw new Error("Razorpay checkout is not available right now");
+        }
+
+        const orderResponse = await axios.post(
+          `${API}/api/test-payment/create-order`,
+          {
+            liveSessionId: selectedSession._id,
+            name: enrollmentForm.name.trim(),
+            email: enrollmentForm.email.trim(),
+            phone: enrollmentForm.phone.trim(),
+            whatsappNumber:
+              enrollmentForm.whatsappNumber.trim() || enrollmentForm.phone.trim(),
+            price: selectedSession.price,
+            paymentSource: "live-session-page",
+          }
+        );
+
+        const orderData = orderResponse.data?.data;
+        if (!orderResponse.data?.success || !orderData?.orderId) {
+          throw new Error(orderResponse.data?.message || "Failed to create payment order");
+        }
+
+        const razorpay = new (window as any).Razorpay({
+          key:
+            orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+          amount: orderData.amount,
+          currency: orderData.currency || "INR",
+          name: "IICPA Institute",
+          description: selectedSession.title,
+          order_id: orderData.orderId,
+          prefill: {
+            name: enrollmentForm.name.trim(),
+            email: enrollmentForm.email.trim(),
+            contact: enrollmentForm.phone.trim(),
+          },
+          theme: {
+            color: "#3cd664",
+          },
+          modal: {
+            ondismiss: () => {
+              setIsSubmittingEnrollment(false);
+            },
+          },
+          handler: async (response: any) => {
+            try {
+              const verificationResponse = await axios.post(
+                `${API}/api/test-payment/verify-and-capture`,
+                response
+              );
+
+              if (!verificationResponse.data?.success) {
+                throw new Error(
+                  verificationResponse.data?.message || "Payment verification failed"
+                );
+              }
+
+              setLiveClasses((prev) =>
+                prev.map((session) =>
+                  session._id === selectedSession._id
+                    ? {
+                        ...session,
+                        isEnrolled: true,
+                        enrolledCount: (session.enrolledCount || 0) + 1,
+                      }
+                    : session
+                )
+              );
+              setEnrollmentSuccessMessage(
+                "Payment successful. Receipt has been sent to your email."
+              );
+            } catch (verificationError: any) {
+              console.error("Payment verification failed:", verificationError);
+              setEnrollmentSuccessMessage(
+                verificationError?.response?.data?.message ||
+                  verificationError?.message ||
+                  "Payment verification failed. Please contact support."
+              );
+            } finally {
+              setIsSubmittingEnrollment(false);
+            }
+          },
+        });
+
+        razorpay.open();
+        return;
+      }
+
+      await axios.post(`${API}/api/bookings`, {
+        liveSessionId: selectedSession._id,
+        by: enrollmentForm.email.trim(),
+        requesterName: enrollmentForm.name.trim(),
         phone: enrollmentForm.phone.trim(),
-        course: selectedSession.title,
-        message: `Live session enrollment request for ${selectedSession.title}`,
-        type: "live-session-enrollment",
+        whatsappNumber:
+          enrollmentForm.whatsappNumber.trim() || enrollmentForm.phone.trim(),
+        title: selectedSession.title,
+        hrs: Math.max(1, Math.ceil((selectedSession.duration || 60) / 60)),
+        type: "individual",
+        category: "live",
+        status: "booked",
+        paymentStatus: "free",
+        date: selectedSession.date,
       });
 
-      setEnrollmentSuccessMessage("Your enrollment is successfully stored.");
-      setEnrollmentForm((prev) => ({
-        ...prev,
-        phone: "",
-      }));
+      setEnrollmentSuccessMessage("Your booking is confirmed.");
+      setLiveClasses((prev) =>
+        prev.map((session) =>
+          session._id === selectedSession._id
+            ? {
+                ...session,
+                isEnrolled: true,
+                enrolledCount: (session.enrolledCount || 0) + 1,
+              }
+            : session
+        )
+      );
     } catch (error) {
       console.error("Failed to store enrollment:", error);
       setEnrollmentSuccessMessage(
-        "Failed to store enrollment. Please try again."
+        (error as any)?.response?.data?.message ||
+          "Failed to complete enrollment. Please try again."
       );
     } finally {
-      setIsSubmittingEnrollment(false);
+      if (selectedSession.price <= 0) {
+        setIsSubmittingEnrollment(false);
+      }
     }
   };
 
@@ -632,7 +773,7 @@ export default function LiveClassesDisplay() {
               {enrollmentSuccessMessage ? (
                 <div
                   className={`rounded-xl border px-4 py-4 text-sm font-medium ${
-                    enrollmentSuccessMessage.includes("successfully")
+                    /(successful|confirmed|sent)/i.test(enrollmentSuccessMessage)
                       ? "border-green-200 bg-green-50 text-green-700"
                       : "border-red-200 bg-red-50 text-red-700"
                   }`}
@@ -683,12 +824,33 @@ export default function LiveClassesDisplay() {
                     onChange={handleEnrollmentInputChange}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
                     placeholder="Enter your email address"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    WhatsApp Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="whatsappNumber"
+                    value={enrollmentForm.whatsappNumber}
+                    onChange={handleEnrollmentInputChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                    placeholder="Enter WhatsApp number"
                   />
                 </div>
 
                 <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
                   Session Date: {formatDate(selectedSession.date)}
                 </div>
+
+                {selectedSession.price > 0 ? (
+                  <div className="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                    Pay now: ₹{selectedSession.price.toLocaleString()}
+                  </div>
+                ) : null}
 
                 <div className="flex gap-3 pt-2">
                   <button
@@ -703,7 +865,11 @@ export default function LiveClassesDisplay() {
                     disabled={isSubmittingEnrollment}
                     className="flex-1 rounded-lg bg-[#3cd664] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#33bb58] disabled:cursor-not-allowed disabled:opacity-70"
                   >
-                    {isSubmittingEnrollment ? "Submitting..." : "Enroll Now"}
+                    {isSubmittingEnrollment
+                      ? "Processing..."
+                      : selectedSession.price > 0
+                      ? `Pay ₹${selectedSession.price}`
+                      : "Enroll Now"}
                   </button>
                 </div>
               </form>
