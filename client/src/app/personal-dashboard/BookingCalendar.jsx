@@ -12,6 +12,31 @@ const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
 const URL =
   process.env.NEXT_PUBLIC_BACKEND || API.replace(/\/api$/, "") || "http://localhost:8080";
 const PAYMENTS_API = `${URL}/api/v1/payments`;
+const loadRazorpayScript = () =>
+  new Promise((resolve) => {
+    if (typeof window === "undefined") {
+      resolve(false);
+      return;
+    }
+    if (window.Razorpay) {
+      resolve(true);
+      return;
+    }
+    const existingScript = document.querySelector(
+      'script[src="https://checkout.razorpay.com/v1/checkout.js"]'
+    );
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(true), { once: true });
+      existingScript.addEventListener("error", () => resolve(false), { once: true });
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
 
 const BookingCalendar = () => {
   //Define the state variables
@@ -26,6 +51,7 @@ const BookingCalendar = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [bookingReceipt, setBookingReceipt] = useState(null);
+  const [razorpayReady, setRazorpayReady] = useState(false);
 
   //Fetch the email from the profile
 
@@ -61,13 +87,23 @@ const BookingCalendar = () => {
     fetchTrainings();
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    loadRazorpayScript().then((loaded) => {
+      if (mounted) setRazorpayReady(Boolean(loaded && window.Razorpay));
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   // Only allow booking after successful payment verification and transaction save
   const handlePayAndBook = async () => {
     if (!form.title || !selectedPrice) {
       toast.error("Please select a training");
       return;
     }
-    if (typeof window === "undefined" || !window.Razorpay) {
+    if (!razorpayReady) {
       toast.error("Razorpay is unavailable. Refresh the page and try again.");
       return;
     }
@@ -567,10 +603,10 @@ const BookingCalendar = () => {
               type="button"
               className="bg-green-600 text-white px-7 py-2 rounded font-semibold hover:bg-green-700"
               style={{ height: 44, flex: 1, minWidth: 120, marginTop: 24 }}
-              disabled={loading || !selectedPrice}
+              disabled={loading || !selectedPrice || !razorpayReady}
               onClick={handlePayAndBook}
             >
-              Pay & Book
+              {razorpayReady ? "Pay & Book" : "Loading Payment..."}
             </button>
             {/* Only show Pay & Book button, no regular Book button */}
             <style>{`
