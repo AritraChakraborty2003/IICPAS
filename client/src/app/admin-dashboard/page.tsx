@@ -427,7 +427,7 @@ const NAVIGATION_GROUPS = [
 ];
 
 function AdminDashboardContent() {
-  const { user, canAccess, logout } = useAuth();
+  const { user, canAccess, logout, isPrivilegedAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -456,7 +456,7 @@ function AdminDashboardContent() {
       if (firstExpandedGroup) {
         const firstAccessibleItem = firstExpandedGroup.items.find((item) => {
           if (!user) return false;
-          if (user.role === "Admin") return true;
+          if (isPrivilegedAdmin(user)) return true;
           return canAccess(item.id);
         });
         if (firstAccessibleItem) {
@@ -565,7 +565,7 @@ function AdminDashboardContent() {
           // Filter group items based on user permissions
           const accessibleGroupItems = group.items.filter((item) => {
             if (!user) return false;
-            if (user.role === "Admin") return true;
+            if (isPrivilegedAdmin(user)) return true;
             return canAccess(item.id);
           });
 
