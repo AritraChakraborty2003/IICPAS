@@ -83,138 +83,57 @@ const JobManagerTab = ({ companyEmail }) => {
   }, [mainTab, companyEmail]);
 
   const fetchJobs = async () => {
+    if (!companyEmail) {
+      setJobs([]);
+      setAllApplications([]);
+      return;
+    }
+
     try {
-      console.log("Fetching all jobs (internal + external)");
-      
-      // Fetch both internal and external jobs
-      const [internalJobsRes, externalJobsRes] = await Promise.all([
-        axios.get(`${API}/api/jobs-internal`),
-        axios.get(`${API}/api/jobs-external`)
-      ]);
-      
-      // Combine both job types and add source identifier
-      const internalJobs = (internalJobsRes.data || []).map(job => ({
+      const externalJobsRes = await axios.get(
+        `${API}/api/jobs-external?email=${encodeURIComponent(companyEmail)}`
+      );
+
+      const externalJobs = (externalJobsRes.data || []).map((job) => ({
         ...job,
-        role: job.type || job.role, // Normalize role field
-        salary: job.salary || "0", // Ensure salary field exists
-        source: 'internal',
-        sourceLabel: 'Admin Posted',
-        postedBy: 'IICPA Institute'
+        source: "external",
+        sourceLabel: "Company Posted",
+        postedBy: companyEmail,
       }));
-      
-      const externalJobs = (externalJobsRes.data || []).map(job => ({
-        ...job,
-        source: 'external',
-        sourceLabel: 'Company Posted',
-        postedBy: 'IICPA Institute' // Always show IICPA Institute for consistency
-      }));
-      
-      // Combine all jobs
-      const allJobs = [...internalJobs, ...externalJobs];
-      
-      // Fetch all applications once and then distribute to jobs
+
       let allApplications = [];
       try {
-        console.log("Fetching applications for company email:", companyEmail);
-        
-        // Try multiple approaches to get all applications
-        const applicationPromises = [];
-        
-        // Try with company email
-        applicationPromises.push(
-          axios.get(`${API}/api/apply/jobs-external/company/${companyEmail}`)
-            .then(res => res.data || [])
-            .catch(err => {
-              console.log("Company email fetch failed:", err.message);
-              return [];
-            })
+        const applicationsRes = await axios.get(
+          `${API}/api/apply/jobs-external/company/${encodeURIComponent(
+            companyEmail
+          )}`
         );
-        
-        // Try with admin@iicpa.com
-        applicationPromises.push(
-          axios.get(`${API}/api/apply/jobs-external/company/admin@iicpa.com`)
-            .then(res => res.data || [])
-            .catch(err => {
-              console.log("Admin email fetch failed:", err.message);
-              return [];
-            })
-        );
-        
-        // Try to get all applications (no company filter)
-        applicationPromises.push(
-          axios.get(`${API}/api/apply/jobs-external`)
-            .then(res => res.data || [])
-            .catch(err => {
-              console.log("All applications fetch failed:", err.message);
-              return [];
-            })
-        );
-        
-        // Wait for all requests to complete
-        const [companyApps, adminApps, allApps] = await Promise.all(applicationPromises);
-        
-        console.log("Company applications:", companyApps.length);
-        console.log("Admin applications:", adminApps.length);
-        console.log("All applications:", allApps.length);
-        
-        // Combine all applications and remove duplicates
-        const allAppsMap = new Map();
-        
-        [...companyApps, ...adminApps, ...allApps].forEach(app => {
-          if (!allAppsMap.has(app._id)) {
-            allAppsMap.set(app._id, app);
-          }
-        });
-        
-        allApplications = Array.from(allAppsMap.values());
-        console.log("Total unique applications after deduplication:", allApplications.length);
-        
+        allApplications = applicationsRes.data || [];
       } catch (error) {
         console.error("Error fetching applications:", error);
         allApplications = [];
       }
 
-      // Add application counts to each job
-      const jobsWithApplications = allJobs.map((job) => {
-        const jobApplications = allApplications.filter(app => {
-          // Handle both string and ObjectId comparisons
+      const jobsWithApplications = externalJobs.map((job) => {
+        const jobApplications = allApplications.filter((app) => {
           const appJobId = app.jobId?._id || app.jobId;
           const jobId = job._id;
-          
-          // Convert both to strings for comparison
           return String(appJobId) === String(jobId);
         });
-        
-        console.log(`Job "${job.title}" (${job._id}) has ${jobApplications.length} applications`);
-        
+
         return {
           ...job,
-          applicationCount: jobApplications.length
+          applicationCount: jobApplications.length,
         };
       });
-      
-      console.log("All jobs (internal + external):", jobsWithApplications);
-      console.log("Job statuses:", jobsWithApplications.map(j => ({ id: j._id, title: j.title, status: j.status, applications: j.applicationCount })));
+
       setJobs(jobsWithApplications);
-      setAllApplications(allApplications); // Store applications for viewing
+      setAllApplications(allApplications);
     } catch (error) {
       console.error("Error fetching jobs:", error);
       toast.error("Failed to load jobs");
-      // Fallback to external jobs only
-      try {
-        const res = await axios.get(`${API}/api/jobs-external`);
-        const externalJobs = (res.data || []).map(job => ({
-          ...job,
-          source: 'external',
-          sourceLabel: 'Company Posted',
-          postedBy: 'IICPA Institute', // Always show IICPA Institute for consistency
-          applicationCount: 0 // Default to 0 for fallback
-        }));
-        setJobs(externalJobs);
-      } catch (fallbackError) {
-        console.error("Error fetching external jobs:", fallbackError);
-        setJobs([]);
-      }
+      setJobs([]);
+      setAllApplications([]);
     }
   };
 
@@ -231,14 +150,7 @@ const JobManagerTab = ({ companyEmail }) => {
         const jobData = { ...form, email: companyEmail };
         console.log("Updating job with data:", jobData);
         
-        // Find the job being edited to determine its source
-        const jobBeingEdited = jobs.find(j => j._id === editJobId);
-        const endpoint = jobBeingEdited?.source === 'internal' 
-          ? `${API}/api/jobs-internal/${editJobId}`
-          : `${API}/api/jobs-external/${editJobId}`;
-        
-        console.log("Using endpoint:", endpoint, "for job source:", jobBeingEdited?.source);
-        await axios.put(endpoint, jobData);
+        await axios.put(`${API}/api/jobs-external/${editJobId}`, jobData);
         toast.success("Job updated successfully! ✨");
       }
       setForm(emptyJob);
@@ -281,12 +193,7 @@ const JobManagerTab = ({ companyEmail }) => {
     });
     if (result.isConfirmed) {
       try {
-        // Use appropriate endpoint based on job source
-        const endpoint = job.source === 'internal' 
-          ? `${API}/api/jobs-internal/${job._id}`
-          : `${API}/api/jobs-external/${job._id}`;
-        
-        await axios.delete(endpoint);
+        await axios.delete(`${API}/api/jobs-external/${job._id}`);
         toast.success("Job deleted successfully! 🗑️");
         fetchJobs();
       } catch (error) {
@@ -316,40 +223,24 @@ const JobManagerTab = ({ companyEmail }) => {
   const handleToggleStatus = async (job) => {
     try {
       const newStatus = job.status === "active" ? "inactive" : "active";
-      console.log(`Toggling job ${job._id} from ${job.status} to ${newStatus}`);
-      
-      // Use appropriate endpoint based on job source
-      const endpoint = job.source === 'internal' 
-        ? `${API}/api/jobs-internal/${job._id}`
-        : `${API}/api/jobs-external/${job._id}`;
-      
-      console.log(`Using endpoint: ${endpoint} for ${job.source} job`);
-      
-      const response = await axios.put(endpoint, { status: newStatus });
-      console.log("Job status update response:", response.data);
-      
-      // Update the job in the local state immediately for better UX
+      await axios.put(`${API}/api/jobs-external/${job._id}`, {
+        status: newStatus,
+      });
+
       setJobs(prevJobs => {
-        const updatedJobs = prevJobs.map(j => 
+        const updatedJobs = prevJobs.map(j =>
           j._id === job._id ? { ...j, status: newStatus } : j
         );
-        console.log("Updated jobs state:", updatedJobs);
-        console.log("Job with updated status:", updatedJobs.find(j => j._id === job._id));
         return updatedJobs;
       });
-      
+
       toast.success(`Job ${newStatus === "active" ? "activated" : "deactivated"} successfully!`);
-      
-      // Fetch fresh data after a short delay to ensure backend has processed the update
+
       setTimeout(() => {
         fetchJobs();
       }, 1000);
-      
     } catch (error) {
       console.error("Error toggling job status:", error);
-      console.error("Error details:", error.response?.data || error.message);
-      console.error("Job source:", job.source);
-      console.error("Job ID:", job._id);
       toast.error("Failed to update job status");
     }
   };
