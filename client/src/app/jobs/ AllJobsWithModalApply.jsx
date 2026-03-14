@@ -138,7 +138,7 @@ export default function AllJobsWithModalApply() {
   };
 
   return (
-    <Box className="bg-[linear-gradient(180deg,#f8fbff_0%,#f4f7fb_100%)] px-4 pb-14 pt-24 md:px-8">
+    <Box className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#f4f7fb_100%)] px-4 pb-14 pt-24 md:px-8">
       <Typography
         variant="h5"
         className="mb-3 flex items-center gap-2 font-bold tracking-tight text-slate-900"
@@ -164,8 +164,8 @@ export default function AllJobsWithModalApply() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] xl:grid-cols-[420px_minmax(0,1fr)]">
-          <div className="max-h-[78vh] space-y-4 overflow-y-auto rounded-[28px] border border-slate-200/80 bg-white/80 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur">
+        <div className="grid gap-6 lg:min-h-[calc(100vh-12rem)] lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
+          <div className="space-y-4 overflow-y-auto rounded-[28px] border border-slate-200/80 bg-white/80 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur lg:h-[calc(100vh-12rem)]">
             {jobs.map((job) => {
               const isActive = selectedJob?._id === job._id;
 
@@ -221,7 +221,7 @@ export default function AllJobsWithModalApply() {
             })}
           </div>
 
-          <div className="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_25px_70px_rgba(15,23,42,0.08)] lg:sticky lg:top-28 lg:max-h-[78vh] lg:overflow-y-auto xl:p-8">
+          <div className="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_25px_70px_rgba(15,23,42,0.08)] lg:sticky lg:top-28 lg:h-[calc(100vh-12rem)] lg:overflow-y-auto xl:p-8">
             {selectedJob ? (
               <>
                 <div className="mb-6 rounded-[28px] bg-[linear-gradient(135deg,#f8fbff_0%,#eef4ff_100%)] p-6">
