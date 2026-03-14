@@ -272,6 +272,7 @@ app.use("/api/v1/centers", centerRoutes);
 app.use("/api/upload", UploadRoutes);
 
 //Payment Routes
+app.use("/api/payments", paymentRoutes);
 app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/phonepe-payments", phonePePaymentRoutes);
 

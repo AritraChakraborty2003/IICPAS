@@ -9,7 +9,9 @@ import { Plus, Check, X as XIcon, Laptop } from "lucide-react";
 import Select from "react-select";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
-const URL = process.env.NEXT_PUBLIC_BACKEND || "http://localhost:8080";
+const URL =
+  process.env.NEXT_PUBLIC_BACKEND || API.replace(/\/api$/, "") || "http://localhost:8080";
+const PAYMENTS_API = `${URL}/api/v1/payments`;
 
 const BookingTab = () => {
   const [email, setEmail] = useState(null);
@@ -64,44 +66,78 @@ const BookingTab = () => {
       toast.error("Please select a training");
       return;
     }
-    console.log(API + "/payments/create-order");
-    const totalPrice = selectedPrice * form.hrs;
-    const res = await axios.post(API + "/payments/create-order", {
-      price: totalPrice,
-      email,
-      trainingTitle: form.title,
-      category: form.category,
-      hrs: form.hrs,
-      type: form.type,
-    });
-    const { orderId, amount, currency, key } = res.data;
-    const options = {
-      key,
-      amount,
-      currency,
-      name: "LMS Booking",
-      description: `Payment for ${form.title}`,
-      order_id: orderId,
-      handler: async function (response) {
-        // Verify payment
-        const verifyRes = await axios.post(API + "/payments/verify", {
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
-        });
-        if (verifyRes.data.success) {
-          toast.success("Payment successful! Transaction saved.");
-          // Booking is automatically created on backend after successful payment
-          fetchBookings(); // Refresh the bookings list
-        } else {
-          toast.error("Payment verification failed");
-        }
-      },
-      prefill: { email },
-      theme: { color: "#2563eb" },
-    };
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+    if (typeof window === "undefined" || !window.Razorpay) {
+      toast.error("Razorpay is unavailable. Refresh the page and try again.");
+      return;
+    }
+
+    try {
+      const totalPrice = selectedPrice * form.hrs;
+      const res = await axios.post(
+        `${PAYMENTS_API}/create-order`,
+        {
+          price: totalPrice,
+          email,
+          name,
+          trainingTitle: form.title,
+          category: form.category,
+          hrs: form.hrs,
+          bookingType: "college",
+          paymentSource: "college-dashboard",
+        },
+        { withCredentials: true }
+      );
+      const { orderId, amount, currency, key } = res.data?.data || {};
+      if (!orderId || !amount || !currency || !key) {
+        throw new Error("Invalid payment order response");
+      }
+
+      const options = {
+        key,
+        amount,
+        currency,
+        name: "IICPA Booking",
+        description: `Payment for ${form.title}`,
+        order_id: orderId,
+        handler: async (response) => {
+          try {
+            const verifyRes = await axios.post(
+              `${PAYMENTS_API}/verify-and-capture`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+              },
+              { withCredentials: true }
+            );
+
+            if (!verifyRes.data?.success) {
+              throw new Error(
+                verifyRes.data?.message || "Payment verification failed"
+              );
+            }
+
+            toast.success("Payment successful. Booking request created.");
+            setForm({ title: "", hrs: 1, category: "onsite" });
+            setSelectedPrice(null);
+            setShowForm(false);
+            fetchBookings();
+          } catch (error) {
+            toast.error(
+              error?.response?.data?.message || "Payment verification failed"
+            );
+          }
+        },
+        prefill: { email, name },
+        theme: { color: "#2563eb" },
+      };
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Payment initiation failed"
+      );
+    }
   };
 
   const fetchBookings = async () => {
@@ -125,25 +161,23 @@ const BookingTab = () => {
       // First try to get receipt by booking ID (most accurate)
       try {
         const res = await axios.get(
-          `${API}/payments/receipts/booking/${bookingId}`
+          `${PAYMENTS_API}/receipts/booking/${bookingId}`,
+          { withCredentials: true }
         );
-        console.log("Receipt found by booking ID:", res.data);
         setBookingReceipt(res.data);
         return;
       } catch (error) {
-        // If not found by booking ID, fallback to email-based search
-        console.log("Receipt not found by booking ID, trying email search...");
+        // Fall through to email search if a direct booking receipt is unavailable.
       }
 
-      // Fallback: search by email and match by title
-      const res = await axios.get(`${API}/payments/receipts?email=${email}`);
+      const res = await axios.get(`${PAYMENTS_API}/receipts?email=${email}`, {
+        withCredentials: true,
+      });
       const receipts = res.data || [];
-      console.log("All receipts for email:", receipts);
 
       const receipt = receipts.find(
         (r) => r.bookingId === bookingId || r.for === selectedBooking?.title
       );
-      console.log("Found receipt:", receipt);
       setBookingReceipt(receipt || null);
     } catch (error) {
       console.error("Error fetching receipt:", error);
@@ -153,33 +187,7 @@ const BookingTab = () => {
 
   const handleAddBooking = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.hrs || !form.category)
-      return toast.error("Fill all fields");
-
-    const start = new Date(selectedDate);
-    start.setHours(10, 0);
-    const end = new Date(start.getTime() + form.hrs * 60 * 60 * 1000);
-
-    try {
-      await axios.post(
-        `${API}/bookings`,
-        {
-          ...form,
-          by: email,
-          type: "college",
-          date: selectedDate,
-          start,
-          end,
-        },
-        { withCredentials: true }
-      );
-      toast.success("Booking request sent!");
-      setForm({ title: "", hrs: 1, category: "onsite" });
-      setShowForm(false);
-      fetchBookings();
-    } catch (err) {
-      console.log(err);
-    }
+    await handlePayAndBook();
   };
 
   const bookedEvents = bookings.filter((b) => b.status === "booked");

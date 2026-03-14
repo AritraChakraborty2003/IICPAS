@@ -5,6 +5,7 @@ import Transaction from "../models/Transaction.js";
 import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
 import Coupon from "../models/Coupon.js";
+import Booking from "../models/Booking.js";
 import { awardCoins, getCoinSettings } from "../services/coinService.js";
 
 const router = express.Router();
@@ -135,6 +136,111 @@ const ensureRazorpayConfigured = (res) => {
   return true;
 };
 
+const LEGACY_BOOKING_PAYMENT_PURPOSE = "legacy_training_booking";
+const LEGACY_BOOKING_CATEGORIES = ["recorded", "live", "onsite"];
+const LEGACY_BOOKING_TYPES = ["company", "individual", "college"];
+
+const isLegacyBookingOrderPayload = (body) =>
+  Boolean(body?.email && body?.trainingTitle && body?.category) &&
+  Number(body?.price) > 0 &&
+  Number(body?.hrs) > 0;
+
+const normalizeLegacyBookingType = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+  return LEGACY_BOOKING_TYPES.includes(normalized) ? normalized : "individual";
+};
+
+const normalizeLegacyBookingReceipt = (booking) => {
+  if (!booking) return null;
+  return {
+    bookingId: booking._id,
+    for: booking.title,
+    amount: booking.paymentAmount || 0,
+    paymentMethod: booking.paymentMethod || "manual",
+    razorpay_order_id: booking.razorpayOrderId || "",
+    razorpay_payment_id: booking.razorpayPaymentId || "",
+    paidAt: booking.paymentVerifiedAt || booking.updatedAt || booking.createdAt,
+    receiptLink: null,
+  };
+};
+
+const verifyRazorpaySignature = ({
+  orderId,
+  paymentId,
+  signature,
+  secret,
+}) => {
+  const body = `${orderId}|${paymentId}`;
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("hex");
+  const expectedBuffer = Buffer.from(expectedSignature, "utf8");
+  const providedBuffer = Buffer.from(signature, "utf8");
+  return (
+    expectedBuffer.length === providedBuffer.length &&
+    crypto.timingSafeEqual(expectedBuffer, providedBuffer)
+  );
+};
+
+const createLegacyBookingFromOrder = async ({
+  order,
+  razorpay_order_id,
+  razorpay_payment_id,
+  razorpay_signature,
+}) => {
+  const existingBooking = await Booking.findOne({
+    $or: [
+      ...(razorpay_payment_id ? [{ razorpayPaymentId: razorpay_payment_id }] : []),
+      ...(razorpay_order_id ? [{ razorpayOrderId: razorpay_order_id }] : []),
+    ],
+  }).sort({ createdAt: -1 });
+
+  if (existingBooking) {
+    let changed = false;
+    if (!existingBooking.razorpayPaymentId && razorpay_payment_id) {
+      existingBooking.razorpayPaymentId = razorpay_payment_id;
+      changed = true;
+    }
+    if (!existingBooking.razorpaySignature && razorpay_signature) {
+      existingBooking.razorpaySignature = razorpay_signature;
+      changed = true;
+    }
+    if (!existingBooking.paymentVerifiedAt) {
+      existingBooking.paymentVerifiedAt = new Date();
+      changed = true;
+    }
+    if (changed) await existingBooking.save();
+    return { booking: existingBooking, alreadyExists: true };
+  }
+
+  const notes = order?.notes || {};
+  const amount = fromPaise(Number(order?.amount || 0));
+
+  const booking = await Booking.create({
+    by: String(notes.email || "").trim().toLowerCase(),
+    requesterName: String(notes.name || "").trim(),
+    title: String(notes.trainingTitle || "").trim(),
+    hrs: Math.max(1, parseInt(notes.hrs, 10) || 1),
+    type: normalizeLegacyBookingType(notes.bookingType || notes.type),
+    category: LEGACY_BOOKING_CATEGORIES.includes(
+      String(notes.category || "").trim().toLowerCase()
+    )
+      ? String(notes.category).trim().toLowerCase()
+      : "onsite",
+    status: "pending",
+    paymentMethod: "razorpay",
+    paymentAmount: amount,
+    razorpayOrderId: razorpay_order_id,
+    razorpayPaymentId: razorpay_payment_id,
+    razorpaySignature: razorpay_signature,
+    paymentVerifiedAt: new Date(),
+    paymentSource: String(notes.paymentSource || "dashboard").trim(),
+  });
+
+  return { booking, alreadyExists: false };
+};
+
 router.post("/create-order", async (req, res) => {
   try {
     if (!ensureRazorpayConfigured(res)) return;
@@ -185,6 +291,87 @@ router.post("/create-order", async (req, res) => {
           currency: legacyOrder.currency,
           receipt: legacyOrder.receipt,
           key: process.env.RAZORPAY_KEY_ID,
+        },
+      });
+    }
+
+    if (isLegacyBookingOrderPayload(req.body)) {
+      const email = String(req.body.email || "").trim().toLowerCase();
+      const name = String(req.body.name || "").trim();
+      const trainingTitle = String(req.body.trainingTitle || "").trim();
+      const category = String(req.body.category || "")
+        .trim()
+        .toLowerCase();
+      const hrs = Math.max(1, parseInt(req.body.hrs, 10) || 0);
+      const amountValue = Number(req.body.price);
+      const bookingType = normalizeLegacyBookingType(
+        req.body.bookingType || req.body.type
+      );
+      const paymentSource = String(
+        req.body.paymentSource || req.body.source || "dashboard"
+      ).trim();
+      const normalizedCurrency = String(req.body.currency || "INR")
+        .trim()
+        .toUpperCase();
+      const amountInPaise = Math.round(amountValue * 100);
+      const receipt = String(
+        req.body.receipt || `booking_${Date.now()}_${bookingType}`
+      ).slice(0, 40);
+
+      if (!email || !trainingTitle || !hrs) {
+        return res.status(400).json({
+          success: false,
+          message: "email, trainingTitle, category, hrs, and price are required",
+        });
+      }
+
+      if (!LEGACY_BOOKING_CATEGORIES.includes(category)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid booking category",
+        });
+      }
+
+      if (!Number.isInteger(amountInPaise) || amountInPaise <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Amount must be a valid positive value",
+        });
+      }
+
+      const order = await razorpay.orders.create({
+        amount: amountInPaise,
+        currency: normalizedCurrency,
+        receipt,
+        notes: {
+          paymentPurpose: LEGACY_BOOKING_PAYMENT_PURPOSE,
+          email,
+          name,
+          trainingTitle,
+          category,
+          hrs: String(hrs),
+          bookingType,
+          paymentSource,
+        },
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: "Booking payment order created successfully",
+        data: {
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+          receipt: order.receipt,
+          key: process.env.RAZORPAY_KEY_ID,
+          bookingRequest: {
+            email,
+            name,
+            trainingTitle,
+            category,
+            hrs,
+            bookingType,
+          },
         },
       });
     }
@@ -614,7 +801,7 @@ router.post("/create-order", async (req, res) => {
   }
 });
 
-router.post("/verify-and-capture", async (req, res) => {
+const verifyAndCaptureHandler = async (req, res) => {
   try {
     if (!ensureRazorpayConfigured(res)) return;
 
@@ -637,16 +824,57 @@ router.post("/verify-and-capture", async (req, res) => {
       )
     );
 
-    if (
-      !razorpay_order_id ||
-      !razorpay_payment_id ||
-      !razorpay_signature ||
-      !transactionIdList.length
-    ) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
       return res.status(400).json({
         success: false,
         message:
-          "razorpay_order_id, razorpay_payment_id, razorpay_signature, and transactionId or transactionIds are required",
+          "razorpay_order_id, razorpay_payment_id, and razorpay_signature are required",
+      });
+    }
+
+    if (!transactionIdList.length) {
+      const order = await razorpay.orders.fetch(razorpay_order_id);
+      const orderNotes = order?.notes || {};
+
+      if (orderNotes.paymentPurpose !== LEGACY_BOOKING_PAYMENT_PURPOSE) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "transactionId or transactionIds are required for non-booking payments",
+        });
+      }
+
+      const isValidLegacySignature = verifyRazorpaySignature({
+        orderId: razorpay_order_id,
+        paymentId: razorpay_payment_id,
+        signature: razorpay_signature,
+        secret: process.env.RAZORPAY_KEY_SECRET,
+      });
+
+      if (!isValidLegacySignature) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid payment signature",
+        });
+      }
+
+      const { booking, alreadyExists } = await createLegacyBookingFromOrder({
+        order,
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: alreadyExists
+          ? "Payment already verified"
+          : "Payment verified and booking created",
+        data: {
+          bookingId: booking._id,
+          status: booking.status,
+          receipt: normalizeLegacyBookingReceipt(booking),
+        },
       });
     }
 
@@ -686,17 +914,12 @@ router.post("/verify-and-capture", async (req, res) => {
       });
     }
 
-    const body = `${razorpay_order_id}|${razorpay_payment_id}`;
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body)
-      .digest("hex");
-
-    const expectedBuffer = Buffer.from(expectedSignature, "utf8");
-    const providedBuffer = Buffer.from(razorpay_signature, "utf8");
-    const isValidSignature =
-      expectedBuffer.length === providedBuffer.length &&
-      crypto.timingSafeEqual(expectedBuffer, providedBuffer);
+    const isValidSignature = verifyRazorpaySignature({
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      signature: razorpay_signature,
+      secret: process.env.RAZORPAY_KEY_SECRET,
+    });
 
     if (!isValidSignature) {
       await Promise.all(
@@ -830,7 +1053,11 @@ router.post("/verify-and-capture", async (req, res) => {
       error: error.message,
     });
   }
-});
+};
+
+router.post("/verify-and-capture", verifyAndCaptureHandler);
+
+router.post("/verify", verifyAndCaptureHandler);
 
 // Backward-compatible lightweight signature check endpoint
 router.post("/verify-payment", async (req, res) => {
@@ -873,6 +1100,58 @@ router.post("/verify-payment", async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to verify payment",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/receipts/booking/:bookingId", async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.bookingId);
+    if (!booking || booking.paymentMethod !== "razorpay") {
+      return res.status(404).json({
+        success: false,
+        message: "Receipt not found",
+      });
+    }
+
+    return res.status(200).json(normalizeLegacyBookingReceipt(booking));
+  } catch (error) {
+    console.error("Error fetching booking receipt:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch receipt",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/receipts", async (req, res) => {
+  try {
+    const email = String(req.query.email || "").trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "email is required",
+      });
+    }
+
+    const bookings = await Booking.find({
+      by: email,
+      paymentMethod: "razorpay",
+      razorpayOrderId: { $ne: "" },
+    }).sort({ paymentVerifiedAt: -1, createdAt: -1 });
+
+    return res.status(200).json(
+      bookings
+        .map((booking) => normalizeLegacyBookingReceipt(booking))
+        .filter(Boolean)
+    );
+  } catch (error) {
+    console.error("Error fetching receipts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch receipts",
       error: error.message,
     });
   }

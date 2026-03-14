@@ -26,6 +26,43 @@ const BookingSchema = new mongoose.Schema(
     link: {
       type: String,
     },
+    requesterName: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["manual", "razorpay"],
+      default: "manual",
+    },
+    paymentAmount: {
+      type: Number,
+      default: 0,
+    },
+    razorpayOrderId: {
+      type: String,
+      default: "",
+      index: true,
+    },
+    razorpayPaymentId: {
+      type: String,
+      default: "",
+      index: true,
+    },
+    razorpaySignature: {
+      type: String,
+      default: "",
+    },
+    paymentVerifiedAt: {
+      type: Date,
+      default: null,
+    },
+    paymentSource: {
+      type: String,
+      default: "",
+      trim: true,
+    },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
