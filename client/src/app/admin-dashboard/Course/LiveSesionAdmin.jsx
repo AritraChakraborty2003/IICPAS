@@ -15,9 +15,6 @@ import {
   TableRow,
   Paper,
   Checkbox,
-  Tabs,
-  Tab,
-  Box,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -26,6 +23,9 @@ import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DownloadIcon from "@mui/icons-material/Download";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import ViewModuleIcon from "@mui/icons-material/ViewModule";
+import EmailIcon from "@mui/icons-material/Email";
+import PhoneIcon from "@mui/icons-material/Phone";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useAuth } from "@/contexts/AuthContext";
 
 const API = process.env.NEXT_PUBLIC_API_URL;
@@ -34,7 +34,9 @@ export default function LiveSesionAdmin() {
   const [tab, setTab] = useState("list");
   const [viewMode, setViewMode] = useState("cards"); // "cards" or "table"
   const [sessions, setSessions] = useState([]);
+  const [sessionBookings, setSessionBookings] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [bookingsLoading, setBookingsLoading] = useState(false);
   const [editId, setEditId] = useState(null);
   const [selectedSessions, setSelectedSessions] = useState([]);
   const [form, setForm] = useState({
@@ -104,6 +106,7 @@ export default function LiveSesionAdmin() {
 
   useEffect(() => {
     fetchSessions();
+    fetchSessionBookings();
 
     // Debug: Check authentication status
     console.log("🔍 Auth Debug - Component loaded");
@@ -140,6 +143,34 @@ export default function LiveSesionAdmin() {
       }
     } catch (err) {
       console.error("Fetch error:", err);
+    }
+  };
+
+  const fetchSessionBookings = async () => {
+    try {
+      setBookingsLoading(true);
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      const res = await fetch(
+        `${API}/api/bookings?category=live&hasLiveSession=true`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        setSessionBookings(Array.isArray(data) ? data : []);
+      } else if (res.status === 401) {
+        showTokenError("Session expired. Please log in again.");
+      }
+    } catch (err) {
+      console.error("Fetch bookings error:", err);
+    } finally {
+      setBookingsLoading(false);
     }
   };
 
@@ -505,12 +536,103 @@ export default function LiveSesionAdmin() {
     }
   };
 
+  const getBookingCountForSession = (sessionId) =>
+    sessionBookings.filter(
+      (booking) => booking.liveSessionId?._id === sessionId || booking.liveSessionId === sessionId
+    ).length;
+
+  const handleEditBooking = async (booking) => {
+    const result = await Swal.fire({
+      title: "Edit booking",
+      html: `
+        <input id="booking-name" class="swal2-input" placeholder="Name" value="${booking.requesterName || ""}" />
+        <input id="booking-email" class="swal2-input" placeholder="Email" value="${booking.by || ""}" />
+        <input id="booking-phone" class="swal2-input" placeholder="Phone" value="${booking.phone || ""}" />
+        <input id="booking-whatsapp" class="swal2-input" placeholder="WhatsApp" value="${booking.whatsappNumber || ""}" />
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      preConfirm: () => ({
+        requesterName: document.getElementById("booking-name")?.value || "",
+        by: document.getElementById("booking-email")?.value || "",
+        phone: document.getElementById("booking-phone")?.value || "",
+        whatsappNumber: document.getElementById("booking-whatsapp")?.value || "",
+      }),
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      const res = await fetch(`${API}/api/bookings/${booking._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(result.value),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update booking");
+      }
+
+      await fetchSessionBookings();
+      Swal.fire("Success", "Booking updated successfully", "success");
+    } catch (error) {
+      console.error("Update booking error:", error);
+      Swal.fire("Error", "Failed to update booking", "error");
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId) => {
+    const confirm = await Swal.fire({
+      title: "Delete this booking?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      const res = await fetch(`${API}/api/bookings/${bookingId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to delete booking");
+      }
+
+      await fetchSessionBookings();
+      Swal.fire("Deleted", "Booking deleted successfully", "success");
+    } catch (error) {
+      console.error("Delete booking error:", error);
+      Swal.fire("Error", "Failed to delete booking", "error");
+    }
+  };
+
   return (
     <div className="w-[75vw] mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-xl lg:text-3xl font-bold">Live Sessions</h1>
         {tab === "list" ? (
           <div className="flex items-center gap-4">
+            <Button
+              variant="outlined"
+              sx={{ borderColor: "#0f265c", color: "#0f265c" }}
+              onClick={() => setTab("bookings")}
+            >
+              View Bookings ({sessionBookings.length})
+            </Button>
             {/* View Mode Toggle */}
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
               <Tooltip title="Card View">
@@ -586,6 +708,28 @@ export default function LiveSesionAdmin() {
               </Button>
             )}
           </div>
+        ) : tab === "bookings" ? (
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outlined"
+              sx={{ borderColor: "#0f265c", color: "#0f265c" }}
+              onClick={fetchSessionBookings}
+            >
+              Refresh Bookings
+            </Button>
+            <Button
+              variant="contained"
+              sx={{
+                bgcolor: "#0f265c",
+                borderRadius: 2,
+                fontWeight: 600,
+                px: 3,
+              }}
+              onClick={() => setTab("list")}
+            >
+              ← Back to Sessions
+            </Button>
+          </div>
         ) : (
           <Button
             variant="contained"
@@ -641,6 +785,9 @@ export default function LiveSesionAdmin() {
                   <div className="text-sm mb-1">
                     <strong>Max Participants:</strong>{" "}
                     {s.maxParticipants || "Unlimited"}
+                  </div>
+                  <div className="text-sm mb-1">
+                    <strong>Bookings:</strong> {getBookingCountForSession(s._id)}
                   </div>
                   <div className="text-sm mb-3">
                     <strong>Price:</strong> ₹{s.price}
@@ -710,6 +857,7 @@ export default function LiveSesionAdmin() {
                       Max Participants
                     </TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Price</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Bookings</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
                   </TableRow>
@@ -736,6 +884,7 @@ export default function LiveSesionAdmin() {
                         {session.maxParticipants || "Unlimited"}
                       </TableCell>
                       <TableCell>₹{session.price}</TableCell>
+                      <TableCell>{getBookingCountForSession(session._id)}</TableCell>
                       <TableCell>
                         <Switch
                           checked={session.status !== "inactive"}
@@ -780,6 +929,135 @@ export default function LiveSesionAdmin() {
             </TableContainer>
           )}
         </>
+      )}
+
+      {tab === "bookings" && (
+        <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
+          <Table>
+            <TableHead>
+              <TableRow sx={{ bgcolor: "#f5f5f5" }}>
+                <TableCell sx={{ fontWeight: "bold" }}>Session</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Payment</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Booked On</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Contact</TableCell>
+                <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {bookingsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <CircularProgress size={24} />
+                  </TableCell>
+                </TableRow>
+              ) : sessionBookings.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    No live session bookings found.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                sessionBookings.map((booking) => (
+                  <TableRow key={booking._id} hover>
+                    <TableCell>
+                      <div className="font-medium">
+                        {booking.liveSessionId?.title || booking.title}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {booking.liveSessionId?.date
+                          ? new Date(booking.liveSessionId.date).toDateString()
+                          : booking.date
+                          ? new Date(booking.date).toDateString()
+                          : "Date not set"}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="font-medium">
+                        {booking.requesterName || "N/A"}
+                      </div>
+                      <div className="text-xs text-gray-500">{booking.by || "N/A"}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm font-medium capitalize">
+                        {booking.paymentStatus || "pending"}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        ₹{booking.paymentAmount || 0}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {booking.paymentVerifiedAt
+                        ? new Date(booking.paymentVerifiedAt).toLocaleString()
+                        : new Date(booking.createdAt).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {booking.phone ? (
+                          <Tooltip title={booking.phone}>
+                            <IconButton
+                              size="small"
+                              component="a"
+                              href={`tel:${booking.phone}`}
+                            >
+                              <PhoneIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        ) : null}
+                        {(booking.whatsappNumber || booking.phone) ? (
+                          <Tooltip title={booking.whatsappNumber || booking.phone}>
+                            <IconButton
+                              size="small"
+                              component="a"
+                              href={`https://wa.me/${String(
+                                booking.whatsappNumber || booking.phone
+                              ).replace(/[^\d]/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <WhatsAppIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        ) : null}
+                        {booking.by ? (
+                          <Tooltip title={booking.by}>
+                            <IconButton
+                              size="small"
+                              component="a"
+                              href={`mailto:${booking.by}`}
+                            >
+                              <EmailIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        ) : null}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Tooltip title="Edit booking">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleEditBooking(booking)}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Delete booking">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteBooking(booking._id)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
 
       {tab === "create" && (
