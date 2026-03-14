@@ -52,9 +52,10 @@ export default function JobsAdminPanel() {
     if (!application) return "Pending";
     if (selectedJob?.source === "external") {
       const status = String(application.status || "pending");
+      if (status === "shortlisted") return "Approved";
       return status.charAt(0).toUpperCase() + status.slice(1);
     }
-    return application.shortlisted ? "Shortlisted" : "Pending";
+    return application.shortlisted ? "Approved" : "Pending";
   };
 
   const isApplicationApproved = (application) => {
@@ -302,15 +303,24 @@ export default function JobsAdminPanel() {
           );
         }
 
-        fetchApplications(selectedJob); // Refresh the list
+        setApplications((prevApplications) =>
+          prevApplications.map((entry) => {
+            if (entry._id !== applicant._id) return entry;
+            return selectedJob.source === "internal"
+              ? { ...entry, shortlisted: true }
+              : { ...entry, status: "shortlisted" };
+          })
+        );
+
+        fetchApplications(selectedJob);
         Swal.fire(
-          "Shortlisted!",
-          `${applicant.name} has been shortlisted.`,
+          "Approved!",
+          `${applicant.name} has been approved.`,
           "success"
         );
       } catch (error) {
         console.error('Error shortlisting applicant:', error);
-        Swal.fire("Error!", "Failed to shortlist the applicant.", "error");
+        Swal.fire("Error!", "Failed to approve the applicant.", "error");
       }
     }
   };
