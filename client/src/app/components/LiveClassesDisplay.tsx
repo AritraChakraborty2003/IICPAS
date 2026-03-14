@@ -12,6 +12,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { getBlogSlug } from "../../lib/blogSlug";
 
 interface LiveClass {
@@ -437,7 +438,6 @@ export default function LiveClassesDisplay() {
         date: selectedSession.date,
       });
 
-      setEnrollmentSuccessMessage("Your booking is confirmed.");
       setLiveClasses((prev) =>
         prev.map((session) =>
           session._id === selectedSession._id
@@ -449,6 +449,8 @@ export default function LiveClassesDisplay() {
             : session
         )
       );
+      toast.success("Enrolled successfully");
+      closeEnrollmentModal();
     } catch (error) {
       console.error("Failed to store enrollment:", error);
       setEnrollmentSuccessMessage(
