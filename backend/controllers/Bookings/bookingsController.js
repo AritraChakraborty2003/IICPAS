@@ -28,7 +28,22 @@ export const rejectBooking = async (req, res) => {
 export const createBooking = async (req, res) => {
   // try {
 
-  let { by, title, hrs, type, category } = req.body;
+  let {
+    by,
+    title,
+    hrs,
+    type,
+    category,
+    liveSessionId,
+    requesterName,
+    phone,
+    whatsappNumber,
+    status,
+    paymentMethod,
+    paymentAmount,
+    paymentStatus,
+    date,
+  } = req.body;
   if (!type) type = "onsite";
 
   console.log(by, title, hrs, type, category);
@@ -49,12 +64,20 @@ export const createBooking = async (req, res) => {
   }
 
   const booking = new Booking({
+    liveSessionId: liveSessionId || null,
     by,
     title,
     hrs,
     type,
-    status: "pending",
+    status: status || "pending",
     category,
+    requesterName: requesterName || "",
+    phone: phone || "",
+    whatsappNumber: whatsappNumber || "",
+    paymentMethod: paymentMethod || "manual",
+    paymentAmount: Number(paymentAmount || 0),
+    paymentStatus: paymentStatus || "pending",
+    date: date || null,
   });
   await booking.save();
   res.status(201).json(booking);

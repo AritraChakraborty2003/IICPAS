@@ -457,6 +457,7 @@ export default function LiveClassesDisplay() {
         (error as any)?.response?.data?.message ||
           "Failed to complete enrollment. Please try again."
       );
+      setIsSubmittingEnrollment(false);
     } finally {
       if (selectedSession.price <= 0) {
         setIsSubmittingEnrollment(false);
