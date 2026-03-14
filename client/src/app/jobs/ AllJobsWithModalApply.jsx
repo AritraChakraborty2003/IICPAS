@@ -138,15 +138,15 @@ export default function AllJobsWithModalApply() {
   };
 
   return (
-    <Box className="bg-[#f9f9f9] px-4 pb-12 pt-24 md:px-8">
+    <Box className="bg-[linear-gradient(180deg,#f8fbff_0%,#f4f7fb_100%)] px-4 pb-14 pt-24 md:px-8">
       <Typography
         variant="h5"
-        className="mb-3 flex items-center gap-2 font-bold"
+        className="mb-3 flex items-center gap-2 font-bold tracking-tight text-slate-900"
       >
         <Briefcase className="text-brown-600" />
         Available Job Openings
       </Typography>
-      <p className="mb-8 max-w-3xl text-sm text-gray-600 md:text-base">
+      <p className="mb-8 max-w-3xl text-sm leading-7 text-slate-600 md:text-base">
         Browse openings from the list and view complete job details on the right before applying.
       </p>
 
@@ -165,7 +165,7 @@ export default function AllJobsWithModalApply() {
         </div>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[380px_minmax(0,1fr)] xl:grid-cols-[420px_minmax(0,1fr)]">
-          <div className="max-h-[78vh] space-y-4 overflow-y-auto pr-1">
+          <div className="max-h-[78vh] space-y-4 overflow-y-auto rounded-[28px] border border-slate-200/80 bg-white/80 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.06)] backdrop-blur">
             {jobs.map((job) => {
               const isActive = selectedJob?._id === job._id;
 
@@ -174,18 +174,18 @@ export default function AllJobsWithModalApply() {
                   key={job._id}
                   type="button"
                   onClick={() => setSelectedJob(job)}
-                  className={`w-full rounded-2xl border p-5 text-left transition-all ${
+                  className={`w-full rounded-3xl border p-5 text-left transition-all duration-200 ${
                     isActive
-                      ? "border-blue-600 bg-blue-50 shadow-lg shadow-blue-100"
-                      : "border-gray-200 bg-white shadow-sm hover:border-blue-300 hover:shadow-md"
+                      ? "border-blue-500 bg-[linear-gradient(135deg,#eff6ff_0%,#f8fbff_100%)] shadow-[0_18px_45px_rgba(37,99,235,0.16)]"
+                      : "border-slate-200 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:border-blue-200 hover:shadow-[0_16px_38px_rgba(15,23,42,0.08)]"
                   }`}
                 >
                   <div className="mb-3 flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-lg font-semibold leading-snug text-gray-900">
+                      <h3 className="text-xl font-semibold leading-snug text-slate-900">
                         {job.title}
                       </h3>
-                      <p className="mt-1 text-sm font-medium text-gray-600">
+                      <p className="mt-1 text-sm font-medium text-slate-600">
                         {job.role || "Role not specified"}
                       </p>
                     </div>
@@ -198,21 +198,21 @@ export default function AllJobsWithModalApply() {
                     </span>
                   </div>
 
-                  <div className="mb-3 flex flex-wrap gap-3 text-sm text-gray-600">
+                  <div className="mb-3 flex flex-wrap gap-3 text-sm text-slate-600">
                     <span className="inline-flex items-center gap-1">
                       <MapPin className="h-4 w-4" />
                       {job.location || "Location not specified"}
                     </span>
-                    <span>{formatSalary(job.salary)}</span>
+                    <span className="font-semibold text-slate-800">{formatSalary(job.salary)}</span>
                   </div>
 
-                  <p className="line-clamp-2 text-sm text-gray-600">
+                  <p className="line-clamp-2 text-sm leading-6 text-slate-600">
                     {job.jd || "Job description will be shared by the recruiter."}
                   </p>
 
-                  <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
+                  <div className="mt-5 flex items-center justify-between text-xs text-slate-500">
                     <span>Posted {dayjs(job.createdAt).format("MMM DD, YYYY")}</span>
-                    <span className={isActive ? "text-blue-700" : "text-gray-500"}>
+                    <span className={isActive ? "font-semibold text-blue-700" : "text-slate-500"}>
                       View details
                     </span>
                   </div>
@@ -221,86 +221,83 @@ export default function AllJobsWithModalApply() {
             })}
           </div>
 
-          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm lg:sticky lg:top-28 lg:max-h-[78vh] lg:overflow-y-auto xl:p-8">
+          <div className="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_25px_70px_rgba(15,23,42,0.08)] lg:sticky lg:top-28 lg:max-h-[78vh] lg:overflow-y-auto xl:p-8">
             {selectedJob ? (
               <>
-                <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-gray-100 pb-6">
-                  <div>
-                    <p className="mb-2 text-sm font-semibold uppercase tracking-[0.18em] text-blue-600">
-                      Job Details
-                    </p>
-                    <h2 className="text-2xl font-bold text-gray-900 xl:text-3xl">
-                      {selectedJob.title}
-                    </h2>
-                    <p className="mt-2 text-base font-medium text-gray-700">
-                      {selectedJob.role || "Role not specified"}
-                    </p>
+                <div className="mb-6 rounded-[28px] bg-[linear-gradient(135deg,#f8fbff_0%,#eef4ff_100%)] p-6">
+                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-blue-100 pb-6">
+                    <div>
+                      <p className="mb-2 text-sm font-semibold uppercase tracking-[0.22em] text-blue-600">
+                        Job Details
+                      </p>
+                      <h2 className="text-2xl font-bold tracking-tight text-slate-900 xl:text-4xl">
+                        {selectedJob.title}
+                      </h2>
+                      <p className="mt-2 text-base font-medium text-slate-700">
+                        {selectedJob.role || "Role not specified"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-start gap-3 sm:items-end">
+                      <span className={`rounded-full px-4 py-2 text-sm font-semibold ${
+                        selectedJob.source === "internal"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}>
+                        {selectedJob.postedBy}
+                      </span>
+                      <Button
+                        variant="contained"
+                        onClick={() => handleOpenModal(selectedJob)}
+                        sx={{
+                          borderRadius: "999px",
+                          bgcolor: "#2563eb",
+                          px: 3.5,
+                          py: 1.2,
+                          fontWeight: 700,
+                          boxShadow: "0 14px 30px rgba(37, 99, 235, 0.28)",
+                          "&:hover": { bgcolor: "#1d4ed8" },
+                        }}
+                      >
+                        Apply Now
+                      </Button>
+                    </div>
                   </div>
-                  <span className={`rounded-full px-4 py-2 text-sm font-semibold ${
-                    selectedJob.source === "internal"
-                      ? "bg-blue-100 text-blue-800"
-                      : "bg-emerald-100 text-emerald-700"
-                  }`}>
-                    {selectedJob.postedBy}
-                  </span>
+
+                  <div className="mt-6 grid gap-4 md:grid-cols-3">
+                    <div className="rounded-2xl border border-white/80 bg-white/80 p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Location
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {selectedJob.location || "Location not specified"}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/80 bg-white/80 p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Salary
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {formatSalary(selectedJob.salary)}
+                      </p>
+                    </div>
+                    <div className="rounded-2xl border border-white/80 bg-white/80 p-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Posted
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {dayjs(selectedJob.createdAt).format("MMM DD, YYYY")}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      Location
-                    </p>
-                    <p className="mt-2 text-sm font-medium text-gray-800">
-                      {selectedJob.location || "Location not specified"}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      Salary
-                    </p>
-                    <p className="mt-2 text-sm font-medium text-gray-800">
-                      {formatSalary(selectedJob.salary)}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-gray-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      Posted
-                    </p>
-                    <p className="mt-2 text-sm font-medium text-gray-800">
-                      {dayjs(selectedJob.createdAt).format("MMM DD, YYYY")}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">
                     Job description
                   </h3>
-                  <div className="mt-3 whitespace-pre-line text-sm leading-7 text-gray-700">
+                  <div className="mt-3 whitespace-pre-line text-sm leading-7 text-slate-700">
                     {selectedJob.jd || "Job description will be shared by the recruiter."}
                   </div>
-                </div>
-
-                <div className="mt-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-blue-600 px-5 py-4 text-white">
-                  <div>
-                    <p className="text-sm font-semibold">Interested in this role?</p>
-                    <p className="text-sm text-blue-100">
-                      Apply now to share your profile with the hiring team.
-                    </p>
-                  </div>
-                  <Button
-                    variant="contained"
-                    onClick={() => handleOpenModal(selectedJob)}
-                    sx={{
-                      bgcolor: "#fff",
-                      color: "#2563eb",
-                      fontWeight: 700,
-                      px: 3,
-                      "&:hover": { bgcolor: "#eff6ff" },
-                    }}
-                  >
-                    Apply Now
-                  </Button>
                 </div>
               </>
             ) : (
