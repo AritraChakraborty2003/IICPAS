@@ -3,6 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
+import {
+  FaEdit,
+  FaTrash,
+  FaPhoneAlt,
+  FaWhatsapp,
+} from "react-icons/fa";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -44,6 +51,7 @@ const getPaymentBadgeClasses = (status) => {
 };
 
 const inferPaymentMode = (booking) => {
+  if (booking.razorpayPaymentId || booking.razorpayOrderId) return "Razorpay";
   if (booking.razorpay_payment_id || booking.razorpay_order_id) return "Razorpay";
   if (booking.utrNumber) return "UPI / Bank";
   if ((booking.paymentStatus || "").toLowerCase() === "free") return "Free";
@@ -79,6 +87,64 @@ export default function LiveBookingsTab() {
   useEffect(() => {
     fetchBookings();
   }, []);
+
+  const handleEditBooking = async (booking) => {
+    const result = await Swal.fire({
+      title: "Edit booking",
+      html: `
+        <input id="booking-name" class="swal2-input" placeholder="Name" value="${booking.requesterName || ""}" />
+        <input id="booking-email" class="swal2-input" placeholder="Email" value="${booking.by || ""}" />
+        <input id="booking-phone" class="swal2-input" placeholder="Phone" value="${booking.phone || ""}" />
+        <input id="booking-whatsapp" class="swal2-input" placeholder="WhatsApp" value="${booking.whatsappNumber || ""}" />
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      preConfirm: () => ({
+        requesterName: document.getElementById("booking-name")?.value || "",
+        by: document.getElementById("booking-email")?.value || "",
+        phone: document.getElementById("booking-phone")?.value || "",
+        whatsappNumber:
+          document.getElementById("booking-whatsapp")?.value || "",
+      }),
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("adminToken");
+      await axios.patch(`${API_URL}/api/bookings/${booking._id}`, result.value, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Booking updated successfully");
+      fetchBookings();
+    } catch (error) {
+      console.error("Update booking error:", error);
+      toast.error("Failed to update booking");
+    }
+  };
+
+  const handleDeleteBooking = async (bookingId) => {
+    const confirm = await Swal.fire({
+      title: "Delete this booking?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Delete",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const token = localStorage.getItem("adminToken");
+      await axios.delete(`${API_URL}/api/bookings/${bookingId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Booking deleted successfully");
+      fetchBookings();
+    } catch (error) {
+      console.error("Delete booking error:", error);
+      toast.error("Failed to delete booking");
+    }
+  };
 
   const filteredBookings = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -231,6 +297,9 @@ export default function LiveBookingsTab() {
                   <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
                     Enrolled On
                   </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -242,9 +311,17 @@ export default function LiveBookingsTab() {
                   const paymentStatus = booking.paymentStatus || "pending";
                   const referenceId =
                     booking.utrNumber ||
+                    booking.razorpayPaymentId ||
+                    booking.razorpayOrderId ||
                     booking.razorpay_payment_id ||
                     booking.razorpay_order_id ||
                     "N/A";
+                  const phoneNumber = String(booking.phone || "").trim();
+                  const whatsappNumber = String(
+                    booking.whatsappNumber || booking.phone || ""
+                  )
+                    .trim()
+                    .replace(/[^\d]/g, "");
 
                   return (
                     <tr key={booking._id}>
@@ -292,6 +369,46 @@ export default function LiveBookingsTab() {
                       </td>
                       <td className="px-3 py-3 text-sm text-gray-700">
                         {formatDateTime(booking.createdAt)}
+                      </td>
+                      <td className="px-3 py-3 text-sm">
+                        <div className="flex items-center gap-2">
+                          {phoneNumber ? (
+                            <a
+                              href={`tel:${phoneNumber}`}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-blue-200 text-blue-600 hover:bg-blue-50"
+                              title="Call"
+                            >
+                              <FaPhoneAlt size={14} />
+                            </a>
+                          ) : null}
+                          {whatsappNumber ? (
+                            <a
+                              href={`https://wa.me/${whatsappNumber}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-green-200 text-green-600 hover:bg-green-50"
+                              title="WhatsApp"
+                            >
+                              <FaWhatsapp size={16} />
+                            </a>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => handleEditBooking(booking)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-amber-200 text-amber-600 hover:bg-amber-50"
+                            title="Edit booking"
+                          >
+                            <FaEdit size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteBooking(booking._id)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 text-red-600 hover:bg-red-50"
+                            title="Delete booking"
+                          >
+                            <FaTrash size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

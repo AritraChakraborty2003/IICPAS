@@ -403,9 +403,7 @@ export default function LiveClassesDisplay() {
                     : session
                 )
               );
-              setEnrollmentSuccessMessage(
-                "Payment successful. Receipt has been sent to your email."
-              );
+              setEnrollmentSuccessMessage("Payment successful. Your booking is confirmed.");
             } catch (verificationError: any) {
               console.error("Payment verification failed:", verificationError);
               setEnrollmentSuccessMessage(
