@@ -9,7 +9,7 @@ import {
   Play,
   CheckCircle,
   X,
-  AlertOctagon,
+  AlertCircle,
 } from "lucide-react";
 import axios from "axios";
 import { getBlogSlug } from "../../lib/blogSlug";
@@ -282,7 +282,7 @@ export default function LiveClassesDisplay() {
       case "active":
         return <Play className="w-4 h-4" />;
       default:
-        return <AlertOctagon className="w-4 h-4" />;
+        return <AlertCircle className="w-4 h-4" />;
     }
   };
 
