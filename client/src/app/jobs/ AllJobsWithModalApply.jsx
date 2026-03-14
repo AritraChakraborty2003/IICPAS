@@ -12,10 +12,18 @@ import {
 import axios from "axios";
 import { Briefcase, MapPin } from "lucide-react";
 import dayjs from "dayjs";
+import JobsSidebarMarquee from "@/components/JobsSidebarMarquee";
+import {
+  DEFAULT_JOB_SIDEBAR_MARQUEE,
+  normalizeJobSidebarMarqueeSettings,
+} from "@/components/jobSidebarMarqueeConfig";
 
 export default function AllJobsWithModalApply() {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [marqueeSettings, setMarqueeSettings] = useState(
+    DEFAULT_JOB_SIDEBAR_MARQUEE
+  );
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -27,6 +35,7 @@ export default function AllJobsWithModalApply() {
 
   useEffect(() => {
     fetchJobs();
+    fetchMarqueeSettings();
   }, []);
 
   const fetchJobs = async () => {
@@ -74,6 +83,20 @@ export default function AllJobsWithModalApply() {
         setJobs([]);
         setSelectedJob(null);
       }
+    }
+  };
+
+  const fetchMarqueeSettings = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/job-sidebar-marquee-settings`
+      );
+      setMarqueeSettings(
+        normalizeJobSidebarMarqueeSettings(response.data?.settings)
+      );
+    } catch (error) {
+      console.error("Error fetching job sidebar marquee settings:", error);
+      setMarqueeSettings(DEFAULT_JOB_SIDEBAR_MARQUEE);
     }
   };
 
@@ -164,7 +187,7 @@ export default function AllJobsWithModalApply() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-5 lg:min-h-[calc(100vh-9.5rem)] lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)]">
+        <div className="grid gap-5 lg:min-h-[calc(100vh-9.5rem)] lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)_120px] 2xl:grid-cols-[420px_minmax(0,1fr)_128px]">
           <div className="space-y-3 overflow-y-auto border border-slate-200/80 bg-white/80 p-2 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur lg:h-[calc(100vh-9.5rem)]">
             {jobs.map((job) => {
               const isActive = selectedJob?._id === job._id;
@@ -307,6 +330,8 @@ export default function AllJobsWithModalApply() {
               </div>
             )}
           </div>
+
+          <JobsSidebarMarquee settings={marqueeSettings} />
         </div>
       )}
 

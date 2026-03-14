@@ -116,6 +116,7 @@ import BookingSettingsTab from "./BookingSettingsTab";
 import AdminBookingsTab from "./AdminBookingsTab";
 import InvoiceCompanySettingsTab from "./InvoiceCompanySettingsTab";
 import LoginAccessControlTab from "./LoginAccessControlTab";
+import JobSidebarMarqueeTab from "./JobSidebarMarqueeTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -328,6 +329,11 @@ const NAVIGATION_GROUPS = [
         id: "center-location",
         label: "Center Locations",
         icon: <FaMapMarkerAlt />,
+      },
+      {
+        id: "job-sidebar-marquee",
+        label: "Jobs Sidebar Marquee",
+        icon: <FaBriefcase />,
       },
     ],
   },
@@ -773,6 +779,8 @@ function AdminDashboardContent() {
           <CoinsTab />
         ) : activeTab === "invoice-company-settings" ? (
           <InvoiceCompanySettingsTab />
+        ) : activeTab === "job-sidebar-marquee" ? (
+          <JobSidebarMarqueeTab />
         ) : activeTab === "booking-settings" ? (
           <BookingSettingsTab />
         ) : activeTab === "bookings" ? (

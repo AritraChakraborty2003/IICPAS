@@ -54,6 +54,11 @@ const MODULES = [
     name: "Invoice Company Settings",
     icon: "🧾",
   },
+  {
+    id: "job-sidebar-marquee",
+    name: "Jobs Sidebar Marquee",
+    icon: "🪄",
+  },
   { id: "bookings", name: "Bookings", icon: "🧾" },
 ];
 
