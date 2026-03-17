@@ -43,6 +43,13 @@ interface User {
   email?: string;
 }
 
+const MOBILE_NUMBER_REGEX = /^[6-9]\d{9}$/;
+const ALLOWED_EMAIL_REGEX =
+  /^[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+
+const normalizeMobileNumber = (value: string) =>
+  value.replace(/\D/g, "").slice(0, 10);
+
 export default function LiveClassesDisplay() {
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
   const [selectedTab, setSelectedTab] = useState<
@@ -319,7 +326,10 @@ export default function LiveClassesDisplay() {
     const { name, value } = e.target;
     setEnrollmentForm((prev) => ({
       ...prev,
-      [name]: value,
+      [name]:
+        name === "phone" || name === "whatsappNumber"
+          ? normalizeMobileNumber(value)
+          : value,
     }));
   };
 
@@ -328,8 +338,42 @@ export default function LiveClassesDisplay() {
   ) => {
     e.preventDefault();
     if (!selectedSession) return;
-    if (!enrollmentForm.name.trim() || !enrollmentForm.email.trim() || !enrollmentForm.phone.trim()) {
+    const normalizedEmail = enrollmentForm.email.trim().toLowerCase();
+    const normalizedPhone = normalizeMobileNumber(enrollmentForm.phone);
+    const normalizedWhatsappNumber = enrollmentForm.whatsappNumber.trim()
+      ? normalizeMobileNumber(enrollmentForm.whatsappNumber)
+      : normalizedPhone;
+
+    if (
+      !enrollmentForm.name.trim() ||
+      !normalizedEmail ||
+      !normalizedPhone
+    ) {
       setEnrollmentSuccessMessage("Please fill in name, email, and phone.");
+      return;
+    }
+
+    if (!ALLOWED_EMAIL_REGEX.test(normalizedEmail)) {
+      setEnrollmentSuccessMessage(
+        "Please enter a valid email address like user@gmail.com or info@company.com."
+      );
+      return;
+    }
+
+    if (!MOBILE_NUMBER_REGEX.test(normalizedPhone)) {
+      setEnrollmentSuccessMessage(
+        "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9."
+      );
+      return;
+    }
+
+    if (
+      enrollmentForm.whatsappNumber.trim() &&
+      !MOBILE_NUMBER_REGEX.test(normalizedWhatsappNumber)
+    ) {
+      setEnrollmentSuccessMessage(
+        "Please enter a valid 10-digit WhatsApp number starting with 6, 7, 8, or 9."
+      );
       return;
     }
 
@@ -345,10 +389,9 @@ export default function LiveClassesDisplay() {
           {
             liveSessionId: selectedSession._id,
             name: enrollmentForm.name.trim(),
-            email: enrollmentForm.email.trim(),
-            phone: enrollmentForm.phone.trim(),
-            whatsappNumber:
-              enrollmentForm.whatsappNumber.trim() || enrollmentForm.phone.trim(),
+            email: normalizedEmail,
+            phone: normalizedPhone,
+            whatsappNumber: normalizedWhatsappNumber,
             price: selectedSession.price,
             paymentSource: "live-session-page",
           }
@@ -369,8 +412,8 @@ export default function LiveClassesDisplay() {
           order_id: orderData.orderId,
           prefill: {
             name: enrollmentForm.name.trim(),
-            email: enrollmentForm.email.trim(),
-            contact: enrollmentForm.phone.trim(),
+            email: normalizedEmail,
+            contact: normalizedPhone,
           },
           theme: {
             color: "#3cd664",
@@ -424,11 +467,10 @@ export default function LiveClassesDisplay() {
 
       await axios.post(`${API}/api/bookings`, {
         liveSessionId: selectedSession._id,
-        by: enrollmentForm.email.trim(),
+        by: normalizedEmail,
         requesterName: enrollmentForm.name.trim(),
-        phone: enrollmentForm.phone.trim(),
-        whatsappNumber:
-          enrollmentForm.whatsappNumber.trim() || enrollmentForm.phone.trim(),
+        phone: normalizedPhone,
+        whatsappNumber: normalizedWhatsappNumber,
         title: selectedSession.title,
         hrs: Math.max(1, Math.ceil((selectedSession.duration || 60) / 60)),
         type: "individual",
@@ -809,7 +851,10 @@ export default function LiveClassesDisplay() {
                     value={enrollmentForm.phone}
                     onChange={handleEnrollmentInputChange}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
-                    placeholder="Enter your phone number"
+                    placeholder="Enter your 10-digit mobile number"
+                    inputMode="numeric"
+                    pattern="[6-9][0-9]{9}"
+                    maxLength={10}
                     required
                   />
                 </div>
@@ -825,6 +870,8 @@ export default function LiveClassesDisplay() {
                     onChange={handleEnrollmentInputChange}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
                     placeholder="Enter your email address"
+                    pattern="[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}"
+                    title="Use a valid email address like user@gmail.com or info@company.com"
                     required
                   />
                 </div>
@@ -839,7 +886,10 @@ export default function LiveClassesDisplay() {
                     value={enrollmentForm.whatsappNumber}
                     onChange={handleEnrollmentInputChange}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
-                    placeholder="Enter WhatsApp number"
+                    placeholder="Enter 10-digit WhatsApp number"
+                    inputMode="numeric"
+                    pattern="[6-9][0-9]{9}"
+                    maxLength={10}
                   />
                 </div>
 
