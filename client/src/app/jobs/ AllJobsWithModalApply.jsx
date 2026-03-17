@@ -187,7 +187,7 @@ export default function AllJobsWithModalApply() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-5 lg:min-h-[calc(100vh-9.5rem)] lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[340px_minmax(0,1fr)_176px] 2xl:grid-cols-[400px_minmax(0,1fr)_196px]">
+        <div className="grid gap-5 lg:min-h-[calc(100vh-9.5rem)] lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)_240px] 2xl:grid-cols-[380px_minmax(0,1fr)_280px]">
           <div className="space-y-3 overflow-y-auto border border-slate-200/80 bg-white/80 p-2 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur lg:h-[calc(100vh-9.5rem)]">
             {jobs.map((job) => {
               const isActive = selectedJob?._id === job._id;
