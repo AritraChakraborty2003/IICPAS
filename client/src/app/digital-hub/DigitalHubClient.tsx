@@ -3407,6 +3407,45 @@ export default function DigitalHubClient({
           border-color: #bfdbfe !important;
         }
 
+        .topic-content-light table,
+        .topic-content-dark table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          margin: 1.5rem 0 !important;
+          table-layout: auto !important;
+          background: transparent !important;
+        }
+
+        .topic-content-light th,
+        .topic-content-light td,
+        .topic-content-dark th,
+        .topic-content-dark td {
+          border: 1px solid #e5e7eb !important;
+          padding: 12px 10px !important;
+          vertical-align: top !important;
+          text-align: left !important;
+          line-height: 1.5 !important;
+          white-space: normal !important;
+          word-break: break-word !important;
+        }
+
+        .topic-content-light th,
+        .topic-content-dark th {
+          font-weight: 700 !important;
+          background: #f8fafc !important;
+          color: #0f172a !important;
+        }
+
+        .topic-content-light tr:nth-child(even) td,
+        .topic-content-dark tr:nth-child(even) td {
+          background: rgba(248, 250, 252, 0.65) !important;
+        }
+
+        .topic-content-light tbody tr:hover td,
+        .topic-content-dark tbody tr:hover td {
+          background: rgba(239, 246, 255, 0.75) !important;
+        }
+
         .topic-content-light img,
         .topic-content-dark img {
           border: none !important;
