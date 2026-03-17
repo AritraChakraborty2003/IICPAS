@@ -60,12 +60,19 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const STATIC_CDN_BASE =
   process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
+const ALLOWED_IMAGE_ACCEPT =
+  ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
+const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
 
 console.log(STATIC_CDN_BASE);
 const joditConfig = {
   readonly: false,
   height: 300,
-  uploader: { insertImageAsBase64URI: true },
+  uploader: {
+    insertImageAsBase64URI: true,
+    accept: ALLOWED_IMAGE_ACCEPT,
+    imagesExtensions: JODIT_IMAGE_EXTENSIONS,
+  },
   toolbarAdaptive: false,
   showCharsCounter: false,
   showWordsCounter: false,
