@@ -539,18 +539,20 @@ export default function SearchCenter() {
               {partnerSettings.items.map((partner, index) => (
                 <div
                   key={`${partner.name}-${index}`}
-                  className="mx-3 inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 shadow-sm"
+                  className="mx-3 inline-flex min-h-[76px] items-center gap-4 rounded-full border border-slate-200 bg-white px-6 py-4 shadow-sm"
                 >
                   {partner.logoUrl ? (
-                    <img
-                      src={partner.logoUrl}
-                      alt={partner.name}
-                      className="h-8 w-8 rounded-full object-contain"
-                    />
+                    <div className="flex h-14 w-20 items-center justify-center overflow-hidden rounded-2xl bg-slate-50">
+                      <img
+                        src={partner.logoUrl}
+                        alt={partner.name}
+                        className="h-12 w-full object-contain"
+                      />
+                    </div>
                   ) : (
-                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-green-500 to-blue-500" />
+                    <span className="h-3.5 w-3.5 rounded-full bg-gradient-to-r from-green-500 to-blue-500" />
                   )}
-                  <span className="text-sm font-semibold text-slate-700">
+                  <span className="text-base font-semibold text-slate-700">
                     {partner.name}
                   </span>
                 </div>
