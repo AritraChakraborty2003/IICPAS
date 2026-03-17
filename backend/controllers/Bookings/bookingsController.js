@@ -89,6 +89,25 @@ export const createBooking = async (req, res) => {
 const SLOT_START = 10; // 10am
 const SLOT_END = 18; // 6pm
 
+function isValidDate(value) {
+  return value instanceof Date && !Number.isNaN(value.getTime());
+}
+
+async function hasBookingConflict(start, end, excludeBookingId = null) {
+  const filter = {
+    status: "booked",
+    start: { $lt: end },
+    end: { $gt: start },
+  };
+
+  if (excludeBookingId) {
+    filter._id = { $ne: excludeBookingId };
+  }
+
+  const conflict = await Booking.findOne(filter).select("_id title start end");
+  return conflict;
+}
+
 // Helper: Find next available slot using plain JS Date, starting from tomorrow (local)
 async function findNextAvailableSlot(hrs) {
   let day = new Date();
@@ -152,30 +171,69 @@ export const approveAndBook = async (req, res) => {
     if (booking.status !== "pending")
       return res.status(400).json({ error: "Already processed" });
 
-    // If booking.category is 'live' or 'recorded', patch with req.body (e.g., link)
-    if (booking.category === "live" || booking.category === "recorded") {
+    const scheduleMode = req.body.scheduleMode === "manual" ? "manual" : "auto";
+    const isLiveOrRecorded =
+      booking.category === "live" || booking.category === "recorded";
+
+    if (isLiveOrRecorded) {
+      const recordingLink = String(
+        req.body.link || req.body.recording || ""
+      ).trim();
+      if (!recordingLink) {
+        return res
+          .status(400)
+          .json({ error: "Recording link is required for this booking" });
+      }
+      booking.link = recordingLink;
+    }
+
+    if (scheduleMode === "manual") {
+      const manualStart = new Date(req.body.manualStart);
+      const manualEnd = new Date(req.body.manualEnd);
+
+      if (!isValidDate(manualStart) || !isValidDate(manualEnd)) {
+        return res
+          .status(400)
+          .json({ error: "Valid manual start and end date/time are required" });
+      }
+
+      if (manualEnd <= manualStart) {
+        return res
+          .status(400)
+          .json({ error: "End date/time must be after start date/time" });
+      }
+
+      const requestedDurationMs = Number(booking.hrs) * 60 * 60 * 1000;
+      const manualDurationMs = manualEnd.getTime() - manualStart.getTime();
+      if (manualDurationMs !== requestedDurationMs) {
+        return res.status(400).json({
+          error: `Manual schedule must be exactly ${booking.hrs} hour(s)`,
+        });
+      }
+
+      const conflict = await hasBookingConflict(
+        manualStart,
+        manualEnd,
+        booking._id
+      );
+      if (conflict) {
+        return res.status(400).json({
+          error: "Selected manual slot overlaps an existing booked session",
+        });
+      }
+
+      booking.start = manualStart;
+      booking.end = manualEnd;
+      booking.date = new Date(manualStart);
+    } else {
       const slot = await findNextAvailableSlot(booking.hrs);
       if (!slot) return res.status(400).json({ error: "No slots available." });
 
       booking.start = slot.start;
       booking.end = slot.end;
       booking.date = slot.date;
-      booking.status = "booked";
-
-      // Accept both 'link' and 'recording' fields from frontend
-      booking.link = req.body.link || req.body.recording;
-      booking.status = "booked";
-      await booking.save();
-      return res.json({ success: true, booking });
     }
 
-    // Find slot and assign (always starts from tomorrow)
-    const slot = await findNextAvailableSlot(booking.hrs);
-    if (!slot) return res.status(400).json({ error: "No slots available." });
-
-    booking.start = slot.start;
-    booking.end = slot.end;
-    booking.date = slot.date;
     booking.status = "booked";
 
     await booking.save();
