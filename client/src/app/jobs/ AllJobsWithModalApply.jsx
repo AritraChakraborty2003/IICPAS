@@ -14,15 +14,15 @@ import { Briefcase, MapPin } from "lucide-react";
 import dayjs from "dayjs";
 import JobsSidebarMarquee from "@/components/JobsSidebarMarquee";
 import {
-  DEFAULT_JOB_SIDEBAR_MARQUEE,
-  normalizeJobSidebarMarqueeSettings,
-} from "@/components/jobSidebarMarqueeConfig";
+  DEFAULT_OUR_PARTNERS_SETTINGS,
+  normalizeOurPartnersSettings,
+} from "@/components/ourPartnersConfig";
 
 export default function AllJobsWithModalApply() {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
-  const [marqueeSettings, setMarqueeSettings] = useState(
-    DEFAULT_JOB_SIDEBAR_MARQUEE
+  const [partnerSettings, setPartnerSettings] = useState(
+    DEFAULT_OUR_PARTNERS_SETTINGS
   );
   const [form, setForm] = useState({
     name: "",
@@ -35,7 +35,7 @@ export default function AllJobsWithModalApply() {
 
   useEffect(() => {
     fetchJobs();
-    fetchMarqueeSettings();
+    fetchPartnerSettings();
   }, []);
 
   const fetchJobs = async () => {
@@ -86,17 +86,17 @@ export default function AllJobsWithModalApply() {
     }
   };
 
-  const fetchMarqueeSettings = async () => {
+  const fetchPartnerSettings = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/job-sidebar-marquee-settings`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/our-partners-settings`
       );
-      setMarqueeSettings(
-        normalizeJobSidebarMarqueeSettings(response.data?.settings)
+      setPartnerSettings(
+        normalizeOurPartnersSettings(response.data?.settings)
       );
     } catch (error) {
-      console.error("Error fetching job sidebar marquee settings:", error);
-      setMarqueeSettings(DEFAULT_JOB_SIDEBAR_MARQUEE);
+      console.error("Error fetching our partners settings:", error);
+      setPartnerSettings(DEFAULT_OUR_PARTNERS_SETTINGS);
     }
   };
 
@@ -331,7 +331,7 @@ export default function AllJobsWithModalApply() {
             )}
           </div>
 
-          <JobsSidebarMarquee settings={marqueeSettings} />
+          <JobsSidebarMarquee settings={partnerSettings} />
         </div>
       )}
 

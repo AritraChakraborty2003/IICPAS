@@ -6,6 +6,10 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import Marquee from "react-fast-marquee";
 import {
+  DEFAULT_OUR_PARTNERS_SETTINGS,
+  normalizeOurPartnersSettings,
+} from "@/components/ourPartnersConfig";
+import {
   FaSearch,
   FaMapMarkerAlt,
   FaPhone,
@@ -37,16 +41,6 @@ interface Center {
   description: string;
 }
 
-const PARTNER_ITEMS = [
-  "Our Partners",
-  "Triostack",
-  "Industry Network",
-  "Hiring Partners",
-  "Placement Ecosystem",
-  "Training Alliances",
-  "Business Collaborators",
-];
-
 export default function SearchCenter() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -55,6 +49,9 @@ export default function SearchCenter() {
   const [filteredCenters, setFilteredCenters] = useState<Center[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [partnerSettings, setPartnerSettings] = useState(
+    DEFAULT_OUR_PARTNERS_SETTINGS
+  );
 
   // Fetch centers from API
   useEffect(() => {
@@ -155,6 +152,22 @@ export default function SearchCenter() {
     };
 
     fetchCenters();
+  }, []);
+
+  useEffect(() => {
+    const fetchPartnerSettings = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/our-partners-settings`);
+        setPartnerSettings(
+          normalizeOurPartnersSettings(response.data?.settings)
+        );
+      } catch (error) {
+        console.error("Error fetching partner settings:", error);
+        setPartnerSettings(DEFAULT_OUR_PARTNERS_SETTINGS);
+      }
+    };
+
+    fetchPartnerSettings();
   }, []);
 
   // Define handleSearch function before using it in useEffect
@@ -501,37 +514,50 @@ export default function SearchCenter() {
           </div>
         </motion.div>
 
-        <motion.div
-          className="mb-16 overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(135deg,#f8fbff_0%,#eef7ff_100%)] shadow-[0_18px_44px_rgba(15,23,42,0.08)]"
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.35 }}
-        >
-          <div className="border-b border-slate-200/80 px-6 py-4 text-center">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-700">
-              Our Partners
-            </p>
-          </div>
-
-          <Marquee
-            speed={55}
-            gradient={false}
-            pauseOnHover
-            className="px-2 py-5"
+        {partnerSettings.enabled && (
+          <motion.div
+            className="mb-16 overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(135deg,#f8fbff_0%,#eef7ff_100%)] shadow-[0_18px_44px_rgba(15,23,42,0.08)]"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.35 }}
           >
-            {PARTNER_ITEMS.map((partner, index) => (
-              <div
-                key={`${partner}-${index}`}
-                className="mx-3 inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 shadow-sm"
-              >
-                <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-green-500 to-blue-500" />
-                <span className="text-sm font-semibold text-slate-700">
-                  {partner}
-                </span>
-              </div>
-            ))}
-          </Marquee>
-        </motion.div>
+            <div className="border-b border-slate-200/80 px-6 py-4 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-700">
+                {partnerSettings.title}
+              </p>
+            </div>
+
+            <Marquee
+              speed={Math.max(
+                30,
+                Math.min(75, 990 / partnerSettings.durationSeconds)
+              )}
+              gradient={false}
+              pauseOnHover
+              className="px-2 py-5"
+            >
+              {partnerSettings.items.map((partner, index) => (
+                <div
+                  key={`${partner.name}-${index}`}
+                  className="mx-3 inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white px-5 py-3 shadow-sm"
+                >
+                  {partner.logoUrl ? (
+                    <img
+                      src={partner.logoUrl}
+                      alt={partner.name}
+                      className="h-8 w-8 rounded-full object-contain"
+                    />
+                  ) : (
+                    <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-r from-green-500 to-blue-500" />
+                  )}
+                  <span className="text-sm font-semibold text-slate-700">
+                    {partner.name}
+                  </span>
+                </div>
+              ))}
+            </Marquee>
+          </motion.div>
+        )}
 
         {/* Results - Only show if search has been performed */}
         {hasSearched && (
