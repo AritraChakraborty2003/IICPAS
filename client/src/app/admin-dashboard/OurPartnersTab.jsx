@@ -16,6 +16,7 @@ export default function OurPartnersTab() {
   const [form, setForm] = useState(DEFAULT_OUR_PARTNERS_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState(null);
 
   useEffect(() => {
@@ -120,6 +121,42 @@ export default function OurPartnersTab() {
     }
   };
 
+  const handleResetToDummy = async () => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) {
+      toast.error("Authentication token not found. Please log in again.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "This will remove the current partner data and replace it with the default dummy partner list. Continue?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const defaultSettings = {
+      ...DEFAULT_OUR_PARTNERS_SETTINGS,
+      items: DEFAULT_OUR_PARTNERS_SETTINGS.items.map((item) => ({ ...item })),
+    };
+
+    setResetting(true);
+    try {
+      await axios.post(`${API_BASE}/our-partners-settings`, defaultSettings, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setForm(defaultSettings);
+      toast.success("Dummy partner data restored");
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to restore dummy partner data"
+      );
+    } finally {
+      setResetting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="rounded-xl bg-white p-6 shadow-sm">
@@ -195,13 +232,23 @@ export default function OurPartnersTab() {
         <div className="mt-8">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Partner Items</h3>
-            <button
-              type="button"
-              onClick={addItem}
-              className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-            >
-              Add Partner
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleResetToDummy}
+                disabled={resetting || saving}
+                className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {resetting ? "Restoring..." : "Reset To Dummy"}
+              </button>
+              <button
+                type="button"
+                onClick={addItem}
+                className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+              >
+                Add Partner
+              </button>
+            </div>
           </div>
 
           <div className="space-y-4">
