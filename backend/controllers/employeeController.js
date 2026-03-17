@@ -103,6 +103,7 @@ const registerInitialAdmin = async (req, res) => {
       "booking-settings": { add: true, read: true, update: true, delete: true, active: true },
       "invoice-company-settings": { add: true, read: true, update: true, delete: true, active: true },
       "job-sidebar-marquee": { add: true, read: true, update: true, delete: true, active: true },
+      "our-partners": { add: true, read: true, update: true, delete: true, active: true },
       bookings: { add: true, read: true, update: true, delete: true, active: true },
     };
 

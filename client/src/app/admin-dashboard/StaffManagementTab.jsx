@@ -60,6 +60,7 @@ const MODULES = [
     name: "Jobs Sidebar Marquee",
     icon: "🪄",
   },
+  { id: "our-partners", name: "Our Partners", icon: "🤝" },
   { id: "bookings", name: "Bookings", icon: "🧾" },
 ];
 

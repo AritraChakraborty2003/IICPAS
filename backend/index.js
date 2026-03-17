@@ -95,6 +95,7 @@ import bookingSettingsRoutes from "./routes/bookingSettingsRoutes.js";
 import courseBookingRoutes from "./routes/courseBookingRoutes.js";
 import invoiceCompanySettingsRoutes from "./routes/invoiceCompanySettingsRoutes.js";
 import jobSidebarMarqueeSettingsRoutes from "./routes/jobSidebarMarqueeSettingsRoutes.js";
+import ourPartnersSettingsRoutes from "./routes/ourPartnersSettingsRoutes.js";
 
 //App Configuration
 dotenv.config();
@@ -259,6 +260,7 @@ app.use("/api/coins", coinRoutes);
 app.use("/api/booking-settings", bookingSettingsRoutes);
 app.use("/api/invoice-company-settings", invoiceCompanySettingsRoutes);
 app.use("/api/job-sidebar-marquee-settings", jobSidebarMarqueeSettingsRoutes);
+app.use("/api/our-partners-settings", ourPartnersSettingsRoutes);
 app.use("/api/v1/course-bookings", courseBookingRoutes);
 
 //New Cart Routes

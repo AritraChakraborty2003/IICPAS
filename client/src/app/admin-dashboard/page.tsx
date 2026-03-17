@@ -118,6 +118,7 @@ import InvoiceCompanySettingsTab from "./InvoiceCompanySettingsTab";
 import LoginAccessControlTab from "./LoginAccessControlTab";
 import JobSidebarMarqueeTab from "./JobSidebarMarqueeTab";
 import LiveBookingsTab from "./LiveBookingsTab";
+import OurPartnersTab from "./OurPartnersTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -298,6 +299,7 @@ const NAVIGATION_GROUPS = [
       { id: "testimonials", label: "Testimonials", icon: <FaQuoteRight /> },
       { id: "faq", label: "FAQ", icon: <FaUserTie /> },
       { id: "about-us", label: "About Us Section", icon: <FaBook /> },
+      { id: "our-partners", label: "Our Partners", icon: <FaUsers /> },
       {
         id: "about-us-section",
         label: "About Us Section Management",
@@ -789,6 +791,8 @@ function AdminDashboardContent() {
           <InvoiceCompanySettingsTab />
         ) : activeTab === "job-sidebar-marquee" ? (
           <JobSidebarMarqueeTab />
+        ) : activeTab === "our-partners" ? (
+          <OurPartnersTab />
         ) : activeTab === "booking-settings" ? (
           <BookingSettingsTab />
         ) : activeTab === "bookings" ? (
