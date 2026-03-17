@@ -40,14 +40,20 @@ const Draggable = dynamic(
 // Debounce utility function
 const debounce = (func, wait) => {
   let timeout;
-  return function executedFunction(...args) {
+  function executedFunction(...args) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
+  }
+
+  executedFunction.cancel = () => {
+    clearTimeout(timeout);
   };
+
+  return executedFunction;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
@@ -173,6 +179,18 @@ export default function AddOrEditTopicForm({
   const currentTopicId = topic?._id || "";
 
   // Debounced content update to prevent typing interruption
+  const debouncedSetContent = useCallback(
+    debounce((newContent) => {
+      setContent(newContent);
+    }, 250),
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedSetContent.cancel?.();
+    };
+  }, [debouncedSetContent]);
 
   // Quiz editing functions
   const openQuizEditor = () => {
