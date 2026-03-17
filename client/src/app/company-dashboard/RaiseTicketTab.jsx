@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+const MOBILE_NUMBER_REGEX = /^[6-9]\d{9}$/;
 
 export default function CompanyTicketRaiseAndList() {
   const [showForm, setShowForm] = useState(false);
@@ -78,14 +79,25 @@ export default function CompanyTicketRaiseAndList() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { email, phone, message } = form;
+    const normalizedPhone = phone.replace(/\D/g, "").slice(0, 10);
 
-    if (!phone.trim() || !message.trim()) {
+    if (!normalizedPhone || !message.trim()) {
       return toast.error("Phone and Message are required.");
+    }
+
+    if (!MOBILE_NUMBER_REGEX.test(normalizedPhone)) {
+      return toast.error(
+        "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9."
+      );
     }
 
     setLoading(true);
     try {
-      await axios.post(`${API}/messages`, { email, phone, message });
+      await axios.post(`${API}/messages`, {
+        email,
+        phone: normalizedPhone,
+        message,
+      });
       toast.success("Message sent successfully!");
       setForm((prev) => ({ ...prev, phone: "", message: "" }));
       setSubmitted(true);
@@ -181,11 +193,17 @@ export default function CompanyTicketRaiseAndList() {
             <input
               type="tel"
               className="border px-3 py-2 rounded w-full"
-              placeholder="Your contact number"
+              placeholder="Enter 10-digit mobile number"
               value={form.phone}
               onChange={(e) =>
-                setForm((f) => ({ ...f, phone: e.target.value }))
+                setForm((f) => ({
+                  ...f,
+                  phone: e.target.value.replace(/\D/g, "").slice(0, 10),
+                }))
               }
+              inputMode="numeric"
+              pattern="[6-9][0-9]{9}"
+              maxLength={10}
               required
             />
           </div>
