@@ -5,7 +5,7 @@ export default function CourseJobs() {
     <ThinHeroSection
       title="Our Openings"
       breadcrumb="Home // Our Openings"
-      className="pb-0"
+      className="pt-24 pb-0"
     />
   );
 }

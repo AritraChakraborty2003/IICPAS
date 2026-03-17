@@ -26,8 +26,8 @@ export const JOB_SIDEBAR_ICON_OPTIONS = [
 
 export const DEFAULT_JOB_SIDEBAR_MARQUEE = {
   enabled: true,
-  title: "Career Tools",
-  subtitle: "Finance and accounting job essentials",
+  title: "Our Partners",
+  subtitle: "Trusted hiring and industry network",
   durationSeconds: 18,
   items: [
     { icon: "briefcase", label: "Openings" },
