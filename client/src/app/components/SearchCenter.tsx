@@ -262,6 +262,14 @@ export default function SearchCenter() {
     // You can implement the booking logic here
   };
 
+  const getPartnerInitials = (name: string) =>
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || "")
+      .join("") || "P";
+
   if (loading) {
     return (
       <section className="relative py-20 bg-white overflow-hidden">
@@ -537,25 +545,44 @@ export default function SearchCenter() {
               className="px-2 py-5"
             >
               {partnerSettings.items.map((partner, index) => (
-                <div
+                <a
                   key={`${partner.name}-${index}`}
-                  className="mx-3 inline-flex min-h-[76px] items-center gap-4 rounded-full border border-slate-200 bg-white px-6 py-4 shadow-sm"
+                  href={partner.logoUrl || undefined}
+                  target={partner.logoUrl ? "_blank" : undefined}
+                  rel={partner.logoUrl ? "noreferrer" : undefined}
+                  className={`mx-3 inline-flex min-h-[92px] items-center gap-4 rounded-[28px] border border-slate-200 bg-white px-6 py-4 shadow-sm transition ${
+                    partner.logoUrl
+                      ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"
+                      : "cursor-default"
+                  }`}
+                  title={
+                    partner.logoUrl
+                      ? `Open ${partner.name} logo`
+                      : partner.name
+                  }
+                  onClick={(event) => {
+                    if (!partner.logoUrl) {
+                      event.preventDefault();
+                    }
+                  }}
                 >
                   {partner.logoUrl ? (
-                    <div className="flex h-14 w-20 items-center justify-center overflow-hidden rounded-2xl bg-slate-50">
+                    <div className="flex h-16 w-28 items-center justify-center overflow-hidden rounded-2xl bg-slate-50">
                       <img
                         src={partner.logoUrl}
                         alt={partner.name}
-                        className="h-12 w-full object-contain"
+                        className="h-14 w-full object-contain"
                       />
                     </div>
                   ) : (
-                    <span className="h-3.5 w-3.5 rounded-full bg-gradient-to-r from-green-500 to-blue-500" />
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-blue-600 text-lg font-bold text-white shadow-sm">
+                      {getPartnerInitials(partner.name)}
+                    </div>
                   )}
                   <span className="text-base font-semibold text-slate-700">
                     {partner.name}
                   </span>
-                </div>
+                </a>
               ))}
             </Marquee>
           </motion.div>
