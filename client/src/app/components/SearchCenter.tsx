@@ -524,7 +524,7 @@ export default function SearchCenter() {
 
         {partnerSettings.enabled && (
           <motion.div
-            className="mb-16 overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(135deg,#f8fbff_0%,#eef7ff_100%)] shadow-[0_18px_44px_rgba(15,23,42,0.08)]"
+            className="mb-16 overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(135deg,#f8fbff_0%,#eef7ff_100%)] pt-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]"
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.35 }}
