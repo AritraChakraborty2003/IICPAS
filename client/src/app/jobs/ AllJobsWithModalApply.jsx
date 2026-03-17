@@ -161,7 +161,7 @@ export default function AllJobsWithModalApply() {
   };
 
   return (
-    <Box className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#f4f7fb_100%)] px-4 pb-14 pt-20 md:px-8">
+    <Box className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#f4f7fb_100%)] px-4 pb-14 pt-6 md:px-8 md:pt-8">
       <Typography
         variant="h5"
         className="mb-2 flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900"
