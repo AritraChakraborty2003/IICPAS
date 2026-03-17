@@ -3406,6 +3406,26 @@ export default function DigitalHubClient({
         .topic-content-light .border-green-200 {
           border-color: #bfdbfe !important;
         }
+
+        .topic-content-light img,
+        .topic-content-dark img {
+          border: none !important;
+          box-shadow: none !important;
+          background: transparent !important;
+          border-radius: 0 !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          height: auto !important;
+        }
+
+        .topic-content-light img[style],
+        .topic-content-dark img[style] {
+          border: none !important;
+          box-shadow: none !important;
+          background: transparent !important;
+          border-radius: 0 !important;
+          min-width: 0 !important;
+        }
       `}</style>
     </div>
   );
