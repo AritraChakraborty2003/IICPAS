@@ -1378,7 +1378,6 @@ export default function AddOrEditTopicForm({
                       variant="outlined"
                       color="secondary"
                       onClick={() => {
-                        // Test video URL
                         const testVideo = document.createElement("video");
                         testVideo.src = url;
                         testVideo.controls = true;
@@ -1671,17 +1670,18 @@ export default function AddOrEditTopicForm({
                       variant="outlined"
                       color="secondary"
                       onClick={() => {
-                        // Test video URL
-                        const testVideo = document.createElement("video");
-                        testVideo.src = url;
-                        testVideo.controls = true;
-                        testVideo.style.width = "300px";
-                        testVideo.style.height = "200px";
+                        const testImage = document.createElement("img");
+                        testImage.src = url;
+                        testImage.alt = "Uploaded preview";
+                        testImage.style.width = "100%";
+                        testImage.style.maxWidth = "500px";
+                        testImage.style.height = "auto";
+                        testImage.style.borderRadius = "12px";
 
                         Swal.fire({
-                          title: "Video Test",
-                          html: testVideo.outerHTML,
-                          width: 400,
+                          title: "Image Preview",
+                          html: testImage.outerHTML,
+                          width: 560,
                           showConfirmButton: true,
                           confirmButtonText: "Close",
                         });
