@@ -28,18 +28,6 @@ import { getBlogSlug } from "../../lib/blogSlug";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
-const slugify = (value = "") =>
-  decodeURIComponent(value)
-    .trim()
-    .toLowerCase()
-    .replace(/[–—−]/g, "-")
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-const getBlogSlug = (blog = {}) => slugify(blog.slug || blog.title || "");
-
 const DUMMY_BLOGS = [
   {
     _id: "dummy-list-1",

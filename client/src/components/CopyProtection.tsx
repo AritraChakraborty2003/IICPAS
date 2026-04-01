@@ -115,17 +115,6 @@ export default function CopyProtection() {
       return false;
     };
 
-    const isEditableTarget = (target: EventTarget | null) => {
-      const element = target as HTMLElement | null;
-      if (!element) return false;
-      const tagName = element.tagName;
-      return (
-        tagName === "INPUT" ||
-        tagName === "TEXTAREA" ||
-        element.isContentEditable
-      );
-    };
-
     // Block keyboard shortcuts (Ctrl/Cmd + C/X/V/A/U)
     const handleKeyDown = (e: KeyboardEvent) => {
       const editableTarget = isEditableTarget(e.target);
