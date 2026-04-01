@@ -162,7 +162,14 @@ export default function CoursePage() {
     try {
       const studentRes = await axios.get(`${API_BASE}/v1/students/isstudent`, {
         withCredentials: true,
+        validateStatus: (status) => status === 200 || status === 401,
       });
+
+      if (studentRes.status === 401) {
+        setStudent(null);
+        setWishlistCourseIds([]);
+        return;
+      }
 
       if (studentRes.data.student) {
         setStudent(studentRes.data.student);
@@ -181,7 +188,10 @@ export default function CoursePage() {
         setWishlistCourseIds([]);
       }
     } catch (error) {
-      console.error("Error fetching wishlist state:", error);
+      console.warn(
+        "fetchWishlistState failed",
+        error.response?.data || error.message
+      );
       // Don't show error to user for background operations
       // Just log it and continue
       setStudent(null);
@@ -213,13 +223,7 @@ export default function CoursePage() {
     selectedCategories.length > 0 ||
     selectedGroupNames.length > 0;
 
-  const showCourseSkeleton =
-    loading ||
-    (!hasActiveFilters &&
-      allCourses.length === 0 &&
-      groupPricing.length === 0 &&
-      filteredCourses.length === 0 &&
-      filteredGroupPricing.length === 0);
+  const showCourseSkeleton = loading;
 
   const softwareStack = [
     { name: "Power BI", image: "/softwares/PowerBI.jpeg" },

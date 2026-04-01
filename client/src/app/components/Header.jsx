@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import axios from "axios";
 import wishlistEventManager from "../../utils/wishlistEventManager";
 
@@ -18,13 +19,13 @@ import {
   BookOpen,
   Star,
 } from "lucide-react";
-import Drawer from "react-modern-drawer";
 import "react-modern-drawer/dist/index.css";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import AlertMarquee from "./AlertMarquee";
 import AdmissionModal from "./AdmissionModal";
 
+const Drawer = dynamic(() => import("react-modern-drawer"), { ssr: false });
 const MySwal = withReactContent(Swal);
 
 const navLinks = [
@@ -61,12 +62,12 @@ const navLinks = [
 
 export default function Header({ showMarquee = true, topOffset }) {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cartDrawer, setCartDrawer] = useState(false);
   const [student, setStudent] = useState(null);
   const [cartCourses, setCartCourses] = useState([]);
   const [wishlistCourses, setWishlistCourses] = useState([]);
-  const [isClient, setIsClient] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
@@ -93,7 +94,14 @@ export default function Header({ showMarquee = true, topOffset }) {
 
       const res = await axios.get(`${API}/api/v1/students/isstudent`, {
         withCredentials: true,
+        validateStatus: (status) => status === 200 || status === 401,
       });
+      if (res.status === 401) {
+        setStudent(null);
+        setCartCourses([]);
+        setWishlistCourses([]);
+        return;
+      }
       const studentData = res.data.student;
 
       // Check if student data exists before proceeding
@@ -164,12 +172,18 @@ export default function Header({ showMarquee = true, topOffset }) {
       setCartCourses(processedCartCourses);
       setWishlistCourses(courseList.filter((c) => wishlistIDs.includes(c._id)));
     } catch (error) {
-      console.error("Error in fetchStudentAndCart:", error);
-      console.error("Error response:", error.response?.data);
-
       // Handle 401 Unauthorized errors gracefully
       if (error.response?.status === 401) {
+        setStudent(null);
+        setCartCourses([]);
+        setWishlistCourses([]);
+        return;
       }
+
+      console.warn(
+        "fetchStudentAndCart failed",
+        error.response?.data || error.message
+      );
 
       setStudent(null);
       setCartCourses([]);
@@ -178,7 +192,7 @@ export default function Header({ showMarquee = true, topOffset }) {
   };
 
   useEffect(() => {
-    setIsClient(true);
+    setMounted(true);
     fetchStudentAndCart();
   }, []);
 
@@ -555,7 +569,7 @@ export default function Header({ showMarquee = true, topOffset }) {
       </header>
 
       {/* Mobile Navigation Drawer */}
-      <Drawer
+      {mounted && <Drawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         direction="right"
@@ -688,10 +702,10 @@ export default function Header({ showMarquee = true, topOffset }) {
             )}
           </div>
         </div>
-      </Drawer>
+      </Drawer>}
 
       {/* Cart Drawer */}
-      <Drawer
+      {mounted && <Drawer
         open={cartDrawer}
         onClose={() => setCartDrawer(false)}
         direction="right"
@@ -800,7 +814,7 @@ export default function Header({ showMarquee = true, topOffset }) {
             </div>
           )}
         </div>
-      </Drawer>
+      </Drawer>}
 
       {/* Admission Modal */}
       <AdmissionModal
