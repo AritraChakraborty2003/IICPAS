@@ -2,8 +2,12 @@
 
 import { motion } from "framer-motion";
 import { FaWhatsapp } from "react-icons/fa";
+import { usePathname } from "next/navigation";
 
 const WhatsAppButton = () => {
+  const pathname = usePathname();
+  const isDigitalHubRoute = pathname?.includes("/digital-hub");
+
   // WhatsApp configuration - you can change this number
   const whatsappNumber = "+1234567890"; // Replace with your actual WhatsApp number
   const whatsappMessage =
@@ -20,11 +24,14 @@ const WhatsAppButton = () => {
 
   return (
     <div
-      className="fixed bottom-4 right-24 z-[60] sm:right-24 md:right-24"
+      className={`fixed z-[60] ${
+        isDigitalHubRoute ? "bottom-24 left-1.5 sm:left-2" : "bottom-4 right-24"
+      }`}
       style={{
         position: "fixed",
-        bottom: "1rem",
-        right: "6rem", // 6rem = 96px spacing from chatbot
+        bottom: isDigitalHubRoute ? "6rem" : "1rem",
+        left: isDigitalHubRoute ? "0.375rem" : "auto",
+        right: isDigitalHubRoute ? "auto" : "6rem",
         zIndex: 60,
       }}
     >
@@ -32,10 +39,10 @@ const WhatsAppButton = () => {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         onClick={handleWhatsAppClick}
-        className="bg-gradient-to-r from-green-400 to-green-500 text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+        className="bg-gradient-to-r from-green-400 to-green-500 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
         title="Chat with us on WhatsApp"
       >
-        <FaWhatsapp className="text-2xl" />
+        <FaWhatsapp className="text-xl sm:text-2xl" />
       </motion.button>
     </div>
   );
