@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   FaCheck,
   FaFilter,
+  FaArrowRight,
+  FaNewspaper,
   FaSearch,
   FaStar,
   FaTimes,
@@ -198,6 +200,8 @@ export default function BuyCoursesTab() {
   const [student, setStudent] = useState(null);
   const [wishlistCourseIds, setWishlistCourseIds] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [newsItems, setNewsItems] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
   const [sortBy, setSortBy] = useState("relevance");
   const [showDiscountOnly, setShowDiscountOnly] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 0 });
@@ -287,6 +291,22 @@ export default function BuyCoursesTab() {
 
     return () => unsubscribe();
   }, [API_BASE, fetchWishlistState]);
+
+  useEffect(() => {
+    const fetchNews = async () => {
+      try {
+        setNewsLoading(true);
+        const response = await axios.get(`${API_BASE}/api/news`);
+        setNewsItems(Array.isArray(response.data) ? response.data.slice(0, 3) : []);
+      } catch (error) {
+        setNewsItems([]);
+      } finally {
+        setNewsLoading(false);
+      }
+    };
+
+    fetchNews();
+  }, [API_BASE]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -430,6 +450,19 @@ export default function BuyCoursesTab() {
   }, [courseIndexMap, filteredCourses, search, sortBy]);
 
   const displayCourses = useMemo(() => sortedCourses, [sortedCourses]);
+
+  const formatNewsDate = useCallback((dateString) => {
+    if (!dateString) return "Latest update";
+
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "Latest update";
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "2-digit",
+      year: "numeric",
+    });
+  }, []);
 
   const toggleCategory = useCallback((categoryName) => {
     setSelectedCategories((prev) =>
@@ -665,7 +698,7 @@ export default function BuyCoursesTab() {
         <div className="relative mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-sm">
           <video
             ref={videoRef}
-            className="absolute inset-0 h-full w-full object-cover opacity-45"
+            className="absolute inset-0 h-full w-full object-cover opacity-30"
             loop
             muted
             playsInline
@@ -674,14 +707,100 @@ export default function BuyCoursesTab() {
             <source src="/videos/homehero.mp4" type="video/mp4" />
             <source src="/videos/homehero.webm" type="video/webm" />
           </video>
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/90 to-slate-900/70" />
           <div className="relative z-10 p-6 sm:p-8 lg:p-10">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-slate-300">
-              Student Dashboard
-            </p>
-            <h1 className="text-2xl font-bold text-white sm:text-3xl">Buy Courses</h1>
-            <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
-              Explore certified programs, compare value quickly, and choose your next learning track.
-            </p>
+            <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-100">
+                  <FaNewspaper className="text-[11px]" />
+                  Student News
+                </p>
+                <h1 className="text-2xl font-bold text-white sm:text-3xl">
+                  Latest updates for students
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
+                  Important announcements, learning tips, and fresh updates from IICPA in one place.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => router.push("/student-dashboard?tab=news")}
+                className="inline-flex items-center gap-2 self-start rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+              >
+                View all news
+                <FaArrowRight className="text-xs" />
+              </button>
+            </div>
+
+            {newsLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {[0, 1, 2].map((item) => (
+                  <div
+                    key={item}
+                    className="h-40 animate-pulse rounded-2xl border border-white/10 bg-white/10"
+                  />
+                ))}
+              </div>
+            ) : newsItems.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                {newsItems.map((item) => (
+                  <article
+                    key={item._id || item.title}
+                    className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm transition hover:bg-white/15"
+                  >
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <span className="inline-flex rounded-full bg-sky-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-100">
+                        Student Update
+                      </span>
+                      <span className="text-xs text-slate-300">
+                        {formatNewsDate(item.createdAt)}
+                      </span>
+                    </div>
+
+                    <h2 className="line-clamp-2 text-base font-semibold text-white">
+                      {item.title || "Latest IICPA update"}
+                    </h2>
+
+                    <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-200">
+                      {stripHtml(item.descr) ||
+                        "Check the latest notice and opportunities curated for students."}
+                    </p>
+
+                    <div className="mt-4 flex items-center justify-between pt-3">
+                      <button
+                        type="button"
+                        onClick={() => router.push("/student-dashboard?tab=news")}
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-sky-100 transition hover:text-white"
+                      >
+                        Read more
+                        <FaArrowRight className="text-xs" />
+                      </button>
+
+                      {item.link ? (
+                        <a
+                          href={item.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-slate-300 transition hover:text-white"
+                        >
+                          Open link
+                        </a>
+                      ) : null}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-center">
+                <p className="text-sm font-medium text-white">
+                  Student news will appear here as soon as updates are published.
+                </p>
+                <p className="mt-2 text-sm text-slate-300">
+                  For now, you can continue exploring available courses below.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
