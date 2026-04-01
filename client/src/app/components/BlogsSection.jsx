@@ -18,55 +18,75 @@ import { getBlogSlug } from "../../lib/blogSlug";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
+const slugify = (value = "") =>
+  decodeURIComponent(value)
+    .trim()
+    .toLowerCase()
+    .replace(/[–—−]/g, "-")
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+const getBlogSlug = (blog = {}) => slugify(blog.slug || blog.title || "");
+
+const DUMMY_BLOGS = [
+  {
+    _id: "dummy-blog-1",
+    title: "Top 7 GST Filing Mistakes Students Must Avoid",
+    author: "IICPA Editorial Team",
+    content:
+      "GST return filing may look easy, but small mistakes can trigger notices and penalties. In this article, we cover common errors like wrong invoice matching, incorrect ITC claims, and late filing habits. You will also learn a practical checklist that helps beginners file returns with more confidence and fewer revisions.",
+    status: "active",
+    category: "GST",
+    createdAt: "2026-01-24T09:00:00.000Z",
+    imageUrl: "",
+  },
+  {
+    _id: "dummy-blog-2",
+    title: "How To Build A Strong Resume For Accounting Jobs",
+    author: "Career Desk",
+    content:
+      "A resume for accounting roles should highlight practical skills, internship work, and tools like Tally, Excel, and GST software. This blog explains the right format, section order, and keyword strategy so recruiters can quickly identify your strengths. We also share an interview-ready resume structure you can adapt immediately.",
+    status: "active",
+    category: "Career",
+    createdAt: "2026-01-18T11:30:00.000Z",
+    imageUrl: "",
+  },
+  {
+    _id: "dummy-blog-3",
+    title: "Beginner Roadmap: From Commerce Student To Finance Professional",
+    author: "Academic Team",
+    content:
+      "If you are starting from scratch, the finance path can feel confusing. This roadmap breaks your journey into clear phases: foundational concepts, software training, real-world projects, and placement preparation. Follow this sequence to build job-ready skills step by step while avoiding random course hopping.",
+    status: "active",
+    category: "Finance",
+    createdAt: "2026-01-10T08:15:00.000Z",
+    imageUrl: "",
+  },
+];
+
 export default function BlogSection() {
-  const [blogs, setBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [blogs, setBlogs] = useState(DUMMY_BLOGS.slice(0, 3));
 
   useEffect(() => {
     async function fetchBlogs() {
       try {
-        const res = await axios.get(`${API_BASE}/blogs`);
+        const res = await axios.get(`${API_BASE}/blogs`, { timeout: 5000 });
         // Filter only blogs that have status === "active" and limit to 3
         const activeBlogs = (res.data || []).filter(
           (blog) => blog.status === "active"
         );
-        setBlogs(activeBlogs.slice(0, 3));
-        setLoading(false);
+        const blogsToRender =
+          activeBlogs.length > 0 ? activeBlogs : DUMMY_BLOGS;
+        setBlogs(blogsToRender.slice(0, 3));
       } catch (error) {
         console.error("Error fetching blogs:", error);
-        setBlogs([]);
-        setLoading(false);
+        setBlogs(DUMMY_BLOGS.slice(0, 3));
       }
     }
     fetchBlogs();
   }, []);
-
-  if (loading) {
-    return (
-      <section className="relative py-20 bg-white overflow-hidden">
-        <div className="relative max-w-7xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
-              Your Source For Ideas, Insights, And{" "}
-              <span className="bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
-                Inspiration
-              </span>
-            </h2>
-            <p className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Discover the latest insights, trends, and inspiration from our
-              expert team
-            </p>
-          </div>
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-              <p className="text-gray-600">Loading blogs...</p>
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="relative py-20 bg-white overflow-hidden">

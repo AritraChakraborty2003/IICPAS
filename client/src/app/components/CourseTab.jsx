@@ -20,16 +20,39 @@ import {
 } from "@mui/icons-material";
 import {
   FaStar,
-  FaClock,
-  FaGraduationCap,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaShoppingCart,
 } from "react-icons/fa";
 import StarRating from "./StarRating";
 import { toast } from "react-hot-toast";
 
 export default function CourseTab() {
+  const QA_DUMMY_COURSE = {
+    _id: "qa-dummy-course-2026",
+    slug: "qa-dummy-course-2026",
+    title: "QA Dummy Course (UI Testing)",
+    category: "Testing",
+    description: "Dummy course for testing dashboard UI and navigation flow.",
+    image: "/images/a1.jpeg",
+    status: "Active",
+    level: "Executive Level",
+    price: 5200,
+    overallProgress: 35,
+    totalChapters: 3,
+    totalAssignments: 2,
+    totalExperiments: 1,
+    totalTests: 1,
+    chapters: [
+      { id: 1, name: "Dummy Chapter 1", completion: 100 },
+      { id: 2, name: "Dummy Chapter 2", completion: 40 },
+      { id: 3, name: "Dummy Chapter 3", completion: 0 },
+    ],
+    assignments: [
+      { id: 1, name: "Dummy Assignment 1" },
+      { id: 2, name: "Dummy Assignment 2" },
+    ],
+    experiments: [{ id: 1, name: "Dummy Experiment 1" }],
+    tests: [{ id: 1, name: "Dummy Test 1", status: "Coming Soon" }],
+  };
+
   const [studentId, setStudentId] = useState(null);
   const [courses, setCourses] = useState([]);
   const [purchasedCourses, setPurchasedCourses] = useState([]); // Student's purchased courses
@@ -98,16 +121,22 @@ export default function CourseTab() {
             (course) => !purchasedCourseIds.includes(course._id)
           );
 
-          // Combine purchased courses and available courses
-          const combinedCourses = [
-            ...purchasedCoursesData,
-            ...filteredAvailableCourses,
-          ];
-          setCourses(combinedCourses);
+          const purchasedWithDummy = purchasedCoursesData.some(
+            (course) => course._id === QA_DUMMY_COURSE._id
+          )
+            ? purchasedCoursesData
+            : [QA_DUMMY_COURSE, ...purchasedCoursesData];
 
+          setPurchasedCourses(purchasedWithDummy);
+
+          // Combine purchased courses and available courses
+          const combinedCourses = [...purchasedWithDummy, ...filteredAvailableCourses];
           if (combinedCourses.length > 0) {
+            setCourses(combinedCourses);
             setSelectedCourse(combinedCourses[0]);
             setLastAccessedCourse(combinedCourses[0]);
+          } else {
+            showDemoData();
           }
         } else {
           // If no courses at all, just set purchased courses
@@ -355,6 +384,40 @@ export default function CourseTab() {
       fetchChaptersForCourse(courseId);
     }
   };
+
+  const getCourseImageSrc = (course) => {
+    if (!course?.image) return "/images/a1.jpeg";
+    if (course.image.startsWith("http")) return course.image;
+    if (course.image.startsWith("/uploads/")) return `${API}${course.image}`;
+    if (course.image.startsWith("/")) return course.image;
+    return `${API}/${course.image}`;
+  };
+
+  const getCourseCategory = (course) => course?.category || "General";
+
+  const getCurrentPrice = (course) => {
+    const price =
+      course?.pricing?.recordedSession?.finalPrice ||
+      course?.pricing?.recordedSession?.price ||
+      course?.price ||
+      0;
+    return Number(price) || 0;
+  };
+
+  const getOriginalPrice = (course, currentPrice) => {
+    const recorded = course?.pricing?.recordedSession;
+    const basePrice = Number(recorded?.price || course?.price || 0);
+    const discount = Number(recorded?.discount || course?.discount || 0);
+
+    if (basePrice > currentPrice) return basePrice;
+    if (discount > 0 && currentPrice > 0) {
+      return Math.round(currentPrice / (1 - discount / 100));
+    }
+    return currentPrice;
+  };
+
+  const formatPrice = (value) =>
+    new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
 
   const getTabIcon = (tabName) => {
     switch (tabName) {
@@ -862,162 +925,81 @@ export default function CourseTab() {
                   <h2 className="text-lg font-bold">{course.title}</h2>
                 </div>
 
-                <div className="p-3">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
-                    {/* Left Side - Course Image with Modern Styling */}
-                    <div className="lg:col-span-1">
-                      <div className="relative group">
-                        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-100 to-gray-200">
-                          <img
-                            src={
-                              course.image
-                                ? `${API}${course.image}`
-                                : "/images/a1.jpeg"
-                            }
-                            alt={course.title}
-                            className="w-full h-32 object-cover transform transition-transform duration-500 group-hover:scale-110"
-                            onError={(e) => {
-                              e.target.src = "/images/a1.jpeg";
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Right Side - Course Stats with Modern Cards */}
-                    <div className="lg:col-span-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
-                        {/* Status Card */}
-                        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
-                              <FaCheckCircle className="text-emerald-600 text-sm" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 font-medium">
-                                Status
-                              </p>
-                              <p className="text-sm font-bold text-emerald-700">
-                                {course.status}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Level Card */}
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                              <FaGraduationCap className="text-blue-600 text-sm" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 font-medium">
-                                Level
-                              </p>
-                              <p className="text-sm font-bold text-blue-700">
-                                {course.level}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Price Card */}
-                        <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                              <FaStar className="text-purple-600 text-sm" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 font-medium">
-                                Price
-                              </p>
-                              <p className="text-sm font-bold text-purple-700">
-                                ₹{course.price}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Duration Card */}
-                        <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-1">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                              <FaClock className="text-orange-600 text-sm" />
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-600 font-medium">
-                                Duration
-                              </p>
-                              <p className="text-sm font-bold text-orange-700">
-                                8 Weeks
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action Buttons */}
-                      <div className="flex gap-3 pt-4 pb-2">
-                        {/* Show different button based on purchase status */}
-                        {isCoursePurchased(course._id) ? (
-                          // Purchased course - show "View Course Details"
-                          <button
-                            onClick={() => handleDetailedToggle(course._id)}
-                            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:from-blue-700 hover:to-purple-700"
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              <Book className="text-xl" />
-                              View Course Details
-                            </span>
-                          </button>
-                        ) : (
-                          // Available course - show "Buy Now"
-                          <button
-                            onClick={() => handleBuyNow(course)}
-                            className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2 px-4 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-700 hover:to-emerald-700"
-                          >
-                            <span className="flex items-center justify-center gap-2">
-                              <FaShoppingCart className="text-xl" />
-                              Buy Now
-                            </span>
-                          </button>
-                        )}
-
-                        {/* Rating Button - Show only for purchased courses that are completed and not already rated */}
-                        {isCoursePurchased(course._id) &&
-                          isCourseCompleted(course) &&
-                          !courseRatings[course._id] && (
-                            <button
-                              onClick={() => {
-                                setCourseToRate(course);
-                                setShowRatingModal(true);
-                              }}
-                              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 px-4 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:from-yellow-600 hover:to-orange-600"
-                            >
-                              <span className="flex items-center justify-center gap-2">
-                                <FaStar className="text-xl" />
-                                Rate Course
-                              </span>
-                            </button>
-                          )}
-
-                        {/* Show rating status if already rated */}
-                        {courseRatings[course._id] && (
-                          <div className="flex items-center justify-center px-6 py-4 bg-gray-100 rounded-xl">
-                            <span className="text-gray-600 font-medium">
-                              {courseRatings[course._id].status === "pending"
-                                ? "Rating Pending"
-                                : courseRatings[course._id].status ===
-                                  "approved"
-                                ? "Rating Approved"
-                                : "Rating Rejected"}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-sm text-gray-500 font-medium">
+                      {getCourseCategory(course)}
+                    </p>
+                    <FaStar className="text-yellow-500 text-lg" />
                   </div>
+
+                  <h2 className="text-4xl leading-8 font-bold text-slate-900 min-h-[64px] mb-3">
+                    {course.title}
+                  </h2>
+
+                  <div className="flex items-end justify-between gap-3">
+                    <div>
+                      {(() => {
+                        const currentPrice = getCurrentPrice(course);
+                        const originalPrice = getOriginalPrice(
+                          course,
+                          currentPrice
+                        );
+                        return (
+                          <>
+                            <p className="text-4xl leading-none font-bold text-emerald-600">
+                              &#8377;{formatPrice(currentPrice)}
+                            </p>
+                            {originalPrice > currentPrice && (
+                              <p className="text-2xl text-gray-400 line-through mt-1">
+                                &#8377;{formatPrice(originalPrice)}
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+
+                    {isCoursePurchased(course._id) ? (
+                      <button
+                        onClick={() => handleDetailedToggle(course._id)}
+                        className="bg-slate-900 text-white px-5 py-2.5 rounded-2xl font-semibold text-base hover:bg-slate-800 transition-colors"
+                      >
+                        View Details &#8594;
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleBuyNow(course)}
+                        className="bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-semibold text-base hover:bg-slate-800 transition-colors"
+                      >
+                        Enroll &#8594;
+                      </button>
+                    )}
+                  </div>
+
+                  {isCoursePurchased(course._id) &&
+                    isCourseCompleted(course) &&
+                    !courseRatings[course._id] && (
+                      <button
+                        onClick={() => {
+                          setCourseToRate(course);
+                          setShowRatingModal(true);
+                        }}
+                        className="mt-3 text-sm font-semibold text-amber-600 hover:text-amber-700"
+                      >
+                        Rate Course
+                      </button>
+                    )}
+
+                  {courseRatings[course._id] && (
+                    <p className="mt-3 text-sm text-gray-600">
+                      {courseRatings[course._id].status === "pending"
+                        ? "Rating Pending"
+                        : courseRatings[course._id].status === "approved"
+                        ? "Rating Approved"
+                        : "Rating Rejected"}
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (

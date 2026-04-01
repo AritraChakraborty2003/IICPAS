@@ -75,7 +75,7 @@ export default function StudentAuthForm() {
 
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/login`,
+        `${API}/api/v1/students/login`,
         { email: loginEmail, password: loginPassword },
         { withCredentials: true }
       );
@@ -105,7 +105,7 @@ export default function StudentAuthForm() {
     setLoading(true);
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/forgot-password`,
+        `${API}/api/v1/students/forgot-password`,
         { email: forgotEmail }
       );
       toast.success("OTP sent to your email.");
@@ -123,7 +123,7 @@ export default function StudentAuthForm() {
     setLoading(true);
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/reset-password`,
+        `${API}/api/v1/students/reset-password`,
         { email: forgotEmail, otp, newPassword }
       );
       toast.success("Password reset successful");

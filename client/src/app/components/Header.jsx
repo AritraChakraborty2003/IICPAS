@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
@@ -69,8 +69,10 @@ export default function Header({ showMarquee = true, topOffset }) {
   const [isClient, setIsClient] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
+  const [activeDropdown, setActiveDropdown] = useState(null);
   const [showAdmissionModal, setShowAdmissionModal] = useState(false);
   const [selectedAdmissionCourse, setSelectedAdmissionCourse] = useState("");
+  const dropdownCloseTimeout = useRef(null);
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -228,6 +230,30 @@ export default function Header({ showMarquee = true, topOffset }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showProfileDropdown]);
 
+  useEffect(() => {
+    return () => {
+      if (dropdownCloseTimeout.current) {
+        clearTimeout(dropdownCloseTimeout.current);
+      }
+    };
+  }, []);
+
+  const handleDropdownOpen = (name) => {
+    if (dropdownCloseTimeout.current) {
+      clearTimeout(dropdownCloseTimeout.current);
+    }
+    setActiveDropdown(name);
+  };
+
+  const handleDropdownClose = () => {
+    if (dropdownCloseTimeout.current) {
+      clearTimeout(dropdownCloseTimeout.current);
+    }
+    dropdownCloseTimeout.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 300);
+  };
+
   const handleLogout = async () => {
     try {
       await axios.get(`${API}/api/v1/students/logout`, {
@@ -381,7 +407,7 @@ export default function Header({ showMarquee = true, topOffset }) {
     <>
       {showMarquee && <AlertMarquee />}
       <header
-        className="fixed left-0 w-full z-40 bg-white shadow-lg"
+        className="fixed left-0 w-full z-40 bg-white border-b border-gray-100 shadow-none"
         style={{ top: headerTop }}
       >
         <div className="w-full px-2 md:px-6 py-3 flex items-center justify-between">

@@ -2,8 +2,8 @@
 @import url("https://fonts.googleapis.com/css?family=Georgia:400,700&display=swap");
 @import "tailwindcss";
 
-/* Content Protection - Prevent Copy/Paste Globally */
-* {
+/* Content protection is opt-in via body[data-copy-protected="true"] */
+body[data-copy-protected="true"] * {
   -webkit-user-select: none !important;
   -moz-user-select: none !important;
   -ms-user-select: none !important;
@@ -90,12 +90,12 @@ select::-moz-selection,
   background: transparent !important;
 }
 
-*::-moz-selection {
+body[data-copy-protected="true"] *::-moz-selection {
   background: transparent !important;
 }
 
-/* Prevent drag and drop */
-* {
+/* Prevent drag and drop when copy protection is enabled */
+body[data-copy-protected="true"] * {
   -webkit-user-drag: none !important;
   -khtml-user-drag: none !important;
   -moz-user-drag: none !important;
