@@ -32,6 +32,38 @@ const CompanyTab = () => {
     }
   };
 
+  const handleToggleStatus = async (id: string) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to toggle active/inactive status for this company?"
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await axios.patch(`${API}/companies/toggle-status/${id}`);
+      toast.success(res.data?.message || "Company status updated");
+      fetchCompanies();
+    } catch (error: any) {
+      toast.error(
+        error?.response?.data?.message || "Failed to update company status"
+      );
+    }
+  };
+
+  const handleDeleteCompany = async (id: string) => {
+    const confirmed = window.confirm(
+      "Delete this company permanently? This action cannot be undone."
+    );
+    if (!confirmed) return;
+
+    try {
+      const res = await axios.delete(`${API}/companies/${id}`);
+      toast.success(res.data?.message || "Company deleted");
+      fetchCompanies();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to delete company");
+    }
+  };
+
   return (
     <div className="p-4 space-y-4">
       <h3 className="text-xl font-bold text-green-700">View Companies</h3>
@@ -71,25 +103,60 @@ const CompanyTab = () => {
                     )}
                   </td>
                   <td className="p-2 border">
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        comp.status === "approved"
-                          ? "bg-green-200 text-green-700"
-                          : "bg-yellow-100 text-yellow-600"
-                      }`}
-                    >
-                      {comp.status}
-                    </span>
+                    {(() => {
+                      const normalizedStatus = String(comp.status || "").toLowerCase();
+                      const isActive = normalizedStatus === "approved";
+                      const isInactive = normalizedStatus === "inactive";
+                      const label = isActive
+                        ? "active"
+                        : isInactive
+                        ? "inactive"
+                        : comp.status;
+                      const badgeClass = isActive
+                        ? "bg-green-200 text-green-700"
+                        : isInactive
+                        ? "bg-gray-200 text-gray-700"
+                        : "bg-yellow-100 text-yellow-600";
+                      return (
+                        <span className={`px-2 py-1 rounded text-xs ${badgeClass}`}>
+                          {label}
+                        </span>
+                      );
+                    })()}
                   </td>
                   <td className="p-2 border">
-                    {comp.status !== "approved" && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {String(comp.status || "").toLowerCase() !== "approved" &&
+                        String(comp.status || "").toLowerCase() !== "inactive" && (
+                          <button
+                            onClick={() => handleApprove(comp._id)}
+                            className="px-3 py-1 text-sm bg-green-600 text-white rounded"
+                          >
+                            Approve
+                          </button>
+                        )}
+                      {(String(comp.status || "").toLowerCase() === "approved" ||
+                        String(comp.status || "").toLowerCase() === "inactive") && (
+                        <button
+                          onClick={() => handleToggleStatus(comp._id)}
+                          className={`px-3 py-1 text-sm text-white rounded ${
+                            String(comp.status || "").toLowerCase() === "approved"
+                              ? "bg-yellow-600"
+                              : "bg-blue-600"
+                          }`}
+                        >
+                          {String(comp.status || "").toLowerCase() === "approved"
+                            ? "Set Inactive"
+                            : "Set Active"}
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleApprove(comp._id)}
-                        className="px-3 py-1 text-sm bg-green-600 text-white rounded"
+                        onClick={() => handleDeleteCompany(comp._id)}
+                        className="px-3 py-1 text-sm bg-red-600 text-white rounded"
                       >
-                        Approve
+                        Delete
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}

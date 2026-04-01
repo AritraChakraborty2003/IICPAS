@@ -4,28 +4,54 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import toast from "react-hot-toast";
 
+const AUTH_ROUTES = new Set([
+  "/login",
+  "/register",
+  "/student-login",
+  "/teacher-login",
+  "/teacher-register",
+  "/center-login",
+  "/center-register",
+]);
+
 export default function CopyProtection() {
   const pathname = usePathname();
 
   useEffect(() => {
-    const isProtectionDisabledPage = () => {
-      const disabledPaths = [
-        "/admin-dashboard",
-        "/student-login",
-        "/student-dashboard",
-        "/center-login",
-        "/center-dashboard",
-        "/teacher-login",
-        "/teacher-dashboard",
-      ];
-      return disabledPaths.some((path) =>
-        pathname?.includes(path)
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      const editableRoot = target.closest(
+        'input, textarea, [contenteditable="true"], [contenteditable=""], [data-allow-copy]'
       );
+
+      if (!editableRoot) {
+        return false;
+      }
+
+      if (editableRoot instanceof HTMLInputElement) {
+        return !["button", "submit", "reset", "checkbox", "radio", "file"].includes(
+          editableRoot.type
+        );
+      }
+
+      return true;
     };
 
-    // Skip protection for auth/dashboard pages.
-    if (isProtectionDisabledPage()) {
-      document.body.removeAttribute("data-copy-protected");
+    // Check if we're on an admin dashboard page
+    const isAdminDashboard = () => {
+      return pathname?.includes("/admin-dashboard") ?? false;
+    };
+
+    // Check if we're on an auth page
+    const isAuthPage = () => {
+      return Boolean(pathname && AUTH_ROUTES.has(pathname));
+    };
+
+    // Skip protection on admin dashboard and auth pages
+    if (isAdminDashboard() || isAuthPage()) {
       return;
     }
 
@@ -48,6 +74,10 @@ export default function CopyProtection() {
 
     // Prevent right-click context menu
     const handleContextMenu = (e: MouseEvent) => {
+      if (isEditableTarget(e.target)) {
+        return true;
+      }
+
       e.preventDefault();
       showProtectionMessage();
       return false;
@@ -55,6 +85,10 @@ export default function CopyProtection() {
 
     // Prevent copy operations
     const handleCopy = (e: ClipboardEvent) => {
+      if (isEditableTarget(e.target)) {
+        return true;
+      }
+
       e.preventDefault();
       showProtectionMessage();
       return false;
@@ -62,6 +96,10 @@ export default function CopyProtection() {
 
     // Prevent cut operations
     const handleCut = (e: ClipboardEvent) => {
+      if (isEditableTarget(e.target)) {
+        return true;
+      }
+
       e.preventDefault();
       showProtectionMessage();
       return false;
@@ -69,6 +107,10 @@ export default function CopyProtection() {
 
     // Prevent text selection
     const handleSelectStart = (e: Event) => {
+      if (isEditableTarget(e.target)) {
+        return true;
+      }
+
       e.preventDefault();
       return false;
     };
@@ -86,30 +128,30 @@ export default function CopyProtection() {
 
     // Block keyboard shortcuts (Ctrl/Cmd + C/X/V/A/U)
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (isEditableTarget(e.target)) return;
+      const editableTarget = isEditableTarget(e.target);
 
       // Check for Ctrl or Cmd key
       if (e.ctrlKey || e.metaKey) {
         // Block Ctrl/Cmd + C (Copy)
-        if (e.key === "c" || e.key === "C") {
+        if ((e.key === "c" || e.key === "C") && !editableTarget) {
           e.preventDefault();
           showProtectionMessage();
           return false;
         }
         // Block Ctrl/Cmd + X (Cut)
-        if (e.key === "x" || e.key === "X") {
+        if ((e.key === "x" || e.key === "X") && !editableTarget) {
           e.preventDefault();
           showProtectionMessage();
           return false;
         }
         // Block Ctrl/Cmd + V (Paste)
-        if (e.key === "v" || e.key === "V") {
+        if ((e.key === "v" || e.key === "V") && !editableTarget) {
           e.preventDefault();
           showProtectionMessage();
           return false;
         }
         // Block Ctrl/Cmd + A (Select All)
-        if (e.key === "a" || e.key === "A") {
+        if ((e.key === "a" || e.key === "A") && !editableTarget) {
           e.preventDefault();
           showProtectionMessage();
           return false;

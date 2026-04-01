@@ -100,31 +100,24 @@ export default function Footer() {
   // Track component mount
   useEffect(() => {
     setMounted(true);
-    console.log("🎯 Footer component mounted!");
   }, []);
 
   // Fetch footer data from API
   useEffect(() => {
     // Only run on client side and after component is mounted
     if (typeof window === "undefined" || !mounted) {
-      console.log("🚫 Footer useEffect skipped - not ready");
       setLoading(false);
       return;
     }
 
-    console.log("🚀 Footer useEffect running on client side..."); // Debug log
-    console.log("🌐 Current window location:", window.location.href);
     const fetchFooterData = async () => {
       try {
         const API_BASE =
           process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
-        console.log("API_BASE:", API_BASE); // Debug log
-        console.log("Fetching from:", `${API_BASE}/footer`); // Debug log
         const response = await fetch(`${API_BASE}/footer`);
 
         if (response.ok) {
           const data = await response.json();
-          console.log("Footer API Response:", data); // Debug log
 
           // Clean up the data structure to match frontend expectations
           const cleanedData = {
@@ -180,13 +173,6 @@ export default function Footer() {
           };
 
           setFooterData(cleanedData);
-          console.log("✅ Footer data updated successfully!");
-          console.log("📊 Updated company name:", cleanedData.companyInfo.name);
-          console.log(
-            "📚 Updated general links:",
-            cleanedData.footerLinks.generalLinks.length,
-            "items"
-          );
         } else {
           console.error(
             "Failed to fetch footer data, status:",
@@ -314,7 +300,6 @@ export default function Footer() {
                     whileTap={{ scale: 0.95 }}
                     aria-label={social.platform}
                     style={{ pointerEvents: "auto" }}
-                    onClick={() => console.log("Social media link clicked:", social.href)}
                   >
                     <IconComponent className="w-4 h-4 text-gray-300 group-hover:text-white" />
                   </motion.a>
@@ -341,9 +326,6 @@ export default function Footer() {
                   <Link
                     href={link.href}
                     className={`${footerData.colors.textSecondary} hover:text-green-500 transition-colors duration-300 text-sm cursor-pointer relative z-20`}
-                    onClick={() =>
-                      console.log("Company Policy link clicked:", link.href)
-                    }
                     style={{ pointerEvents: "auto" }}
                   >
                     {link.name}
@@ -371,9 +353,6 @@ export default function Footer() {
                   <Link
                     href={link.href}
                     className={`${footerData.colors.textSecondary} hover:text-green-500 transition-colors duration-300 text-sm cursor-pointer relative z-20`}
-                    onClick={() =>
-                      console.log("General link clicked:", link.href)
-                    }
                     style={{ pointerEvents: "auto" }}
                   >
                     {link.name}
@@ -405,7 +384,6 @@ export default function Footer() {
                   key={index}
                   href={link.href}
                   className="hover:text-green-500 transition-colors duration-300 cursor-pointer relative z-20"
-                  onClick={() => console.log("Legal link clicked:", link.href)}
                   style={{ pointerEvents: "auto" }}
                 >
                   {link.name}

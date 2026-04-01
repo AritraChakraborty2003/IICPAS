@@ -23,6 +23,7 @@ const router = express.Router();
 router.post("/register", uploadCenterDoc.single("document"), registerCenter);
 router.post("/login", loginCenter);
 router.post("/logout", logoutCenter);
+router.get("/logout", logoutCenter);
 
 // Public routes
 router.get("/public", getPublicCenters);

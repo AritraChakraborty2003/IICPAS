@@ -2,7 +2,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, use, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ChevronDown,
@@ -16,7 +17,6 @@ import {
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import LoginModal from "../../components/LoginModal";
-import SimpleCheckoutModal from "../../../components/SimpleCheckoutModal";
 import jsPDF from "jspdf";
 
 import LiveSchedule from "../../components/LiveSchedule";
@@ -24,243 +24,59 @@ import { useCart } from "../../../hooks/useCart";
 
 import axios from "axios";
 
-// Dummy course data - in real app this would come from API
-const dummyCourses = {
-  "basic-accounting-tally": {
-    id: "basic-accounting-tally",
-    title: "Basic Accounting & Tally Foundation",
-    rating: 4.7,
-    reviewCount: 449,
-    price: 4750,
-    originalPrice: 5000,
-    discount: 5,
-    category: "Accounting",
-    type: "Individual Course",
-    description:
-      "Tally Foundation Course covers in-depth knowledge to meet all the accounting requirements of the industry with learning exposure on Voucher Entries, Grouping, BRS, etc. We not only teach the concepts but also help you learn how you can practically implement those concepts in your day to day Accounting Process with practical examples and entries in Tally.",
-    image: "/images/a1.jpeg",
-    videoThumbnail: "/images/a1.jpeg",
-    syllabus: [
-      {
-        title: "Basic Accounting",
-        topics: [
-          "Introduction to Accounting",
-          "Accounting Principles",
-          "Double Entry System",
-          "Journal Entries",
-        ],
-      },
-      {
-        title: "Company creation and data management",
-        topics: [
-          "Creating Company in Tally",
-          "Company Configuration",
-          "Data Backup & Restore",
-          "Multi-Company Setup",
-        ],
-      },
-      {
-        title: "Voucher Entries in Tally",
-        topics: [
-          "Sales Voucher",
-          "Purchase Voucher",
-          "Payment Voucher",
-          "Receipt Voucher",
-          "Journal Voucher",
-        ],
-      },
-      {
-        title: "Concept of Dual Entry",
-        topics: [
-          "Debit and Credit Rules",
-          "Trial Balance",
-          "Profit & Loss Account",
-          "Balance Sheet",
-        ],
-      },
-      {
-        title: "Finalisation of ledger balances",
-        topics: [
-          "Ledger Creation",
-          "Balance Confirmation",
-          "Reconciliation Process",
-          "Year-end Procedures",
-        ],
-      },
-      {
-        title: "Bank Reconciliation Statement",
-        topics: [
-          "BRS Concepts",
-          "Bank Statement Analysis",
-          "Reconciliation Process",
-          "Common Discrepancies",
-        ],
-      },
-    ],
-    features: {
-      chapters: 7,
-      microVideos: 28,
-      caseStudies: 16,
-      assessments: 89,
-      simulations: 0,
-      experiments: 30,
-      recordings: 10,
-      languages: 15,
-    },
-    duration: "40 hours",
-    level: "Levels",
-    students: 1250,
-  },
-  "hr-certification": {
-    id: "hr-certification",
-    title: "HR Certification Course",
-    rating: 4.5,
-    reviewCount: 320,
-    price: 900,
-    originalPrice: 1000,
-    discount: 10,
-    category: "HR",
-    type: "Individual Course",
-    description:
-      "Comprehensive HR certification course covering recruitment, employee relations, performance management, and HR analytics. Learn practical HR skills with real-world case studies and industry best practices.",
-    image: "/images/course-2.jpg",
-    videoThumbnail: "/images/young-woman.jpg",
-    syllabus: [
-      {
-        title: "HR Fundamentals",
-        topics: [
-          "Introduction to Human Resources",
-          "HR Roles and Responsibilities",
-          "HR Strategy and Planning",
-          "Legal Framework",
-        ],
-      },
-      {
-        title: "Recruitment and Selection",
-        topics: [
-          "Job Analysis and Design",
-          "Recruitment Methods",
-          "Selection Process",
-          "Interview Techniques",
-        ],
-      },
-      {
-        title: "Employee Relations",
-        topics: [
-          "Employee Engagement",
-          "Conflict Resolution",
-          "Disciplinary Procedures",
-          "Grievance Handling",
-        ],
-      },
-      {
-        title: "Performance Management",
-        topics: [
-          "Performance Appraisal",
-          "Goal Setting",
-          "Feedback Mechanisms",
-          "Performance Improvement",
-        ],
-      },
-    ],
-    features: {
-      chapters: 5,
-      microVideos: 20,
-      caseStudies: 12,
-      assessments: 45,
-      simulations: 5,
-      experiments: 15,
-      recordings: 8,
-      languages: 12,
-    },
-    duration: "30 hours",
-    level: "Levels",
-    students: 890,
-  },
-  "excel-certification": {
-    id: "excel-certification",
-    title: "Excel Certification Course",
-    rating: 4.8,
-    reviewCount: 680,
-    price: 2000,
-    originalPrice: 2000,
-    discount: 0,
-    category: "Accounting",
-    type: "Individual Course",
-    description:
-      "Master Excel from basics to advanced level. Learn formulas, functions, data analysis, pivot tables, and automation. Perfect for accounting professionals and data analysts.",
-    image: "/images/course-3.jpg",
-    videoThumbnail: "/images/course.png",
-    syllabus: [
-      {
-        title: "Excel Basics",
-        topics: [
-          "Interface and Navigation",
-          "Data Entry and Formatting",
-          "Basic Formulas",
-          "Cell References",
-        ],
-      },
-      {
-        title: "Advanced Formulas",
-        topics: [
-          "VLOOKUP and HLOOKUP",
-          "INDEX and MATCH",
-          "IF Functions",
-          "Array Formulas",
-        ],
-      },
-      {
-        title: "Data Analysis",
-        topics: [
-          "Pivot Tables",
-          "Charts and Graphs",
-          "Data Validation",
-          "Conditional Formatting",
-        ],
-      },
-      {
-        title: "Automation",
-        topics: [
-          "Macros Basics",
-          "VBA Introduction",
-          "Automated Reports",
-          "Dashboard Creation",
-        ],
-      },
-    ],
-    features: {
-      chapters: 6,
-      microVideos: 35,
-      caseStudies: 20,
-      assessments: 60,
-      simulations: 8,
-      experiments: 25,
-      recordings: 12,
-      languages: 18,
-    },
-    duration: "35 hours",
-    level: "Levels",
-    students: 2100,
-  },
-};
+interface Course {
+  _id?: string;
+  title?: string;
+  description?: string;
+  level?: string;
+  rating?: number;
+  reviewCount?: number;
+  tabs?: {
+    syllabus?: { label?: string };
+    assignment?: { label?: string };
+    assessment?: { label?: string };
+    schedule?: { label?: string };
+    simulator?: { label?: string };
+  };
+  pricing?: {
+    recordedSession?: {
+      finalPrice?: number;
+      price?: number;
+      discount?: number;
+    };
+    liveSession?: {
+      finalPrice?: number;
+      price?: number;
+      discount?: number;
+    };
+  };
+  chapters?: Array<{
+    title?: string;
+    topics?: Array<{ title?: string } | string>;
+  }>;
+  syllabus?: Array<{
+    title?: string;
+    topics?: string[];
+  }>;
+  [key: string]: any;
+}
 
 export default function CourseDetailClient({
-  params,
+  courseId,
+  initialCourse,
 }: {
-  params: Promise<{ courseId: string }>;
+  courseId: string;
+  initialCourse: Course;
 }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("syllabus");
   const [expandedSections, setExpandedSections] = useState<number[]>([]);
-  const [course, setCourse] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [course] = useState<Course>(initialCourse);
   const [courseRatings, setCourseRatings] = useState<any>(null);
   const [ratingsLoading, setRatingsLoading] = useState(true);
   const [student, setStudent] = useState<any>(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [pendingCartAction, setPendingCartAction] = useState<{
     courseId: string;
     sessionType: "recorded" | "live";
@@ -271,76 +87,17 @@ export default function CourseDetailClient({
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-  // Debug logging - removed to prevent console spam
-
-  // Unwrap the params Promise using React.use()
-  const resolvedParams = use(params);
-
-  // Removed console.log to prevent re-renders
-
-  // Temporary hardcoded test data to check if image display works
-  const testCourse = useMemo(
-    () => ({
-      _id: "68d7eab196f732ef361fd287", // Real course ID from database
-      id: "68d7eab196f732ef361fd287",
-      title: "Basic Accounting & Tally Foundation",
-      image: "/uploads/1758703607767-656204190.webp",
-      pricing: {
-        recordedSession: { finalPrice: 4750, price: 5000, discount: 5 },
-        liveSession: { finalPrice: 6650, price: 7000, discount: 5 },
-      },
-    }),
-    []
-  );
-
-  // Removed console.log to prevent re-renders
-
-  // Force course data for testing - bypass loading state
-  const displayCourse = course || testCourse;
-
-  // Fetch course data from API
-  useEffect(() => {
-    // Removed console.log to prevent re-renders
-
-    // Set initial course data immediately to prevent blinking
-    const fallbackCourse =
-      dummyCourses[resolvedParams.courseId as keyof typeof dummyCourses];
-    if (fallbackCourse) {
-      setCourse(fallbackCourse);
-      setLoading(false);
-    } else if (
-      resolvedParams.courseId === "basic-accounting-tally-foundation"
-    ) {
-      setCourse(testCourse);
-      setLoading(false);
-    }
-
-    // Fetch from API in background
-    const fetchCourse = async () => {
-      if (!resolvedParams.courseId) {
-        return;
-      }
-
-      try {
-        const response = await axios.get(
-          `${API_BASE}/api/courses/${resolvedParams.courseId}`
-        );
-        setCourse(response.data);
-      } catch {
-        setError("Course not found");
-        // Keep existing fallback course if API fails
-      }
-    };
-
-    // Run API call in background
-    fetchCourse();
-  }, [resolvedParams.courseId, API_BASE, testCourse]);
+  const notifyCartUpdateAndOpenDrawer = () => {
+    window.dispatchEvent(
+      new CustomEvent("cartUpdated", { detail: { openDrawer: true } })
+    );
+  };
 
   // Check student authentication
   useEffect(() => {
     const checkStudentAuth = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/v1/students/isstudent`, {
+        const response = await axios.get(`${API_BASE}/api/v1/students/isstudent`, {
           withCredentials: true,
         });
         setStudent(response.data.student);
@@ -373,18 +130,9 @@ export default function CourseDetailClient({
       const result = await addToCart(courseId, sessionType);
       console.log("Add to cart result:", result);
 
-      // Trigger a custom event to update cart in header
-      window.dispatchEvent(new CustomEvent("cartUpdated"));
-
-      // Show appropriate message based on result
-      if (result?.message === "Item already in cart") {
-        alert("This course is already in your cart!");
-      } else {
-        alert("Course added to cart successfully!");
-      }
+      notifyCartUpdateAndOpenDrawer();
     } catch (error: any) {
       console.error("Error adding to cart:", error);
-      alert("Course added to cart successfully!");
     }
   };
 
@@ -393,10 +141,9 @@ export default function CourseDetailClient({
     const fetchCourseRatings = async () => {
       try {
         setRatingsLoading(true);
-        // Use the course ID from the fetched course data, not the slug
-        const courseId = course?._id || resolvedParams.courseId;
+        const ratingCourseId = course?._id || courseId;
         const response = await axios.get(
-          `${API_BASE}/v1/course-ratings/course/${courseId}`
+          `${API_BASE}/v1/course-ratings/course/${ratingCourseId}`
         );
         if (response.data.success) {
           setCourseRatings(response.data);
@@ -424,65 +171,7 @@ export default function CourseDetailClient({
     if (course && course._id) {
       fetchCourseRatings();
     }
-  }, [course, API_BASE, resolvedParams.courseId]);
-
-  // Loading state
-  if (loading && !displayCourse) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading course...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error && !course) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="pt-20 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Course Not Found
-            </h1>
-            <p className="text-gray-600">
-              The course you&apos;re looking for doesn&apos;t exist.
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Course ID: {resolvedParams.courseId}
-            </p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  // Course not found
-  if (!course) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <Header />
-        <div className="pt-20 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">
-              Course Not Found
-            </h1>
-            <p className="text-gray-600">
-              The course you&apos;re looking for doesn&apos;t exist.
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              Course ID: {resolvedParams.courseId}
-            </p>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
+  }, [course, API_BASE, courseId]);
 
   const toggleSection = (index: number) => {
     setExpandedSections((prev) =>
@@ -1065,7 +754,7 @@ export default function CourseDetailClient({
                           </p>
                         </div>
                         <button
-                          onClick={() => setShowCheckoutModal(true)}
+                          onClick={() => router.push("/checkout")}
                           className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
                           disabled={cartLoading}
                         >
@@ -1154,13 +843,6 @@ export default function CourseDetailClient({
 
       <Footer />
 
-      {/* Checkout Modal */}
-      <SimpleCheckoutModal
-        isOpen={showCheckoutModal}
-        onClose={() => setShowCheckoutModal(false)}
-        student={student}
-      />
-
       {/* Login Modal */}
       <LoginModal
         isOpen={showLoginModal}
@@ -1176,7 +858,7 @@ export default function CourseDetailClient({
             // Refresh student data first
             try {
               const response = await axios.get(
-                `${API_BASE}/v1/students/isstudent`,
+                `${API_BASE}/api/v1/students/isstudent`,
                 { withCredentials: true }
               );
               const loggedInStudent = response.data.student;
@@ -1190,22 +872,14 @@ export default function CourseDetailClient({
                     pendingCartAction.sessionType
                   );
 
-                  // Trigger a custom event to update cart in header
-                  window.dispatchEvent(new CustomEvent("cartUpdated"));
+                  console.log("Add to cart after login result:", result);
+                  notifyCartUpdateAndOpenDrawer();
 
                   // Clear pending action
                   setPendingCartAction(null);
-
-                  // Show appropriate message based on result
-                  if (result?.message === "Item already in cart") {
-                    alert("This course is already in your cart!");
-                  } else {
-                    alert("Course added to cart successfully!");
-                  }
                 } catch (error: any) {
                   console.error("Error adding to cart after login:", error);
                   setPendingCartAction(null);
-                  alert("Course added to cart successfully!");
                 }
               }
             } catch (error) {

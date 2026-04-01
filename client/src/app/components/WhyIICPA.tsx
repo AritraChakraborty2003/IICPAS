@@ -6,6 +6,11 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 
 export default function WhyIICPA() {
+  const normalizeCoursesLink = (link) => {
+    if (link === "/courses") return "/course";
+    return link || "/course";
+  };
+
   const [whyIICPAData, setWhyIICPAData] = useState({
     title: "Empowering Your Future with Excellence",
     subtitle: "Why Choose IICPA",
@@ -39,7 +44,7 @@ export default function WhyIICPA() {
     buttons: {
       exploreCourses: {
         text: "Explore Our Courses",
-        link: "/courses",
+        link: "/course",
       },
       learnMore: {
         text: "Learn More About IICPA",
@@ -239,7 +244,9 @@ export default function WhyIICPA() {
               transition={{ duration: 0.02, delay: 0.01 }}
             >
               <Link
-                href={whyIICPAData.buttons.exploreCourses.link}
+                href={normalizeCoursesLink(
+                  whyIICPAData.buttons.exploreCourses.link
+                )}
                 className="inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white px-8 py-4 rounded-full font-semibold text-lg shadow-2xl transition-all duration-300 transform-gpu hover:scale-105 hover:shadow-green-500/25 border border-white/20"
               >
                 <FaGraduationCap className="text-xl" />

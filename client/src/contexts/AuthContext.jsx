@@ -1,7 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { useAuthHeartbeat } from "../lib/useAuthHeartbeat";
 
 const AuthContext = createContext();
 
@@ -21,11 +22,29 @@ export const AuthProvider = ({ children }) => {
   const API_BASE =
     process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
+  const getHeartbeatHeaders = useCallback(() => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) return {};
+    return { Authorization: `Bearer ${token}` };
+  }, []);
+
+  const isPrivilegedAdmin = useCallback(
+    (currentUser) =>
+      currentUser?.role === "Admin" || currentUser?.role === "superadmin",
+    []
+  );
+
+  useAuthHeartbeat({
+    enabled: !!user,
+    heartbeatUrl: `${API_BASE}/auth/heartbeat`,
+    getHeaders: getHeartbeatHeaders,
+  });
+
   // Check if user has permission for specific module and action
   const hasPermission = (module, action) => {
     if (!user) return false;
-    // Admin users have all permissions
-    if (user.role === "Admin") return true;
+    // Admin and superadmin users have all permissions
+    if (isPrivilegedAdmin(user)) return true;
     if (!user.permissions) return false;
     return user.permissions[module]?.[action] || false;
   };
@@ -33,8 +52,8 @@ export const AuthProvider = ({ children }) => {
   // Check if user can access a module (has read permission)
   const canAccess = (module) => {
     if (!user) return false;
-    // Admin users can access all modules
-    if (user.role === "Admin") return true;
+    // Admin and superadmin users can access all modules
+    if (isPrivilegedAdmin(user)) return true;
     return hasPermission(module, "read");
   };
 
@@ -62,9 +81,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("adminToken", userData.token);
       localStorage.setItem("adminUser", JSON.stringify(userData));
 
-      // Return redirect URL based on role
-      const redirectUrl =
-        userData.role === "Admin" ? "/admin-dashboard" : "/team-dashboard";
+      // Route both admin and team users into the same admin dashboard shell.
+      // Module visibility is controlled by permissions from Staff Management.
+      const redirectUrl = "/admin-dashboard";
 
       return { success: true, redirectUrl };
     } catch (error) {
@@ -81,7 +100,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // Call logout endpoint if needed
       await axios.post(
-        `${API_BASE}/logout`,
+        `${API_BASE}/employees/logout`,
         {},
         {
           headers: {
@@ -157,6 +176,7 @@ export const AuthProvider = ({ children }) => {
     hasPermission,
     canAccess,
     getAccessibleModules,
+    isPrivilegedAdmin,
     isAuthenticated: !!user,
   };
 

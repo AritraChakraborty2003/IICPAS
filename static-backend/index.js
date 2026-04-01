@@ -42,6 +42,25 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 let db;
 let filesCollection;
 
+const serializeFileDoc = (fileDoc) => ({
+  ...fileDoc,
+  id: fileDoc._id?.toString?.() || fileDoc.id,
+});
+
+const getUploadContextFromRequest = (req) => {
+  const topicId = typeof req.body?.topicId === "string" ? req.body.topicId.trim() : "";
+  const chapterId =
+    typeof req.body?.chapterId === "string" ? req.body.chapterId.trim() : "";
+  const courseId =
+    typeof req.body?.courseId === "string" ? req.body.courseId.trim() : "";
+
+  return {
+    ...(topicId ? { topicId } : {}),
+    ...(chapterId ? { chapterId } : {}),
+    ...(courseId ? { courseId } : {}),
+  };
+};
+
 const connectToMongoDB = async () => {
   try {
     const client = new MongoClient(
@@ -57,6 +76,7 @@ const connectToMongoDB = async () => {
     await filesCollection.createIndex({ file_type: 1 });
     await filesCollection.createIndex({ upload_date: -1 });
     await filesCollection.createIndex({ filename: 1 });
+    await filesCollection.createIndex({ topicId: 1, file_type: 1, upload_date: -1 });
 
     console.log("MongoDB indexes created");
   } catch (error) {
@@ -160,6 +180,7 @@ app.post("/upload/image", uploadImage.single("image"), async (req, res) => {
     const cdnUrl = `${process.env.CDN_BASE_URL}/uploads/images/${req.file.filename}`;
 
     // Save to MongoDB
+    const uploadContext = getUploadContextFromRequest(req);
     const fileDoc = {
       filename: req.file.filename,
       original_name: req.file.originalname,
@@ -168,6 +189,7 @@ app.post("/upload/image", uploadImage.single("image"), async (req, res) => {
       file_type: req.file.mimetype,
       cdn_url: cdnUrl,
       upload_date: new Date(),
+      ...uploadContext,
     };
 
     const result = await filesCollection.insertOne(fileDoc);
@@ -207,6 +229,7 @@ app.post(
 
       const uploadedFiles = [];
       const errors = [];
+      const uploadContext = getUploadContextFromRequest(req);
 
       for (const file of req.files) {
         try {
@@ -221,6 +244,7 @@ app.post(
             file_type: file.mimetype,
             cdn_url: cdnUrl,
             upload_date: new Date(),
+            ...uploadContext,
           };
 
           const result = await filesCollection.insertOne(fileDoc);
@@ -269,6 +293,7 @@ app.post("/upload/video", uploadVideo.single("video"), async (req, res) => {
     const cdnUrl = `${process.env.CDN_BASE_URL}/uploads/videos/${req.file.filename}`;
 
     // Save to MongoDB
+    const uploadContext = getUploadContextFromRequest(req);
     const fileDoc = {
       filename: req.file.filename,
       original_name: req.file.originalname,
@@ -277,6 +302,7 @@ app.post("/upload/video", uploadVideo.single("video"), async (req, res) => {
       file_type: req.file.mimetype,
       cdn_url: cdnUrl,
       upload_date: new Date(),
+      ...uploadContext,
     };
 
     const result = await filesCollection.insertOne(fileDoc);
@@ -313,6 +339,7 @@ app.post("/upload/videos", uploadVideo.array("videos", 5), async (req, res) => {
 
     const uploadedFiles = [];
     const errors = [];
+    const uploadContext = getUploadContextFromRequest(req);
 
     for (const file of req.files) {
       try {
@@ -327,6 +354,7 @@ app.post("/upload/videos", uploadVideo.array("videos", 5), async (req, res) => {
           file_type: file.mimetype,
           cdn_url: cdnUrl,
           upload_date: new Date(),
+          ...uploadContext,
         };
 
         const result = await filesCollection.insertOne(fileDoc);
@@ -494,7 +522,7 @@ app.get("/files", async (req, res) => {
       .find({})
       .sort({ upload_date: -1 })
       .toArray();
-    res.json({ success: true, data: files });
+    res.json({ success: true, data: files.map(serializeFileDoc) });
   } catch (error) {
     console.error("Error fetching files:", error);
     res.status(500).json({ error: "Failed to fetch files" });
@@ -505,19 +533,29 @@ app.get("/files", async (req, res) => {
 app.get("/files/:type", async (req, res) => {
   try {
     const type = req.params.type; // 'images' or 'videos'
+    const topicId =
+      typeof req.query.topicId === "string" ? req.query.topicId.trim() : "";
 
     if (type === "images") {
+      const query = {
+        file_type: { $regex: /^image\// },
+        ...(topicId ? { topicId } : {}),
+      };
       const images = await filesCollection
-        .find({ file_type: { $regex: /^image\// } })
+        .find(query)
         .sort({ upload_date: -1 })
         .toArray();
-      res.json({ success: true, data: images });
+      res.json({ success: true, data: images.map(serializeFileDoc) });
     } else if (type === "videos") {
+      const query = {
+        file_type: { $regex: /^video\// },
+        ...(topicId ? { topicId } : {}),
+      };
       const videos = await filesCollection
-        .find({ file_type: { $regex: /^video\// } })
+        .find(query)
         .sort({ upload_date: -1 })
         .toArray();
-      res.json({ success: true, data: videos });
+      res.json({ success: true, data: videos.map(serializeFileDoc) });
     } else {
       res
         .status(400)

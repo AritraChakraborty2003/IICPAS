@@ -11,6 +11,9 @@ import dynamic from "next/dynamic";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const ALLOWED_IMAGE_ACCEPT =
+  ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
+const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
 
 // Blog interface
 interface Blog {
@@ -40,7 +43,11 @@ const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 const joditConfig = {
   readonly: false,
   height: 400,
-  uploader: { insertImageAsBase64URI: true },
+  uploader: {
+    insertImageAsBase64URI: true,
+    accept: ALLOWED_IMAGE_ACCEPT,
+    imagesExtensions: JODIT_IMAGE_EXTENSIONS,
+  },
   toolbarAdaptive: false,
   showCharsCounter: false,
   showWordsCounter: false,
@@ -633,7 +640,7 @@ export default function BlogComponent() {
           <input
             type="file"
             name="image"
-            accept="image/*"
+            accept={ALLOWED_IMAGE_ACCEPT}
             onChange={handleFormChange}
             title="Select banner image for the blog"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"

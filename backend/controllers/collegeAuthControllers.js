@@ -3,8 +3,16 @@ import jwt from "jsonwebtoken";
 import College from "../models/College.js";
 import { generateToken } from "../utils/generateToken.js";
 import dotenv from "dotenv";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
 export const sendCollegeOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -44,6 +52,15 @@ export const collegeSignup = async (req, res) => {
     });
 
     const token = generateToken(college);
+    await recordLogin({
+      role: "college",
+      actorModel: "College",
+      actorId: college._id,
+      displayName: college.name,
+      email: college.email,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -62,6 +79,10 @@ export const collegeLogin = async (req, res) => {
     const { email, password } = req.body;
     const college = await College.findOne({ email });
     if (!college) return res.status(404).json({ message: "College not found" });
+    const allowed = await isLoginAllowed("college", college._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
 
     const isMatch = await bcrypt.compare(password, college.password);
     if (!isMatch)
@@ -81,9 +102,38 @@ export const collegeLogin = async (req, res) => {
   }
 };
 
-export const collegeLogout = (req, res) => {
-  res.clearCookie("token");
-  res.status(200).json({ message: "Logged out successfully" });
+export const collegeLogout = async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || "default_jwt_secret_for_development"
+        );
+        if (decoded?.id) {
+          const college = await College.findById(decoded.id).select("_id name email");
+          if (college) {
+            await recordLogout({
+              role: "college",
+              actorModel: "College",
+              actorId: college._id,
+              displayName: college.name,
+              email: college.email,
+              req,
+            });
+          }
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
+
+    res.clearCookie("token");
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch {
+    res.status(200).json({ message: "Logged out successfully" });
+  }
 };
 
 export const isCollegeLoggedIn = (req, res) => {
@@ -173,6 +223,52 @@ export const approveCollege = async (req, res) => {
     res.status(200).json({ message: "College approved", college });
   } catch (err) {
     res.status(500).json({ message: "Approval failed", error: err.message });
+  }
+};
+
+// Toggle college status between approved and inactive
+export const toggleCollegeStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const college = await College.findById(id);
+    if (!college) return res.status(404).json({ message: "College not found" });
+
+    const current = String(college.status || "").toLowerCase();
+    if (current === "approved") {
+      college.status = "inactive";
+    } else if (current === "inactive") {
+      college.status = "approved";
+    } else {
+      return res.status(400).json({
+        message:
+          "Only approved/inactive colleges can be toggled. Approve this college first.",
+      });
+    }
+
+    await college.save();
+    res.status(200).json({
+      message: `College marked as ${college.status}`,
+      college,
+    });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to toggle college status", error: err.message });
+  }
+};
+
+// Delete college by ID
+export const deleteCollege = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const college = await College.findByIdAndDelete(id);
+    if (!college) return res.status(404).json({ message: "College not found" });
+
+    res.status(200).json({ message: "College deleted successfully" });
+  } catch (err) {
+    res
+      .status(500)
+      .json({ message: "Failed to delete college", error: err.message });
   }
 };
 

@@ -40,26 +40,39 @@ const Draggable = dynamic(
 // Debounce utility function
 const debounce = (func, wait) => {
   let timeout;
-  return function executedFunction(...args) {
+  function executedFunction(...args) {
     const later = () => {
       clearTimeout(timeout);
       func(...args);
     };
     clearTimeout(timeout);
     timeout = setTimeout(later, wait);
+  }
+
+  executedFunction.cancel = () => {
+    clearTimeout(timeout);
   };
+
+  return executedFunction;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const STATIC_CDN_BASE =
   process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
+const ALLOWED_IMAGE_ACCEPT =
+  ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
+const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
 
 console.log(STATIC_CDN_BASE);
 const joditConfig = {
   readonly: false,
   height: 300,
-  uploader: { insertImageAsBase64URI: true },
+  uploader: {
+    insertImageAsBase64URI: true,
+    accept: ALLOWED_IMAGE_ACCEPT,
+    imagesExtensions: JODIT_IMAGE_EXTENSIONS,
+  },
   toolbarAdaptive: false,
   showCharsCounter: false,
   showWordsCounter: false,
@@ -170,8 +183,21 @@ export default function AddOrEditTopicForm({
     videos: [],
   });
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const currentTopicId = topic?._id || "";
 
   // Debounced content update to prevent typing interruption
+  const debouncedSetContent = useCallback(
+    debounce((newContent) => {
+      setContent(newContent);
+    }, 250),
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedSetContent.cancel?.();
+    };
+  }, [debouncedSetContent]);
 
   // Quiz editing functions
   const openQuizEditor = () => {
@@ -303,18 +329,38 @@ export default function AddOrEditTopicForm({
   const fetchUploadedFiles = async () => {
     setLoadingFiles(true);
     try {
-      // Fetch images and videos in parallel
-      const [imagesRes, videosRes] = await Promise.all([
-        axios.get(`${STATIC_CDN_BASE}/files/images`),
-        axios.get(`${STATIC_CDN_BASE}/files/videos`),
+      const normalizeFiles = (files = []) =>
+        files.map((file) => ({
+          ...file,
+          id:
+            file.id ||
+            (typeof file._id === "string"
+              ? file._id
+              : file._id?.$oid || file.filename),
+        }));
+
+      const videosPromise = axios.get(`${STATIC_CDN_BASE}/files/videos`);
+      const imagesPromise = currentTopicId
+        ? axios.get(`${STATIC_CDN_BASE}/files/images`, {
+            params: { topicId: currentTopicId },
+          })
+        : Promise.resolve({ data: { success: true, data: [] } });
+
+      const [videosRes, imagesRes] = await Promise.all([
+        videosPromise,
+        imagesPromise,
       ]);
 
-      if (imagesRes.data.success && videosRes.data.success) {
-        setUploadedFiles({
-          images: imagesRes.data.data || [],
-          videos: videosRes.data.data || [],
-        });
-      }
+      setUploadedFiles({
+        images:
+          imagesRes.data?.success === true
+            ? normalizeFiles(imagesRes.data.data)
+            : [],
+        videos:
+          videosRes.data?.success === true
+            ? normalizeFiles(videosRes.data.data)
+            : [],
+      });
     } catch (error) {
       console.error("Error fetching uploaded files:", error);
       // Don't show error to user as this is not critical
@@ -325,6 +371,11 @@ export default function AddOrEditTopicForm({
 
   // Delete uploaded file
   const handleDeleteFile = async (fileId, fileType) => {
+    if (!fileId) {
+      Swal.fire("Error", "Invalid file id. Refresh files and try again.", "error");
+      return;
+    }
+
     try {
       await axios.delete(`${STATIC_CDN_BASE}/files/${fileId}`);
 
@@ -849,6 +900,14 @@ export default function AddOrEditTopicForm({
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (!currentTopicId) {
+      Swal.fire(
+        "Save Topic First",
+        "Save topic once to start topic-scoped media library.",
+        "info"
+      );
+      return;
+    }
 
     // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
@@ -864,6 +923,10 @@ export default function AddOrEditTopicForm({
 
     const formData = new FormData();
     formData.append("image", file);
+    formData.append("topicId", currentTopicId);
+    if (chapterId) {
+      formData.append("chapterId", chapterId);
+    }
 
     try {
       // Upload to static-backend microservice
@@ -878,6 +941,7 @@ export default function AddOrEditTopicForm({
       if (res.data.success && res.data.data.cdnUrl) {
         // Add the image URL to the list
         setImageLinks((prev) => [...prev, res.data.data.cdnUrl]);
+        fetchUploadedFiles();
         Swal.fire({
           title: "Image Uploaded Successfully!",
           text: "Image URL is now available below. You can copy and use it in the editor.",
@@ -897,6 +961,14 @@ export default function AddOrEditTopicForm({
   const handleMultipleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
+    if (!currentTopicId) {
+      Swal.fire(
+        "Save Topic First",
+        "Save topic once to start topic-scoped media library.",
+        "info"
+      );
+      return;
+    }
 
     // Check if too many files
     if (files.length > 10) {
@@ -929,6 +1001,10 @@ export default function AddOrEditTopicForm({
     validFiles.forEach((file) => {
       formData.append("images", file);
     });
+    formData.append("topicId", currentTopicId);
+    if (chapterId) {
+      formData.append("chapterId", chapterId);
+    }
 
     try {
       // Upload to static-backend microservice
@@ -1108,7 +1184,7 @@ export default function AddOrEditTopicForm({
                 <Stack spacing={1}>
                   {uploadedFiles.videos.map((file) => (
                     <Box
-                      key={file.id}
+                      key={file.id || file.filename}
                       sx={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -1187,7 +1263,9 @@ export default function AddOrEditTopicForm({
                           size="small"
                           variant="outlined"
                           color="error"
-                          onClick={() => handleDeleteFile(file.id, "videos")}
+                          onClick={() =>
+                            handleDeleteFile(file.id || file._id, "videos")
+                          }
                         >
                           Delete
                         </Button>
@@ -1300,7 +1378,6 @@ export default function AddOrEditTopicForm({
                       variant="outlined"
                       color="secondary"
                       onClick={() => {
-                        // Test video URL
                         const testVideo = document.createElement("video");
                         testVideo.src = url;
                         testVideo.controls = true;
@@ -1350,7 +1427,7 @@ export default function AddOrEditTopicForm({
                 size="small"
                 variant="outlined"
                 onClick={fetchUploadedFiles}
-                disabled={loadingFiles}
+                disabled={loadingFiles || !currentTopicId}
               >
                 {loadingFiles ? "Loading..." : "Refresh Files"}
               </Button>
@@ -1360,7 +1437,12 @@ export default function AddOrEditTopicForm({
               in the editor.
             </Typography>
             <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
-              <Button component="label" variant="contained" color="secondary">
+              <Button
+                component="label"
+                variant="contained"
+                color="secondary"
+                disabled={!currentTopicId}
+              >
                 Upload Single Image
                 <input
                   type="file"
@@ -1369,7 +1451,12 @@ export default function AddOrEditTopicForm({
                   onChange={handleImageUpload}
                 />
               </Button>
-              <Button component="label" variant="outlined" color="secondary">
+              <Button
+                component="label"
+                variant="outlined"
+                color="secondary"
+                disabled={!currentTopicId}
+              >
                 Upload Multiple Images
                 <input
                   type="file"
@@ -1382,7 +1469,17 @@ export default function AddOrEditTopicForm({
             </Stack>
 
             {/* Display existing uploaded images */}
-            {uploadedFiles.images.length > 0 && (
+            {!currentTopicId && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Save topic once to start topic-scoped media library.
+              </Typography>
+            )}
+            {currentTopicId && uploadedFiles.images.length === 0 && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                No images uploaded for this topic yet.
+              </Typography>
+            )}
+            {currentTopicId && uploadedFiles.images.length > 0 && (
               <Box mt={2} mb={2}>
                 <Typography
                   variant="body2"
@@ -1394,7 +1491,7 @@ export default function AddOrEditTopicForm({
                 <Stack spacing={1}>
                   {uploadedFiles.images.map((file) => (
                     <Box
-                      key={file.id}
+                      key={file.id || file.filename}
                       sx={{
                         display: "flex",
                         justifyContent: "space-between",
@@ -1487,7 +1584,9 @@ export default function AddOrEditTopicForm({
                           size="small"
                           variant="outlined"
                           color="error"
-                          onClick={() => handleDeleteFile(file.id, "images")}
+                          onClick={() =>
+                            handleDeleteFile(file.id || file._id, "images")
+                          }
                         >
                           Delete
                         </Button>
@@ -1571,17 +1670,18 @@ export default function AddOrEditTopicForm({
                       variant="outlined"
                       color="secondary"
                       onClick={() => {
-                        // Test video URL
-                        const testVideo = document.createElement("video");
-                        testVideo.src = url;
-                        testVideo.controls = true;
-                        testVideo.style.width = "300px";
-                        testVideo.style.height = "200px";
+                        const testImage = document.createElement("img");
+                        testImage.src = url;
+                        testImage.alt = "Uploaded preview";
+                        testImage.style.width = "100%";
+                        testImage.style.maxWidth = "500px";
+                        testImage.style.height = "auto";
+                        testImage.style.borderRadius = "12px";
 
                         Swal.fire({
-                          title: "Video Test",
-                          html: testVideo.outerHTML,
-                          width: 400,
+                          title: "Image Preview",
+                          html: testImage.outerHTML,
+                          width: 560,
                           showConfirmButton: true,
                           confirmButtonText: "Close",
                         });

@@ -28,8 +28,10 @@ import ScheduleBookingTab from "./ScheduleBookingTab";
 import JobManagerTab from "./JobListTab";
 import CompanyDashboardOverview from "./Dashboard";
 import CompanyProfile from "./CompanyProfile";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+const MOBILE_NUMBER_REGEX = /^[6-9]\d{9}$/;
 
 const CompanyDashboardPage = () => {
   const router = useRouter();
@@ -47,6 +49,11 @@ const CompanyDashboardPage = () => {
     message: "",
   });
   const [submitting, setSubmitting] = useState(false);
+
+  useAuthHeartbeat({
+    enabled: !!company,
+    heartbeatUrl: `${API}/auth/heartbeat`,
+  });
 
   useEffect(() => {
     const verifyCompany = async () => {
@@ -94,14 +101,26 @@ const CompanyDashboardPage = () => {
   const handleTicketSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
     const { name, email, phone, message } = ticketForm;
+    const normalizedPhone = phone.replace(/\D/g, "").slice(0, 10);
 
-    if (!phone.trim() || !message.trim()) {
+    if (!normalizedPhone || !message.trim()) {
       return toast.error("Phone and Message are required.");
+    }
+
+    if (!MOBILE_NUMBER_REGEX.test(normalizedPhone)) {
+      return toast.error(
+        "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9."
+      );
     }
 
     setSubmitting(true);
     try {
-      await axios.post(`${API}/tickets`, { name, email, phone, message });
+      await axios.post(`${API}/tickets`, {
+        name,
+        email,
+        phone: normalizedPhone,
+        message,
+      });
       toast.success("Ticket raised successfully!");
       setTicketForm((prev) => ({ ...prev, phone: "", message: "" }));
       setShowTicketModal(false);
@@ -237,14 +256,17 @@ const CompanyDashboardPage = () => {
                 <input
                   type="tel"
                   className="w-full px-3 py-2 border border-gray-600 rounded-md bg-gray-800 bg-opacity-70 focus:ring-blue-500 focus:border-blue-500 placeholder-gray-400"
-                  placeholder="Your contact number"
+                  placeholder="Enter 10-digit mobile number"
                   value={ticketForm.phone}
                   onChange={(e) =>
                     setTicketForm((prev) => ({
                       ...prev,
-                      phone: e.target.value,
+                      phone: e.target.value.replace(/\D/g, "").slice(0, 10),
                     }))
                   }
+                  inputMode="numeric"
+                  pattern="[6-9][0-9]{9}"
+                  maxLength={10}
                   required
                 />
               </div>

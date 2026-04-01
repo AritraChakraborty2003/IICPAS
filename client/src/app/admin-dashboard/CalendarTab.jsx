@@ -10,14 +10,22 @@ import withReactContent from "sweetalert2-react-content";
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
 const MySwal = withReactContent(Swal);
 
+const DEFAULT_MODAL_STATE = {
+  scheduleMode: "auto",
+  startDate: "",
+  startTime: "",
+  endDate: "",
+  endTime: "",
+};
+
 const CalendarTab = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [modalOpen, setModalOpen] = useState(false);
   const [modalBooking, setModalBooking] = useState(null);
-  const [linkInput, setLinkInput] = useState("");
   const [recordingInput, setRecordingInput] = useState("");
+  const [scheduleForm, setScheduleForm] = useState(DEFAULT_MODAL_STATE);
 
   useEffect(() => {
     fetchBookings();
@@ -36,33 +44,28 @@ const CalendarTab = () => {
     setLoading(false);
   };
 
+  const resetModalState = () => {
+    setModalOpen(false);
+    setModalBooking(null);
+    setRecordingInput("");
+    setScheduleForm(DEFAULT_MODAL_STATE);
+  };
+
+  const isLiveOrRecordedBooking = (booking) =>
+    booking &&
+    (booking.category === "live" ||
+      booking.category === "recorded" ||
+      booking.type === "live" ||
+      booking.type === "recorded");
+
   const handleSchedule = async (id) => {
     const booking = bookings.find((b) => b._id === id);
-    if (
-      booking &&
-      (booking.category === "live" ||
-        booking.category === "recorded" ||
-        booking.type === "live" ||
-        booking.type === "recorded")
-    ) {
-      setModalBooking(booking);
-      setLinkInput(booking.link || "");
-      setRecordingInput(booking.recording || "");
-      setModalOpen(true);
-      return;
-    }
-    // Default: old behavior
-    try {
-      await axios.patch(
-        `${API}/bookings/${id}/approve`,
-        {},
-        { withCredentials: true }
-      );
-      toast.success("Scheduled!");
-      fetchBookings();
-    } catch (err) {
-      toast.error("Failed to schedule");
-    }
+    if (!booking) return;
+
+    setModalBooking(booking);
+    setRecordingInput(booking.link || booking.recording || "");
+    setScheduleForm(DEFAULT_MODAL_STATE);
+    setModalOpen(true);
   };
 
   const handleCancel = async (id) => {
@@ -111,47 +114,96 @@ const CalendarTab = () => {
       b.date && new Date(b.date).toDateString() === selectedDate.toDateString()
   );
 
+  const updateScheduleField = (key, value) => {
+    setScheduleForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const buildLocalDateTime = (date, time) => new Date(`${date}T${time}`);
+
   // Modal submit for live/recorded
   const handleModalSubmit = async () => {
-    if (!recordingInput) {
+    if (!modalBooking) return;
+
+    if (isLiveOrRecordedBooking(modalBooking) && !recordingInput.trim()) {
       toast.error("Please enter a recording link");
       return;
     }
+
+    const payload = { scheduleMode: scheduleForm.scheduleMode };
+
+    if (scheduleForm.scheduleMode === "manual") {
+      const { startDate, startTime, endDate, endTime } = scheduleForm;
+      if (!startDate || !startTime || !endDate || !endTime) {
+        toast.error("Please enter start and end date/time");
+        return;
+      }
+
+      const manualStart = buildLocalDateTime(startDate, startTime);
+      const manualEnd = buildLocalDateTime(endDate, endTime);
+
+      if (
+        Number.isNaN(manualStart.getTime()) ||
+        Number.isNaN(manualEnd.getTime())
+      ) {
+        toast.error("Please enter valid start and end date/time");
+        return;
+      }
+
+      if (manualEnd <= manualStart) {
+        toast.error("End date/time must be after start date/time");
+        return;
+      }
+
+      const durationMs = manualEnd.getTime() - manualStart.getTime();
+      const requestedMs = Number(modalBooking.hrs) * 60 * 60 * 1000;
+
+      if (durationMs !== requestedMs) {
+        toast.error(
+          `Manual schedule must be exactly ${modalBooking.hrs} hour(s)`
+        );
+        return;
+      }
+
+      payload.manualStart = manualStart.toISOString();
+      payload.manualEnd = manualEnd.toISOString();
+    }
+
+    if (isLiveOrRecordedBooking(modalBooking)) {
+      payload.recording = recordingInput.trim();
+    }
+
     try {
       await axios.patch(
         `${API}/bookings/${modalBooking._id}/approve`,
-        { recording: recordingInput },
+        payload,
         { withCredentials: true }
       );
       toast.success("Scheduled!");
-      setModalOpen(false);
-      setModalBooking(null);
-      setLinkInput("");
-      setRecordingInput("");
+      resetModalState();
       fetchBookings();
     } catch (err) {
-      toast.error("Failed to schedule");
+      toast.error(err.response?.data?.error || "Failed to schedule");
     }
   };
 
   return (
     <div className="w-full mx-auto space-y-12 pb-8">
-      {/* Modal for live/recorded booking link */}
+      {/* Approval modal */}
       {modalOpen && modalBooking && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
             className="absolute inset-0 bg-black/60"
-            onClick={() => setModalOpen(false)}
+            onClick={resetModalState}
           />
           <div className="relative bg-white rounded-xl shadow-xl p-8 max-w-md w-full z-10">
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
-              onClick={() => setModalOpen(false)}
+              onClick={resetModalState}
             >
               <X size={24} />
             </button>
             <h3 className="text-xl font-bold mb-4 text-blue-700 text-center">
-              Schedule Live/Recorded Booking
+              Schedule Booking
             </h3>
             <div className="mb-4">
               <div className="font-semibold text-gray-700 mb-1">
@@ -170,22 +222,113 @@ const CalendarTab = () => {
                 Hours: <span className="font-normal">{modalBooking.hrs}</span>
               </div>
             </div>
-            <label className="block mb-2 font-medium text-blue-900">
-              Recording Link
-            </label>
-            <input
-              type="url"
-              className="border rounded px-3 py-2 w-full mb-4"
-              placeholder="https://..."
-              value={recordingInput}
-              onChange={(e) => setRecordingInput(e.target.value)}
-              required
-            />
+            <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 p-4">
+              <div className="mb-3 text-sm font-semibold text-blue-900">
+                Approval Mode
+              </div>
+              <label className="mb-2 flex items-center gap-3 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={scheduleForm.scheduleMode === "auto"}
+                  onChange={() =>
+                    setScheduleForm((current) => ({
+                      ...current,
+                      scheduleMode: "auto",
+                    }))
+                  }
+                />
+                <span>Auto Schedule</span>
+              </label>
+              <label className="flex items-center gap-3 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={scheduleForm.scheduleMode === "manual"}
+                  onChange={() =>
+                    setScheduleForm((current) => ({
+                      ...current,
+                      scheduleMode: "manual",
+                    }))
+                  }
+                />
+                <span>Manual Entry</span>
+              </label>
+            </div>
+            {scheduleForm.scheduleMode === "manual" && (
+              <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-blue-900">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full rounded border px-3 py-2"
+                    value={scheduleForm.startDate}
+                    onChange={(e) =>
+                      updateScheduleField("startDate", e.target.value)
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-blue-900">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full rounded border px-3 py-2"
+                    value={scheduleForm.startTime}
+                    onChange={(e) =>
+                      updateScheduleField("startTime", e.target.value)
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-blue-900">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full rounded border px-3 py-2"
+                    value={scheduleForm.endDate}
+                    onChange={(e) =>
+                      updateScheduleField("endDate", e.target.value)
+                    }
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-blue-900">
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    className="w-full rounded border px-3 py-2"
+                    value={scheduleForm.endTime}
+                    onChange={(e) =>
+                      updateScheduleField("endTime", e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+            )}
+            {isLiveOrRecordedBooking(modalBooking) && (
+              <>
+                <label className="block mb-2 font-medium text-blue-900">
+                  Recording Link
+                </label>
+                <input
+                  type="url"
+                  className="border rounded px-3 py-2 w-full mb-4"
+                  placeholder="https://..."
+                  value={recordingInput}
+                  onChange={(e) => setRecordingInput(e.target.value)}
+                  required
+                />
+              </>
+            )}
             <button
               onClick={handleModalSubmit}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded"
             >
-              Schedule & Save Recording
+              Approve & Schedule
             </button>
           </div>
         </div>

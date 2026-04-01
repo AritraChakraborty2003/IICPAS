@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { Toaster } from "react-hot-toast";
-import Chatbot from "@/components/Chatbot";
-import WhatsAppButton from "@/components/WhatsAppButton";
-import CookiePolicyPopup from "@/components/CookiePolicyPopup";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
-import SpecialOfferWrapper from "@/components/SpecialOfferWrapper";
-import CopyProtection from "@/components/CopyProtection";
+import DeferredGlobalWidgets from "@/components/DeferredGlobalWidgets";
+import ScrollToTopOnNavigation from "@/components/ScrollToTopOnNavigation";
+import AuthRouteMarker from "@/components/AuthRouteMarker";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,13 +23,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <GoogleAnalytics />
       <body className={inter.className} suppressHydrationWarning={true}>
-        <CopyProtection />
+        <GoogleAnalytics />
         <AuthProvider>
-          {/* Special Offers Flash Cards - Show on all pages as modal */}
-          <SpecialOfferWrapper location="all" maxCards={1} />
+          <AuthRouteMarker />
+          <Suspense fallback={null}>
+            <ScrollToTopOnNavigation />
+          </Suspense>
           {children}
+          <DeferredGlobalWidgets />
         </AuthProvider>
         <Toaster
           position="top-right"
@@ -56,9 +57,6 @@ export default function RootLayout({
             },
           }}
         />
-        <Chatbot />
-        <WhatsAppButton />
-        <CookiePolicyPopup />
       </body>
     </html>
   );

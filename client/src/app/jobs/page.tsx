@@ -4,7 +4,6 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import CourseJobs from "./CourseJobs";
 import ApplyJobsWithModalApply from "./ AllJobsWithModalApply";
-import ContactSection from "../components/ContactSection";
 
 export const metadata: Metadata = {
   title: "Jobs & Careers - IICPA Institute",
@@ -48,7 +47,6 @@ const page = () => {
       <Header />
       <CourseJobs />
       <ApplyJobsWithModalApply />
-      <ContactSection />
       <Footer />
     </div>
   );

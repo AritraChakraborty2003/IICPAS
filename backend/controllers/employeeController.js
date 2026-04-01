@@ -1,11 +1,19 @@
 import Employee from "../models/Employee.js";
 import jwt from "jsonwebtoken";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 // Create JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: "30d",
   });
+};
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
 };
 
 // @desc    Register new employee
@@ -92,6 +100,11 @@ const registerInitialAdmin = async (req, res) => {
       topics: { add: true, read: true, update: true, delete: true, active: true },
       revision: { add: true, read: true, update: true, delete: true, active: true },
       support: { add: true, read: true, update: true, delete: true, active: true },
+      "booking-settings": { add: true, read: true, update: true, delete: true, active: true },
+      "invoice-company-settings": { add: true, read: true, update: true, delete: true, active: true },
+      "job-sidebar-marquee": { add: true, read: true, update: true, delete: true, active: true },
+      "our-partners": { add: true, read: true, update: true, delete: true, active: true },
+      bookings: { add: true, read: true, update: true, delete: true, active: true },
     };
 
     const admin = await Employee.create({
@@ -147,6 +160,21 @@ const loginEmployee = async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    const allowed = await isLoginAllowed("employee", employee._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
+
+    const token = generateToken(employee._id);
+    await recordLogin({
+      role: "employee",
+      actorModel: "Employee",
+      actorId: employee._id,
+      displayName: employee.name,
+      email: employee.email,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
 
     res.json({
       _id: employee._id,
@@ -155,11 +183,32 @@ const loginEmployee = async (req, res) => {
       role: employee.role,
       status: employee.status,
       permissions: employee.permissions,
-      token: generateToken(employee._id),
+      token,
     });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// @desc    Logout employee
+// @route   POST /api/employees/logout
+// @access  Private
+const logoutEmployee = async (req, res) => {
+  try {
+    await recordLogout({
+      role: "employee",
+      actorModel: "Employee",
+      actorId: req.user._id,
+      displayName: req.user.name,
+      email: req.user.email,
+      req,
+    });
+
+    return res.status(200).json({ message: "Logout successful" });
+  } catch (error) {
+    console.error("Logout employee error:", error);
+    return res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -323,6 +372,7 @@ export {
   registerEmployee,
   registerInitialAdmin,
   loginEmployee,
+  logoutEmployee,
   getEmployees,
   getEmployeeById,
   updateEmployee,

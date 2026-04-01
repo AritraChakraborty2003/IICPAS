@@ -3,12 +3,20 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
 
 const JWT_SECRET =
   process.env.JWT_SECRET || "default_jwt_secret_for_development";
 const isProd = process.env.NODE_ENV === "production";
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -53,6 +61,10 @@ export const loginCompany = async (req, res) => {
     const isMatch = await bcrypt.compare(password, company.password);
     if (!isMatch)
       return res.status(401).json({ message: "Invalid credentials" });
+    const allowed = await isLoginAllowed("company", company._id);
+    if (!allowed) {
+      return res.status(403).json({ message: "Account is inactive" });
+    }
 
     console.log(JWT_SECRET);
     const token = jwt.sign(
@@ -68,6 +80,16 @@ export const loginCompany = async (req, res) => {
         expiresIn: "7d",
       }
     );
+
+    await recordLogin({
+      role: "company",
+      actorModel: "Company",
+      actorId: company._id,
+      displayName: company.fullName,
+      email: company.email,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
 
     // Set token in HttpOnly cookie
     res.cookie("token", token, {
@@ -94,13 +116,41 @@ export const loginCompany = async (req, res) => {
 };
 
 export const logoutCompany = (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-  });
+  const doLogout = async () => {
+    const token = req.cookies.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded?.id) {
+          const company = await Company.findById(decoded.id).select("_id fullName email");
+          if (company) {
+            await recordLogout({
+              role: "company",
+              actorModel: "Company",
+              actorId: company._id,
+              displayName: company.fullName,
+              email: company.email,
+              req,
+            });
+          }
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
 
-  res.status(200).json({ message: "Logout successful" });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    });
+
+    res.status(200).json({ message: "Logout successful" });
+  };
+
+  doLogout().catch(() => {
+    res.status(200).json({ message: "Logout successful" });
+  });
 };
 
 // Forgot password — send OTP
@@ -151,12 +201,68 @@ export const getAllCompanies = async (_, res) => {
 
 // Admin: Approve company
 export const approveCompany = async (req, res) => {
-  const company = await Company.findByIdAndUpdate(
-    req.params.id,
-    { status: "approved" },
-    { new: true }
-  );
-  res.json({ message: "Approved", company });
+  try {
+    const company = await Company.findByIdAndUpdate(
+      req.params.id,
+      { status: "approved" },
+      { new: true }
+    );
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    res.json({ message: "Approved", company });
+  } catch (error) {
+    res.status(500).json({ message: "Approval failed", error: error.message });
+  }
+};
+
+// Admin: Toggle company status between approved and inactive
+export const toggleCompanyStatus = async (req, res) => {
+  try {
+    const company = await Company.findById(req.params.id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const current = String(company.status || "").toLowerCase();
+    if (current === "approved") {
+      company.status = "inactive";
+    } else if (current === "inactive") {
+      company.status = "approved";
+    } else {
+      return res.status(400).json({
+        message:
+          "Only approved/inactive companies can be toggled. Approve this company first.",
+      });
+    }
+
+    await company.save();
+    res.status(200).json({
+      message: `Company marked as ${company.status}`,
+      company,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to toggle company status",
+      error: error.message,
+    });
+  }
+};
+
+// Admin: Delete company
+export const deleteCompany = async (req, res) => {
+  try {
+    const company = await Company.findByIdAndDelete(req.params.id);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+    res.status(200).json({ message: "Company deleted successfully" });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to delete company",
+      error: error.message,
+    });
+  }
 };
 
 // Update company profile

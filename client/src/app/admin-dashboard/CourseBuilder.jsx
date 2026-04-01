@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import Swal from "sweetalert2"; // <-- Add this import
 import CourseList from "./Course/CourseList";
 import ChapterList from "./Course/ChapterList";
@@ -22,6 +22,119 @@ export default function CourseArea() {
   const [editingChapter, setEditingChapter] = useState(null);
   const courseListRef = useRef();
   const chapterListRef = useRef();
+  const historyReadyRef = useRef(false);
+  const historyNavigationRef = useRef(false);
+
+  const applyCourseState = useCallback((snapshot = {}) => {
+    setView(snapshot.view || "course-list");
+    setSelectedCourse(snapshot.selectedCourse || null);
+    setSelectedChapter(snapshot.selectedChapter || null);
+    setEditingTopic(snapshot.editingTopic || null);
+    setEditingChapter(snapshot.editingChapter || null);
+  }, []);
+
+  const getCourseStateSnapshot = useCallback(
+    () => ({
+      view,
+      selectedCourse,
+      selectedChapter,
+      editingTopic,
+      editingChapter,
+    }),
+    [view, selectedCourse, selectedChapter, editingTopic, editingChapter]
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const currentHistoryState =
+      window.history.state && typeof window.history.state === "object"
+        ? window.history.state
+        : {};
+    const existingCourseState = currentHistoryState.courseAreaState;
+
+    if (existingCourseState) {
+      historyNavigationRef.current = true;
+      applyCourseState(existingCourseState);
+    } else {
+      window.history.replaceState(
+        {
+          ...currentHistoryState,
+          courseAreaState: {
+            view: "course-list",
+            selectedCourse: null,
+            selectedChapter: null,
+            editingTopic: null,
+            editingChapter: null,
+          },
+        },
+        "",
+        window.location.href
+      );
+    }
+
+    historyReadyRef.current = true;
+
+    const handlePopState = (event) => {
+      historyNavigationRef.current = true;
+      applyCourseState(event.state?.courseAreaState);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [applyCourseState]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !historyReadyRef.current) return;
+
+    if (historyNavigationRef.current) {
+      historyNavigationRef.current = false;
+      return;
+    }
+
+    const nextSnapshot = getCourseStateSnapshot();
+    const currentHistoryState =
+      window.history.state && typeof window.history.state === "object"
+        ? window.history.state
+        : {};
+    const currentSnapshot = currentHistoryState.courseAreaState;
+
+    if (
+      JSON.stringify(currentSnapshot || null) ===
+      JSON.stringify(nextSnapshot || null)
+    ) {
+      historyNavigationRef.current = false;
+      return;
+    }
+
+    const nextHistoryState = {
+      ...currentHistoryState,
+      courseAreaState: nextSnapshot,
+    };
+
+    window.history.pushState(nextHistoryState, "", window.location.href);
+  }, [
+    view,
+    selectedCourse,
+    selectedChapter,
+    editingTopic,
+    editingChapter,
+    getCourseStateSnapshot,
+  ]);
+
+  const handleViewBack = useCallback(
+    (fallbackView) => {
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        window.history.back();
+        return;
+      }
+      setView(fallbackView);
+    },
+    []
+  );
 
   // Navigation handlers
   const handleShowCourseList = () => {
@@ -175,22 +288,16 @@ export default function CourseArea() {
           chapterId={selectedChapter._id}
           chapterName={selectedChapter.title}
           topic={editingTopic}
-          onCancel={() => setView("topics")}
-          onSaved={() => setView("topics")}
+          onCancel={() => handleViewBack("topics")}
+          onSaved={() => handleViewBack("topics")}
         />
       )}
 
       {view === "edit-chapter" && editingChapter && (
         <EditChapter
           chapterId={editingChapter._id}
-          onCancel={() => setView("chapters")}
-          onUpdated={() => {
-            setView("chapters");
-            // Refresh chapters list when returning from edit
-            if (chapterListRef.current?.fetchChapters) {
-              chapterListRef.current.fetchChapters();
-            }
-          }}
+          onCancel={() => handleViewBack("chapters")}
+          onUpdated={() => handleViewBack("chapters")}
         />
       )}
 

@@ -11,6 +11,7 @@ CLIENT_URL=http://localhost:3000
 # Razorpay Configuration
 RAZORPAY_KEY_ID=rzp_test_your_key_id_here
 RAZORPAY_KEY_SECRET=your_key_secret_here
+# IMPORTANT: Never commit real Razorpay secrets. Rotate immediately if exposed.
 
 # JWT Configuration
 JWT_SECRET=your_jwt_secret_here

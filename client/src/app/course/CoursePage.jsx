@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { FaSearch } from "react-icons/fa";
+import { FaArrowRight, FaEnvelope, FaPhoneAlt, FaSearch } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,44 @@ import Swal from "sweetalert2";
 import wishlistEventManager from "../../utils/wishlistEventManager";
 import GroupCourseCard from "../components/GroupCourseCard";
 import SimpleScrabbleGame from "./SimpleScrabbleGame";
+
+const normalizeCourseImageSrc = (rawImage, apiUrl) => {
+  if (!rawImage || typeof rawImage !== "string") return null;
+
+  const safeApiOrigin = (() => {
+    const fallback = "https://api.iicpa.in";
+    if (!apiUrl || typeof apiUrl !== "string") return fallback;
+
+    const trimmed = apiUrl.trim();
+    if (!trimmed) return fallback;
+
+    if (
+      trimmed.includes("localhost") ||
+      trimmed.includes("127.0.0.1") ||
+      trimmed.includes("0.0.0.0")
+    ) {
+      return fallback;
+    }
+
+    return trimmed.replace(/^http:\/\//i, "https://").replace(/\/+$/, "");
+  })();
+
+  const value = rawImage.trim();
+
+  if (/^https?:\/\//i.test(value)) {
+    return value.replace(/^http:\/\//i, "https://");
+  }
+
+  if (value.startsWith("/uploads/")) {
+    return `${safeApiOrigin}${value}`;
+  }
+
+  if (value.startsWith("/")) {
+    return value;
+  }
+
+  return `${safeApiOrigin}/${value.replace(/^\/+/, "")}`;
+};
 
 export default function CoursePage() {
   const router = useRouter();
@@ -22,7 +60,14 @@ export default function CoursePage() {
   const [selectedGroupNames, setSelectedGroupNames] = useState([]);
   const [student, setStudent] = useState(null);
   const [wishlistCourseIds, setWishlistCourseIds] = useState([]);
-  const [loading, setLoading] = useState(false); // Initialize as false to prevent initial blinking
+  const [loading, setLoading] = useState(true);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [contactSubmitting, setContactSubmitting] = useState(false);
 
   // Define API_BASE at component level
   const API_BASE =
@@ -65,21 +110,11 @@ export default function CoursePage() {
         }
 
         // Update group pricing if API call succeeded
-        console.log("Group pricing response:", groupPricingResponse);
         if (
           groupPricingResponse.status === "fulfilled" &&
           groupPricingResponse.value.data?.length > 0
         ) {
-          console.log(
-            "Setting group pricing data:",
-            groupPricingResponse.value.data
-          );
           setGroupPricing(groupPricingResponse.value.data);
-        } else {
-          console.log(
-            "Group pricing response failed or empty:",
-            groupPricingResponse
-          );
         }
 
         // Update blogs if API call succeeded
@@ -94,7 +129,7 @@ export default function CoursePage() {
           setBlogs(activeBlogs);
         }
       } catch (error) {
-        console.log("API calls failed:", error);
+        console.error("API calls failed:", error);
       } finally {
         setLoading(false);
       }
@@ -108,11 +143,8 @@ export default function CoursePage() {
 
     // Subscribe to wishlist changes
     const unsubscribe = wishlistEventManager.subscribe(
-      ({ studentId, courseId, action }) => {
+      ({ studentId, courseId }) => {
         if (student && student._id === studentId) {
-          console.log(
-            `Wishlist ${action} event received for course ${courseId}`
-          );
           // Refresh wishlist state when other components make changes
           fetchWishlistState();
         }
@@ -150,10 +182,6 @@ export default function CoursePage() {
       }
     } catch (error) {
       console.error("Error fetching wishlist state:", error);
-      // Handle 401 Unauthorized errors gracefully
-      if (error.response?.status === 401) {
-        console.log("User not authenticated, clearing student data");
-      }
       // Don't show error to user for background operations
       // Just log it and continue
       setStudent(null);
@@ -179,6 +207,30 @@ export default function CoursePage() {
       selectedGroupNames.includes(group.groupName)
     );
   });
+
+  const hasActiveFilters =
+    search.trim().length > 0 ||
+    selectedCategories.length > 0 ||
+    selectedGroupNames.length > 0;
+
+  const showCourseSkeleton =
+    loading ||
+    (!hasActiveFilters &&
+      allCourses.length === 0 &&
+      groupPricing.length === 0 &&
+      filteredCourses.length === 0 &&
+      filteredGroupPricing.length === 0);
+
+  const softwareStack = [
+    { name: "Power BI", image: "/softwares/PowerBI.jpeg" },
+    { name: "Share Trading", image: "/softwares/share-trading.jpg" },
+    { name: "Zoho", image: "/softwares/zoho.png" },
+    { name: "PowerPoint", image: "/softwares/powerpoint.svg" },
+    { name: "QuickBooks", image: "/softwares/quickbooks.png" },
+    { name: "SAP", image: "/softwares/sap.webp" },
+    { name: "Tally Prime", image: "/softwares/tally-prime.png" },
+    { name: "Microsoft Excel", image: "/softwares/microsoft-excel-icon.webp" },
+  ];
 
   // Handlers
   const toggleCategory = (categoryName) =>
@@ -220,31 +272,20 @@ export default function CoursePage() {
       const studentId = student._id;
       const isLiked = wishlistCourseIds.includes(courseId);
 
-      console.log("Toggle wishlist:", {
-        studentId,
-        courseId,
-        isLiked,
-        API_BASE,
-      });
-
       if (isLiked) {
         // Remove from wishlist
-        const response = await axios.post(
+        await axios.post(
           `${API_BASE}/v1/students/remove-wishlist/${studentId}`,
           { courseId },
           { withCredentials: true }
         );
-
-        console.log("Remove wishlist response:", response.data);
       } else {
         // Add to wishlist
-        const response = await axios.post(
+        await axios.post(
           `${API_BASE}/v1/students/add-wishlist/${studentId}`,
           { courseId },
           { withCredentials: true }
         );
-
-        console.log("Add wishlist response:", response.data);
       }
 
       // Refresh wishlist state from backend instead of optimistic update
@@ -284,13 +325,51 @@ export default function CoursePage() {
     }
   };
 
+  const handleContactChange = (e) => {
+    const { name, value } = e.target;
+    setContactForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleContactSubmit = async (e) => {
+    e.preventDefault();
+    if (contactSubmitting) return;
+
+    try {
+      setContactSubmitting(true);
+      await axios.post(`${API_BASE}/contact`, contactForm);
+      await Swal.fire({
+        title: "Request Sent",
+        text: "Our team will contact you shortly.",
+        icon: "success",
+        confirmButtonColor: "#16a34a",
+      });
+      setContactForm({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+      });
+    } catch (error) {
+      await Swal.fire({
+        title: "Submission Failed",
+        text:
+          error?.response?.data?.error ||
+          "Unable to submit right now. Please try again.",
+        icon: "error",
+        confirmButtonColor: "#dc2626",
+      });
+    } finally {
+      setContactSubmitting(false);
+    }
+  };
+
   return (
     <section className="bg-gradient-to-br from-[#f5fcfa] via-white to-[#eef7fc] min-h-screen text-[#0b1224]">
-      <div className="max-w-full mx-auto px-4 pb-8 mr-4">
+      <div className="max-w-full mx-auto px-3 sm:px-4 pb-8 mr-0 lg:mr-4">
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* Sidebar */}
-          <aside className="w-full lg:w-1/4 xl:w-1/5 lg:sticky lg:top-24 lg:max-h-screen lg:overflow-y-auto ml-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+          <aside className="w-full lg:w-1/4 xl:w-1/5 lg:sticky lg:top-24 lg:max-h-screen lg:overflow-y-auto ml-0 lg:ml-8">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6">
               <h2 className="text-xl font-bold mb-4">Find by Course Name</h2>
               <div className="relative">
                 <input
@@ -304,7 +383,7 @@ export default function CoursePage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6">
               <h3 className="text-lg font-semibold mb-3">Categories</h3>
               {categories.length === 0 && (
                 <div className="text-gray-400 text-sm">No categories</div>
@@ -325,7 +404,7 @@ export default function CoursePage() {
               ))}
             </div>
 
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6">
               <h3 className="text-lg font-semibold mb-3">
                 Course Combinations
               </h3>
@@ -349,16 +428,43 @@ export default function CoursePage() {
               )}
             </div>
 
-            {/* Mini Scrabble Game */}
-            <SimpleScrabbleGame />
+            {/* Mini Scrabble Game (desktop only) */}
+            <div className="hidden lg:block">
+              <SimpleScrabbleGame />
+            </div>
           </aside>
 
           {/* Course Cards */}
           <main className="w-full lg:w-3/4 xl:w-4/5">
             {/* Unified Display: Show all courses together in a single grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-max">
+              {showCourseSkeleton &&
+                Array.from({ length: 8 }).map((_, index) => (
+                  <div
+                    key={`course-skeleton-${index}`}
+                    className="bg-white rounded-xl shadow-lg overflow-hidden animate-pulse"
+                  >
+                    <div className="h-40 w-full bg-gray-200" />
+                    <div className="p-4 space-y-3">
+                      <div className="h-3 w-24 bg-gray-200 rounded" />
+                      <div className="h-5 w-4/5 bg-gray-200 rounded" />
+                      <div className="h-5 w-3/5 bg-gray-200 rounded" />
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="h-6 w-24 bg-gray-200 rounded" />
+                        <div className="h-8 w-20 bg-gray-200 rounded-lg" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
               {/* Individual Course Cards */}
-              {filteredCourses.map((course, index) => {
+              {!showCourseSkeleton &&
+                filteredCourses.map((course, index) => {
+                const courseImageSrc = normalizeCourseImageSrc(
+                  course.image,
+                  process.env.NEXT_PUBLIC_API_URL
+                );
+
                 // Use recorded session pricing if available, otherwise fall back to legacy pricing
                 const recordedPrice =
                   course.pricing?.recordedSession?.finalPrice ||
@@ -395,25 +501,16 @@ export default function CoursePage() {
                   >
                     {/* Image Section */}
                     <div className="relative h-40 w-full rounded-t-xl overflow-hidden">
-                      {course.image ? (
+                      {courseImageSrc ? (
                         <Image
-                          src={
-                            course.image.startsWith("http")
-                              ? course.image
-                              : course.image.startsWith("/uploads/")
-                              ? `${process.env.NEXT_PUBLIC_API_URL}${course.image}`
-                              : course.image.startsWith("/")
-                              ? course.image
-                              : `${process.env.NEXT_PUBLIC_API_URL}${course.image}`
-                          }
+                          src={courseImageSrc}
                           alt={course.title}
                           fill
+                          unoptimized
                           className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
                           sizes="(max-width: 768px) 100vw, 33vw"
                           priority={index < 2}
                           onError={(e) => {
-                            console.log("Image failed to load:", e);
-                            console.log("Image src was:", e.currentTarget.src);
                             // Fallback to placeholder
                             e.currentTarget.style.display = "none";
                             const placeholder =
@@ -428,10 +525,10 @@ export default function CoursePage() {
                       {/* Fallback placeholder - always present but hidden when image loads */}
                       <div
                         className={`w-full h-full flex items-center justify-center text-gray-400 bg-gray-200 ${
-                          course.image ? "hidden" : ""
+                          courseImageSrc ? "hidden" : ""
                         }`}
                         style={{
-                          display: course.image ? "none" : "flex",
+                          display: courseImageSrc ? "none" : "flex",
                         }}
                       >
                         <div className="text-center">
@@ -539,7 +636,7 @@ export default function CoursePage() {
               })}
 
               {/* Course Packages Section */}
-              {filteredGroupPricing.length > 0 && (
+              {!showCourseSkeleton && filteredGroupPricing.length > 0 && (
                 <>
                   <div className="col-span-full mb-6">
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -560,7 +657,8 @@ export default function CoursePage() {
               )}
 
               {/* No courses found message */}
-              {filteredCourses.length === 0 &&
+              {!showCourseSkeleton &&
+                filteredCourses.length === 0 &&
                 filteredGroupPricing.length === 0 && (
                   <div className="col-span-full text-gray-500 text-center py-12">
                     <div className="text-4xl mb-4">📚</div>
@@ -575,95 +673,226 @@ export default function CoursePage() {
         </div>
       </div>
 
-      {/* Softwares We Teach Carousel Section */}
-      <section className="py-20 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="w-full">
+      {/* Softwares We Teach Section */}
+      <section className="py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
-            className="text-center mb-16 px-4"
+            className="text-center mb-10 md:mb-12"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white border border-gray-200 text-blue-700 px-4 py-1.5 text-xs font-semibold tracking-wide mb-5">
+              <span>Software Ecosystem</span>
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
               Softwares We Teach
             </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-lg">
-              Master industry-leading software tools and technologies
+            <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg">
+              Master industry-leading tools used by modern finance,
+              accounting, and business teams.
             </p>
           </motion.div>
+        </div>
 
-          {/* Moving Cards Container */}
-          <div
-            className="relative overflow-hidden bg-white py-8"
-            style={{ width: "95vw" }}
-          >
-            <motion.div
-              className="flex gap-8"
-              animate={{
-                x: [0, -100 * 8],
-              }}
-              transition={{
-                duration: 20,
-                repeat: Infinity,
-                ease: "linear",
-              }}
-              style={{
-                width: `${8 * 360}px`,
-              }}
-            >
-              {/* Software data */}
-              {(() => {
-                const softwares = [
-                  { name: "Power BI", image: "/softwares/PowerBI.jpeg" },
-                  {
-                    name: "Share Trading",
-                    image: "/softwares/share-trading.jpg",
-                  },
-                  { name: "Zoho", image: "/softwares/zoho.png" },
-                  { name: "PowerPoint", image: "/softwares/powerpoint.svg" },
-                  { name: "QuickBooks", image: "/softwares/quickbooks.png" },
-                  { name: "SAP", image: "/softwares/sap.webp" },
-                  { name: "Tally Prime", image: "/softwares/tally-prime.png" },
-                  {
-                    name: "Microsoft Excel",
-                    image: "/softwares/microsoft-excel-icon.webp",
-                  },
-                ];
+        <div className="software-marquee w-full py-2">
+          <div className="software-track">
+            {[...softwareStack, ...softwareStack].map((software, index) => (
+              <div
+                key={`${software.name}-${index}`}
+                className="software-card group"
+              >
+                <div className="h-44 rounded-2xl bg-gradient-to-br from-[#eef8ff] via-[#f0fbf5] to-[#eef8ff] border border-blue-100/70 flex items-center justify-center p-6">
+                  <img
+                    src={software.image}
+                    alt={software.name}
+                    className="w-28 h-28 object-contain transition-transform duration-500 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                </div>
 
-                // Duplicate cards for seamless loop
-                return [...softwares, ...softwares].map((software, index) => (
-                  <motion.div
-                    key={`${software.name}-${index}`}
-                    className="flex-shrink-0 w-80 bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 hover:scale-105 mx-4"
-                    whileHover={{ y: -8 }}
+                <div className="pt-5 px-1">
+                  <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+                    <span>Software</span>
+                  </span>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {software.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Professional certification course
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-4 sm:px-6 lg:px-8 mt-14 md:mt-16 min-h-[70vh] flex items-center">
+          <div className="relative w-full max-w-5xl mx-auto overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-6 md:p-10 grid grid-cols-1 lg:grid-cols-5 gap-8 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
+            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.09),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(37,99,235,0.08),transparent_48%)]" />
+
+            <div className="relative hidden lg:block lg:col-span-2">
+              <span className="inline-flex items-center rounded-full bg-slate-100 text-slate-700 px-3 py-1.5 text-xs font-semibold tracking-wide mb-4">
+                Contact Support
+              </span>
+              <h3 className="text-2xl md:text-4xl font-bold text-slate-900 mb-3 leading-tight">
+                Talk To Our Course Advisors
+              </h3>
+              <p className="text-slate-600 mb-6 text-base md:text-lg leading-relaxed">
+                Get personalized guidance on course selection, pricing, and
+                career outcomes.
+              </p>
+
+              <div className="space-y-3 mb-7">
+                <a
+                  href="tel:+919593330999"
+                  className="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3.5 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition"
+                >
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                    <FaPhoneAlt className="text-xs" />
+                  </span>
+                  <span>Call: +91 9593330999</span>
+                </a>
+                <a
+                  href="mailto:iicpaconnect@gmail.com"
+                  className="group flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/90 px-4 py-3.5 text-sm font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-50 transition break-all"
+                >
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                    <FaEnvelope className="text-xs" />
+                  </span>
+                  <span>Email: iicpaconnect@gmail.com</span>
+                </a>
+              </div>
+
+              <button
+                onClick={() => router.push("/course")}
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 text-sm font-semibold transition"
+              >
+                Explore Our Course
+                <FaArrowRight className="text-xs" />
+              </button>
+            </div>
+
+            <div className="relative lg:col-span-3 rounded-2xl border border-slate-200/90 bg-white/80 backdrop-blur-sm p-4 sm:p-6 md:p-7 flex items-center">
+              <form onSubmit={handleContactSubmit} className="space-y-6 w-full max-w-2xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <input
+                    type="text"
+                    name="name"
+                    value={contactForm.name}
+                    onChange={handleContactChange}
+                    placeholder="Your name"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    value={contactForm.email}
+                    onChange={handleContactChange}
+                    placeholder="Your email"
+                    required
+                    className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
+                  />
+                </div>
+
+                <input
+                  type="tel"
+                  name="phone"
+                  value={contactForm.phone}
+                  onChange={handleContactChange}
+                  placeholder="Phone number"
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 transition"
+                />
+
+                <textarea
+                  name="message"
+                  value={contactForm.message}
+                  onChange={handleContactChange}
+                  placeholder="Tell us what you need help with"
+                  rows={5}
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/70 focus:border-emerald-300 resize-none transition"
+                />
+
+                <div className="flex flex-wrap items-center gap-4 pt-1">
+                  <button
+                    type="submit"
+                    disabled={contactSubmitting}
+                    className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white px-6 py-3 text-sm font-semibold transition shadow-sm hover:shadow"
                   >
-                    <div className="h-56 overflow-hidden rounded-t-3xl bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
-                      <img
-                        src={software.image}
-                        alt={software.name}
-                        className="w-32 h-32 object-contain hover:scale-110 transition-transform duration-700"
-                      />
-                    </div>
-                    <div className="p-8">
-                      <div className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium mb-4">
-                        <span>💻</span>
-                        <span>Software</span>
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-2 mb-3">
-                        {software.name}
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        Professional certification course
-                      </p>
-                    </div>
-                  </motion.div>
-                ));
-              })()}
-            </motion.div>
+                    {contactSubmitting ? "Sending..." : "Submit Inquiry"}
+                    {!contactSubmitting && <FaArrowRight className="text-xs" />}
+                  </button>
+                  <span className="text-xs text-slate-500">
+                    Response time: usually within 24 hours.
+                  </span>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </section>
+      <style jsx>{`
+        .software-marquee {
+          overflow: hidden;
+          position: relative;
+        }
+
+        .software-track {
+          display: flex;
+          gap: 1.25rem;
+          width: max-content;
+          animation: softwareSlide 36s linear infinite;
+          padding-inline: 0;
+        }
+
+        .software-marquee:hover .software-track {
+          animation-play-state: paused;
+        }
+
+        .software-card {
+          flex: 0 0 280px;
+          border-radius: 1.25rem;
+          border: 1px solid rgba(203, 213, 225, 0.7);
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.98) 0%,
+            rgba(249, 250, 251, 0.98) 100%
+          );
+          box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.35);
+          padding: 1rem;
+          transition: transform 0.35s ease, box-shadow 0.35s ease;
+        }
+
+        .software-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 22px 45px -20px rgba(15, 23, 42, 0.45);
+        }
+
+        @keyframes softwareSlide {
+          from {
+            transform: translateX(0);
+          }
+          to {
+            transform: translateX(-50%);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .software-track {
+            animation-duration: 26s;
+            padding-inline: 0.75rem;
+            gap: 0.9rem;
+          }
+
+          .software-card {
+            flex-basis: 240px;
+          }
+        }
+      `}</style>
     </section>
   );
 }

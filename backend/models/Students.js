@@ -58,6 +58,7 @@ const StudentSchema = new mongoose.Schema(
 
     otp: { type: String },
     otpExpiry: { type: Date },
+    coinBalance: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
 );

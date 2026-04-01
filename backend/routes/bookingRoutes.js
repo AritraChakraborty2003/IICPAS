@@ -4,6 +4,8 @@ import {
   getAllBookings,
   approveAndBook,
   rejectBooking,
+  updateBooking,
+  deleteBooking,
 } from "../controllers/Bookings/bookingsController.js";
 
 const router = express.Router();
@@ -19,5 +21,9 @@ router.patch("/:id/approve", approveAndBook);
 
 // Admin: reject/cancel booking (optional)
 router.patch("/:id/reject", rejectBooking);
+
+router.patch("/:id", updateBooking);
+
+router.delete("/:id", deleteBooking);
 
 export default router;

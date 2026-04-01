@@ -3,6 +3,7 @@ import express from "express";
 import {
   teacherRegister,
   teacherLogin,
+  teacherLogout,
   getTeacherProfile,
   updateTeacherProfile,
   getAllTeachers,
@@ -18,6 +19,7 @@ const router = express.Router();
 // Public routes
 router.post("/register", teacherRegister);
 router.post("/login", teacherLogin);
+router.post("/logout", teacherLogout);
 
 // Protected routes - Teacher only
 router.get("/profile", requireAuth, isTeacher, getTeacherProfile);

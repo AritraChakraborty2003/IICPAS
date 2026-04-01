@@ -28,7 +28,22 @@ export const rejectBooking = async (req, res) => {
 export const createBooking = async (req, res) => {
   // try {
 
-  let { by, title, hrs, type, category } = req.body;
+  let {
+    by,
+    title,
+    hrs,
+    type,
+    category,
+    liveSessionId,
+    requesterName,
+    phone,
+    whatsappNumber,
+    status,
+    paymentMethod,
+    paymentAmount,
+    paymentStatus,
+    date,
+  } = req.body;
   if (!type) type = "onsite";
 
   console.log(by, title, hrs, type, category);
@@ -49,12 +64,20 @@ export const createBooking = async (req, res) => {
   }
 
   const booking = new Booking({
+    liveSessionId: liveSessionId || null,
     by,
     title,
     hrs,
     type,
-    status: "pending",
+    status: status || "pending",
     category,
+    requesterName: requesterName || "",
+    phone: phone || "",
+    whatsappNumber: whatsappNumber || "",
+    paymentMethod: paymentMethod || "manual",
+    paymentAmount: Number(paymentAmount || 0),
+    paymentStatus: paymentStatus || "pending",
+    date: date || null,
   });
   await booking.save();
   res.status(201).json(booking);
@@ -65,6 +88,25 @@ export const createBooking = async (req, res) => {
 
 const SLOT_START = 10; // 10am
 const SLOT_END = 18; // 6pm
+
+function isValidDate(value) {
+  return value instanceof Date && !Number.isNaN(value.getTime());
+}
+
+async function hasBookingConflict(start, end, excludeBookingId = null) {
+  const filter = {
+    status: "booked",
+    start: { $lt: end },
+    end: { $gt: start },
+  };
+
+  if (excludeBookingId) {
+    filter._id = { $ne: excludeBookingId };
+  }
+
+  const conflict = await Booking.findOne(filter).select("_id title start end");
+  return conflict;
+}
 
 // Helper: Find next available slot using plain JS Date, starting from tomorrow (local)
 async function findNextAvailableSlot(hrs) {
@@ -129,30 +171,69 @@ export const approveAndBook = async (req, res) => {
     if (booking.status !== "pending")
       return res.status(400).json({ error: "Already processed" });
 
-    // If booking.category is 'live' or 'recorded', patch with req.body (e.g., link)
-    if (booking.category === "live" || booking.category === "recorded") {
+    const scheduleMode = req.body.scheduleMode === "manual" ? "manual" : "auto";
+    const isLiveOrRecorded =
+      booking.category === "live" || booking.category === "recorded";
+
+    if (isLiveOrRecorded) {
+      const recordingLink = String(
+        req.body.link || req.body.recording || ""
+      ).trim();
+      if (!recordingLink) {
+        return res
+          .status(400)
+          .json({ error: "Recording link is required for this booking" });
+      }
+      booking.link = recordingLink;
+    }
+
+    if (scheduleMode === "manual") {
+      const manualStart = new Date(req.body.manualStart);
+      const manualEnd = new Date(req.body.manualEnd);
+
+      if (!isValidDate(manualStart) || !isValidDate(manualEnd)) {
+        return res
+          .status(400)
+          .json({ error: "Valid manual start and end date/time are required" });
+      }
+
+      if (manualEnd <= manualStart) {
+        return res
+          .status(400)
+          .json({ error: "End date/time must be after start date/time" });
+      }
+
+      const requestedDurationMs = Number(booking.hrs) * 60 * 60 * 1000;
+      const manualDurationMs = manualEnd.getTime() - manualStart.getTime();
+      if (manualDurationMs !== requestedDurationMs) {
+        return res.status(400).json({
+          error: `Manual schedule must be exactly ${booking.hrs} hour(s)`,
+        });
+      }
+
+      const conflict = await hasBookingConflict(
+        manualStart,
+        manualEnd,
+        booking._id
+      );
+      if (conflict) {
+        return res.status(400).json({
+          error: "Selected manual slot overlaps an existing booked session",
+        });
+      }
+
+      booking.start = manualStart;
+      booking.end = manualEnd;
+      booking.date = new Date(manualStart);
+    } else {
       const slot = await findNextAvailableSlot(booking.hrs);
       if (!slot) return res.status(400).json({ error: "No slots available." });
 
       booking.start = slot.start;
       booking.end = slot.end;
       booking.date = slot.date;
-      booking.status = "booked";
-
-      // Accept both 'link' and 'recording' fields from frontend
-      booking.link = req.body.link || req.body.recording;
-      booking.status = "booked";
-      await booking.save();
-      return res.json({ success: true, booking });
     }
 
-    // Find slot and assign (always starts from tomorrow)
-    const slot = await findNextAvailableSlot(booking.hrs);
-    if (!slot) return res.status(400).json({ error: "No slots available." });
-
-    booking.start = slot.start;
-    booking.end = slot.end;
-    booking.date = slot.date;
     booking.status = "booked";
 
     await booking.save();
@@ -165,13 +246,64 @@ export const approveAndBook = async (req, res) => {
 // GET /api/bookings or /api/bookings?status=booked&by=email
 export const getAllBookings = async (req, res) => {
   try {
-    const { status, by } = req.query;
+    const { status, by, category, liveSessionId, hasLiveSession, paymentStatus } =
+      req.query;
     const filter = {};
     if (status) filter.status = status;
     if (by) filter.by = by;
-    const bookings = await Booking.find(filter).sort({ start: 1 });
+    if (category) filter.category = category;
+    if (paymentStatus) filter.paymentStatus = paymentStatus;
+    if (liveSessionId) filter.liveSessionId = liveSessionId;
+    if (String(hasLiveSession).toLowerCase() === "true") {
+      filter.liveSessionId = { $ne: null };
+    }
+    const bookings = await Booking.find(filter)
+      .populate("liveSessionId", "title date time price")
+      .sort({ createdAt: -1, start: 1 });
     res.json(bookings);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+export const updateBooking = async (req, res) => {
+  try {
+    const allowedUpdates = [
+      "requesterName",
+      "by",
+      "phone",
+      "whatsappNumber",
+      "status",
+      "paymentStatus",
+      "date",
+    ];
+    const updateData = Object.fromEntries(
+      Object.entries(req.body || {}).filter(([key]) => allowedUpdates.includes(key))
+    );
+
+    const booking = await Booking.findByIdAndUpdate(req.params.id, updateData, {
+      new: true,
+      runValidators: true,
+    }).populate("liveSessionId", "title date time price");
+
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+
+    return res.json({ success: true, booking });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+export const deleteBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndDelete(req.params.id);
+    if (!booking) {
+      return res.status(404).json({ error: "Booking not found" });
+    }
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 };

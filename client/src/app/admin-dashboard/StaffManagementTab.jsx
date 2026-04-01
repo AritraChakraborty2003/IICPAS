@@ -16,6 +16,7 @@ const MODULES = [
   { id: "course", name: "Course", icon: "🎓" },
   { id: "course-display", name: "Course Display", icon: "👁️" },
   { id: "live-session", name: "Live Session", icon: "📺" },
+  { id: "live-bookings", name: "Live Bookings", icon: "🧾" },
   { id: "blogs", name: "Blogs", icon: "📝" },
   { id: "testimonials", name: "Testimonials", icon: "💬" },
   { id: "about", name: "About Us", icon: "ℹ️" },
@@ -48,6 +49,19 @@ const MODULES = [
   { id: "ip-whitelist", name: "IP Whitelisting", icon: "🔒" },
   { id: "study-material", name: "Study Material", icon: "📚" },
   { id: "faq", name: "FAQ", icon: "❓" },
+  { id: "booking-settings", name: "Booking Settings", icon: "⚙️" },
+  {
+    id: "invoice-company-settings",
+    name: "Invoice Company Settings",
+    icon: "🧾",
+  },
+  {
+    id: "job-sidebar-marquee",
+    name: "Jobs Sidebar Marquee",
+    icon: "🪄",
+  },
+  { id: "our-partners", name: "Our Partners", icon: "🤝" },
+  { id: "bookings", name: "Bookings", icon: "🧾" },
 ];
 
 const PERMISSIONS = [

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   PlayArrow,
   Visibility,
@@ -73,13 +73,15 @@ export default function CourseTab() {
   const [review, setReview] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
   const [courseRatings, setCourseRatings] = useState({}); // Store existing ratings
+  const [expandedChapterKeys, setExpandedChapterKeys] = useState({});
   const router = useRouter();
-  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const searchParams = useSearchParams();
+  const API = process.env.NEXT_PUBLIC_API_URL;
 
   // Fetch student courses from database
   const fetchStudentCourses = async () => {
+    setLoading(true);
     try {
-      // Don't set loading to true initially to prevent blinking
       const response = await axios.get(`${API}/api/v1/students/isstudent`, {
         withCredentials: true,
       });
@@ -137,179 +139,63 @@ export default function CourseTab() {
             showDemoData();
           }
         } else {
-          // If no courses at all, fall back to demo courses
-          const purchasedWithDummy = purchasedCoursesData.some(
-            (course) => course._id === QA_DUMMY_COURSE._id
-          )
-            ? purchasedCoursesData
-            : [QA_DUMMY_COURSE, ...purchasedCoursesData];
-
-          if (purchasedWithDummy.length > 0) {
-            setPurchasedCourses(purchasedWithDummy);
-            setCourses(purchasedWithDummy);
-            setSelectedCourse(purchasedWithDummy[0]);
-            setLastAccessedCourse(purchasedWithDummy[0]);
+          // If no courses at all, just set purchased courses
+          setCourses(purchasedCoursesData);
+          if (purchasedCoursesData.length > 0) {
+            setSelectedCourse(purchasedCoursesData[0]);
+            setLastAccessedCourse(purchasedCoursesData[0]);
           } else {
-            showDemoData();
+            setSelectedCourse(null);
+            setLastAccessedCourse(null);
           }
         }
+      } else {
+        setCourses([]);
+        setPurchasedCourses([]);
+        setAvailableCourses([]);
+        setSelectedCourse(null);
+        setLastAccessedCourse(null);
       }
     } catch (error) {
       console.error("Error fetching courses:", error);
-      // Fallback to demo data if API fails
-      showDemoData();
+      setCourses([]);
+      setPurchasedCourses([]);
+      setAvailableCourses([]);
+      setSelectedCourse(null);
+      setLastAccessedCourse(null);
+    } finally {
+      setLoading(false);
     }
-    // Remove finally block to prevent loading state changes
-  };
-
-  // Mock data for demonstration (fallback)
-  const showDemoData = () => {
-    const demoCourses = [
-      {
-        _id: "1",
-        title: "Basic Accounting & Tally Foundation",
-        description:
-          "Comprehensive accounting course covering all aspects of modern accounting practices.",
-        image: "/images/a1.jpeg",
-        status: "Active",
-        level: "Foundation",
-        price: 999,
-        overallProgress: 75,
-        totalChapters: 8,
-        totalAssignments: 12,
-        totalExperiments: 6,
-        totalTests: 5,
-        chapters: [
-          { id: 1, name: "Basic Accounting", completion: 100 },
-          { id: 2, name: "Company Creation", completion: 100 },
-          { id: 3, name: "Voucher Entries", completion: 100 },
-          { id: 4, name: "Accounting Methods", completion: 60 },
-          { id: 5, name: "Ledger Balances", completion: 45 },
-          { id: 6, name: "Bank Reconciliation", completion: 30 },
-          { id: 7, name: "Advanced Topics", completion: 20 },
-          { id: 8, name: "Final Assessment", completion: 10 },
-        ],
-        assignments: [
-          { id: 1, name: "Assignment 1: Basic Principles" },
-          { id: 2, name: "Assignment 2: Company Setup" },
-          { id: 3, name: "Assignment 3: Voucher Entries" },
-          { id: 4, name: "Assignment 4: Ledger Management" },
-          { id: 5, name: "Assignment 5: Final Project" },
-        ],
-        experiments: [
-          { id: 1, name: "Experiment 1: Ledger Creation" },
-          { id: 2, name: "Experiment 2: Balance Sheet" },
-          { id: 3, name: "Experiment 3: Income Statement" },
-          { id: 4, name: "Experiment 4: Cash Flow" },
-        ],
-        tests: [
-          {
-            id: 1,
-            name: "Basic Accounting Test",
-            status: "Coming Soon",
-          },
-          {
-            id: 2,
-            name: "Voucher Entries Test",
-            status: "Coming Soon",
-          },
-          {
-            id: 3,
-            name: "Ledger Management Test",
-            status: "Coming Soon",
-          },
-          {
-            id: 4,
-            name: "Final Assessment Test",
-            status: "Coming Soon",
-          },
-          {
-            id: 5,
-            name: "Comprehensive Test",
-            status: "Coming Soon",
-          },
-        ],
-      },
-      {
-        _id: "2",
-        title: "GST Return Filing Practical",
-        description:
-          "Hands-on GST practical training with return filing and compliance workflow.",
-        image: "/images/a2.jpeg",
-        status: "Active",
-        level: "Intermediate",
-        price: 1499,
-        overallProgress: 52,
-        totalChapters: 10,
-        totalAssignments: 8,
-        totalExperiments: 5,
-        totalTests: 4,
-        chapters: [
-          { id: 1, name: "GST Basics", completion: 100 },
-          { id: 2, name: "Registration", completion: 100 },
-          { id: 3, name: "Invoicing", completion: 80 },
-          { id: 4, name: "Returns", completion: 40 },
-        ],
-        assignments: [
-          { id: 1, name: "GST Registration Form Practice" },
-          { id: 2, name: "Invoice Data Preparation" },
-        ],
-        experiments: [{ id: 1, name: "GSTR-1 Upload Simulation" }],
-        tests: [{ id: 1, name: "GST Mid-Term Test", status: "Coming Soon" }],
-      },
-      {
-        _id: "3",
-        title: "Income Tax with TDS",
-        description:
-          "Learn TDS calculations, return filing, and income tax compliance end to end.",
-        image: "/images/a3.jpeg",
-        status: "New Batch",
-        level: "Advanced",
-        price: 1999,
-        overallProgress: 0,
-        totalChapters: 12,
-        totalAssignments: 10,
-        totalExperiments: 6,
-        totalTests: 5,
-        chapters: [
-          { id: 1, name: "TDS Introduction", completion: 0 },
-          { id: 2, name: "Sections and Rates", completion: 0 },
-        ],
-        assignments: [{ id: 1, name: "TDS Calculation Sheet" }],
-        experiments: [{ id: 1, name: "Form 26Q Upload Flow" }],
-        tests: [{ id: 1, name: "Tax Fundamentals Test", status: "Coming Soon" }],
-      },
-      {
-        _id: "4",
-        title: "Payroll & PF/ESI Masterclass",
-        description:
-          "Complete payroll processing with PF, ESI, bonus and statutory deductions.",
-        image: "/images/a4.jpeg",
-        status: "Upcoming",
-        level: "Professional",
-        price: 1799,
-        overallProgress: 0,
-        totalChapters: 9,
-        totalAssignments: 7,
-        totalExperiments: 4,
-        totalTests: 3,
-        chapters: [{ id: 1, name: "Payroll Setup", completion: 0 }],
-        assignments: [{ id: 1, name: "Monthly Payroll Sheet" }],
-        experiments: [{ id: 1, name: "PF/ESI Challan Simulation" }],
-        tests: [{ id: 1, name: "Payroll Compliance Test", status: "Coming Soon" }],
-      },
-    ];
-    setCourses(demoCourses);
-    setPurchasedCourses(demoCourses.slice(0, 2)); // Show first 2 as enrolled
-    setAvailableCourses(demoCourses.slice(2)); // Remaining as buyable
-    setSelectedCourse(demoCourses[0]);
-    setLastAccessedCourse(demoCourses[0]);
-    setLoading(false);
   };
 
   useEffect(() => {
     fetchStudentCourses();
   }, []);
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    const requestedCourseId = searchParams.get("courseId");
+    const requestedView = searchParams.get("view");
+
+    if (requestedTab !== "courses" || !requestedCourseId || courses.length === 0) {
+      return;
+    }
+
+    const matchedCourse = courses.find((course) => course._id === requestedCourseId);
+    if (!matchedCourse) {
+      return;
+    }
+
+    setSelectedCourse(matchedCourse);
+    setLastAccessedCourse(matchedCourse);
+
+    if (requestedView === "detailed" && isCoursePurchased(matchedCourse._id)) {
+      setViewModes((prev) => ({ ...prev, [matchedCourse._id]: "detailed" }));
+      if (!courseChapters[matchedCourse._id]) {
+        fetchChaptersForCourse(matchedCourse._id);
+      }
+    }
+  }, [searchParams, courses, courseChapters]);
 
   // Helper function to check if a course is purchased
 
@@ -326,8 +212,7 @@ export default function CourseTab() {
 
   // Check if course is completed (simplified logic - you can enhance this)
   const isCourseCompleted = (course) => {
-    // For demo purposes, consider course completed if progress > 80%
-    // In real implementation, you'd check if all chapters, assignments, and tests are completed
+    // Consider course completed if progress > 80%.
     return course.overallProgress >= 80;
   };
 
@@ -410,9 +295,28 @@ export default function CourseTab() {
     }));
   };
 
-  const handleChapterClick = (chapterName) => {
-    // Navigate to digital-hub when any chapter is clicked
-    router.push("/digital-hub");
+  const buildDigitalHubPath = (course, chapterId) => {
+    if (!course?._id && !course?.slug) return "/digital-hub";
+    const identifier = encodeURIComponent(course?.slug || course?._id);
+    const basePath = `/digital-hub/${identifier}`;
+    if (!chapterId) return basePath;
+    return `${basePath}/${encodeURIComponent(chapterId)}`;
+  };
+
+  const toggleDetailedChapter = (courseId, chapterId) => {
+    const key = `${courseId}-${chapterId}`;
+    setExpandedChapterKeys((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
+
+  const getTopicSubtopics = (topic) => {
+    if (!topic) return [];
+    if (Array.isArray(topic.subtopics)) return topic.subtopics;
+    if (Array.isArray(topic.points)) return topic.points;
+    if (Array.isArray(topic.items)) return topic.items;
+    return [];
   };
 
   const handleAddNew = (type) => {
@@ -469,6 +373,11 @@ export default function CourseTab() {
     }
 
     setViewModes((prev) => ({ ...prev, [courseId]: "detailed" }));
+    const selected = courses.find((course) => course._id === courseId);
+    if (selected) {
+      setSelectedCourse(selected);
+      setLastAccessedCourse(selected);
+    }
 
     // Fetch chapters if cache data available
     if (!courseChapters[courseId]) {
@@ -715,10 +624,7 @@ export default function CourseTab() {
               selectedCourse.chapters.map((chapter, index) => (
                 <div
                   key={chapter._id || index}
-                  className="bg-gradient-to-r from-gray-100 to-gray-150 border border-gray-300 rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer"
-                  onClick={() =>
-                    handleChapterClick(chapter.title || chapter.name)
-                  }
+                  className="bg-gradient-to-r from-gray-100 to-gray-150 border border-gray-300 rounded-lg p-4 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -727,7 +633,16 @@ export default function CourseTab() {
                           {index + 1}
                         </span>
                       </div>
-                      <div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleDetailedChapter(
+                            selectedCourse._id,
+                            chapter._id || index
+                          )
+                        }
+                        className="text-left"
+                      >
                         <p className="font-semibold text-gray-800">
                           {chapter.title || chapter.name}
                         </p>
@@ -736,7 +651,7 @@ export default function CourseTab() {
                             {chapter.description}
                           </p>
                         )}
-                      </div>
+                      </button>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-24 bg-gray-200 rounded-full h-2">
@@ -764,6 +679,61 @@ export default function CourseTab() {
                       </span>
                     </div>
                   </div>
+                  {expandedChapterKeys[
+                    `${selectedCourse._id}-${chapter._id || index}`
+                  ] ? (
+                    <div className="mt-3 rounded-md border border-gray-200 bg-white p-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          router.push(
+                            buildDigitalHubPath(selectedCourse, chapter._id)
+                          )
+                        }
+                        className="mb-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                      >
+                        Open in Digital Hub
+                      </button>
+                      {Array.isArray(chapter.topics) && chapter.topics.length > 0 ? (
+                        <ul className="space-y-2">
+                          {chapter.topics.map((topic, topicIndex) => {
+                            const subtopics = getTopicSubtopics(topic);
+                            return (
+                              <li
+                                key={topic?._id || `${chapter._id}-topic-${topicIndex}`}
+                                className="rounded border border-gray-100 bg-gray-50 p-2"
+                              >
+                                <p className="text-sm font-semibold text-gray-800">
+                                  {topic?.title || `Topic ${topicIndex + 1}`}
+                                </p>
+                                {subtopics.length ? (
+                                  <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                                    {subtopics.map((subtopic, subtopicIndex) => (
+                                      <li key={`sub-${subtopicIndex}`}>
+                                        {typeof subtopic === "string"
+                                          ? subtopic
+                                          : subtopic?.title ||
+                                            subtopic?.name ||
+                                            `Subtopic ${subtopicIndex + 1}`}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    No subtopics
+                                  </p>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-gray-500">
+                          No topics available for this chapter.
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
                 </div>
               ))
             ) : (
@@ -939,26 +909,20 @@ export default function CourseTab() {
       </div>
 
       {/* Course Display with State Switching */}
-      <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {courses.map((course) => (
-          <div
-            key={course._id}
-            className={`group relative ${
-              viewModes[course._id] === "detailed" ? "md:col-span-2 xl:col-span-4" : ""
-            }`}
-          >
+      <div className="px-6 pb-6 space-y-6">
+        {courses.length === 0 ? (
+          <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-gray-600">
+            No results found
+          </div>
+        ) : (
+          courses.map((course) => (
+            <div key={course._id} className="group relative">
             {viewModes[course._id] !== "detailed" ? (
-              // State 1: Compact Course Card (ss3 style)
-              <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-                <div className="relative h-44 bg-gray-100">
-                  <img
-                    src={getCourseImageSrc(course)}
-                    alt={course.title}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.target.src = "/images/a1.jpeg";
-                    }}
-                  />
+              // State 1: Modern Course Overview Card
+              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
+                {/* Course Header */}
+                <div className="bg-blue-600 px-3 py-2 text-white">
+                  <h2 className="text-lg font-bold">{course.title}</h2>
                 </div>
 
                 <div className="p-5">
@@ -1039,21 +1003,19 @@ export default function CourseTab() {
                 </div>
               </div>
             ) : (
-              // State 2: Course Detailed View with Modern Design
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-                {/* Course Header with Gradient */}
-                <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 text-white relative overflow-hidden">
-                  <div className="absolute inset-0 bg-black opacity-10"></div>
-                  <div className="relative z-10 flex items-center justify-between">
+              // State 2: Course Detailed View (Compact Professional)
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                {/* Course Header */}
+                <div className="bg-slate-50 border-b border-slate-200 p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-2xl font-bold mb-2">
+                      <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-1">
                         {course.title}
                       </h2>
-                      <p className="text-indigo-100 text-sm opacity-90">
+                      <p className="text-xs text-slate-600">
                         Explore chapters, assignments, and assessments
                       </p>
                     </div>
-                    {/* Small Back Arrow Icon */}
                     <button
                       onClick={() =>
                         setViewModes((prev) => ({
@@ -1061,22 +1023,19 @@ export default function CourseTab() {
                           [course._id]: "overview",
                         }))
                       }
-                      className="bg-white/20 backdrop-blur-sm hover:bg-white/30 p-3 rounded-full transition-all duration-300 hover:scale-110 border border-white/30"
+                      className="h-9 w-9 rounded-md border border-slate-300 bg-white text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center"
                     >
-                      <ArrowBack className="text-white text-xl" />
+                      <ArrowBack className="text-base" />
                     </button>
                   </div>
-                  {/* Decorative elements */}
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-5 rounded-full -translate-y-16 translate-x-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-5 rounded-full translate-y-12 -translate-x-12"></div>
                 </div>
 
-                <div className="p-6">
+                <div className="p-4 sm:p-5">
                   {/* Full Width Content Area - No Image */}
                   <div className="w-full">
-                    {/* Modern Tab Navigation - Full Width */}
-                    <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 rounded-xl mb-6 border border-gray-200">
-                      <div className="flex gap-3 justify-center">
+                    {/* Compact Tab Navigation */}
+                    <div className="bg-slate-50 p-2 rounded-lg mb-4 border border-slate-200">
+                      <div className="flex flex-wrap gap-2 justify-center">
                         {[
                           "chapters",
                           "assignments",
@@ -1086,14 +1045,14 @@ export default function CourseTab() {
                           <div
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`flex items-center gap-3 px-6 py-4 rounded-xl cursor-pointer transition-all duration-300 min-w-[120px] justify-center border-2 font-semibold text-lg ${
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors min-w-[110px] justify-center border text-sm font-medium ${
                               activeTab === tab
-                                ? "bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg text-white border-transparent transform scale-105"
-                                : "bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 border-gray-200 hover:border-gray-300 hover:shadow-md"
+                                ? "bg-blue-600 text-white border-blue-600"
+                                : "bg-white text-slate-700 hover:bg-slate-100 border-slate-200"
                             }`}
                           >
                             {getTabIcon(tab)}
-                            <span className="font-semibold">
+                            <span>
                               {getTabLabel(tab)}
                             </span>
                           </div>
@@ -1101,51 +1060,55 @@ export default function CourseTab() {
                       </div>
                     </div>
 
-                    {/* Tab Content with Modern Styling - Full Width */}
-                    <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 h-[500px] overflow-y-auto border border-gray-200 shadow-inner">
+                    {/* Tab Content */}
+                    <div className="bg-slate-50 rounded-lg p-4 h-[500px] overflow-y-auto border border-slate-200">
                       {activeTab === "chapters" ? (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {courseChapters[course._id] &&
                           courseChapters[course._id].length > 0 ? (
                             courseChapters[course._id].map((chapter, index) => (
                               <div
                                 key={chapter._id || index}
-                                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-[1.02] hover:border-blue-300"
-                                onClick={() =>
-                                  router.push(
-                                    `/digital-hub?courseId=${course._id}&chapterId=${chapter._id}`
-                                  )
-                                }
+                                className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
                               >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-6">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                                      <span className="font-bold text-white text-lg">
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex items-center gap-4 min-w-0">
+                                    <div className="w-10 h-10 bg-blue-600 rounded-md flex items-center justify-center shrink-0">
+                                      <span className="font-semibold text-white text-sm">
                                         {index + 1}
                                       </span>
                                     </div>
-                                    <div className="flex-1">
-                                      <p className="font-bold text-gray-800 text-xl mb-2">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        toggleDetailedChapter(
+                                          course._id,
+                                          chapter._id || index
+                                        )
+                                      }
+                                      className="text-left flex-1 min-w-0"
+                                    >
+                                      <p className="font-semibold text-slate-800 text-base mb-1 truncate">
                                         {chapter.title || chapter.name}
                                       </p>
                                       {chapter.description && (
-                                        <p className="text-gray-600 text-base leading-relaxed">
+                                        <p className="text-slate-600 text-sm leading-relaxed line-clamp-2">
                                           {chapter.description}
                                         </p>
                                       )}
-                                    </div>
+                                    </button>
                                   </div>
-                                  <div className="flex items-center gap-4">
-                                    <div className="w-32 bg-gray-200 rounded-full h-4">
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <div className="w-24 bg-slate-200 rounded-full h-2.5">
                                       <div
-                                        className={`h-4 rounded-full transition-all duration-500 ${
+                                        className={`h-2.5 rounded-full transition-all duration-500 ${
                                           chapter.completion === 100
-                                            ? "bg-gradient-to-r from-green-500 to-emerald-500"
+                                            ? "bg-emerald-500"
                                             : chapter.completion >= 70
-                                            ? "bg-gradient-to-r from-blue-500 to-purple-500"
+                                            ? "bg-blue-500"
                                             : chapter.completion >= 40
-                                            ? "bg-gradient-to-r from-yellow-500 to-orange-500"
-                                            : "bg-gradient-to-r from-gray-400 to-gray-500"
+                                            ? "bg-amber-500"
+                                            : "bg-slate-400"
                                         }`}
                                         style={{
                                           width: `${chapter.completion || 0}%`,
@@ -1153,22 +1116,90 @@ export default function CourseTab() {
                                       />
                                     </div>
                                     <span
-                                      className={`px-4 py-2 rounded-full text-sm font-bold ${
+                                      className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                                         (chapter.completion || 0) === 100
-                                          ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-800"
-                                          : "bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800"
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : "bg-blue-100 text-blue-700"
                                       }`}
                                     >
                                       {chapter.completion || 0}%
                                     </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        router.push(
+                                          buildDigitalHubPath(course, chapter._id)
+                                        )
+                                      }
+                                      className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
+                                    >
+                                      Open in Digital Hub
+                                    </button>
                                   </div>
                                 </div>
+
+                                {expandedChapterKeys[
+                                  `${course._id}-${chapter._id || index}`
+                                ] ? (
+                                  <div className="mt-4 border-t border-slate-200 pt-3">
+                                    <h4 className="text-sm font-semibold text-slate-800 mb-2">
+                                      Topics
+                                    </h4>
+                                    {Array.isArray(chapter.topics) &&
+                                    chapter.topics.length > 0 ? (
+                                      <div className="space-y-2">
+                                        {chapter.topics.map((topic, topicIndex) => {
+                                          const subtopics = getTopicSubtopics(topic);
+                                          return (
+                                            <div
+                                              key={topic?._id || `${chapter._id}-topic-${topicIndex}`}
+                                              className="rounded-md border border-slate-200 bg-slate-50 p-2.5"
+                                            >
+                                              <p className="text-sm font-medium text-slate-800">
+                                                {topic?.title || `Topic ${topicIndex + 1}`}
+                                              </p>
+                                              {topic?.content ? (
+                                                <p className="text-xs text-slate-600 mt-1 line-clamp-2">
+                                                  {String(topic.content).replace(/<[^>]*>/g, "")}
+                                                </p>
+                                              ) : null}
+                                              <div className="mt-2">
+                                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                                  Subtopics
+                                                </p>
+                                                {subtopics.length > 0 ? (
+                                                  <ul className="mt-1 list-disc pl-5 text-xs text-slate-700 space-y-1">
+                                                    {subtopics.map((subtopic, subtopicIndex) => (
+                                                      <li key={`subtopic-${subtopicIndex}`}>
+                                                        {typeof subtopic === "string"
+                                                          ? subtopic
+                                                          : subtopic?.title || subtopic?.name || `Subtopic ${subtopicIndex + 1}`}
+                                                      </li>
+                                                    ))}
+                                                  </ul>
+                                                ) : (
+                                                  <p className="text-xs text-slate-500 mt-1">
+                                                    No subtopics
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm text-slate-500">
+                                        No topics available for this chapter.
+                                      </p>
+                                    )}
+                                  </div>
+                                ) : null}
                               </div>
                             ))
                           ) : (
-                            <div className="text-center py-12 text-gray-500">
-                              <Book className="mx-auto mb-4 text-6xl text-gray-300" />
-                              <p className="text-lg font-medium">
+                            <div className="text-center py-10 text-slate-500">
+                              <Book className="mx-auto mb-3 text-5xl text-slate-300" />
+                              <p className="text-base font-medium">
                                 No chapters available for this course.
                               </p>
                             </div>
@@ -1179,7 +1210,7 @@ export default function CourseTab() {
                       )}
                     </div>
 
-                    {/* Back Button with Modern Styling */}
+                    {/* Back Button */}
                     <button
                       onClick={() =>
                         setViewModes((prev) => ({
@@ -1187,17 +1218,18 @@ export default function CourseTab() {
                           [course._id]: "overview",
                         }))
                       }
-                      className="w-full mt-6 bg-gradient-to-r from-gray-600 to-gray-700 text-white py-4 px-6 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 hover:from-gray-700 hover:to-gray-800 flex items-center justify-center gap-3"
+                      className="w-full mt-4 bg-slate-700 text-white py-2.5 px-4 rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors flex items-center justify-center gap-2"
                     >
-                      <ArrowBack />
+                      <ArrowBack className="text-base" />
                       Back to Course Overview
                     </button>
                   </div>
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          ))
+        )}
       </div>
 
       {/* Form Modal */}

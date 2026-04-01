@@ -12,16 +12,18 @@ import contactRoutesOld from "./routes/contactRoutes.js";
 import connectDB from "./config/db.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import newCartRoutes from "./routes/newCartRoutes.js";
-import paymentRoutes from "./routes/PaymentRoutes/paymentRoutes.js";
-import testPaymentRoutes from "./routes/payment.js";
+import paymentRoutes from "./routes/payment.js";
+import phonePePaymentRoutes from "./routes/PaymentRoutes/paymentRoutes.js";
 import transactionRoutes from "./routes/transactionRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import authAuditRoutes from "./routes/authAuditRoutes.js";
 import blogRoutes from "./routes/blogRoutes.js";
 import JobAdminRoutes from "./routes/JobAdminRoutes.js";
 import JobApplyRoutes from "./routes/JobApplyRoutes.js";
 import alertRoutes from "./routes/alertRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
+import chatbotLeadRoutes from "./routes/chatbotLeadRoutes.js";
 
 //Import Routes For Content
 import testimonialRoutes from "./routes/TestimonialRoutes.js";
@@ -35,6 +37,7 @@ import LiveSessionRoutes from "./routes/LiveSessionRoutes/LiveSessionRoutes.js";
 import courseLevelsRoutes from "./routes/courseLevelsRoutes.js";
 import groupPricingRoutes from "./routes/groupPricingRoutes.js";
 import specialOfferRoutes from "./routes/specialOfferRoutes.js";
+import couponRoutes from "./routes/couponRoutes.js";
 
 //Extra Routes
 import metaTagRoutes from "./routes/metatagsRoute.js";
@@ -76,6 +79,8 @@ import teacherRoutes from "./routes/teacherRoutes.js";
 
 //Import employee routes
 import employeeRoutes from "./routes/employeeRoutes.js";
+import masterLoginAccessRoutes from "./routes/masterLoginAccessRoutes.js";
+import publicLoginAccessRoutes from "./routes/publicLoginAccessRoutes.js";
 
 //Contact Info Routes
 import contactInfoRoutes from "./routes/contactInfoRoutes.js";
@@ -85,6 +90,12 @@ import contactFormRoutes from "./routes/contactFormRoutes.js";
 
 //University Course Routes
 import universityCourseRoutes from "./routes/universityCourseRoutes.js";
+import coinRoutes from "./routes/coinRoutes.js";
+import bookingSettingsRoutes from "./routes/bookingSettingsRoutes.js";
+import courseBookingRoutes from "./routes/courseBookingRoutes.js";
+import invoiceCompanySettingsRoutes from "./routes/invoiceCompanySettingsRoutes.js";
+import jobSidebarMarqueeSettingsRoutes from "./routes/jobSidebarMarqueeSettingsRoutes.js";
+import ourPartnersSettingsRoutes from "./routes/ourPartnersSettingsRoutes.js";
 
 //App Configuration
 dotenv.config();
@@ -103,6 +114,8 @@ app.use(
       "http://localhost:3001",
       "http://localhost:3002",
       "https://www.iicpa.in",
+      "https://admin-master.iicpa.in",
+      "https://www.admin-master.comu",
     ], // your frontend URL
     credentials: true,
   })
@@ -144,6 +157,7 @@ const contactLimiter = rateLimit({
 // Routes
 app.use("/api/college", collegeRoutes);
 app.use("/api/admin", authRoutes);
+app.use("/api", authAuditRoutes);
 // Apply rate limiting to contact routes only
 app.use("/api/contact-old", contactLimiter, contactRoutesOld);
 app.use("/api/companies", companyRoutes);
@@ -164,6 +178,7 @@ app.use("/api/topics", topicRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/revision-tests", revisionTestRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/coupons", couponRoutes);
 
 // Assignment and Case Study Routes
 import assignmentRoutes from "./routes/assignmentRoutes.js";
@@ -226,7 +241,7 @@ app.use("/api/tickets", ticketRoutes);
 app.use("/api/bookings", bookingRoutes);
 
 //Test Payment Routes
-app.use("/api/test-payment", testPaymentRoutes);
+app.use("/api/test-payment", paymentRoutes);
 
 //IP Whitelist Routes
 app.use("/api/ip-whitelist", ipWhitelistRoutes);
@@ -241,6 +256,12 @@ app.use("/api/apply/jobs-external", ExternalJobApplicationRoutes);
 
 //Student Routes
 app.use("/api/v1/students", studentRoutes);
+app.use("/api/coins", coinRoutes);
+app.use("/api/booking-settings", bookingSettingsRoutes);
+app.use("/api/invoice-company-settings", invoiceCompanySettingsRoutes);
+app.use("/api/job-sidebar-marquee-settings", jobSidebarMarqueeSettingsRoutes);
+app.use("/api/our-partners-settings", ourPartnersSettingsRoutes);
+app.use("/api/v1/course-bookings", courseBookingRoutes);
 
 //New Cart Routes
 app.use("/api/v1/cart", newCartRoutes);
@@ -255,7 +276,9 @@ app.use("/api/v1/centers", centerRoutes);
 app.use("/api/upload", UploadRoutes);
 
 //Payment Routes
+app.use("/api/payments", paymentRoutes);
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/phonepe-payments", phonePePaymentRoutes);
 
 //Transaction Routes (Legacy)
 import legacyTransactionRoutes from "./routes/transaction.js";
@@ -276,9 +299,12 @@ app.use("/api/v1/kit-orders", kitOrderRoutes);
 
 //Teacher Routes
 app.use("/api/v1/teachers", teacherRoutes);
+app.use("/api/v1/chatbot-leads", chatbotLeadRoutes);
 
 // Use employee routes
 app.use("/api/employees", employeeRoutes);
+app.use("/api/master/login-access", masterLoginAccessRoutes);
+app.use("/api/public/login-access", publicLoginAccessRoutes);
 
 // Course Rating Routes
 import courseRatingRoutes from "./routes/courseRatingRoutes.js";

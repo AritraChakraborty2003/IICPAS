@@ -7,6 +7,9 @@ import dynamic from "next/dynamic";
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const ALLOWED_IMAGE_ACCEPT =
+  ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
+const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
 
 const initialForm = {
   category: null,
@@ -70,7 +73,11 @@ export default function CourseAddTab({ onBack }) {
   const joditConfig = {
     readonly: false,
     height: 200,
-    uploader: { insertImageAsBase64URI: true },
+    uploader: {
+      insertImageAsBase64URI: true,
+      accept: ALLOWED_IMAGE_ACCEPT,
+      imagesExtensions: JODIT_IMAGE_EXTENSIONS,
+    },
     toolbarAdaptive: false,
     showCharsCounter: false,
     showWordsCounter: false,

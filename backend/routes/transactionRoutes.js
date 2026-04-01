@@ -3,8 +3,126 @@ import Transaction from "../models/Transaction.js";
 import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
 import paymentScreenshotUpload from "../middleware/paymentScreenshotUpload.js";
+import isStudent from "../middleware/isStudent.js";
 
 const router = express.Router();
+
+const objectIdEquals = (left, right) => {
+  if (!left || !right) return false;
+  return left.toString() === right.toString();
+};
+
+const syncStudentEnrollment = async (transaction) => {
+  const student = await Student.findById(transaction.studentId);
+  if (!student) return null;
+
+  if (!student.course.some((id) => objectIdEquals(id, transaction.courseId))) {
+    student.course.push(transaction.courseId);
+  }
+
+  if (transaction.sessionType === "recorded") {
+    if (
+      !student.enrolledRecordedSessions.some((id) =>
+        objectIdEquals(id, transaction.courseId)
+      )
+    ) {
+      student.enrolledRecordedSessions.push(transaction.courseId);
+    }
+  } else if (transaction.sessionType === "live") {
+    if (
+      !student.enrolledLiveSessions.some((id) =>
+        objectIdEquals(id, transaction.courseId)
+      )
+    ) {
+      student.enrolledLiveSessions.push(transaction.courseId);
+    }
+  }
+
+  student.cart = student.cart.filter(
+    (item) =>
+      !(
+        objectIdEquals(item.courseId, transaction.courseId) &&
+        item.sessionType === transaction.sessionType
+      )
+  );
+
+  await student.save();
+  return student;
+};
+
+const sendReceiptForTransaction = async (transactionId) => {
+  const transaction = await Transaction.findById(transactionId)
+    .populate("studentId", "name email")
+    .populate("courseId", "title category price");
+
+  if (!transaction || transaction.status !== "approved") {
+    return { sent: false, reason: "Transaction missing or not approved" };
+  }
+
+  if (transaction.receiptSent) {
+    return { sent: true, skipped: true };
+  }
+
+  const { generateReceiptPDF } = await import("../utils/pdfReceiptGenerator.js");
+  const { sendReceiptEmail } = await import("../utils/emailService.js");
+
+  const pdfBuffer = await generateReceiptPDF(transaction);
+  await sendReceiptEmail(transaction, pdfBuffer);
+
+  transaction.receiptSent = true;
+  transaction.receiptSentAt = new Date();
+  await transaction.save();
+
+  return { sent: true, skipped: false };
+};
+
+// Get current student's invoice/transaction history
+router.get("/student", isStudent, async (req, res) => {
+  try {
+    const studentId = req.user?.id;
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+    const skip = (page - 1) * limit;
+
+    if (!studentId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+
+    const [transactions, totalCount] = await Promise.all([
+      Transaction.find({ studentId })
+        .populate({
+          path: "courseId",
+          select: "title category price",
+        })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit),
+      Transaction.countDocuments({ studentId }),
+    ]);
+
+    return res.json({
+      success: true,
+      transactions,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+        totalCount,
+        hasNext: skip + transactions.length < totalCount,
+        hasPrev: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Get student invoice history error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch invoice history",
+      error: error.message,
+    });
+  }
+});
 
 // Submit payment with screenshot
 router.post(
@@ -77,6 +195,7 @@ router.post(
         courseId,
         sessionType,
         amount: parseFloat(amount),
+        paymentMethod: "manual",
         utrNumber,
         paymentScreenshot: `/uploads/payment-screenshots/${req.file.filename}`,
         additionalNotes: additionalNotes || "",
@@ -87,10 +206,7 @@ router.post(
       // Remove item from cart after successful payment submission
       student.cart = student.cart.filter(
         (item) =>
-          !(
-            item.courseId.toString() === courseId &&
-            item.sessionType === sessionType
-          )
+          !(item.courseId.toString() === courseId && item.sessionType === sessionType)
       );
       await student.save();
 
@@ -223,22 +339,17 @@ router.put("/admin/update-status/:transactionId", async (req, res) => {
 
     await transaction.save();
 
-    // If approved, enroll student in the course
+    // If approved, enroll student in the course and try receipt send
     if (status === "approved") {
-      const student = await Student.findById(transaction.studentId);
-      if (student) {
-        if (transaction.sessionType === "recorded") {
-          if (
-            !student.enrolledRecordedSessions.includes(transaction.courseId)
-          ) {
-            student.enrolledRecordedSessions.push(transaction.courseId);
-          }
-        } else if (transaction.sessionType === "live") {
-          if (!student.enrolledLiveSessions.includes(transaction.courseId)) {
-            student.enrolledLiveSessions.push(transaction.courseId);
-          }
-        }
-        await student.save();
+      await syncStudentEnrollment(transaction);
+
+      try {
+        await sendReceiptForTransaction(transactionId);
+      } catch (receiptError) {
+        console.error(
+          "Non-blocking receipt send failed for approved transaction:",
+          receiptError
+        );
       }
     }
 

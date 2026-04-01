@@ -23,7 +23,6 @@ import "react-modern-drawer/dist/index.css";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import AlertMarquee from "./AlertMarquee";
-import CheckoutModal from "./CheckoutModal";
 import AdmissionModal from "./AdmissionModal";
 
 const MySwal = withReactContent(Swal);
@@ -31,32 +30,6 @@ const MySwal = withReactContent(Swal);
 const navLinks = [
   { name: "Home", href: "/" },
   { name: "Courses", href: "/course" },
-  {
-    name: "University Courses",
-    children: [
-      { name: "UG Programs", isHeader: true },
-      {
-        name: "B.Tech (All Specializations)",
-        href: "/admission/university-courses/b-tech-all-specializations",
-      },
-      { name: "BBA", href: "/admission/university-courses/bba" },
-      { name: "BCA", href: "/admission/university-courses/bca" },
-      { name: "B.Pharma", href: "/admission/university-courses/b-pharm" },
-      { name: "D.Pharma", href: "/admission/university-courses/d-pharm" },
-      { name: "LLB", href: "/admission/university-courses/llb" },
-      { name: "BA LLB", href: "/admission/university-courses/ba-llb" },
-      { name: "BBA LLB", href: "/admission/university-courses/bba-llb" },
-      { name: "B.Ed", href: "/admission/university-courses/b-ed" },
-      { name: "PG Programs", isHeader: true },
-      { name: "MBA", href: "/admission/university-courses/mba" },
-      { name: "LLM", href: "/admission/university-courses/llm" },
-      { name: "Ph.D Programs", isHeader: true },
-      {
-        name: "Ph.D (All Specializations)",
-        href: "/admission/university-courses/phd-all-specializations",
-      },
-    ],
-  },
   {
     name: "Placement",
     children: [
@@ -90,7 +63,6 @@ export default function Header({ showMarquee = true, topOffset }) {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [cartDrawer, setCartDrawer] = useState(false);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [student, setStudent] = useState(null);
   const [cartCourses, setCartCourses] = useState([]);
   const [wishlistCourses, setWishlistCourses] = useState([]);
@@ -125,7 +97,6 @@ export default function Header({ showMarquee = true, topOffset }) {
         withCredentials: true,
       });
       const studentData = res.data.student;
-      console.log("Student data:", studentData);
 
       // Check if student data exists before proceeding
       if (!studentData) {
@@ -136,17 +107,13 @@ export default function Header({ showMarquee = true, topOffset }) {
       }
 
       setStudent(studentData);
-
-      console.log("Making cart request for student ID:", studentData._id);
       const cartRes = await axios.get(
         `${API}/api/v1/cart/get/${studentData._id}`,
         {
           withCredentials: true,
         }
       );
-      console.log("Header cart response:", cartRes.data);
       const cartItems = cartRes.data.cart || [];
-      console.log("Cart items from API:", cartItems);
 
       const wishlistRes = await axios.get(
         `${API}/api/v1/students/get-wishlist/${studentData._id}`,
@@ -160,19 +127,13 @@ export default function Header({ showMarquee = true, topOffset }) {
       // Process cart courses using new cart structure
       const processedCartCourses = cartItems
         .map((cartItem) => {
-          console.log("Header processing cart item:", cartItem);
 
           // New cart API returns: { courseId, course, sessionType, quantity }
           const course = cartItem.course;
           const sessionType = cartItem.sessionType || "recorded";
           const quantity = cartItem.quantity || 1;
 
-          console.log("Course object:", course);
-          console.log("Session type:", sessionType);
-          console.log("Quantity:", quantity);
-
           if (!course) {
-            console.log("No course found for cart item");
             return null;
           }
 
@@ -193,21 +154,15 @@ export default function Header({ showMarquee = true, topOffset }) {
               0;
           }
 
-          console.log("Display price:", displayPrice);
-
           const processedItem = {
             ...course,
             sessionType,
             quantity,
             price: displayPrice, // Override the price with the correct one
           };
-
-          console.log("Processed cart item:", processedItem);
           return processedItem;
         })
         .filter(Boolean); // Remove null entries
-
-      console.log("Header processed cart courses:", processedCartCourses);
       setCartCourses(processedCartCourses);
       setWishlistCourses(courseList.filter((c) => wishlistIDs.includes(c._id)));
     } catch (error) {
@@ -216,7 +171,6 @@ export default function Header({ showMarquee = true, topOffset }) {
 
       // Handle 401 Unauthorized errors gracefully
       if (error.response?.status === 401) {
-        console.log("User not authenticated, clearing student data");
       }
 
       setStudent(null);
@@ -232,13 +186,23 @@ export default function Header({ showMarquee = true, topOffset }) {
 
   // Listen for cart update events
   useEffect(() => {
-    const handleCartUpdate = () => {
+    const handleCartUpdate = (event) => {
       fetchStudentAndCart();
+      if (event?.detail?.openDrawer) {
+        setCartDrawer(true);
+      }
+    };
+
+    const handleOpenCartDrawer = () => {
+      fetchStudentAndCart();
+      setCartDrawer(true);
     };
 
     window.addEventListener("cartUpdated", handleCartUpdate);
+    window.addEventListener("openCartDrawer", handleOpenCartDrawer);
     return () => {
       window.removeEventListener("cartUpdated", handleCartUpdate);
+      window.removeEventListener("openCartDrawer", handleOpenCartDrawer);
     };
   }, []);
 
@@ -428,8 +392,8 @@ export default function Header({ showMarquee = true, topOffset }) {
       });
       return;
     }
-    // Open checkout modal instead of redirecting
-    setShowCheckoutModal(true);
+    setCartDrawer(false);
+    window.location.href = "/checkout";
   };
 
   const handleAdmissionClick = (course) => {
@@ -459,42 +423,25 @@ export default function Header({ showMarquee = true, topOffset }) {
           <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
             {navLinks.map((item) =>
               item.children ? (
-                <div
-                  key={item.name}
-                  className="relative"
-                >
-                  <div
-                    onMouseEnter={() => handleDropdownOpen(item.name)}
-                    onMouseLeave={handleDropdownClose}
-                  >
-                    <button className="flex items-center gap-1 py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm">
-                      {item.name}
-                      <svg
-                        className={`w-2.5 h-2.5 transition-transform ${
-                          activeDropdown === item.name ? "rotate-180" : ""
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                  <div
-                    className={`absolute left-0 top-full w-48 bg-white shadow-xl rounded-lg z-50 transition-all duration-200 ${
-                      activeDropdown === item.name
-                        ? "opacity-100 visible pointer-events-auto translate-y-0"
-                        : "opacity-0 invisible pointer-events-none -translate-y-2"
-                    }`}
-                    onMouseEnter={() => handleDropdownOpen(item.name)}
-                    onMouseLeave={handleDropdownClose}
-                  >
+                <div key={item.name} className="relative group">
+                  <button className="flex items-center gap-1 py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm">
+                    {item.name}
+                    <svg
+                      className="w-2.5 h-2.5 transition-transform group-hover:rotate-180"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div className="absolute left-0 top-full w-56 pt-2 z-50 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all">
+                    <div className="bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden">
                     {item.children.map((child) =>
                       child.isHeader ? (
                         <div
@@ -507,7 +454,7 @@ export default function Header({ showMarquee = true, topOffset }) {
                         <Link
                           key={child.name}
                           href={child.href}
-                          className="block px-3 py-2 text-xs hover:bg-green-50"
+                          className="block px-3 py-2.5 text-xs hover:bg-green-50"
                         >
                           {child.name}
                         </Link>
@@ -515,12 +462,13 @@ export default function Header({ showMarquee = true, topOffset }) {
                         <Link
                           key={child.name}
                           href={child.href}
-                          className="block px-3 py-2 text-xs hover:bg-green-50"
+                          className="block px-3 py-2.5 text-xs hover:bg-green-50"
                         >
                           {child.name}
                         </Link>
                       )
                     )}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -538,7 +486,7 @@ export default function Header({ showMarquee = true, topOffset }) {
           </nav>
 
           {/* Right side - Desktop Only */}
-          <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
+	          <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
             {/* Cart Icon - Show for all users */}
             <button
               onClick={() => setCartDrawer(true)}
@@ -552,27 +500,30 @@ export default function Header({ showMarquee = true, topOffset }) {
                       (total, item) => total + (item.quantity || 1),
                       0
                     );
-                    console.log(
-                      "Header cart count:",
-                      count,
-                      "from items:",
-                      cartCourses
-                    );
                     return count;
                   })()}
                 </span>
               )}
-            </button>
+	            </button>
 
-            {isAdmin ? (
-              <Link
-                href="/admin-dashboard"
+		            {!isAdmin && (
+		              <Link
+		                href="/booking"
+		                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
+		              >
+		                Register Now
+		              </Link>
+		            )}
+
+	            {isAdmin ? (
+	              <Link
+	                href="/admin-dashboard"
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm"
               >
                 Admin Dashboard
               </Link>
-            ) : student ? (
-              <div className="relative profile-dropdown">
+	            ) : student ? (
+	              <div className="relative profile-dropdown">
                 <button
                   onClick={() => setShowProfileDropdown(!showProfileDropdown)}
                   className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md text-sm"
@@ -607,13 +558,15 @@ export default function Header({ showMarquee = true, topOffset }) {
                   </div>
                 )}
               </div>
-            ) : (
-              <Link
-                href="/student-login"
-                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
-              >
-                Digital Hub
-              </Link>
+	            ) : (
+	              <>
+	                <Link
+	                  href="/student-login"
+	                  className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm"
+                >
+                  Digital Hub
+                </Link>
+              </>
             )}
           </div>
 
@@ -713,11 +666,18 @@ export default function Header({ showMarquee = true, topOffset }) {
               >
                 Admin Dashboard
               </Link>
-            ) : student ? (
-              <>
-                <Link
-                  href="/student-dashboard"
-                  onClick={() => setDrawerOpen(false)}
+	            ) : student ? (
+	              <>
+		                <Link
+		                  href="/booking"
+		                  onClick={() => setDrawerOpen(false)}
+		                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
+		                >
+		                  Register Now
+		                </Link>
+	                <Link
+	                  href="/student-dashboard"
+	                  onClick={() => setDrawerOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm"
                 >
                   <User size={16} />
@@ -735,13 +695,22 @@ export default function Header({ showMarquee = true, topOffset }) {
                 </button>
               </>
             ) : (
-              <Link
-                href="/student-login"
-                onClick={() => setDrawerOpen(false)}
-                className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
-              >
-                Digital Hub
-              </Link>
+              <>
+	                <Link
+	                  href="/booking"
+	                  onClick={() => setDrawerOpen(false)}
+	                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
+	                >
+	                  Register Now
+	                </Link>
+                <Link
+                  href="/student-login"
+                  onClick={() => setDrawerOpen(false)}
+                  className="block w-full border border-green-600 text-green-600 hover:bg-green-50 px-4 py-2 rounded-lg text-center text-sm"
+                >
+                  Digital Hub
+                </Link>
+              </>
             )}
           </div>
         </div>
@@ -796,7 +765,6 @@ export default function Header({ showMarquee = true, topOffset }) {
                         alt={course.title}
                         className="w-16 h-16 object-cover rounded"
                         onError={(e) => {
-                          console.log("Cart image failed to load:", e);
                           e.currentTarget.src = "/images/a1.jpeg";
                         }}
                       />
@@ -859,17 +827,6 @@ export default function Header({ showMarquee = true, topOffset }) {
           )}
         </div>
       </Drawer>
-
-      {/* Checkout Modal */}
-      {showCheckoutModal && (
-        <CheckoutModal
-          isOpen={showCheckoutModal}
-          onClose={() => setShowCheckoutModal(false)}
-          cartCourses={cartCourses}
-          student={student}
-          onCartUpdate={fetchStudentAndCart}
-        />
-      )}
 
       {/* Admission Modal */}
       <AdmissionModal

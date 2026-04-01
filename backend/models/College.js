@@ -9,7 +9,7 @@ const collegeSchema = new mongoose.Schema({
   image: { type: String }, // Profile image field
   status: {
     type: String,
-    enum: ["not approved", "approved"],
+    enum: ["not approved", "approved", "inactive"],
     default: "not approved",
   },
   otp: String,

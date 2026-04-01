@@ -1,4 +1,5 @@
 import Testimonial from "../models/Testimonials.js";
+import { awardCoins, getCoinSettings } from "../services/coinService.js";
 
 // Create a new testimonial (admin only)
 export const createTestimonial = async (req, res) => {
@@ -111,17 +112,34 @@ export const getApprovedTestimonials = async (req, res) => {
 export const approveTestimonial = async (req, res) => {
   try {
     const { id } = req.params;
-    const testimonial = await Testimonial.findByIdAndUpdate(
-      id,
-      { status: true },
-      { new: true }
-    );
+    const existing = await Testimonial.findById(id);
 
-    if (!testimonial) {
+    if (!existing) {
       return res.status(404).json({ error: "Testimonial not found" });
     }
 
-    res.json({ message: "Testimonial approved successfully", testimonial });
+    const wasPending = existing.status !== true;
+    existing.status = true;
+    await existing.save();
+
+    if (wasPending && existing.studentId) {
+      try {
+        const settings = await getCoinSettings();
+        await awardCoins({
+          studentId: existing.studentId.toString(),
+          eventType: "TESTIMONIAL_APPROVED",
+          coins: settings.testimonialApprovedCoins,
+          metadata: {
+            testimonialId: existing._id.toString(),
+          },
+          idempotencyKey: `testimonial:${existing._id}:approved`,
+        });
+      } catch (coinError) {
+        console.error("Testimonial coin reward failed:", coinError);
+      }
+    }
+
+    res.json({ message: "Testimonial approved successfully", testimonial: existing });
   } catch (error) {
     console.error("Error approving testimonial:", error);
     res.status(500).json({ error: "Failed to approve testimonial" });

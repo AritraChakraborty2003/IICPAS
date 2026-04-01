@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
 import Drawer from "react-modern-drawer";
 import "react-modern-drawer/dist/index.css";
 import axios from "axios";
@@ -17,31 +17,38 @@ import {
   FaQuoteLeft,
   FaPlay,
   FaSignOutAlt,
-  FaFileAlt,
-  FaQuestionCircle,
-  FaComments,
   FaBell,
   FaShoppingCart,
+  FaCoins,
+  FaWallet,
+  FaChevronLeft,
+  FaChevronRight,
+  FaFileAlt,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
 import CertificatesTab from "../components/CertificateTab";
 import CoursesTab from "../components/CourseTab";
 import BuyCoursesTab from "../components/BuyCoursesTab";
-import RevisionTab from "./RevisionTab";
+import RevisionTab from "./RevisionTab.tsx";
 import TicketTab from "../components/TicketTab";
 import NewsTab from "./NewsTab";
 import LiveClassTab from "../components/LiveClassTab";
 import RecordedSessionTab from "./RecordedSessionTab";
 import ProfileTab from "../components/ProfileTab";
 import TestimonialTab from "./TestimonialTab";
+import StudentInvoicesTab from "./StudentInvoicesTab";
+import StudentBookingsTab from "./StudentBookingsTab";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
-export default function StudentDashboard() {
+function StudentDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState("buy-courses"); // Default to Buy Courses for new students
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [student, setStudent] = useState(null);
+  const [studentCoins, setStudentCoins] = useState(0);
+  const [walletPaidAmount, setWalletPaidAmount] = useState(0);
   const [checkingAuth, setCheckingAuth] = useState(false); // Initialize as false to prevent initial blinking
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -57,6 +64,49 @@ export default function StudentDashboard() {
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+  useAuthHeartbeat({
+    enabled: !!student,
+    heartbeatUrl: `${API}/api/auth/heartbeat`,
+  });
+
+  const getStudentImageUrl = (imagePath) => {
+    if (!imagePath || typeof imagePath !== "string") return "";
+    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+      return imagePath;
+    }
+    const normalizedPath = imagePath.startsWith("/")
+      ? imagePath
+      : `/${imagePath}`;
+    return `${API}${normalizedPath}`;
+  };
+
+  const fetchStudentCoins = async (studentId) => {
+    try {
+      const response = await axios.get(`${API}/api/v1/students/coins/${studentId}`, {
+        withCredentials: true,
+      });
+      setStudentCoins(response.data?.coinBalance ?? 0);
+    } catch (error) {
+      setStudentCoins(0);
+    }
+  };
+
+  const fetchWalletPaidAmount = async () => {
+    try {
+      const response = await axios.get(`${API}/api/v1/course-bookings/student`, {
+        withCredentials: true,
+      });
+      const bookings = Array.isArray(response.data?.bookings) ? response.data.bookings : [];
+      const totalPaid = bookings.reduce(
+        (sum, entry) => sum + Number(entry?.paidAmount || 0),
+        0
+      );
+      setWalletPaidAmount(totalPaid);
+    } catch {
+      setWalletPaidAmount(0);
+    }
+  };
+
   // Sidebar tabs
   const tabs = [
     { id: "buy-courses", icon: <FaShoppingCart />, label: "Buy Courses" },
@@ -66,6 +116,7 @@ export default function StudentDashboard() {
     { id: "recorded", icon: <FaPlay />, label: "Recorded Sessions", dot: true },
     { id: "news", icon: <FaNewspaper />, label: "News" },
     { id: "testimonial", icon: <FaQuoteLeft />, label: "Testimonial" },
+    { id: "bookings", icon: <FaFileAlt />, label: "Bookings" },
     { id: "support", icon: <FaHeadset />, label: "Support" },
     {
       id: "certificates",
@@ -73,15 +124,6 @@ export default function StudentDashboard() {
       label: "Certificates",
       dot: true,
       dotColor: "green",
-    },
-    {
-      id: "collapse",
-      icon: (
-        <span className="font-bold text-lg">
-          {sidebarCollapsed ? "⟶" : "⟵"}
-        </span>
-      ),
-      label: sidebarCollapsed ? "Expand" : "Collapse",
     },
   ];
 
@@ -98,9 +140,11 @@ export default function StudentDashboard() {
         "recorded",
         "news",
         "testimonial",
+        "bookings",
         "support",
         "certificates",
         "profile",
+        "invoices",
       ].includes(tab)
     ) {
       setActiveTab(tab);
@@ -117,25 +161,51 @@ export default function StudentDashboard() {
         );
         // Authenticated: set student
         if (res.data && res.data.student) {
-          setStudent(res.data.student);
+          const currentStudent = res.data.student;
+          setStudent(currentStudent);
+          if (currentStudent?._id) {
+            await fetchStudentCoins(currentStudent._id);
+            await fetchWalletPaidAmount();
+          }
 
           // Update ticket form with student data
           setTicketForm({
-            name: res.data.student.name || "",
-            email: res.data.student.email || "",
-            phone: res.data.student.phone || "",
+            name: currentStudent.name || "",
+            email: currentStudent.email || "",
+            phone: currentStudent.phone || "",
             message: "",
           });
         } else {
+          setStudentCoins(0);
           router.replace("/student-login");
         }
       } catch (err) {
+        setStudentCoins(0);
         router.replace("/student-login");
       }
       // Remove finally block to prevent loading state changes
     };
     fetchStudent();
   }, [router]);
+
+  useEffect(() => {
+    if (!student?._id) return undefined;
+
+    const handleCoinUpdate = () => {
+      fetchStudentCoins(student._id);
+    };
+
+    window.addEventListener("coins:updated", handleCoinUpdate);
+    return () => {
+      window.removeEventListener("coins:updated", handleCoinUpdate);
+    };
+  }, [student?._id]);
+
+  useEffect(() => {
+    if (!student?._id) return;
+    if (activeTab !== "bookings") return;
+    fetchWalletPaidAmount();
+  }, [activeTab, student?._id]);
 
   // Handle ticket submission
   const handleTicketSubmit = async (e) => {
@@ -202,24 +272,28 @@ export default function StudentDashboard() {
       case "news":
         return <NewsTab />;
       case "profile":
-        return <ProfileTab student={student} />;
+        return (
+          <ProfileTab
+            onImageUpdated={(newImage) => {
+              if (!newImage) return;
+              setStudent((prev) => (prev ? { ...prev, image: newImage } : prev));
+            }}
+          />
+        );
+      case "invoices":
+        return <StudentInvoicesTab />;
+      case "bookings":
+        return <StudentBookingsTab />;
       case "testimonial":
         return <TestimonialTab student={student} />;
       case "support":
-        return <TicketTab />;
+        return <TicketTab viewerType="student" />;
       case "certificates":
         return <CertificatesTab />;
-      case "collapse":
-        // Handle collapse action - only on desktop
-        if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-          setSidebarCollapsed(!sidebarCollapsed);
-          setActiveTab("buy-courses"); // Switch back to buy-courses tab
-        }
-        return <BuyCoursesTab />;
       default:
         return <BuyCoursesTab />;
     }
-  }, [activeTab, student, sidebarCollapsed]);
+  }, [activeTab, student]);
 
   const SidebarContent = () => (
     <div className="h-full flex flex-col">
@@ -247,43 +321,18 @@ export default function StudentDashboard() {
             />
           </div>
         </div>
-        {/* User Info */}
-        {student && !sidebarCollapsed && (
-          <div className="text-center mb-4 p-3 bg-blue-50 rounded-lg">
-            <div
-              onClick={() => setActiveTab("profile")}
-              className="cursor-pointer hover:bg-blue-100 p-2 rounded-md transition-colors duration-200"
-            >
-              <div className="flex items-center justify-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
-                  {student.image ? (
-                    <img
-                      src={`${API}/${student.image}`}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        console.log(
-                          "Sidebar profile image failed to load:",
-                          `${API}/${student.image}`
-                        );
-                        e.target.style.display = "none";
-                        e.target.nextElementSibling.style.display = "flex";
-                      }}
-                    />
-                  ) : null}
-                  <div
-                    className={`w-full h-full flex items-center justify-center ${
-                      student.image ? "hidden" : ""
-                    }`}
-                  >
-                    <FaUser size={16} className="text-white" />
-                  </div>
-                </div>
-                <p className="font-semibold text-blue-800">{student.name}</p>
-              </div>
-              <p className="text-sm text-blue-600 mt-1">Student</p>
-            </div>
-          </div>
+        {!sidebarCollapsed && (
+          <button
+            type="button"
+            onClick={() => {
+              router.push("/digital-hub");
+              setIsDrawerOpen(false);
+            }}
+            className="mb-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-3 text-sm font-semibold text-white shadow-md transition hover:from-blue-700 hover:to-blue-800"
+          >
+            <FaBook />
+            <span>Digital Hub</span>
+          </button>
         )}
         {/* Collapsed user profile */}
         {student && sidebarCollapsed && (
@@ -295,13 +344,13 @@ export default function StudentDashboard() {
               <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center overflow-hidden">
                 {student.image ? (
                   <img
-                    src={`${API}/${student.image}`}
+                    src={getStudentImageUrl(student.image)}
                     alt="Profile"
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       console.log(
                         "Sidebar profile image failed to load:",
-                        `${API}`
+                        getStudentImageUrl(student.image)
                       );
                       e.target.style.display = "none";
                       e.target.nextElementSibling.style.display = "flex";
@@ -319,6 +368,22 @@ export default function StudentDashboard() {
             </div>
           </div>
         )}
+        {sidebarCollapsed && (
+          <div className="mb-4 flex justify-center">
+            <button
+              type="button"
+              onClick={() => {
+                router.push("/digital-hub");
+                setIsDrawerOpen(false);
+              }}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white shadow-md transition hover:bg-blue-700"
+              title="Digital Hub"
+              aria-label="Digital Hub"
+            >
+              <FaBook size={16} />
+            </button>
+          </div>
+        )}
       </div>
       <nav
         className={`flex-1 overflow-y-auto ${
@@ -326,10 +391,7 @@ export default function StudentDashboard() {
         } custom-scrollbar`}
       >
         {tabs.map((tab) => (
-          <div
-            key={tab.id}
-            className={tab.id === "collapse" ? "hidden lg:block" : ""}
-          >
+          <div key={tab.id}>
             <NavItem
               icon={tab.icon}
               label={sidebarCollapsed ? "" : tab.label}
@@ -358,17 +420,24 @@ export default function StudentDashboard() {
 
   return (
     <div
-      className={`bg-gray-50 min-h-screen sidebar-layout ${
-        sidebarCollapsed ? "sidebar-collapsed" : "sidebar-expanded"
-      }`}
+      className="bg-gray-50 min-h-screen lg:flex"
     >
       {/* Desktop Sidebar */}
       <aside
         className={`hidden lg:block ${
           sidebarCollapsed ? "w-16" : "w-64"
-        } h-screen fixed left-0 top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-y-auto custom-scrollbar z-50 transition-all duration-300`}
+        } h-screen sticky top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-y-auto custom-scrollbar z-30 transition-all duration-300 relative shrink-0`}
       >
         <SidebarContent />
+        <button
+          type="button"
+          onClick={() => setSidebarCollapsed((prev) => !prev)}
+          className="absolute top-20 -right-3 h-9 w-9 rounded-full border border-blue-200 bg-white text-blue-600 shadow-md hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center justify-center"
+          title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? <FaChevronRight size={14} /> : <FaChevronLeft size={14} />}
+        </button>
       </aside>
       {/* Mobile Drawer */}
       <Drawer
@@ -385,7 +454,7 @@ export default function StudentDashboard() {
         </div>
       </Drawer>
       {/* Main Content */}
-      <main className="main-content bg-[#f5f6fa] min-h-screen lg:h-screen overflow-y-auto thin-scrollbar">
+      <main className="main-content flex-1 min-w-0 bg-[#f5f6fa] min-h-screen overflow-x-hidden thin-scrollbar">
         {/* Fixed Header */}
         <div className="sticky top-0 z-40 bg-[#f5f6fa] border-b border-gray-200 p-2 md:p-3">
           <div className="flex justify-between items-center">
@@ -401,6 +470,14 @@ export default function StudentDashboard() {
               className="w-full md:w-1/2 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <div className="flex items-center gap-2 md:gap-3 ml-4">
+              {/* Mobile coins button */}
+              <button
+                type="button"
+                className="md:hidden p-2 bg-amber-100 text-amber-700 rounded-lg transition-colors"
+                title={`Coins: ${studentCoins}`}
+              >
+                <FaCoins />
+              </button>
               {/* Mobile logout button */}
               <button
                 onClick={handleLogout}
@@ -411,14 +488,28 @@ export default function StudentDashboard() {
               </button>
               {/* Desktop buttons */}
               <div className="hidden md:flex items-center gap-3">
-                <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded text-base font-medium transition-colors">
-                  Digital Hub
-                </button>
-                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded text-base font-medium transition-colors">
-                  Download App
-                </button>
-                <div className="bg-yellow-400 px-3 py-1 rounded-full font-semibold">
-                  50
+                {student?.name ? (
+                  <div
+                    className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-semibold text-blue-700"
+                    title={student.name}
+                  >
+                    <FaUser className="text-blue-600" />
+                    <span>Hi, {student.name}</span>
+                  </div>
+                ) : null}
+                <div
+                  className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700"
+                  title="Total paid amount in bookings"
+                >
+                  <FaWallet className="text-emerald-600" />
+                  <span>Wallet ₹{Number(walletPaidAmount || 0).toLocaleString("en-IN")}</span>
+                </div>
+                <div
+                  className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700"
+                  title="Your coins"
+                >
+                  <FaCoins className="text-amber-500" />
+                  <span>{studentCoins}</span>
                 </div>
                 <button
                   onClick={handleLogout}
@@ -544,6 +635,14 @@ export default function StudentDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function StudentDashboard() {
+  return (
+    <Suspense fallback={null}>
+      <StudentDashboardContent />
+    </Suspense>
   );
 }
 

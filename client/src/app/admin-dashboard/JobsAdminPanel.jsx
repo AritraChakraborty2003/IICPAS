@@ -48,6 +48,23 @@ export default function JobsAdminPanel() {
   const [editId, setEditId] = useState(null);
   const { hasPermission } = useAuth();
 
+  const getApplicationStatusLabel = (application) => {
+    if (!application) return "Pending";
+    if (selectedJob?.source === "external") {
+      const status = String(application.status || "pending");
+      if (status === "shortlisted") return "Approved";
+      return status.charAt(0).toUpperCase() + status.slice(1);
+    }
+    return application.shortlisted ? "Approved" : "Pending";
+  };
+
+  const isApplicationApproved = (application) => {
+    if (!application) return false;
+    return selectedJob?.source === "external"
+      ? application.status === "shortlisted"
+      : Boolean(application.shortlisted);
+  };
+
   useEffect(() => {
     fetchJobs();
   }, []);
@@ -200,10 +217,10 @@ export default function JobsAdminPanel() {
 
     if (confirm.isConfirmed) {
       try {
-        // Use appropriate endpoint based on job source
-        const endpoint = selectedJob.source === 'internal' 
-          ? `${API_BASE}/jobs-internal/applications/${applicant._id}`
-          : `${API_BASE}/jobs-external/applications/${applicant._id}`;
+        const endpoint =
+          selectedJob.source === "internal"
+            ? `${API_BASE}/jobs-internal/applications/${applicant._id}`
+            : `${API_BASE}/apply/jobs-external/${applicant._id}`;
         
         await axios.delete(endpoint);
         fetchApplications(selectedJob);
@@ -275,21 +292,35 @@ export default function JobsAdminPanel() {
 
     if (confirm.isConfirmed) {
       try {
-        // Use appropriate endpoint based on job source
-        const endpoint = selectedJob.source === 'internal' 
-          ? `${API_BASE}/jobs-internal/applications/${applicant._id}/shortlist`
-          : `${API_BASE}/jobs-external/applications/${applicant._id}/shortlist`;
-        
-        await axios.post(endpoint);
-        fetchApplications(selectedJob); // Refresh the list
+        if (selectedJob.source === "internal") {
+          await axios.post(
+            `${API_BASE}/jobs-internal/applications/${applicant._id}/shortlist`
+          );
+        } else {
+          await axios.put(
+            `${API_BASE}/apply/jobs-external/${applicant._id}/status`,
+            { status: "shortlisted" }
+          );
+        }
+
+        setApplications((prevApplications) =>
+          prevApplications.map((entry) => {
+            if (entry._id !== applicant._id) return entry;
+            return selectedJob.source === "internal"
+              ? { ...entry, shortlisted: true }
+              : { ...entry, status: "shortlisted" };
+          })
+        );
+
+        fetchApplications(selectedJob);
         Swal.fire(
-          "Shortlisted!",
-          `${applicant.name} has been shortlisted.`,
+          "Approved!",
+          `${applicant.name} has been approved.`,
           "success"
         );
       } catch (error) {
         console.error('Error shortlisting applicant:', error);
-        Swal.fire("Error!", "Failed to shortlist the applicant.", "error");
+        Swal.fire("Error!", "Failed to approve the applicant.", "error");
       }
     }
   };
@@ -299,7 +330,7 @@ export default function JobsAdminPanel() {
       Name: a.name,
       Email: a.email,
       Phone: a.phone,
-      Status: a.shortlisted ? "Shortlisted" : "Pending",
+      Status: getApplicationStatusLabel(a),
     }));
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
@@ -508,8 +539,8 @@ export default function JobsAdminPanel() {
                 <TableCell>Name</TableCell>
                 <TableCell>Email</TableCell>
                 <TableCell>Phone</TableCell>
-                <TableCell>Shortlisted</TableCell>
                 <TableCell>Resume</TableCell>
+                <TableCell>Status</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -525,10 +556,10 @@ export default function JobsAdminPanel() {
                     </a>
                   </TableCell>
                   <TableCell>
-                    {applicant.shortlisted ? "Shortlisted" : "Pending"}
+                    {getApplicationStatusLabel(applicant)}
                   </TableCell>
                   <TableCell>
-                    {!applicant.shortlisted && (
+                    {!isApplicationApproved(applicant) && (
                       <IconButton
                         color="primary"
                         onClick={() => handleShortlist(applicant)}

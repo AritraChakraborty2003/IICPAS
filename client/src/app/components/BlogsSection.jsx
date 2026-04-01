@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { motion } from "framer-motion";
 import axios from "axios";
+import { getBlogSlug } from "../../lib/blogSlug";
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
@@ -153,6 +154,8 @@ export default function BlogSection() {
                       : "/" + blog.imageUrl
                   }`
                 : getFallbackImage(blog.title);
+              const blogSlug = getBlogSlug(blog);
+              const blogHref = blogSlug ? `/blogs/${blogSlug}` : "/blogs";
 
               return (
                 <div
@@ -223,9 +226,7 @@ export default function BlogSection() {
                       initial={{ scale: 0.5, rotate: -180 }}
                       whileHover={{ scale: 1, rotate: 0 }}
                     >
-                      <Link
-                        href={`/blogs/${encodeURIComponent(getBlogSlug(blog))}`}
-                      >
+                      <Link href={blogHref}>
                         <motion.div
                           className="bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-white/30 cursor-pointer"
                           whileHover={{ scale: 1.1 }}
@@ -284,7 +285,7 @@ export default function BlogSection() {
                       transition={{ duration: 0.6, delay: 0.3 + index * 0.1 }}
                     >
                       <Link
-                        href={`/blogs/${encodeURIComponent(getBlogSlug(blog))}`}
+                        href={blogHref}
                         className="text-2xl font-bold leading-tight mb-4 text-gray-900 hover:text-transparent hover:bg-gradient-to-r hover:from-green-600 hover:to-blue-600 hover:bg-clip-text transition-all duration-500 group-hover:underline decoration-2 underline-offset-4"
                       >
                         {blog.title}
@@ -309,7 +310,7 @@ export default function BlogSection() {
                       transition={{ duration: 0.6, delay: 0.5 + index * 0.1 }}
                     >
                       <Link
-                        href={`/blogs/${encodeURIComponent(getBlogSlug(blog))}`}
+                        href={blogHref}
                         className="group/btn inline-flex items-center gap-3 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white px-6 py-3 rounded-2xl font-semibold text-sm transition-all duration-300 hover:shadow-xl hover:shadow-green-500/25 hover:-translate-y-1"
                       >
                         <span>Read Full Article</span>

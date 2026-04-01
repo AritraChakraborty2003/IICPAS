@@ -1,5 +1,6 @@
 import LiveSession from "../../models/LiveSession/LiveSession.js";
 import Student from "../../models/Students.js";
+import Booking from "../../models/Booking.js";
 
 export const createLiveSession = async (req, res) => {
   try {
@@ -21,6 +22,25 @@ export const getAllLiveSessions = async (req, res) => {
     const sessions = await LiveSession.find().populate(
       "enrolledStudents",
       "name email"
+    );
+    const sessionIds = sessions.map((session) => session._id);
+    const paidBookings = await Booking.aggregate([
+      {
+        $match: {
+          liveSessionId: { $in: sessionIds },
+          paymentStatus: { $in: ["paid", "free"] },
+          status: { $in: ["booked", "approved"] },
+        },
+      },
+      {
+        $group: {
+          _id: "$liveSessionId",
+          total: { $sum: 1 },
+        },
+      },
+    ]);
+    const bookingCountMap = new Map(
+      paidBookings.map((entry) => [String(entry._id), Number(entry.total || 0)])
     );
 
     // Transform sessions to include enrollment status for authenticated user
@@ -74,7 +94,10 @@ export const getAllLiveSessions = async (req, res) => {
         ...sessionObj,
         status: dynamicStatus,
         duration: durationMinutes, // Use calculated duration
-        enrolledCount: session.enrolledStudents.length,
+        enrolledCount: Math.max(
+          session.enrolledStudents.length,
+          bookingCountMap.get(String(session._id)) || 0
+        ),
         imageUrl: finalImageUrl,
       };
     });
@@ -127,6 +150,11 @@ export const getLiveSessionById = async (req, res) => {
     // If session is inactive in database, keep it as inactive
 
     const sessionObj = session.toObject();
+    const paidBookingCount = await Booking.countDocuments({
+      liveSessionId: session._id,
+      paymentStatus: { $in: ["paid", "free"] },
+      status: { $in: ["booked", "approved"] },
+    });
     // Handle image URLs - prioritize uploaded images, then fallback to client images
     let finalImageUrl = session.imageUrl || session.thumbnail;
 
@@ -141,7 +169,7 @@ export const getLiveSessionById = async (req, res) => {
       ...sessionObj,
       status: dynamicStatus,
       duration: durationMinutes, // Use calculated duration
-      enrolledCount: session.enrolledStudents.length,
+      enrolledCount: Math.max(session.enrolledStudents.length, paidBookingCount),
       imageUrl: finalImageUrl,
     });
   } catch (err) {

@@ -15,9 +15,17 @@ import { isAdmin } from "../middleware/isAdmin.js";
 //FOR PDF Import
 import PDFDocument from "pdfkit";
 import Course from "../models/Content/Course.js";
+import Quiz from "../models/Content/Quiz.js";
 import fs from "fs-extra";
 import nodemailer from "nodemailer";
 import express from "express";
+import {
+  awardCoins,
+  getCoinSettings,
+  getStudentCoinSummary,
+} from "../services/coinService.js";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
 
@@ -31,7 +39,21 @@ const createToken = (student) => {
   );
 };
 
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
+
 const router = express.Router();
+
+const ensureAuthorizedStudent = (req, res) => {
+  if (!req.user?.id || req.user.id !== req.params.id) {
+    res.status(403).json({ message: "Forbidden" });
+    return false;
+  }
+  return true;
+};
 
 //Register Student
 router.post("/register", async (req, res) => {
@@ -96,7 +118,19 @@ router.post("/login", async (req, res) => {
 
     const match = await bcrypt.compare(password, student.password);
     if (!match) return res.status(401).json({ message: "Wrong password" });
+    const allowed = await isLoginAllowed("student", student._id);
+    if (!allowed) return res.status(403).json({ message: "Account is inactive" });
     const token = createToken(student);
+
+    await recordLogin({
+      role: "student",
+      actorModel: "Student",
+      actorId: student._id,
+      displayName: student.name,
+      email: student.email,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
 
     res
       .cookie("token", token, {
@@ -110,14 +144,43 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.get("/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+router.get("/logout", async (req, res) => {
+  try {
+    const token = req.cookies.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(
+          token,
+          process.env.JWT_SECRET || "default_jwt_secret_for_development"
+        );
+        if (decoded?.id) {
+          const student = await Student.findById(decoded.id).select("_id name email");
+          if (student) {
+            await recordLogout({
+              role: "student",
+              actorModel: "Student",
+              actorId: student._id,
+              displayName: student.name,
+              email: student.email,
+              req,
+            });
+          }
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
 
-  res.status(200).json({ message: "Logged out successfully" });
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.status(200).json({ message: "Logged out successfully" });
+  } catch {
+    res.status(200).json({ message: "Logged out successfully" });
+  }
 });
 
 // isStudent
@@ -130,12 +193,201 @@ router.get("/isstudent", async (req, res) => {
       token,
       process.env.JWT_SECRET || "default_jwt_secret_for_development"
     );
-    const student = await Student.findById(decoded.id);
+    const student = await Student.findById(decoded.id).select(
+      "-password -otp -otpExpiry"
+    );
     if (!student) return res.status(404).json({ student: null });
 
-    res.json({ student });
+    res.json({
+      student: {
+        ...student.toObject(),
+        coinBalance: student.coinBalance ?? 0,
+      },
+    });
   } catch {
     res.status(401).json({ student: null });
+  }
+});
+
+// GET /api/v1/students/coins/:id - Get student's coin balance and recent transactions
+router.get("/coins/:id", isStudent, async (req, res) => {
+  try {
+    if (!ensureAuthorizedStudent(req, res)) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid student ID format" });
+    }
+
+    const summary = await getStudentCoinSummary(req.params.id);
+    if (!summary) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    return res.json(summary);
+  } catch (error) {
+    console.error("Error fetching student coin summary:", error);
+    return res.status(500).json({
+      message: "Failed to fetch coin summary",
+      error: error.message,
+    });
+  }
+});
+
+// POST /api/v1/students/revision-tests/:id/complete - Complete a revision test and earn coins once
+router.post("/revision-tests/:id/complete", isStudent, async (req, res) => {
+  try {
+    if (!ensureAuthorizedStudent(req, res)) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid student ID format" });
+    }
+
+    const { testId, score, totalQuestions } = req.body;
+    if (!testId) {
+      return res.status(400).json({ message: "testId is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(testId)) {
+      return res.status(400).json({ message: "Invalid test ID format" });
+    }
+
+    const settings = await getCoinSettings();
+    const idempotencyKey = `quiz:${req.params.id}:${testId}`;
+    const awardResult = await awardCoins({
+      studentId: req.params.id,
+      eventType: "QUIZ_COMPLETE",
+      coins: settings.quizCompleteCoins,
+      metadata: {
+        testId,
+        score,
+        totalQuestions,
+      },
+      idempotencyKey,
+    });
+
+    return res.json({
+      message:
+        awardResult.awarded
+          ? "Quiz completed and coins awarded"
+          : "Quiz already rewarded",
+      status: awardResult.awarded ? "awarded" : "already_awarded",
+      coinBalance: awardResult.coinBalance ?? 0,
+      coinsAwarded: awardResult.awarded ? settings.quizCompleteCoins : 0,
+    });
+  } catch (error) {
+    console.error("Error completing revision test:", error);
+    return res.status(500).json({
+      message: "Failed to complete revision test",
+      error: error.message,
+    });
+  }
+});
+
+// POST /api/v1/students/digital-hub-quizzes/:id/complete - Award coins per correct answer
+router.post("/digital-hub-quizzes/:id/complete", isStudent, async (req, res) => {
+  try {
+    if (!ensureAuthorizedStudent(req, res)) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid student ID format" });
+    }
+
+    const { quizId, topicId, selectedAnswers, totalQuestions } = req.body || {};
+    if (!quizId || !mongoose.Types.ObjectId.isValid(quizId)) {
+      return res.status(400).json({ message: "Valid quizId is required" });
+    }
+
+    if (!selectedAnswers || typeof selectedAnswers !== "object") {
+      return res
+        .status(400)
+        .json({ message: "selectedAnswers map is required" });
+    }
+
+    const quiz = await Quiz.findById(quizId).select("topic questions");
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+
+    const normalizedSelectedAnswers = selectedAnswers || {};
+    const correctQuestionIds = (quiz.questions || [])
+      .filter((question) => {
+        const selected = normalizedSelectedAnswers[String(question._id)];
+        return typeof selected === "string" && selected === question.answer;
+      })
+      .map((question) => String(question._id));
+
+    if (correctQuestionIds.length === 0) {
+      const summary = await getStudentCoinSummary(req.params.id, 1);
+      return res.json({
+        message: "No correct answers in this attempt",
+        status: "no_correct_answers",
+        coinAwarded: false,
+        coinsAwarded: 0,
+        correctAnswers: 0,
+        totalQuestions: Number(totalQuestions) || quiz.questions.length || 0,
+        coinBalance: summary?.coinBalance ?? 0,
+      });
+    }
+
+    const settings = await getCoinSettings();
+    const coinsPerCorrect = Number(settings?.quizCompleteCoins || 0);
+    if (!Number.isFinite(coinsPerCorrect) || coinsPerCorrect <= 0) {
+      const summary = await getStudentCoinSummary(req.params.id, 1);
+      return res.json({
+        message: "Quiz coins are disabled in settings",
+        status: "coins_disabled",
+        coinAwarded: false,
+        coinsAwarded: 0,
+        correctAnswers: correctQuestionIds.length,
+        totalQuestions: Number(totalQuestions) || quiz.questions.length || 0,
+        coinBalance: summary?.coinBalance ?? 0,
+      });
+    }
+
+    let awardedCount = 0;
+    let latestBalance = 0;
+
+    for (const questionId of correctQuestionIds) {
+      const awardResult = await awardCoins({
+        studentId: req.params.id,
+        eventType: "QUIZ_COMPLETE",
+        coins: coinsPerCorrect,
+        metadata: {
+          quizId,
+          topicId: topicId || String(quiz.topic),
+          questionId,
+          coinRule: "per_correct_answer",
+          totalQuestions: Number(totalQuestions) || quiz.questions.length || 0,
+        },
+        idempotencyKey: `quiz_correct:${req.params.id}:${quizId}:${questionId}`,
+      });
+
+      if (awardResult.awarded) {
+        awardedCount += 1;
+      }
+      latestBalance = awardResult.coinBalance ?? latestBalance;
+    }
+
+    return res.json({
+      message:
+        awardedCount > 0
+          ? "Coins awarded for correct answers"
+          : "Correct answers already rewarded",
+      status: awardedCount > 0 ? "awarded" : "already_awarded",
+      coinAwarded: awardedCount > 0,
+      coinsAwarded: awardedCount * coinsPerCorrect,
+      coinsPerCorrect,
+      awardedCorrectAnswers: awardedCount,
+      correctAnswers: correctQuestionIds.length,
+      totalQuestions: Number(totalQuestions) || quiz.questions.length || 0,
+      coinBalance: latestBalance,
+    });
+  } catch (error) {
+    console.error("Error completing digital hub quiz:", error);
+    return res.status(500).json({
+      message: "Failed to process quiz rewards",
+      error: error.message,
+    });
   }
 });
 
@@ -342,6 +594,26 @@ router.post("/verify-buy/:id", async (req, res) => {
     student.receipts.push({ id: receiptId, file: pdfPath });
     await student.save();
 
+    // Non-blocking coin award on purchase success
+    try {
+      const settings = await getCoinSettings();
+      const merchantTransactionId =
+        req.body?.data?.merchantTransactionId || receiptId;
+      await awardCoins({
+        studentId: student._id.toString(),
+        eventType: "PURCHASE_SUCCESS",
+        coins: settings.purchaseSuccessCoins,
+        metadata: {
+          courseId: course._id.toString(),
+          receiptId,
+          merchantTransactionId,
+        },
+        idempotencyKey: `purchase:${student._id}:${course._id}:${merchantTransactionId}`,
+      });
+    } catch (coinError) {
+      console.error("Purchase coin reward failed:", coinError);
+    }
+
     res.redirect("/payment-success"); // Or res.json({ message: "Verified" });
   } catch (err) {
     res
@@ -523,70 +795,69 @@ router.post("/ticket/:id", async (req, res) => {
   }
 });
 
-// Profile update route with image upload support
-router.put(
-  "/profile",
-  uploadStudentImage.single("profileImage"),
-  async (req, res) => {
-    try {
-      console.log("Profile update request received");
-      console.log("Request body:", req.body);
-      console.log("Request file:", req.file);
-      console.log("Request cookies:", req.cookies);
+const updateStudentProfile = async (req, res) => {
+  try {
+    console.log("Profile update request received");
+    console.log("Request body:", req.body);
+    console.log("Request file:", req.file);
+    console.log("Request cookies:", req.cookies);
 
-      const token = req.cookies.token;
-      if (!token) {
-        console.log("No token found in cookies");
-        return res
-          .status(401)
-          .json({ message: "Unauthorized - No token found" });
-      }
-
-      console.log("Token found, verifying...");
-      const decoded = jwt.verify(
-        token,
-        process.env.JWT_SECRET || "default_jwt_secret_for_development"
-      );
-      console.log("Token decoded:", decoded);
-
-      const student = await Student.findById(decoded.id);
-      if (!student) {
-        console.log("Student not found with ID:", decoded.id);
-        return res.status(404).json({ message: "Student not found" });
-      }
-
-      console.log("Student found:", student.name);
-
-      // Handle image upload
-      if (req.file) {
-        console.log("Image file received:", req.file.filename);
-        student.image = req.file.path;
-      } else {
-        console.log("No image file in request");
-      }
-
-      await student.save();
-      console.log("Student saved successfully");
-
-      res.json({
-        message: "Profile updated successfully",
-        student: {
-          id: student._id,
-          name: student.name,
-          email: student.email,
-          phone: student.phone,
-          image: student.image,
-          mode: student.mode,
-          location: student.location,
-          center: student.center,
-        },
-      });
-    } catch (err) {
-      console.error("Profile update error:", err);
-      res.status(500).json({ message: "Update failed", error: err.message });
+    const token = req.cookies.token;
+    if (!token) {
+      console.log("No token found in cookies");
+      return res.status(401).json({ message: "Unauthorized - No token found" });
     }
+
+    console.log("Token found, verifying...");
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "default_jwt_secret_for_development"
+    );
+    console.log("Token decoded:", decoded);
+
+    const student = await Student.findById(decoded.id);
+    if (!student) {
+      console.log("Student not found with ID:", decoded.id);
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    console.log("Student found:", student.name);
+
+    // Handle image upload
+    if (req.file) {
+      console.log("Image file received:", req.file.filename);
+      student.image = req.file.path;
+    } else {
+      console.log("No image file in request");
+    }
+
+    await student.save();
+    console.log("Student saved successfully");
+
+    res.json({
+      message: "Profile updated successfully",
+      student: {
+        id: student._id,
+        name: student.name,
+        email: student.email,
+        phone: student.phone,
+        image: student.image,
+        mode: student.mode,
+        location: student.location,
+        center: student.center,
+      },
+    });
+  } catch (err) {
+    console.error("Profile update error:", err);
+    res.status(500).json({ message: "Update failed", error: err.message });
   }
-);
+};
+
+// Profile update route with image upload support
+router.put("/profile", uploadStudentImage.single("profileImage"), updateStudentProfile);
+
+// POST alias to avoid CORS preflight issues on some deployments
+router.post("/profile", uploadStudentImage.single("profileImage"), updateStudentProfile);
 
 // Superadmin route to update student profile details (excluding profile image)
 router.put(

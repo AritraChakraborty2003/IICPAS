@@ -3,6 +3,7 @@
 interface ThinHeroSectionProps {
   title: string;
   breadcrumb?: string;
+  className?: string;
 }
 
 // Add shimmer animation styles
@@ -64,11 +65,12 @@ const shimmerStyles = `
 export default function ThinHeroSection({
   title,
   breadcrumb,
+  className,
 }: ThinHeroSectionProps) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: shimmerStyles }} />
-      <section className="relative pt-28 pb-10">
+      <section className={`relative pt-28 pb-10 ${className ?? ""}`}>
         {/* Full width container without edges */}
         <div className="relative w-full">
           <div className="relative py-3 px-3 md:px-3 text-center ribbon-shine full-ribbon-shine">

@@ -2,8 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Video, Clock, User, Play, CheckCircle } from "lucide-react";
+import {
+  Video,
+  Clock,
+  User,
+  Play,
+  CheckCircle,
+  X,
+  AlertCircle,
+} from "lucide-react";
 import axios from "axios";
+import toast from "react-hot-toast";
+import { getBlogSlug } from "../../lib/blogSlug";
 
 interface LiveClass {
   _id: string;
@@ -33,6 +43,13 @@ interface User {
   email?: string;
 }
 
+const MOBILE_NUMBER_REGEX = /^[6-9]\d{9}$/;
+const ALLOWED_EMAIL_REGEX =
+  /^[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+
+const normalizeMobileNumber = (value: string) =>
+  value.replace(/\D/g, "").slice(0, 10);
+
 export default function LiveClassesDisplay() {
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
   const [selectedTab, setSelectedTab] = useState<
@@ -40,6 +57,17 @@ export default function LiveClassesDisplay() {
   >("upcoming");
   const [user, setUser] = useState<User | null>(null);
   const [blogs, setBlogs] = useState<any[]>([]);
+  const [selectedSession, setSelectedSession] = useState<LiveClass | null>(null);
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [isSubmittingEnrollment, setIsSubmittingEnrollment] = useState(false);
+  const [isRazorpayReady, setIsRazorpayReady] = useState(false);
+  const [enrollmentSuccessMessage, setEnrollmentSuccessMessage] = useState("");
+  const [enrollmentForm, setEnrollmentForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    whatsappNumber: "",
+  });
 
   const API = process.env.NEXT_PUBLIC_API_URL;
 
@@ -59,6 +87,26 @@ export default function LiveClassesDisplay() {
       return null;
     }
   }, [API]);
+
+  useEffect(() => {
+    if ((window as any).Razorpay) {
+      setIsRazorpayReady(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setIsRazorpayReady(true);
+    script.onerror = () => setIsRazorpayReady(false);
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -242,7 +290,7 @@ export default function LiveClassesDisplay() {
       case "active":
         return <Play className="w-4 h-4" />;
       default:
-        return <AlertOctagon className="w-4 h-4" />;
+        return <AlertCircle className="w-4 h-4" />;
     }
   };
 
@@ -252,6 +300,212 @@ export default function LiveClassesDisplay() {
     }
     return session.status === selectedTab;
   });
+
+  const openEnrollmentModal = (session: LiveClass) => {
+    setSelectedSession(session);
+    setEnrollmentSuccessMessage("");
+    setEnrollmentForm({
+      name: user?.name || "",
+      email: user?.email || "",
+      phone: "",
+      whatsappNumber: "",
+    });
+    setShowEnrollModal(true);
+  };
+
+  const closeEnrollmentModal = () => {
+    setShowEnrollModal(false);
+    setSelectedSession(null);
+    setIsSubmittingEnrollment(false);
+    setEnrollmentSuccessMessage("");
+  };
+
+  const handleEnrollmentInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setEnrollmentForm((prev) => ({
+      ...prev,
+      [name]:
+        name === "phone" || name === "whatsappNumber"
+          ? normalizeMobileNumber(value)
+          : value,
+    }));
+  };
+
+  const handleEnrollmentSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
+    e.preventDefault();
+    if (!selectedSession) return;
+    const normalizedEmail = enrollmentForm.email.trim().toLowerCase();
+    const normalizedPhone = normalizeMobileNumber(enrollmentForm.phone);
+    const normalizedWhatsappNumber = enrollmentForm.whatsappNumber.trim()
+      ? normalizeMobileNumber(enrollmentForm.whatsappNumber)
+      : normalizedPhone;
+
+    if (
+      !enrollmentForm.name.trim() ||
+      !normalizedEmail ||
+      !normalizedPhone
+    ) {
+      setEnrollmentSuccessMessage("Please fill in name, email, and phone.");
+      return;
+    }
+
+    if (!ALLOWED_EMAIL_REGEX.test(normalizedEmail)) {
+      setEnrollmentSuccessMessage(
+        "Please enter a valid email address like user@gmail.com or info@company.com."
+      );
+      return;
+    }
+
+    if (!MOBILE_NUMBER_REGEX.test(normalizedPhone)) {
+      setEnrollmentSuccessMessage(
+        "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9."
+      );
+      return;
+    }
+
+    if (
+      enrollmentForm.whatsappNumber.trim() &&
+      !MOBILE_NUMBER_REGEX.test(normalizedWhatsappNumber)
+    ) {
+      setEnrollmentSuccessMessage(
+        "Please enter a valid 10-digit WhatsApp number starting with 6, 7, 8, or 9."
+      );
+      return;
+    }
+
+    setIsSubmittingEnrollment(true);
+    try {
+      if (selectedSession.price > 0) {
+        if (!isRazorpayReady || !(window as any).Razorpay) {
+          throw new Error("Razorpay checkout is not available right now");
+        }
+
+        const orderResponse = await axios.post(
+          `${API}/api/test-payment/create-order`,
+          {
+            liveSessionId: selectedSession._id,
+            name: enrollmentForm.name.trim(),
+            email: normalizedEmail,
+            phone: normalizedPhone,
+            whatsappNumber: normalizedWhatsappNumber,
+            price: selectedSession.price,
+            paymentSource: "live-session-page",
+          }
+        );
+
+        const orderData = orderResponse.data?.data;
+        if (!orderResponse.data?.success || !orderData?.orderId) {
+          throw new Error(orderResponse.data?.message || "Failed to create payment order");
+        }
+
+        const razorpay = new (window as any).Razorpay({
+          key:
+            orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+          amount: orderData.amount,
+          currency: orderData.currency || "INR",
+          name: "IICPA Institute",
+          description: selectedSession.title,
+          order_id: orderData.orderId,
+          prefill: {
+            name: enrollmentForm.name.trim(),
+            email: normalizedEmail,
+            contact: normalizedPhone,
+          },
+          theme: {
+            color: "#3cd664",
+          },
+          modal: {
+            ondismiss: () => {
+              setIsSubmittingEnrollment(false);
+            },
+          },
+          handler: async (response: any) => {
+            try {
+              const verificationResponse = await axios.post(
+                `${API}/api/test-payment/verify-and-capture`,
+                response
+              );
+
+              if (!verificationResponse.data?.success) {
+                throw new Error(
+                  verificationResponse.data?.message || "Payment verification failed"
+                );
+              }
+
+              setLiveClasses((prev) =>
+                prev.map((session) =>
+                  session._id === selectedSession._id
+                    ? {
+                        ...session,
+                        isEnrolled: true,
+                        enrolledCount: (session.enrolledCount || 0) + 1,
+                      }
+                    : session
+                )
+              );
+              setEnrollmentSuccessMessage("Payment successful. Your booking is confirmed.");
+            } catch (verificationError: any) {
+              console.error("Payment verification failed:", verificationError);
+              setEnrollmentSuccessMessage(
+                verificationError?.response?.data?.message ||
+                  verificationError?.message ||
+                  "Payment verification failed. Please contact support."
+              );
+            } finally {
+              setIsSubmittingEnrollment(false);
+            }
+          },
+        });
+
+        razorpay.open();
+        return;
+      }
+
+      await axios.post(`${API}/api/bookings`, {
+        liveSessionId: selectedSession._id,
+        by: normalizedEmail,
+        requesterName: enrollmentForm.name.trim(),
+        phone: normalizedPhone,
+        whatsappNumber: normalizedWhatsappNumber,
+        title: selectedSession.title,
+        hrs: Math.max(1, Math.ceil((selectedSession.duration || 60) / 60)),
+        type: "individual",
+        category: "live",
+        status: "booked",
+        paymentStatus: "free",
+        date: selectedSession.date,
+      });
+
+      setLiveClasses((prev) =>
+        prev.map((session) =>
+          session._id === selectedSession._id
+            ? {
+                ...session,
+                isEnrolled: true,
+                enrolledCount: (session.enrolledCount || 0) + 1,
+              }
+            : session
+        )
+      );
+      toast.success("Enrolled successfully");
+      closeEnrollmentModal();
+    } catch (error) {
+      console.error("Failed to store enrollment:", error);
+      setEnrollmentSuccessMessage(
+        (error as any)?.response?.data?.message ||
+          "Failed to complete enrollment. Please try again."
+      );
+      setIsSubmittingEnrollment(false);
+    } finally {
+      if (selectedSession.price <= 0) {
+        setIsSubmittingEnrollment(false);
+      }
+    }
+  };
 
   return (
     <div className="py-8 px-4">
@@ -354,7 +608,23 @@ export default function LiveClassesDisplay() {
               )}
 
               <div className="pt-3 border-t border-gray-100">
-                <button className="w-full bg-[#3cd664] text-white py-2 px-3 rounded-lg text-sm font-medium hover:bg-[#33bb58] transition-colors duration-200 flex items-center justify-center space-x-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (session.status === "live" && session.meetingLink) {
+                      window.open(session.meetingLink, "_blank", "noopener,noreferrer");
+                      return;
+                    }
+                    if (session.isEnrolled) return;
+                    openEnrollmentModal(session);
+                  }}
+                  disabled={session.isEnrolled}
+                  className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-1 ${
+                    session.isEnrolled
+                      ? "bg-green-100 text-green-700 cursor-not-allowed"
+                      : "bg-[#3cd664] text-white hover:bg-[#33bb58]"
+                  }`}
+                >
                   {session.status === "live" ? (
                     <>
                       <Video className="w-3 h-3" />
@@ -457,10 +727,10 @@ export default function LiveClassesDisplay() {
                         className="flex-shrink-0 w-80 bg-white rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 hover:scale-105"
                         whileHover={{ y: -8 }}
                         onClick={() => {
-                          const blogSlug = blog.title
-                            .replace(/\s+/g, "-")
-                            .toLowerCase();
-                          window.location.href = `/blogs/${blogSlug}`;
+                          const blogSlug = getBlogSlug(blog);
+                          window.location.href = blogSlug
+                            ? `/blogs/${blogSlug}`
+                            : "/blogs";
                         }}
                       >
                         <div className="h-56 overflow-hidden rounded-t-3xl">
@@ -518,6 +788,145 @@ export default function LiveClassesDisplay() {
             </div>
           </div>
         </section>
+      )}
+
+      {showEnrollModal && selectedSession && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between border-b border-gray-200 px-6 py-5">
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Enroll in Live Session
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  {selectedSession.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEnrollmentModal}
+                className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Close enrollment modal"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5">
+              {enrollmentSuccessMessage ? (
+                <div
+                  className={`rounded-xl border px-4 py-4 text-sm font-medium ${
+                    /(successful|confirmed|sent)/i.test(enrollmentSuccessMessage)
+                      ? "border-green-200 bg-green-50 text-green-700"
+                      : "border-red-200 bg-red-50 text-red-700"
+                  }`}
+                >
+                  {enrollmentSuccessMessage}
+                </div>
+              ) : null}
+
+              <form onSubmit={handleEnrollmentSubmit} className="mt-4 space-y-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={enrollmentForm.name}
+                    onChange={handleEnrollmentInputChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                    placeholder="Enter your full name"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={enrollmentForm.phone}
+                    onChange={handleEnrollmentInputChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                    placeholder="Enter your 10-digit mobile number"
+                    inputMode="numeric"
+                    pattern="[6-9][0-9]{9}"
+                    maxLength={10}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={enrollmentForm.email}
+                    onChange={handleEnrollmentInputChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                    placeholder="Enter your email address"
+                    pattern="[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}"
+                    title="Use a valid email address like user@gmail.com or info@company.com"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    WhatsApp Number
+                  </label>
+                  <input
+                    type="tel"
+                    name="whatsappNumber"
+                    value={enrollmentForm.whatsappNumber}
+                    onChange={handleEnrollmentInputChange}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                    placeholder="Enter 10-digit WhatsApp number"
+                    inputMode="numeric"
+                    pattern="[6-9][0-9]{9}"
+                    maxLength={10}
+                  />
+                </div>
+
+                <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                  Session Date: {formatDate(selectedSession.date)}
+                </div>
+
+                {selectedSession.price > 0 ? (
+                  <div className="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                    Pay now: ₹{selectedSession.price.toLocaleString()}
+                  </div>
+                ) : null}
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeEnrollmentModal}
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingEnrollment}
+                    className="flex-1 rounded-lg bg-[#3cd664] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#33bb58] disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {isSubmittingEnrollment
+                      ? "Processing..."
+                      : selectedSession.price > 0
+                      ? `Pay ₹${selectedSession.price}`
+                      : "Enroll Now"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

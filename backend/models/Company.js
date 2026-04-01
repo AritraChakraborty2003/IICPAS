@@ -9,7 +9,7 @@ const companySchema = new mongoose.Schema({
   documentPath: String,
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected"],
+    enum: ["pending", "approved", "rejected", "inactive"],
     default: "pending",
   },
   otp: String,

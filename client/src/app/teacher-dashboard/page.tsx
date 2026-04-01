@@ -27,6 +27,7 @@ import TeacherAssignmentsTab from "./TeacherAssignmentsTab";
 import TeacherAnalyticsTab from "./TeacherAnalyticsTab";
 import TeacherCalendarTab from "./TeacherCalendarTab";
 import TeacherSettingsTab from "./TeacherSettingsTab";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
 
@@ -59,6 +60,11 @@ export default function TeacherDashboard() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  useAuthHeartbeat({
+    enabled: !!teacher,
+    heartbeatUrl: `${API_BASE}/api/auth/heartbeat`,
+  });
+
   const fetchTeacherProfile = useCallback(async () => {
     try {
       const response = await axios.get(`${API_BASE}/api/v1/teachers/profile`, {
@@ -79,7 +85,11 @@ export default function TeacherDashboard() {
 
   const logout = async () => {
     try {
-      await axios.post(`${API_BASE}/logout`, {}, { withCredentials: true });
+      await axios.post(
+        `${API_BASE}/api/v1/teachers/logout`,
+        {},
+        { withCredentials: true }
+      );
     } finally {
       router.push("/teacher-login");
     }

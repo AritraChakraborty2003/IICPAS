@@ -71,6 +71,7 @@ import {
   FaChevronLeft,
   FaClipboardList,
   FaGraduationCap,
+  FaCoins,
 } from "react-icons/fa";
 import CompanyTab from "./CompanyTab";
 import CourseArea from "./CourseBuilder";
@@ -110,6 +111,14 @@ import TransactionsTab from "./TransactionsTab";
 import IndividualRequestsTab from "./IndividualRequestsTab";
 import AdmissionManagementTab from "./AdmissionManagementTab";
 import UniversityCourseManagementTab from "./UniversityCourseManagementTab";
+import CoinsTab from "./CoinsTab";
+import BookingSettingsTab from "./BookingSettingsTab";
+import AdminBookingsTab from "./AdminBookingsTab";
+import InvoiceCompanySettingsTab from "./InvoiceCompanySettingsTab";
+import LoginAccessControlTab from "./LoginAccessControlTab";
+import JobSidebarMarqueeTab from "./JobSidebarMarqueeTab";
+import LiveBookingsTab from "./LiveBookingsTab";
+import OurPartnersTab from "./OurPartnersTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -251,6 +260,11 @@ const NAVIGATION_GROUPS = [
     icon: <FaCalendarAlt />,
     items: [
       { id: "live-session", label: "Live Session", icon: <FaCalendarAlt /> },
+      {
+        id: "live-bookings",
+        label: "Live Bookings",
+        icon: <FaClipboardList />,
+      },
       { id: "calendar", label: "Calendar", icon: <FaCalendarAlt /> },
     ],
   },
@@ -285,6 +299,7 @@ const NAVIGATION_GROUPS = [
       { id: "testimonials", label: "Testimonials", icon: <FaQuoteRight /> },
       { id: "faq", label: "FAQ", icon: <FaUserTie /> },
       { id: "about-us", label: "About Us Section", icon: <FaBook /> },
+      { id: "our-partners", label: "Our Partners", icon: <FaUsers /> },
       {
         id: "about-us-section",
         label: "About Us Section Management",
@@ -323,6 +338,11 @@ const NAVIGATION_GROUPS = [
         label: "Center Locations",
         icon: <FaMapMarkerAlt />,
       },
+      {
+        id: "job-sidebar-marquee",
+        label: "Jobs Sidebar Marquee",
+        icon: <FaBriefcase />,
+      },
     ],
   },
   {
@@ -353,12 +373,23 @@ const NAVIGATION_GROUPS = [
     items: [
       { id: "payments", label: "Payments", icon: <FaCreditCard /> },
       { id: "transactions", label: "Transactions", icon: <FaCreditCard /> },
+      { id: "coins", label: "Coins", icon: <FaCoins /> },
+      {
+        id: "invoice-company-settings",
+        label: "Invoice Company Settings",
+        icon: <FaFileAlt />,
+      },
       { id: "tickets", label: "Tickets", icon: <FaComments /> },
       { id: "audit", label: "IP Logs", icon: <FaShieldAlt /> },
       { id: "ip-whitelist", label: "IP Whitelisting", icon: <FaShieldAlt /> },
       { id: "meta", label: "Manage Metatags", icon: <FaTags /> },
       { id: "special-offers", label: "Special Offers", icon: <FaStar /> },
       { id: "support", label: "Support Requests", icon: <FaEnvelope /> },
+      {
+        id: "master-login-access",
+        label: "Master Login Access",
+        icon: <FaShieldAlt />,
+      },
     ],
   },
   {
@@ -378,10 +409,27 @@ const NAVIGATION_GROUPS = [
       },
     ],
   },
+  {
+    id: "booking-operations",
+    label: "Booking Operations",
+    icon: <FaCreditCard />,
+    items: [
+      {
+        id: "booking-settings",
+        label: "Booking Settings",
+        icon: <FaCog />,
+      },
+      {
+        id: "bookings",
+        label: "Bookings",
+        icon: <FaClipboardList />,
+      },
+    ],
+  },
 ];
 
 function AdminDashboardContent() {
-  const { user, canAccess, logout } = useAuth();
+  const { user, canAccess, logout, isPrivilegedAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -395,6 +443,7 @@ function AdminDashboardContent() {
       communication: false,
       "system-management": false,
       "admission-management": false,
+      "booking-operations": false,
     }
   );
   const router = useRouter();
@@ -409,7 +458,7 @@ function AdminDashboardContent() {
       if (firstExpandedGroup) {
         const firstAccessibleItem = firstExpandedGroup.items.find((item) => {
           if (!user) return false;
-          if (user.role === "Admin") return true;
+          if (isPrivilegedAdmin(user)) return true;
           return canAccess(item.id);
         });
         if (firstAccessibleItem) {
@@ -425,6 +474,10 @@ function AdminDashboardContent() {
   };
 
   const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
     setActiveTab("");
   };
 
@@ -518,7 +571,7 @@ function AdminDashboardContent() {
           // Filter group items based on user permissions
           const accessibleGroupItems = group.items.filter((item) => {
             if (!user) return false;
-            if (user.role === "Admin") return true;
+            if (isPrivilegedAdmin(user)) return true;
             return canAccess(item.id);
           });
 
@@ -694,10 +747,12 @@ function AdminDashboardContent() {
         {/* Permission-based content rendering */}
         {activeTab === "live-session" ? (
           <LiveSessionAdmin />
+        ) : activeTab === "live-bookings" ? (
+          <LiveBookingsTab />
         ) : activeTab === "enquiries" ? (
           <EnquiriesTab />
         ) : activeTab === "support" ? (
-          <TicketTab />
+          <TicketTab viewerType="admin" />
         ) : activeTab === "calendar" ? (
           <CalendarTab />
         ) : activeTab === "companies" ? (
@@ -734,12 +789,32 @@ function AdminDashboardContent() {
           <PaymentsTab />
         ) : activeTab === "transactions" ? (
           <TransactionsTab />
+        ) : activeTab === "coins" ? (
+          <CoinsTab />
+        ) : activeTab === "invoice-company-settings" ? (
+          <InvoiceCompanySettingsTab />
+        ) : activeTab === "job-sidebar-marquee" ? (
+          <JobSidebarMarqueeTab />
+        ) : activeTab === "our-partners" ? (
+          <OurPartnersTab />
+        ) : activeTab === "booking-settings" ? (
+          <BookingSettingsTab />
+        ) : activeTab === "bookings" ? (
+          <AdminBookingsTab />
         ) : activeTab === "jobs" ? (
           <JobsAdminPanel />
         ) : activeTab === "jobs-post-management" ? (
           <JobsAdminPanel />
         ) : activeTab === "staff" ? (
           <StaffManagementTab />
+        ) : activeTab === "team" ? (
+          <div className="bg-white rounded-lg p-6">
+            <h2 className="text-xl font-bold mb-4">Our Team</h2>
+            <p className="text-gray-600">
+              Team management view is not wired in this dashboard yet. You can
+              grant and manage access for this module from Staff Management.
+            </p>
+          </div>
         ) : activeTab === "alert" ? (
           <AlertsTab />
         ) : activeTab === "ip-whitelist" ? (
@@ -881,6 +956,8 @@ function AdminDashboardContent() {
           <AdminProfileTab />
         ) : activeTab === "individual-requests" ? (
           <IndividualRequestsTab />
+        ) : activeTab === "master-login-access" ? (
+          <LoginAccessControlTab />
         ) : activeTab === "admission-leads" ? (
           <AdmissionManagementTab />
         ) : activeTab === "university-course-management" ? (

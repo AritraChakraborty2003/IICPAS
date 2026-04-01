@@ -2,10 +2,18 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Center from "../models/Center.js";
 import dotenv from "dotenv";
+import { recordLogin, recordLogout } from "../services/authAuditService.js";
+import { isLoginAllowed } from "../services/loginAccessService.js";
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret_for_development";
+
+const getTokenExpiry = (token) => {
+  const decoded = jwt.decode(token);
+  if (!decoded?.exp) return null;
+  return new Date(decoded.exp * 1000);
+};
 
 // Register new center
 export const registerCenter = async (req, res) => {
@@ -130,6 +138,13 @@ export const loginCenter = async (req, res) => {
         message: "Your account has been rejected" 
       });
     }
+    const allowed = await isLoginAllowed("center", center._id);
+    if (!allowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is inactive",
+      });
+    }
 
     // Generate JWT token
     const token = jwt.sign(
@@ -141,6 +156,16 @@ export const loginCenter = async (req, res) => {
       JWT_SECRET,
       { expiresIn: "7d" }
     );
+
+    await recordLogin({
+      role: "center",
+      actorModel: "Center",
+      actorId: center._id,
+      displayName: center.name,
+      email: center.email,
+      req,
+      sessionExpiresAt: getTokenExpiry(token),
+    });
 
     // Set cookie
     res.cookie("token", token, {
@@ -179,17 +204,37 @@ export const loginCenter = async (req, res) => {
 // Logout center
 export const logoutCenter = async (req, res) => {
   try {
+    const token = req.cookies.token;
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded?.id) {
+          const center = await Center.findById(decoded.id).select("_id name email");
+          if (center) {
+            await recordLogout({
+              role: "center",
+              actorModel: "Center",
+              actorId: center._id,
+              displayName: center.name,
+              email: center.email,
+              req,
+            });
+          }
+        }
+      } catch {
+        // Continue clearing cookie even when token is invalid.
+      }
+    }
+
     res.clearCookie("token");
     res.status(200).json({
       success: true,
       message: "Logged out successfully"
     });
-  } catch (error) {
-    console.error("Center logout error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Logout failed",
-      error: error.message
+  } catch {
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully"
     });
   }
 };

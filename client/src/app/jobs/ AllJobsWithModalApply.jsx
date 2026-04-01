@@ -12,10 +12,18 @@ import {
 import axios from "axios";
 import { Briefcase, MapPin } from "lucide-react";
 import dayjs from "dayjs";
+import JobsSidebarMarquee from "@/components/JobsSidebarMarquee";
+import {
+  DEFAULT_OUR_PARTNERS_SETTINGS,
+  normalizeOurPartnersSettings,
+} from "@/components/ourPartnersConfig";
 
 export default function AllJobsWithModalApply() {
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
+  const [partnerSettings, setPartnerSettings] = useState(
+    DEFAULT_OUR_PARTNERS_SETTINGS
+  );
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -27,6 +35,7 @@ export default function AllJobsWithModalApply() {
 
   useEffect(() => {
     fetchJobs();
+    fetchPartnerSettings();
   }, []);
 
   const fetchJobs = async () => {
@@ -60,6 +69,7 @@ export default function AllJobsWithModalApply() {
       );
       
       setJobs(activeJobs);
+      setSelectedJob(activeJobs[0] || null);
     } catch (error) {
       console.error("Error fetching jobs:", error);
       // Fallback to external jobs only
@@ -67,10 +77,26 @@ export default function AllJobsWithModalApply() {
         const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/jobs-external`);
         const activeJobs = (res.data || []).filter(job => job.status === 'active');
         setJobs(activeJobs);
+        setSelectedJob(activeJobs[0] || null);
       } catch (fallbackError) {
         console.error("Error fetching external jobs:", fallbackError);
         setJobs([]);
+        setSelectedJob(null);
       }
+    }
+  };
+
+  const fetchPartnerSettings = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/our-partners-settings`
+      );
+      setPartnerSettings(
+        normalizeOurPartnersSettings(response.data?.settings)
+      );
+    } catch (error) {
+      console.error("Error fetching our partners settings:", error);
+      setPartnerSettings(DEFAULT_OUR_PARTNERS_SETTINGS);
     }
   };
 
@@ -81,7 +107,6 @@ export default function AllJobsWithModalApply() {
 
   const handleCloseModal = () => {
     setOpen(false);
-    setSelectedJob(null);
     setForm({ name: "", email: "", phone: "", resumeLink: "" });
     setSubmitted(false);
   };
@@ -124,15 +149,29 @@ export default function AllJobsWithModalApply() {
     }
   };
 
+  const formatSalary = (salary) => {
+    if (salary === null || salary === undefined || salary === "") {
+      return "Not disclosed";
+    }
+
+    const numericSalary = Number(String(salary).replace(/[^\d.]/g, ""));
+    return Number.isFinite(numericSalary) && numericSalary > 0
+      ? `₹${numericSalary.toLocaleString("en-IN")}`
+      : `₹${salary}`;
+  };
+
   return (
-    <Box className="bg-[#f9f9f9] pt-24 pl-8 pb-10">
+    <Box className="min-h-screen bg-[linear-gradient(180deg,#f8fbff_0%,#f4f7fb_100%)] px-4 pb-14 pt-1 md:px-8 md:pt-2">
       <Typography
         variant="h5"
-        className=" font-bold mb-8 flex items-center gap-2"
+        className="mb-2 flex items-center gap-2 text-xl font-semibold tracking-tight text-slate-900"
       >
         <Briefcase className="text-brown-600" />
         Available Job Openings
       </Typography>
+      <p className="mb-6 max-w-3xl text-sm leading-6 text-slate-600">
+        Browse openings from the list and view complete job details on the right before applying.
+      </p>
 
       {jobs.length === 0 ? (
         <div className="text-center py-16">
@@ -148,56 +187,151 @@ export default function AllJobsWithModalApply() {
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {jobs.map((job) => (
-            <div
-              key={job._id}
-              className="bg-white shadow-md rounded-xl p-6 hover:shadow-lg transition-all"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xl font-semibold text-gray-800">
-                  <Briefcase className="inline-block mr-2 text-blue-600" />
-                  {job.title}
-                </h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  job.source === 'internal' 
-                    ? 'bg-blue-100 text-blue-800' 
-                    : 'bg-green-100 text-green-800'
-                }`}>
-                  {job.postedBy}
-                </span>
+        <div className="grid gap-5 lg:min-h-[calc(100vh-9.5rem)] lg:grid-cols-[400px_minmax(0,1fr)] xl:grid-cols-[320px_minmax(0,1fr)_240px] 2xl:grid-cols-[380px_minmax(0,1fr)_280px]">
+          <div className="space-y-3 overflow-y-auto border border-slate-200/80 bg-white/80 p-2 shadow-[0_16px_40px_rgba(15,23,42,0.05)] backdrop-blur lg:h-[calc(100vh-9.5rem)]">
+            {jobs.map((job) => {
+              const isActive = selectedJob?._id === job._id;
+
+              return (
+                <button
+                  key={job._id}
+                  type="button"
+                  onClick={() => setSelectedJob(job)}
+                  className={`w-full border p-4 text-left transition-all duration-200 ${
+                    isActive
+                      ? "border-blue-500 bg-[linear-gradient(135deg,#eff6ff_0%,#f8fbff_100%)] shadow-[0_12px_28px_rgba(37,99,235,0.12)]"
+                      : "border-slate-200 bg-white shadow-[0_6px_20px_rgba(15,23,42,0.05)] hover:border-blue-200 hover:shadow-[0_10px_24px_rgba(15,23,42,0.06)]"
+                  }`}
+                >
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-semibold leading-snug text-slate-900">
+                        {job.title}
+                      </h3>
+                      <p className="mt-1 text-sm font-medium text-slate-600">
+                        {job.role || "Role not specified"}
+                      </p>
+                    </div>
+                    <span className={`shrink-0 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide ${
+                      job.source === "internal"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                      {job.postedBy}
+                    </span>
+                  </div>
+
+                  <div className="mb-2 flex flex-wrap gap-3 text-sm text-slate-600">
+                    <span className="inline-flex items-center gap-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {job.location || "Location not specified"}
+                    </span>
+                    <span className="font-semibold text-slate-800">{formatSalary(job.salary)}</span>
+                  </div>
+
+                  <p className="line-clamp-2 text-sm leading-6 text-slate-600">
+                    {job.jd || "Job description will be shared by the recruiter."}
+                  </p>
+
+                  <div className="mt-4 flex items-center justify-between text-[11px] text-slate-500">
+                    <span>Posted {dayjs(job.createdAt).format("MMM DD, YYYY")}</span>
+                    <span className={isActive ? "font-semibold text-blue-700" : "text-slate-500"}>
+                      View details
+                    </span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="border border-slate-200/80 bg-white p-5 shadow-[0_18px_44px_rgba(15,23,42,0.06)] lg:sticky lg:top-24 lg:h-[calc(100vh-9.5rem)] lg:overflow-y-auto xl:p-6">
+            {selectedJob ? (
+              <>
+                <div className="mb-5 bg-[linear-gradient(135deg,#f8fbff_0%,#eef4ff_100%)] p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-blue-100 pb-5">
+                    <div>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">
+                        Job Details
+                      </p>
+                      <h2 className="text-3xl font-semibold tracking-tight text-slate-900">
+                        {selectedJob.title}
+                      </h2>
+                      <p className="mt-2 text-sm font-medium text-slate-700">
+                        {selectedJob.role || "Role not specified"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-start gap-3 sm:items-end">
+                      <span className={`px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide ${
+                        selectedJob.source === "internal"
+                          ? "bg-blue-100 text-blue-800"
+                          : "bg-emerald-100 text-emerald-700"
+                      }`}>
+                        {selectedJob.postedBy}
+                      </span>
+                      <Button
+                        variant="contained"
+                        onClick={() => handleOpenModal(selectedJob)}
+                        sx={{
+                          borderRadius: "4px",
+                          bgcolor: "#2563eb",
+                          px: 3,
+                          py: 1,
+                          fontSize: "0.8125rem",
+                          fontWeight: 700,
+                          boxShadow: "0 10px 24px rgba(37, 99, 235, 0.22)",
+                          "&:hover": { bgcolor: "#1d4ed8" },
+                        }}
+                      >
+                        Apply Now
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 md:grid-cols-3">
+                    <div className="border border-white/80 bg-white/80 p-4 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Location
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {selectedJob.location || "Location not specified"}
+                      </p>
+                    </div>
+                    <div className="border border-white/80 bg-white/80 p-4 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Salary
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {formatSalary(selectedJob.salary)}
+                      </p>
+                    </div>
+                    <div className="border border-white/80 bg-white/80 p-4 shadow-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                        Posted
+                      </p>
+                      <p className="mt-2 text-sm font-semibold text-slate-900">
+                        {dayjs(selectedJob.createdAt).format("MMM DD, YYYY")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Job description
+                  </h3>
+                  <div className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-700">
+                    {selectedJob.jd || "Job description will be shared by the recruiter."}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex min-h-[320px] items-center justify-center text-center text-gray-500">
+                Select a job from the left to view the full details.
               </div>
+            )}
+          </div>
 
-              <p className="text-gray-600 text-sm mb-2">
-                <strong>Role:</strong> {job.role}
-              </p>
-
-              <p className="text-gray-600 text-sm mb-3">
-                {job.jd.slice(0, 100)}...
-              </p>
-
-              <p className="flex items-center text-sm text-gray-500 mb-2">
-                <MapPin className="w-4 h-4 mr-1" /> {job.location}
-              </p>
-
-              <p className="text-sm text-gray-600 mb-2">
-                <strong>Salary:</strong> ₹{job.salary}
-              </p>
-
-              <p className="text-xs text-gray-400">
-                Posted on {dayjs(job.createdAt).format("MMM DD, YYYY")}
-              </p>
-
-              <Button
-                variant="contained"
-                fullWidth
-                sx={{ mt: 2 }}
-                onClick={() => handleOpenModal(job)}
-              >
-                Apply Now
-              </Button>
-            </div>
-          ))}
+          <JobsSidebarMarquee settings={partnerSettings} />
         </div>
       )}
 

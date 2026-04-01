@@ -96,13 +96,10 @@ const CourseSection = memo(function CourseSection() {
         const API_BASE =
           process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
 
-        console.log("🔍 CourseSection - Fetching from:", `${API_BASE}/courses`);
-
         const response = await fetch(`${API_BASE}/courses`);
 
         if (response.ok) {
           const data = await response.json();
-          console.log("🔍 CourseSection - API Response:", data);
 
           if (Array.isArray(data) && data.length > 0) {
             const transformedCourses = data.map(
@@ -140,20 +137,11 @@ const CourseSection = memo(function CourseSection() {
                   new Date(b.createdAt || 0).getTime() -
                   new Date(a.createdAt || 0).getTime()
               );
-
-            console.log(
-              "🔍 CourseSection - Transformed courses:",
-              activeCourses
-            );
             setCourses(activeCourses);
           } else {
-            console.log(
-              "🔍 CourseSection - No courses found, using sample data"
-            );
             setCourses(sampleCourses);
           }
         } else {
-          console.log("🔍 CourseSection - API failed, using sample data");
           setCourses(sampleCourses);
         }
       } catch (error) {

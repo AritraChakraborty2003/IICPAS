@@ -23,6 +23,7 @@ import CollegeTicketRaise from "./CollegeTicketRaise";
 import CertificationRequests from "./CertificationRequest";
 import CollegeDashboardOverview from "./Dashboard";
 import CollegeProfile from "./CollegeProfile";
+import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
 
@@ -42,6 +43,11 @@ const CollegeDashboardPage = () => {
     message: "",
   });
   const [submitting, setSubmitting] = useState(false);
+
+  useAuthHeartbeat({
+    enabled: !!college,
+    heartbeatUrl: `${API}/auth/heartbeat`,
+  });
 
   useEffect(() => {
     const verifyCollege = async () => {

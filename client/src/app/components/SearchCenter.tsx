@@ -4,6 +4,11 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import axios from "axios";
+import Marquee from "react-fast-marquee";
+import {
+  DEFAULT_OUR_PARTNERS_SETTINGS,
+  normalizeOurPartnersSettings,
+} from "@/components/ourPartnersConfig";
 import {
   FaSearch,
   FaMapMarkerAlt,
@@ -44,6 +49,9 @@ export default function SearchCenter() {
   const [filteredCenters, setFilteredCenters] = useState<Center[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [partnerSettings, setPartnerSettings] = useState(
+    DEFAULT_OUR_PARTNERS_SETTINGS
+  );
 
   // Fetch centers from API
   useEffect(() => {
@@ -146,6 +154,22 @@ export default function SearchCenter() {
     fetchCenters();
   }, []);
 
+  useEffect(() => {
+    const fetchPartnerSettings = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/our-partners-settings`);
+        setPartnerSettings(
+          normalizeOurPartnersSettings(response.data?.settings)
+        );
+      } catch (error) {
+        console.error("Error fetching partner settings:", error);
+        setPartnerSettings(DEFAULT_OUR_PARTNERS_SETTINGS);
+      }
+    };
+
+    fetchPartnerSettings();
+  }, []);
+
   // Define handleSearch function before using it in useEffect
   const handleSearch = useCallback(() => {
     console.log("Search triggered!");
@@ -237,6 +261,14 @@ export default function SearchCenter() {
     console.log(`Booking ${courseName} at center ${centerId}`);
     // You can implement the booking logic here
   };
+
+  const getPartnerInitials = (name: string) =>
+    name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase() || "")
+      .join("") || "P";
 
   if (loading) {
     return (
@@ -489,6 +521,72 @@ export default function SearchCenter() {
             </button>
           </div>
         </motion.div>
+
+        {partnerSettings.enabled && (
+          <motion.div
+            className="mb-16 overflow-hidden rounded-[28px] border border-slate-200/80 bg-[linear-gradient(135deg,#f8fbff_0%,#eef7ff_100%)] pt-4 shadow-[0_18px_44px_rgba(15,23,42,0.08)]"
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.35 }}
+          >
+            <div className="border-b border-slate-200/80 px-6 py-4 text-center">
+              <p className="text-sm font-semibold uppercase tracking-[0.28em] text-blue-700">
+                {partnerSettings.title}
+              </p>
+            </div>
+
+            <Marquee
+              speed={Math.max(
+                30,
+                Math.min(75, 990 / partnerSettings.durationSeconds)
+              )}
+              gradient={false}
+              pauseOnHover
+              className="px-2 py-5"
+            >
+              {partnerSettings.items.map((partner, index) => (
+                <a
+                  key={`${partner.name}-${index}`}
+                  href={partner.logoUrl || undefined}
+                  target={partner.logoUrl ? "_blank" : undefined}
+                  rel={partner.logoUrl ? "noreferrer" : undefined}
+                  className={`mx-3 inline-flex min-h-[92px] items-center gap-4 rounded-[28px] border border-slate-200 bg-white px-6 py-4 shadow-sm transition ${
+                    partner.logoUrl
+                      ? "cursor-pointer hover:-translate-y-0.5 hover:shadow-md"
+                      : "cursor-default"
+                  }`}
+                  title={
+                    partner.logoUrl
+                      ? `Open ${partner.name} logo`
+                      : partner.name
+                  }
+                  onClick={(event) => {
+                    if (!partner.logoUrl) {
+                      event.preventDefault();
+                    }
+                  }}
+                >
+                  {partner.logoUrl ? (
+                    <div className="flex h-16 w-28 items-center justify-center overflow-hidden rounded-2xl bg-slate-50">
+                      <img
+                        src={partner.logoUrl}
+                        alt={partner.name}
+                        className="h-14 w-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-blue-600 text-lg font-bold text-white shadow-sm">
+                      {getPartnerInitials(partner.name)}
+                    </div>
+                  )}
+                  <span className="text-base font-semibold text-slate-700">
+                    {partner.name}
+                  </span>
+                </a>
+              ))}
+            </Marquee>
+          </motion.div>
+        )}
 
         {/* Results - Only show if search has been performed */}
         {hasSearched && (
