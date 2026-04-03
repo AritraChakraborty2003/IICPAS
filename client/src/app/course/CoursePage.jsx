@@ -172,9 +172,8 @@ export default function CoursePage() {
 
     // Subscribe to wishlist changes
     const unsubscribe = wishlistEventManager.subscribe(
-      ({ studentId, courseId }) => {
-        if (student && student._id === studentId) {
-          // Refresh wishlist state when other components make changes
+      ({ studentId }) => {
+        if (studentId) {
           fetchWishlistState();
         }
       }
@@ -184,7 +183,7 @@ export default function CoursePage() {
     return () => {
       unsubscribe();
     };
-  }, [API_BASE, student]); // Remove student dependency to prevent loops
+  }, [API_BASE]);
 
   // Fetch current wishlist state
   const fetchWishlistState = async () => {
