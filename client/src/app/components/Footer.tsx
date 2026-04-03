@@ -17,6 +17,38 @@ import {
   FaMapMarkerAlt,
 } from "react-icons/fa";
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const normalizeFooterHref = (href: string = "/") => {
+  const trimmed = href.trim();
+  if (!trimmed) return "/";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+
+  const normalized = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  const routeMap: Record<string, string> = {
+    "/courses": "/course",
+    "/blog": "/blogs",
+    "/privacy-policy": "/privacy",
+    "/cancellation-refund-policy": "/refund",
+    "/refund-policy": "/refund",
+    "/cookie-policy": "/cookies",
+    "/confidentiality-policy": "/confidentiality",
+    "/disclaimer-policy": "/disclaimer",
+    "/terms-and-conditions": "/terms-conditions",
+    "/terms-of-service": "/terms",
+  };
+
+  return routeMap[normalized] || normalized;
+};
+
 export default function Footer() {
   const currentYear = new Date().getFullYear();
   const [footerData, setFooterData] = useState({
@@ -113,7 +145,7 @@ export default function Footer() {
     const fetchFooterData = async () => {
       try {
         const API_BASE =
-          process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+          getApiBase();
         const response = await fetch(`${API_BASE}/footer`);
 
         if (response.ok) {
@@ -135,13 +167,13 @@ export default function Footer() {
               companyPolicies: (data.footerLinks?.companyPolicies || []).map(
                 (link: { name: string; href: string }) => ({
                   name: link.name,
-                  href: link.href,
+                  href: normalizeFooterHref(link.href),
                 })
               ),
               generalLinks: (data.footerLinks?.generalLinks || []).map(
                 (link: { name: string; href: string }) => ({
                   name: link.name,
-                  href: link.href,
+                  href: normalizeFooterHref(link.href),
                 })
               ),
             },
@@ -159,7 +191,7 @@ export default function Footer() {
               legalLinks: (data.bottomBar?.legalLinks || []).map(
                 (link: { name: string; href: string }) => ({
                   name: link.name,
-                  href: link.href,
+                  href: normalizeFooterHref(link.href),
                 })
               ),
             },

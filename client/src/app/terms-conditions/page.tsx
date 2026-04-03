@@ -4,6 +4,23 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const extractPolicyData = <T,>(payload: any): T | null => {
+  if (!payload) return null;
+  if (payload.success && payload.data) return payload.data as T;
+  if (payload.data && typeof payload.data === "object") return payload.data as T;
+  if (typeof payload === "object") return payload as T;
+  return null;
+};
+
 interface Subsection {
   title?: string;
   content?: string;
@@ -39,7 +56,7 @@ export default function TermsAndConditionsPage() {
   useEffect(() => {
     const fetchTermsAndConditions = async () => {
       try {
-        const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        const API_BASE = getApiBase();
         const response = await fetch(`${API_BASE}/terms-and-conditions/active`);
         
         if (!response.ok) {
@@ -48,8 +65,9 @@ export default function TermsAndConditionsPage() {
 
         const result = await response.json();
         
-        if (result.success) {
-          setTermsData(result.data);
+        const termsPayload = extractPolicyData<TermsAndConditionsData>(result);
+        if (termsPayload) {
+          setTermsData(termsPayload);
         } else {
           throw new Error(result.message || 'Failed to fetch terms and conditions');
         }

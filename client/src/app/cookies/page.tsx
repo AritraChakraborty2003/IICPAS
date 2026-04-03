@@ -4,6 +4,23 @@ import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const extractPolicyData = <T,>(payload: any): T | null => {
+  if (!payload) return null;
+  if (payload.success && payload.data) return payload.data as T;
+  if (payload.data && typeof payload.data === "object") return payload.data as T;
+  if (typeof payload === "object") return payload as T;
+  return null;
+};
+
 interface Subsection {
   title?: string;
   content?: string;
@@ -44,13 +61,14 @@ const CookiePolicyPage = () => {
 
   const fetchCookiePolicy = async () => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
-      const response = await fetch(`${API_BASE}/cookie-policy`);
+      const API_BASE = getApiBase();
+      const response = await fetch(`${API_BASE}/cookie-policy/active`);
       
       if (response.ok) {
         const data = await response.json();
-        if (data.success) {
-          setCookiePolicy(data.data);
+        const policyData = extractPolicyData<CookiePolicyData>(data);
+        if (policyData) {
+          setCookiePolicy(policyData);
         } else {
           console.error("Failed to fetch cookie policy:", data.message);
         }
