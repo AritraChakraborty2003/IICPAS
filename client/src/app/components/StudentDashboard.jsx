@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useMemo } from "react";
-import Drawer from "react-modern-drawer";
+import dynamic from "next/dynamic";
 import "react-modern-drawer/dist/index.css";
 import axios from "axios";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -43,9 +43,12 @@ import StudentBookingsTab from "./StudentBookingsTab";
 import ReferAndEarnTab from "./ReferAndEarnTab";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
+const Drawer = dynamic(() => import("react-modern-drawer"), { ssr: false });
+
 function StudentDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState("buy-courses"); // Default to Buy Courses for new students
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [student, setStudent] = useState(null);
@@ -129,6 +132,10 @@ function StudentDashboardContent() {
       dotColor: "green",
     },
   ];
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Handle URL tab parameter
   useEffect(() => {
@@ -454,19 +461,21 @@ function StudentDashboardContent() {
         </button>
       </aside>
       {/* Mobile Drawer */}
-      <Drawer
-        open={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        direction="left"
-        className="lg:hidden"
-        size="280px"
-        enableOverlay={true}
-        lockBackgroundScroll={true}
-      >
-        <div className="h-full">
-          <SidebarContent />
-        </div>
-      </Drawer>
+      {mounted && (
+        <Drawer
+          open={isDrawerOpen}
+          onClose={() => setIsDrawerOpen(false)}
+          direction="left"
+          className="lg:hidden"
+          size="280px"
+          enableOverlay={true}
+          lockBackgroundScroll={true}
+        >
+          <div className="h-full">
+            <SidebarContent />
+          </div>
+        </Drawer>
+      )}
       {/* Main Content */}
       <main className="main-content flex-1 min-w-0 bg-[#f5f6fa] min-h-screen overflow-x-hidden thin-scrollbar">
         {/* Fixed Header */}

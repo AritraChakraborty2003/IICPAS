@@ -187,7 +187,6 @@ const stripHtml = (value) => {
 
 export default function BuyCoursesTab() {
   const router = useRouter();
-  const videoRef = useRef(null);
   const studentRef = useRef(null);
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -202,6 +201,7 @@ export default function BuyCoursesTab() {
   const [loading, setLoading] = useState(false);
   const [newsItems, setNewsItems] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
+  const [achievementStats, setAchievementStats] = useState([]);
   const [sortBy, setSortBy] = useState("relevance");
   const [showDiscountOnly, setShowDiscountOnly] = useState(false);
   const [priceRange, setPriceRange] = useState({ min: 0, max: 0 });
@@ -309,12 +309,20 @@ export default function BuyCoursesTab() {
   }, [API_BASE]);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {
-        // Ignore autoplay errors.
-      });
-    }
-  }, []);
+    const fetchAchievementStats = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/api/yellow-stats-strip`);
+        const stats = Array.isArray(response.data?.statistics)
+          ? response.data.statistics
+          : [];
+        setAchievementStats(stats.slice(0, 4));
+      } catch (error) {
+        setAchievementStats([]);
+      }
+    };
+
+    fetchAchievementStats();
+  }, [API_BASE]);
 
   const effectiveCategories = useMemo(() => {
     if (categories.length > 0) {
@@ -451,18 +459,43 @@ export default function BuyCoursesTab() {
 
   const displayCourses = useMemo(() => sortedCourses, [sortedCourses]);
 
-  const formatNewsDate = useCallback((dateString) => {
-    if (!dateString) return "Latest update";
+  const tickerItems = useMemo(() => {
+    const statsUpdates = achievementStats.map((item, index) => ({
+      id: `stat-${index}-${item.label}`,
+      text: `${item.number || ""} ${item.label || "Student achievements"}`.trim(),
+      type: "achievement",
+    }));
 
-    const date = new Date(dateString);
-    if (Number.isNaN(date.getTime())) return "Latest update";
+    const latestNewsUpdates = newsItems.map((item, index) => ({
+      id: item._id || `news-${index}`,
+      text: item.title || stripHtml(item.descr) || "Latest student update",
+      type: "news",
+    }));
 
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric",
-    });
-  }, []);
+    const combined = [...statsUpdates, ...latestNewsUpdates].filter(
+      (item) => item.text && item.text.trim()
+    );
+
+    if (combined.length > 0) return combined;
+
+    return [
+      {
+        id: "fallback-1",
+        text: "120K+ students trained by IICPA",
+        type: "achievement",
+      },
+      {
+        id: "fallback-2",
+        text: "560K+ course completions recorded",
+        type: "achievement",
+      },
+      {
+        id: "fallback-3",
+        text: "Latest IICPA announcements will appear here",
+        type: "news",
+      },
+    ];
+  }, [achievementStats, newsItems]);
 
   const toggleCategory = useCallback((categoryName) => {
     setSelectedCategories((prev) =>
@@ -695,112 +728,57 @@ export default function BuyCoursesTab() {
   return (
     <section className="bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-        <div className="relative mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-slate-900 shadow-sm">
-          <video
-            ref={videoRef}
-            className="absolute inset-0 h-full w-full object-cover opacity-30"
-            loop
-            muted
-            playsInline
-            autoPlay
-          >
-            <source src="/videos/homehero.mp4" type="video/mp4" />
-            <source src="/videos/homehero.webm" type="video/webm" />
-          </video>
-          <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-900/90 to-slate-900/70" />
-          <div className="relative z-10 p-6 sm:p-8 lg:p-10">
-            <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="mb-6 overflow-hidden rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-emerald-50 shadow-sm">
+          <div className="flex flex-col gap-3 px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:gap-4">
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sky-600 text-white shadow-sm">
+                <FaNewspaper className="text-sm" />
+              </div>
               <div>
-                <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-sky-100">
-                  <FaNewspaper className="text-[11px]" />
-                  Student News
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-sky-700">
+                  Student Updates
                 </p>
-                <h1 className="text-2xl font-bold text-white sm:text-3xl">
-                  Latest updates for students
-                </h1>
-                <p className="mt-2 max-w-2xl text-sm text-slate-200 sm:text-base">
-                  Important announcements, learning tips, and fresh updates from IICPA in one place.
+                <p className="text-sm font-medium text-slate-600">
+                  Latest news, placements and course progress highlights
                 </p>
               </div>
-
-              <button
-                type="button"
-                onClick={() => router.push("/student-dashboard?tab=news")}
-                className="inline-flex items-center gap-2 self-start rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
-              >
-                View all news
-                <FaArrowRight className="text-xs" />
-              </button>
             </div>
 
-            {newsLoading ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {[0, 1, 2].map((item) => (
-                  <div
-                    key={item}
-                    className="h-40 animate-pulse rounded-2xl border border-white/10 bg-white/10"
-                  />
-                ))}
-              </div>
-            ) : newsItems.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {newsItems.map((item) => (
-                  <article
-                    key={item._id || item.title}
-                    className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm transition hover:bg-white/15"
-                  >
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <span className="inline-flex rounded-full bg-sky-400/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-100">
-                        Student Update
-                      </span>
-                      <span className="text-xs text-slate-300">
-                        {formatNewsDate(item.createdAt)}
-                      </span>
-                    </div>
-
-                    <h2 className="line-clamp-2 text-base font-semibold text-white">
-                      {item.title || "Latest IICPA update"}
-                    </h2>
-
-                    <p className="mt-3 line-clamp-4 text-sm leading-6 text-slate-200">
-                      {stripHtml(item.descr) ||
-                        "Check the latest notice and opportunities curated for students."}
-                    </p>
-
-                    <div className="mt-4 flex items-center justify-between pt-3">
-                      <button
-                        type="button"
-                        onClick={() => router.push("/student-dashboard?tab=news")}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-sky-100 transition hover:text-white"
+            <div className="relative min-w-0 flex-1 overflow-hidden rounded-xl border border-sky-100 bg-white/80 px-3 py-3">
+              {newsLoading && achievementStats.length === 0 ? (
+                <div className="h-6 animate-pulse rounded-lg bg-slate-100" />
+              ) : (
+                <div className="student-updates-marquee flex min-w-max items-center gap-6 whitespace-nowrap">
+                  {[...tickerItems, ...tickerItems].map((item, index) => (
+                    <div
+                      key={`${item.id}-${index}`}
+                      className="inline-flex items-center gap-3 text-sm text-slate-700"
+                    >
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${
+                          item.type === "achievement"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-sky-100 text-sky-700"
+                        }`}
                       >
-                        Read more
-                        <FaArrowRight className="text-xs" />
-                      </button>
-
-                      {item.link ? (
-                        <a
-                          href={item.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs font-medium text-slate-300 transition hover:text-white"
-                        >
-                          Open link
-                        </a>
-                      ) : null}
+                        {item.type === "achievement" ? "Stats" : "News"}
+                      </span>
+                      <span className="font-medium">{item.text}</span>
+                      <span className="text-slate-300">•</span>
                     </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-white/15 bg-white/5 p-6 text-center">
-                <p className="text-sm font-medium text-white">
-                  Student news will appear here as soon as updates are published.
-                </p>
-                <p className="mt-2 text-sm text-slate-300">
-                  For now, you can continue exploring available courses below.
-                </p>
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => router.push("/student-dashboard?tab=news")}
+              className="inline-flex shrink-0 items-center gap-2 self-start rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 lg:self-auto"
+            >
+              View all news
+              <FaArrowRight className="text-xs" />
+            </button>
           </div>
         </div>
 
@@ -1021,6 +999,21 @@ export default function BuyCoursesTab() {
           </div>
         </div>
       )}
+
+      <style jsx>{`
+        .student-updates-marquee {
+          animation: studentUpdatesMarquee 28s linear infinite;
+        }
+
+        @keyframes studentUpdatesMarquee {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
     </section>
   );
 }
