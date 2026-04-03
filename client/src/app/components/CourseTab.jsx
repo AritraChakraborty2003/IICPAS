@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   PlayArrow,
@@ -76,7 +77,7 @@ export default function CourseTab() {
   const [expandedChapterKeys, setExpandedChapterKeys] = useState({});
   const router = useRouter();
   const searchParams = useSearchParams();
-  const API = process.env.NEXT_PUBLIC_API_URL;
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   // Fetch student courses from database
   const fetchStudentCourses = async () => {
@@ -418,6 +419,34 @@ export default function CourseTab() {
 
   const formatPrice = (value) =>
     new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
+
+  const getCourseCount = (course, itemsKey, totalKey) => {
+    if (Array.isArray(course?.[itemsKey])) {
+      return course[itemsKey].length;
+    }
+
+    const count = Number(course?.[totalKey] || 0);
+    return Number.isFinite(count) ? count : 0;
+  };
+
+  const getProgressValue = (course) => {
+    const progress = Number(course?.overallProgress || 0);
+    if (!Number.isFinite(progress)) return 0;
+    return Math.max(0, Math.min(progress, 100));
+  };
+
+  const getCourseDescription = (course, isPurchased) => {
+    const rawDescription = course?.description;
+    const cleanedDescription = rawDescription
+      ? String(rawDescription).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+      : "";
+
+    if (cleanedDescription) return cleanedDescription;
+
+    return isPurchased
+      ? "Resume your enrolled course and keep track of chapters, tests, and assignments from one place."
+      : "Review the course structure, pricing, and highlights before you enroll.";
+  };
 
   const getTabIcon = (tabName) => {
     switch (tabName) {
@@ -898,13 +927,37 @@ export default function CourseTab() {
     <div className="w-full max-w-full bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
       <div className="p-6 pb-0">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent mb-2">
-            My Courses
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Continue your learning journey
-          </p>
+        <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">
+              Digital Hub
+            </span>
+            <h1 className="mt-3 text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent">
+              My Courses
+            </h1>
+            <p className="mt-2 text-base text-gray-600 sm:text-lg">
+              Continue your learning journey with a cleaner course overview.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[320px]">
+            <div className="rounded-2xl border border-blue-100 bg-white/90 px-4 py-3 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
+                Enrolled
+              </p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">
+                {purchasedCourses.length}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Available
+              </p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">
+                {Math.max(courses.length - purchasedCourses.length, 0)}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -915,94 +968,197 @@ export default function CourseTab() {
             No results found
           </div>
         ) : (
-          courses.map((course) => (
-            <div key={course._id} className="group relative">
-            {viewModes[course._id] !== "detailed" ? (
-              // State 1: Modern Course Overview Card
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
-                {/* Course Header */}
-                <div className="bg-blue-600 px-3 py-2 text-white">
-                  <h2 className="text-lg font-bold">{course.title}</h2>
-                </div>
+          courses.map((course) => {
+            const isPurchased = isCoursePurchased(course._id);
+            const currentPrice = getCurrentPrice(course);
+            const originalPrice = getOriginalPrice(course, currentPrice);
+            const chaptersCount = getCourseCount(course, "chapters", "totalChapters");
+            const assignmentsCount = getCourseCount(
+              course,
+              "assignments",
+              "totalAssignments"
+            );
+            const testsCount = getCourseCount(course, "tests", "totalTests");
+            const progressValue = getProgressValue(course);
+            const description = getCourseDescription(course, isPurchased);
 
-                <div className="p-5">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-gray-500 font-medium">
-                      {getCourseCategory(course)}
-                    </p>
-                    <FaStar className="text-yellow-500 text-lg" />
-                  </div>
+            const overviewStats = [
+              {
+                label: "Category",
+                value: getCourseCategory(course),
+              },
+              {
+                label: "Level",
+                value: course?.level || "Professional course",
+              },
+              {
+                label: "Content",
+                value: `${chaptersCount} ${chaptersCount === 1 ? "chapter" : "chapters"}`,
+              },
+              {
+                label: isPurchased ? "Progress" : "Assessments",
+                value: isPurchased
+                  ? `${progressValue}% complete`
+                  : `${assignmentsCount + testsCount} evaluations`,
+              },
+            ];
 
-                  <h2 className="text-4xl leading-8 font-bold text-slate-900 min-h-[64px] mb-3">
-                    {course.title}
-                  </h2>
+            return (
+              <div key={course._id} className="group relative">
+                {viewModes[course._id] !== "detailed" ? (
+                  // State 1: Modern Course Overview Card
+                  <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-white to-blue-50 shadow-[0_18px_48px_-28px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-30px_rgba(15,23,42,0.5)]">
+                    <div className="flex flex-col lg:flex-row">
+                      <div className="relative min-h-[220px] overflow-hidden bg-slate-200 lg:min-h-full lg:w-[290px]">
+                        <Image
+                          src={getCourseImageSrc(course)}
+                          alt={course.title}
+                          fill
+                          unoptimized
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          sizes="(max-width: 1024px) 100vw, 290px"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-900/10 to-transparent" />
 
-                  <div className="flex items-end justify-between gap-3">
-                    <div>
-                      {(() => {
-                        const currentPrice = getCurrentPrice(course);
-                        const originalPrice = getOriginalPrice(
-                          course,
-                          currentPrice
-                        );
-                        return (
-                          <>
-                            <p className="text-4xl leading-none font-bold text-emerald-600">
-                              &#8377;{formatPrice(currentPrice)}
+                        <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+                          <span className="inline-flex items-center rounded-full bg-white/92 px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm backdrop-blur">
+                            {getCourseCategory(course)}
+                          </span>
+                          <span
+                            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm backdrop-blur ${
+                              isPurchased
+                                ? "bg-emerald-500/90 text-white"
+                                : "bg-slate-950/80 text-white"
+                            }`}
+                          >
+                            {isPurchased ? "Enrolled" : "Available"}
+                          </span>
+                        </div>
+
+                        <div className="absolute bottom-4 left-4 right-4">
+                          <div className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                            <FaStar className="text-[11px] text-amber-300" />
+                            Student Dashboard Course
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-1 flex-col gap-5 p-5 sm:p-6">
+                        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-3 flex flex-wrap gap-2">
+                              <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                                {course?.level || "Professional course"}
+                              </span>
+                              <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                                {chaptersCount} {chaptersCount === 1 ? "chapter" : "chapters"}
+                              </span>
+                              {testsCount > 0 ? (
+                                <span className="inline-flex rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">
+                                  {testsCount} {testsCount === 1 ? "test" : "tests"}
+                                </span>
+                              ) : null}
+                            </div>
+
+                            <h2 className="max-w-4xl text-2xl font-bold leading-tight text-slate-900 sm:text-[2rem]">
+                              {course.title}
+                            </h2>
+
+                            <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 line-clamp-2">
+                              {description}
                             </p>
-                            {originalPrice > currentPrice && (
-                              <p className="text-2xl text-gray-400 line-through mt-1">
-                                &#8377;{formatPrice(originalPrice)}
+
+                            <div className="mt-5 grid gap-3 sm:grid-cols-2 2xl:grid-cols-4">
+                              {overviewStats.map((stat) => (
+                                <div
+                                  key={`${course._id}-${stat.label}`}
+                                  className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm"
+                                >
+                                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                                    {stat.label}
+                                  </p>
+                                  <p className="mt-2 text-sm font-semibold text-slate-900">
+                                    {stat.value}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="xl:w-[240px] xl:shrink-0">
+                            <div className="rounded-[24px] bg-slate-950 px-5 py-4 text-white shadow-lg">
+                              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">
+                                {isPurchased ? "Your access" : "Course fee"}
+                              </p>
+                              <p className="mt-3 text-3xl font-bold leading-none text-emerald-400">
+                                &#8377;{formatPrice(currentPrice)}
+                              </p>
+                              {originalPrice > currentPrice && (
+                                <p className="mt-2 text-sm text-slate-400 line-through">
+                                  &#8377;{formatPrice(originalPrice)}
+                                </p>
+                              )}
+
+                              {isPurchased ? (
+                                <div className="mt-4">
+                                  <div className="flex items-center justify-between text-xs font-medium text-slate-300">
+                                    <span>Learning progress</span>
+                                    <span>{progressValue}%</span>
+                                  </div>
+                                  <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
+                                    <div
+                                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
+                                      style={{ width: `${progressValue}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="mt-4 text-sm leading-6 text-slate-300">
+                                  Enroll to unlock chapter-wise navigation, assignments, and tests.
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              onClick={() =>
+                                isPurchased
+                                  ? handleDetailedToggle(course._id)
+                                  : handleBuyNow(course)
+                              }
+                              className="mt-4 w-full rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                            >
+                              {isPurchased ? "View Details →" : "Enroll Now →"}
+                            </button>
+
+                            {isPurchased &&
+                              isCourseCompleted(course) &&
+                              !courseRatings[course._id] && (
+                                <button
+                                  onClick={() => {
+                                    setCourseToRate(course);
+                                    setShowRatingModal(true);
+                                  }}
+                                  className="mt-3 w-full rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700 transition-colors hover:bg-amber-100"
+                                >
+                                  Rate Course
+                                </button>
+                              )}
+
+                            {courseRatings[course._id] && (
+                              <p className="mt-3 text-center text-sm text-slate-600">
+                                {courseRatings[course._id].status === "pending"
+                                  ? "Rating Pending"
+                                  : courseRatings[course._id].status === "approved"
+                                  ? "Rating Approved"
+                                  : "Rating Rejected"}
                               </p>
                             )}
-                          </>
-                        );
-                      })()}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-
-                    {isCoursePurchased(course._id) ? (
-                      <button
-                        onClick={() => handleDetailedToggle(course._id)}
-                        className="bg-slate-900 text-white px-5 py-2.5 rounded-2xl font-semibold text-base hover:bg-slate-800 transition-colors"
-                      >
-                        View Details &#8594;
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleBuyNow(course)}
-                        className="bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-semibold text-base hover:bg-slate-800 transition-colors"
-                      >
-                        Enroll &#8594;
-                      </button>
-                    )}
                   </div>
-
-                  {isCoursePurchased(course._id) &&
-                    isCourseCompleted(course) &&
-                    !courseRatings[course._id] && (
-                      <button
-                        onClick={() => {
-                          setCourseToRate(course);
-                          setShowRatingModal(true);
-                        }}
-                        className="mt-3 text-sm font-semibold text-amber-600 hover:text-amber-700"
-                      >
-                        Rate Course
-                      </button>
-                    )}
-
-                  {courseRatings[course._id] && (
-                    <p className="mt-3 text-sm text-gray-600">
-                      {courseRatings[course._id].status === "pending"
-                        ? "Rating Pending"
-                        : courseRatings[course._id].status === "approved"
-                        ? "Rating Approved"
-                        : "Rating Rejected"}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ) : (
+                ) : (
               // State 2: Course Detailed View (Compact Professional)
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 {/* Course Header */}
@@ -1226,9 +1382,10 @@ export default function CourseTab() {
                   </div>
                 </div>
               </div>
-              )}
-            </div>
-          ))
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 

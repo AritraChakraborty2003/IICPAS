@@ -11,6 +11,12 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const Chatbot = () => {
   const pathname = usePathname();
   const isDigitalHubRoute = pathname?.includes("/digital-hub");
+  const chatWindowPositionClasses = isDigitalHubRoute
+    ? "bottom-12 left-14 w-[calc(100vw-4.5rem)] max-w-sm sm:bottom-16 sm:left-20 sm:w-96"
+    : "bottom-20 right-4 w-96";
+  const chatButtonPositionClasses = isDigitalHubRoute
+    ? "bottom-12 left-14 sm:bottom-16 sm:left-20"
+    : "bottom-4 right-4";
   const [isOpen, setIsOpen] = useState(false);
   const [leadFormVisible, setLeadFormVisible] = useState(true);
   const [hasLead, setHasLead] = useState(false);
@@ -262,11 +268,7 @@ const Chatbot = () => {
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
-            className={`fixed z-40 flex h-[500px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl ${
-              isDigitalHubRoute
-                ? "bottom-4 left-14 w-[calc(100vw-4.5rem)] max-w-sm sm:left-20 sm:w-96"
-                : "bottom-20 right-4 w-96"
-            }`}
+            className={`fixed z-40 flex h-[500px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl ${chatWindowPositionClasses}`}
           >
             <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -426,18 +428,7 @@ const Chatbot = () => {
         )}
       </AnimatePresence>
 
-      <div
-        className={`fixed z-50 ${
-          isDigitalHubRoute ? "bottom-4 left-1.5 sm:left-2" : "bottom-4 right-4"
-        }`}
-        style={{
-          position: "fixed",
-          bottom: "1rem",
-          left: isDigitalHubRoute ? "0.375rem" : "auto",
-          right: isDigitalHubRoute ? "auto" : "1rem",
-          zIndex: 50,
-        }}
-      >
+      <div className={`fixed z-50 ${chatButtonPositionClasses}`}>
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
