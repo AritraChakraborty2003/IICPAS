@@ -1377,8 +1377,8 @@ export default function CourseTab() {
               </div>
                 )}
               </div>
-            ))
-        )}
+	            })
+	        )}
       </div>
 
       {/* Form Modal */}
