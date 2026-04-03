@@ -6,8 +6,12 @@ const API_ROOT =
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_API_BASE?.replace(/\/api\/?$/i, "") ||
   "http://localhost:8080";
-const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE || `${API_ROOT.replace(/\/+$/, "")}/api`;
+const BASE_URL = (() => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE || `${API_ROOT.replace(/\/+$/, "")}/api`;
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+})();
 
 const extractTickets = (payload) => {
   if (Array.isArray(payload)) return payload;
