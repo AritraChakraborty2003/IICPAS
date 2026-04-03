@@ -194,6 +194,35 @@ interface DigitalHubClientProps {
   isDemo: boolean;
 }
 
+const extractCourseRecord = (payload: unknown): Record<string, unknown> | null => {
+  if (!payload || typeof payload !== "object") return null;
+
+  const candidate = payload as {
+    course?: Record<string, unknown>;
+    data?: Record<string, unknown> | { course?: Record<string, unknown> };
+  };
+
+  if (candidate.course && typeof candidate.course === "object") {
+    return candidate.course;
+  }
+
+  if (
+    candidate.data &&
+    typeof candidate.data === "object" &&
+    "course" in candidate.data &&
+    candidate.data.course &&
+    typeof candidate.data.course === "object"
+  ) {
+    return candidate.data.course;
+  }
+
+  if (candidate.data && typeof candidate.data === "object" && !Array.isArray(candidate.data)) {
+    return candidate.data;
+  }
+
+  return candidate;
+};
+
 export default function DigitalHubClient({
   courseSlugOrId,
   chapterId,
@@ -842,7 +871,8 @@ export default function DigitalHubClient({
         const response = await axios.get(
           `${API}/api/courses/${encodeURIComponent(courseSlugOrId)}`
         );
-        const resolvedId = response.data?._id;
+        const courseRecord = extractCourseRecord(response.data);
+        const resolvedId = courseRecord?._id;
         setResolvedCourseId(typeof resolvedId === "string" ? resolvedId : null);
       } catch (error) {
         console.error("Error resolving course identifier:", error);

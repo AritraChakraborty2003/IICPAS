@@ -15,6 +15,35 @@ const sanitize = (value: string) => {
   }
 };
 
+const extractCourseRecord = (payload: unknown): Record<string, unknown> | null => {
+  if (!payload || typeof payload !== "object") return null;
+
+  const candidate = payload as {
+    course?: Record<string, unknown>;
+    data?: Record<string, unknown> | { course?: Record<string, unknown> };
+  };
+
+  if (candidate.course && typeof candidate.course === "object") {
+    return candidate.course;
+  }
+
+  if (
+    candidate.data &&
+    typeof candidate.data === "object" &&
+    "course" in candidate.data &&
+    candidate.data.course &&
+    typeof candidate.data.course === "object"
+  ) {
+    return candidate.data.course;
+  }
+
+  if (candidate.data && typeof candidate.data === "object" && !Array.isArray(candidate.data)) {
+    return candidate.data;
+  }
+
+  return candidate;
+};
+
 async function resolveCourseSlug(courseIdentifier: string): Promise<string | null> {
   const normalized = sanitize(courseIdentifier);
   if (!normalized) return null;
@@ -28,8 +57,9 @@ async function resolveCourseSlug(courseIdentifier: string): Promise<string | nul
     if (!response.ok) return null;
 
     const payload = await response.json();
-    const slug = payload?.slug;
-    const fallbackId = payload?._id;
+    const courseRecord = extractCourseRecord(payload);
+    const slug = courseRecord?.slug;
+    const fallbackId = courseRecord?._id;
 
     if (typeof slug === "string" && slug.trim()) return slug.trim();
     if (typeof fallbackId === "string" && fallbackId.trim()) return fallbackId.trim();

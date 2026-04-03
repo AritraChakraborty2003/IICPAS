@@ -25,6 +25,26 @@ import {
 import StarRating from "./StarRating";
 import { toast } from "react-hot-toast";
 
+const extractCourseList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.courses)) return payload.courses;
+  if (Array.isArray(payload?.data?.courses)) return payload.data.courses;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const extractCourseRecord = (payload) => {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.course && typeof payload.course === "object") return payload.course;
+  if (payload.data?.course && typeof payload.data.course === "object") {
+    return payload.data.course;
+  }
+  if (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+    return payload.data;
+  }
+  return payload;
+};
+
 export default function CourseTab() {
   const QA_DUMMY_COURSE = {
     _id: "qa-dummy-course-2026",
@@ -101,25 +121,32 @@ export default function CourseTab() {
             }
           );
 
-          if (
-            purchasedCoursesResponse.data &&
-            purchasedCoursesResponse.data.courses
-          ) {
-            purchasedCoursesData = purchasedCoursesResponse.data.courses;
+          const normalizedPurchasedCourses = extractCourseList(
+            purchasedCoursesResponse.data
+          );
+
+          if (normalizedPurchasedCourses.length > 0) {
+            purchasedCoursesData = normalizedPurchasedCourses;
             setPurchasedCourses(purchasedCoursesData);
           }
         }
 
         // Fetch all available courses
         const allCoursesResponse = await axios.get(`${API}/api/courses/all`);
-        if (allCoursesResponse.data) {
-          const allCoursesData = allCoursesResponse.data;
+        const allCoursesData = extractCourseList(allCoursesResponse.data);
+
+        if (allCoursesData.length > 0) {
           setAvailableCourses(allCoursesData);
 
           // Filter out purchased courses from available courses
-          const purchasedCourseIds = student.course || [];
+          const purchasedCourseIds = new Set([
+            ...(Array.isArray(student.course) ? student.course : []),
+            ...purchasedCoursesData
+              .map((course) => extractCourseRecord(course)?._id)
+              .filter(Boolean),
+          ]);
           const filteredAvailableCourses = allCoursesData.filter(
-            (course) => !purchasedCourseIds.includes(course._id)
+            (course) => !purchasedCourseIds.has(course._id)
           );
 
           const purchasedWithDummy = purchasedCoursesData.some(
@@ -141,6 +168,7 @@ export default function CourseTab() {
           }
         } else {
           // If no courses at all, just set purchased courses
+          setAvailableCourses([]);
           setCourses(purchasedCoursesData);
           if (purchasedCoursesData.length > 0) {
             setSelectedCourse(purchasedCoursesData[0]);
