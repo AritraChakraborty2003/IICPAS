@@ -24,6 +24,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaFileAlt,
+  FaGift,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -39,6 +40,7 @@ import ProfileTab from "../components/ProfileTab";
 import TestimonialTab from "./TestimonialTab";
 import StudentInvoicesTab from "./StudentInvoicesTab";
 import StudentBookingsTab from "./StudentBookingsTab";
+import ReferAndEarnTab from "./ReferAndEarnTab";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 function StudentDashboardContent() {
@@ -117,6 +119,7 @@ function StudentDashboardContent() {
     { id: "news", icon: <FaNewspaper />, label: "News" },
     { id: "testimonial", icon: <FaQuoteLeft />, label: "Testimonial" },
     { id: "bookings", icon: <FaFileAlt />, label: "Bookings" },
+    { id: "refer-earn", icon: <FaGift />, label: "Refer & Earn" },
     { id: "support", icon: <FaHeadset />, label: "Support" },
     {
       id: "certificates",
@@ -141,6 +144,7 @@ function StudentDashboardContent() {
         "news",
         "testimonial",
         "bookings",
+        "refer-earn",
         "support",
         "certificates",
         "profile",
@@ -205,6 +209,12 @@ function StudentDashboardContent() {
     if (!student?._id) return;
     if (activeTab !== "bookings") return;
     fetchWalletPaidAmount();
+  }, [activeTab, student?._id]);
+
+  useEffect(() => {
+    if (!student?._id) return;
+    if (activeTab !== "refer-earn") return;
+    fetchStudentCoins(student._id);
   }, [activeTab, student?._id]);
 
   // Handle ticket submission
@@ -284,6 +294,8 @@ function StudentDashboardContent() {
         return <StudentInvoicesTab />;
       case "bookings":
         return <StudentBookingsTab />;
+      case "refer-earn":
+        return <ReferAndEarnTab student={student} />;
       case "testimonial":
         return <TestimonialTab student={student} />;
       case "support":

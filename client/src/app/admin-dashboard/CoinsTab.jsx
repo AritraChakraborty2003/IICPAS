@@ -12,6 +12,7 @@ export default function CoinsTab() {
     quizCompleteCoins: 10,
     testimonialApprovedCoins: 3,
     purchaseSuccessCoins: 20,
+    referralSignupCoins: 50,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,6 +30,8 @@ export default function CoinsTab() {
               response.data.settings.testimonialApprovedCoins ?? 3,
             purchaseSuccessCoins:
               response.data.settings.purchaseSuccessCoins ?? 20,
+            referralSignupCoins:
+              response.data.settings.referralSignupCoins ?? 50,
           });
         }
       } catch (error) {
@@ -118,6 +121,21 @@ export default function CoinsTab() {
             value={form.purchaseSuccessCoins}
             onChange={(e) =>
               handleChange("purchaseSuccessCoins", e.target.value)
+            }
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Referral Signup Coins
+          </label>
+          <input
+            type="number"
+            min="0"
+            value={form.referralSignupCoins}
+            onChange={(e) =>
+              handleChange("referralSignupCoins", e.target.value)
             }
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />

@@ -2,11 +2,20 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Select from "react-select";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import axios from "axios";
 import toast from "react-hot-toast";
+
+const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+const normalizeReferralCode = (value = "") =>
+  value
+    .toString()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 10);
 
 export default function StudentAuthForm() {
   const [mode, setMode] = useState<"register" | "login" | "forgot">("login");
@@ -19,6 +28,7 @@ export default function StudentAuthForm() {
     confirmPassword: "",
     location: "Greater Noida",
     center: "Greater Noida",
+    referralCode: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -34,9 +44,32 @@ export default function StudentAuthForm() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const referralCode = normalizeReferralCode(params.get("ref") || "");
+    const requestedMode = params.get("mode");
+
+    if (referralCode) {
+      setForm((prev) =>
+        prev.referralCode === referralCode
+          ? prev
+          : { ...prev, referralCode }
+      );
+    }
+
+    if (requestedMode === "register") {
+      setMode("register");
+    }
+  }, []);
+
   const handleChange = (e: any) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [name]: name === "referralCode" ? normalizeReferralCode(value) : value,
+    }));
   };
 
   const handleCenterChange = (selected: any) => {
@@ -45,10 +78,19 @@ export default function StudentAuthForm() {
 
   const handleRegister = async (e: any) => {
     e.preventDefault();
-    const { name, email, phone, password, confirmPassword, location, center } = form;
+    const {
+      name,
+      email,
+      phone,
+      password,
+      confirmPassword,
+      location,
+      center,
+      referralCode,
+    } = form;
 
     if (!name || !email || !phone || !password || !confirmPassword) {
-      return toast.success("All fields required");
+      return toast.error("All fields are required");
     }
     if (password !== confirmPassword) {
       return toast.error("Passwords do not match!");
@@ -56,8 +98,16 @@ export default function StudentAuthForm() {
 
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/register`,
-        { name, email, phone, password, location, center },
+        `${API}/api/v1/students/register`,
+        {
+          name,
+          email,
+          phone,
+          password,
+          location,
+          center,
+          ...(referralCode ? { referralCode } : {}),
+        },
         { withCredentials: true }
       );
       toast.success("Registration successful!");
@@ -240,6 +290,20 @@ export default function StudentAuthForm() {
                   <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} />
                 </div>
 
+                <div className="sm:col-span-2">
+                  <Input
+                    label="Referral Code (Optional)"
+                    name="referralCode"
+                    value={form.referralCode}
+                    onChange={handleChange}
+                  />
+                  <p className="mt-1 text-xs text-emerald-700">
+                    {form.referralCode
+                      ? "Referral code will be applied during signup."
+                      : "Have a referral code? Add it here before you register."}
+                  </p>
+                </div>
+
                 <PasswordInput
                   label="Password"
                   name="password"
@@ -388,6 +452,7 @@ function Input({ label, name, value, onChange, type = "text" }: any) {
         name={name}
         value={value}
         onChange={onChange}
+        autoComplete="off"
         placeholder={label}
         className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
       />
