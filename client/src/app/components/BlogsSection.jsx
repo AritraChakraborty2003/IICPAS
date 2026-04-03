@@ -15,8 +15,32 @@ import { motion } from "framer-motion";
 import axios from "axios";
 import { getBlogSlug } from "../../lib/blogSlug";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const getApiOrigin = () => {
+  const configuredOrigin =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE?.replace(/\/api\/?$/i, "") ||
+    "http://localhost:8080";
+
+  return configuredOrigin.trim().replace(/\/+$/, "");
+};
+
+const extractBlogs = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.blogs)) return payload.blogs;
+  if (Array.isArray(payload?.data?.blogs)) return payload.data.blogs;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const DUMMY_BLOGS = [
   {
@@ -55,14 +79,17 @@ const DUMMY_BLOGS = [
 ];
 
 export default function BlogSection() {
+  const API_BASE = getApiBase();
+  const API_ORIGIN = getApiOrigin();
   const [blogs, setBlogs] = useState(DUMMY_BLOGS.slice(0, 3));
 
   useEffect(() => {
     async function fetchBlogs() {
       try {
         const res = await axios.get(`${API_BASE}/blogs`, { timeout: 5000 });
+        const blogList = extractBlogs(res.data);
         // Filter only blogs that have status === "active" and limit to 3
-        const activeBlogs = (res.data || []).filter(
+        const activeBlogs = blogList.filter(
           (blog) => blog.status === "active"
         );
         const blogsToRender =
@@ -74,7 +101,7 @@ export default function BlogSection() {
       }
     }
     fetchBlogs();
-  }, []);
+  }, [API_BASE]);
 
   return (
     <section className="relative py-20 bg-white overflow-hidden">
@@ -134,9 +161,7 @@ export default function BlogSection() {
               const imageUrl = blog.imageUrl?.startsWith("http")
                 ? blog.imageUrl
                 : blog.imageUrl
-                ? `${
-                    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
-                  }${
+                ? `${API_ORIGIN}${
                     blog.imageUrl.startsWith("/")
                       ? blog.imageUrl
                       : "/" + blog.imageUrl

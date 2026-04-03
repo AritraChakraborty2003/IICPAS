@@ -25,8 +25,23 @@ import Footer from "../components/Footer";
 import BlogsSidebar from "../components/BlogsSidebar";
 import { getBlogSlug } from "../../lib/blogSlug";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const extractBlogs = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.blogs)) return payload.blogs;
+  if (Array.isArray(payload?.data?.blogs)) return payload.data.blogs;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const DUMMY_BLOGS = [
   {
@@ -68,6 +83,7 @@ const DUMMY_BLOGS = [
 ];
 
 export default function BlogsPage() {
+  const API_BASE = getApiBase();
   const [blogs, setBlogs] = useState(DUMMY_BLOGS);
   const [filteredBlogs, setFilteredBlogs] = useState(DUMMY_BLOGS);
   const [searchTerm, setSearchTerm] = useState("");
@@ -80,8 +96,9 @@ export default function BlogsPage() {
     async function fetchBlogs() {
       try {
         const res = await axios.get(`${API_BASE}/blogs`, { timeout: 5000 });
+        const blogList = extractBlogs(res.data);
         // Filter only blogs that have status === "active"
-        const activeBlogs = (res.data || []).filter(
+        const activeBlogs = blogList.filter(
           (blog) => blog.status === "active"
         );
         const blogsToRender = activeBlogs.length > 0 ? activeBlogs : DUMMY_BLOGS;
@@ -94,7 +111,7 @@ export default function BlogsPage() {
       }
     }
     fetchBlogs();
-  }, []);
+  }, [API_BASE]);
 
   // Filter blogs based on search term and category
   useEffect(() => {

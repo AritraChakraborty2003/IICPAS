@@ -2,7 +2,17 @@ import { cache } from "react";
 import BlogDetailClient from "./BlogDetailClient";
 import { getBlogSlug, normalizeBlogSlug } from "../../../lib/blogSlug";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const API_BASE = getApiBase();
 
 export const revalidate = 600;
 
@@ -16,6 +26,7 @@ const extractBlogs = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.data)) return payload.data;
   if (Array.isArray(payload?.blogs)) return payload.blogs;
+  if (Array.isArray(payload?.data?.blogs)) return payload.data.blogs;
   return [];
 };
 
