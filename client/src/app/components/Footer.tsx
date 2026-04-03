@@ -74,8 +74,8 @@ export default function Footer() {
     ],
       generalLinks: [
         { name: "About Us", href: "/about" },
-        { name: "Courses", href: "/courses" },
-        { name: "Blog", href: "/blog" },
+        { name: "Courses", href: "/course" },
+        { name: "Blog", href: "/blogs" },
         { name: "Contact Us", href: "/contact" },
         { name: "FAQ", href: "/faq" },
         { name: "Help Center", href: "/help" },
