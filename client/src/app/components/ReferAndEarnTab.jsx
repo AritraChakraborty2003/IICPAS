@@ -199,13 +199,13 @@ export default function ReferAndEarnTab({ student }) {
 
   return (
     <div className="space-y-6">
-      <section className="relative overflow-hidden rounded-[30px] bg-gradient-to-br from-slate-950 via-emerald-900 to-teal-700 p-6 text-white shadow-[0_24px_70px_rgba(15,23,42,0.22)] md:p-8">
-        <div className="absolute -right-16 -top-12 h-44 w-44 rounded-full bg-amber-300/20 blur-3xl" />
-        <div className="absolute -bottom-24 left-10 h-56 w-56 rounded-full bg-cyan-300/15 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[30px] bg-gradient-to-br from-[#00111F] via-[#002640] to-[#003153] p-6 text-white shadow-[0_24px_70px_rgba(15,23,42,0.22)] md:p-8">
+        <div className="absolute -right-16 -top-12 h-44 w-44 rounded-full bg-[#4F93CE]/20 blur-3xl" />
+        <div className="absolute -bottom-24 left-10 h-56 w-56 rounded-full bg-[#0F4C81]/25 blur-3xl" />
 
         <div className="relative grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-semibold text-emerald-50 backdrop-blur">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm font-semibold text-blue-50 backdrop-blur">
               <FaGift className="text-amber-300" />
               <span>Refer & Earn</span>
             </div>
@@ -213,7 +213,7 @@ export default function ReferAndEarnTab({ student }) {
             <h2 className="mt-5 max-w-2xl text-3xl font-black leading-tight md:text-4xl">
               Share IICPA with friends and collect coins for every successful signup.
             </h2>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-emerald-50/85 md:text-base">
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-blue-50/85 md:text-base">
               Your personal referral link is ready. Copy it, share it, and track how
               many students joined through you from one place.
             </p>
@@ -222,7 +222,7 @@ export default function ReferAndEarnTab({ student }) {
               <button
                 type="button"
                 onClick={() => handleCopy(referralLink, "link")}
-                className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-emerald-50"
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-blue-50"
               >
                 {copyState === "link" ? <FaCheckCircle className="text-emerald-600" /> : <FaCopy />}
                 <span>{copyState === "link" ? "Copied Link" : "Copy Referral Link"}</span>
@@ -241,21 +241,21 @@ export default function ReferAndEarnTab({ student }) {
           </div>
 
           <div className="rounded-[28px] border border-white/15 bg-white/10 p-5 backdrop-blur-xl">
-            <p className="text-sm font-medium uppercase tracking-[0.24em] text-emerald-100/80">
+            <p className="text-sm font-medium uppercase tracking-[0.24em] text-blue-100/80">
               Your Reward
             </p>
             <div className="mt-4 flex items-end gap-3">
               <span className="text-5xl font-black text-white">
                 {Number(summary.referralRewardCoins || 0)}
               </span>
-              <span className="pb-1 text-lg font-semibold text-emerald-100">coins</span>
+              <span className="pb-1 text-lg font-semibold text-blue-100">coins</span>
             </div>
-            <p className="mt-3 text-sm leading-6 text-emerald-50/80">
+            <p className="mt-3 text-sm leading-6 text-blue-50/80">
               Coins are credited when a new student signs up using your referral code.
             </p>
 
             <div className="mt-6 rounded-3xl border border-white/10 bg-slate-950/25 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-100/70">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-100/70">
                 Referral Code
               </p>
               <p className="mt-3 break-all text-2xl font-black tracking-[0.35em] text-white">
@@ -266,7 +266,7 @@ export default function ReferAndEarnTab({ student }) {
                 onClick={() => handleCopy(summary.referralCode, "code")}
                 className="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
               >
-                {copyState === "code" ? <FaCheckCircle className="text-emerald-300" /> : <FaCopy />}
+                {copyState === "code" ? <FaCheckCircle className="text-blue-300" /> : <FaCopy />}
                 <span>{copyState === "code" ? "Copied Code" : "Copy Code"}</span>
               </button>
             </div>
