@@ -438,9 +438,11 @@ function StudentDashboardContent() {
       <aside
         className={`hidden lg:block ${
           sidebarCollapsed ? "w-16" : "w-64"
-        } h-screen sticky top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-y-auto custom-scrollbar z-30 transition-all duration-300 relative shrink-0`}
+        } h-screen sticky top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-visible z-30 transition-all duration-300 relative shrink-0`}
       >
-        <SidebarContent />
+        <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar rounded-r-2xl">
+          <SidebarContent />
+        </div>
         <button
           type="button"
           onClick={() => setSidebarCollapsed((prev) => !prev)}
