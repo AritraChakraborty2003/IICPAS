@@ -20,6 +20,12 @@ const coinSettingsSchema = new mongoose.Schema(
       default: 20,
       min: 0,
     },
+    referralSignupCoins: {
+      type: Number,
+      required: true,
+      default: 50,
+      min: 0,
+    },
   },
   { timestamps: true }
 );

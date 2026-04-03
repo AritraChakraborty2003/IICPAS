@@ -55,8 +55,14 @@ export default function CopyProtection() {
       return;
     }
 
-    // Function to show protection message
+    document.body.setAttribute("data-copy-protected", "true");
+
+    let lastToastAt = 0;
     const showProtectionMessage = () => {
+      const now = Date.now();
+      if (now - lastToastAt < 1500) return;
+      lastToastAt = now;
+
       toast.error("Content is protected and cannot be copied.", {
         duration: 3000,
         style: {
@@ -109,7 +115,7 @@ export default function CopyProtection() {
       return false;
     };
 
-    // Block keyboard shortcuts (Ctrl+C, Ctrl+X, Ctrl+V, Ctrl+A, Cmd+C, Cmd+X, Cmd+V, Cmd+A)
+    // Block keyboard shortcuts (Ctrl/Cmd + C/X/V/A/U)
     const handleKeyDown = (e: KeyboardEvent) => {
       const editableTarget = isEditableTarget(e.target);
 
@@ -146,7 +152,7 @@ export default function CopyProtection() {
           return false;
         }
         // Block Ctrl/Cmd + Shift + I (Developer Tools)
-        if (e.key === "I" && e.shiftKey) {
+        if ((e.key === "i" || e.key === "I") && e.shiftKey) {
           e.preventDefault();
           showProtectionMessage();
           return false;
@@ -169,6 +175,7 @@ export default function CopyProtection() {
 
     // Cleanup event listeners on unmount
     return () => {
+      document.body.removeAttribute("data-copy-protected");
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("cut", handleCut);

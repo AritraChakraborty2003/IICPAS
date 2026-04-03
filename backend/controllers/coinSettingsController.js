@@ -29,11 +29,15 @@ export const updateCoinSettings = async (req, res) => {
     const purchaseSuccessCoins = normalizeNonNegativeInt(
       req.body.purchaseSuccessCoins
     );
+    const referralSignupCoins = normalizeNonNegativeInt(
+      req.body.referralSignupCoins
+    );
 
     if (
       quizCompleteCoins === null ||
       testimonialApprovedCoins === null ||
-      purchaseSuccessCoins === null
+      purchaseSuccessCoins === null ||
+      referralSignupCoins === null
     ) {
       return res.status(400).json({
         success: false,
@@ -49,6 +53,7 @@ export const updateCoinSettings = async (req, res) => {
     settings.quizCompleteCoins = quizCompleteCoins;
     settings.testimonialApprovedCoins = testimonialApprovedCoins;
     settings.purchaseSuccessCoins = purchaseSuccessCoins;
+    settings.referralSignupCoins = referralSignupCoins;
 
     await settings.save();
 

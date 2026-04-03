@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   PlayArrow,
@@ -20,11 +21,6 @@ import {
 } from "@mui/icons-material";
 import {
   FaStar,
-  FaClock,
-  FaGraduationCap,
-  FaCheckCircle,
-  FaExclamationTriangle,
-  FaShoppingCart,
 } from "react-icons/fa";
 import StarRating from "./StarRating";
 import { toast } from "react-hot-toast";
@@ -95,6 +91,34 @@ const resolveCourseImage = (course, apiBase) => {
 };
 
 export default function CourseTab() {
+  const QA_DUMMY_COURSE = {
+    _id: "qa-dummy-course-2026",
+    slug: "qa-dummy-course-2026",
+    title: "QA Dummy Course (UI Testing)",
+    category: "Testing",
+    description: "Dummy course for testing dashboard UI and navigation flow.",
+    image: "/images/a1.jpeg",
+    status: "Active",
+    level: "Executive Level",
+    price: 5200,
+    overallProgress: 35,
+    totalChapters: 3,
+    totalAssignments: 2,
+    totalExperiments: 1,
+    totalTests: 1,
+    chapters: [
+      { id: 1, name: "Dummy Chapter 1", completion: 100 },
+      { id: 2, name: "Dummy Chapter 2", completion: 40 },
+      { id: 3, name: "Dummy Chapter 3", completion: 0 },
+    ],
+    assignments: [
+      { id: 1, name: "Dummy Assignment 1" },
+      { id: 2, name: "Dummy Assignment 2" },
+    ],
+    experiments: [{ id: 1, name: "Dummy Experiment 1" }],
+    tests: [{ id: 1, name: "Dummy Test 1", status: "Coming Soon" }],
+  };
+
   const [studentId, setStudentId] = useState(null);
   const [courses, setCourses] = useState([]);
   const [purchasedCourses, setPurchasedCourses] = useState([]); // Student's purchased courses
@@ -118,7 +142,7 @@ export default function CourseTab() {
   const [expandedChapterKeys, setExpandedChapterKeys] = useState({});
   const router = useRouter();
   const searchParams = useSearchParams();
-  const API = process.env.NEXT_PUBLIC_API_URL;
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   // Fetch student courses from database
   const fetchStudentCourses = async () => {
@@ -163,16 +187,22 @@ export default function CourseTab() {
             (course) => !purchasedCourseIds.includes(course._id)
           );
 
-          // Combine purchased courses and available courses
-          const combinedCourses = [
-            ...purchasedCoursesData,
-            ...filteredAvailableCourses,
-          ];
-          setCourses(combinedCourses);
+          const purchasedWithDummy = purchasedCoursesData.some(
+            (course) => course._id === QA_DUMMY_COURSE._id
+          )
+            ? purchasedCoursesData
+            : [QA_DUMMY_COURSE, ...purchasedCoursesData];
 
+          setPurchasedCourses(purchasedWithDummy);
+
+          // Combine purchased courses and available courses
+          const combinedCourses = [...purchasedWithDummy, ...filteredAvailableCourses];
           if (combinedCourses.length > 0) {
+            setCourses(combinedCourses);
             setSelectedCourse(combinedCourses[0]);
             setLastAccessedCourse(combinedCourses[0]);
+          } else {
+            showDemoData();
           }
         } else {
           // If no courses at all, just set purchased courses
@@ -419,6 +449,44 @@ export default function CourseTab() {
     if (!courseChapters[courseId]) {
       fetchChaptersForCourse(courseId);
     }
+  };
+
+  const getCourseImageSrc = (course) => {
+    if (!course?.image) return "/images/a1.jpeg";
+    if (course.image.startsWith("http")) return course.image;
+    if (course.image.startsWith("/uploads/")) return `${API}${course.image}`;
+    if (course.image.startsWith("/")) return course.image;
+    return `${API}/${course.image}`;
+  };
+
+  const getCourseCategory = (course) => course?.category || "General";
+
+  const getCourseCount = (course, itemsKey, totalKey) => {
+    if (Array.isArray(course?.[itemsKey])) {
+      return course[itemsKey].length;
+    }
+
+    const count = Number(course?.[totalKey] || 0);
+    return Number.isFinite(count) ? count : 0;
+  };
+
+  const getProgressValue = (course) => {
+    const progress = Number(course?.overallProgress || 0);
+    if (!Number.isFinite(progress)) return 0;
+    return Math.max(0, Math.min(progress, 100));
+  };
+
+  const getCourseDescription = (course, isPurchased) => {
+    const rawDescription = course?.description;
+    const cleanedDescription = rawDescription
+      ? String(rawDescription).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+      : "";
+
+    if (cleanedDescription) return cleanedDescription;
+
+    return isPurchased
+      ? "Resume your enrolled course and keep track of chapters, tests, and assignments from one place."
+      : "Review the course structure, pricing, and highlights before you enroll.";
   };
 
   const getTabIcon = (tabName) => {
@@ -900,13 +968,37 @@ export default function CourseTab() {
     <div className="w-full max-w-full bg-gradient-to-br from-gray-50 to-blue-50">
       {/* Header */}
       <div className="p-6 pb-0">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent mb-2">
-            My Courses
-          </h1>
-          <p className="text-gray-600 text-lg">
-            Continue your learning journey
-          </p>
+        <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">
+              Digital Hub
+            </span>
+            <h1 className="mt-3 text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent">
+              My Courses
+            </h1>
+            <p className="mt-2 text-base text-gray-600 sm:text-lg">
+              Continue your learning journey with a cleaner course overview.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[320px]">
+            <div className="rounded-2xl border border-blue-100 bg-white/90 px-4 py-3 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
+                Enrolled
+              </p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">
+                {purchasedCourses.length}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                Available
+              </p>
+              <p className="mt-2 text-2xl font-bold text-slate-900">
+                {Math.max(courses.length - purchasedCourses.length, 0)}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -967,8 +1059,6 @@ export default function CourseTab() {
                             </span>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
                     {/* Right Side - Course Stats with Modern Cards */}
                     <div>
@@ -989,6 +1079,7 @@ export default function CourseTab() {
                             </div>
                           </div>
                         </div>
+                      </div>
 
                         {/* Level Card */}
                         <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-4">
@@ -1004,8 +1095,6 @@ export default function CourseTab() {
                                 {course.level || "Professional Level"}
                               </p>
                             </div>
-                          </div>
-                        </div>
 
                         {/* Price Card */}
                         <div className="rounded-2xl border border-violet-100 bg-violet-50/70 px-4 py-4">
@@ -1030,7 +1119,6 @@ export default function CourseTab() {
                               )}
                             </div>
                           </div>
-                        </div>
 
                         {/* Duration Card */}
                         <div className="rounded-2xl border border-orange-100 bg-orange-50/70 px-4 py-4">
@@ -1045,10 +1133,6 @@ export default function CourseTab() {
                               <p className="text-base font-bold text-orange-700">
                                 {course.duration || "Flexible schedule"}
                               </p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
 
                       {/* Action Buttons */}
                       <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
@@ -1095,7 +1179,6 @@ export default function CourseTab() {
                               <FaStar className="text-lg" />
                               Rate Course
                             </button>
-                          )}
 
                         {/* Show rating status if already rated */}
                         {courseRatings[course._id] && (
@@ -1109,20 +1192,18 @@ export default function CourseTab() {
                                 : "Rating Rejected"}
                             </span>
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ) : (
+                ) : (
               // State 2: Course Detailed View (Compact Professional)
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 {/* Course Header */}
                 <div className="bg-slate-50 border-b border-slate-200 p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-1">
+                      <h2 className="text-base sm:text-lg font-semibold text-slate-900 mb-1">
                         {course.title}
                       </h2>
                       <p className="text-xs text-slate-600">
@@ -1339,9 +1420,10 @@ export default function CourseTab() {
                   </div>
                 </div>
               </div>
-              )}
-            </div>
-          ))
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 

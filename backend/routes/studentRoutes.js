@@ -19,6 +19,7 @@ import Quiz from "../models/Content/Quiz.js";
 import fs from "fs-extra";
 import nodemailer from "nodemailer";
 import express from "express";
+import CoinTransaction from "../models/CoinTransaction.js";
 import {
   awardCoins,
   getCoinSettings,
@@ -26,6 +27,11 @@ import {
 } from "../services/coinService.js";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
 import { isLoginAllowed } from "../services/loginAccessService.js";
+import {
+  ensureStudentReferralCode,
+  generateUniqueReferralCode,
+  normalizeReferralCode,
+} from "../services/referralService.js";
 
 dotenv.config();
 
@@ -55,15 +61,46 @@ const ensureAuthorizedStudent = (req, res) => {
   return true;
 };
 
+const sanitizeStudentResponse = (student) => {
+  const payload = student?.toObject ? student.toObject() : { ...student };
+  delete payload.password;
+  delete payload.otp;
+  delete payload.otpExpiry;
+  return payload;
+};
+
 //Register Student
 router.post("/register", async (req, res) => {
-  const { name, email, phone, password, mode, location, center } = req.body;
+  const {
+    name,
+    email,
+    phone,
+    password,
+    mode,
+    location,
+    center,
+    referralCode: rawReferralCode,
+  } = req.body;
 
   try {
     const existing = await Student.findOne({ email });
-    console.log(existing);
     if (existing)
       return res.status(400).json({ message: "Email already exists" });
+
+    const normalizedReferralCode = normalizeReferralCode(rawReferralCode);
+    let referrer = null;
+
+    if (normalizedReferralCode) {
+      referrer = await Student.findOne({
+        referralCode: normalizedReferralCode,
+      }).select("_id name referralCode");
+
+      if (!referrer) {
+        return res
+          .status(400)
+          .json({ message: "Referral code is invalid or expired" });
+      }
+    }
 
     const hashed = await bcrypt.hash(password, 10);
     const student = new Student({
@@ -74,10 +111,32 @@ router.post("/register", async (req, res) => {
       mode,
       location,
       center,
+      referralCode: await generateUniqueReferralCode(name || email),
+      referredBy: referrer?._id || null,
     });
     await student.save();
 
-    res.status(201).json({ message: "Registered", student });
+    if (referrer?._id) {
+      const settings = await getCoinSettings();
+      await awardCoins({
+        studentId: referrer._id.toString(),
+        eventType: "REFERRAL_SIGNUP",
+        coins: Number(settings?.referralSignupCoins || 0),
+        metadata: {
+          referredStudentId: student._id,
+          referredStudentName: student.name,
+          referredStudentEmail: student.email,
+          referralCode: normalizedReferralCode,
+        },
+        idempotencyKey: `referral:${referrer._id}:${student._id}`,
+      });
+    }
+
+    res.status(201).json({
+      message: "Registered",
+      student: sanitizeStudentResponse(student),
+      referralApplied: Boolean(referrer),
+    });
   } catch (err) {
     res.status(500).json({ error: "Register failed", details: err.message });
   }
@@ -228,6 +287,80 @@ router.get("/coins/:id", isStudent, async (req, res) => {
     console.error("Error fetching student coin summary:", error);
     return res.status(500).json({
       message: "Failed to fetch coin summary",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/referral-summary/:id", isStudent, async (req, res) => {
+  try {
+    if (!ensureAuthorizedStudent(req, res)) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid student ID format" });
+    }
+
+    const student = await Student.findById(req.params.id).select(
+      "name email referralCode referredBy coinBalance"
+    );
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const referralCode = await ensureStudentReferralCode(student);
+
+    const [settings, referredCount, recentReferrals, rewardSummary, referrer] =
+      await Promise.all([
+        getCoinSettings(),
+        Student.countDocuments({ referredBy: student._id }),
+        Student.find({ referredBy: student._id })
+          .select("name email createdAt")
+          .sort({ createdAt: -1 })
+          .limit(8),
+        CoinTransaction.aggregate([
+          {
+            $match: {
+              studentId: student._id,
+              eventType: "REFERRAL_SIGNUP",
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              totalCoins: { $sum: "$coins" },
+            },
+          },
+        ]),
+        student.referredBy
+          ? Student.findById(student.referredBy).select("name referralCode")
+          : null,
+      ]);
+
+    return res.json({
+      referralCode,
+      referralRewardCoins: Number(settings?.referralSignupCoins || 0),
+      referredCount,
+      totalReferralCoins: Number(rewardSummary?.[0]?.totalCoins || 0),
+      currentCoinBalance: Number(student.coinBalance || 0),
+      recentReferrals: recentReferrals.map((entry) => ({
+        id: entry._id,
+        name: entry.name || "Student",
+        email: entry.email || "",
+        joinedAt: entry.createdAt,
+      })),
+      referredBy: referrer
+        ? {
+            id: referrer._id,
+            name: referrer.name || "",
+            referralCode: referrer.referralCode || "",
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error("Error fetching referral summary:", error);
+    return res.status(500).json({
+      message: "Failed to fetch referral summary",
       error: error.message,
     });
   }

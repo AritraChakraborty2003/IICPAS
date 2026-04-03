@@ -24,6 +24,7 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaFileAlt,
+  FaGift,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
@@ -39,6 +40,7 @@ import ProfileTab from "../components/ProfileTab";
 import TestimonialTab from "./TestimonialTab";
 import StudentInvoicesTab from "./StudentInvoicesTab";
 import StudentBookingsTab from "./StudentBookingsTab";
+import ReferAndEarnTab from "./ReferAndEarnTab";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 
 const Drawer = dynamic(() => import("react-modern-drawer"), { ssr: false });
@@ -120,6 +122,7 @@ function StudentDashboardContent() {
     { id: "news", icon: <FaNewspaper />, label: "News" },
     { id: "testimonial", icon: <FaQuoteLeft />, label: "Testimonial" },
     { id: "bookings", icon: <FaFileAlt />, label: "Bookings" },
+    { id: "refer-earn", icon: <FaGift />, label: "Refer & Earn" },
     { id: "support", icon: <FaHeadset />, label: "Support" },
     {
       id: "certificates",
@@ -148,6 +151,7 @@ function StudentDashboardContent() {
         "news",
         "testimonial",
         "bookings",
+        "refer-earn",
         "support",
         "certificates",
         "profile",
@@ -163,7 +167,7 @@ function StudentDashboardContent() {
     const fetchStudent = async () => {
       try {
         const res = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/isstudent`,
+          `${API}/api/v1/students/isstudent`,
           { withCredentials: true }
         );
         // Authenticated: set student
@@ -214,6 +218,12 @@ function StudentDashboardContent() {
     fetchWalletPaidAmount();
   }, [activeTab, student?._id]);
 
+  useEffect(() => {
+    if (!student?._id) return;
+    if (activeTab !== "refer-earn") return;
+    fetchStudentCoins(student._id);
+  }, [activeTab, student?._id]);
+
   // Handle ticket submission
   const handleTicketSubmit = async (e) => {
     e.preventDefault();
@@ -227,7 +237,7 @@ function StudentDashboardContent() {
     try {
       console.log("Ticket data:", { name, email, phone, message });
 
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/tickets`, {
+      await axios.post(`${API}/api/tickets`, {
         name,
         email,
         phone,
@@ -251,7 +261,7 @@ function StudentDashboardContent() {
   const handleLogout = async () => {
     try {
       await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/logout`,
+        `${API}/api/v1/students/logout`,
         {
           withCredentials: true,
         }
@@ -291,6 +301,8 @@ function StudentDashboardContent() {
         return <StudentInvoicesTab />;
       case "bookings":
         return <StudentBookingsTab />;
+      case "refer-earn":
+        return <ReferAndEarnTab student={student} />;
       case "testimonial":
         return <TestimonialTab student={student} />;
       case "support":
@@ -433,9 +445,11 @@ function StudentDashboardContent() {
       <aside
         className={`hidden lg:block ${
           sidebarCollapsed ? "w-16" : "w-64"
-        } h-screen sticky top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-y-auto custom-scrollbar z-30 transition-all duration-300 relative shrink-0`}
+        } h-screen sticky top-0 bg-gradient-to-b from-blue-100 to-blue-200 border-r border-blue-300 rounded-r-2xl shadow-xl overflow-visible z-30 transition-all duration-300 relative shrink-0`}
       >
-        <SidebarContent />
+        <div className="h-full overflow-y-auto overflow-x-hidden custom-scrollbar rounded-r-2xl">
+          <SidebarContent />
+        </div>
         <button
           type="button"
           onClick={() => setSidebarCollapsed((prev) => !prev)}

@@ -15,6 +15,7 @@ const coinTransactionSchema = new mongoose.Schema(
         "QUIZ_COMPLETE",
         "TESTIMONIAL_APPROVED",
         "PURCHASE_SUCCESS",
+        "REFERRAL_SIGNUP",
         "ADMIN_ADJUST",
       ],
     },

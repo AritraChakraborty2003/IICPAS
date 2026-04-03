@@ -28,10 +28,48 @@ import { getBlogSlug } from "../../lib/blogSlug";
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
 
+const DUMMY_BLOGS = [
+  {
+    _id: "dummy-list-1",
+    title: "Top 7 GST Filing Mistakes Students Must Avoid",
+    slug: "top-7-gst-filing-mistakes-students-must-avoid",
+    author: "IICPA Editorial Team",
+    content:
+      "GST return filing may look easy, but small mistakes can trigger notices and penalties. Learn the most common errors and how to avoid them.",
+    status: "active",
+    category: "GST",
+    createdAt: "2026-01-24T09:00:00.000Z",
+    imageUrl: "",
+  },
+  {
+    _id: "dummy-list-2",
+    title: "How To Build A Strong Resume For Accounting Jobs",
+    slug: "how-to-build-a-strong-resume-for-accounting-jobs",
+    author: "Career Desk",
+    content:
+      "This guide explains the ideal resume structure for accounting aspirants, including skills, certifications, projects, and interview-ready highlights.",
+    status: "active",
+    category: "Career",
+    createdAt: "2026-01-18T11:30:00.000Z",
+    imageUrl: "",
+  },
+  {
+    _id: "dummy-list-3",
+    title: "Beginner Roadmap: From Commerce Student To Finance Professional",
+    slug: "beginner-roadmap-from-commerce-student-to-finance-professional",
+    author: "Academic Team",
+    content:
+      "Build a clear career path from basics to placement. Follow this roadmap to gain practical accounting and finance skills step by step.",
+    status: "active",
+    category: "Finance",
+    createdAt: "2026-01-10T08:15:00.000Z",
+    imageUrl: "",
+  },
+];
+
 export default function BlogsPage() {
-  const [blogs, setBlogs] = useState([]);
-  const [filteredBlogs, setFilteredBlogs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [blogs, setBlogs] = useState(DUMMY_BLOGS);
+  const [filteredBlogs, setFilteredBlogs] = useState(DUMMY_BLOGS);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [viewMode, setViewMode] = useState("grid");
@@ -41,19 +79,18 @@ export default function BlogsPage() {
   useEffect(() => {
     async function fetchBlogs() {
       try {
-        const res = await axios.get(`${API_BASE}/blogs`);
+        const res = await axios.get(`${API_BASE}/blogs`, { timeout: 5000 });
         // Filter only blogs that have status === "active"
         const activeBlogs = (res.data || []).filter(
           (blog) => blog.status === "active"
         );
-        setBlogs(activeBlogs);
-        setFilteredBlogs(activeBlogs);
-        setLoading(false);
+        const blogsToRender = activeBlogs.length > 0 ? activeBlogs : DUMMY_BLOGS;
+        setBlogs(blogsToRender);
+        setFilteredBlogs(blogsToRender);
       } catch (error) {
         console.error("Error fetching blogs:", error);
-        setBlogs([]);
-        setFilteredBlogs([]);
-        setLoading(false);
+        setBlogs(DUMMY_BLOGS);
+        setFilteredBlogs(DUMMY_BLOGS);
       }
     }
     fetchBlogs();
@@ -104,21 +141,6 @@ export default function BlogsPage() {
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
-  }
-
-  if (loading) {
-    return (
-      <>
-        <Header />
-        <div className="min-h-screen bg-white flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading blogs...</p>
-          </div>
-        </div>
-        <Footer />
-      </>
-    );
   }
 
   return (

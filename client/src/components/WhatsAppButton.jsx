@@ -7,6 +7,9 @@ import { usePathname } from "next/navigation";
 const WhatsAppButton = () => {
   const pathname = usePathname();
   const isDigitalHubRoute = pathname?.includes("/digital-hub");
+  const positionClasses = isDigitalHubRoute
+    ? "top-32 left-14 sm:top-36 sm:left-20"
+    : "bottom-4 right-24";
 
   // WhatsApp configuration - you can change this number
   const whatsappNumber = "+1234567890"; // Replace with your actual WhatsApp number
@@ -23,18 +26,7 @@ const WhatsAppButton = () => {
   };
 
   return (
-    <div
-      className={`fixed z-[60] ${
-        isDigitalHubRoute ? "bottom-24 left-1.5 sm:left-2" : "bottom-4 right-24"
-      }`}
-      style={{
-        position: "fixed",
-        bottom: isDigitalHubRoute ? "6rem" : "1rem",
-        left: isDigitalHubRoute ? "0.375rem" : "auto",
-        right: isDigitalHubRoute ? "auto" : "6rem",
-        zIndex: 60,
-      }}
-    >
+    <div className={`fixed z-[60] ${positionClasses}`}>
       <motion.button
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}

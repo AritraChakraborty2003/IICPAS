@@ -58,6 +58,19 @@ const StudentSchema = new mongoose.Schema(
 
     otp: { type: String },
     otpExpiry: { type: Date },
+    referralCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    referredBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+      default: null,
+    },
     coinBalance: { type: Number, default: 0, min: 0 },
   },
   { timestamps: true }
