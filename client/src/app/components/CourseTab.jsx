@@ -1047,7 +1047,7 @@ export default function CourseTab() {
                               e.target.src = "/images/a1.jpeg";
                             }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
                           <div className="absolute left-4 top-4">
                             <span className="rounded-full bg-slate-950/65 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
                               Digital Hub Ready
@@ -1059,15 +1059,16 @@ export default function CourseTab() {
                             </span>
                           </div>
                         </div>
+                      </div>
+                    </div>
 
                     {/* Right Side - Course Stats with Modern Cards */}
                     <div>
                       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        {/* Status Card */}
                         <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
-                              <FaCheckCircle className="text-emerald-600 text-sm" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100">
+                              <FaCheckCircle className="text-sm text-emerald-600" />
                             </div>
                             <div>
                               <p className="text-xs font-medium text-slate-500">
@@ -1079,13 +1080,11 @@ export default function CourseTab() {
                             </div>
                           </div>
                         </div>
-                      </div>
 
-                        {/* Level Card */}
                         <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                              <FaGraduationCap className="text-blue-600 text-sm" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100">
+                              <FaGraduationCap className="text-sm text-blue-600" />
                             </div>
                             <div>
                               <p className="text-xs font-medium text-slate-500">
@@ -1095,12 +1094,13 @@ export default function CourseTab() {
                                 {course.level || "Professional Level"}
                               </p>
                             </div>
+                          </div>
+                        </div>
 
-                        {/* Price Card */}
                         <div className="rounded-2xl border border-violet-100 bg-violet-50/70 px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                              <FaStar className="text-purple-600 text-sm" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100">
+                              <FaStar className="text-sm text-purple-600" />
                             </div>
                             <div>
                               <p className="text-xs font-medium text-slate-500">
@@ -1115,16 +1115,18 @@ export default function CourseTab() {
                                   Rs {getDisplayPricing(course).originalPrice.toLocaleString()}
                                 </p>
                               ) : (
-                                <p className="text-xs text-slate-500">Best available fee</p>
+                                <p className="text-xs text-slate-500">
+                                  Best available fee
+                                </p>
                               )}
                             </div>
                           </div>
+                        </div>
 
-                        {/* Duration Card */}
                         <div className="rounded-2xl border border-orange-100 bg-orange-50/70 px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                              <FaClock className="text-orange-600 text-sm" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
+                              <FaClock className="text-sm text-orange-600" />
                             </div>
                             <div>
                               <p className="text-xs font-medium text-slate-500">
@@ -1133,12 +1135,14 @@ export default function CourseTab() {
                               <p className="text-base font-bold text-orange-700">
                                 {course.duration || "Flexible schedule"}
                               </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
                       {/* Action Buttons */}
                       <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
-                        {/* Show different button based on purchase status */}
                         {isCoursePurchased(course._id) ? (
-                          // Purchased course - show "View Course Details"
                           <button
                             onClick={() => handleDetailedToggle(course._id)}
                             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto sm:min-w-[220px]"
@@ -1147,7 +1151,6 @@ export default function CourseTab() {
                             Open Course
                           </button>
                         ) : (
-                          // Available course - show "Buy Now"
                           <button
                             onClick={() => handleBuyNow(course)}
                             className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 sm:w-auto sm:min-w-[220px]"
@@ -1158,14 +1161,15 @@ export default function CourseTab() {
                         )}
 
                         <button
-                          onClick={() => router.push(`/course/${course.slug || course._id}`)}
+                          onClick={() =>
+                            router.push(`/course/${course.slug || course._id}`)
+                          }
                           className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 sm:w-auto sm:min-w-[200px]"
                         >
                           <Visibility className="text-lg" />
                           View Details
                         </button>
 
-                        {/* Rating Button - Show only for purchased courses that are completed and not already rated */}
                         {isCoursePurchased(course._id) &&
                           isCourseCompleted(course) &&
                           !courseRatings[course._id] && (
@@ -1179,20 +1183,19 @@ export default function CourseTab() {
                               <FaStar className="text-lg" />
                               Rate Course
                             </button>
+                          )}
 
-                        {/* Show rating status if already rated */}
                         {courseRatings[course._id] && (
                           <div className="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-600 sm:ml-auto">
                             <span>
                               {courseRatings[course._id].status === "pending"
                                 ? "Rating Pending"
-                                : courseRatings[course._id].status ===
-                                  "approved"
-                                ? "Rating Approved"
-                                : "Rating Rejected"}
+                                : courseRatings[course._id].status === "approved"
+                                  ? "Rating Approved"
+                                  : "Rating Rejected"}
                             </span>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
