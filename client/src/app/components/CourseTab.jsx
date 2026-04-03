@@ -20,6 +20,10 @@ import {
   ArrowBack,
 } from "@mui/icons-material";
 import {
+  FaCheckCircle,
+  FaClock,
+  FaGraduationCap,
+  FaShoppingCart,
   FaStar,
 } from "react-icons/fa";
 import StarRating from "./StarRating";
