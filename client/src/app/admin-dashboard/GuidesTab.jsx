@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -19,7 +20,7 @@ import {
   FaGripVertical,
 } from "react-icons/fa";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = getApiBase();
 
 const GuidesTab = () => {
   const [guides, setGuides] = useState([]);
@@ -85,7 +86,7 @@ const GuidesTab = () => {
   const fetchGuides = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE}/api/v1/guides`);
+      const response = await axios.get(`${API_BASE}/v1/guides`);
       setGuides(response.data);
     } catch (error) {
       console.error("Error fetching guides:", error);
@@ -101,12 +102,12 @@ const GuidesTab = () => {
     try {
       if (editingGuide) {
         await axios.put(
-          `${API_BASE}/api/v1/guides/${editingGuide._id}`,
+          `${API_BASE}/v1/guides/${editingGuide._id}`,
           formData
         );
         Swal.fire("Success", "Guide updated successfully", "success");
       } else {
-        await axios.post(`${API_BASE}/api/v1/guides`, formData);
+        await axios.post(`${API_BASE}/v1/guides`, formData);
         Swal.fire("Success", "Guide created successfully", "success");
       }
 
@@ -149,7 +150,7 @@ const GuidesTab = () => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`${API_BASE}/api/v1/guides/${id}`);
+        await axios.delete(`${API_BASE}/v1/guides/${id}`);
         Swal.fire("Deleted!", "Guide has been deleted.", "success");
         fetchGuides();
       } catch (error) {
@@ -161,7 +162,7 @@ const GuidesTab = () => {
 
   const handleToggleStatus = async (id) => {
     try {
-      await axios.put(`${API_BASE}/api/v1/guides/${id}/toggle-status`);
+      await axios.put(`${API_BASE}/v1/guides/${id}/toggle-status`);
       fetchGuides();
     } catch (error) {
       console.error("Error toggling status:", error);

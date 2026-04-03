@@ -1,4 +1,5 @@
 "use client";
+import { getApiOrigin } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import {
@@ -28,7 +29,7 @@ import PhoneIcon from "@mui/icons-material/Phone";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API = process.env.NEXT_PUBLIC_API_URL;
+const API = getApiOrigin();
 
 export default function LiveSesionAdmin() {
   const [tab, setTab] = useState("list");

@@ -1,3 +1,4 @@
+import { getApiOrigin } from "@/lib/apiBase";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -6,7 +7,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { FaEye, FaEnvelope, FaDownload } from "react-icons/fa";
 
-const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API = getApiOrigin();
 
 interface Payment {
   _id: string;

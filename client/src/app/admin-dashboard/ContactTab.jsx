@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import {
@@ -88,7 +89,7 @@ export default function ContactTab() {
   const fetchContactEntries = async () => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -153,7 +154,7 @@ export default function ContactTab() {
     e.preventDefault();
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -200,7 +201,7 @@ export default function ContactTab() {
   const handleUpdate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -253,7 +254,7 @@ export default function ContactTab() {
 
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -297,7 +298,7 @@ export default function ContactTab() {
   const handleActivate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {

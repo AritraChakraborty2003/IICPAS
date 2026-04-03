@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import { FaSave, FaEdit, FaTrash, FaCheck, FaTimes, FaPlus, FaMinus, FaGraduationCap, FaClipboardCheck, FaBookOpen, FaTrophy, FaRocket, FaChartLine } from "react-icons/fa";
@@ -85,7 +86,7 @@ export default function YellowStatsStripTab() {
 
   const fetchYellowStatsStripEntries = async () => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -168,7 +169,7 @@ export default function YellowStatsStripTab() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -208,7 +209,7 @@ export default function YellowStatsStripTab() {
 
   const handleUpdate = async (id) => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -251,7 +252,7 @@ export default function YellowStatsStripTab() {
     if (!window.confirm("Are you sure you want to delete this YellowStatsStrip content?")) return;
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -288,7 +289,7 @@ export default function YellowStatsStripTab() {
 
   const handleActivate = async (id) => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {

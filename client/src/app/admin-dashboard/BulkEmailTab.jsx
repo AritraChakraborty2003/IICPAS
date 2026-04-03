@@ -1,4 +1,5 @@
 "use client";
+import { getApiOrigin } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -52,7 +53,7 @@ export default function BulkEmailTab() {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/bulk-email/emails`,
+        `${getApiOrigin()}/api/v1/bulk-email/emails`,
         { withCredentials: true }
       );
       
@@ -111,7 +112,7 @@ export default function BulkEmailTab() {
     setTesting(true);
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/bulk-email/test-send`,
+        `${getApiOrigin()}/api/v1/bulk-email/test-send`,
         {
           subject: formData.subject,
           htmlContent: formData.htmlContent,
@@ -152,7 +153,7 @@ export default function BulkEmailTab() {
     setSending(true);
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/bulk-email/send`,
+        `${getApiOrigin()}/api/v1/bulk-email/send`,
         formData,
         { withCredentials: true }
       );

@@ -1,3 +1,4 @@
+import { getApiBase } from "@/lib/apiBase";
 import React, { useEffect, useState } from "react";
 
 // Helper to create a consistent randomuser.me avatar per email
@@ -17,14 +18,22 @@ export default function TicketTab() {
   const [resolveText, setResolveText] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  const BASE_URL = getApiBase();
+  const extractTicketList = (payload) => {
+    if (Array.isArray(payload)) return payload;
+    if (Array.isArray(payload?.tickets)) return payload.tickets;
+    if (Array.isArray(payload?.data?.tickets)) return payload.data.tickets;
+    if (Array.isArray(payload?.data)) return payload.data;
+    return [];
+  };
+  const extractTicketRecord = (payload) =>
+    payload?.ticket || payload?.data?.ticket || payload?.data || payload;
 
   // Fetch tickets on mount
   useEffect(() => {
     fetch(`${BASE_URL}/tickets`)
       .then((res) => res.json())
-      .then(setTickets);
+      .then((data) => setTickets(extractTicketList(data)));
   }, [BASE_URL]);
 
   useEffect(() => {
@@ -37,7 +46,7 @@ export default function TicketTab() {
     setLoading(true);
     const res = await fetch(`${BASE_URL}/tickets/${ticket._id}`);
     const data = await res.json();
-    setSelectedTicket(data);
+    setSelectedTicket(extractTicketRecord(data));
     setLoading(false);
   };
 

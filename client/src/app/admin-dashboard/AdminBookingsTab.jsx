@@ -1,11 +1,12 @@
 "use client";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = getApiBase();
+const API_URL = getApiOrigin();
 
 const formatCurrency = (value) =>
   Number(value || 0).toLocaleString("en-IN", {

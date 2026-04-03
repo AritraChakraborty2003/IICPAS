@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import {
@@ -79,7 +80,7 @@ export default function HeroTab() {
   const fetchHeroes = async () => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -141,7 +142,7 @@ export default function HeroTab() {
 
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/hero/upload-video`, {
@@ -202,7 +203,7 @@ export default function HeroTab() {
     e.preventDefault();
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/hero`, {
@@ -230,7 +231,7 @@ export default function HeroTab() {
   const handleUpdate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/hero/${id}`, {
@@ -262,7 +263,7 @@ export default function HeroTab() {
 
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/hero/${id}`, {
@@ -287,7 +288,7 @@ export default function HeroTab() {
   const handleActivate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/hero/activate/${id}`, {

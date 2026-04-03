@@ -1,9 +1,10 @@
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaPlayCircle, FaBookOpen, FaCalculator, FaChartBar, FaFileAlt, FaVideo, FaDownload, FaEye, FaPlus, FaEdit, FaTrash, FaSave } from "react-icons/fa";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = getApiBase();
 
 const iconOptions = [
   { value: "FaPlayCircle", label: "Play Circle", icon: <FaPlayCircle /> },

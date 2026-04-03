@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +11,7 @@ import {
 import dynamic from "next/dynamic";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  getApiBase();
 const ALLOWED_IMAGE_ACCEPT =
   ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
 const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
@@ -236,7 +237,7 @@ export default function BlogComponent() {
       content: blog.content || "",
       image: null,
       previewUrl: blog.imageUrl
-        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}${
+        ? `${getApiOrigin()}${
             blog.imageUrl.startsWith("/") ? blog.imageUrl : "/" + blog.imageUrl
           }`
         : null,
@@ -400,8 +401,7 @@ export default function BlogComponent() {
                     {blog.imageUrl ? (
                       <img
                         src={`${
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          "http://localhost:8080"
+                          getApiOrigin()
                         }${
                           blog.imageUrl.startsWith("/")
                             ? blog.imageUrl
@@ -719,7 +719,7 @@ export default function BlogComponent() {
           {selectedBlog.imageUrl && (
             <img
               src={`${
-                process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+                getApiOrigin()
               }${
                 selectedBlog.imageUrl.startsWith("/")
                   ? selectedBlog.imageUrl

@@ -1,3 +1,4 @@
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa";
 import axios from "axios";
@@ -15,7 +16,7 @@ export default function TopicForm({ chapterId, onSuccess }) {
     if (chapterId)
       axios
         .get(
-          `${process.env.NEXT_PUBLIC_API_BASE}/topics/by-chapter/${chapterId}`
+          `${getApiBase()}/topics/by-chapter/${chapterId}`
         )
         .then((res) => setTopics(res.data));
   }, [chapterId]);
@@ -30,7 +31,7 @@ export default function TopicForm({ chapterId, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { data } = await axios.post(
-      `${process.env.NEXT_PUBLIC_API_BASE}/topics/by-chapter/${chapterId}`,
+      `${getApiBase()}/topics/by-chapter/${chapterId}`,
       form
     );
     setTopics((ts) => [...ts, data]);

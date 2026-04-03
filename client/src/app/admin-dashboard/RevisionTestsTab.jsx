@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import {
@@ -33,7 +34,7 @@ import DownloadIcon from "@mui/icons-material/Download";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import * as XLSX from "xlsx";
 
-const API = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const API = getApiBase();
 
 export default function RevisionTestsTab() {
   const [revisionTests, setRevisionTests] = useState([]);

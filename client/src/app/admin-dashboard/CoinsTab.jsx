@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -6,7 +7,7 @@ import { toast } from "react-hot-toast";
 
 export default function CoinsTab() {
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+    getApiBase();
 
   const [form, setForm] = useState({
     quizCompleteCoins: 10,

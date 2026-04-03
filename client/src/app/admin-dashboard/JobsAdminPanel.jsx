@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -29,7 +30,7 @@ import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 export default function JobsAdminPanel() {
   const [jobs, setJobs] = useState([]);

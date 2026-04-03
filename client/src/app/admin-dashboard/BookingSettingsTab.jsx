@@ -1,10 +1,11 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const API_BASE = getApiBase();
 
 const sanitizePercent = (value, fallback = 0) => {
   const parsed = Number(value);

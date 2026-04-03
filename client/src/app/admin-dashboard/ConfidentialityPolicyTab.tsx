@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaCheck, FaTimes, FaFileExcel } from "react-icons/fa";
@@ -54,7 +55,7 @@ const ConfidentialityPolicyTab = ({ onEditPolicy }: ConfidentialityPolicyTabProp
   const fetchConfidentialityPolicies = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/confidentiality-policy/admin/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -84,7 +85,7 @@ const ConfidentialityPolicyTab = ({ onEditPolicy }: ConfidentialityPolicyTabProp
     setSaving(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/confidentiality-policy/admin/update/${currentPolicy._id}`, {
         method: "PUT",
@@ -115,7 +116,7 @@ const ConfidentialityPolicyTab = ({ onEditPolicy }: ConfidentialityPolicyTabProp
   const handleActivate = async (policyId: string) => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/confidentiality-policy/admin/activate/${policyId}`, {
         method: "PUT",
@@ -145,7 +146,7 @@ const ConfidentialityPolicyTab = ({ onEditPolicy }: ConfidentialityPolicyTabProp
 
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/confidentiality-policy/admin/delete/${policyId}`, {
         method: "DELETE",

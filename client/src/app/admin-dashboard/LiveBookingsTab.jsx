@@ -1,4 +1,5 @@
 "use client";
+import { getApiOrigin } from "@/lib/apiBase";
 
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
@@ -11,7 +12,7 @@ import {
   FaWhatsapp,
 } from "react-icons/fa";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = getApiOrigin();
 
 const formatDateTime = (value) => {
   if (!value) return "N/A";

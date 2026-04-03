@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -54,7 +55,7 @@ const IndividualRequestsTab = () => {
   const [adminNotes, setAdminNotes] = useState("");
 
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+    getApiBase();
 
   useEffect(() => {
     fetchRequests();

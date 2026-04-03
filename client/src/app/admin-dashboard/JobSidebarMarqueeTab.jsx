@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
@@ -10,7 +11,7 @@ import {
   normalizeJobSidebarMarqueeSettings,
 } from "@/components/jobSidebarMarqueeConfig";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const API_BASE = getApiBase();
 
 export default function JobSidebarMarqueeTab() {
   const [form, setForm] = useState(DEFAULT_JOB_SIDEBAR_MARQUEE);

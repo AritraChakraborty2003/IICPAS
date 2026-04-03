@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
@@ -116,7 +117,7 @@ function EditStudentProfileModal({ student, isOpen, onClose, onSuccess }) {
       }
 
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE}/v1/students/admin/update-profile/${student._id}`,
+        `${getApiBase()}/v1/students/admin/update-profile/${student._id}`,
         updateData,
         {
           headers: {
@@ -336,7 +337,7 @@ export default function StudentProfileManagementTab() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE}/v1/students`
+        `${getApiBase()}/v1/students`
       );
       setStudents(response.data.students || []);
     } catch (error) {

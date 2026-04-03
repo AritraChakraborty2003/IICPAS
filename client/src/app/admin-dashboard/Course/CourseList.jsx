@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useEffect, useState, useRef, forwardRef } from "react";
 import {
@@ -21,7 +22,14 @@ import withReactContent from "sweetalert2-react-content";
 import { useAuth } from "@/contexts/AuthContext";
 
 const MySwal = withReactContent(Swal);
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
+const extractCourseList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.courses)) return payload.courses;
+  if (Array.isArray(payload?.data?.courses)) return payload.data.courses;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const CourseList = forwardRef(
   (
@@ -50,7 +58,7 @@ const CourseList = forwardRef(
       setLoading(true);
       try {
         const response = await axios.get(`${API_BASE}/courses`);
-        setCourses(response.data);
+        setCourses(extractCourseList(response.data));
       } catch (error) {
         console.error("Error fetching courses:", error);
         MySwal.fire("Error!", "Failed to fetch courses", "error");

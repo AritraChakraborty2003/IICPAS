@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaPlus, FaEdit, FaTrash, FaArrowLeft } from "react-icons/fa";
@@ -6,7 +7,7 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 // Default course levels
 const DEFAULT_LEVELS = [

@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -15,7 +16,7 @@ import {
 import RichTextEditor from "../components/RichTextEditor";
 import { toast } from "react-hot-toast";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const API_BASE = getApiBase();
 
 const BulkEmailPage = ({ onBack }) => {
   const [formData, setFormData] = useState({

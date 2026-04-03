@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useEffect, useState } from "react";
 import { FiMail } from "react-icons/fi";
@@ -16,7 +17,14 @@ import {
 import { toast } from "react-hot-toast";
 import * as XLSX from 'xlsx';
 
-const API = process.env.NEXT_PUBLIC_API_BASE + "/leads";
+const API = `${getApiBase()}/leads`;
+const extractLeads = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.leads)) return payload.leads;
+  if (Array.isArray(payload?.data?.leads)) return payload.data.leads;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const SOURCE_OPTIONS = [
   "enquiries",
@@ -60,7 +68,9 @@ export default function LeadsTab() {
       setLoading(true);
       const res = await fetch(API);
       const data = await res.json();
-      const filtered = data.leads.filter((lead) => lead.type === sourceFilter);
+      const filtered = extractLeads(data).filter(
+        (lead) => lead.type === sourceFilter
+      );
       setLeads(filtered);
     } catch (error) {
       console.error("Failed to fetch leads:", error);

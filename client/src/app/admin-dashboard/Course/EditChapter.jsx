@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -18,7 +19,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Swal from "sweetalert2";
 import axios from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 export default function EditChapter({ chapterId, onCancel, onUpdated }) {
   const [title, setTitle] = useState("");

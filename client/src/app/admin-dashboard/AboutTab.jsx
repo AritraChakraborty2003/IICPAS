@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import {
   IconButton,
@@ -18,7 +19,7 @@ import withReactContent from "sweetalert2-react-content";
 
 const MySwal = withReactContent(Swal);
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 export default function AboutTab() {
   const [aboutList, setAboutList] = useState([]);
@@ -36,7 +37,7 @@ export default function AboutTab() {
   const fetchContent = async () => {
     try {
       const res = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/about`
+        `${getApiOrigin()}/api/about`
       );
       setAboutList(res.data);
     } catch (err) {
@@ -48,11 +49,11 @@ export default function AboutTab() {
     try {
       if (editingItem) {
         await axios.put(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/about/${editingItem}`,
+          `${getApiOrigin()}/api/about/${editingItem}`,
           { content: form.content }
         );
       } else {
-        await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/about`, {
+        await axios.post(`${getApiOrigin()}/api/about`, {
           content: form.content,
         });
       }
@@ -84,7 +85,7 @@ export default function AboutTab() {
     if (result.isConfirmed) {
       try {
         await axios.delete(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/about/${id}`
+          `${getApiOrigin()}/api/about/${id}`
         );
         fetchContent();
         MySwal.fire("Deleted!", "The content has been removed.", "success");

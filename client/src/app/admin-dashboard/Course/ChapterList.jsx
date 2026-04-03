@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, {
   useEffect,
@@ -26,7 +27,7 @@ import withReactContent from "sweetalert2-react-content";
 import { useAuth } from "@/contexts/AuthContext";
 
 const MySwal = withReactContent(Swal);
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 const ChapterList = forwardRef(
   (

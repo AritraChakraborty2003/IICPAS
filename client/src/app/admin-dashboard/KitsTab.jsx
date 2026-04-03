@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -17,7 +18,7 @@ import {
   FaFilter,
 } from "react-icons/fa";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = getApiBase();
 
 const KitsTab = () => {
   const [kits, setKits] = useState([]);
@@ -77,7 +78,7 @@ const KitsTab = () => {
   const fetchKits = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE}/api/v1/kits`);
+      const response = await axios.get(`${API_BASE}/v1/kits`);
       setKits(response.data);
     } catch (error) {
       console.error("Error fetching kits:", error);
@@ -89,7 +90,7 @@ const KitsTab = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/v1/kits/stats`);
+      const response = await axios.get(`${API_BASE}/v1/kits/stats`);
       setStats(response.data);
     } catch (error) {
       console.error("Error fetching stats:", error);
@@ -101,10 +102,10 @@ const KitsTab = () => {
 
     try {
       if (editingKit) {
-        await axios.put(`${API_BASE}/api/v1/kits/${editingKit._id}`, formData);
+        await axios.put(`${API_BASE}/v1/kits/${editingKit._id}`, formData);
         Swal.fire("Success", "Kit updated successfully", "success");
       } else {
-        await axios.post(`${API_BASE}/api/v1/kits`, formData);
+        await axios.post(`${API_BASE}/v1/kits`, formData);
         Swal.fire("Success", "Kit created successfully", "success");
       }
 
@@ -148,7 +149,7 @@ const KitsTab = () => {
 
     if (result.isConfirmed) {
       try {
-        await axios.delete(`${API_BASE}/api/v1/kits/${id}`);
+        await axios.delete(`${API_BASE}/v1/kits/${id}`);
         Swal.fire("Deleted!", "Kit has been deleted.", "success");
         fetchKits();
         fetchStats();
@@ -161,7 +162,7 @@ const KitsTab = () => {
 
   const handleToggleStatus = async (id) => {
     try {
-      await axios.put(`${API_BASE}/api/v1/kits/${id}/toggle-status`);
+      await axios.put(`${API_BASE}/v1/kits/${id}/toggle-status`);
       fetchKits();
       fetchStats();
     } catch (error) {

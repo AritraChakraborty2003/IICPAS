@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import {
@@ -160,7 +161,7 @@ export default function ContactInfoTab() {
   const fetchContactInfo = async () => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -201,7 +202,7 @@ export default function ContactInfoTab() {
     e.preventDefault();
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/contact-info`, {
@@ -229,7 +230,7 @@ export default function ContactInfoTab() {
   const handleContactInfoUpdate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/contact-info/${id}`, {
@@ -265,7 +266,7 @@ export default function ContactInfoTab() {
 
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/contact-info/${id}`, {
@@ -290,7 +291,7 @@ export default function ContactInfoTab() {
   const handleContactInfoToggleActive = async (id, currentStatus) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/contact-info/${id}/toggle`, {
@@ -342,7 +343,7 @@ export default function ContactInfoTab() {
   const fetchContactForms = async () => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -424,7 +425,7 @@ export default function ContactInfoTab() {
       formData.append("image", file);
 
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -530,7 +531,7 @@ export default function ContactInfoTab() {
     e.preventDefault();
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const formDataToSubmit = {
@@ -574,7 +575,7 @@ export default function ContactInfoTab() {
   const handleContactFormUpdate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const formDataToSubmit = {
@@ -626,7 +627,7 @@ export default function ContactInfoTab() {
 
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/contact-form/${id}`, {
@@ -651,7 +652,7 @@ export default function ContactInfoTab() {
   const handleContactFormToggleActive = async (id, currentStatus) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(`${API_BASE}/contact-form/${id}/toggle`, {

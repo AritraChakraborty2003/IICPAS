@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { 
@@ -20,7 +21,7 @@ import {
 import { toast } from "react-hot-toast";
 import BulkEmailPage from "./BulkEmailPage";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const API_BASE = getApiBase();
 
 export default function NewsletterSubscriptionsTab() {
   const [subscriptions, setSubscriptions] = useState([]);

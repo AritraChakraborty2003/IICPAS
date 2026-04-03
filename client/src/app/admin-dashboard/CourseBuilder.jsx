@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import Swal from "sweetalert2"; // <-- Add this import
 import CourseList from "./Course/CourseList";
@@ -12,7 +13,7 @@ import CourseLevelManager from "./Course/CourseLevelManager";
 import GroupPricingTab from "./Course/GroupPricingTab";
 import axios from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 export default function CourseArea() {
   const [view, setView] = useState("course-list");

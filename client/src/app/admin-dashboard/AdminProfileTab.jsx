@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -234,7 +235,7 @@ export default function AdminProfileTab() {
       uploadFormData.append("image", profileImage);
 
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -273,7 +274,7 @@ export default function AdminProfileTab() {
 
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -413,7 +414,7 @@ export default function AdminProfileTab() {
               ) : formData.image ? (
                 <img
                   src={`${
-                    process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+                    getApiOrigin()
                   }${formData.image}`}
                   alt="Profile"
                   className="w-full h-full object-cover"

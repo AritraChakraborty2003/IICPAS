@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -27,7 +28,16 @@ import Swal from "sweetalert2";
 import * as XLSX from "xlsx";
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  getApiBase();
+const extractTestimonials = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.testimonials)) return payload.testimonials;
+  if (Array.isArray(payload?.data?.testimonials)) {
+    return payload.data.testimonials;
+  }
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 export default function TestimonialAdmin() {
   const [testimonials, setTestimonials] = useState([]);
@@ -54,7 +64,7 @@ export default function TestimonialAdmin() {
         Authorization: `Bearer ${token}`,
       },
     });
-    setTestimonials(res.data);
+    setTestimonials(extractTestimonials(res.data));
   };
 
   const handleDelete = async (id) => {

@@ -1,3 +1,4 @@
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -16,7 +17,7 @@ import {
   FaFileExcel,
 } from "react-icons/fa";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = getApiBase();
 
 export default function CenterLocationTab() {
   const [centers, setCenters] = useState([]);
@@ -65,7 +66,7 @@ export default function CenterLocationTab() {
     try {
       setLoading(true);
 
-      const response = await axios.get(`${API_BASE}/api/v1/centers`, {
+      const response = await axios.get(`${API_BASE}/v1/centers`, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -106,7 +107,7 @@ export default function CenterLocationTab() {
       }
 
       const response = await axios.post(
-        `${API_BASE}/api/v1/centers`,
+        `${API_BASE}/v1/centers`,
         newCenter,
         {
           headers: {
@@ -149,7 +150,7 @@ export default function CenterLocationTab() {
       setSaving(true);
 
       const response = await axios.put(
-        `${API_BASE}/api/v1/centers/${editingCenter._id}`,
+        `${API_BASE}/v1/centers/${editingCenter._id}`,
         editingCenter,
         {
           headers: {
@@ -175,7 +176,7 @@ export default function CenterLocationTab() {
     }
 
     try {
-      await axios.delete(`${API_BASE}/api/v1/centers/${centerId}`, {
+      await axios.delete(`${API_BASE}/v1/centers/${centerId}`, {
         headers: {
           "Content-Type": "application/json",
         },
@@ -191,7 +192,7 @@ export default function CenterLocationTab() {
   const handleStatusToggle = async (centerId, newStatus) => {
     try {
       await axios.put(
-        `${API_BASE}/api/v1/centers/${centerId}`,
+        `${API_BASE}/v1/centers/${centerId}`,
         { status: newStatus },
         {
           headers: {

@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { FaSave, FaTimes, FaPlus, FaTrash } from "react-icons/fa";
@@ -77,7 +78,7 @@ const EditDisclaimerPolicyTab = ({ onBack, policyId }: EditDisclaimerPolicyTabPr
   const fetchPolicy = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/disclaimer-policy/admin/${policyId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -104,7 +105,7 @@ const EditDisclaimerPolicyTab = ({ onBack, policyId }: EditDisclaimerPolicyTabPr
     setSaving(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       let response;
       if (policyId === "new") {

@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import { useState, useEffect } from "react";
 import { DataGrid } from "@mui/x-data-grid";
 import { Button, Box, IconButton, Tooltip, Chip } from "@mui/material";
@@ -11,7 +12,7 @@ import { showDeleteConfirmation, showSuccess, showError } from "@/utils/sweetAle
 import { useAuth } from "@/contexts/AuthContext";
 import axios from "axios";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 export default function CourseCategoryExcelGrid() {
   const [rows, setRows] = useState([]);

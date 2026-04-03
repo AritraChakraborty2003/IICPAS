@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useEffect, useState, useCallback } from "react";
 import {
@@ -23,7 +24,7 @@ import AssignmentsList from "../../components/AssignmentsList";
 import CaseStudiesList from "../../components/CaseStudiesList";
 
 const MySwal = withReactContent(Swal);
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 export default function TopicList({
   chapterId,

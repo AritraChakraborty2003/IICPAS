@@ -1,4 +1,5 @@
 "use client";
+import { getApiOrigin } from "@/lib/apiBase";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Pencil, Trash2 } from "lucide-react";
@@ -7,7 +8,7 @@ import Swal from "sweetalert2";
 import EditTopic from "./EditTopics";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = getApiOrigin();
 
 const ViewTrainingsTab = ({ topics, fetchTopics }) => {
   const [editingTopic, setEditingTopic] = useState(null);

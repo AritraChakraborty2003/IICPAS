@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import {
@@ -116,7 +117,7 @@ export default function FooterTab() {
   const fetchFooterEntries = async () => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -260,7 +261,7 @@ export default function FooterTab() {
     e.preventDefault();
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -293,7 +294,7 @@ export default function FooterTab() {
   const handleUpdate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -330,7 +331,7 @@ export default function FooterTab() {
 
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -361,7 +362,7 @@ export default function FooterTab() {
   const handleActivate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {

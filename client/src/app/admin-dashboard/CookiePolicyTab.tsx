@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaPlus, FaTrash, FaCheck, FaFileExcel } from "react-icons/fa";
@@ -51,7 +52,7 @@ const CookiePolicyTab = ({ onEditPolicy }: CookiePolicyTabProps) => {
   const fetchCookiePolicies = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/cookie-policy/admin/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -79,7 +80,7 @@ const CookiePolicyTab = ({ onEditPolicy }: CookiePolicyTabProps) => {
   const handleActivate = async (policyId: string) => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/cookie-policy/admin/activate/${policyId}`, {
         method: "PUT",
@@ -107,7 +108,7 @@ const CookiePolicyTab = ({ onEditPolicy }: CookiePolicyTabProps) => {
     
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/cookie-policy/admin/delete/${policyId}`, {
         method: "DELETE",

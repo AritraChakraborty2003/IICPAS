@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useEffect, useState } from "react";
 import { FiMail } from "react-icons/fi";
@@ -16,7 +17,7 @@ import {
 import { toast } from "react-hot-toast";
 import * as XLSX from "xlsx";
 
-const API = process.env.NEXT_PUBLIC_API_BASE + "/leads";
+const API = `${getApiBase()}/leads`;
 
 export default function AdmissionManagementTab() {
   const [leads, setLeads] = useState([]);

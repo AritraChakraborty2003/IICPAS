@@ -1,3 +1,4 @@
+import { getApiBase } from "@/lib/apiBase";
 // components/AddStudentTab.jsx
 import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,7 +36,7 @@ export default function AddStudentTab({ onSuccess }) {
     setError("");
     setSuccess("");
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const res = await fetch(`${API_BASE}/students/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

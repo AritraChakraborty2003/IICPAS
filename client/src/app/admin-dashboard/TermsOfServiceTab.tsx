@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
@@ -55,7 +56,7 @@ const TermsOfServiceTab = ({ onEditPolicy }: TermsOfServiceTabProps) => {
   const fetchTermsOfService = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/terms-of-service/admin/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -85,7 +86,7 @@ const TermsOfServiceTab = ({ onEditPolicy }: TermsOfServiceTabProps) => {
     setSaving(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/terms-of-service/admin/${currentPolicy._id}`, {
         method: "PUT",
         headers: {
@@ -114,7 +115,7 @@ const TermsOfServiceTab = ({ onEditPolicy }: TermsOfServiceTabProps) => {
   const handleActivate = async (policyId: string) => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/terms-of-service/admin/${policyId}/activate`, {
         method: "PUT",
         headers: {
@@ -149,7 +150,7 @@ const TermsOfServiceTab = ({ onEditPolicy }: TermsOfServiceTabProps) => {
 
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/terms-of-service/admin/${policyId}`, {
         method: "DELETE",
         headers: {

@@ -1,3 +1,4 @@
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import { X, Plus, Edit, Trash2, Eye, EyeOff, UserPlus } from "lucide-react";
 import axios from "axios";
@@ -8,7 +9,7 @@ import {
   showError,
 } from "@/utils/sweetAlert";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 // All modules with their display names
 const MODULES = [

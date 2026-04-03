@@ -1,4 +1,5 @@
 "use client";
+import { getApiOrigin } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -537,7 +538,7 @@ function AdminDashboardContent() {
                 {user?.image ? (
                   <img
                     src={`${
-                      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"
+                      getApiOrigin()
                     }${user.image}`}
                     alt="Profile"
                     className="w-full h-full object-cover"

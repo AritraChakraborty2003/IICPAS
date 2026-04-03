@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -32,7 +33,7 @@ import {
 } from "@/utils/sweetAlert";
 import * as XLSX from "xlsx";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 export default function ManageMetaTags() {
   const [metaTags, setMetaTags] = useState([]);

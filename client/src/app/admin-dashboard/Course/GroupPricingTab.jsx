@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -34,7 +35,24 @@ import withReactContent from "sweetalert2-react-content";
 import { toast } from "react-hot-toast";
 
 const MySwal = withReactContent(Swal);
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_BASE = getApiBase();
+const extractCourseList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.courses)) return payload.courses;
+  if (Array.isArray(payload?.data?.courses)) return payload.data.courses;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const extractGroupPricingList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.groupPricing)) return payload.groupPricing;
+  if (Array.isArray(payload?.data?.groupPricing)) {
+    return payload.data.groupPricing;
+  }
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const GroupPricingTab = ({ onBack }) => {
   const [groupPricing, setGroupPricing] = useState([]);
@@ -77,8 +95,8 @@ const GroupPricingTab = ({ onBack }) => {
   const fetchGroupPricing = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE}/api/group-pricing`);
-      const groupPricingData = response.data || [];
+      const response = await axios.get(`${API_BASE}/group-pricing`);
+      const groupPricingData = extractGroupPricingList(response.data);
 
       // Ensure courses are populated
       const populatedGroupPricing = groupPricingData.map((item) => ({
@@ -98,8 +116,8 @@ const GroupPricingTab = ({ onBack }) => {
 
   const fetchCourses = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/api/courses`);
-      setCourses(response.data || []);
+      const response = await axios.get(`${API_BASE}/courses`);
+      setCourses(extractCourseList(response.data));
     } catch (error) {
       console.error("Error fetching courses:", error);
       setCourses([]);
@@ -218,7 +236,7 @@ const GroupPricingTab = ({ onBack }) => {
     if (!result.isConfirmed) return;
 
     try {
-      await axios.delete(`${API_BASE}/api/group-pricing/${item._id}`);
+      await axios.delete(`${API_BASE}/group-pricing/${item._id}`);
       toast.success("Group pricing deleted successfully!", {
         style: {
           zIndex: 9999,
@@ -326,7 +344,7 @@ const GroupPricingTab = ({ onBack }) => {
 
       if (editingItem) {
         await axios.put(
-          `${API_BASE}/api/group-pricing/${editingItem._id}`,
+          `${API_BASE}/group-pricing/${editingItem._id}`,
           formDataToSend,
           {
             headers: {
@@ -341,7 +359,7 @@ const GroupPricingTab = ({ onBack }) => {
           },
         });
       } else {
-        await axios.post(`${API_BASE}/api/group-pricing`, formDataToSend, {
+        await axios.post(`${API_BASE}/group-pricing`, formDataToSend, {
           headers: {
             "Content-Type": "multipart/form-data",
           },

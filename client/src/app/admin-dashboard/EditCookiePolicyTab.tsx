@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { FaSave, FaPlus, FaTrash, FaTimes, FaArrowLeft } from "react-icons/fa";
@@ -68,7 +69,7 @@ const EditCookiePolicyTab = ({ onBack, policyId }: EditCookiePolicyTabProps) => 
   const fetchCookiePolicy = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/cookie-policy/admin/${policyId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -93,7 +94,7 @@ const EditCookiePolicyTab = ({ onBack, policyId }: EditCookiePolicyTabProps) => 
     setSaving(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const isNewPolicy = !policyId || policyId === "new";
       const url = isNewPolicy 

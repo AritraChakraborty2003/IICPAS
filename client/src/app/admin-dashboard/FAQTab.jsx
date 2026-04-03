@@ -1,9 +1,10 @@
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 import { FaQuestionCircle, FaGraduationCap, FaCreditCard, FaUser, FaBook, FaCertificate, FaPlus, FaEdit, FaTrash, FaSave, FaChevronDown, FaChevronUp } from "react-icons/fa";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 const iconOptions = [
   { value: "FaQuestionCircle", label: "Question Circle", icon: <FaQuestionCircle /> },

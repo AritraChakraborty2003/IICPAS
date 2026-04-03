@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -25,7 +26,7 @@ const TransactionsTab = () => {
   const [showModal, setShowModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_BASE = getApiBase();
 
   useEffect(() => {
     fetchTransactions();
@@ -48,7 +49,7 @@ const TransactionsTab = () => {
       }
 
       const response = await axios.get(
-        `${API_BASE}/api/v1/transactions/admin/all?${params}`
+        `${API_BASE}/v1/transactions/admin/all?${params}`
       );
 
       if (response.data.success) {
@@ -83,7 +84,7 @@ const TransactionsTab = () => {
       try {
         setActionLoading(true);
         const response = await axios.delete(
-          `${API_BASE}/api/v1/transactions/admin/${transactionId}`
+          `${API_BASE}/v1/transactions/admin/${transactionId}`
         );
 
         if (response.data.success) {
@@ -107,7 +108,7 @@ const TransactionsTab = () => {
     try {
       setActionLoading(true);
       const response = await axios.put(
-        `${API_BASE}/api/v1/transactions/admin/update-status/${transactionId}`,
+        `${API_BASE}/v1/transactions/admin/update-status/${transactionId}`,
         { status: newStatus, adminNotes: notes, adminId: "admin-user-001" }
       );
 
@@ -141,7 +142,7 @@ const TransactionsTab = () => {
     try {
       setActionLoading(true);
       const response = await axios.post(
-        `${API_BASE}/api/v1/transactions/admin/send-receipt/${transactionId}`,
+        `${API_BASE}/v1/transactions/admin/send-receipt/${transactionId}`,
         {}
       );
 

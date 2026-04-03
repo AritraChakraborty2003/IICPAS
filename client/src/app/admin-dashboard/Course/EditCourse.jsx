@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import React, { useState, useEffect, useCallback } from "react";
 import Select from "react-select";
 import axios from "axios";
@@ -9,7 +10,7 @@ import { FaArrowLeft, FaSave } from "react-icons/fa";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 const MySwal = withReactContent(Swal);
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 const ALLOWED_IMAGE_ACCEPT =
   ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
 const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
@@ -364,8 +365,7 @@ export default function EditCourse({ courseId, onBack }) {
                     form.imageUrl.startsWith("http")
                       ? form.imageUrl
                       : `${
-                          process.env.NEXT_PUBLIC_API_URL ||
-                          "http://localhost:8080"
+                          getApiOrigin()
                         }${form.imageUrl}`
                   }
                   alt="Current Course"
@@ -676,8 +676,7 @@ export default function EditCourse({ courseId, onBack }) {
                       simulation.imageUrl.startsWith("http")
                         ? simulation.imageUrl
                         : `${
-                            process.env.NEXT_PUBLIC_API_URL ||
-                            "http://localhost:8080"
+                            getApiOrigin()
                           }${simulation.imageUrl}`
                     }
                     alt={simulation.title}

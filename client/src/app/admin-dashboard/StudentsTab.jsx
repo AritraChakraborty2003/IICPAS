@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
@@ -28,6 +29,15 @@ import { FaWhatsapp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
+
+const API_BASE = getApiBase();
+const extractStudents = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.students)) return payload.students;
+  if (Array.isArray(payload?.data?.students)) return payload.data.students;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 // BASIC COMPONENTS
 const Button = ({ className = "", children, ...props }) => (
@@ -137,7 +147,7 @@ function EditStudentModal({ student, isOpen, onClose, onSuccess }) {
       }
 
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE}/v1/students/admin/update-profile/${student._id}`,
+        `${API_BASE}/v1/students/admin/update-profile/${student._id}`,
         updateData,
         {
           headers: {
@@ -302,7 +312,7 @@ function AddStudentForm({ onSuccess }) {
     setSuccess("");
     try {
       const res = await axios.post(
-        process.env.NEXT_PUBLIC_API_BASE + "/v1/students/register",
+        `${API_BASE}/v1/students/register`,
         form,
         {
           headers: { "Content-Type": "application/json" },
@@ -443,10 +453,10 @@ function StudentsTable({ students, onStudentUpdated }) {
     if (window.confirm(`Are you sure you want to delete ${student.name}? This action cannot be undone.`)) {
       try {
         console.log("Deleting student with ID:", student._id);
-        console.log("API Base:", process.env.NEXT_PUBLIC_API_BASE);
-        console.log("Full URL:", `${process.env.NEXT_PUBLIC_API_BASE}/v1/students/${student._id}`);
-        
-        const response = await axios.delete(`${process.env.NEXT_PUBLIC_API_BASE}/v1/students/${student._id}`);
+        console.log("API Base:", API_BASE);
+        console.log("Full URL:", `${API_BASE}/v1/students/${student._id}`);
+
+        const response = await axios.delete(`${API_BASE}/v1/students/${student._id}`);
         console.log("Delete response:", response.data);
         
         toast.success(`${student.name} has been deleted successfully!`);
@@ -471,7 +481,7 @@ function StudentsTable({ students, onStudentUpdated }) {
     
     if (window.confirm(`Are you sure you want to ${action} ${student.name}?`)) {
       try {
-        await axios.put(`${process.env.NEXT_PUBLIC_API_BASE}/v1/students/${student._id}/status`, {
+        await axios.put(`${API_BASE}/v1/students/${student._id}/status`, {
           status: student.status === 'suspended' ? 'active' : 'suspended'
         });
         toast.success(`${student.name} has been ${action}ed successfully!`);
@@ -832,9 +842,9 @@ function StudentProfileManagement() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_BASE}/v1/students`
+        `${API_BASE}/v1/students`
       );
-      setStudents(response.data.students || []);
+      setStudents(extractStudents(response.data));
     } catch (error) {
       console.error("Error fetching students:", error);
       toast.error("Failed to fetch students");
@@ -894,7 +904,7 @@ function StudentProfileManagement() {
       }
 
       const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_API_BASE}/v1/students/admin/update-profile/${studentId}`,
+        `${API_BASE}/v1/students/admin/update-profile/${studentId}`,
         updateData,
         {
           headers: {
@@ -1369,8 +1379,8 @@ export default function StudentsTab() {
     if (activeTab === "list") {
       setLoading(true);
       axios
-        .get(process.env.NEXT_PUBLIC_API_BASE + "/v1/students")
-        .then((res) => setStudents(res.data.students || []))
+        .get(`${API_BASE}/v1/students`)
+        .then((res) => setStudents(extractStudents(res.data)))
         .catch((err) => {
           console.error("Error fetching students:", err);
           setStudents([]);
@@ -1383,8 +1393,8 @@ export default function StudentsTab() {
     setActiveTab("list");
     setLoading(true);
     axios
-      .get(process.env.NEXT_PUBLIC_API_BASE + "/v1/students")
-      .then((res) => setStudents(res.data.students || []))
+      .get(`${API_BASE}/v1/students`)
+      .then((res) => setStudents(extractStudents(res.data)))
       .catch((err) => {
         console.error("Error fetching students:", err);
         setStudents([]);

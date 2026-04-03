@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -6,7 +7,7 @@ import { showSuccess, showError } from "@/utils/sweetAlert";
 import { FaSave, FaPlus, FaTrash, FaArrowLeft } from "react-icons/fa";
 import { universityCourses, getCourseBySlug } from "@/data/universityCourses";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {

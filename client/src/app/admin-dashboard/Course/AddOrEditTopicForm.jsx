@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
@@ -58,8 +59,8 @@ const debounce = (func, wait) => {
   return executedFunction;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = getApiBase();
+const API_URL = getApiOrigin();
 const STATIC_CDN_BASE =
   process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
 const ALLOWED_IMAGE_ACCEPT =

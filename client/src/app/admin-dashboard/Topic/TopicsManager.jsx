@@ -1,11 +1,12 @@
 "use client";
+import { getApiOrigin } from "@/lib/apiBase";
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import ViewTrainingsTab from "./ViewTrainingsTab";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL = getApiOrigin();
 
 export default function TopicsPage() {
   const [topics, setTopics] = useState([]);

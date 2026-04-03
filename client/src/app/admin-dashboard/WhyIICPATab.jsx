@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import {
@@ -105,7 +106,7 @@ export default function WhyIICPATab() {
   const fetchWhyIICPAEntries = async () => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
       const response = await fetch(`${API_BASE}/why-iicpa/all`, {
         headers: {
@@ -201,7 +202,7 @@ export default function WhyIICPATab() {
       formData.append("image", file);
 
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
 
       if (!token) {
@@ -247,7 +248,7 @@ export default function WhyIICPATab() {
     e.preventDefault();
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
       const response = await fetch(`${API_BASE}/why-iicpa`, {
         method: "POST",
@@ -274,7 +275,7 @@ export default function WhyIICPATab() {
   const handleUpdate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
       const response = await fetch(`${API_BASE}/why-iicpa/${id}`, {
         method: "PUT",
@@ -307,7 +308,7 @@ export default function WhyIICPATab() {
 
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
       const response = await fetch(`${API_BASE}/why-iicpa/${id}`, {
         method: "DELETE",
@@ -331,7 +332,7 @@ export default function WhyIICPATab() {
   const handleActivate = async (id) => {
     try {
       const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        getApiBase();
       const token = localStorage.getItem("adminToken");
       const response = await fetch(`${API_BASE}/why-iicpa/activate/${id}`, {
         method: "PUT",

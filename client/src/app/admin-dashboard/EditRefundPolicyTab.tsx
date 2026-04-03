@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { FaSave, FaPlus, FaTrash, FaArrowLeft } from "react-icons/fa";
@@ -67,7 +68,7 @@ const EditRefundPolicyTab = ({ onBack, policyId }: EditRefundPolicyTabProps) => 
   const fetchRefundPolicy = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       let url;
       if (policyId) {
@@ -125,7 +126,7 @@ const EditRefundPolicyTab = ({ onBack, policyId }: EditRefundPolicyTabProps) => 
     setSaving(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       let url;
       let method;

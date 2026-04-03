@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -13,7 +14,7 @@ import {
   FaShieldAlt,
 } from "react-icons/fa";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 export default function IPWhitelistTab() {
   const [ips, setIps] = useState([]);

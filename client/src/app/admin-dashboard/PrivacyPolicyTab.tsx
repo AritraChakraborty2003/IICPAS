@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaSave, FaPlus, FaTrash, FaCheck, FaTimes, FaFileExcel } from "react-icons/fa";
@@ -57,7 +58,7 @@ const PrivacyPolicyTab = ({ onEditPolicy }: PrivacyPolicyTabProps) => {
   const fetchPrivacyPolicies = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/privacy-policy/admin/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -87,7 +88,7 @@ const PrivacyPolicyTab = ({ onEditPolicy }: PrivacyPolicyTabProps) => {
     setSaving(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/privacy-policy/admin/update/${currentPolicy._id}`, {
         method: "PUT",
@@ -118,7 +119,7 @@ const PrivacyPolicyTab = ({ onEditPolicy }: PrivacyPolicyTabProps) => {
   const handleActivate = async (policyId: string) => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/privacy-policy/admin/activate/${policyId}`, {
         method: "PUT",
@@ -148,7 +149,7 @@ const PrivacyPolicyTab = ({ onEditPolicy }: PrivacyPolicyTabProps) => {
 
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/privacy-policy/admin/delete/${policyId}`, {
         method: "DELETE",

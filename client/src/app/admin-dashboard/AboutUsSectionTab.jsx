@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import { FaSave, FaEdit, FaTrash, FaCheck, FaTimes, FaPlus, FaMinus, FaImage, FaUpload } from "react-icons/fa";
@@ -102,7 +103,7 @@ export default function AboutUsSectionTab() {
 
   const fetchAboutUsEntries = async () => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -168,7 +169,7 @@ export default function AboutUsSectionTab() {
     formData.append('image', file);
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -212,7 +213,7 @@ export default function AboutUsSectionTab() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -244,7 +245,7 @@ export default function AboutUsSectionTab() {
 
   const handleUpdate = async (id) => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -279,7 +280,7 @@ export default function AboutUsSectionTab() {
     if (!window.confirm("Are you sure you want to delete this About Us content?")) return;
 
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -309,7 +310,7 @@ export default function AboutUsSectionTab() {
 
   const handleActivate = async (id) => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {

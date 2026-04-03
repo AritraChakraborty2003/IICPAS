@@ -1,3 +1,4 @@
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
@@ -19,7 +20,7 @@ import {
   FaRobot
 } from "react-icons/fa";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE = getApiBase();
 
 export default function ChatConversationsTab() {
   const router = useRouter();

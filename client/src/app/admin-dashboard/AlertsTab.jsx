@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -6,7 +7,14 @@ import { X, Plus } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
+const extractAlerts = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.alerts)) return payload.alerts;
+  if (Array.isArray(payload?.data?.alerts)) return payload.data.alerts;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 export default function AlertsTab() {
   const [alerts, setAlerts] = useState([]);
@@ -20,7 +28,7 @@ export default function AlertsTab() {
   const fetchAlerts = async () => {
     const res = await fetch(API_BASE + "/alerts");
     const data = await res.json();
-    setAlerts(data);
+    setAlerts(extractAlerts(data));
   };
 
   const addAlert = async (e) => {

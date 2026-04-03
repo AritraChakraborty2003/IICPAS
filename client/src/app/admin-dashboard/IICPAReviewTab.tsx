@@ -1,4 +1,5 @@
 "use client";
+import { getApiBase } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import { FaPlus, FaEdit, FaTrash, FaCheck, FaTimes, FaFileExcel } from "react-icons/fa";
@@ -54,7 +55,7 @@ const IICPAReviewTab = ({ onEditReview }: IICPAReviewTabProps) => {
   const fetchIICPAReviews = async () => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const response = await fetch(`${API_BASE}/iicpa-review/admin/all`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -84,7 +85,7 @@ const IICPAReviewTab = ({ onEditReview }: IICPAReviewTabProps) => {
     setSaving(true);
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/iicpa-review/admin/update/${currentReview._id}`, {
         method: "PUT",
@@ -115,7 +116,7 @@ const IICPAReviewTab = ({ onEditReview }: IICPAReviewTabProps) => {
   const handleActivate = async (reviewId: string) => {
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/iicpa-review/admin/activate/${reviewId}`, {
         method: "PUT",
@@ -145,7 +146,7 @@ const IICPAReviewTab = ({ onEditReview }: IICPAReviewTabProps) => {
 
     try {
       const token = localStorage.getItem("adminToken");
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       
       const response = await fetch(`${API_BASE}/iicpa-review/admin/delete/${reviewId}`, {
         method: "DELETE",
