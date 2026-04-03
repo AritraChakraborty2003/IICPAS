@@ -1997,15 +1997,28 @@ export default function DigitalHubClient({
         <div
           className={`transition-all duration-300 ease-in-out ${
             hamburgerOpen ? "w-80" : "w-0"
-          } overflow-hidden ${
+          } overflow-visible relative ${
             isDarkMode
               ? "bg-slate-900 border-slate-800"
               : "bg-white border-stone-200"
           } border-r h-full shrink-0 notranslate`}
           translate="no"
         >
-          <div className="h-full w-80 overflow-y-auto p-4">
-            <div className="flex items-center justify-between mb-4">
+          {hamburgerOpen && (
+            <button
+              onClick={() => setHamburgerOpen(false)}
+              className={`absolute left-0 top-1/2 z-20 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border shadow-md transition-colors ${
+                isDarkMode
+                  ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                  : "border-stone-200 bg-white text-slate-500 hover:bg-stone-50"
+              }`}
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
+          <div className="h-full w-80 overflow-y-auto overflow-x-hidden p-4">
+            <div className="mb-4 flex items-center">
               <h2
                 className={`text-lg font-semibold ${
                   isDarkMode ? "text-slate-100" : "text-slate-800"
@@ -2013,17 +2026,6 @@ export default function DigitalHubClient({
               >
                 Topics
               </h2>
-              <button
-                onClick={() => setHamburgerOpen(false)}
-                className="p-2 rounded-lg hover:bg-stone-100 transition-colors"
-                aria-label="Close menu"
-              >
-                <X
-                  className={`w-5 h-5 ${
-                    isDarkMode ? "text-slate-300" : "text-slate-500"
-                  }`}
-                />
-              </button>
             </div>
             <div className="space-y-2">
               {selectedChapter ? (
