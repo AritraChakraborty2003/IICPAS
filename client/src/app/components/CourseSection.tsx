@@ -54,6 +54,66 @@ interface ApiCourse {
   };
 }
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://api.iicpa.in/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const getApiOrigin = () => {
+  const configuredOrigin =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE?.replace(/\/api\/?$/i, "") ||
+    "https://api.iicpa.in";
+
+  return configuredOrigin.trim().replace(/\/+$/, "");
+};
+
+const extractCourses = (payload: unknown): ApiCourse[] => {
+  if (Array.isArray(payload)) return payload as ApiCourse[];
+
+  if (payload && typeof payload === "object") {
+    const candidate = payload as {
+      courses?: ApiCourse[];
+      data?: ApiCourse[] | { courses?: ApiCourse[] };
+    };
+
+    if (Array.isArray(candidate.courses)) return candidate.courses;
+    if (Array.isArray(candidate.data)) return candidate.data;
+    if (Array.isArray(candidate.data?.courses)) return candidate.data.courses;
+  }
+
+  return [];
+};
+
+const resolveCourseImage = (image: string | undefined, apiOrigin: string) => {
+  const value = (image || "").trim();
+  if (!value) return "/images/a1.jpeg";
+  if (/^https?:\/\//i.test(value)) {
+    return value.replace(/^http:\/\//i, "https://");
+  }
+  if (value.startsWith("/uploads/")) {
+    return `${apiOrigin}${value}`;
+  }
+  if (value.startsWith("/")) {
+    return value;
+  }
+  return `${apiOrigin}/${value.replace(/^\/+/, "")}`;
+};
+
+const getDisplayPrice = (course: ApiCourse) => {
+  return (
+    course.pricing?.recordedSession?.finalPrice ||
+    course.pricing?.recordedSession?.price ||
+    course.price ||
+    0
+  );
+};
+
 // Fallback data - Updated to match real API data
 const sampleCourses: Course[] = [
   {
@@ -93,27 +153,22 @@ const CourseSection = memo(function CourseSection() {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const API_BASE =
-          process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
+        const API_BASE = getApiBase();
+        const API_ORIGIN = getApiOrigin();
 
         const response = await fetch(`${API_BASE}/courses`);
 
         if (response.ok) {
           const data = await response.json();
+          const apiCourses = extractCourses(data);
 
-          if (Array.isArray(data) && data.length > 0) {
-            const transformedCourses = data.map(
+          if (apiCourses.length > 0) {
+            const transformedCourses = apiCourses.map(
               (course: ApiCourse): Course => ({
                 _id: course._id,
                 title: course.title?.trim() || "Untitled Course",
-                image: course.image
-                  ? course.image.startsWith("http")
-                    ? course.image
-                    : course.image.startsWith("/uploads/")
-                    ? `https://api.iicpa.in${course.image}`
-                    : `https://api.iicpa.in/${course.image}`
-                  : "/images/a1.jpeg",
-                price: course.price || 0,
+                image: resolveCourseImage(course.image, API_ORIGIN),
+                price: getDisplayPrice(course),
                 slug:
                   course.slug ||
                   course.title
