@@ -205,6 +205,7 @@ export default function DigitalHubClient({
 
   const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
   const [hamburgerOpen, setHamburgerOpen] = useState(false);
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
@@ -429,6 +430,12 @@ export default function DigitalHubClient({
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
+
+  const closeSidebarIfMobile = useCallback(() => {
+    if (!isDesktopViewport) {
+      setHamburgerOpen(false);
+    }
+  }, [isDesktopViewport]);
 
   // Fetch case studies for a chapter
   const fetchCaseStudies = useCallback(
@@ -991,6 +998,23 @@ export default function DigitalHubClient({
     fetchCaseStudies,
     loadQuizForTopic,
   ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const updateViewportMode = () => {
+      const desktop = window.innerWidth >= 1024;
+      setIsDesktopViewport(desktop);
+      setHamburgerOpen((prev) => (desktop ? true : prev));
+    };
+
+    updateViewportMode();
+    window.addEventListener("resize", updateViewportMode);
+
+    return () => {
+      window.removeEventListener("resize", updateViewportMode);
+    };
+  }, []);
 
   useEffect(() => {
     if (!selectedChapter || typeof window === "undefined") return;
@@ -1907,7 +1931,7 @@ export default function DigitalHubClient({
         </div>
       </div>
 
-      <div className="flex h-[calc(100vh-89px)] min-h-0">
+      <div className="relative flex h-[calc(100vh-89px)] min-h-0">
         {/* Narrow Left Sidebar */}
         <div
           className={`w-12 sm:w-16 transition-colors duration-300 ${
@@ -1993,32 +2017,34 @@ export default function DigitalHubClient({
           </div>
         </div>
 
+        {!isDesktopViewport && hamburgerOpen ? (
+          <button
+            type="button"
+            aria-label="Close sidebar overlay"
+            className="absolute inset-0 z-30 bg-slate-950/30 backdrop-blur-[1px] lg:hidden"
+            onClick={() => setHamburgerOpen(false)}
+          />
+        ) : null}
+
         {/* Hamburger Menu Sidebar */}
         <div
-          className={`transition-all duration-300 ease-in-out ${
-            hamburgerOpen ? "w-80" : "w-0"
-          } overflow-visible relative ${
+          className={`${
+            isDesktopViewport
+              ? `relative transition-all duration-300 ease-in-out ${
+                  hamburgerOpen ? "w-80" : "w-0"
+                }`
+              : `absolute inset-y-0 left-12 sm:left-16 z-40 w-80 max-w-[calc(100vw-4rem)] transform transition-transform duration-300 ease-in-out ${
+                  hamburgerOpen ? "translate-x-0" : "-translate-x-full"
+                }`
+          } overflow-hidden ${
             isDarkMode
               ? "bg-slate-900 border-slate-800"
               : "bg-white border-stone-200"
           } border-r h-full shrink-0 notranslate`}
           translate="no"
         >
-          {hamburgerOpen && (
-            <button
-              onClick={() => setHamburgerOpen(false)}
-              className={`absolute left-0 top-1/2 z-20 flex h-10 w-10 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border shadow-md transition-colors ${
-                isDarkMode
-                  ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
-                  : "border-stone-200 bg-white text-slate-500 hover:bg-stone-50"
-              }`}
-              aria-label="Close menu"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          )}
           <div className="h-full w-80 overflow-y-auto overflow-x-hidden p-4">
-            <div className="mb-4 flex items-center">
+            <div className="mb-4 flex items-start justify-between gap-3">
               <h2
                 className={`text-lg font-semibold ${
                   isDarkMode ? "text-slate-100" : "text-slate-800"
@@ -2026,6 +2052,20 @@ export default function DigitalHubClient({
               >
                 Topics
               </h2>
+              {hamburgerOpen ? (
+                <button
+                  type="button"
+                  onClick={() => setHamburgerOpen(false)}
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+                    isDarkMode
+                      ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
+                      : "border-stone-200 bg-stone-50 text-slate-600 hover:bg-stone-100"
+                  }`}
+                  aria-label="Close menu"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              ) : null}
             </div>
             <div className="space-y-2">
               {selectedChapter ? (
@@ -2041,7 +2081,7 @@ export default function DigitalHubClient({
                           <button
                             key={topic._id}
                             onClick={() => {
-                              setHamburgerOpen(false);
+                              closeSidebarIfMobile();
                               handleTopicSelect(topic);
                             }}
                             className={`w-full text-left p-3 rounded-xl transition-colors border ${
@@ -2078,7 +2118,7 @@ export default function DigitalHubClient({
                           <button
                             key={caseStudy._id}
                             onClick={() => {
-                              setHamburgerOpen(false);
+                              closeSidebarIfMobile();
                               handleCaseStudySelect(caseStudy);
                             }}
                             className={`w-full text-left p-3 rounded-xl hover:bg-emerald-50 hover:text-slate-900 transition-colors border border-stone-200 ${
@@ -2112,7 +2152,7 @@ export default function DigitalHubClient({
                           <button
                             key={assignment._id}
                             onClick={() => {
-                              setHamburgerOpen(false);
+                              closeSidebarIfMobile();
                               handleAssignmentSelect(assignment);
                             }}
                             className={`w-full text-left p-3 rounded-xl hover:bg-emerald-50 hover:text-slate-900 transition-colors border border-stone-200 ${
