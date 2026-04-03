@@ -8,6 +8,15 @@ import { FaEnvelope, FaLock, FaUser, FaUpload } from "react-icons/fa";
 import { AiFillEye, AiFillEyeInvisible } from "react-icons/ai";
 import { toast } from "react-hot-toast";
 
+const getApiBase = () => {
+  const rawBase =
+    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+
+  return rawBase.endsWith("/api")
+    ? rawBase
+    : `${rawBase.replace(/\/+$/, "")}/api`;
+};
+
 export default function AdminLogin() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -44,7 +53,7 @@ export default function AdminLogin() {
       const uploadFormData = new FormData();
       uploadFormData.append("image", profileImage);
 
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+      const API_BASE = getApiBase();
       const token = localStorage.getItem("adminToken");
       
       if (!token) {
@@ -81,7 +90,7 @@ export default function AdminLogin() {
     setLoading(true);
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:8080/api'}/employees/login`,
+        `${getApiBase()}/employees/login`,
         { email, password }
       );
 

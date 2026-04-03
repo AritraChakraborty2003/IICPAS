@@ -5,6 +5,14 @@ import axios from "axios";
 import { useAuthHeartbeat } from "../lib/useAuthHeartbeat";
 
 const AuthContext = createContext();
+const getApiBase = () => {
+  const rawBase =
+    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+
+  return rawBase.endsWith("/api")
+    ? rawBase
+    : `${rawBase.replace(/\/+$/, "")}/api`;
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -19,8 +27,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [permissions, setPermissions] = useState({});
 
-  const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  const API_BASE = getApiBase();
 
   const getHeartbeatHeaders = useCallback(() => {
     const token = localStorage.getItem("adminToken");
