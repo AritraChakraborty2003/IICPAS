@@ -1019,7 +1019,7 @@ export default function CourseTab() {
                       </div>
 
                       <div className="flex flex-1 flex-col gap-5 p-5 sm:p-6 xl:flex-row">
-                        <div className="min-w-0 flex-1">
+                        <div className="min-w-0 flex flex-1 flex-col">
                           <div className="mb-3 flex flex-wrap gap-2">
                             <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
                               {course?.level || "Professional course"}
@@ -1060,6 +1060,62 @@ export default function CourseTab() {
                               </div>
                             ))}
                           </div>
+
+                          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                            {isPurchased ? (
+                              <button
+                                onClick={() => handleDetailedToggle(course._id)}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto sm:min-w-[210px]"
+                              >
+                                <Book className="text-xl" />
+                                Open Course
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleBuyNow(course)}
+                                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 sm:w-auto sm:min-w-[210px]"
+                              >
+                                <FaShoppingCart className="text-lg" />
+                                Enroll Now
+                              </button>
+                            )}
+
+                            <button
+                              onClick={() =>
+                                router.push(`/course/${course.slug || course._id}`)
+                              }
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 sm:w-auto sm:min-w-[190px]"
+                            >
+                              <Visibility className="text-lg" />
+                              View Details
+                            </button>
+                          </div>
+
+                          {isPurchased &&
+                            isCourseCompleted(course) &&
+                            !courseRatings[course._id] && (
+                              <button
+                                onClick={() => {
+                                  setCourseToRate(course);
+                                  setShowRatingModal(true);
+                                }}
+                                className="mt-3 w-full rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-100 sm:w-auto sm:self-start"
+                              >
+                                Rate Course
+                              </button>
+                            )}
+
+                          {courseRatings[course._id] && (
+                            <div className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-600 sm:w-auto sm:self-start">
+                              <span>
+                                {courseRatings[course._id].status === "pending"
+                                  ? "Rating Pending"
+                                  : courseRatings[course._id].status === "approved"
+                                    ? "Rating Approved"
+                                    : "Rating Rejected"}
+                              </span>
+                            </div>
+                          )}
                         </div>
 
                         <div className="xl:w-[240px] xl:shrink-0">
@@ -1091,62 +1147,6 @@ export default function CourseTab() {
                               </div>
                             </div>
                           </div>
-
-                          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                            {isPurchased ? (
-                              <button
-                                onClick={() => handleDetailedToggle(course._id)}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800"
-                              >
-                                <Book className="text-xl" />
-                                Open Course
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleBuyNow(course)}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
-                              >
-                                <FaShoppingCart className="text-lg" />
-                                Enroll Now
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() =>
-                                router.push(`/course/${course.slug || course._id}`)
-                              }
-                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                            >
-                              <Visibility className="text-lg" />
-                              View Details
-                            </button>
-                          </div>
-
-                          {isPurchased &&
-                            isCourseCompleted(course) &&
-                            !courseRatings[course._id] && (
-                              <button
-                                onClick={() => {
-                                  setCourseToRate(course);
-                                  setShowRatingModal(true);
-                                }}
-                                className="mt-3 w-full rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700 transition hover:bg-amber-100"
-                              >
-                                Rate Course
-                              </button>
-                            )}
-
-                          {courseRatings[course._id] && (
-                            <div className="mt-3 inline-flex w-full items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-600">
-                              <span>
-                                {courseRatings[course._id].status === "pending"
-                                  ? "Rating Pending"
-                                  : courseRatings[course._id].status === "approved"
-                                    ? "Rating Approved"
-                                    : "Rating Rejected"}
-                              </span>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
