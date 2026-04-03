@@ -4,6 +4,24 @@ import { useState, useEffect } from "react";
 import { FaThumbsUp, FaCommentAlt, FaShareAlt, FaYoutube } from "react-icons/fa";
 import axios from "axios";
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const extractNewsItems = (payload: any): NewsItem[] => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.news)) return payload.news;
+  if (Array.isArray(payload?.data?.news)) return payload.data.news;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 interface NewsItem {
   _id: string;
   title: string;
@@ -13,6 +31,7 @@ interface NewsItem {
 }
 
 export default function NewsTab() {
+  const API_BASE = getApiBase();
   const [newsItems, setNewsItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +40,9 @@ export default function NewsTab() {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/news`);
-        setNewsItems(response.data);
+        const response = await axios.get(`${API_BASE}/news`);
+        setNewsItems(extractNewsItems(response.data));
+        setError(null);
       } catch (err) {
         console.error("Error fetching news:", err);
         setError("Failed to load news");
@@ -32,7 +52,7 @@ export default function NewsTab() {
     };
 
     fetchNews();
-  }, []);
+  }, [API_BASE]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

@@ -15,6 +15,24 @@ import { FaClock, FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 import Swal from "sweetalert2";
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const extractRevisionTests = (payload: any): RevisionTest[] => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.tests)) return payload.tests;
+  if (Array.isArray(payload?.data?.tests)) return payload.data.tests;
+  return [];
+};
+
 interface Question {
   _id: string;
   question: string;
@@ -61,7 +79,7 @@ const RevisionTab: React.FC = () => {
   );
   const [quizStarted, setQuizStarted] = useState(false);
 
-  const API = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  const API = getApiBase();
   const totalTests = courses.reduce((sum, course) => sum + course.tests.length, 0);
 
   useEffect(() => {
@@ -72,18 +90,25 @@ const RevisionTab: React.FC = () => {
     try {
       setLoading(true);
       const response = await axios.get(`${API}/revision-tests`);
-      const tests = response.data.data;
+      const tests = extractRevisionTests(response.data);
+
+      if (!tests.length) {
+        setCourses([]);
+        setError(null);
+        return;
+      }
 
       // Group tests by course
       const courseMap = new Map<string, CourseWithTests>();
       tests.forEach((test: RevisionTest) => {
-        const courseId = test.course._id;
+        const courseId = test.course?._id;
+        if (!courseId) return;
         if (!courseMap.has(courseId)) {
           courseMap.set(courseId, {
             _id: courseId,
-            title: test.course.title || "Unknown Course",
-            category: test.course.category || "General",
-            level: test.course.level || "Beginner",
+            title: test.course?.title || "Unknown Course",
+            category: test.course?.category || "General",
+            level: test.course?.level || "Beginner",
             tests: [],
           });
         }
@@ -215,7 +240,7 @@ const RevisionTab: React.FC = () => {
 
     setQuizStarted(false);
 
-    const reportQuizCompletion = async () => {
+      const reportQuizCompletion = async () => {
       try {
         if (!currentTest?._id) return;
 

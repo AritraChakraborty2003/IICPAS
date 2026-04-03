@@ -2,8 +2,32 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
+const API_ROOT =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE?.replace(/\/api\/?$/i, "") ||
+  "http://localhost:8080";
 const BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  process.env.NEXT_PUBLIC_API_BASE || `${API_ROOT.replace(/\/+$/, "")}/api`;
+
+const extractTickets = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.tickets)) return payload.tickets;
+  if (Array.isArray(payload?.data?.tickets)) return payload.data.tickets;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const extractTicket = (payload) => {
+  if (!payload || typeof payload !== "object") return payload;
+  if (payload.ticket && typeof payload.ticket === "object") return payload.ticket;
+  if (payload.data?.ticket && typeof payload.data.ticket === "object") {
+    return payload.data.ticket;
+  }
+  if (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+    return payload.data;
+  }
+  return payload;
+};
 
 export default function TicketTab({ viewerType = "student", authToken }) {
   const [tickets, setTickets] = useState([]);
@@ -66,7 +90,7 @@ export default function TicketTab({ viewerType = "student", authToken }) {
           return;
         }
         const data = await res.json();
-        setTickets(Array.isArray(data) ? data : []);
+        setTickets(extractTickets(data));
       } catch (error) {
         setErrorMessage("Failed to load tickets.");
       }
@@ -92,7 +116,7 @@ export default function TicketTab({ viewerType = "student", authToken }) {
         return;
       }
       const data = await res.json();
-      setSelectedTicket(data);
+      setSelectedTicket(extractTicket(data));
     } catch (error) {
       setErrorMessage("Failed to load ticket details.");
     } finally {
@@ -139,8 +163,11 @@ export default function TicketTab({ viewerType = "student", authToken }) {
       }
 
       const data = await res.json();
-      setTickets((prev) => prev.map((t) => (t._id === data._id ? data : t)));
-      setSelectedTicket(data);
+      const updatedTicket = extractTicket(data);
+      setTickets((prev) =>
+        prev.map((t) => (t._id === updatedTicket?._id ? updatedTicket : t))
+      );
+      setSelectedTicket(updatedTicket);
       toast.success("Reply saved.");
     } catch (error) {
       toast.error("Failed to update reply.");
