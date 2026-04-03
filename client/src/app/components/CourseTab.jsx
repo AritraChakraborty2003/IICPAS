@@ -396,30 +396,6 @@ export default function CourseTab() {
 
   const getCourseCategory = (course) => course?.category || "General";
 
-  const getCurrentPrice = (course) => {
-    const price =
-      course?.pricing?.recordedSession?.finalPrice ||
-      course?.pricing?.recordedSession?.price ||
-      course?.price ||
-      0;
-    return Number(price) || 0;
-  };
-
-  const getOriginalPrice = (course, currentPrice) => {
-    const recorded = course?.pricing?.recordedSession;
-    const basePrice = Number(recorded?.price || course?.price || 0);
-    const discount = Number(recorded?.discount || course?.discount || 0);
-
-    if (basePrice > currentPrice) return basePrice;
-    if (discount > 0 && currentPrice > 0) {
-      return Math.round(currentPrice / (1 - discount / 100));
-    }
-    return currentPrice;
-  };
-
-  const formatPrice = (value) =>
-    new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
-
   const getCourseCount = (course, itemsKey, totalKey) => {
     if (Array.isArray(course?.[itemsKey])) {
       return course[itemsKey].length;
@@ -970,8 +946,6 @@ export default function CourseTab() {
         ) : (
           courses.map((course) => {
             const isPurchased = isCoursePurchased(course._id);
-            const currentPrice = getCurrentPrice(course);
-            const originalPrice = getOriginalPrice(course, currentPrice);
             const chaptersCount = getCourseCount(course, "chapters", "totalChapters");
             const assignmentsCount = getCourseCount(
               course,
@@ -996,10 +970,8 @@ export default function CourseTab() {
                 value: `${chaptersCount} ${chaptersCount === 1 ? "chapter" : "chapters"}`,
               },
               {
-                label: isPurchased ? "Progress" : "Assessments",
-                value: isPurchased
-                  ? `${progressValue}% complete`
-                  : `${assignmentsCount + testsCount} evaluations`,
+                label: "Assessments",
+                value: `${assignmentsCount + testsCount} items`,
               },
             ];
 
@@ -1086,37 +1058,33 @@ export default function CourseTab() {
                           </div>
 
                           <div className="xl:w-[240px] xl:shrink-0">
-                            <div className="rounded-[24px] bg-slate-950 px-5 py-4 text-white shadow-lg">
-                              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-300">
-                                {isPurchased ? "Your access" : "Course fee"}
+                            <div className="rounded-[24px] border border-blue-100 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 px-5 py-4 text-white shadow-lg">
+                              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">
+                                Course Progress
                               </p>
-                              <p className="mt-3 text-3xl font-bold leading-none text-emerald-400">
-                                &#8377;{formatPrice(currentPrice)}
+                              <p className="mt-3 text-3xl font-bold leading-none">
+                                {progressValue}%
                               </p>
-                              {originalPrice > currentPrice && (
-                                <p className="mt-2 text-sm text-slate-400 line-through">
-                                  &#8377;{formatPrice(originalPrice)}
-                                </p>
-                              )}
+                              <p className="mt-2 text-sm text-blue-50">
+                                {isPurchased
+                                  ? progressValue > 0
+                                    ? "Keep going through your course modules."
+                                    : "You are enrolled. Start your first chapter."
+                                  : "Enroll to begin tracking your learning progress."}
+                              </p>
 
-                              {isPurchased ? (
-                                <div className="mt-4">
-                                  <div className="flex items-center justify-between text-xs font-medium text-slate-300">
-                                    <span>Learning progress</span>
-                                    <span>{progressValue}%</span>
-                                  </div>
-                                  <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/10">
-                                    <div
-                                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400"
-                                      style={{ width: `${progressValue}%` }}
-                                    />
-                                  </div>
+                              <div className="mt-5">
+                                <div className="flex items-center justify-between text-xs font-medium text-blue-100">
+                                  <span>{isPurchased ? "Learning progress" : "Progress will appear here"}</span>
+                                  <span>{progressValue}%</span>
                                 </div>
-                              ) : (
-                                <p className="mt-4 text-sm leading-6 text-slate-300">
-                                  Enroll to unlock chapter-wise navigation, assignments, and tests.
-                                </p>
-                              )}
+                                <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/20">
+                                  <div
+                                    className="h-full rounded-full bg-white"
+                                    style={{ width: `${progressValue}%` }}
+                                  />
+                                </div>
+                              </div>
                             </div>
 
                             <button
