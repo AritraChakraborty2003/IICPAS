@@ -8,7 +8,7 @@ const WhatsAppButton = () => {
   const pathname = usePathname();
   const isDigitalHubRoute = pathname?.includes("/digital-hub");
   const positionClasses = isDigitalHubRoute
-    ? "top-32 left-14 sm:top-36 sm:left-20"
+    ? "top-1/2 left-14 -translate-y-16 sm:left-20"
     : "bottom-4 right-24";
 
   // WhatsApp configuration - you can change this number

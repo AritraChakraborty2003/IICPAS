@@ -20,6 +20,8 @@ import {
   Close,
   Add,
   DragIndicator,
+  OpenInFull,
+  CloseFullscreen,
 } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 
@@ -164,6 +166,7 @@ export default function AddOrEditTopicForm({
   onSaved,
 }) {
   const editor = useRef(null);
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [title, setTitle] = useState(topic?.title || "");
   const [content, setContent] = useState(topic?.content || "");
   const [quizFile, setQuizFile] = useState(null);
@@ -1105,17 +1108,79 @@ export default function AddOrEditTopicForm({
   };
 
   return (
-    <Box sx={{ width: "75vw", maxWidth: "76vw", mx: "auto", mt: 3 }}>
-      <form onSubmit={handleSubmit}>
-        <Stack spacing={3} sx={{ p: { xs: 2, md: 5 } }}>
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            align="center"
-            sx={{ fontSize: 28 }}
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 1400,
+        display: "flex",
+        justifyContent: "flex-end",
+        backgroundColor: "rgba(15, 23, 42, 0.35)",
+        backdropFilter: "blur(2px)",
+      }}
+    >
+      <Box
+        sx={{
+          width: {
+            xs: "100vw",
+            md: sidebarExpanded ? "min(88vw, 1320px)" : "min(48vw, 860px)",
+          },
+          height: "100vh",
+          bgcolor: "#fff",
+          boxShadow: "-24px 0 60px rgba(15, 23, 42, 0.22)",
+          display: "flex",
+          flexDirection: "column",
+          transition: "width 220ms ease",
+        }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            px: { xs: 2, md: 3 },
+            py: 2,
+            borderBottom: "1px solid #e2e8f0",
+            position: "sticky",
+            top: 0,
+            zIndex: 2,
+            bgcolor: "#fff",
+          }}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <IconButton
+              onClick={onCancel}
+              sx={{
+                color: "#334155",
+                border: "1px solid #cbd5e1",
+                borderRadius: 2,
+              }}
+            >
+              <Close />
+            </IconButton>
+            <Typography
+              variant="h5"
+              fontWeight={700}
+              sx={{ fontSize: { xs: 20, md: 24 }, lineHeight: 1.2 }}
+            >
+              {topic ? "Edit Topic" : "Add Topic"} for "{chapterName}"
+            </Typography>
+          </Stack>
+
+          <Button
+            variant="outlined"
+            startIcon={sidebarExpanded ? <CloseFullscreen /> : <OpenInFull />}
+            onClick={() => setSidebarExpanded((prev) => !prev)}
+            sx={{ whiteSpace: "nowrap" }}
           >
-            {topic ? "Edit Topic" : "Add Topic"} for "{chapterName}"
-          </Typography>
+            {sidebarExpanded ? "Minimize" : "Maximize"}
+          </Button>
+        </Box>
+
+        <Box sx={{ flex: 1, overflowY: "auto" }}>
+          <form onSubmit={handleSubmit}>
+            <Stack spacing={3} sx={{ p: { xs: 2, md: 4 } }}>
 
           <TextField
             label="Topic Title *"
@@ -1923,8 +1988,10 @@ export default function AddOrEditTopicForm({
                 : "Add Topic"}
             </Button>
           </Stack>
-        </Stack>
-      </form>
+            </Stack>
+          </form>
+        </Box>
+      </Box>
 
       {/* Content Preview Modal */}
       <Modal
