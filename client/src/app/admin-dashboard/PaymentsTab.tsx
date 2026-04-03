@@ -1,6 +1,6 @@
+"use client";
 import { getApiOrigin } from "@/lib/apiBase";
 /* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
