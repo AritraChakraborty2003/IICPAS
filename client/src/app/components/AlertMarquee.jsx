@@ -4,23 +4,40 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Marquee from "react-fast-marquee";
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const extractAlerts = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.alerts)) return payload.alerts;
+  if (Array.isArray(payload?.data?.alerts)) return payload.data.alerts;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 const AlertMarquee = ({ showMarquee = true }) => {
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  // Use the correct API base URL pattern
-  const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  const API_BASE = getApiBase();
 
   useEffect(() => {
     const fetchAlerts = async () => {
       try {
         console.log("Fetching alerts from:", `${API_BASE}/alerts`);
         const response = await axios.get(`${API_BASE}/alerts`);
+        const alertList = extractAlerts(response.data);
 
         // Filter only active alerts
-        const activeAlerts = response.data.filter(
+        const activeAlerts = alertList.filter(
           (alert) => alert.status === "active"
         );
 
