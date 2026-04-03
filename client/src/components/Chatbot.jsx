@@ -12,10 +12,10 @@ const Chatbot = () => {
   const pathname = usePathname();
   const isDigitalHubRoute = pathname?.includes("/digital-hub");
   const chatWindowPositionClasses = isDigitalHubRoute
-    ? "bottom-12 left-14 w-[calc(100vw-4.5rem)] max-w-sm sm:bottom-16 sm:left-20 sm:w-96"
+    ? "top-52 left-14 w-[calc(100vw-4.5rem)] max-w-sm sm:top-56 sm:left-20 sm:w-96"
     : "bottom-20 right-4 w-96";
   const chatButtonPositionClasses = isDigitalHubRoute
-    ? "bottom-12 left-14 sm:bottom-16 sm:left-20"
+    ? "top-48 left-14 sm:top-52 sm:left-20"
     : "bottom-4 right-4";
   const [isOpen, setIsOpen] = useState(false);
   const [leadFormVisible, setLeadFormVisible] = useState(true);
