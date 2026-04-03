@@ -76,9 +76,7 @@ const AlertMarquee = ({ showMarquee = true }) => {
   // Always show marquee with content (either from API or fallback)
   return (
     <div
-      className={`text-white font-bold border-b border-yellow-200 fixed top-0 left-0 w-full z-50 ${
-        error ? "bg-orange-600" : "bg-green-600"
-      }`}
+      className="bg-green-600 text-white font-bold border-b border-green-500 fixed top-0 left-0 w-full z-50"
       style={{ "--marquee-height": "40px" }}
     >
       <Marquee speed={80} gradient={false} className="py-2 overflow-hidden">

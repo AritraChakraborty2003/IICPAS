@@ -117,9 +117,7 @@ const ThinNavbar = ({ showNavbar = true }) => {
     <>
       <style dangerouslySetInnerHTML={{ __html: waveStyles }} />
       <div
-        className={`thin-navbar text-white font-bold ${
-          error ? "bg-orange-600" : "bg-green-600"
-        }`}
+        className="thin-navbar bg-green-600 text-white font-bold"
         style={{ height: "40px" }}
       >
         {/* Shining wave overlay */}
