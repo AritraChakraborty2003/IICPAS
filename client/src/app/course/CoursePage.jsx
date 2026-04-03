@@ -11,6 +11,33 @@ import wishlistEventManager from "../../utils/wishlistEventManager";
 import GroupCourseCard from "../components/GroupCourseCard";
 import SimpleScrabbleGame from "./SimpleScrabbleGame";
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "http://localhost:8080/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const getApiOrigin = () => {
+  const configuredOrigin =
+    process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_API_BASE?.replace(/\/api\/?$/i, "") ||
+    "http://localhost:8080";
+
+  return configuredOrigin.trim().replace(/\/+$/, "");
+};
+
+const extractList = (payload, key) => {
+  if (Array.isArray(payload)) return payload;
+  if (key && Array.isArray(payload?.[key])) return payload[key];
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (key && Array.isArray(payload?.data?.[key])) return payload.data[key];
+  return [];
+};
+
 const normalizeCourseImageSrc = (rawImage, apiUrl) => {
   if (!rawImage || typeof rawImage !== "string") return null;
 
@@ -69,9 +96,9 @@ export default function CoursePage() {
   });
   const [contactSubmitting, setContactSubmitting] = useState(false);
 
-  // Define API_BASE at component level
-  const API_BASE =
-    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+  const API_BASE = getApiBase();
+  const API_ORIGIN = getApiOrigin();
+
   // Fetch data
   useEffect(() => {
     const fetchData = async () => {
@@ -92,39 +119,41 @@ export default function CoursePage() {
         ]);
 
         // Update courses if API call succeeded
-        if (
-          coursesResponse.status === "fulfilled" &&
-          coursesResponse.value.data?.length > 0
-        ) {
-          setAllCourses(coursesResponse.value.data);
+        if (coursesResponse.status === "fulfilled") {
+          const courses = extractList(coursesResponse.value.data, "courses");
+          if (courses.length > 0) {
+            setAllCourses(courses);
+          }
         }
 
         // Update categories if API call succeeded
         if (categoriesResponse.status === "fulfilled") {
-          const apiCategories =
-            categoriesResponse.value.data.categories ||
-            categoriesResponse.value.data;
+          const apiCategories = extractList(
+            categoriesResponse.value.data,
+            "categories"
+          );
           if (apiCategories && apiCategories.length > 0) {
             setCategories(apiCategories);
           }
         }
 
         // Update group pricing if API call succeeded
-        if (
-          groupPricingResponse.status === "fulfilled" &&
-          groupPricingResponse.value.data?.length > 0
-        ) {
-          setGroupPricing(groupPricingResponse.value.data);
+        if (groupPricingResponse.status === "fulfilled") {
+          const groups = extractList(
+            groupPricingResponse.value.data,
+            "groupPricing"
+          );
+          if (groups.length > 0) {
+            setGroupPricing(groups);
+          }
         }
 
         // Update blogs if API call succeeded
-        if (
-          blogsResponse.status === "fulfilled" &&
-          blogsResponse.value.data?.length > 0
-        ) {
+        if (blogsResponse.status === "fulfilled") {
+          const blogs = extractList(blogsResponse.value.data, "blogs");
           // Filter only active blogs
-          const activeBlogs = blogsResponse.value.data.filter(
-            (blog) => blog.status === "active"
+          const activeBlogs = blogs.filter(
+            (blog) => !blog?.status || blog.status === "active"
           );
           setBlogs(activeBlogs);
         }
@@ -155,7 +184,7 @@ export default function CoursePage() {
     return () => {
       unsubscribe();
     };
-  }, []); // Remove student dependency to prevent loops
+  }, [API_BASE, student]); // Remove student dependency to prevent loops
 
   // Fetch current wishlist state
   const fetchWishlistState = async () => {
@@ -466,7 +495,7 @@ export default function CoursePage() {
                 filteredCourses.map((course, index) => {
                 const courseImageSrc = normalizeCourseImageSrc(
                   course.image,
-                  process.env.NEXT_PUBLIC_API_URL
+                  API_ORIGIN
                 );
 
                 // Use recorded session pricing if available, otherwise fall back to legacy pricing
