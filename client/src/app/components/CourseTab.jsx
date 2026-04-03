@@ -1376,8 +1376,9 @@ export default function CourseTab() {
                 </div>
               </div>
                 )}
-              </div>
-	            })
+	              </div>
+	            );
+	          })
 	        )}
       </div>
 
