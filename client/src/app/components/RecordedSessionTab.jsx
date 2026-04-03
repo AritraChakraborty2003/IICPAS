@@ -9,6 +9,19 @@ import {
   UserIcon,
 } from "lucide-react";
 
+const stripHtml = (value) => {
+  if (!value) return "";
+  return value
+    .toString()
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 export default function RecordedSessionTab() {
   const [recordedSessions, setRecordedSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,7 +153,7 @@ export default function RecordedSessionTab() {
                   </div>
 
                   <p className="text-sm text-gray-600 mb-3">
-                    {course.description || "Recorded course content"}
+                    {stripHtml(course.description) || "Recorded course content"}
                   </p>
 
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
