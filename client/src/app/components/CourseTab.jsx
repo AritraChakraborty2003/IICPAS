@@ -1199,6 +1199,8 @@ export default function CourseTab() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
                 ) : (
               // State 2: Course Detailed View (Compact Professional)
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
