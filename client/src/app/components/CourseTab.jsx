@@ -1032,7 +1032,7 @@ export default function CourseTab() {
                               ) : null}
                             </div>
 
-                            <h2 className="max-w-4xl text-2xl font-bold leading-tight text-slate-900 sm:text-[2rem]">
+                            <h2 className="max-w-4xl text-xl font-bold leading-snug text-slate-900 sm:text-[1.65rem]">
                               {course.title}
                             </h2>
 
@@ -1133,7 +1133,7 @@ export default function CourseTab() {
                 <div className="bg-slate-50 border-b border-slate-200 p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className="text-lg sm:text-xl font-semibold text-slate-900 mb-1">
+                      <h2 className="text-base sm:text-lg font-semibold text-slate-900 mb-1">
                         {course.title}
                       </h2>
                       <p className="text-xs text-slate-600">
