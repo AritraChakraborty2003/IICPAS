@@ -29,6 +29,71 @@ import {
 import StarRating from "./StarRating";
 import { toast } from "react-hot-toast";
 
+const toNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const getDisplayPricing = (course) => {
+  const recordedFinal = toNumber(course?.pricing?.recordedSession?.finalPrice, NaN);
+  const recordedPrice = toNumber(course?.pricing?.recordedSession?.price, NaN);
+  const legacyPrice = toNumber(course?.price, 0);
+
+  const finalPrice = Number.isFinite(recordedFinal)
+    ? recordedFinal
+    : Number.isFinite(recordedPrice)
+    ? recordedPrice
+    : legacyPrice;
+
+  const originalPrice = Number.isFinite(recordedPrice) ? recordedPrice : legacyPrice;
+  const explicitDiscount = toNumber(
+    course?.pricing?.recordedSession?.discount ?? course?.discount,
+    0
+  );
+  const derivedDiscount =
+    originalPrice > 0 && finalPrice < originalPrice
+      ? Math.round(((originalPrice - finalPrice) / originalPrice) * 100)
+      : 0;
+
+  return {
+    finalPrice,
+    originalPrice,
+    discountPercent: Math.max(explicitDiscount, derivedDiscount, 0),
+  };
+};
+
+const stripHtml = (value) => {
+  if (!value) return "";
+  return value
+    .toString()
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
+const resolveCourseImage = (course, apiBase) => {
+  const raw = (course?.image || "").toString().trim();
+  if (!raw) return "";
+
+  if (/^https?:\/\//i.test(raw)) {
+    return raw.replace(/^http:\/\//i, "https://");
+  }
+
+  if (raw.startsWith("/uploads/")) {
+    return `${apiBase}${raw}`;
+  }
+
+  if (raw.startsWith("/")) {
+    return raw;
+  }
+
+  return `${apiBase}/${raw.replace(/^\/+/, "")}`;
+};
+
 export default function CourseTab() {
   const [studentId, setStudentId] = useState(null);
   const [courses, setCourses] = useState([]);
@@ -856,49 +921,69 @@ export default function CourseTab() {
             <div key={course._id} className="group relative">
             {viewModes[course._id] !== "detailed" ? (
               // State 1: Modern Course Overview Card
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
+              <div className="overflow-hidden rounded-[30px] border border-slate-200/80 bg-white/95 shadow-[0_20px_60px_-30px_rgba(15,23,42,0.35)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_28px_80px_-34px_rgba(15,23,42,0.45)]">
                 {/* Course Header */}
-                <div className="bg-blue-600 px-3 py-2 text-white">
-                  <h2 className="text-lg font-bold">{course.title}</h2>
+                <div className="border-b border-white/10 bg-[linear-gradient(120deg,#1d4ed8_0%,#2563eb_35%,#0f9f6e_100%)] px-5 py-5 text-white sm:px-6">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-100 backdrop-blur">
+                      {course.category || "General"}
+                    </span>
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white/95 backdrop-blur">
+                      {isCoursePurchased(course._id) ? "Enrolled" : "Available"}
+                    </span>
+                  </div>
+                  <h2 className="mt-3 text-[1.9rem] font-semibold leading-tight tracking-[-0.02em] sm:text-[2.1rem]">
+                    {course.title}
+                  </h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-blue-50/90">
+                    {stripHtml(course.description) ||
+                      "Structured modules, guided practice, and industry-ready learning outcomes."}
+                  </p>
                 </div>
 
-                <div className="p-3">
-                  <div className="grid grid-cols-1 lg:grid-cols-5 gap-3">
+                <div className="p-5 sm:p-6">
+                  <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
                     {/* Left Side - Course Image with Modern Styling */}
-                    <div className="lg:col-span-1">
+                    <div>
                       <div className="relative group">
-                        <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-gray-100 to-gray-200">
+                        <div className="relative overflow-hidden rounded-[24px] bg-slate-100 shadow-inner ring-1 ring-slate-200/70">
                           <img
-                            src={
-                              course.image
-                                ? `${API}${course.image}`
-                                : "/images/a1.jpeg"
-                            }
+                            src={resolveCourseImage(course, API) || "/images/a1.jpeg"}
                             alt={course.title}
-                            className="w-full h-32 object-cover transform transition-transform duration-500 group-hover:scale-110"
+                            className="h-[250px] w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
                             onError={(e) => {
                               e.target.src = "/images/a1.jpeg";
                             }}
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent"></div>
+                          <div className="absolute left-4 top-4">
+                            <span className="rounded-full bg-slate-950/65 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                              Digital Hub Ready
+                            </span>
+                          </div>
+                          <div className="absolute bottom-4 left-4">
+                            <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
+                              {course.level || "Professional Level"}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
                     {/* Right Side - Course Stats with Modern Cards */}
-                    <div className="lg:col-span-4">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">
+                    <div>
+                      <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         {/* Status Card */}
-                        <div className="bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl p-1">
+                        <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
                               <FaCheckCircle className="text-emerald-600 text-sm" />
                             </div>
                             <div>
-                              <p className="text-xs text-gray-600 font-medium">
+                              <p className="text-xs font-medium text-slate-500">
                                 Status
                               </p>
-                              <p className="text-sm font-bold text-emerald-700">
+                              <p className="text-base font-bold text-emerald-700">
                                 {course.status}
                               </p>
                             </div>
@@ -906,51 +991,59 @@ export default function CourseTab() {
                         </div>
 
                         {/* Level Card */}
-                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-1">
+                        <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                               <FaGraduationCap className="text-blue-600 text-sm" />
                             </div>
                             <div>
-                              <p className="text-xs text-gray-600 font-medium">
+                              <p className="text-xs font-medium text-slate-500">
                                 Level
                               </p>
-                              <p className="text-sm font-bold text-blue-700">
-                                {course.level}
+                              <p className="text-base font-bold text-blue-700">
+                                {course.level || "Professional Level"}
                               </p>
                             </div>
                           </div>
                         </div>
 
                         {/* Price Card */}
-                        <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200 rounded-xl p-1">
+                        <div className="rounded-2xl border border-violet-100 bg-violet-50/70 px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                               <FaStar className="text-purple-600 text-sm" />
                             </div>
                             <div>
-                              <p className="text-xs text-gray-600 font-medium">
+                              <p className="text-xs font-medium text-slate-500">
                                 Price
                               </p>
-                              <p className="text-sm font-bold text-purple-700">
-                                ₹{course.price}
+                              <p className="text-lg font-bold text-violet-700">
+                                Rs {getDisplayPricing(course).finalPrice.toLocaleString()}
                               </p>
+                              {getDisplayPricing(course).originalPrice >
+                              getDisplayPricing(course).finalPrice ? (
+                                <p className="text-xs text-slate-400 line-through">
+                                  Rs {getDisplayPricing(course).originalPrice.toLocaleString()}
+                                </p>
+                              ) : (
+                                <p className="text-xs text-slate-500">Best available fee</p>
+                              )}
                             </div>
                           </div>
                         </div>
 
                         {/* Duration Card */}
-                        <div className="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-xl p-1">
+                        <div className="rounded-2xl border border-orange-100 bg-orange-50/70 px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
                               <FaClock className="text-orange-600 text-sm" />
                             </div>
                             <div>
-                              <p className="text-xs text-gray-600 font-medium">
+                              <p className="text-xs font-medium text-slate-500">
                                 Duration
                               </p>
-                              <p className="text-sm font-bold text-orange-700">
-                                8 Weeks
+                              <p className="text-base font-bold text-orange-700">
+                                {course.duration || "Flexible schedule"}
                               </p>
                             </div>
                           </div>
@@ -958,31 +1051,35 @@ export default function CourseTab() {
                       </div>
 
                       {/* Action Buttons */}
-                      <div className="flex gap-3 pt-4 pb-2">
+                      <div className="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:flex-wrap sm:items-center">
                         {/* Show different button based on purchase status */}
                         {isCoursePurchased(course._id) ? (
                           // Purchased course - show "View Course Details"
                           <button
                             onClick={() => handleDetailedToggle(course._id)}
-                            className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-2 px-4 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:from-blue-700 hover:to-purple-700"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto sm:min-w-[220px]"
                           >
-                            <span className="flex items-center justify-center gap-2">
-                              <Book className="text-xl" />
-                              View Course Details
-                            </span>
+                            <Book className="text-xl" />
+                            Open Course
                           </button>
                         ) : (
                           // Available course - show "Buy Now"
                           <button
                             onClick={() => handleBuyNow(course)}
-                            className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2 px-4 rounded-xl font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 hover:from-green-700 hover:to-emerald-700"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-5 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 sm:w-auto sm:min-w-[220px]"
                           >
-                            <span className="flex items-center justify-center gap-2">
-                              <FaShoppingCart className="text-xl" />
-                              Buy Now
-                            </span>
+                            <FaShoppingCart className="text-lg" />
+                            Buy Now
                           </button>
                         )}
+
+                        <button
+                          onClick={() => router.push(`/course/${course.slug || course._id}`)}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 sm:w-auto sm:min-w-[200px]"
+                        >
+                          <Visibility className="text-lg" />
+                          View Details
+                        </button>
 
                         {/* Rating Button - Show only for purchased courses that are completed and not already rated */}
                         {isCoursePurchased(course._id) &&
@@ -993,19 +1090,17 @@ export default function CourseTab() {
                                 setCourseToRate(course);
                                 setShowRatingModal(true);
                               }}
-                              className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white py-3 px-4 rounded-xl font-semibold text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:from-yellow-600 hover:to-orange-600"
+                              className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 sm:ml-auto sm:w-auto"
                             >
-                              <span className="flex items-center justify-center gap-2">
-                                <FaStar className="text-xl" />
-                                Rate Course
-                              </span>
+                              <FaStar className="text-lg" />
+                              Rate Course
                             </button>
                           )}
 
                         {/* Show rating status if already rated */}
                         {courseRatings[course._id] && (
-                          <div className="flex items-center justify-center px-6 py-4 bg-gray-100 rounded-xl">
-                            <span className="text-gray-600 font-medium">
+                          <div className="inline-flex items-center justify-center rounded-2xl bg-slate-100 px-5 py-3 text-sm font-medium text-slate-600 sm:ml-auto">
+                            <span>
                               {courseRatings[course._id].status === "pending"
                                 ? "Rating Pending"
                                 : courseRatings[course._id].status ===
