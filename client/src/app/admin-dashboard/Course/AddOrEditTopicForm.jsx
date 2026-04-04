@@ -21,8 +21,6 @@ import {
   Close,
   Add,
   DragIndicator,
-  OpenInFull,
-  CloseFullscreen,
 } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 
@@ -167,7 +165,6 @@ export default function AddOrEditTopicForm({
   onSaved,
 }) {
   const editor = useRef(null);
-  const [sidebarExpanded, setSidebarExpanded] = useState(false);
   const [title, setTitle] = useState(topic?.title || "");
   const [content, setContent] = useState(topic?.content || "");
   const [quizFile, setQuizFile] = useState(null);
@@ -1111,27 +1108,21 @@ export default function AddOrEditTopicForm({
   return (
     <Box
       sx={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1400,
-        display: "flex",
-        justifyContent: "flex-end",
-        backgroundColor: "rgba(15, 23, 42, 0.35)",
-        backdropFilter: "blur(2px)",
+        width: "100%",
+        minHeight: "calc(100vh - 120px)",
       }}
     >
       <Box
         sx={{
-          width: {
-            xs: "100vw",
-            md: sidebarExpanded ? "min(88vw, 1320px)" : "min(48vw, 860px)",
-          },
-          height: "100vh",
+          width: "100%",
+          minHeight: "calc(100vh - 120px)",
           bgcolor: "#fff",
-          boxShadow: "-24px 0 60px rgba(15, 23, 42, 0.22)",
+          borderRadius: 3,
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 18px 45px rgba(15, 23, 42, 0.08)",
           display: "flex",
           flexDirection: "column",
-          transition: "width 220ms ease",
+          overflow: "hidden",
         }}
       >
         <Box
@@ -1148,10 +1139,10 @@ export default function AddOrEditTopicForm({
             zIndex: 2,
             bgcolor: "#fff",
           }}
-        >
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <IconButton
-              onClick={onCancel}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <IconButton
+                onClick={onCancel}
               sx={{
                 color: "#334155",
                 border: "1px solid #cbd5e1",
@@ -1164,19 +1155,10 @@ export default function AddOrEditTopicForm({
               variant="h5"
               fontWeight={700}
               sx={{ fontSize: { xs: 20, md: 24 }, lineHeight: 1.2 }}
-            >
-              {topic ? "Edit Topic" : "Add Topic"} for "{chapterName}"
-            </Typography>
-          </Stack>
-
-          <Button
-            variant="outlined"
-            startIcon={sidebarExpanded ? <CloseFullscreen /> : <OpenInFull />}
-            onClick={() => setSidebarExpanded((prev) => !prev)}
-            sx={{ whiteSpace: "nowrap" }}
-          >
-            {sidebarExpanded ? "Minimize" : "Maximize"}
-          </Button>
+              >
+                {topic ? "Edit Topic" : "Add Topic"} for "{chapterName}"
+              </Typography>
+            </Stack>
         </Box>
 
         <Box sx={{ flex: 1, overflowY: "auto" }}>
