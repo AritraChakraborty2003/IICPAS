@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Edit, Trash2, Plus } from "lucide-react";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+import { getApiBase } from "@/lib/apiBase";
 
 interface AssignmentsListProps {
   chapterId: string;
@@ -73,6 +72,7 @@ export default function AssignmentsList({
   onEdit,
   onAdd,
 }: AssignmentsListProps) {
+  const API_BASE = getApiBase();
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -84,11 +84,10 @@ export default function AssignmentsList({
   const fetchAssignments = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${API_BASE}/assignments/chapter/${chapterId}`
-      );
+      setError("");
+      const response = await axios.get(`${API_BASE}/assignments/chapter/${chapterId}`);
       if (response.data.success) {
-        setAssignments(response.data.data);
+        setAssignments(response.data.data || []);
       } else {
         setError("Failed to fetch assignments");
       }

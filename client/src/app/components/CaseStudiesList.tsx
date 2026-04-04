@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Edit, Trash2, Plus } from "lucide-react";
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+import { getApiBase } from "@/lib/apiBase";
 
 interface CaseStudiesListProps {
   chapterId: string;
@@ -73,6 +72,7 @@ export default function CaseStudiesList({
   onEdit,
   onAdd,
 }: CaseStudiesListProps) {
+  const API_BASE = getApiBase();
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -84,11 +84,10 @@ export default function CaseStudiesList({
   const fetchCaseStudies = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${API_BASE}/case-studies/chapter/${chapterId}`
-      );
+      setError("");
+      const response = await axios.get(`${API_BASE}/case-studies/chapter/${chapterId}`);
       if (response.data.success) {
-        setCaseStudies(response.data.data);
+        setCaseStudies(response.data.data || []);
       } else {
         setError("Failed to fetch case studies");
       }
