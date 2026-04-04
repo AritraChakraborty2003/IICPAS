@@ -195,6 +195,8 @@ interface DigitalHubClientProps {
   isDemo: boolean;
 }
 
+const QUIZ_QUESTION_LIMIT = 5;
+
 const extractCourseRecord = (payload: unknown): Record<string, unknown> | null => {
   if (!payload || typeof payload !== "object") return null;
 
@@ -222,6 +224,23 @@ const extractCourseRecord = (payload: unknown): Record<string, unknown> | null =
   }
 
   return candidate;
+};
+
+const getRandomQuestions = (
+  questions: QuizQuestion[],
+  limit: number = QUIZ_QUESTION_LIMIT
+) => {
+  const shuffled = [...questions];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [
+      shuffled[randomIndex],
+      shuffled[index],
+    ];
+  }
+
+  return shuffled.slice(0, Math.min(limit, shuffled.length));
 };
 
 export default function DigitalHubClient({
@@ -626,8 +645,15 @@ export default function DigitalHubClient({
         console.log("Quiz API response:", response.data);
 
         if (response.data.success && response.data.quiz) {
-          console.log("Quiz loaded successfully:", response.data.quiz);
-          setQuizData(response.data.quiz);
+          const quiz = response.data.quiz as QuizData;
+          const randomizedQuestions = getRandomQuestions(quiz.questions || []);
+          const randomizedQuiz = {
+            ...quiz,
+            questions: randomizedQuestions,
+          };
+
+          console.log("Quiz loaded successfully:", randomizedQuiz);
+          setQuizData(randomizedQuiz);
         } else {
           console.log("No quiz found or invalid response");
         }
