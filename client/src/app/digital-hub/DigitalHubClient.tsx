@@ -2578,7 +2578,7 @@ export default function DigitalHubClient({
                                   : "bg-blue-600 hover:bg-blue-700"
                               }`}
                             >
-                              <span>Next</span>
+                              <span>Next Topic</span>
                               <span aria-hidden="true">→</span>
                             </button>
                           ) : null}
