@@ -22,6 +22,7 @@ import {
   FaShoppingCart,
   FaStar,
 } from "react-icons/fa";
+import { Lock } from "lucide-react";
 import StarRating from "./StarRating";
 import { toast } from "react-hot-toast";
 
@@ -800,7 +801,14 @@ export default function CourseTab() {
                             : "bg-blue-600 text-white hover:bg-blue-700"
                         }`}
                       >
-                        {chapter.isLocked ? "Locked" : "Open in Digital Hub"}
+                        {chapter.isLocked ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Lock className="h-3.5 w-3.5" />
+                            <span>Locked</span>
+                          </span>
+                        ) : (
+                          "Open in Digital Hub"
+                        )}
                       </button>
                       {Array.isArray(chapter.topics) && chapter.topics.length > 0 ? (
                         <ul className="space-y-2">
@@ -1400,7 +1408,14 @@ export default function CourseTab() {
                                           : "bg-blue-600 text-white hover:bg-blue-700"
                                       }`}
                                     >
-                                      {chapter.isLocked ? "Locked" : "Open in Digital Hub"}
+                                      {chapter.isLocked ? (
+                                        <span className="inline-flex items-center gap-1">
+                                          <Lock className="h-3.5 w-3.5" />
+                                          <span>Locked</span>
+                                        </span>
+                                      ) : (
+                                        "Open in Digital Hub"
+                                      )}
                                     </button>
                                   </div>
                                 </div>

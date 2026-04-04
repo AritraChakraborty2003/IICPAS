@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { Upload, User } from "lucide-react";
+import { Lock, Upload, User } from "lucide-react";
 import StudentInvoicesTab from "./StudentInvoicesTab";
 
 const studentSectionTabs = [
@@ -619,9 +619,14 @@ export default function ProfileTab({ onImageUpdated }) {
                                               : "bg-blue-100 text-blue-700"
                                           }`}
                                         >
-                                          {chapter?.isLocked
-                                            ? "Locked"
-                                            : `${chapter?.completion || 0}%`}
+                                          {chapter?.isLocked ? (
+                                            <span className="inline-flex items-center gap-1">
+                                              <Lock className="h-3.5 w-3.5" />
+                                              <span>Locked</span>
+                                            </span>
+                                          ) : (
+                                            `${chapter?.completion || 0}%`
+                                          )}
                                         </span>
                                         <button
                                           type="button"
@@ -638,7 +643,14 @@ export default function ProfileTab({ onImageUpdated }) {
                                               : "bg-blue-600 text-white hover:bg-blue-700"
                                           }`}
                                         >
-                                          {chapter?.isLocked ? "Locked" : "Open in Digital Hub"}
+                                          {chapter?.isLocked ? (
+                                            <span className="inline-flex items-center gap-1">
+                                              <Lock className="h-3.5 w-3.5" />
+                                              <span>Locked</span>
+                                            </span>
+                                          ) : (
+                                            "Open in Digital Hub"
+                                          )}
                                         </button>
                                       </div>
                                     </div>
