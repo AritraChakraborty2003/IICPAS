@@ -16,6 +16,66 @@ const studentSectionTabs = [
 
 const MAX_PROFILE_IMAGE_BYTES = 900 * 1024;
 
+const sortChaptersByOrder = (chapters) =>
+  [...(Array.isArray(chapters) ? chapters : [])].sort((left, right) => {
+    const leftOrder = Number(left?.order || 0);
+    const rightOrder = Number(right?.order || 0);
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+    return String(left?.title || "").localeCompare(String(right?.title || ""));
+  });
+
+const mergeChaptersWithProgress = (chapters, progressPayload) => {
+  const progressMap = new Map(
+    Array.isArray(progressPayload?.chapters)
+      ? progressPayload.chapters.map((chapter) => [chapter.chapterId, chapter])
+      : []
+  );
+
+  return sortChaptersByOrder(chapters).map((chapter, index) => {
+    const progressEntry = progressMap.get(chapter?._id) || {};
+
+    return {
+      ...chapter,
+      isLocked:
+        typeof progressEntry.isLocked === "boolean"
+          ? progressEntry.isLocked
+          : index > 0,
+      isCompleted: Boolean(progressEntry.isCompleted),
+      completion:
+        typeof progressEntry.completionPercent === "number"
+          ? progressEntry.completionPercent
+          : Number(chapter?.completion || 0),
+      completedTopicCount: Number(progressEntry.completedTopicCount || 0),
+      totalTopicCount:
+        typeof progressEntry.totalTopicCount === "number"
+          ? progressEntry.totalTopicCount
+          : Array.isArray(chapter?.topics)
+          ? chapter.topics.length
+          : 0,
+      completedAssignmentCount: Number(
+        progressEntry.completedAssignmentCount || 0
+      ),
+      totalAssignmentCount: Number(progressEntry.totalAssignmentCount || 0),
+      completedQuestionSetCount: Number(
+        progressEntry.completedQuestionSetCount || 0
+      ),
+      totalQuestionSetCount: Number(progressEntry.totalQuestionSetCount || 0),
+    };
+  });
+};
+
+const getLatestAccessibleChapter = (chapters) => {
+  const unlockedChapters = (chapters || []).filter((chapter) => !chapter?.isLocked);
+  if (unlockedChapters.length === 0) {
+    return null;
+  }
+
+  return (
+    unlockedChapters.find((chapter) => !chapter?.isCompleted) ||
+    unlockedChapters[unlockedChapters.length - 1]
+  );
+};
+
 export default function ProfileTab({ onImageUpdated }) {
   const router = useRouter();
   const API =
@@ -409,11 +469,24 @@ export default function ProfileTab({ onImageUpdated }) {
   const fetchCourseChapters = async (courseId) => {
     if (!courseId || courseChaptersByCourse[courseId]) return;
     try {
-      const response = await axios.get(`${API}/api/chapters/course/${courseId}`);
+      const [response, progressResponse] = await Promise.all([
+        axios.get(`${API}/api/chapters/course/${courseId}`),
+        student._id
+          ? axios
+              .get(
+                `${API}/api/v1/students/${student._id}/digital-hub-progress/${courseId}`,
+                { withCredentials: true }
+              )
+              .catch(() => null)
+          : Promise.resolve(null),
+      ]);
       if (response.data?.success) {
         setCourseChaptersByCourse((prev) => ({
           ...prev,
-          [courseId]: response.data.chapters || [],
+          [courseId]: mergeChaptersWithProgress(
+            response.data.chapters || [],
+            progressResponse?.data
+          ),
         }));
       }
     } catch (chapterError) {
@@ -464,6 +537,10 @@ export default function ProfileTab({ onImageUpdated }) {
                   const digitalHubPath = `/digital-hub/${encodeURIComponent(
                     course?.slug || courseId
                   )}`;
+                  const primaryChapter = getLatestAccessibleChapter(chapters);
+                  const digitalHubOpenPath = primaryChapter?._id
+                    ? `${digitalHubPath}/${encodeURIComponent(primaryChapter._id)}`
+                    : digitalHubPath;
 
                   return (
                     <div
@@ -499,10 +576,10 @@ export default function ProfileTab({ onImageUpdated }) {
                             </p>
                             <button
                               type="button"
-                              onClick={() => router.push(digitalHubPath)}
+                              onClick={() => router.push(digitalHubOpenPath)}
                               className="text-xs rounded-md bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700"
                             >
-                              Open in Digital Hub
+                              {primaryChapter ? "Open in Digital Hub" : "View Course"}
                             </button>
                           </div>
 
@@ -524,15 +601,47 @@ export default function ProfileTab({ onImageUpdated }) {
                                     key={chapterId}
                                     className="border border-gray-200 rounded-lg"
                                   >
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        toggleProfileChapter(courseId, chapterId)
-                                      }
-                                      className="w-full text-left px-3 py-2 text-sm font-medium text-gray-800 bg-gray-50 hover:bg-gray-100"
-                                    >
-                                      {chapter?.title || `Chapter ${chapterIndex + 1}`}
-                                    </button>
+                                    <div className="flex items-center justify-between gap-3 px-3 py-2 bg-gray-50">
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          toggleProfileChapter(courseId, chapterId)
+                                        }
+                                        className="flex-1 text-left text-sm font-medium text-gray-800"
+                                      >
+                                        {chapter?.title || `Chapter ${chapterIndex + 1}`}
+                                      </button>
+                                      <div className="flex items-center gap-2 shrink-0">
+                                        <span
+                                          className={`rounded-full px-2 py-1 text-xs font-semibold ${
+                                            chapter?.isLocked
+                                              ? "bg-amber-100 text-amber-700"
+                                              : "bg-blue-100 text-blue-700"
+                                          }`}
+                                        >
+                                          {chapter?.isLocked
+                                            ? "Locked"
+                                            : `${chapter?.completion || 0}%`}
+                                        </span>
+                                        <button
+                                          type="button"
+                                          disabled={chapter?.isLocked}
+                                          onClick={() =>
+                                            !chapter?.isLocked &&
+                                            router.push(
+                                              `${digitalHubPath}/${encodeURIComponent(chapterId)}`
+                                            )
+                                          }
+                                          className={`rounded-md px-3 py-1.5 text-xs font-medium ${
+                                            chapter?.isLocked
+                                              ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                                              : "bg-blue-600 text-white hover:bg-blue-700"
+                                          }`}
+                                        >
+                                          {chapter?.isLocked ? "Locked" : "Open in Digital Hub"}
+                                        </button>
+                                      </div>
+                                    </div>
 
                                     {chapterExpanded ? (
                                       <div className="p-3 space-y-2">
@@ -578,6 +687,20 @@ export default function ProfileTab({ onImageUpdated }) {
                                             No topics available for this chapter.
                                           </p>
                                         )}
+                                        <div className="flex flex-wrap gap-2 pt-1 text-xs text-gray-600">
+                                          <span className="rounded-full bg-gray-100 px-2.5 py-1">
+                                            Topics {chapter?.completedTopicCount || 0}/
+                                            {chapter?.totalTopicCount || 0}
+                                          </span>
+                                          <span className="rounded-full bg-gray-100 px-2.5 py-1">
+                                            Assignments {chapter?.completedAssignmentCount || 0}/
+                                            {chapter?.totalAssignmentCount || 0}
+                                          </span>
+                                          <span className="rounded-full bg-gray-100 px-2.5 py-1">
+                                            Question sets {chapter?.completedQuestionSetCount || 0}/
+                                            {chapter?.totalQuestionSetCount || 0}
+                                          </span>
+                                        </div>
                                       </div>
                                     ) : null}
                                   </div>

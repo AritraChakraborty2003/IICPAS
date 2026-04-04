@@ -122,7 +122,6 @@ import {
   CheckCircle,
   Moon,
   Sun,
-  AlertTriangle,
   ArrowLeft,
   Menu,
   X,
@@ -132,6 +131,7 @@ import {
   BookOpen,
   ChevronDown,
   Globe,
+  Lock,
 } from "lucide-react";
 
 type ContentKey =
@@ -157,6 +157,18 @@ interface ChapterData {
   topics: TopicData[];
   order: number;
   status: string;
+  isLocked?: boolean;
+  isCompleted?: boolean;
+  completion?: number;
+  completedTopicCount?: number;
+  totalTopicCount?: number;
+  completedAssignmentCount?: number;
+  totalAssignmentCount?: number;
+  completedQuestionSetCount?: number;
+  totalQuestionSetCount?: number;
+  completedTopicIds?: string[];
+  completedAssignmentIds?: string[];
+  completedQuestionSetIds?: string[];
 }
 
 interface TopicData {
@@ -193,6 +205,22 @@ interface DigitalHubClientProps {
   courseSlugOrId: string;
   chapterId?: string;
   isDemo: boolean;
+}
+
+interface ChapterProgressSummary {
+  chapterId: string;
+  isLocked: boolean;
+  isCompleted: boolean;
+  completionPercent: number;
+  completedTopicCount: number;
+  totalTopicCount: number;
+  completedAssignmentCount: number;
+  totalAssignmentCount: number;
+  completedQuestionSetCount: number;
+  totalQuestionSetCount: number;
+  completedTopicIds: string[];
+  completedAssignmentIds: string[];
+  completedQuestionSetIds: string[];
 }
 
 const QUIZ_QUESTION_LIMIT = 5;
@@ -241,6 +269,63 @@ const getRandomQuestions = (
   }
 
   return shuffled.slice(0, Math.min(limit, shuffled.length));
+};
+
+const sortChaptersByOrder = (chapters: ChapterData[]) =>
+  [...chapters].sort((left, right) => {
+    const leftOrder = Number(left?.order || 0);
+    const rightOrder = Number(right?.order || 0);
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+    return String(left?.title || "").localeCompare(String(right?.title || ""));
+  });
+
+const mergeChapterProgress = (
+  chapters: ChapterData[],
+  progressSummaries: ChapterProgressSummary[] = []
+) => {
+  const progressMap = new Map(
+    progressSummaries.map((chapter) => [chapter.chapterId, chapter])
+  );
+
+  return sortChaptersByOrder(chapters).map((chapter, index) => {
+    const summary = progressMap.get(chapter._id);
+    return {
+      ...chapter,
+      isLocked:
+        typeof summary?.isLocked === "boolean" ? summary.isLocked : index > 0,
+      isCompleted: Boolean(summary?.isCompleted),
+      completion:
+        typeof summary?.completionPercent === "number"
+          ? summary.completionPercent
+          : Number(chapter.completion || 0),
+      completedTopicCount: Number(summary?.completedTopicCount || 0),
+      totalTopicCount:
+        typeof summary?.totalTopicCount === "number"
+          ? summary.totalTopicCount
+          : Array.isArray(chapter.topics)
+          ? chapter.topics.length
+          : 0,
+      completedAssignmentCount: Number(summary?.completedAssignmentCount || 0),
+      totalAssignmentCount: Number(summary?.totalAssignmentCount || 0),
+      completedQuestionSetCount: Number(summary?.completedQuestionSetCount || 0),
+      totalQuestionSetCount: Number(summary?.totalQuestionSetCount || 0),
+      completedTopicIds: summary?.completedTopicIds || [],
+      completedAssignmentIds: summary?.completedAssignmentIds || [],
+      completedQuestionSetIds: summary?.completedQuestionSetIds || [],
+    };
+  });
+};
+
+const getPreferredUnlockedChapter = (chapters: ChapterData[]) => {
+  const unlockedChapters = chapters.filter((chapter) => !chapter.isLocked);
+  if (unlockedChapters.length === 0) {
+    return chapters[0] || null;
+  }
+
+  return (
+    unlockedChapters.find((chapter) => !chapter.isCompleted) ||
+    unlockedChapters[unlockedChapters.length - 1]
+  );
 };
 
 export default function DigitalHubClient({
@@ -398,6 +483,10 @@ export default function DigitalHubClient({
   const [points, setPoints] = useState(0);
   const [studentId, setStudentId] = useState<string | null>(null);
   const [studentName, setStudentName] = useState("");
+  const [authResolved, setAuthResolved] = useState(false);
+  const [progressMutationKey, setProgressMutationKey] = useState<string | null>(
+    null
+  );
 
   useAuthHeartbeat({
     enabled: !!studentId,
@@ -455,7 +544,7 @@ export default function DigitalHubClient({
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3000);
       }
-    } catch (error) {
+    } catch {
       setToastMessage("Error submitting ticket. Please try again.");
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -516,37 +605,47 @@ export default function DigitalHubClient({
     [API_BASE]
   );
 
-  // Handle chapter selection
-  const handleChapterSelect = useCallback(
-    (chapter: ChapterData) => {
-      setSelectedChapter(chapter);
-      setTopics(chapter.topics || []);
+  const buildChapterPath = useCallback(
+    (targetChapterId?: string) => {
+      const basePath = isDemo
+        ? `/digital-hub/demo/${encodeURIComponent(courseSlugOrId)}`
+        : `/digital-hub/${encodeURIComponent(courseSlugOrId)}`;
 
-      // Fetch case studies and assignments for this chapter
-      fetchCaseStudies(chapter._id);
-      fetchAssignments(chapter._id);
-
-      // Auto-select first topic of selected chapter
-      if (chapter.topics && chapter.topics.length > 0) {
-        const firstTopic = chapter.topics[0];
-        setSelectedTopic(firstTopic);
-
-        // Decode and set topic content
-        if (firstTopic.content) {
-          try {
-            const decodedContent = atob(firstTopic.content);
-            setTopicContent(decodedContent);
-          } catch (error) {
-            console.error("Error decoding topic content:", error);
-            setTopicContent(firstTopic.content || "Content not available");
-          }
-        }
-      } else {
-        setSelectedTopic(null);
-        setTopicContent("No topics available for this chapter.");
+      if (!targetChapterId) {
+        return basePath;
       }
+
+      return `${basePath}/${encodeURIComponent(targetChapterId)}`;
     },
-    [fetchCaseStudies, fetchAssignments]
+    [courseSlugOrId, isDemo]
+  );
+
+  const applyProgressSummary = useCallback(
+    (
+      progressPayload: { overallProgress?: number; chapters?: ChapterProgressSummary[] },
+      baseChapters: ChapterData[]
+    ) => {
+      const mergedChapters = mergeChapterProgress(
+        baseChapters,
+        Array.isArray(progressPayload?.chapters) ? progressPayload.chapters : []
+      );
+      setCourseChapters(mergedChapters);
+      setProgress(Number(progressPayload?.overallProgress || 0));
+      setSelectedChapter((currentSelectedChapter) => {
+        if (!currentSelectedChapter?._id) {
+          return currentSelectedChapter;
+        }
+
+        return (
+          mergedChapters.find(
+            (chapter) => chapter._id === currentSelectedChapter._id
+          ) || currentSelectedChapter
+        );
+      });
+
+      return mergedChapters;
+    },
+    []
   );
 
   // Function to split content into pages
@@ -665,6 +764,70 @@ export default function DigitalHubClient({
       }
     },
     [API_BASE]
+  );
+
+  const selectChapterContent = useCallback(
+    (chapter: ChapterData, navigationMode: "push" | "replace" | "none" = "none") => {
+      setSelectedChapter(chapter);
+      setTopics(chapter.topics || []);
+      setSelectedCaseStudy(null);
+      setSelectedAssignment(null);
+
+      fetchCaseStudies(chapter._id);
+      fetchAssignments(chapter._id);
+
+      if (!isDemo && navigationMode !== "none") {
+        const targetPath = buildChapterPath(chapter._id);
+        if (navigationMode === "replace") {
+          router.replace(targetPath);
+        } else {
+          router.push(targetPath);
+        }
+      }
+
+      if (chapter.topics && chapter.topics.length > 0) {
+        const firstTopic = chapter.topics[0];
+        setSelectedTopic(firstTopic);
+
+        if (firstTopic.content) {
+          try {
+            const decodedContent = atob(firstTopic.content);
+            setTopicContent(decodedContent);
+          } catch (error) {
+            console.error("Error decoding topic content:", error);
+            setTopicContent(firstTopic.content || "Content not available");
+          }
+        }
+
+        loadQuizForTopic(firstTopic._id);
+      } else {
+        setSelectedTopic(null);
+        setTopicContent("No topics available for this chapter.");
+        setQuizData(null);
+      }
+    },
+    [
+      buildChapterPath,
+      fetchAssignments,
+      fetchCaseStudies,
+      isDemo,
+      loadQuizForTopic,
+      router,
+    ]
+  );
+
+  const handleChapterSelect = useCallback(
+    (chapter: ChapterData) => {
+      if (chapter.isLocked) {
+        setToastMessage("Complete the previous chapter first to unlock this chapter.");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        return;
+      }
+
+      selectChapterContent(chapter, "push");
+    },
+    [selectChapterContent]
   );
 
   // Handle answer selection
@@ -907,8 +1070,7 @@ export default function DigitalHubClient({
   // Fetch course data when resolved course ID is available
   useEffect(() => {
     const fetchCourseData = async () => {
-      console.log("Current courseId:", resolvedCourseId);
-      if (!resolvedCourseId) {
+      if (!resolvedCourseId || (!isDemo && !authResolved)) {
         setLoading(false);
         return;
       }
@@ -916,122 +1078,72 @@ export default function DigitalHubClient({
       try {
         setLoading(true);
 
-        // Fetch chapters for the course
-        const chaptersResponse = await axios.get(
-          `${API_BASE}/chapters/course/${resolvedCourseId}`
-        );
-        console.log("Chapters response:", chaptersResponse.data);
+        const [chaptersResponse, progressResponse] = await Promise.all([
+          axios.get(`${API_BASE}/chapters/course/${resolvedCourseId}`),
+          !isDemo && studentId
+            ? axios
+                .get(
+                  `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}`,
+                  { withCredentials: true }
+                )
+                .catch(() => null)
+            : Promise.resolve(null),
+        ]);
 
-        if (
-          chaptersResponse.data.success &&
-          chaptersResponse.data.chapters.length > 0
-        ) {
-          const availableChapters = isDemo
-            ? chaptersResponse.data.chapters.slice(0, 1)
-            : chaptersResponse.data.chapters;
-          setCourseChapters(availableChapters);
-
-          // If chapterId is provided, select that specific chapter
-          if (chapterId && !isDemo) {
-            const specificChapter = availableChapters.find(
-              (chapter: ChapterData) => chapter._id === chapterId
-            );
-
-            if (specificChapter) {
-              setSelectedChapter(specificChapter);
-
-              // Fetch case studies and assignments for this chapter
-              fetchCaseStudies(specificChapter._id);
-              fetchAssignments(specificChapter._id);
-
-              // Auto-select first topic of the specific chapter
-              if (specificChapter.topics && specificChapter.topics.length > 0) {
-                const firstTopic = specificChapter.topics[0];
-                setSelectedTopic(firstTopic);
-                setTopics(specificChapter.topics);
-
-                // Decode and set topic content
-                if (firstTopic.content) {
-                  try {
-                    const decodedContent = atob(firstTopic.content);
-                    setTopicContent(decodedContent);
-                  } catch (error) {
-                    console.error("Error decoding topic content:", error);
-                    setTopicContent(
-                      firstTopic.content || "Content not available"
-                    );
-                  }
-                }
-
-                // Load quiz for the first topic
-                console.log("Loading quiz for topic:", firstTopic._id);
-                loadQuizForTopic(firstTopic._id);
-              }
-            } else {
-              // Fallback to first chapter if specific chapter not found
-              const firstChapter = availableChapters[0];
-              setSelectedChapter(firstChapter);
-
-              // Fetch case studies and assignments for this chapter
-              fetchCaseStudies(firstChapter._id);
-              fetchAssignments(firstChapter._id);
-
-              if (firstChapter.topics && firstChapter.topics.length > 0) {
-                const firstTopic = firstChapter.topics[0];
-                setSelectedTopic(firstTopic);
-                setTopics(firstChapter.topics);
-
-                if (firstTopic.content) {
-                  try {
-                    const decodedContent = atob(firstTopic.content);
-                    setTopicContent(decodedContent);
-                  } catch (error) {
-                    console.error("Error decoding topic content:", error);
-                    setTopicContent(
-                      firstTopic.content || "Content not available"
-                    );
-                  }
-                }
-
-                // Load quiz for the first topic
-                console.log("Loading quiz for topic:", firstTopic._id);
-                loadQuizForTopic(firstTopic._id);
-              }
-            }
-          } else {
-            // No chapterId provided, select first chapter
-            const firstChapter = availableChapters[0];
-            setSelectedChapter(firstChapter);
-
-            // Fetch case studies and assignments for this chapter
-            fetchCaseStudies(firstChapter._id);
-            fetchAssignments(firstChapter._id);
-
-            if (firstChapter.topics && firstChapter.topics.length > 0) {
-              const firstTopic = firstChapter.topics[0];
-              setSelectedTopic(firstTopic);
-              setTopics(firstChapter.topics);
-
-              if (firstTopic.content) {
-                try {
-                  const decodedContent = atob(firstTopic.content);
-                  setTopicContent(decodedContent);
-                } catch (error) {
-                  console.error("Error decoding topic content:", error);
-                  setTopicContent(
-                    firstTopic.content || "Content not available"
-                  );
-                }
-              }
-
-              // Load quiz for the first topic
-              console.log("Loading quiz for topic:", firstTopic._id);
-              loadQuizForTopic(firstTopic._id);
-            }
-          }
-        } else {
-          console.log("No chapters found for course");
+        if (!chaptersResponse.data.success || chaptersResponse.data.chapters.length === 0) {
+          setCourseChapters([]);
+          setSelectedChapter(null);
+          setTopics([]);
+          setSelectedTopic(null);
+          setTopicContent("No chapters available for this course.");
+          return;
         }
+
+        const rawChapters = isDemo
+          ? chaptersResponse.data.chapters.slice(0, 1)
+          : chaptersResponse.data.chapters;
+        const mergedChapters =
+          !isDemo && progressResponse?.data
+            ? applyProgressSummary(progressResponse.data, rawChapters)
+            : mergeChapterProgress(rawChapters, []);
+
+        if (!progressResponse?.data) {
+          setCourseChapters(mergedChapters);
+          setProgress(0);
+        }
+
+        const requestedChapter = chapterId
+          ? mergedChapters.find((chapter) => chapter._id === chapterId)
+          : null;
+        const fallbackChapter = getPreferredUnlockedChapter(mergedChapters);
+        const chapterToOpen =
+          requestedChapter && !requestedChapter.isLocked
+            ? requestedChapter
+            : fallbackChapter;
+
+        if (!chapterToOpen) {
+          return;
+        }
+
+        if (requestedChapter?.isLocked) {
+          setToastMessage(
+            "Complete the previous chapter first. Redirected to your unlocked chapter."
+          );
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3500);
+        }
+
+        const needsRouteReplace =
+          !isDemo &&
+          (!chapterId ||
+            !requestedChapter ||
+            Boolean(requestedChapter.isLocked) ||
+            requestedChapter._id !== chapterToOpen._id);
+
+        selectChapterContent(
+          chapterToOpen,
+          needsRouteReplace ? "replace" : "none"
+        );
       } catch (error) {
         console.error("Error fetching course data:", error);
       } finally {
@@ -1042,12 +1154,13 @@ export default function DigitalHubClient({
     fetchCourseData();
   }, [
     resolvedCourseId,
+    authResolved,
     chapterId,
     isDemo,
     API_BASE,
-    fetchAssignments,
-    fetchCaseStudies,
-    loadQuizForTopic,
+    studentId,
+    applyProgressSummary,
+    selectChapterContent,
   ]);
 
   useEffect(() => {
@@ -1107,7 +1220,10 @@ export default function DigitalHubClient({
         }
       } catch {
         // Keep points as 0 when user isn't authenticated in demo/public access.
+      } finally {
+        setAuthResolved(true);
       }
+
       setStudentId(null);
       setStudentName("");
       setPoints(0);
@@ -1796,6 +1912,83 @@ export default function DigitalHubClient({
     currentTopicIndex >= 0 && currentTopicIndex < visibleTopics.length - 1
       ? visibleTopics[currentTopicIndex + 1]
       : null;
+  const completedTopicIds = selectedChapter?.completedTopicIds || [];
+  const completedAssignmentIds = selectedChapter?.completedAssignmentIds || [];
+  const completedQuestionSetIds = selectedChapter?.completedQuestionSetIds || [];
+  const isSelectedTopicCompleted = Boolean(
+    selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
+  );
+  const isSelectedAssignmentCompleted = Boolean(
+    selectedAssignment?._id &&
+      completedAssignmentIds.includes(selectedAssignment._id)
+  );
+
+  const markProgressItemComplete = useCallback(
+    async (
+      itemType: "topic" | "assignment" | "questionSet",
+      itemId: string,
+      successMessage: string
+    ) => {
+      if (!studentId || !resolvedCourseId || !selectedChapter?._id) {
+        setToastMessage("Login is required to save chapter progress.");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        return;
+      }
+
+      const progressSegment =
+        itemType === "topic"
+          ? `topics/${itemId}/complete`
+          : itemType === "assignment"
+          ? `assignments/${itemId}/complete`
+          : `question-sets/${itemId}/complete`;
+      const mutationKey = `${itemType}:${itemId}`;
+
+      try {
+        setProgressMutationKey(mutationKey);
+        const response = await axios.post(
+          `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}/${progressSegment}`,
+          { chapterId: selectedChapter._id },
+          { withCredentials: true }
+        );
+
+        const mergedChapters = applyProgressSummary(response.data, courseChapters);
+        const refreshedChapter = mergedChapters.find(
+          (chapter) => chapter._id === selectedChapter._id
+        );
+
+        const chapterCompletionMessage =
+          refreshedChapter?.isCompleted && !selectedChapter.isCompleted
+            ? " Chapter completed and the next chapter is now unlocked."
+            : "";
+
+        setToastMessage(`${successMessage}${chapterCompletionMessage}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3500);
+      } catch (error) {
+        const message =
+          axios.isAxiosError(error) &&
+          (error.response?.data?.message || error.response?.data?.error)
+            ? error.response?.data?.message || error.response?.data?.error
+            : "Failed to save chapter progress.";
+        setToastMessage(message);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3500);
+      } finally {
+        setProgressMutationKey(null);
+      }
+    },
+    [
+      API_BASE,
+      applyProgressSummary,
+      courseChapters,
+      resolvedCourseId,
+      selectedChapter,
+      studentId,
+    ]
+  );
+  const firstCaseStudy = caseStudies.length > 0 ? caseStudies[0] : null;
+  const firstAssignment = assignments.length > 0 ? assignments[0] : null;
 
   return (
     <div
@@ -1945,8 +2138,14 @@ export default function DigitalHubClient({
                           setChapterDropdownOpen(false);
                           handleChapterSelect(chapter);
                         }}
-                      className="w-full text-left px-4 py-3 hover:bg-blue-50 transition-colors text-slate-700 border-b border-stone-200 last:border-b-0 flex items-center space-x-3"
-                    >
+                        disabled={chapter.isLocked}
+                        className={`w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 ${
+                          chapter.isLocked
+                            ? "cursor-not-allowed bg-stone-50 text-slate-400"
+                            : "text-slate-700 hover:bg-blue-50"
+                        }`}
+                      >
+                        <div className="flex items-center space-x-3">
                         <div
                           className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-medium ${
                             isDarkMode ? "bg-emerald-600" : "bg-amber-500"
@@ -1955,6 +2154,19 @@ export default function DigitalHubClient({
                           {index + 1}
                         </div>
                         <span className="font-medium">{chapter.title}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          {chapter.isLocked ? (
+                            <>
+                              <Lock className="h-4 w-4" />
+                              <span>Locked</span>
+                            </>
+                          ) : (
+                            <span className="rounded-full bg-blue-100 px-2 py-1 font-semibold text-blue-700">
+                              {chapter.completion || 0}%
+                            </span>
+                          )}
+                        </div>
                       </button>
                     ))
                   ) : (
@@ -2048,7 +2260,7 @@ export default function DigitalHubClient({
               }`}
               title="Submit a ticket"
             >
-              <AlertTriangle
+              <Target
                 className={`w-5 h-5 ${
                   isDarkMode ? "text-slate-200" : "text-slate-700"
                 }`}
@@ -2150,6 +2362,9 @@ export default function DigitalHubClient({
                                 {index + 1}
                               </div>
                               <span className="font-medium">{topic.title}</span>
+                              {selectedChapter?.completedTopicIds?.includes(topic._id) ? (
+                                <CheckCircle className="h-4 w-4 text-emerald-500" />
+                              ) : null}
                             </div>
                           </button>
                         )
@@ -2275,6 +2490,53 @@ export default function DigitalHubClient({
                       </span>
                     )}
                   </h1>
+
+                  {!isDemo ? (
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
+                      <span
+                        className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+                          isSelectedTopicCompleted
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {isSelectedTopicCompleted
+                          ? "Topic completed"
+                          : "Topic pending"}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
+                        Chapter topics {selectedChapter?.completedTopicCount || 0}/
+                        {selectedChapter?.totalTopicCount || 0}
+                      </span>
+                      {selectedTopic?._id ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            markProgressItemComplete(
+                              "topic",
+                              selectedTopic._id,
+                              "Topic marked as completed."
+                            )
+                          }
+                          disabled={
+                            isSelectedTopicCompleted ||
+                            progressMutationKey === `topic:${selectedTopic._id}`
+                          }
+                          className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all ${
+                            isSelectedTopicCompleted
+                              ? "cursor-not-allowed bg-emerald-300"
+                              : "bg-emerald-600 hover:bg-emerald-700"
+                          }`}
+                        >
+                          {isSelectedTopicCompleted
+                            ? "Completed"
+                            : progressMutationKey === `topic:${selectedTopic._id}`
+                            ? "Saving..."
+                            : "Mark Topic Complete"}
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   {/* Demo Limit Banner */}
                   {isDemo && showDemoLimit && (
@@ -2585,6 +2847,24 @@ export default function DigitalHubClient({
                         </div>
                       </div>
                     )}
+                    {!nextTopic && selectedTopic && firstCaseStudy ? (
+                      <div className="mt-6 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleCaseStudySelect(firstCaseStudy);
+                          }}
+                          className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
+                            isDarkMode
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
+                        >
+                          <span>Next Simulation</span>
+                          <span aria-hidden="true">→</span>
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </>
               ) : selectedCaseStudy ? (
@@ -2704,6 +2984,24 @@ export default function DigitalHubClient({
                       )}
                     </div>
 
+                    {firstAssignment ? (
+                      <div className="mt-8 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            handleAssignmentSelect(firstAssignment);
+                          }}
+                          className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
+                            isDarkMode
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-blue-600 hover:bg-blue-700"
+                          }`}
+                        >
+                          <span>Continue</span>
+                          <span aria-hidden="true">→</span>
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </>
               ) : selectedAssignment ? (
@@ -2716,6 +3014,50 @@ export default function DigitalHubClient({
                       <p className="text-slate-700">
                         {selectedAssignment.description}
                       </p>
+                    </div>
+                    <div className="mb-6 flex flex-wrap items-center gap-3">
+                      <span
+                        className={`rounded-full px-3 py-1.5 text-sm font-semibold ${
+                          isSelectedAssignmentCompleted
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {isSelectedAssignmentCompleted
+                          ? "Assignment completed"
+                          : "Assignment pending"}
+                      </span>
+                      <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
+                        Assignments {selectedChapter?.completedAssignmentCount || 0}/
+                        {selectedChapter?.totalAssignmentCount || 0}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          markProgressItemComplete(
+                            "assignment",
+                            selectedAssignment._id,
+                            "Assignment marked as completed."
+                          )
+                        }
+                        disabled={
+                          isSelectedAssignmentCompleted ||
+                          progressMutationKey ===
+                            `assignment:${selectedAssignment._id}`
+                        }
+                        className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all ${
+                          isSelectedAssignmentCompleted
+                            ? "cursor-not-allowed bg-emerald-300"
+                            : "bg-emerald-600 hover:bg-emerald-700"
+                        }`}
+                      >
+                        {isSelectedAssignmentCompleted
+                          ? "Completed"
+                          : progressMutationKey ===
+                            `assignment:${selectedAssignment._id}`
+                          ? "Saving..."
+                          : "Mark Assignment Complete"}
+                      </button>
                     </div>
 
                     {/* Tasks Section */}
@@ -2845,17 +3187,61 @@ export default function DigitalHubClient({
                     selectedAssignment.questionSets.length > 0 ? (
                       <div className="space-y-6">
                         {selectedAssignment.questionSets.map(
-                          (questionSet: QuestionSet, index: number) => (
+                          (questionSet: QuestionSet) => (
                             <div
                               key={questionSet._id}
                               className="bg-emerald-50 border border-emerald-200 rounded-lg p-6"
                             >
-                              <h3 className="text-lg font-semibold text-emerald-800 mb-4">
-                                {questionSet.name}
-                              </h3>
-                              <p className="text-emerald-700 mb-4">
-                                {questionSet.description}
-                              </p>
+                              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                  <h3 className="text-lg font-semibold text-emerald-800">
+                                    {questionSet.name}
+                                  </h3>
+                                  <p className="text-emerald-700 mt-1">
+                                    {questionSet.description}
+                                  </p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <span
+                                    className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                                      completedQuestionSetIds.includes(questionSet._id)
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : "bg-amber-100 text-amber-700"
+                                    }`}
+                                  >
+                                    {completedQuestionSetIds.includes(questionSet._id)
+                                      ? "Question set completed"
+                                      : "Question set pending"}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      markProgressItemComplete(
+                                        "questionSet",
+                                        questionSet._id,
+                                        "Question set submitted and marked as completed."
+                                      )
+                                    }
+                                    disabled={
+                                      completedQuestionSetIds.includes(questionSet._id) ||
+                                      progressMutationKey ===
+                                        `questionSet:${questionSet._id}`
+                                    }
+                                    className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all ${
+                                      completedQuestionSetIds.includes(questionSet._id)
+                                        ? "cursor-not-allowed bg-emerald-300"
+                                        : "bg-emerald-600 hover:bg-emerald-700"
+                                    }`}
+                                  >
+                                    {completedQuestionSetIds.includes(questionSet._id)
+                                      ? "Completed"
+                                      : progressMutationKey ===
+                                        `questionSet:${questionSet._id}`
+                                      ? "Saving..."
+                                      : "Submit Question Set"}
+                                  </button>
+                                </div>
+                              </div>
 
                               {/* Dynamic Questions */}
                               <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -2954,13 +3340,6 @@ export default function DigitalHubClient({
                                         </div>
                                       </div>
                                     </div>
-
-                                    {/* Submit Button */}
-                                    <div className="text-center mt-6">
-                                      <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
-                                        Submit Assessment
-                                      </button>
-                                    </div>
                                   </div>
                                 ) : (
                                   <div className="text-center py-8 text-gray-500">
@@ -2970,202 +3349,6 @@ export default function DigitalHubClient({
                                     </p>
                                   </div>
                                 )}
-
-                                {/* Question 2 */}
-                                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                                  <h5 className="text-md font-semibold text-gray-800 mb-3">
-                                    2. Which ledger to be recognised for the
-                                    payment made through SBI bank account?
-                                  </h5>
-                                  <div className="space-y-2">
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Cash
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Party
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Bank
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        None of the above
-                                      </span>
-                                    </label>
-                                  </div>
-                                </div>
-
-                                {/* Question 3 */}
-                                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                                  <h5 className="text-md font-semibold text-gray-800 mb-3">
-                                    3. When equipment is purchased on credit,
-                                    which accounts are affected?
-                                  </h5>
-                                  <div className="space-y-2">
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Equipment (Debit) & Cash (Credit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Equipment (Debit) & Accounts Payable
-                                        (Credit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Cash (Debit) & Equipment (Credit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Accounts Payable (Debit) & Equipment
-                                        (Credit)
-                                      </span>
-                                    </label>
-                                  </div>
-                                </div>
-
-                                {/* Question 4 */}
-                                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                                  <h5 className="text-md font-semibold text-gray-800 mb-3">
-                                    4. What is the correct journal entry for
-                                    paying salary advance to an employee?
-                                  </h5>
-                                  <div className="space-y-2">
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Salary Advance (Debit) & Cash (Credit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Cash (Debit) & Salary Advance (Credit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Salary Expense (Debit) & Cash (Credit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Employee Advance (Debit) & Bank (Credit)
-                                      </span>
-                                    </label>
-                                  </div>
-                                </div>
-
-                                {/* Question 5 */}
-                                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                                  <h5 className="text-md font-semibold text-gray-800 mb-3">
-                                    5. When services are provided and partial
-                                    payment is received, which accounts are
-                                    involved?
-                                  </h5>
-                                  <div className="space-y-2">
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Service Revenue (Credit) & Cash (Debit)
-                                        & Accounts Receivable (Debit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Cash (Credit) & Service Revenue (Debit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Accounts Receivable (Credit) & Service
-                                        Revenue (Debit)
-                                      </span>
-                                    </label>
-                                    <label className="flex items-center space-x-3 cursor-pointer">
-                                      <input
-                                        type="checkbox"
-                                        className="w-4 h-4 text-emerald-600 rounded"
-                                      />
-                                      <span className="text-gray-700">
-                                        Service Expense (Debit) & Cash (Credit)
-                                      </span>
-                                    </label>
-                                  </div>
-                                </div>
-
-                                {/* Submit Button */}
-                                <div className="text-center">
-                                  <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
-                                    Submit Assessment
-                                  </button>
-                                </div>
                               </div>
                             </div>
                           )

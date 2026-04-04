@@ -45,6 +45,57 @@ const extractCourseRecord = (payload) => {
   return payload;
 };
 
+const sortChaptersByOrder = (chapters) =>
+  [...(Array.isArray(chapters) ? chapters : [])].sort((left, right) => {
+    const leftOrder = Number(left?.order || 0);
+    const rightOrder = Number(right?.order || 0);
+    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+    return String(left?.title || left?.name || "").localeCompare(
+      String(right?.title || right?.name || "")
+    );
+  });
+
+const mergeChaptersWithProgress = (chapters, progressPayload) => {
+  const sortedChapters = sortChaptersByOrder(chapters);
+  const progressMap = new Map(
+    Array.isArray(progressPayload?.chapters)
+      ? progressPayload.chapters.map((chapter) => [chapter.chapterId, chapter])
+      : []
+  );
+
+  return sortedChapters.map((chapter, index) => {
+    const progressEntry = progressMap.get(chapter?._id) || {};
+
+    return {
+      ...chapter,
+      isLocked:
+        typeof progressEntry.isLocked === "boolean"
+          ? progressEntry.isLocked
+          : index > 0,
+      isCompleted: Boolean(progressEntry.isCompleted),
+      completedTopicCount: Number(progressEntry.completedTopicCount || 0),
+      totalTopicCount:
+        typeof progressEntry.totalTopicCount === "number"
+          ? progressEntry.totalTopicCount
+          : Array.isArray(chapter?.topics)
+          ? chapter.topics.length
+          : 0,
+      completedAssignmentCount: Number(
+        progressEntry.completedAssignmentCount || 0
+      ),
+      totalAssignmentCount: Number(progressEntry.totalAssignmentCount || 0),
+      completedQuestionSetCount: Number(
+        progressEntry.completedQuestionSetCount || 0
+      ),
+      totalQuestionSetCount: Number(progressEntry.totalQuestionSetCount || 0),
+      completion:
+        typeof progressEntry.completionPercent === "number"
+          ? progressEntry.completionPercent
+          : Number(chapter?.completion || 0),
+    };
+  });
+};
+
 export default function CourseTab() {
   const QA_DUMMY_COURSE = {
     _id: "qa-dummy-course-2026",
@@ -375,13 +426,25 @@ export default function CourseTab() {
   // Fetch chapters for a course
   const fetchChaptersForCourse = async (courseId) => {
     try {
-      const response = await axios.get(
-        `${API}/api/chapters/course/${courseId}`
-      );
+      const [response, progressResponse] = await Promise.all([
+        axios.get(`${API}/api/chapters/course/${courseId}`),
+        studentId
+          ? axios
+              .get(
+                `${API}/api/v1/students/${studentId}/digital-hub-progress/${courseId}`,
+                { withCredentials: true }
+              )
+              .catch(() => null)
+          : Promise.resolve(null),
+      ]);
       if (response.data.success) {
+        const mergedChapters = mergeChaptersWithProgress(
+          response.data.chapters,
+          progressResponse?.data
+        );
         setCourseChapters((prev) => ({
           ...prev,
-          [courseId]: response.data.chapters,
+          [courseId]: mergedChapters,
         }));
       }
     } catch (error) {
@@ -480,6 +543,17 @@ export default function CourseTab() {
       default:
         return "Chapter";
     }
+  };
+
+  const handleOpenChapter = (course, chapter) => {
+    if (!chapter) return;
+
+    if (chapter.isLocked) {
+      toast.error("Complete the previous chapter first to unlock this chapter.");
+      return;
+    }
+
+    router.push(buildDigitalHubPath(course, chapter._id));
   };
 
   const renderForm = () => {
@@ -690,11 +764,11 @@ export default function CourseTab() {
                       <div className="w-24 bg-gray-200 rounded-full h-2">
                         <div
                           className={`h-2 rounded-full transition-all duration-300 ${
-                            chapter.completion === 100
+                            (chapter.completion || 0) === 100
                               ? "bg-green-500"
-                              : chapter.completion >= 70
+                              : (chapter.completion || 0) >= 70
                               ? "bg-blue-500"
-                              : chapter.completion >= 40
+                              : (chapter.completion || 0) >= 40
                               ? "bg-yellow-500"
                               : "bg-gray-400"
                           }`}
@@ -718,14 +792,15 @@ export default function CourseTab() {
                     <div className="mt-3 rounded-md border border-gray-200 bg-white p-3">
                       <button
                         type="button"
-                        onClick={() =>
-                          router.push(
-                            buildDigitalHubPath(selectedCourse, chapter._id)
-                          )
-                        }
-                        className="mb-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                        onClick={() => handleOpenChapter(selectedCourse, chapter)}
+                        disabled={chapter.isLocked}
+                        className={`mb-3 rounded-md px-3 py-1.5 text-sm font-medium ${
+                          chapter.isLocked
+                            ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                            : "bg-blue-600 text-white hover:bg-blue-700"
+                        }`}
                       >
-                        Open in Digital Hub
+                        {chapter.isLocked ? "Locked" : "Open in Digital Hub"}
                       </button>
                       {Array.isArray(chapter.topics) && chapter.topics.length > 0 ? (
                         <ul className="space-y-2">
@@ -765,6 +840,20 @@ export default function CourseTab() {
                           No topics available for this chapter.
                         </p>
                       )}
+                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                          Topics {chapter.completedTopicCount || 0}/
+                          {chapter.totalTopicCount || 0}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                          Assignments {chapter.completedAssignmentCount || 0}/
+                          {chapter.totalAssignmentCount || 0}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                          Question sets {chapter.completedQuestionSetCount || 0}/
+                          {chapter.totalQuestionSetCount || 0}
+                        </span>
+                      </div>
                     </div>
                   ) : null}
                 </div>
@@ -1279,11 +1368,11 @@ export default function CourseTab() {
                                     <div className="w-24 bg-slate-200 rounded-full h-2.5">
                                       <div
                                         className={`h-2.5 rounded-full transition-all duration-500 ${
-                                          chapter.completion === 100
+                                          (chapter.completion || 0) === 100
                                             ? "bg-emerald-500"
-                                            : chapter.completion >= 70
+                                            : (chapter.completion || 0) >= 70
                                             ? "bg-blue-500"
-                                            : chapter.completion >= 40
+                                            : (chapter.completion || 0) >= 40
                                             ? "bg-amber-500"
                                             : "bg-slate-400"
                                         }`}
@@ -1303,14 +1392,15 @@ export default function CourseTab() {
                                     </span>
                                     <button
                                       type="button"
-                                      onClick={() =>
-                                        router.push(
-                                          buildDigitalHubPath(course, chapter._id)
-                                        )
-                                      }
-                                      className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs font-medium hover:bg-blue-700"
+                                      onClick={() => handleOpenChapter(course, chapter)}
+                                      disabled={chapter.isLocked}
+                                      className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+                                        chapter.isLocked
+                                          ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                                          : "bg-blue-600 text-white hover:bg-blue-700"
+                                      }`}
                                     >
-                                      Open in Digital Hub
+                                      {chapter.isLocked ? "Locked" : "Open in Digital Hub"}
                                     </button>
                                   </div>
                                 </div>
@@ -1369,6 +1459,25 @@ export default function CourseTab() {
                                         No topics available for this chapter.
                                       </p>
                                     )}
+                                    <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                                      <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                                        Topics {chapter.completedTopicCount || 0}/
+                                        {chapter.totalTopicCount || 0}
+                                      </span>
+                                      <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                                        Assignments {chapter.completedAssignmentCount || 0}/
+                                        {chapter.totalAssignmentCount || 0}
+                                      </span>
+                                      <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                                        Question sets {chapter.completedQuestionSetCount || 0}/
+                                        {chapter.totalQuestionSetCount || 0}
+                                      </span>
+                                      {chapter.isLocked ? (
+                                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-700">
+                                          Complete the previous chapter first
+                                        </span>
+                                      ) : null}
+                                    </div>
                                   </div>
                                 ) : null}
                               </div>

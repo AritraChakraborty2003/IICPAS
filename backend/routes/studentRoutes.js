@@ -32,6 +32,10 @@ import {
   generateUniqueReferralCode,
   normalizeReferralCode,
 } from "../services/referralService.js";
+import {
+  getDigitalHubCourseProgress,
+  markDigitalHubCompletion,
+} from "../services/digitalHubProgressService.js";
 
 dotenv.config();
 
@@ -523,6 +527,163 @@ router.post("/digital-hub-quizzes/:id/complete", isStudent, async (req, res) => 
     });
   }
 });
+
+router.get("/:id/digital-hub-progress/:courseId", isStudent, async (req, res) => {
+  try {
+    if (!ensureAuthorizedStudent(req, res)) return;
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid student ID format" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.courseId)) {
+      return res.status(400).json({ message: "Invalid course ID format" });
+    }
+
+    const progress = await getDigitalHubCourseProgress(
+      req.params.id,
+      req.params.courseId
+    );
+
+    if (!progress) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    return res.json({
+      success: true,
+      ...progress,
+    });
+  } catch (error) {
+    console.error("Error fetching digital hub progress:", error);
+    return res.status(500).json({
+      message: "Failed to fetch digital hub progress",
+      error: error.message,
+    });
+  }
+});
+
+router.post(
+  "/:id/digital-hub-progress/:courseId/topics/:topicId/complete",
+  isStudent,
+  async (req, res) => {
+    try {
+      if (!ensureAuthorizedStudent(req, res)) return;
+
+      const { id, courseId, topicId } = req.params;
+      const { chapterId } = req.body || {};
+
+      if (
+        !mongoose.Types.ObjectId.isValid(id) ||
+        !mongoose.Types.ObjectId.isValid(courseId) ||
+        !mongoose.Types.ObjectId.isValid(topicId) ||
+        !mongoose.Types.ObjectId.isValid(chapterId)
+      ) {
+        return res.status(400).json({ message: "Valid IDs are required" });
+      }
+
+      const progress = await markDigitalHubCompletion({
+        studentId: id,
+        courseId,
+        chapterId,
+        itemId: topicId,
+        itemType: "topic",
+      });
+
+      return res.json({
+        success: true,
+        message: "Topic marked as completed",
+        ...progress,
+      });
+    } catch (error) {
+      console.error("Error marking topic completion:", error);
+      return res.status(error.status || 500).json({
+        message: error.message || "Failed to mark topic completion",
+      });
+    }
+  }
+);
+
+router.post(
+  "/:id/digital-hub-progress/:courseId/assignments/:assignmentId/complete",
+  isStudent,
+  async (req, res) => {
+    try {
+      if (!ensureAuthorizedStudent(req, res)) return;
+
+      const { id, courseId, assignmentId } = req.params;
+      const { chapterId } = req.body || {};
+
+      if (
+        !mongoose.Types.ObjectId.isValid(id) ||
+        !mongoose.Types.ObjectId.isValid(courseId) ||
+        !mongoose.Types.ObjectId.isValid(assignmentId) ||
+        !mongoose.Types.ObjectId.isValid(chapterId)
+      ) {
+        return res.status(400).json({ message: "Valid IDs are required" });
+      }
+
+      const progress = await markDigitalHubCompletion({
+        studentId: id,
+        courseId,
+        chapterId,
+        itemId: assignmentId,
+        itemType: "assignment",
+      });
+
+      return res.json({
+        success: true,
+        message: "Assignment marked as completed",
+        ...progress,
+      });
+    } catch (error) {
+      console.error("Error marking assignment completion:", error);
+      return res.status(error.status || 500).json({
+        message: error.message || "Failed to mark assignment completion",
+      });
+    }
+  }
+);
+
+router.post(
+  "/:id/digital-hub-progress/:courseId/question-sets/:questionSetId/complete",
+  isStudent,
+  async (req, res) => {
+    try {
+      if (!ensureAuthorizedStudent(req, res)) return;
+
+      const { id, courseId, questionSetId } = req.params;
+      const { chapterId } = req.body || {};
+
+      if (
+        !mongoose.Types.ObjectId.isValid(id) ||
+        !mongoose.Types.ObjectId.isValid(courseId) ||
+        !mongoose.Types.ObjectId.isValid(questionSetId) ||
+        !mongoose.Types.ObjectId.isValid(chapterId)
+      ) {
+        return res.status(400).json({ message: "Valid IDs are required" });
+      }
+
+      const progress = await markDigitalHubCompletion({
+        studentId: id,
+        courseId,
+        chapterId,
+        itemId: questionSetId,
+        itemType: "questionSet",
+      });
+
+      return res.json({
+        success: true,
+        message: "Question set marked as completed",
+        ...progress,
+      });
+    } catch (error) {
+      console.error("Error marking question set completion:", error);
+      return res.status(error.status || 500).json({
+        message: error.message || "Failed to mark question set completion",
+      });
+    }
+  }
+);
 
 /*---- Course buy Routes ----- */
 const generateReceiptPDF = async (student, course, receiptId) => {
