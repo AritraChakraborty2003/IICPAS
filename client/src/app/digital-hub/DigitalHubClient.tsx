@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
+import { getApiBase } from "@/lib/apiBase";
 
 // Type definitions
 interface Task {
@@ -229,7 +230,7 @@ export default function DigitalHubClient({
   isDemo,
 }: DigitalHubClientProps) {
   const router = useRouter();
-  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const API_BASE = getApiBase();
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
 
   const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
@@ -470,9 +471,7 @@ export default function DigitalHubClient({
   const fetchCaseStudies = useCallback(
     async (chapterId: string) => {
       try {
-        const response = await axios.get(
-          `${API}/api/case-studies/chapter/${chapterId}`
-        );
+        const response = await axios.get(`${API_BASE}/case-studies/chapter/${chapterId}`);
         if (response.data.success) {
           setCaseStudies(response.data.data || []);
         }
@@ -481,16 +480,14 @@ export default function DigitalHubClient({
         setCaseStudies([]);
       }
     },
-    [API]
+    [API_BASE]
   );
 
   // Fetch assignments for a chapter
   const fetchAssignments = useCallback(
     async (chapterId: string) => {
       try {
-        const response = await axios.get(
-          `${API}/api/assignments/chapter/${chapterId}`
-        );
+        const response = await axios.get(`${API_BASE}/assignments/chapter/${chapterId}`);
         if (response.data.success) {
           setAssignments(response.data.data || []);
         }
@@ -499,7 +496,7 @@ export default function DigitalHubClient({
         setAssignments([]);
       }
     },
-    [API]
+    [API_BASE]
   );
 
   // Handle chapter selection
