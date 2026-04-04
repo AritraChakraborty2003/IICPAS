@@ -382,7 +382,7 @@ export default function DigitalHubClient({
 
   useAuthHeartbeat({
     enabled: !!studentId,
-    heartbeatUrl: `${API}/api/auth/heartbeat`,
+    heartbeatUrl: `${API_BASE}/auth/heartbeat`,
   });
 
   const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
@@ -392,7 +392,7 @@ export default function DigitalHubClient({
     async (currentStudentId: string) => {
       try {
         const response = await axios.get(
-          `${API}/api/v1/students/coins/${currentStudentId}`,
+          `${API_BASE}/v1/students/coins/${currentStudentId}`,
           { withCredentials: true }
         );
         setPoints(response.data?.coinBalance ?? 0);
@@ -400,7 +400,7 @@ export default function DigitalHubClient({
         setPoints(0);
       }
     },
-    [API]
+    [API_BASE]
   );
 
   // Ticket submission functions
@@ -408,8 +408,6 @@ export default function DigitalHubClient({
     e.preventDefault();
 
     try {
-      const API_BASE =
-        process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
       const response = await fetch(`${API_BASE}/tickets`, {
         method: "POST",
         headers: {
@@ -624,7 +622,7 @@ export default function DigitalHubClient({
         setQuizSubmitted(false);
         setQuizRewardSummary(null);
 
-        const response = await axios.get(`${API}/api/quizzes/topic/${topicId}`);
+        const response = await axios.get(`${API_BASE}/quizzes/topic/${topicId}`);
         console.log("Quiz API response:", response.data);
 
         if (response.data.success && response.data.quiz) {
@@ -640,7 +638,7 @@ export default function DigitalHubClient({
         setQuizLoading(false);
       }
     },
-    [API]
+    [API_BASE]
   );
 
   // Handle answer selection
@@ -785,7 +783,7 @@ export default function DigitalHubClient({
 
     try {
       const response = await axios.post(
-        `${API}/api/v1/students/digital-hub-quizzes/${studentId}/complete`,
+        `${API_BASE}/v1/students/digital-hub-quizzes/${studentId}/complete`,
         {
           quizId: quizData._id,
           topicId: selectedTopic?._id,
@@ -827,7 +825,7 @@ export default function DigitalHubClient({
       setTimeout(() => setShowToast(false), 3500);
     }
   }, [
-    API,
+    API_BASE,
     playCelebrationSound,
     quizData,
     quizSubmitted,
@@ -866,7 +864,7 @@ export default function DigitalHubClient({
 
       try {
         const response = await axios.get(
-          `${API}/api/courses/${encodeURIComponent(courseSlugOrId)}`
+          `${API_BASE}/courses/${encodeURIComponent(courseSlugOrId)}`
         );
         const courseRecord = extractCourseRecord(response.data);
         const resolvedId = courseRecord?._id;
@@ -878,7 +876,7 @@ export default function DigitalHubClient({
     };
 
     resolveCourseId();
-  }, [API, courseSlugOrId]);
+  }, [API_BASE, courseSlugOrId]);
 
   // Fetch course data when resolved course ID is available
   useEffect(() => {
@@ -894,7 +892,7 @@ export default function DigitalHubClient({
 
         // Fetch chapters for the course
         const chaptersResponse = await axios.get(
-          `${API}/api/chapters/course/${resolvedCourseId}`
+          `${API_BASE}/chapters/course/${resolvedCourseId}`
         );
         console.log("Chapters response:", chaptersResponse.data);
 
@@ -1020,7 +1018,7 @@ export default function DigitalHubClient({
     resolvedCourseId,
     chapterId,
     isDemo,
-    API,
+    API_BASE,
     fetchAssignments,
     fetchCaseStudies,
     loadQuizForTopic,
@@ -1053,7 +1051,7 @@ export default function DigitalHubClient({
   useEffect(() => {
     const fetchCoinSettings = async () => {
       try {
-        const response = await axios.get(`${API}/api/coins/settings`);
+        const response = await axios.get(`${API_BASE}/coins/settings`);
         const configuredCoins = Number(response.data?.settings?.quizCompleteCoins);
         setQuizCoinsPerCorrect(
           Number.isFinite(configuredCoins) && configuredCoins > 0
@@ -1066,12 +1064,12 @@ export default function DigitalHubClient({
     };
 
     fetchCoinSettings();
-  }, [API]);
+  }, [API_BASE]);
 
   useEffect(() => {
     const fetchStudentContext = async () => {
       try {
-        const response = await axios.get(`${API}/api/v1/students/isstudent`, {
+        const response = await axios.get(`${API_BASE}/v1/students/isstudent`, {
           withCredentials: true,
         });
         const currentStudentId = response.data?.student?._id;
@@ -1090,7 +1088,7 @@ export default function DigitalHubClient({
     };
 
     fetchStudentContext();
-  }, [API, fetchStudentCoins]);
+  }, [API_BASE, fetchStudentCoins]);
 
   useEffect(() => {
     if (!studentId || typeof window === "undefined") return undefined;
