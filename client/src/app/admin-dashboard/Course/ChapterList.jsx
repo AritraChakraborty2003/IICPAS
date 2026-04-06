@@ -139,7 +139,10 @@ const ChapterList = forwardRef(
         sortable: false,
         filterable: false,
         valueGetter: (params) =>
-          params?.row?.updatedAt || params?.row?.createdAt || "",
+          params?.row?.publishAt ||
+          params?.row?.updatedAt ||
+          params?.row?.createdAt ||
+          "",
         renderCell: (params) => (
           <span style={{ fontSize: 14, color: "#475569" }}>
             {formatDateTime(params.value)}
@@ -203,6 +206,7 @@ const ChapterList = forwardRef(
           title: newTitle.trim(),
           order: chapters.length + 1,
           status: "Active",
+          publishAt: new Date().toISOString(),
           seoTitle: "",
           seoKeywords: "",
           seoDescription: "",
