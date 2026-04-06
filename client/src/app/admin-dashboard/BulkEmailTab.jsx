@@ -1,5 +1,5 @@
 "use client";
-import { getApiOrigin } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -49,12 +49,20 @@ export default function BulkEmailTab() {
     fetchEmailAddresses();
   }, []);
 
+  const getAdminToken = () => localStorage.getItem("adminToken");
+
   const fetchEmailAddresses = async () => {
     setLoading(true);
     try {
+      const token = getAdminToken();
       const response = await axios.get(
-        `${getApiOrigin()}/api/v1/bulk-email/emails`,
-        { withCredentials: true }
+        `${getApiBase()}/bulk-email/emails`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
       );
       
       if (response.data.success) {
@@ -111,14 +119,20 @@ export default function BulkEmailTab() {
 
     setTesting(true);
     try {
+      const token = getAdminToken();
       const response = await axios.post(
-        `${getApiOrigin()}/api/v1/bulk-email/test-send`,
+        `${getApiBase()}/bulk-email/test-send`,
         {
           subject: formData.subject,
           htmlContent: formData.htmlContent,
           textContent: formData.textContent
         },
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
       );
 
       if (response.data.success) {
@@ -152,10 +166,16 @@ export default function BulkEmailTab() {
 
     setSending(true);
     try {
+      const token = getAdminToken();
       const response = await axios.post(
-        `${getApiOrigin()}/api/v1/bulk-email/send`,
+        `${getApiBase()}/bulk-email/send`,
         formData,
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
       );
 
       if (response.data.success) {

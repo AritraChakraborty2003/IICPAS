@@ -1,12 +1,13 @@
 import express from "express";
 import { sendBulkEmail, getAllEmailAddresses, testEmailConnection } from "../utils/emailService.js";
 import { isAdmin } from "../middleware/isAdmin.js";
+import { requireAuth } from "../middleware/requireAuth.js";
 import EmailLog from "../models/EmailLog.js";
 
 const router = express.Router();
 
 // Get all email addresses (Super Admin only)
-router.get("/emails", isAdmin, async (req, res) => {
+router.get("/emails", requireAuth, isAdmin, async (req, res) => {
   try {
     console.log("Fetching all email addresses for bulk email");
     const result = await getAllEmailAddresses();
@@ -35,7 +36,7 @@ router.get("/emails", isAdmin, async (req, res) => {
 });
 
 // Send bulk email (Super Admin only)
-router.post("/send", isAdmin, async (req, res) => {
+router.post("/send", requireAuth, isAdmin, async (req, res) => {
   try {
     const { subject, htmlContent, textContent, recipientTypes } = req.body;
     
@@ -128,7 +129,7 @@ router.post("/send", isAdmin, async (req, res) => {
 });
 
 // Test email connection (Super Admin only)
-router.get("/test-connection", isAdmin, async (req, res) => {
+router.get("/test-connection", requireAuth, isAdmin, async (req, res) => {
   try {
     console.log("Testing email connection");
     const result = await testEmailConnection();
@@ -157,7 +158,7 @@ router.get("/test-connection", isAdmin, async (req, res) => {
 });
 
 // Send test email to admin (Super Admin only)
-router.post("/test-send", isAdmin, async (req, res) => {
+router.post("/test-send", requireAuth, isAdmin, async (req, res) => {
   try {
     const { subject, htmlContent, textContent } = req.body;
     const adminEmail = req.user.email; // Get admin email from authenticated user
@@ -220,7 +221,7 @@ router.post("/test-send", isAdmin, async (req, res) => {
 });
 
 // Get email logs (Super Admin only)
-router.get("/logs", isAdmin, async (req, res) => {
+router.get("/logs", requireAuth, isAdmin, async (req, res) => {
   try {
     const { page = 1, limit = 10, status, isTestEmail } = req.query;
     const skip = (page - 1) * limit;

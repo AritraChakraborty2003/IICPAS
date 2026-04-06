@@ -1,5 +1,5 @@
 "use client";
-import { getApiOrigin } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from "react";
@@ -7,7 +7,15 @@ import axios from "axios";
 import toast from "react-hot-toast";
 import { FaEye, FaEnvelope, FaDownload } from "react-icons/fa";
 
-const API = getApiOrigin();
+const API = getApiBase();
+
+const extractPayments = (payload: any) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.payments)) return payload.payments;
+  if (Array.isArray(payload?.data?.payments)) return payload.data.payments;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 interface Payment {
   _id: string;
@@ -68,12 +76,12 @@ export default function PaymentsTab() {
         return;
       }
 
-      const response = await axios.get(`${API}/api/v1/payments/all`, {
+      const response = await axios.get(`${API}/payments/all`, {
         headers: {
           Authorization: `Bearer ${adminToken}`,
         },
       });
-      setPayments(response.data.payments);
+      setPayments(extractPayments(response.data));
     } catch (error: unknown) {
       console.error("Error fetching payments:", error);
       if (
@@ -100,7 +108,7 @@ export default function PaymentsTab() {
       }
 
       await axios.put(
-        `${API}/api/v1/payments/update/${paymentId}`,
+        `${API}/payments/update/${paymentId}`,
         verificationData,
         {
           headers: {
@@ -127,7 +135,7 @@ export default function PaymentsTab() {
       }
 
       await axios.post(
-        `${API}/api/v1/payments/send-invoice/${paymentId}`,
+        `${API}/payments/send-invoice/${paymentId}`,
         {},
         {
           headers: {

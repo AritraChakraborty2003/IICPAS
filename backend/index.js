@@ -69,6 +69,7 @@ import guideRoutes from "./routes/guideRoutes.js";
 
 //Kit Routes
 import kitRoutes from "./routes/kitRoutes.js";
+import bulkEmailRoutes from "./routes/bulkEmailRoutes.js";
 
 //Newsletter Subscription Routes
 import newsletterSubscriptionRoutes from "./routes/newsletterSubscriptionRoutes.js";
@@ -262,6 +263,7 @@ app.use("/api/invoice-company-settings", invoiceCompanySettingsRoutes);
 app.use("/api/job-sidebar-marquee-settings", jobSidebarMarqueeSettingsRoutes);
 app.use("/api/our-partners-settings", ourPartnersSettingsRoutes);
 app.use("/api/v1/course-bookings", courseBookingRoutes);
+app.use("/api/bulk-email", bulkEmailRoutes);
 
 //New Cart Routes
 app.use("/api/v1/cart", newCartRoutes);
