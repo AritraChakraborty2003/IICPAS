@@ -834,6 +834,25 @@ function DigitalHubAccessTab({ students, loading, onStudentUpdated }) {
     );
   }
 
+  if (filteredStudents.length === 0) {
+    return (
+      <motion.div
+        key="access-empty"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full"
+      >
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 text-center">
+          <User className="mx-auto mb-3 text-gray-300" size={48} />
+          <h3 className="text-lg font-semibold text-gray-700">No students found</h3>
+          <p className="text-gray-500 mt-1">
+            Try a different name, email, phone, location, or center.
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
       key="access"
