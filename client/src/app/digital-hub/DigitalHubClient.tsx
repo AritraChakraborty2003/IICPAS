@@ -496,6 +496,132 @@ export default function DigitalHubClient({
   const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
   const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
 
+  const applyProgressSummary = useCallback(
+    (
+      progressPayload: {
+        overallProgress?: number;
+        chapters?: ChapterProgressSummary[];
+      },
+      baseChapters: ChapterData[]
+    ) => {
+      const mergedChapters = mergeChapterProgress(
+        baseChapters,
+        Array.isArray(progressPayload?.chapters) ? progressPayload.chapters : []
+      );
+      setCourseChapters(mergedChapters);
+      setProgress(Number(progressPayload?.overallProgress || 0));
+      setSelectedChapter((currentSelectedChapter) => {
+        if (!currentSelectedChapter?._id) {
+          return currentSelectedChapter;
+        }
+
+        return (
+          mergedChapters.find(
+            (chapter) => chapter._id === currentSelectedChapter._id
+          ) || currentSelectedChapter
+        );
+      });
+
+      return mergedChapters;
+    },
+    []
+  );
+
+  // Derived state and common logic
+  const completedTopicIds = selectedChapter?.completedTopicIds || [];
+  const completedAssignmentIds = selectedChapter?.completedAssignmentIds || [];
+  const completedQuestionSetIds =
+    selectedChapter?.completedQuestionSetIds || [];
+  const currentTopicIndex = selectedTopic
+    ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
+    : -1;
+  const previousTopic =
+    currentTopicIndex > 0 ? visibleTopics[currentTopicIndex - 1] : null;
+  const nextTopic =
+    currentTopicIndex >= 0 && currentTopicIndex < visibleTopics.length - 1
+      ? visibleTopics[currentTopicIndex + 1]
+      : null;
+
+  const isSelectedTopicCompleted = Boolean(
+    selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
+  );
+  const isSelectedAssignmentCompleted = Boolean(
+    selectedAssignment?._id &&
+      completedAssignmentIds.includes(selectedAssignment._id)
+  );
+
+  const allTopicsCompleted =
+    topics.length > 0 &&
+    topics.every((t) => completedTopicIds.includes(t._id));
+
+  const markProgressItemComplete = useCallback(
+    async (
+      itemType: "topic" | "assignment" | "questionSet",
+      itemId: string,
+      successMessage: string
+    ) => {
+      if (!studentId || !resolvedCourseId || !selectedChapter?._id) {
+        setToastMessage("Login is required to save chapter progress.");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        return;
+      }
+
+      const progressSegment =
+        itemType === "topic"
+          ? `topics/${itemId}/complete`
+          : itemType === "assignment"
+          ? `assignments/${itemId}/complete`
+          : `question-sets/${itemId}/complete`;
+      const mutationKey = `${itemType}:${itemId}`;
+
+      try {
+        setProgressMutationKey(mutationKey);
+        const response = await axios.post(
+          `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}/${progressSegment}`,
+          { chapterId: selectedChapter._id },
+          { withCredentials: true }
+        );
+
+        const mergedChapters = applyProgressSummary(
+          response.data,
+          courseChapters
+        );
+        const refreshedChapter = mergedChapters.find(
+          (chapter) => chapter._id === selectedChapter._id
+        );
+
+        const chapterCompletionMessage =
+          refreshedChapter?.isCompleted && !selectedChapter.isCompleted
+            ? " Chapter completed and the next chapter is now unlocked."
+            : "";
+
+        setToastMessage(`${successMessage}${chapterCompletionMessage}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3500);
+      } catch (error) {
+        const message =
+          axios.isAxiosError(error) &&
+          (error.response?.data?.message || error.response?.data?.error)
+            ? error.response?.data?.message || error.response?.data?.error
+            : "Failed to save chapter progress.";
+        setToastMessage(message);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3500);
+      } finally {
+        setProgressMutationKey(null);
+      }
+    },
+    [
+      API_BASE,
+      applyProgressSummary,
+      courseChapters,
+      resolvedCourseId,
+      selectedChapter,
+      studentId,
+    ]
+  );
+
   const fetchStudentCoins = useCallback(
     async (currentStudentId: string) => {
       try {
@@ -620,33 +746,6 @@ export default function DigitalHubClient({
     [courseSlugOrId, isDemo]
   );
 
-  const applyProgressSummary = useCallback(
-    (
-      progressPayload: { overallProgress?: number; chapters?: ChapterProgressSummary[] },
-      baseChapters: ChapterData[]
-    ) => {
-      const mergedChapters = mergeChapterProgress(
-        baseChapters,
-        Array.isArray(progressPayload?.chapters) ? progressPayload.chapters : []
-      );
-      setCourseChapters(mergedChapters);
-      setProgress(Number(progressPayload?.overallProgress || 0));
-      setSelectedChapter((currentSelectedChapter) => {
-        if (!currentSelectedChapter?._id) {
-          return currentSelectedChapter;
-        }
-
-        return (
-          mergedChapters.find(
-            (chapter) => chapter._id === currentSelectedChapter._id
-          ) || currentSelectedChapter
-        );
-      });
-
-      return mergedChapters;
-    },
-    []
-  );
 
   // Function to split content into pages
   const splitContentIntoPages = (content: string, maxPages: number = 3) => {
@@ -935,6 +1034,7 @@ export default function DigitalHubClient({
     };
   }, []);
 
+
   const handleQuizSubmit = useCallback(async () => {
     if (!quizData || quizSubmitted) return;
 
@@ -1003,6 +1103,15 @@ export default function DigitalHubClient({
       setToastMessage(awardedMessage);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3500);
+
+      // Automatically mark topic as complete when quiz is submitted
+      if (selectedTopic?._id) {
+        markProgressItemComplete(
+          "topic",
+          selectedTopic._id,
+          awardedMessage || "Quiz submitted and topic marked as complete."
+        );
+      }
     } catch (error) {
       const message =
         axios.isAxiosError(error) &&
@@ -1021,6 +1130,7 @@ export default function DigitalHubClient({
     selectedAnswers,
     selectedTopic?._id,
     studentId,
+    markProgressItemComplete,
   ]);
 
   // Handle language selection
@@ -1903,90 +2013,6 @@ export default function DigitalHubClient({
   const pendingQuizPoints =
     studentId && !quizSubmitted ? liveCorrectAnswers * quizCoinsPerCorrect : 0;
   const visiblePoints = points + pendingQuizPoints;
-  const currentTopicIndex = selectedTopic
-    ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
-    : -1;
-  const previousTopic =
-    currentTopicIndex > 0 ? visibleTopics[currentTopicIndex - 1] : null;
-  const nextTopic =
-    currentTopicIndex >= 0 && currentTopicIndex < visibleTopics.length - 1
-      ? visibleTopics[currentTopicIndex + 1]
-      : null;
-  const completedTopicIds = selectedChapter?.completedTopicIds || [];
-  const completedAssignmentIds = selectedChapter?.completedAssignmentIds || [];
-  const completedQuestionSetIds = selectedChapter?.completedQuestionSetIds || [];
-  const isSelectedTopicCompleted = Boolean(
-    selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
-  );
-  const isSelectedAssignmentCompleted = Boolean(
-    selectedAssignment?._id &&
-      completedAssignmentIds.includes(selectedAssignment._id)
-  );
-
-  const markProgressItemComplete = useCallback(
-    async (
-      itemType: "topic" | "assignment" | "questionSet",
-      itemId: string,
-      successMessage: string
-    ) => {
-      if (!studentId || !resolvedCourseId || !selectedChapter?._id) {
-        setToastMessage("Login is required to save chapter progress.");
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-        return;
-      }
-
-      const progressSegment =
-        itemType === "topic"
-          ? `topics/${itemId}/complete`
-          : itemType === "assignment"
-          ? `assignments/${itemId}/complete`
-          : `question-sets/${itemId}/complete`;
-      const mutationKey = `${itemType}:${itemId}`;
-
-      try {
-        setProgressMutationKey(mutationKey);
-        const response = await axios.post(
-          `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}/${progressSegment}`,
-          { chapterId: selectedChapter._id },
-          { withCredentials: true }
-        );
-
-        const mergedChapters = applyProgressSummary(response.data, courseChapters);
-        const refreshedChapter = mergedChapters.find(
-          (chapter) => chapter._id === selectedChapter._id
-        );
-
-        const chapterCompletionMessage =
-          refreshedChapter?.isCompleted && !selectedChapter.isCompleted
-            ? " Chapter completed and the next chapter is now unlocked."
-            : "";
-
-        setToastMessage(`${successMessage}${chapterCompletionMessage}`);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3500);
-      } catch (error) {
-        const message =
-          axios.isAxiosError(error) &&
-          (error.response?.data?.message || error.response?.data?.error)
-            ? error.response?.data?.message || error.response?.data?.error
-            : "Failed to save chapter progress.";
-        setToastMessage(message);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3500);
-      } finally {
-        setProgressMutationKey(null);
-      }
-    },
-    [
-      API_BASE,
-      applyProgressSummary,
-      courseChapters,
-      resolvedCourseId,
-      selectedChapter,
-      studentId,
-    ]
-  );
   const firstCaseStudy = caseStudies.length > 0 ? caseStudies[0] : null;
   const firstAssignment = assignments.length > 0 ? assignments[0] : null;
 
@@ -2266,17 +2292,6 @@ export default function DigitalHubClient({
                 }`}
               />
             </button>
-            <button
-              onClick={handleBackNavigation}
-              className="p-2 rounded-lg hover:bg-stone-200 transition-colors"
-              aria-label="Go back"
-            >
-              <ArrowLeft
-                className={`w-5 h-5 ${
-                  isDarkMode ? "text-slate-200" : "text-slate-700"
-                }`}
-              />
-            </button>
           </div>
         </div>
 
@@ -2339,36 +2354,62 @@ export default function DigitalHubClient({
                       <h3 className="text-sm font-semibold text-slate-500 mb-2">
                         Topics
                       </h3>
-                      {visibleTopics.map(
-                        (topic: TopicData, index) => (
+                      {visibleTopics.map((topic: TopicData, index) => {
+                        const isLocked =
+                          index > 0 &&
+                          !completedTopicIds.includes(
+                            visibleTopics[index - 1]._id
+                          );
+
+                        return (
                           <button
                             key={topic._id}
                             onClick={() => {
+                              if (isLocked) {
+                                setToastMessage(
+                                  "Complete the previous topic to unlock this one."
+                                );
+                                setShowToast(true);
+                                setTimeout(() => setShowToast(false), 3000);
+                                return;
+                              }
                               closeSidebarIfMobile();
                               handleTopicSelect(topic);
                             }}
                             className={`w-full text-left p-3 rounded-xl transition-colors border ${
-                              isDarkMode
+                              isLocked
+                                ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
+                                : isDarkMode
                                 ? selectedTopic?._id === topic._id
                                   ? "bg-slate-800 border-slate-600 text-slate-100"
                                   : "bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800"
                                 : selectedTopic?._id === topic._id
-                                  ? "bg-emerald-50 border-emerald-300 text-slate-900"
-                                  : "border-stone-200 text-slate-700 hover:bg-emerald-50 hover:text-slate-900"
+                                ? "bg-emerald-50 border-emerald-300 text-slate-900"
+                                : "border-stone-200 text-slate-700 hover:bg-emerald-50 hover:text-slate-900"
                             }`}
                           >
                             <div className="flex items-center space-x-3">
-                              <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                                {index + 1}
+                              <div
+                                className={`w-6 h-6 ${
+                                  isLocked ? "bg-slate-400" : "bg-emerald-600"
+                                } text-white rounded-full flex items-center justify-center text-sm font-medium`}
+                              >
+                                {isLocked ? (
+                                  <Lock className="h-3 w-3" />
+                                ) : (
+                                  index + 1
+                                )}
                               </div>
                               <span className="font-medium">{topic.title}</span>
-                              {selectedChapter?.completedTopicIds?.includes(topic._id) ? (
+                              {selectedChapter?.completedTopicIds?.includes(
+                                topic._id
+                              ) ? (
                                 <CheckCircle className="h-4 w-4 text-emerald-500" />
                               ) : null}
                             </div>
                           </button>
-                        )
-                      )}
+                        );
+                      })}
                     </>
                   )}
 
@@ -2380,29 +2421,53 @@ export default function DigitalHubClient({
                       </h3>
                       {caseStudies
                         .slice(0, 2)
-                        .map((caseStudy: CaseStudy, index) => (
-                          <button
-                            key={caseStudy._id}
-                            onClick={() => {
-                              closeSidebarIfMobile();
-                              handleCaseStudySelect(caseStudy);
-                            }}
-                            className={`w-full text-left p-3 rounded-xl hover:bg-emerald-50 hover:text-slate-900 transition-colors border border-stone-200 ${
-                              selectedCaseStudy?._id === caseStudy._id
-                                ? "bg-emerald-50 border-emerald-300"
-                                : ""
-                            } ${isDarkMode ? "text-slate-100" : "text-slate-700"}`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                                S{index + 1}
+                        .map((caseStudy: CaseStudy, index) => {
+                          const isLocked = !allTopicsCompleted;
+
+                          return (
+                            <button
+                              key={caseStudy._id}
+                              onClick={() => {
+                                if (isLocked) {
+                                  setToastMessage(
+                                    "Complete all topics to unlock simulations."
+                                  );
+                                  setShowToast(true);
+                                  setTimeout(() => setShowToast(false), 3000);
+                                  return;
+                                }
+                                closeSidebarIfMobile();
+                                handleCaseStudySelect(caseStudy);
+                              }}
+                              className={`w-full text-left p-3 rounded-xl transition-colors border ${
+                                isLocked
+                                  ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
+                                  : selectedCaseStudy?._id === caseStudy._id
+                                  ? "bg-emerald-50 border-emerald-300"
+                                  : "hover:bg-emerald-50 hover:text-slate-900 border-stone-200"
+                              } ${
+                                isDarkMode ? "text-slate-100" : "text-slate-700"
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div
+                                  className={`w-6 h-6 ${
+                                    isLocked ? "bg-slate-400" : "bg-emerald-600"
+                                  } text-white rounded-full flex items-center justify-center text-sm font-medium`}
+                                >
+                                  {isLocked ? (
+                                    <Lock className="h-3 w-3" />
+                                  ) : (
+                                    `S${index + 1}`
+                                  )}
+                                </div>
+                                <span className="font-medium">
+                                  Simulation {index + 1}
+                                </span>
                               </div>
-                              <span className="font-medium">
-                                Simulation {index + 1}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
+                            </button>
+                          );
+                        })}
                     </>
                   )}
 
@@ -2414,29 +2479,58 @@ export default function DigitalHubClient({
                       </h3>
                       {assignments
                         .slice(0, 2)
-                        .map((assignment: Assignment, index) => (
-                          <button
-                            key={assignment._id}
-                            onClick={() => {
-                              closeSidebarIfMobile();
-                              handleAssignmentSelect(assignment);
-                            }}
-                            className={`w-full text-left p-3 rounded-xl hover:bg-emerald-50 hover:text-slate-900 transition-colors border border-stone-200 ${
-                              selectedAssignment?._id === assignment._id
-                                ? "bg-emerald-50 border-emerald-300"
-                                : ""
-                            } ${isDarkMode ? "text-slate-100" : "text-slate-700"}`}
-                          >
-                            <div className="flex items-center space-x-3">
-                              <div className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium">
-                                A{index + 1}
+                        .map((assignment: Assignment, index) => {
+                          const isLocked = !allTopicsCompleted;
+
+                          return (
+                            <button
+                              key={assignment._id}
+                              onClick={() => {
+                                if (isLocked) {
+                                  setToastMessage(
+                                    "Complete all topics to unlock assessments."
+                                  );
+                                  setShowToast(true);
+                                  setTimeout(() => setShowToast(false), 3000);
+                                  return;
+                                }
+                                closeSidebarIfMobile();
+                                handleAssignmentSelect(assignment);
+                              }}
+                              className={`w-full text-left p-3 rounded-xl transition-colors border ${
+                                isLocked
+                                  ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
+                                  : selectedAssignment?._id === assignment._id
+                                  ? "bg-emerald-50 border-emerald-300"
+                                  : "hover:bg-emerald-50 hover:text-slate-900 border-stone-200"
+                              } ${
+                                isDarkMode ? "text-slate-100" : "text-slate-700"
+                              }`}
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div
+                                  className={`w-6 h-6 ${
+                                    isLocked ? "bg-slate-400" : "bg-emerald-600"
+                                  } text-white rounded-full flex items-center justify-center text-sm font-medium`}
+                                >
+                                  {isLocked ? (
+                                    <Lock className="h-3 w-3" />
+                                  ) : (
+                                    `A${index + 1}`
+                                  )}
+                                </div>
+                                <span className="font-medium">
+                                  Assessment {index + 1}
+                                </span>
+                                {selectedChapter?.completedAssignmentIds?.includes(
+                                  assignment._id
+                                ) ? (
+                                  <CheckCircle className="h-4 w-4 text-emerald-500" />
+                                ) : null}
                               </div>
-                              <span className="font-medium">
-                                Assessment {index + 1}
-                              </span>
-                            </div>
-                          </button>
-                        ))}
+                            </button>
+                          );
+                        })}
                     </>
                   )}
 
@@ -2832,10 +2926,21 @@ export default function DigitalHubClient({
                             <button
                               type="button"
                               onClick={() => {
+                                if (quizData && !quizSubmitted) {
+                                  setToastMessage(
+                                    "Please complete the quiz before moving to the next topic."
+                                  );
+                                  setShowToast(true);
+                                  setTimeout(() => setShowToast(false), 3000);
+                                  return;
+                                }
                                 handleTopicSelect(nextTopic);
                               }}
+                              disabled={Boolean(quizData && !quizSubmitted)}
                               className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
-                                isDarkMode
+                                quizData && !quizSubmitted
+                                  ? "bg-slate-400 cursor-not-allowed"
+                                  : isDarkMode
                                   ? "bg-emerald-600 hover:bg-emerald-700"
                                   : "bg-blue-600 hover:bg-blue-700"
                               }`}
