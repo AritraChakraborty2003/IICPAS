@@ -77,6 +77,7 @@ import {
 } from "react-icons/fa";
 import CompanyTab from "./CompanyTab";
 import CourseArea from "./CourseBuilder";
+import ChapterScheduleTab from "./Course/ChapterScheduleTab";
 import CourseCategory from "./Course/CourseCategory";
 import LiveSessionAdmin from "./Course/LiveSesionAdmin";
 import TicketTab from "../components/TicketTab";
@@ -246,6 +247,11 @@ const NAVIGATION_GROUPS = [
       },
       { id: "course", label: "Course", icon: <FaBook /> },
       { id: "course-display", label: "Course Display", icon: <FaEye /> },
+      {
+        id: "chapter-schedule",
+        label: "Chapter Schedule",
+        icon: <FaCalendarAlt />,
+      },
       { id: "topics", label: "Training Topics", icon: <FaBook /> },
       { id: "guides", label: "Guides & Resources", icon: <FaFileAlt /> },
       { id: "kits", label: "Kit Stock", icon: <FaBoxes /> },
@@ -839,6 +845,8 @@ function AdminDashboardContent() {
           <CourseArea />
         ) : activeTab === "course-display" ? (
           <CourseDisplayTab />
+        ) : activeTab === "chapter-schedule" ? (
+          <ChapterScheduleTab onBack={handleBack} />
         ) : activeTab === "revision-tests" ? (
           <RevisionTestsTab />
         ) : activeTab === "topics" ? (
