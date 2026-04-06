@@ -18,8 +18,10 @@ type BookingPageClientProps = {
   initialCategories: Array<{ _id?: string; category?: string }>;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_BASE?.replace(/\/api\/?$/i, "") ||
+  "https://api.iicpa.in";
 
 type RazorpayOrderData = {
   orderId: string;
@@ -76,6 +78,30 @@ type PendingCheckout = {
   successMessage: string;
 };
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://api.iicpa.in/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const extractList = (payload: unknown, key: string) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray((payload as { [k: string]: unknown[] })?.[key])) {
+    return (payload as { [k: string]: unknown[] })[key];
+  }
+  if (Array.isArray((payload as { data?: unknown[] })?.data)) {
+    return (payload as { data: unknown[] }).data;
+  }
+  if (Array.isArray((payload as { data?: { [k: string]: unknown[] } })?.data?.[key])) {
+    return (payload as { data: { [k: string]: unknown[] } }).data[key];
+  }
+  return [];
+};
+
 declare global {
   interface Window {
     Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayInstance;
@@ -88,6 +114,7 @@ export default function BookingPageClient({
   initialCategories,
 }: BookingPageClientProps) {
   const router = useRouter();
+  const API_BASE = getApiBase();
   const [courses, setCourses] = useState<BookingCourse[]>(initialCourses);
   const [groupPricing, setGroupPricing] =
     useState<Array<Record<string, unknown>>>(initialGroupPricing);
@@ -160,29 +187,50 @@ export default function BookingPageClient({
         fetch(`${API_BASE}/group-pricing`, { cache: "no-store" }),
       ]);
 
-      if (coursesResponse.status === "fulfilled" && coursesResponse.value.ok) {
-        const payload = await coursesResponse.value.json();
-        setCourses(normalizeCoursesPayload(payload));
+      let coursesLoaded = false;
+      let categoriesLoaded = false;
+      let groupsLoaded = false;
+
+      if (coursesResponse.status === "fulfilled") {
+        if (coursesResponse.value.ok) {
+          const payload = await coursesResponse.value.json();
+          setCourses(normalizeCoursesPayload(payload));
+          coursesLoaded = true;
+        } else {
+          console.warn("Courses request failed:", coursesResponse.value.status);
+        }
+      } else {
+        console.warn("Courses request rejected:", coursesResponse.reason);
       }
 
-      if (categoriesResponse.status === "fulfilled" && categoriesResponse.value.ok) {
-        const payload = await categoriesResponse.value.json();
-        const list = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.categories)
-          ? payload.categories
-          : [];
-        setCategoriesData(list);
+      if (categoriesResponse.status === "fulfilled") {
+        if (categoriesResponse.value.ok) {
+          const payload = await categoriesResponse.value.json();
+          const list = extractList(payload, "categories");
+          setCategoriesData(list as Array<{ _id?: string; category?: string }>);
+          categoriesLoaded = true;
+        } else {
+          console.warn("Categories request failed:", categoriesResponse.value.status);
+        }
+      } else {
+        console.warn("Categories request rejected:", categoriesResponse.reason);
       }
 
-      if (groupResponse.status === "fulfilled" && groupResponse.value.ok) {
-        const payload = await groupResponse.value.json();
-        const list = Array.isArray(payload)
-          ? payload
-          : Array.isArray(payload?.groupPricing)
-          ? payload.groupPricing
-          : [];
-        setGroupPricing(list);
+      if (groupResponse.status === "fulfilled") {
+        if (groupResponse.value.ok) {
+          const payload = await groupResponse.value.json();
+          const list = extractList(payload, "groupPricing");
+          setGroupPricing(list as Array<Record<string, unknown>>);
+          groupsLoaded = true;
+        } else {
+          console.warn("Group pricing request failed:", groupResponse.value.status);
+        }
+      } else {
+        console.warn("Group pricing request rejected:", groupResponse.reason);
+      }
+
+      if (!coursesLoaded && !categoriesLoaded && !groupsLoaded) {
+        setError("Unable to load courses right now. Please refresh or try again later.");
       }
     } catch (fetchError) {
       console.error(fetchError);

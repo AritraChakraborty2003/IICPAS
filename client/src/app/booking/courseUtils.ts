@@ -73,6 +73,10 @@ export const normalizeCoursesPayload = (payload: unknown): BookingCourse[] => {
     ? payload
     : Array.isArray((payload as { courses?: unknown[] })?.courses)
     ? (payload as { courses: unknown[] }).courses
+    : Array.isArray((payload as { data?: unknown[] })?.data)
+    ? (payload as { data: unknown[] }).data
+    : Array.isArray((payload as { data?: { courses?: unknown[] } })?.data?.courses)
+    ? (payload as { data: { courses: unknown[] } }).data.courses
     : [];
 
   return list
@@ -94,4 +98,3 @@ export const getDefaultSessionType = (course: BookingCourse): "recorded" | "live
   if (course.recordedPrice !== null) return "recorded";
   return "live";
 };
-

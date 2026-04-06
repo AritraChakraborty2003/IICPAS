@@ -12,8 +12,18 @@ export const metadata: Metadata = {
     "Register and pre-book IICPA courses with a modern, fast booking experience.",
 };
 
+const getApiBase = () => {
+  const configuredBase =
+    process.env.NEXT_PUBLIC_API_BASE ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    "https://api.iicpa.in/api";
+
+  const trimmed = configuredBase.trim().replace(/\/+$/, "");
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
 async function getInitialCourses(): Promise<BookingCourse[]> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
+  const API_BASE = getApiBase();
   try {
     const response = await fetch(`${API_BASE}/courses`, {
       next: { revalidate: 300 },
@@ -28,7 +38,7 @@ async function getInitialCourses(): Promise<BookingCourse[]> {
 }
 
 async function getInitialGroupPricing(): Promise<Array<Record<string, unknown>>> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
+  const API_BASE = getApiBase();
   try {
     const response = await fetch(`${API_BASE}/group-pricing`, {
       next: { revalidate: 300 },
@@ -45,7 +55,7 @@ async function getInitialGroupPricing(): Promise<Array<Record<string, unknown>>>
 }
 
 async function getInitialCategories(): Promise<Array<{ _id?: string; category?: string }>> {
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "https://api.iicpa.in/api";
+  const API_BASE = getApiBase();
   try {
     const response = await fetch(`${API_BASE}/categories`, {
       next: { revalidate: 300 },
