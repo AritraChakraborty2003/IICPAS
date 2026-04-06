@@ -6,24 +6,23 @@ import toast from "react-hot-toast";
 import { FaVolumeUp, FaSave, FaUpload, FaSpinner } from "react-icons/fa";
 import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
-const API_BASE = getApiBase();
-const API_ORIGIN = getApiOrigin();
-
 const DEFAULT_SETTINGS = {
   correctAnswerSound: "/sounds/success.mp3",
   wrongAnswerSound: "/sounds/error.mp3",
 };
 
-const resolveSoundUrl = (value) => {
+const resolveSoundUrl = (value, apiOrigin) => {
   const raw = (value || "").toString().trim();
   if (!raw) return "";
   if (/^https?:\/\//i.test(raw)) return raw;
-  if (raw.startsWith("/uploads/")) return `${API_ORIGIN}${raw}`;
+  if (raw.startsWith("/uploads/")) return `${apiOrigin}${raw}`;
   if (raw.startsWith("/")) return raw;
-  return `${API_ORIGIN}/${raw.replace(/^\/+/, "")}`;
+  return `${apiOrigin}/${raw.replace(/^\/+/, "")}`;
 };
 
 const QuizSoundSettingsTab = () => {
+  const API_BASE = useMemo(() => getApiBase(), []);
+  const API_ORIGIN = useMemo(() => getApiOrigin(), []);
   const [settings, setSettings] = useState(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -32,10 +31,10 @@ const QuizSoundSettingsTab = () => {
 
   const resolvedCurrentSounds = useMemo(
     () => ({
-      correct: resolveSoundUrl(settings.correctAnswerSound),
-      wrong: resolveSoundUrl(settings.wrongAnswerSound),
+      correct: resolveSoundUrl(settings.correctAnswerSound, API_ORIGIN),
+      wrong: resolveSoundUrl(settings.wrongAnswerSound, API_ORIGIN),
     }),
-    [settings]
+    [settings, API_ORIGIN]
   );
 
   useEffect(() => {
