@@ -15,6 +15,7 @@ const publicBackendUrl =
   process.env.NEXT_PUBLIC_BACKEND_URL || publicApiBase;
 
 const nextConfig = {
+  productionBrowserSourceMaps: true,
   async headers() {
     return [
       {
