@@ -17,6 +17,7 @@ const MODULES = [
   { id: "course", name: "Course", icon: "🎓" },
   { id: "course-display", name: "Course Display", icon: "👁️" },
   { id: "chapter-schedule", name: "Chapter Schedule", icon: "⏰" },
+  { id: "topic-schedule", name: "Topic Schedule", icon: "🕒" },
   { id: "live-session", name: "Live Session", icon: "📺" },
   { id: "live-bookings", name: "Live Bookings", icon: "🧾" },
   { id: "blogs", name: "Blogs", icon: "📝" },

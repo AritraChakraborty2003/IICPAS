@@ -78,6 +78,7 @@ import {
 import CompanyTab from "./CompanyTab";
 import CourseArea from "./CourseBuilder";
 import ChapterScheduleTab from "./Course/ChapterScheduleTab";
+import TopicScheduleTab from "./Course/TopicScheduleTab";
 import CourseCategory from "./Course/CourseCategory";
 import LiveSessionAdmin from "./Course/LiveSesionAdmin";
 import TicketTab from "../components/TicketTab";
@@ -250,6 +251,11 @@ const NAVIGATION_GROUPS = [
       {
         id: "chapter-schedule",
         label: "Chapter Schedule",
+        icon: <FaCalendarAlt />,
+      },
+      {
+        id: "topic-schedule",
+        label: "Topic Schedule",
         icon: <FaCalendarAlt />,
       },
       { id: "topics", label: "Training Topics", icon: <FaBook /> },
@@ -847,6 +853,8 @@ function AdminDashboardContent() {
           <CourseDisplayTab />
         ) : activeTab === "chapter-schedule" ? (
           <ChapterScheduleTab onBack={handleBack} />
+        ) : activeTab === "topic-schedule" ? (
+          <TopicScheduleTab onBack={handleBack} />
         ) : activeTab === "revision-tests" ? (
           <RevisionTestsTab />
         ) : activeTab === "topics" ? (
