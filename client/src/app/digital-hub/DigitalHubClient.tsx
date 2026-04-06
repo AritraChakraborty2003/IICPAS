@@ -594,7 +594,8 @@ export default function DigitalHubClient({
   });
 
   const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
-  const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
+  const publishedTopics = filterPublishedTopics(topics);
+  const visibleTopics = isDemo ? publishedTopics.slice(0, 1) : publishedTopics;
 
   const applyProgressSummary = useCallback(
     (
@@ -907,8 +908,9 @@ export default function DigitalHubClient({
       navigationMode: "push" | "replace" | "none" = "none",
       preferredTopicId?: string
     ) => {
+      const availableTopics = filterPublishedTopics(chapter.topics || []);
       setSelectedChapter(chapter);
-      setTopics(chapter.topics || []);
+      setTopics(availableTopics);
       setSelectedCaseStudy(null);
       setSelectedAssignment(null);
 
@@ -924,24 +926,27 @@ export default function DigitalHubClient({
         }
       }
 
-      if (chapter.topics && chapter.topics.length > 0) {
+      if (availableTopics.length > 0) {
         const completedIds = chapter.completedTopicIds || [];
         const storedTopic =
           preferredTopicId &&
-          chapter.topics.find((topic) => topic._id === preferredTopicId);
+          availableTopics.find((topic) => topic._id === preferredTopicId);
         const storedTopicIndex = storedTopic
-          ? chapter.topics.findIndex((topic) => topic._id === storedTopic._id)
+          ? availableTopics.findIndex((topic) => topic._id === storedTopic._id)
           : -1;
         const storedTopicUnlocked =
           storedTopicIndex === 0
             ? true
             : storedTopicIndex > 0 &&
-              completedIds.includes(chapter.topics[storedTopicIndex - 1]?._id);
-        const fallbackTopic = getFirstUnlockedTopic(chapter, completedIds);
+              completedIds.includes(availableTopics[storedTopicIndex - 1]?._id);
+        const fallbackTopic = getFirstUnlockedTopic(
+          { ...chapter, topics: availableTopics },
+          completedIds
+        );
         const firstTopic =
           storedTopic && storedTopicUnlocked
             ? storedTopic
-            : fallbackTopic || chapter.topics[0];
+            : fallbackTopic || availableTopics[0];
         setSelectedTopic(firstTopic);
         if (firstTopic?._id) {
           storeLastSelection(chapter._id, firstTopic._id);
