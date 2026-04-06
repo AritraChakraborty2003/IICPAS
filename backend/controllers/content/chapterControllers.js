@@ -47,7 +47,8 @@ export const createChapter = async (req, res) => {
       seoDescription,
       metaTitle, 
       metaKeywords, 
-      metaDescription 
+      metaDescription,
+      publishAt
     } = req.body;
 
     // Handle course lookup by both ObjectId and slug
@@ -74,6 +75,7 @@ export const createChapter = async (req, res) => {
       metaTitle,
       metaKeywords,
       metaDescription,
+      ...(publishAt ? { publishAt: new Date(publishAt) } : {}),
     });
     await chapter.save();
 
@@ -100,23 +102,30 @@ export const updateChapter = async (req, res) => {
       seoDescription,
       metaTitle, 
       metaKeywords, 
-      metaDescription 
+      metaDescription,
+      publishAt
     } = req.body;
+
+    const updateData = {
+      title,
+      status,
+      order,
+      seoTitle,
+      seoKeywords,
+      seoDescription,
+      metaTitle,
+      metaKeywords,
+      metaDescription,
+      updatedAt: new Date(),
+    };
+
+    if (publishAt !== undefined) {
+      updateData.publishAt = new Date(publishAt);
+    }
 
     const chapter = await Chapter.findByIdAndUpdate(
       id,
-      {
-        title,
-        status,
-        order,
-        seoTitle,
-        seoKeywords,
-        seoDescription,
-        metaTitle,
-        metaKeywords,
-        metaDescription,
-        updatedAt: new Date(),
-      },
+      updateData,
       { new: true }
     );
     

@@ -29,6 +29,16 @@ import { useAuth } from "@/contexts/AuthContext";
 const MySwal = withReactContent(Swal);
 const API_BASE = getApiBase();
 
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
+
 const ChapterList = forwardRef(
   (
     { courseId, courseName, onViewCourse, onViewTopics, onEditChapter },
@@ -122,6 +132,20 @@ const ChapterList = forwardRef(
         valueGetter: () => courseName,
       },
       { field: "title", headerName: "Chapter Name", flex: 1 },
+      {
+        field: "dateTime",
+        headerName: "Date & Time",
+        width: 180,
+        sortable: false,
+        filterable: false,
+        valueGetter: (params) =>
+          params?.row?.updatedAt || params?.row?.createdAt || "",
+        renderCell: (params) => (
+          <span style={{ fontSize: 14, color: "#475569" }}>
+            {formatDateTime(params.value)}
+          </span>
+        ),
+      },
       {
         field: "actions",
         headerName: "Action",

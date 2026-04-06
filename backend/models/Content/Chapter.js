@@ -17,6 +17,7 @@ const ChapterSchema = new Schema({
   metaTitle: { type: String },
   metaKeywords: { type: String },
   metaDescription: { type: String },
+  publishAt: { type: Date, default: Date.now },
   
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

@@ -21,9 +21,17 @@ import axios from "axios";
 
 const API_BASE = getApiBase();
 
+const toDateTimeLocalValue = (value) => {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return "";
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+};
+
 export default function AddChapterForm({ courseId, onCancel, onAdded }) {
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState("Active");
+  const [publishAt, setPublishAt] = useState(toDateTimeLocalValue());
   const [seoTitle, setSeoTitle] = useState("");
   const [seoKeywords, setSeoKeywords] = useState("");
   const [seoDescription, setSeoDescription] = useState("");
@@ -45,6 +53,7 @@ export default function AddChapterForm({ courseId, onCancel, onAdded }) {
       await axios.post(`${API_BASE}/chapters/by-course/${courseId}`, {
         title: title.trim(),
         status,
+        publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
         seoTitle: seoTitle.trim(),
         seoKeywords: seoKeywords.trim(),
         seoDescription: seoDescription.trim(),
@@ -104,6 +113,17 @@ export default function AddChapterForm({ courseId, onCancel, onAdded }) {
           <MenuItem value="Inactive">Inactive</MenuItem>
         </Select>
       </FormControl>
+
+      <TextField
+        label="Date & Time"
+        type="datetime-local"
+        fullWidth
+        value={publishAt}
+        onChange={(e) => setPublishAt(e.target.value)}
+        sx={{ mb: 3 }}
+        InputLabelProps={{ shrink: true }}
+        helperText="Managed chapter date and time"
+      />
 
       {/* SEO Section */}
       <Accordion sx={{ mb: 3 }}>
