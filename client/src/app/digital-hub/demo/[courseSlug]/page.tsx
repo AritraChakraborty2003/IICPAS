@@ -1,11 +1,15 @@
-import DigitalHubClient from "../../DigitalHubClient";
+import dynamic from "next/dynamic";
 
-export default async function DemoDigitalHubCoursePage({
+const DigitalHubClient = dynamic(() => import("../../DigitalHubClient"), {
+  ssr: false,
+});
+
+export default function DemoDigitalHubCoursePage({
   params,
 }: {
-  params: Promise<{ courseSlug: string }>;
+  params: { courseSlug: string };
 }) {
-  const { courseSlug } = await params;
+  const { courseSlug } = params;
 
   return <DigitalHubClient courseSlugOrId={courseSlug} isDemo={true} />;
 }
