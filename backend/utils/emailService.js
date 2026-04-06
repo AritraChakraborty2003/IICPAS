@@ -10,7 +10,7 @@ const createTransporter = () => {
   return nodemailer.createTransport(emailConfig);
 };
 
-// Send receipt email with PDF attachment
+// Send invoice email with PDF attachment
 export const sendReceiptEmail = async (transaction, pdfBuffer) => {
   try {
     // Check if email is properly configured
@@ -21,7 +21,6 @@ export const sendReceiptEmail = async (transaction, pdfBuffer) => {
       setupEmailInstructions();
 
       // For development/testing, just mark as sent without actually sending
-      // In production, you should throw an error
       return {
         success: true,
         emailSent: false,
@@ -47,75 +46,65 @@ export const sendReceiptEmail = async (transaction, pdfBuffer) => {
 
     const mailOptions = {
       from: {
-        name: "IICPAS Institute",
+        name: "IICPA Private limited",
         address: emailConfig.auth.user,
       },
       to: studentEmail,
-      subject: `Payment Receipt - Rs. ${amount?.toLocaleString(
+      subject: `Invoice - Rs. ${amount?.toLocaleString(
         "en-IN"
       )} - ${courseName}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #003057; color: white; padding: 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px;">IICPAS INSTITUTE</h1>
-            <p style="margin: 5px 0 0 0; font-size: 16px;">Payment Receipt Confirmation</p>
+          <div style="background: #0f172a; color: white; padding: 20px; text-align: center;">
+            <h1 style="margin: 0; font-size: 24px;">IICPA Private limited</h1>
+            <p style="margin: 5px 0 0 0; font-size: 16px;">Course Purchase Invoice</p>
           </div>
           
           <div style="padding: 20px; background: #f8f9fa;">
-            <h2 style="color: #003057; margin-bottom: 15px;">Dear ${studentName},</h2>
+            <h2 style="color: #0f172a; margin-bottom: 15px;">Dear ${studentName},</h2>
             
-            <p>We are pleased to confirm that your payment for <strong>${courseName}</strong> has been successfully processed.</p>
+            <p>Thank you for choosing IICPA. Your payment for <strong>${courseName}</strong> has been successfully processed.</p>
             
-            <div style="background: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #28a745;">
-              <p style="margin: 0; font-size: 14px;"><strong>Payment Details:</strong></p>
-              <p style="margin: 5px 0 0 0; font-size: 18px; color: #28a745; font-weight: bold;">
-                Amount: Rs. ${amount?.toLocaleString("en-IN") || "N/A"}
+            <div style="background: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #0f172a;">
+              <p style="margin: 0; font-size: 14px;"><strong>Invoice Details:</strong></p>
+              <p style="margin: 5px 0 0 0; font-size: 18px; color: #0f172a; font-weight: bold;">
+                Amount Paid: Rs. ${amount?.toLocaleString("en-IN") || "N/A"}
               </p>
               <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
-                UTR Number: ${transaction.utrNumber || "N/A"}
+                Transaction ID: ${transaction._id.toString().slice(-8).toUpperCase()}
               </p>
               <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
-                Status: <span style="color: #28a745; font-weight: bold;">${
-                  transaction.status.charAt(0).toUpperCase() +
-                  transaction.status.slice(1)
-                }</span>
+                Status: <span style="color: #28a745; font-weight: bold;">Paid</span>
               </p>
             </div>
             
-            <p>Your detailed receipt is attached to this email as a PDF document for your records.</p>
+            <p>Your official invoice is attached to this email as a PDF document.</p>
             
-            <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 15px 0;">
-              <p style="margin: 0; font-size: 14px; color: #856404;">
-                <strong>📋 Important:</strong> Please keep this receipt safe. You may need it for:
+            <div style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px; border-radius: 5px; margin: 15px 0;">
+              <p style="margin: 0; font-size: 14px; color: #475569;">
+                <strong>📋 Important:</strong> This invoice serves as proof of enrollment. Please keep it safe for future reference.
               </p>
-              <ul style="margin: 5px 0 0 20px; font-size: 14px; color: #856404;">
-                <li>Course access and enrollment verification</li>
-                <li>Tax purposes and expense tracking</li>
-                <li>Customer support and inquiries</li>
-              </ul>
             </div>
             
-            <p>If you have any questions about this payment or need assistance with your course enrollment, please don't hesitate to contact us.</p>
+            <p>If you have any questions, please contact our support team.</p>
             
             <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #dee2e6;">
               <p style="margin: 0; font-size: 14px; color: #666;">
-                <strong>Need Help?</strong><br>
-                Email: support@iicpas.com<br>
-                Phone: +91-9876543210<br>
-                Website: www.iicpas.com
+                <strong>Support Contact:</strong><br>
+                Email: support@iicpa.org<br>
+                Website: www.iicpa.org
               </p>
             </div>
           </div>
           
-          <div style="background: #343a40; color: white; padding: 15px; text-align: center; font-size: 12px;">
-            <p style="margin: 0;">© 2025 IICPAS Institute. All rights reserved.</p>
-            <p style="margin: 5px 0 0 0;">This is an automated email. Please do not reply directly to this email.</p>
+          <div style="background: #0f172a; color: white; padding: 15px; text-align: center; font-size: 12px;">
+            <p style="margin: 0;">© ${new Date().getFullYear()} IICPA Private limited. All rights reserved.</p>
           </div>
         </div>
       `,
       attachments: [
         {
-          filename: `Receipt-${transaction._id.toString().slice(-8)}.pdf`,
+          filename: `Invoice-${transaction._id.toString().slice(-8).toUpperCase()}.pdf`,
           content: pdfBuffer,
           contentType: "application/pdf",
         },
@@ -123,7 +112,7 @@ export const sendReceiptEmail = async (transaction, pdfBuffer) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log("Receipt email sent successfully:", result.messageId);
+    console.log("Invoice email sent successfully:", result.messageId);
 
     return {
       success: true,
