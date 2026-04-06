@@ -22,6 +22,14 @@ import {
 
 const API_BASE = getApiBase();
 
+const extractConversations = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.conversations)) return payload.conversations;
+  if (Array.isArray(payload?.data?.conversations)) return payload.data.conversations;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export default function ChatConversationsTab() {
   const router = useRouter();
   const [conversations, setConversations] = useState([]);
@@ -62,7 +70,7 @@ export default function ChatConversationsTab() {
       console.log('Token for conversations:', token ? 'Present' : 'Missing');
       
       const response = await axios.get(
-        `${API_BASE || 'http://localhost:8080'}/api/chat/conversations`,
+        `${API_BASE}/chat/conversations`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -75,8 +83,8 @@ export default function ChatConversationsTab() {
           }
         }
       );
-      setConversations(response.data.conversations);
-      setTotalPages(response.data.pagination.pages);
+      setConversations(extractConversations(response.data));
+      setTotalPages(response.data?.pagination?.pages || 1);
     } catch (error) {
       console.error("Error fetching conversations:", error);
       console.error("Error response:", error.response?.data);
@@ -92,7 +100,7 @@ export default function ChatConversationsTab() {
       console.log('Token:', token ? 'Present' : 'Missing');
       
       const response = await axios.get(
-        `${API_BASE || 'http://localhost:8080'}/api/chat/statistics`,
+        `${API_BASE}/chat/statistics`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -109,7 +117,7 @@ export default function ChatConversationsTab() {
   const fetchConversationDetails = async (sessionId) => {
     try {
       const response = await axios.get(
-        `${API_BASE || 'http://localhost:8080'}/api/chat/conversations/${sessionId}`,
+        `${API_BASE}/chat/conversations/${sessionId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
@@ -138,7 +146,7 @@ export default function ChatConversationsTab() {
   const updateConversationStatus = async (sessionId, status) => {
     try {
       await axios.put(
-        `${API_BASE || 'http://localhost:8080'}/api/chat/conversations/${sessionId}/status`,
+        `${API_BASE}/chat/conversations/${sessionId}/status`,
         { status },
         {
           headers: {
@@ -164,7 +172,7 @@ export default function ChatConversationsTab() {
 
     try {
       await axios.delete(
-        `${API_BASE || 'http://localhost:8080'}/api/chat/conversations/${sessionId}`,
+        `${API_BASE}/chat/conversations/${sessionId}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
@@ -198,7 +206,7 @@ export default function ChatConversationsTab() {
       
       // Fetch all conversations without pagination
       const response = await axios.get(
-        `${API_BASE || 'http://localhost:8080'}/api/chat/conversations`,
+        `${API_BASE}/chat/conversations`,
         {
           headers: {
             'Authorization': `Bearer ${token}`

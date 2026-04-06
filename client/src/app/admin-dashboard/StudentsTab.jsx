@@ -24,6 +24,8 @@ import {
   UserCheck,
   AlertCircle,
   Search,
+  Unlock,
+  Lock,
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -757,6 +759,215 @@ function StudentsTable({ students, onStudentUpdated }) {
   );
 }
 
+function DigitalHubAccessTab({ students, loading, onStudentUpdated }) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [updatingStudentId, setUpdatingStudentId] = useState(null);
+
+  const filteredStudents = students.filter((student) =>
+    student.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.phone?.includes(searchTerm) ||
+    student.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.center?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleToggleAccess = async (student) => {
+    const nextUnlocked = !Boolean(student.digitalHubAccessOverride);
+    const actionLabel = nextUnlocked ? "unfreeze" : "restore normal locking for";
+
+    if (
+      !window.confirm(
+        `Are you sure you want to ${actionLabel} ${student.name}'s Digital Hub access?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setUpdatingStudentId(student._id);
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        throw new Error("No admin token found");
+      }
+
+      await axios.put(
+        `${API_BASE}/v1/students/admin/digital-hub-access/${student._id}`,
+        { unlocked: nextUnlocked },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      toast.success(
+        nextUnlocked
+          ? `${student.name}'s Digital Hub access is now fully unfrozen.`
+          : `${student.name}'s Digital Hub access is back to normal lock order.`
+      );
+
+      if (onStudentUpdated) onStudentUpdated();
+    } catch (error) {
+      console.error("Error updating Digital Hub access:", error);
+      toast.error(
+        error.response?.data?.message || error.message || "Failed to update Digital Hub access"
+      );
+    } finally {
+      setUpdatingStudentId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="animate-spin text-indigo-500" size={36} />
+      </div>
+    );
+  }
+
+  if (!students?.length) {
+    return (
+      <div className="text-gray-500 text-center py-12">
+        No students available.
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      key="access"
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 30 }}
+      className="w-full"
+    >
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Digital Hub Access Override
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Unfreeze all chapters and topics for a specific student without affecting others.
+            </p>
+          </div>
+          <div className="relative max-w-md w-full md:w-96">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search students..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+            />
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Use <strong>Unfreeze All</strong> to bypass chapter/topic lock order for one student only.
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Courses
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Digital Hub Access
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredStudents.map((student) => {
+                const accessEnabled = Boolean(student.digitalHubAccessOverride);
+                return (
+                  <tr key={student._id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 bg-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md flex-shrink-0 mr-3">
+                          {student.name?.charAt(0)?.toUpperCase() || "S"}
+                        </div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {student.name}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{student.email}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">
+                        {student.course && student.course.length > 0 ? (
+                          <div className="space-y-1">
+                            {student.course.slice(0, 2).map((course, index) => (
+                              <div key={index} className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">
+                                {course.title || course}
+                              </div>
+                            ))}
+                            {student.course.length > 2 && (
+                              <div className="text-xs text-gray-500">
+                                +{student.course.length - 2} more
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500">No courses</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-semibold rounded-full ${
+                        accessEnabled
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-gray-100 text-gray-700"
+                      }`}>
+                        {accessEnabled ? <Unlock size={14} /> : <Lock size={14} />}
+                        {accessEnabled ? "Unfrozen" : "Locked by order"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => handleToggleAccess(student)}
+                        disabled={updatingStudentId === student._id}
+                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          accessEnabled
+                            ? "bg-gray-900 hover:bg-gray-800 text-white"
+                            : "bg-indigo-500 hover:bg-indigo-600 text-white"
+                        } disabled:opacity-60 disabled:cursor-not-allowed`}
+                      >
+                        {updatingStudentId === student._id ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : accessEnabled ? (
+                          <Lock size={16} />
+                        ) : (
+                          <Unlock size={16} />
+                        )}
+                        {accessEnabled ? "Restore Lock Order" : "Unfreeze All"}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // Student Profile Card Component
 function StudentProfileCard({ student, onEdit }) {
   return (
@@ -1373,10 +1584,10 @@ function StudentProfileManagement() {
 export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("add"); // "add", "list", or "profile"
+  const [activeTab, setActiveTab] = useState("add"); // "add", "list", "access", or "profile"
 
   useEffect(() => {
-    if (activeTab === "list") {
+    if (activeTab === "list" || activeTab === "access") {
       setLoading(true);
       axios
         .get(`${API_BASE}/v1/students`)
@@ -1435,6 +1646,17 @@ export default function StudentsTab() {
           View Students
         </Button>
         <Button
+          onClick={() => setActiveTab("access")}
+          className={`flex items-center gap-2 px-6 py-3 ${
+            activeTab === "access"
+              ? "bg-indigo-500 text-white shadow-lg"
+              : "bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50"
+          }`}
+        >
+          <Unlock size={18} />
+          Digital Hub Access
+        </Button>
+        <Button
           onClick={() => setActiveTab("profile")}
           className={`flex items-center gap-2 px-6 py-3 ${
             activeTab === "profile"
@@ -1466,6 +1688,25 @@ export default function StudentsTab() {
               </motion.div>
             ) : (
               <StudentsTable key="studentstable" students={students} onStudentUpdated={handleStudentAdded} />
+            ))}
+          {activeTab === "access" &&
+            (loading ? (
+              <motion.div
+                key="access-loader"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center justify-center h-64"
+              >
+                <Loader2 className="animate-spin text-indigo-500" size={36} />
+              </motion.div>
+            ) : (
+              <DigitalHubAccessTab
+                key="digitalhubaccess"
+                students={students}
+                loading={loading}
+                onStudentUpdated={handleStudentAdded}
+              />
             ))}
           {activeTab === "profile" && (
             <StudentProfileManagement key="profilemanagement" />
