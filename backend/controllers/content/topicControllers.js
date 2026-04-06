@@ -15,7 +15,11 @@ export const getTopic = async (req, res) => {
 };
 
 export const createTopic = async (req, res) => {
-  const topic = new Topic(req.body);
+  const { publishAt, ...rest } = req.body;
+  const topic = new Topic({
+    ...rest,
+    ...(publishAt ? { publishAt: new Date(publishAt) } : {}),
+  });
   await topic.save();
   // Add topic to chapter
   await Chapter.findByIdAndUpdate(req.params.chapterId, {
@@ -25,7 +29,15 @@ export const createTopic = async (req, res) => {
 };
 
 export const updateTopic = async (req, res) => {
-  const topic = await Topic.findByIdAndUpdate(req.params.id, req.body, {
+  const { publishAt, ...rest } = req.body;
+  const updateData = {
+    ...rest,
+    updatedAt: new Date(),
+  };
+  if (publishAt !== undefined) {
+    updateData.publishAt = new Date(publishAt);
+  }
+  const topic = await Topic.findByIdAndUpdate(req.params.id, updateData, {
     new: true,
   });
   if (!topic) return res.status(404).json({ error: "Topic not found" });

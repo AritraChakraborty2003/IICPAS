@@ -176,6 +176,7 @@ interface TopicData {
   title: string;
   content: string;
   quiz?: string;
+  publishAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -345,6 +346,16 @@ const getFirstUnlockedTopic = (
   }
   return topics[0] || null;
 };
+
+const isTopicPublished = (topic?: TopicData | null) => {
+  if (!topic?.publishAt) return true;
+  const publishedAt = new Date(topic.publishAt);
+  if (Number.isNaN(publishedAt.getTime())) return true;
+  return publishedAt.getTime() <= Date.now();
+};
+
+const filterPublishedTopics = (topics: TopicData[] = []) =>
+  topics.filter((topic) => isTopicPublished(topic));
 
 export default function DigitalHubClient({
   courseSlugOrId,
