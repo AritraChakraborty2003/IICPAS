@@ -1348,8 +1348,8 @@ export default function DigitalHubClient({
         }
 
         const storedSelection = loadLastSelection();
-        const requestedChapter = chapterId
-          ? mergedChapters.find((chapter) => chapter._id === chapterId)
+        const requestedChapter = effectiveChapterId
+          ? mergedChapters.find((chapter) => chapter._id === effectiveChapterId)
           : null;
         const storedChapter = storedSelection?.chapterId
           ? mergedChapters.find(
@@ -1378,7 +1378,7 @@ export default function DigitalHubClient({
 
         const needsRouteReplace =
           !isDemo &&
-          (!chapterId ||
+          (!effectiveChapterId ||
             !requestedChapter ||
             Boolean(requestedChapter.isLocked) ||
             requestedChapter._id !== chapterToOpen._id);
@@ -1404,7 +1404,7 @@ export default function DigitalHubClient({
     resolvedCourseId,
     effectiveCourseSlugOrId,
     authResolved,
-    chapterId,
+    effectiveChapterId,
     isDemo,
     API_BASE,
     studentId,

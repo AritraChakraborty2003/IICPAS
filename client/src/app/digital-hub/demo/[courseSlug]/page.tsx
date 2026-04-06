@@ -1,5 +1,3 @@
-"use client";
-
 import DigitalHubClient from "../../DigitalHubClient";
 
 export default function DemoDigitalHubCoursePage({
