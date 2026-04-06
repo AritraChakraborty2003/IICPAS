@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
-import { getApiBase, getApiOrigin } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
 
 // Type definitions
 interface Task {
@@ -353,7 +353,7 @@ export default function DigitalHubClient({
 }: DigitalHubClientProps) {
   const router = useRouter();
   const API_BASE = getApiBase();
-  const API_ORIGIN = getApiOrigin();
+  const API_ORIGIN = API_BASE.replace(/\/api\/?$/i, "");
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
 
   const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
