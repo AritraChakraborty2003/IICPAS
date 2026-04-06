@@ -20,6 +20,14 @@ import withReactContent from "sweetalert2-react-content";
 const MySwal = withReactContent(Swal);
 
 const API_BASE = getApiBase();
+const API_ORIGIN = getApiOrigin();
+
+const extractAbout = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.about)) return payload.about;
+  return [];
+};
 
 export default function AboutTab() {
   const [aboutList, setAboutList] = useState([]);
@@ -37,9 +45,9 @@ export default function AboutTab() {
   const fetchContent = async () => {
     try {
       const res = await axios.get(
-        `${getApiOrigin()}/api/about`
+        `${API_ORIGIN}/api/about`
       );
-      setAboutList(res.data);
+      setAboutList(extractAbout(res.data));
     } catch (err) {
       console.error("Failed to fetch content", err);
     }
@@ -49,11 +57,11 @@ export default function AboutTab() {
     try {
       if (editingItem) {
         await axios.put(
-          `${getApiOrigin()}/api/about/${editingItem}`,
+          `${API_ORIGIN}/api/about/${editingItem}`,
           { content: form.content }
         );
       } else {
-        await axios.post(`${getApiOrigin()}/api/about`, {
+        await axios.post(`${API_ORIGIN}/api/about`, {
           content: form.content,
         });
       }
@@ -85,7 +93,7 @@ export default function AboutTab() {
     if (result.isConfirmed) {
       try {
         await axios.delete(
-          `${getApiOrigin()}/api/about/${id}`
+          `${API_ORIGIN}/api/about/${id}`
         );
         fetchContent();
         MySwal.fire("Deleted!", "The content has been removed.", "success");

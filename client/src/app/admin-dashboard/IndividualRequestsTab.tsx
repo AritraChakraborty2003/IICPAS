@@ -58,6 +58,24 @@ const IndividualRequestsTab = () => {
     getApiBase();
   const API_ORIGIN = getApiOrigin();
 
+  const extractRequests = (payload: unknown): TrainingRequest[] => {
+    if (Array.isArray(payload)) return payload as TrainingRequest[];
+    if (Array.isArray((payload as { requests?: TrainingRequest[] })?.requests)) {
+      return (payload as { requests: TrainingRequest[] }).requests;
+    }
+    if (
+      Array.isArray(
+        (payload as { data?: { requests?: TrainingRequest[] } })?.data?.requests
+      )
+    ) {
+      return (payload as { data: { requests: TrainingRequest[] } }).data.requests;
+    }
+    if (Array.isArray((payload as { data?: TrainingRequest[] })?.data)) {
+      return (payload as { data: TrainingRequest[] }).data;
+    }
+    return [];
+  };
+
   useEffect(() => {
     fetchRequests();
   }, [statusFilter]);
@@ -77,7 +95,7 @@ const IndividualRequestsTab = () => {
         },
         withCredentials: true,
       });
-      setRequests(response.data.requests || []);
+      setRequests(extractRequests(response.data));
     } catch (error) {
       console.error("Error fetching requests:", error);
       toast.error("Failed to load training requests");

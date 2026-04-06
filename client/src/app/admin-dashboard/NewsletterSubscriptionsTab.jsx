@@ -23,6 +23,24 @@ import BulkEmailPage from "./BulkEmailPage";
 
 const API_BASE = getApiBase();
 
+const extractSubscriptions = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
+  if (Array.isArray(payload?.subscriptions)) return payload.subscriptions;
+  if (Array.isArray(payload?.data?.subscriptions)) return payload.data.subscriptions;
+  return [];
+};
+
+const extractCampaigns = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
+  if (Array.isArray(payload?.campaigns)) return payload.campaigns;
+  if (Array.isArray(payload?.data?.campaigns)) return payload.data.campaigns;
+  return [];
+};
+
 export default function NewsletterSubscriptionsTab() {
   const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,8 +100,8 @@ export default function NewsletterSubscriptionsTab() {
       }
 
       const data = await response.json();
-      setSubscriptions(data.data || []);
-      setTotalPages(data.pagination?.pages || 1);
+      setSubscriptions(extractSubscriptions(data));
+      setTotalPages(data.pagination?.pages || data.data?.pagination?.pages || 1);
     } catch (error) {
       console.error("Error fetching subscriptions:", error);
       toast.error("Failed to fetch subscriptions");
@@ -121,7 +139,7 @@ export default function NewsletterSubscriptionsTab() {
       }
 
       const data = await response.json();
-      setStats(data.stats || {});
+      setStats(data.stats || data.data?.stats || {});
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
@@ -320,8 +338,8 @@ export default function NewsletterSubscriptionsTab() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        setEmailCampaigns(data.data || []);
+      const data = await response.json();
+      setEmailCampaigns(extractCampaigns(data));
       }
     } catch (error) {
       console.error("Error fetching email campaigns:", error);

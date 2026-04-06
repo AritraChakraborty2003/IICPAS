@@ -12,9 +12,24 @@ import dynamic from "next/dynamic";
 
 const API_BASE =
   getApiBase();
+const API_ORIGIN = getApiOrigin();
 const ALLOWED_IMAGE_ACCEPT =
   ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
 const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
+
+const extractBlogs = (payload: unknown): Blog[] => {
+  if (Array.isArray(payload)) return payload as Blog[];
+  if (Array.isArray((payload as { blogs?: Blog[] })?.blogs)) {
+    return (payload as { blogs: Blog[] }).blogs;
+  }
+  if (Array.isArray((payload as { data?: { blogs?: Blog[] } })?.data?.blogs)) {
+    return (payload as { data: { blogs: Blog[] } }).data.blogs;
+  }
+  if (Array.isArray((payload as { data?: Blog[] })?.data)) {
+    return (payload as { data: Blog[] }).data;
+  }
+  return [];
+};
 
 // Blog interface
 interface Blog {
@@ -111,7 +126,7 @@ export default function BlogComponent() {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE}/blogs`);
-      setBlogs(response.data);
+      setBlogs(extractBlogs(response.data));
     } catch (error) {
       console.error("Error fetching blogs:", error);
       showError("Error!", "Failed to fetch blogs.");
@@ -237,7 +252,7 @@ export default function BlogComponent() {
       content: blog.content || "",
       image: null,
       previewUrl: blog.imageUrl
-        ? `${getApiOrigin()}${
+        ? `${API_ORIGIN}${
             blog.imageUrl.startsWith("/") ? blog.imageUrl : "/" + blog.imageUrl
           }`
         : null,
@@ -401,7 +416,7 @@ export default function BlogComponent() {
                     {blog.imageUrl ? (
                       <img
                         src={`${
-                          getApiOrigin()
+                          API_ORIGIN
                         }${
                           blog.imageUrl.startsWith("/")
                             ? blog.imageUrl
@@ -719,7 +734,7 @@ export default function BlogComponent() {
           {selectedBlog.imageUrl && (
             <img
               src={`${
-                getApiOrigin()
+                API_ORIGIN
               }${
                 selectedBlog.imageUrl.startsWith("/")
                   ? selectedBlog.imageUrl

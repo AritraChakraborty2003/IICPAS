@@ -6,6 +6,14 @@ import { useAuth } from "@/contexts/AuthContext";
 
 const API_BASE = getApiBase();
 
+const extractNews = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.news)) return payload.news;
+  if (Array.isArray(payload?.data?.news)) return payload.data.news;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export default function NewsTab() {
   const [newsList, setNewsList] = useState([]);
   const [form, setForm] = useState({
@@ -19,7 +27,7 @@ export default function NewsTab() {
   const fetchNews = async () => {
     try {
       const res = await axios.get(`${API_BASE}/news`);
-      setNewsList(res.data);
+      setNewsList(extractNews(res.data));
     } catch (err) {
       console.error("Error fetching news:", err);
     }
