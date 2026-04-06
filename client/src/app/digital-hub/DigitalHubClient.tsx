@@ -1269,10 +1269,12 @@ export default function DigitalHubClient({
     resolveCourseId();
   }, [API_BASE, courseSlugOrId]);
 
-  // Fetch course data when resolved course ID is available
+  // Fetch course data using resolved id first, falling back to slug
   useEffect(() => {
     const fetchCourseData = async () => {
-      if (!resolvedCourseId || (!isDemo && !authResolved)) {
+      const chapterCourseIdentifier = resolvedCourseId || courseSlugOrId;
+
+      if (!chapterCourseIdentifier || (!isDemo && !authResolved)) {
         setLoading(false);
         return;
       }
@@ -1280,9 +1282,20 @@ export default function DigitalHubClient({
       try {
         setLoading(true);
 
+        if (!resolvedCourseId && courseSlugOrId) {
+          console.warn(
+            "Using course slug fallback for chapter fetch:",
+            courseSlugOrId
+          );
+        }
+
         const [chaptersResponse, progressResponse] = await Promise.all([
-          axios.get(`${API_BASE}/chapters/course/${resolvedCourseId}`),
-          !isDemo && studentId
+          axios.get(
+            `${API_BASE}/chapters/course/${encodeURIComponent(
+              chapterCourseIdentifier
+            )}`
+          ),
+          !isDemo && studentId && resolvedCourseId
             ? axios
                 .get(
                   `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}`,
@@ -1369,6 +1382,7 @@ export default function DigitalHubClient({
     fetchCourseData();
   }, [
     resolvedCourseId,
+    courseSlugOrId,
     authResolved,
     chapterId,
     isDemo,
