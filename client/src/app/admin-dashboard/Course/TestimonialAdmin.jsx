@@ -1,5 +1,5 @@
 "use client";
-import { getApiBase } from "@/lib/apiBase";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import {
   Table,
@@ -29,6 +29,7 @@ import * as XLSX from "xlsx";
 
 const API_BASE =
   getApiBase();
+const API_ORIGIN = getApiOrigin();
 const extractTestimonials = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.testimonials)) return payload.testimonials;
@@ -192,7 +193,7 @@ export default function TestimonialAdmin() {
       image: null, // Don't pre-populate image for editing
     });
     setImagePreview(
-      data.image ? `${API_BASE.replace("/api", "")}/${data.image}` : null
+      data.image ? `${API_ORIGIN}/${data.image}` : null
     );
     setEditingTestimonial(data._id);
     setMode("edit");
@@ -338,7 +339,7 @@ export default function TestimonialAdmin() {
                   <TableCell>
                     {item.image ? (
                       <img
-                        src={`${API_BASE.replace("/api", "")}/${item.image}`}
+                        src={`${API_ORIGIN}/${item.image}`}
                         alt={item.name}
                         className="w-12 h-12 object-cover rounded-full"
                         onError={(e) => {

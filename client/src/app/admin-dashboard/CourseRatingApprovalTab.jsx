@@ -14,6 +14,13 @@ import {
 
 const API_BASE = getApiBase();
 
+const extractRatings = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.data)) return payload.data.data;
+  return [];
+};
+
 export default function CourseRatingApprovalTab() {
   const [ratings, setRatings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -33,24 +40,21 @@ export default function CourseRatingApprovalTab() {
       let endpoint;
 
       if (filter === "all") {
-        endpoint = `/api/v1/course-ratings/admin/all`;
+        endpoint = `/v1/course-ratings/admin/all`;
       } else if (filter === "approved") {
-        endpoint = `/api/v1/course-ratings/admin/all?status=approved`;
+        endpoint = `/v1/course-ratings/admin/all?status=approved`;
       } else if (filter === "rejected") {
-        endpoint = `/api/v1/course-ratings/admin/all?status=rejected`;
+        endpoint = `/v1/course-ratings/admin/all?status=rejected`;
       } else {
-        endpoint = `/api/v1/course-ratings/admin/pending`;
+        endpoint = `/v1/course-ratings/admin/pending`;
       }
 
-      const response = await axios.get(
-        `${API_BASE || "http://localhost:8080"}${endpoint}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setRatings(response.data.data || []);
+      const response = await axios.get(`${API_BASE}${endpoint}`, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      setRatings(extractRatings(response.data));
     } catch (error) {
       console.error("Error fetching ratings:", error);
       toast.error("Failed to fetch ratings");
@@ -66,9 +70,7 @@ export default function CourseRatingApprovalTab() {
       const adminId = "admin"; // Default admin ID since no authentication
 
       await axios.patch(
-        `${
-          API_BASE || "http://localhost:8080"
-        }/api/v1/course-ratings/admin/approve/${ratingId}`,
+        `${API_BASE}/v1/course-ratings/admin/approve/${ratingId}`,
         { adminId },
         {
           headers: {
@@ -90,9 +92,7 @@ export default function CourseRatingApprovalTab() {
       const adminId = "admin"; // Default admin ID since no authentication
 
       await axios.patch(
-        `${
-          API_BASE || "http://localhost:8080"
-        }/api/v1/course-ratings/admin/reject/${ratingId}`,
+        `${API_BASE}/v1/course-ratings/admin/reject/${ratingId}`,
         {
           adminId,
           rejectedReason: rejectReason || "Rating rejected by admin",

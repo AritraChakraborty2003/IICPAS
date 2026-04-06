@@ -1,5 +1,5 @@
 "use client";
-import { getApiBase } from "@/lib/apiBase";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import axios from "axios";
@@ -56,6 +56,7 @@ const IndividualRequestsTab = () => {
 
   const API_BASE =
     getApiBase();
+  const API_ORIGIN = getApiOrigin();
 
   useEffect(() => {
     fetchRequests();
@@ -444,7 +445,7 @@ const IndividualRequestsTab = () => {
                 <div className="mt-1 flex items-center">
                   <FaFileAlt className="mr-2 text-gray-400" />
                   <a
-                    href={`${API_BASE.replace("/api", "")}${
+                    href={`${API_ORIGIN}${
                       selectedRequest.resume
                     }`}
                     target="_blank"
