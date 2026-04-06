@@ -6,13 +6,33 @@ import DigitalHubChapterProgress from "../models/DigitalHubChapterProgress.js";
 const toIdString = (value) => {
   if (!value) return "";
   if (typeof value === "string") return value;
-  if (typeof value === "object" && value !== null && "_id" in value) {
-    return toIdString(value._id);
+
+  if (typeof value === "object" && value !== null) {
+    if (typeof value.toString === "function") {
+      const asString = value.toString();
+      if (asString && asString !== "[object Object]") {
+        return asString;
+      }
+    }
+
+    if ("_id" in value) {
+      const maybeId = value._id;
+      if (maybeId && maybeId === value) {
+        return "";
+      }
+      return toIdString(maybeId);
+    }
   }
+
   return String(value);
 };
 
-const toObjectId = (value) => new mongoose.Types.ObjectId(toIdString(value));
+const toObjectId = (value) => {
+  if (value instanceof mongoose.Types.ObjectId) return value;
+  const normalized = toIdString(value);
+  if (!normalized) return new mongoose.Types.ObjectId();
+  return new mongoose.Types.ObjectId(normalized);
+};
 
 const sanitizeCompletionIds = (completedIds, allowedIds) => {
   const allowed = new Set((allowedIds || []).map(toIdString));

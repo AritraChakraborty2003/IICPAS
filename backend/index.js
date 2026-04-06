@@ -362,7 +362,9 @@ app.use("/api/chat", chatRoutes);
 
 //Chatbot Settings Routes
 import chatbotSettingsRoutes from "./routes/chatbotSettingsRoutes.js";
+import quizSoundSettingsRoutes from "./routes/quizSoundSettingsRoutes.js";
 app.use("/api/chatbot", chatbotSettingsRoutes);
+app.use("/api/quiz-sounds", quizSoundSettingsRoutes);
 
 //Privacy Policy Routes
 import privacyPolicyRoutes from "./routes/privacyPolicy.js";

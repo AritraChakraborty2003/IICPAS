@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
-import { getApiBase } from "@/lib/apiBase";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
 // Type definitions
 interface Task {
@@ -224,6 +224,7 @@ interface ChapterProgressSummary {
 }
 
 const QUIZ_QUESTION_LIMIT = 5;
+const LAST_SELECTION_STORAGE_KEY = "digitalHub:lastSelection";
 
 const extractCourseRecord = (payload: unknown): Record<string, unknown> | null => {
   if (!payload || typeof payload !== "object") return null;
@@ -328,6 +329,23 @@ const getPreferredUnlockedChapter = (chapters: ChapterData[]) => {
   );
 };
 
+const getFirstUnlockedTopic = (
+  chapter: ChapterData,
+  completedTopicIds: string[]
+) => {
+  const topics = chapter?.topics || [];
+  for (let index = 0; index < topics.length; index += 1) {
+    const previousTopicId = index > 0 ? topics[index - 1]._id : null;
+    const unlocked =
+      index === 0 ||
+      (previousTopicId && completedTopicIds.includes(previousTopicId));
+    if (unlocked) {
+      return topics[index] || null;
+    }
+  }
+  return topics[0] || null;
+};
+
 export default function DigitalHubClient({
   courseSlugOrId,
   chapterId,
@@ -335,6 +353,7 @@ export default function DigitalHubClient({
 }: DigitalHubClientProps) {
   const router = useRouter();
   const API_BASE = getApiBase();
+  const API_ORIGIN = getApiOrigin();
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
 
   const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
@@ -350,6 +369,10 @@ export default function DigitalHubClient({
     phone: "",
     message: "",
   });
+  const [quizSoundSettings, setQuizSoundSettings] = useState({
+    correctAnswerSound: "/sounds/success.mp3",
+    wrongAnswerSound: "/sounds/error.mp3",
+  });
 
   // Language dropdown state
   const [languageDropdownOpen, setLanguageDropdownOpen] = useState(false);
@@ -357,6 +380,7 @@ export default function DigitalHubClient({
   const translateWidgetRef = useRef<{
     translatePage: (languageCode: string) => void;
   } | null>(null);
+  const contentScrollRef = useRef<HTMLDivElement | null>(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
   const pendingLanguageRef = useRef<string | null>(null);
   const googleTranslateScriptRef = useRef<HTMLScriptElement | null>(null);
@@ -377,6 +401,52 @@ export default function DigitalHubClient({
     combo.dispatchEvent(new Event("change", { bubbles: true }));
     return true;
   }, []);
+
+  const scrollContentToTop = useCallback(() => {
+    if (contentScrollRef.current) {
+      contentScrollRef.current.scrollTo({ top: 0, behavior: "smooth" });
+    } else if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, []);
+
+  const loadLastSelection = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(LAST_SELECTION_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== "object") return null;
+      const courseKey = String(parsed.courseKey || "");
+      if (courseKey !== String(courseSlugOrId)) return null;
+      const chapterId = typeof parsed.chapterId === "string" ? parsed.chapterId : "";
+      const topicId = typeof parsed.topicId === "string" ? parsed.topicId : "";
+      return { chapterId, topicId };
+    } catch {
+      return null;
+    }
+  }, [courseSlugOrId]);
+
+  const storeLastSelection = useCallback(
+    (chapterIdValue?: string, topicIdValue?: string) => {
+      if (typeof window === "undefined") return;
+      if (!chapterIdValue || !topicIdValue) return;
+      const payload = {
+        courseKey: String(courseSlugOrId),
+        chapterId: chapterIdValue,
+        topicId: topicIdValue,
+      };
+      try {
+        window.localStorage.setItem(
+          LAST_SELECTION_STORAGE_KEY,
+          JSON.stringify(payload)
+        );
+      } catch {
+        // Ignore write failures.
+      }
+    },
+    [courseSlugOrId]
+  );
 
   const resetGoogleTranslateState = useCallback(() => {
     if (typeof document === "undefined") return;
@@ -595,6 +665,42 @@ export default function DigitalHubClient({
             ? " Chapter completed and the next chapter is now unlocked."
             : "";
 
+        if (itemType === "topic" && selectedTopic?._id === itemId) {
+          const updatedChapter = refreshedChapter || selectedChapter;
+          const updatedTopics = updatedChapter?.topics || [];
+          const updatedCompletedTopicIds =
+            updatedChapter?.completedTopicIds || [];
+          const currentIndex = updatedTopics.findIndex(
+            (topic) => topic._id === itemId
+          );
+          const nextTopicCandidate =
+            currentIndex >= 0 && currentIndex < updatedTopics.length - 1
+              ? updatedTopics[currentIndex + 1]
+              : null;
+
+          if (
+            nextTopicCandidate &&
+            updatedCompletedTopicIds.includes(itemId)
+          ) {
+            handleTopicSelect(nextTopicCandidate);
+          } else if (
+            refreshedChapter?.isCompleted &&
+            !selectedChapter.isCompleted
+          ) {
+            const currentChapterIndex = mergedChapters.findIndex(
+              (chapter) => chapter._id === selectedChapter._id
+            );
+            const nextChapter =
+              currentChapterIndex >= 0 &&
+              currentChapterIndex < mergedChapters.length - 1
+                ? mergedChapters[currentChapterIndex + 1]
+                : null;
+            if (nextChapter && !nextChapter.isLocked) {
+              selectChapterContent(nextChapter, "replace");
+            }
+          }
+        }
+
         setToastMessage(`${successMessage}${chapterCompletionMessage}`);
         setShowToast(true);
         setTimeout(() => setShowToast(false), 3500);
@@ -615,8 +721,11 @@ export default function DigitalHubClient({
       API_BASE,
       applyProgressSummary,
       courseChapters,
+      handleTopicSelect,
       resolvedCourseId,
       selectedChapter,
+      selectedTopic?._id,
+      selectChapterContent,
       studentId,
     ]
   );
@@ -771,6 +880,10 @@ export default function DigitalHubClient({
     setSelectedTopic(topic);
     setSelectedCaseStudy(null);
     setSelectedAssignment(null);
+    if (selectedChapter?._id) {
+      storeLastSelection(selectedChapter._id, topic._id);
+    }
+    scrollContentToTop();
 
     // Decode and set topic content
     if (topic.content) {
@@ -865,7 +978,11 @@ export default function DigitalHubClient({
   );
 
   const selectChapterContent = useCallback(
-    (chapter: ChapterData, navigationMode: "push" | "replace" | "none" = "none") => {
+    (
+      chapter: ChapterData,
+      navigationMode: "push" | "replace" | "none" = "none",
+      preferredTopicId?: string
+    ) => {
       setSelectedChapter(chapter);
       setTopics(chapter.topics || []);
       setSelectedCaseStudy(null);
@@ -884,10 +1001,30 @@ export default function DigitalHubClient({
       }
 
       if (chapter.topics && chapter.topics.length > 0) {
-        const firstTopic = chapter.topics[0];
+        const completedIds = chapter.completedTopicIds || [];
+        const storedTopic =
+          preferredTopicId &&
+          chapter.topics.find((topic) => topic._id === preferredTopicId);
+        const storedTopicIndex = storedTopic
+          ? chapter.topics.findIndex((topic) => topic._id === storedTopic._id)
+          : -1;
+        const storedTopicUnlocked =
+          storedTopicIndex === 0
+            ? true
+            : storedTopicIndex > 0 &&
+              completedIds.includes(chapter.topics[storedTopicIndex - 1]?._id);
+        const fallbackTopic = getFirstUnlockedTopic(chapter, completedIds);
+        const firstTopic =
+          storedTopic && storedTopicUnlocked
+            ? storedTopic
+            : fallbackTopic || chapter.topics[0];
         setSelectedTopic(firstTopic);
+        if (firstTopic?._id) {
+          storeLastSelection(chapter._id, firstTopic._id);
+        }
+        scrollContentToTop();
 
-        if (firstTopic.content) {
+        if (firstTopic?.content) {
           try {
             const decodedContent = atob(firstTopic.content);
             setTopicContent(decodedContent);
@@ -897,7 +1034,9 @@ export default function DigitalHubClient({
           }
         }
 
-        loadQuizForTopic(firstTopic._id);
+        if (firstTopic?._id) {
+          loadQuizForTopic(firstTopic._id);
+        }
       } else {
         setSelectedTopic(null);
         setTopicContent("No topics available for this chapter.");
@@ -911,6 +1050,8 @@ export default function DigitalHubClient({
       isDemo,
       loadQuizForTopic,
       router,
+      scrollContentToTop,
+      storeLastSelection,
     ]
   );
 
@@ -947,24 +1088,43 @@ export default function DigitalHubClient({
     }));
   };
 
+  const resolveSoundUrl = useCallback(
+    (value: string | undefined, fallback: string) => {
+      const raw = (value || "").toString().trim();
+      if (!raw) return fallback;
+      if (/^https?:\/\//i.test(raw)) return raw;
+      if (raw.startsWith("/uploads/")) return `${API_ORIGIN}${raw}`;
+      if (raw.startsWith("/")) return raw;
+      return `${API_ORIGIN}/${raw.replace(/^\/+/, "")}`;
+    },
+    [API_ORIGIN]
+  );
+
   const playAnswerFeedbackSound = useCallback(
     (isCorrect: boolean) => {
       const audio = new Audio(
-        isCorrect ? "/sounds/success.mp3" : "/sounds/error.mp3"
+        resolveSoundUrl(
+          isCorrect
+            ? quizSoundSettings.correctAnswerSound
+            : quizSoundSettings.wrongAnswerSound,
+          isCorrect ? "/sounds/success.mp3" : "/sounds/error.mp3"
+        )
       );
       audio.play().catch(() => {
         // Fallback or mute if autoplay blocked
       });
     },
-    []
+    [quizSoundSettings, resolveSoundUrl]
   );
 
   const playCelebrationSound = useCallback(() => {
-    const audio = new Audio("/sounds/success.mp3");
+    const audio = new Audio(
+      resolveSoundUrl(quizSoundSettings.correctAnswerSound, "/sounds/success.mp3")
+    );
     audio.play().catch(() => {
       // Fallback
     });
-  }, []);
+  }, [quizSoundSettings, resolveSoundUrl]);
 
 
   const handleQuizSubmit = useCallback(async () => {
@@ -1154,13 +1314,21 @@ export default function DigitalHubClient({
           setProgress(0);
         }
 
+        const storedSelection = loadLastSelection();
         const requestedChapter = chapterId
           ? mergedChapters.find((chapter) => chapter._id === chapterId)
+          : null;
+        const storedChapter = storedSelection?.chapterId
+          ? mergedChapters.find(
+              (chapter) => chapter._id === storedSelection.chapterId
+            )
           : null;
         const fallbackChapter = getPreferredUnlockedChapter(mergedChapters);
         const chapterToOpen =
           requestedChapter && !requestedChapter.isLocked
             ? requestedChapter
+            : storedChapter && !storedChapter.isLocked
+            ? storedChapter
             : fallbackChapter;
 
         if (!chapterToOpen) {
@@ -1181,10 +1349,15 @@ export default function DigitalHubClient({
             !requestedChapter ||
             Boolean(requestedChapter.isLocked) ||
             requestedChapter._id !== chapterToOpen._id);
+        const preferredTopicId =
+          storedSelection?.chapterId === chapterToOpen._id
+            ? storedSelection.topicId
+            : undefined;
 
         selectChapterContent(
           chapterToOpen,
-          needsRouteReplace ? "replace" : "none"
+          needsRouteReplace ? "replace" : "none",
+          preferredTopicId
         );
       } catch (error) {
         console.error("Error fetching course data:", error);
@@ -1202,6 +1375,7 @@ export default function DigitalHubClient({
     API_BASE,
     studentId,
     applyProgressSummary,
+    loadLastSelection,
     selectChapterContent,
   ]);
 
@@ -1245,6 +1419,24 @@ export default function DigitalHubClient({
     };
 
     fetchCoinSettings();
+  }, [API_BASE]);
+
+  useEffect(() => {
+    const fetchQuizSoundSettings = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/quiz-sounds/settings`);
+        if (response.data?.settings) {
+          setQuizSoundSettings((prev) => ({
+            ...prev,
+            ...response.data.settings,
+          }));
+        }
+      } catch {
+        // Keep default sound settings
+      }
+    };
+
+    fetchQuizSoundSettings();
   }, [API_BASE]);
 
   useEffect(() => {
@@ -2489,6 +2681,7 @@ export default function DigitalHubClient({
 
         {/* Main Content */}
         <div
+          ref={contentScrollRef}
           className={`flex-1 min-w-0 overflow-y-auto p-3 sm:p-5 lg:p-8 transition-colors duration-300 ${
             isDarkMode ? "bg-slate-950" : "bg-stone-50"
           }`}
@@ -2864,6 +3057,17 @@ export default function DigitalHubClient({
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
+                                  return;
+                                }
+                                if (
+                                  selectedTopic?._id &&
+                                  !isSelectedTopicCompleted
+                                ) {
+                                  markProgressItemComplete(
+                                    "topic",
+                                    selectedTopic._id,
+                                    "Topic marked as completed."
+                                  );
                                   return;
                                 }
                                 handleTopicSelect(nextTopic);

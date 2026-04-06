@@ -69,6 +69,7 @@ import {
   FaComments,
   FaUser,
   FaRobot,
+  FaVolumeUp,
   FaChevronLeft,
   FaClipboardList,
   FaGraduationCap,
@@ -92,6 +93,7 @@ import ContactInfoTab from "./ContactInfoTab";
 import AdminProfileTab from "./AdminProfileTab";
 import ChatConversationsTab from "./ChatConversationsTab";
 import ChatbotSettingsTab from "./ChatbotSettingsTab";
+import QuizSoundSettingsTab from "./QuizSoundSettingsTab";
 import PrivacyPolicyTab from "./PrivacyPolicyTab";
 import EditPrivacyPolicyTab from "./EditPrivacyPolicyTab";
 import RefundPolicyTab from "./RefundPolicyTab";
@@ -253,6 +255,11 @@ const NAVIGATION_GROUPS = [
         icon: <FaStar />,
       },
       { id: "revision-tests", label: "Revision Tests", icon: <FaSyncAlt /> },
+      {
+        id: "quiz-sound-settings",
+        label: "Quiz Sound Settings",
+        icon: <FaVolumeUp />,
+      },
     ],
   },
   {
@@ -861,6 +868,8 @@ function AdminDashboardContent() {
           <ChatConversationsTab />
         ) : activeTab === "chatbot-settings" ? (
           <ChatbotSettingsTab />
+        ) : activeTab === "quiz-sound-settings" ? (
+          <QuizSoundSettingsTab />
         ) : activeTab === "privacy-policy" ? (
           <PrivacyPolicyTab
             onEditPolicy={(policyId) =>

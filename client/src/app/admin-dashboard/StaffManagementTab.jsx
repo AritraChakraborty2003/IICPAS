@@ -46,6 +46,7 @@ const MODULES = [
   { id: "payments", name: "Payments", icon: "💳" },
   { id: "guides", name: "Guides & Resources", icon: "📄" },
   { id: "kits", name: "Kit Stock", icon: "📦" },
+  { id: "quiz-sound-settings", name: "Quiz Sound Settings", icon: "🔊" },
   { id: "audit", name: "IP Logs", icon: "🛡️" },
   { id: "ip-whitelist", name: "IP Whitelisting", icon: "🔒" },
   { id: "study-material", name: "Study Material", icon: "📚" },
