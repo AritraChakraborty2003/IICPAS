@@ -623,6 +623,128 @@ export default function DigitalHubClient({
     topics.length > 0 &&
     topics.every((t) => completedTopicIds.includes(t._id));
 
+  // Function to split content into pages
+  const splitContentIntoPages = (content: string, maxPages: number = 3) => {
+    if (!content) return { pages: [], totalPages: 0 };
+
+    // Split content by paragraphs or sections
+    const paragraphs = content.split(/(?=<h[1-6]|<\/p>|<\/div>|<\/section>)/i);
+    const pages = [];
+    const itemsPerPage = Math.ceil(paragraphs.length / maxPages);
+
+    for (let i = 0; i < paragraphs.length; i += itemsPerPage) {
+      const pageContent = paragraphs.slice(i, i + itemsPerPage).join("");
+      if (pageContent.trim()) {
+        pages.push(pageContent);
+      }
+    }
+
+    return { pages, totalPages: Math.min(pages.length, maxPages) };
+  };
+
+  // Handle topic selection
+  const handleTopicSelect = (topic: TopicData) => {
+    console.log("Topic selected:", topic);
+    setSelectedTopic(topic);
+    setSelectedCaseStudy(null);
+    setSelectedAssignment(null);
+    if (selectedChapter?._id) {
+      storeLastSelection(selectedChapter._id, topic._id);
+    }
+    scrollContentToTop();
+
+    // Decode and set topic content
+    if (topic.content) {
+      try {
+        const decodedContent = atob(topic.content);
+
+        if (isDemo) {
+          // For demo mode, split content into pages and limit to 1 page
+          const { pages, totalPages } = splitContentIntoPages(
+            decodedContent,
+            1
+          );
+          setTotalPages(totalPages);
+          setCurrentPage(1);
+          setTopicContent(pages[0] || "Content not available");
+          setShowDemoLimit(totalPages > 0);
+        } else {
+          // For full mode, show all content
+          setTopicContent(decodedContent);
+          setTotalPages(1);
+          setCurrentPage(1);
+          setShowDemoLimit(false);
+        }
+      } catch (error) {
+        console.error("Error decoding topic content:", error);
+        setTopicContent(topic.content || "Content not available");
+        setTotalPages(1);
+        setCurrentPage(1);
+        setShowDemoLimit(false);
+      }
+    }
+
+    // Load quiz for the selected topic
+    console.log("Calling loadQuizForTopic with topic ID:", topic._id);
+    loadQuizForTopic(topic._id);
+  };
+
+  // Handle case study selection
+  const handleCaseStudySelect = (caseStudy: CaseStudy) => {
+    console.log("Case study selected:", caseStudy);
+    setSelectedCaseStudy(caseStudy);
+    setSelectedTopic(null);
+    setSelectedAssignment(null);
+    setTopicContent("");
+  };
+
+  // Handle assignment selection
+  const handleAssignmentSelect = (assignment: Assignment) => {
+    console.log("Assignment selected:", assignment);
+    setSelectedAssignment(assignment);
+    setSelectedTopic(null);
+    setSelectedCaseStudy(null);
+    setTopicContent("");
+  };
+
+  // Load quiz for a specific topic
+  const loadQuizForTopic = useCallback(
+    async (topicId: string) => {
+      try {
+        console.log("Loading quiz for topic:", topicId);
+        setQuizLoading(true);
+        setQuizData(null);
+        setSelectedAnswers({});
+        setShowQuizResults(false);
+        setQuizSubmitted(false);
+        setQuizRewardSummary(null);
+
+        const response = await axios.get(`${API_BASE}/quizzes/topic/${topicId}`);
+        console.log("Quiz API response:", response.data);
+
+        if (response.data.success && response.data.quiz) {
+          const quiz = response.data.quiz as QuizData;
+          const randomizedQuestions = getRandomQuestions(quiz.questions || []);
+          const randomizedQuiz = {
+            ...quiz,
+            questions: randomizedQuestions,
+          };
+
+          console.log("Quiz loaded successfully:", randomizedQuiz);
+          setQuizData(randomizedQuiz);
+        } else {
+          console.log("No quiz found or invalid response");
+        }
+      } catch (error) {
+        console.error("Error loading quiz:", error);
+        // Quiz might not exist for this topic, which is fine
+      } finally {
+        setQuizLoading(false);
+      }
+    },
+    [API_BASE]
+  );
+
   const markProgressItemComplete = useCallback(
     async (
       itemType: "topic" | "assignment" | "questionSet",
@@ -854,128 +976,6 @@ export default function DigitalHubClient({
     [courseSlugOrId, isDemo]
   );
 
-
-  // Function to split content into pages
-  const splitContentIntoPages = (content: string, maxPages: number = 3) => {
-    if (!content) return { pages: [], totalPages: 0 };
-
-    // Split content by paragraphs or sections
-    const paragraphs = content.split(/(?=<h[1-6]|<\/p>|<\/div>|<\/section>)/i);
-    const pages = [];
-    const itemsPerPage = Math.ceil(paragraphs.length / maxPages);
-
-    for (let i = 0; i < paragraphs.length; i += itemsPerPage) {
-      const pageContent = paragraphs.slice(i, i + itemsPerPage).join("");
-      if (pageContent.trim()) {
-        pages.push(pageContent);
-      }
-    }
-
-    return { pages, totalPages: Math.min(pages.length, maxPages) };
-  };
-
-  // Handle topic selection
-  const handleTopicSelect = (topic: TopicData) => {
-    console.log("Topic selected:", topic);
-    setSelectedTopic(topic);
-    setSelectedCaseStudy(null);
-    setSelectedAssignment(null);
-    if (selectedChapter?._id) {
-      storeLastSelection(selectedChapter._id, topic._id);
-    }
-    scrollContentToTop();
-
-    // Decode and set topic content
-    if (topic.content) {
-      try {
-        const decodedContent = atob(topic.content);
-
-        if (isDemo) {
-          // For demo mode, split content into pages and limit to 1 page
-          const { pages, totalPages } = splitContentIntoPages(
-            decodedContent,
-            1
-          );
-          setTotalPages(totalPages);
-          setCurrentPage(1);
-          setTopicContent(pages[0] || "Content not available");
-          setShowDemoLimit(totalPages > 0);
-        } else {
-          // For full mode, show all content
-          setTopicContent(decodedContent);
-          setTotalPages(1);
-          setCurrentPage(1);
-          setShowDemoLimit(false);
-        }
-      } catch (error) {
-        console.error("Error decoding topic content:", error);
-        setTopicContent(topic.content || "Content not available");
-        setTotalPages(1);
-        setCurrentPage(1);
-        setShowDemoLimit(false);
-      }
-    }
-
-    // Load quiz for the selected topic
-    console.log("Calling loadQuizForTopic with topic ID:", topic._id);
-    loadQuizForTopic(topic._id);
-  };
-
-  // Handle case study selection
-  const handleCaseStudySelect = (caseStudy: CaseStudy) => {
-    console.log("Case study selected:", caseStudy);
-    setSelectedCaseStudy(caseStudy);
-    setSelectedTopic(null);
-    setSelectedAssignment(null);
-    setTopicContent("");
-  };
-
-  // Handle assignment selection
-  const handleAssignmentSelect = (assignment: Assignment) => {
-    console.log("Assignment selected:", assignment);
-    setSelectedAssignment(assignment);
-    setSelectedTopic(null);
-    setSelectedCaseStudy(null);
-    setTopicContent("");
-  };
-
-  // Load quiz for a specific topic
-  const loadQuizForTopic = useCallback(
-    async (topicId: string) => {
-      try {
-        console.log("Loading quiz for topic:", topicId);
-        setQuizLoading(true);
-        setQuizData(null);
-        setSelectedAnswers({});
-        setShowQuizResults(false);
-        setQuizSubmitted(false);
-        setQuizRewardSummary(null);
-
-        const response = await axios.get(`${API_BASE}/quizzes/topic/${topicId}`);
-        console.log("Quiz API response:", response.data);
-
-        if (response.data.success && response.data.quiz) {
-          const quiz = response.data.quiz as QuizData;
-          const randomizedQuestions = getRandomQuestions(quiz.questions || []);
-          const randomizedQuiz = {
-            ...quiz,
-            questions: randomizedQuestions,
-          };
-
-          console.log("Quiz loaded successfully:", randomizedQuiz);
-          setQuizData(randomizedQuiz);
-        } else {
-          console.log("No quiz found or invalid response");
-        }
-      } catch (error) {
-        console.error("Error loading quiz:", error);
-        // Quiz might not exist for this topic, which is fine
-      } finally {
-        setQuizLoading(false);
-      }
-    },
-    [API_BASE]
-  );
 
   const selectChapterContent = useCallback(
     (
