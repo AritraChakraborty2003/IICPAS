@@ -745,113 +745,6 @@ export default function DigitalHubClient({
     [API_BASE]
   );
 
-  const markProgressItemComplete = useCallback(
-    async (
-      itemType: "topic" | "assignment" | "questionSet",
-      itemId: string,
-      successMessage: string
-    ) => {
-      if (!studentId || !resolvedCourseId || !selectedChapter?._id) {
-        setToastMessage("Login is required to save chapter progress.");
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-        return;
-      }
-
-      const progressSegment =
-        itemType === "topic"
-          ? `topics/${itemId}/complete`
-          : itemType === "assignment"
-          ? `assignments/${itemId}/complete`
-          : `question-sets/${itemId}/complete`;
-      const mutationKey = `${itemType}:${itemId}`;
-
-      try {
-        setProgressMutationKey(mutationKey);
-        const response = await axios.post(
-          `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}/${progressSegment}`,
-          { chapterId: selectedChapter._id },
-          { withCredentials: true }
-        );
-
-        const mergedChapters = applyProgressSummary(
-          response.data,
-          courseChapters
-        );
-        const refreshedChapter = mergedChapters.find(
-          (chapter) => chapter._id === selectedChapter._id
-        );
-
-        const chapterCompletionMessage =
-          refreshedChapter?.isCompleted && !selectedChapter.isCompleted
-            ? " Chapter completed and the next chapter is now unlocked."
-            : "";
-
-        if (itemType === "topic" && selectedTopic?._id === itemId) {
-          const updatedChapter = refreshedChapter || selectedChapter;
-          const updatedTopics = updatedChapter?.topics || [];
-          const updatedCompletedTopicIds =
-            updatedChapter?.completedTopicIds || [];
-          const currentIndex = updatedTopics.findIndex(
-            (topic) => topic._id === itemId
-          );
-          const nextTopicCandidate =
-            currentIndex >= 0 && currentIndex < updatedTopics.length - 1
-              ? updatedTopics[currentIndex + 1]
-              : null;
-
-          if (
-            nextTopicCandidate &&
-            updatedCompletedTopicIds.includes(itemId)
-          ) {
-            handleTopicSelect(nextTopicCandidate);
-          } else if (
-            refreshedChapter?.isCompleted &&
-            !selectedChapter.isCompleted
-          ) {
-            const currentChapterIndex = mergedChapters.findIndex(
-              (chapter) => chapter._id === selectedChapter._id
-            );
-            const nextChapter =
-              currentChapterIndex >= 0 &&
-              currentChapterIndex < mergedChapters.length - 1
-                ? mergedChapters[currentChapterIndex + 1]
-                : null;
-            if (nextChapter && !nextChapter.isLocked) {
-              selectChapterContent(nextChapter, "replace");
-            }
-          }
-        }
-
-        setToastMessage(`${successMessage}${chapterCompletionMessage}`);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3500);
-      } catch (error) {
-        const message =
-          axios.isAxiosError(error) &&
-          (error.response?.data?.message || error.response?.data?.error)
-            ? error.response?.data?.message || error.response?.data?.error
-            : "Failed to save chapter progress.";
-        setToastMessage(message);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3500);
-      } finally {
-        setProgressMutationKey(null);
-      }
-    },
-    [
-      API_BASE,
-      applyProgressSummary,
-      courseChapters,
-      handleTopicSelect,
-      resolvedCourseId,
-      selectedChapter,
-      selectedTopic?._id,
-      selectChapterContent,
-      studentId,
-    ]
-  );
-
   const fetchStudentCoins = useCallback(
     async (currentStudentId: string) => {
       try {
@@ -1067,6 +960,113 @@ export default function DigitalHubClient({
       selectChapterContent(chapter, "push");
     },
     [selectChapterContent]
+  );
+
+  const markProgressItemComplete = useCallback(
+    async (
+      itemType: "topic" | "assignment" | "questionSet",
+      itemId: string,
+      successMessage: string
+    ) => {
+      if (!studentId || !resolvedCourseId || !selectedChapter?._id) {
+        setToastMessage("Login is required to save chapter progress.");
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        return;
+      }
+
+      const progressSegment =
+        itemType === "topic"
+          ? `topics/${itemId}/complete`
+          : itemType === "assignment"
+          ? `assignments/${itemId}/complete`
+          : `question-sets/${itemId}/complete`;
+      const mutationKey = `${itemType}:${itemId}`;
+
+      try {
+        setProgressMutationKey(mutationKey);
+        const response = await axios.post(
+          `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}/${progressSegment}`,
+          { chapterId: selectedChapter._id },
+          { withCredentials: true }
+        );
+
+        const mergedChapters = applyProgressSummary(
+          response.data,
+          courseChapters
+        );
+        const refreshedChapter = mergedChapters.find(
+          (chapter) => chapter._id === selectedChapter._id
+        );
+
+        const chapterCompletionMessage =
+          refreshedChapter?.isCompleted && !selectedChapter.isCompleted
+            ? " Chapter completed and the next chapter is now unlocked."
+            : "";
+
+        if (itemType === "topic" && selectedTopic?._id === itemId) {
+          const updatedChapter = refreshedChapter || selectedChapter;
+          const updatedTopics = updatedChapter?.topics || [];
+          const updatedCompletedTopicIds =
+            updatedChapter?.completedTopicIds || [];
+          const currentIndex = updatedTopics.findIndex(
+            (topic) => topic._id === itemId
+          );
+          const nextTopicCandidate =
+            currentIndex >= 0 && currentIndex < updatedTopics.length - 1
+              ? updatedTopics[currentIndex + 1]
+              : null;
+
+          if (
+            nextTopicCandidate &&
+            updatedCompletedTopicIds.includes(itemId)
+          ) {
+            handleTopicSelect(nextTopicCandidate);
+          } else if (
+            refreshedChapter?.isCompleted &&
+            !selectedChapter.isCompleted
+          ) {
+            const currentChapterIndex = mergedChapters.findIndex(
+              (chapter) => chapter._id === selectedChapter._id
+            );
+            const nextChapter =
+              currentChapterIndex >= 0 &&
+              currentChapterIndex < mergedChapters.length - 1
+                ? mergedChapters[currentChapterIndex + 1]
+                : null;
+            if (nextChapter && !nextChapter.isLocked) {
+              selectChapterContent(nextChapter, "replace");
+            }
+          }
+        }
+
+        setToastMessage(`${successMessage}${chapterCompletionMessage}`);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3500);
+      } catch (error) {
+        const message =
+          axios.isAxiosError(error) &&
+          (error.response?.data?.message || error.response?.data?.error)
+            ? error.response?.data?.message || error.response?.data?.error
+            : "Failed to save chapter progress.";
+        setToastMessage(message);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3500);
+      } finally {
+        setProgressMutationKey(null);
+      }
+    },
+    [
+      API_BASE,
+      applyProgressSummary,
+      courseChapters,
+      handleTopicSelect,
+      resolvedCourseId,
+      selectedChapter,
+      selectedTopic?._id,
+      selectChapterContent,
+      studentId,
+    ]
   );
 
   // Handle answer selection
