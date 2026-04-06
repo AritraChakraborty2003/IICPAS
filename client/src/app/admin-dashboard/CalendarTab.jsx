@@ -6,8 +6,9 @@ import "react-calendar/dist/Calendar.css";
 import { X } from "lucide-react";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import { getApiBase } from "@/lib/apiBase";
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+const API = getApiBase();
 const MySwal = withReactContent(Swal);
 
 const DEFAULT_MODAL_STATE = {
@@ -16,6 +17,14 @@ const DEFAULT_MODAL_STATE = {
   startTime: "",
   endDate: "",
   endTime: "",
+};
+
+const extractBookings = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.bookings)) return payload.bookings;
+  if (Array.isArray(payload?.data?.bookings)) return payload.data.bookings;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
 };
 
 const CalendarTab = () => {
@@ -36,7 +45,7 @@ const CalendarTab = () => {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/bookings`);
-      setBookings(res.data || []);
+      setBookings(extractBookings(res.data));
     } catch (err) {
       setBookings([]);
       toast.error("Failed to fetch bookings.");

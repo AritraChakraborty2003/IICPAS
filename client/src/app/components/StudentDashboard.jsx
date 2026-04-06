@@ -114,7 +114,6 @@ function StudentDashboardContent() {
 
   // Sidebar tabs
   const tabs = [
-    { id: "buy-courses", icon: <FaShoppingCart />, label: "Buy Courses" },
     { id: "courses", icon: <FaBook />, label: "Courses" },
     { id: "revision", icon: <FaBook />, label: "Assessment" },
     { id: "live", icon: <FaVideo />, label: "Live Class", dot: true },
@@ -131,6 +130,7 @@ function StudentDashboardContent() {
       dot: true,
       dotColor: "green",
     },
+    { id: "buy-courses", icon: <FaShoppingCart />, label: "Buy Courses" },
   ];
 
   useEffect(() => {

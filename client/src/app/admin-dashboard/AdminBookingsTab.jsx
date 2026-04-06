@@ -27,6 +27,14 @@ const formatDate = (value) => {
   });
 };
 
+const extractBookings = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.bookings)) return payload.bookings;
+  if (Array.isArray(payload?.data?.bookings)) return payload.data.bookings;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export default function AdminBookingsTab() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +52,7 @@ export default function AdminBookingsTab() {
         params,
         headers: { Authorization: `Bearer ${token}` },
       });
-      setBookings(response.data?.bookings || []);
+      setBookings(extractBookings(response.data));
     } catch (error) {
       toast.error("Failed to fetch bookings");
       setBookings([]);

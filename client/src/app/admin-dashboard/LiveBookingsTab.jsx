@@ -59,6 +59,14 @@ const inferPaymentMode = (booking) => {
   return "Manual / Pending";
 };
 
+const extractBookings = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.bookings)) return payload.bookings;
+  if (Array.isArray(payload?.data?.bookings)) return payload.data.bookings;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export default function LiveBookingsTab() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +83,7 @@ export default function LiveBookingsTab() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      setBookings(Array.isArray(response.data) ? response.data : []);
+      setBookings(extractBookings(response.data));
     } catch (error) {
       console.error("Failed to fetch live bookings:", error);
       toast.error("Failed to fetch live bookings");
