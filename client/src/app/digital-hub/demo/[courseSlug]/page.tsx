@@ -1,8 +1,6 @@
-import dynamic from "next/dynamic";
+"use client";
 
-const DigitalHubClient = dynamic(() => import("../../DigitalHubClient"), {
-  ssr: false,
-});
+import DigitalHubClient from "../../DigitalHubClient";
 
 export default function DemoDigitalHubCoursePage({
   params,
