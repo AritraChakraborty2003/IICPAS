@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
@@ -352,6 +352,21 @@ export default function DigitalHubClient({
   isDemo,
 }: DigitalHubClientProps) {
   const router = useRouter();
+  const routeParams = useParams<Record<string, string | string[]>>();
+  const routeCourseSlugOrId =
+    typeof routeParams?.courseSlug === "string"
+      ? routeParams.courseSlug
+      : Array.isArray(routeParams?.courseSlug)
+      ? routeParams.courseSlug[0] || ""
+      : "";
+  const routeChapterId =
+    typeof routeParams?.chapterId === "string"
+      ? routeParams.chapterId
+      : Array.isArray(routeParams?.chapterId)
+      ? routeParams.chapterId[0] || ""
+      : "";
+  const effectiveCourseSlugOrId = courseSlugOrId || routeCourseSlugOrId;
+  const effectiveChapterId = chapterId || routeChapterId;
   const API_BASE = getApiBase();
   const API_ORIGIN = API_BASE.replace(/\/api\/?$/i, "");
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
@@ -418,21 +433,21 @@ export default function DigitalHubClient({
       const parsed = JSON.parse(raw);
       if (!parsed || typeof parsed !== "object") return null;
       const courseKey = String(parsed.courseKey || "");
-      if (courseKey !== String(courseSlugOrId)) return null;
+      if (courseKey !== String(effectiveCourseSlugOrId)) return null;
       const chapterId = typeof parsed.chapterId === "string" ? parsed.chapterId : "";
       const topicId = typeof parsed.topicId === "string" ? parsed.topicId : "";
       return { chapterId, topicId };
     } catch {
       return null;
     }
-  }, [courseSlugOrId]);
+  }, [effectiveCourseSlugOrId]);
 
   const storeLastSelection = useCallback(
     (chapterIdValue?: string, topicIdValue?: string) => {
       if (typeof window === "undefined") return;
       if (!chapterIdValue || !topicIdValue) return;
       const payload = {
-        courseKey: String(courseSlugOrId),
+        courseKey: String(effectiveCourseSlugOrId),
         chapterId: chapterIdValue,
         topicId: topicIdValue,
       };
@@ -445,7 +460,7 @@ export default function DigitalHubClient({
         // Ignore write failures.
       }
     },
-    [courseSlugOrId]
+    [effectiveCourseSlugOrId]
   );
 
   const resetGoogleTranslateState = useCallback(() => {
@@ -500,7 +515,7 @@ export default function DigitalHubClient({
 
   const handleBackNavigation = useCallback(() => {
     resetGoogleTranslateState();
-    const courseIdentifier = resolvedCourseId || courseSlugOrId;
+    const courseIdentifier = resolvedCourseId || effectiveCourseSlugOrId;
     if (courseIdentifier) {
       router.push(
         `/student-dashboard?tab=courses&courseId=${encodeURIComponent(
@@ -510,7 +525,12 @@ export default function DigitalHubClient({
       return;
     }
     router.push("/student-dashboard?tab=courses");
-  }, [courseSlugOrId, resetGoogleTranslateState, resolvedCourseId, router]);
+  }, [
+    effectiveCourseSlugOrId,
+    resetGoogleTranslateState,
+    resolvedCourseId,
+    router,
+  ]);
 
   // New state for dynamic content
   const [courseChapters, setCourseChapters] = useState<ChapterData[]>([]);
@@ -857,8 +877,8 @@ export default function DigitalHubClient({
   const buildChapterPath = useCallback(
     (targetChapterId?: string) => {
       const basePath = isDemo
-        ? `/digital-hub/demo/${encodeURIComponent(courseSlugOrId)}`
-        : `/digital-hub/${encodeURIComponent(courseSlugOrId)}`;
+        ? `/digital-hub/demo/${encodeURIComponent(effectiveCourseSlugOrId)}`
+        : `/digital-hub/${encodeURIComponent(effectiveCourseSlugOrId)}`;
 
       if (!targetChapterId) {
         return basePath;
@@ -866,7 +886,7 @@ export default function DigitalHubClient({
 
       return `${basePath}/${encodeURIComponent(targetChapterId)}`;
     },
-    [courseSlugOrId, isDemo]
+    [effectiveCourseSlugOrId, isDemo]
   );
 
 
@@ -1248,14 +1268,14 @@ export default function DigitalHubClient({
 
   useEffect(() => {
     const resolveCourseId = async () => {
-      if (!courseSlugOrId) {
+      if (!effectiveCourseSlugOrId) {
         setResolvedCourseId(null);
         return;
       }
 
       try {
         const response = await axios.get(
-          `${API_BASE}/courses/${encodeURIComponent(courseSlugOrId)}`
+          `${API_BASE}/courses/${encodeURIComponent(effectiveCourseSlugOrId)}`
         );
         const courseRecord = extractCourseRecord(response.data);
         const resolvedId = courseRecord?._id;
@@ -1267,12 +1287,12 @@ export default function DigitalHubClient({
     };
 
     resolveCourseId();
-  }, [API_BASE, courseSlugOrId]);
+  }, [API_BASE, effectiveCourseSlugOrId]);
 
   // Fetch course data using resolved id first, falling back to slug
   useEffect(() => {
     const fetchCourseData = async () => {
-      const chapterCourseIdentifier = resolvedCourseId || courseSlugOrId;
+      const chapterCourseIdentifier = resolvedCourseId || effectiveCourseSlugOrId;
 
       if (!chapterCourseIdentifier || (!isDemo && !authResolved)) {
         setLoading(false);
@@ -1282,10 +1302,10 @@ export default function DigitalHubClient({
       try {
         setLoading(true);
 
-        if (!resolvedCourseId && courseSlugOrId) {
+        if (!resolvedCourseId && effectiveCourseSlugOrId) {
           console.warn(
             "Using course slug fallback for chapter fetch:",
-            courseSlugOrId
+            effectiveCourseSlugOrId
           );
         }
 
@@ -1382,7 +1402,7 @@ export default function DigitalHubClient({
     fetchCourseData();
   }, [
     resolvedCourseId,
-    courseSlugOrId,
+    effectiveCourseSlugOrId,
     authResolved,
     chapterId,
     isDemo,
