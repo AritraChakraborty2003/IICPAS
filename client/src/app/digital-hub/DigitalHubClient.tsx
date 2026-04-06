@@ -357,7 +357,6 @@ export default function DigitalHubClient({
   const translateWidgetRef = useRef<{
     translatePage: (languageCode: string) => void;
   } | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
   const pendingLanguageRef = useRef<string | null>(null);
   const googleTranslateScriptRef = useRef<HTMLScriptElement | null>(null);
@@ -948,90 +947,23 @@ export default function DigitalHubClient({
     }));
   };
 
-  const getAudioContext = useCallback(() => {
-    if (typeof window === "undefined") return null;
-    const AudioContextClass =
-      window.AudioContext ||
-      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
-        .webkitAudioContext;
-    if (!AudioContextClass) return null;
-
-    if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContextClass();
-    }
-
-    const context = audioContextRef.current;
-    if (context.state === "suspended") {
-      context.resume().catch(() => {
-        // Ignore resume errors; playback simply won't occur.
-      });
-    }
-
-    return context;
-  }, []);
-
   const playAnswerFeedbackSound = useCallback(
     (isCorrect: boolean) => {
-      const audioContext = getAudioContext();
-      if (!audioContext) return;
-
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      oscillator.type = isCorrect ? "triangle" : "sawtooth";
-      oscillator.frequency.setValueAtTime(
-        isCorrect ? 740 : 220,
-        audioContext.currentTime
+      const audio = new Audio(
+        isCorrect ? "/sounds/success.mp3" : "/sounds/error.mp3"
       );
-      if (!isCorrect) {
-        oscillator.frequency.exponentialRampToValueAtTime(
-          160,
-          audioContext.currentTime + 0.15
-        );
-      }
-
-      const now = audioContext.currentTime;
-      gainNode.gain.setValueAtTime(0.0001, now);
-      gainNode.gain.exponentialRampToValueAtTime(0.09, now + 0.01);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-
-      oscillator.start(now);
-      oscillator.stop(now + 0.18);
+      audio.play().catch(() => {
+        // Fallback or mute if autoplay blocked
+      });
     },
-    [getAudioContext]
+    []
   );
 
   const playCelebrationSound = useCallback(() => {
-    const audioContext = getAudioContext();
-    if (!audioContext) return;
-    const notes = [523.25, 659.25, 783.99];
-    notes.forEach((frequency, index) => {
-      const oscillator = audioContext.createOscillator();
-      const gainNode = audioContext.createGain();
-      oscillator.type = "triangle";
-      oscillator.frequency.value = frequency;
-      oscillator.connect(gainNode);
-      gainNode.connect(audioContext.destination);
-
-      const startTime = audioContext.currentTime + index * 0.08;
-      gainNode.gain.setValueAtTime(0.0001, startTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.08, startTime + 0.03);
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.22);
-      oscillator.start(startTime);
-      oscillator.stop(startTime + 0.22);
+    const audio = new Audio("/sounds/success.mp3");
+    audio.play().catch(() => {
+      // Fallback
     });
-  }, [getAudioContext]);
-
-  useEffect(() => {
-    return () => {
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {
-          // Ignore close errors during teardown.
-        });
-      }
-    };
   }, []);
 
 
