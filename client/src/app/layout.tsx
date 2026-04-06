@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Suspense } from "react";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -8,8 +7,6 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import DeferredGlobalWidgets from "@/components/DeferredGlobalWidgets";
 import ScrollToTopOnNavigation from "@/components/ScrollToTopOnNavigation";
 import AuthRouteMarker from "@/components/AuthRouteMarker";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "IICPA Institute - Best Accounting Institute in India",
@@ -23,7 +20,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={inter.className} suppressHydrationWarning={true}>
+      <body className="antialiased" suppressHydrationWarning={true}>
         <GoogleAnalytics />
         <AuthProvider>
           <AuthRouteMarker />
