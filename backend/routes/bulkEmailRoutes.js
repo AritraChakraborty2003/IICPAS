@@ -206,9 +206,21 @@ router.post("/send", requireAuth, isAdmin, async (req, res) => {
           htmlContent,
           textContent || ""
         );
-        results.push({ email: recipient.email, success: true, messageId: sendResult.messageId });
+        results.push({
+          email: recipient.email,
+          name: recipient.name,
+          type: recipient.type,
+          success: true,
+          messageId: sendResult.messageId,
+        });
       } catch (error) {
-        results.push({ email: recipient.email, success: false, error: error.message });
+        results.push({
+          email: recipient.email,
+          name: recipient.name,
+          type: recipient.type,
+          success: false,
+          error: error.message,
+        });
       }
     }
 
