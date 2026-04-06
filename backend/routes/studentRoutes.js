@@ -1203,12 +1203,54 @@ router.put(
           mode: student.mode,
           location: student.location,
           center: student.center,
+          digitalHubAccessOverride: student.digitalHubAccessOverride ?? false,
           image: student.image, // Include image for reference but it wasn't updated
         },
       });
     } catch (err) {
       console.error("Superadmin profile update error:", err);
       res.status(500).json({ message: "Update failed", error: err.message });
+    }
+  }
+);
+
+router.put(
+  "/admin/digital-hub-access/:studentId",
+  requireAuth,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      const { unlocked } = req.body || {};
+
+      if (!mongoose.Types.ObjectId.isValid(studentId)) {
+        return res.status(400).json({ message: "Invalid student ID format" });
+      }
+
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      student.digitalHubAccessOverride = Boolean(unlocked);
+      await student.save();
+
+      return res.json({
+        message: student.digitalHubAccessOverride
+          ? "Digital Hub access unfrozen for this student"
+          : "Digital Hub access restored to normal lock order",
+        student: {
+          id: student._id,
+          name: student.name,
+          digitalHubAccessOverride: student.digitalHubAccessOverride,
+        },
+      });
+    } catch (err) {
+      console.error("Superadmin digital hub access update error:", err);
+      return res.status(500).json({
+        message: "Failed to update Digital Hub access",
+        error: err.message,
+      });
     }
   }
 );

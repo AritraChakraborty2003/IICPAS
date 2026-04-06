@@ -77,6 +77,7 @@ export const loginStudent = async (req, res) => {
           phone: student.phone,
           course: student.course,
           teacher: student.teacher,
+          digitalHubAccessOverride: student.digitalHubAccessOverride ?? false,
         },
       });
   } catch (error) {

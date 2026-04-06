@@ -6,6 +6,14 @@ import { FaEnvelope, FaPhone, FaUser, FaClock, FaReply, FaCheck, FaTimes, FaEye,
 
 const API_BASE = getApiBase();
 
+const extractMessages = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.messages)) return payload.messages;
+  if (Array.isArray(payload?.data?.messages)) return payload.data.messages;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
 export default function MessagesTab() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,12 +29,12 @@ export default function MessagesTab() {
   const fetchMessages = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_BASE || 'http://localhost:8080'}/api/contact/messages`, {
+      const response = await axios.get(`${API_BASE}/contact/messages`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
         }
       });
-      setMessages(response.data);
+      setMessages(extractMessages(response.data));
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast.error("Failed to fetch messages");
@@ -44,7 +52,7 @@ export default function MessagesTab() {
     try {
       setReplying(true);
       const response = await axios.put(
-        `${API_BASE || 'http://localhost:8080'}/api/contact/messages/${messageId}/reply`,
+        `${API_BASE}/contact/messages/${messageId}/reply`,
         {
           adminReply: replyText,
           adminRepliedBy: "Admin" // You can get this from user context

@@ -1,10 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+const API = getApiBase();
+const API_ORIGIN = getApiOrigin();
+
+const extractCompanies = (payload: any) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.companies)) return payload.companies;
+  if (Array.isArray(payload?.data?.companies)) return payload.data.companies;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 const CompanyTab = () => {
   const [companies, setCompanies] = useState([]);
@@ -16,7 +26,7 @@ const CompanyTab = () => {
   const fetchCompanies = async () => {
     try {
       const res = await axios.get(`${API}/companies`);
-      setCompanies(res.data);
+      setCompanies(extractCompanies(res.data));
     } catch {
       toast.error("Failed to fetch companies");
     }
@@ -91,7 +101,10 @@ const CompanyTab = () => {
                   <td className="p-2 border">
                     {comp.documentPath ? (
                       <a
-                        href={`${API}/${comp.documentPath.replace(/\\/g, "/")}`}
+                        href={`${API_ORIGIN}/${comp.documentPath.replace(
+                          /\\/g,
+                          "/"
+                        )}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-blue-600 underline"

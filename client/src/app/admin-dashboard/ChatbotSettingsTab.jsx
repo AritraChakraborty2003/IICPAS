@@ -1,11 +1,12 @@
 "use client";
 
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 import { FaRobot, FaSave, FaUpload, FaUser, FaSpinner } from "react-icons/fa";
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+const API = getApiBase();
 
 const ChatbotSettingsTab = () => {
   const [settings, setSettings] = useState({

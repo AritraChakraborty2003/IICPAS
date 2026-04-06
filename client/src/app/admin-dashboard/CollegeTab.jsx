@@ -1,11 +1,32 @@
 "use client";
 
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-// Use your backend API URL
-const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+const API = getApiBase();
+const API_ORIGIN = getApiOrigin();
+
+const extractColleges = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.colleges)) return payload.colleges;
+  if (Array.isArray(payload?.data?.colleges)) return payload.data.colleges;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const extractCertRequests = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.certRequests)) return payload.certRequests;
+  if (Array.isArray(payload?.certificationRequests)) return payload.certificationRequests;
+  if (Array.isArray(payload?.data?.certRequests)) return payload.data.certRequests;
+  if (Array.isArray(payload?.data?.certificationRequests)) {
+    return payload.data.certificationRequests;
+  }
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 export default function CollegeTab() {
   const [activeTab, setActiveTab] = useState("colleges");
@@ -20,7 +41,7 @@ export default function CollegeTab() {
     setCollegesLoading(true);
     try {
       const res = await axios.get(`${API}/college`);
-      setColleges(res.data.colleges || []);
+      setColleges(extractColleges(res.data));
     } catch {
       toast.error("Failed to load colleges");
     } finally {
@@ -33,7 +54,7 @@ export default function CollegeTab() {
     setCertLoading(true);
     try {
       const res = await axios.get(`${API}/certification-requests`);
-      setCertRequests(res.data || []);
+      setCertRequests(extractCertRequests(res.data));
     } catch {
       toast.error("Failed to load requests");
     } finally {
@@ -101,11 +122,6 @@ export default function CollegeTab() {
     }
   };
 
-  // Get base URL for docs (e.g., http://localhost:8080)
-  const BASE_URL =
-    process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/api$/, "") ||
-    "http://localhost:8080";
-
   return (
     <div className="p-6 bg-white rounded-xl shadow">
       {/* Tabs */}
@@ -163,7 +179,7 @@ export default function CollegeTab() {
                       <td className="border px-4 py-2">
                         {college.document ? (
                           <a
-                            href={`${BASE_URL}/${college.document.replace(
+                            href={`${API_ORIGIN}/${college.document.replace(
                               /^uploads[\/\\]?/,
                               "uploads/"
                             )}`}
@@ -281,7 +297,7 @@ export default function CollegeTab() {
                       <td className="border px-4 py-2">
                         {req.document ? (
                           <a
-                            href={`${BASE_URL}/${req.document.replace(
+                            href={`${API_ORIGIN}/${req.document.replace(
                               /^uploads[\/\\]?/,
                               "uploads/"
                             )}`}

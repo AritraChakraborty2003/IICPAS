@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Course from "../models/Content/Course.js";
 import Assignment from "../models/Assignment.js";
 import DigitalHubChapterProgress from "../models/DigitalHubChapterProgress.js";
+import Student from "../models/Students.js";
 
 const toIdString = (value) => {
   if (!value) return "";
@@ -201,6 +202,10 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
   }
 
   const { chapters, assignmentsByChapter } = structure;
+  const student = await Student.findById(studentId)
+    .select("digitalHubAccessOverride")
+    .lean();
+  const forceUnlockAll = Boolean(student?.digitalHubAccessOverride);
   const chapterIds = chapters.map((chapter) => chapter._id);
   const progressRecords = chapterIds.length
     ? await DigitalHubChapterProgress.find({
@@ -222,11 +227,20 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
       chapter,
       assignments: assignmentsByChapter.get(chapterId) || [],
       progressRecord: progressByChapter.get(chapterId),
-      unlocked,
+      unlocked: forceUnlockAll ? true : unlocked,
     });
 
-    unlocked = unlocked && chapterSummary.chapterCompleted;
-    return chapterSummary;
+    if (!forceUnlockAll) {
+      unlocked = unlocked && chapterSummary.chapterCompleted;
+    }
+
+    return forceUnlockAll
+      ? {
+          ...chapterSummary,
+          isLocked: false,
+          unlocked: true,
+        }
+      : chapterSummary;
   });
 
   if (chapterSummaries.length > 0) {
@@ -277,6 +291,7 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
     courseId: toIdString(courseId),
     overallProgress,
     latestUnlockedChapterId,
+    digitalHubAccessOverride: forceUnlockAll,
     chapters: chapterSummaries,
   };
 };

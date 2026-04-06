@@ -52,7 +52,7 @@ export default function DemoDigitalHubTab() {
 
   const fetchData = async () => {
     try {
-      const response = await axios.get(`${API_BASE || 'http://localhost:8080'}/api/v1/website/demo-digital-hub`);
+      const response = await axios.get(`${API_BASE}/v1/website/demo-digital-hub`);
       setData(response.data);
     } catch (error) {
       console.error("Error fetching demo digital hub data:", error);
@@ -133,7 +133,7 @@ export default function DemoDigitalHubTab() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await axios.put(`${API_BASE || 'http://localhost:8080'}/api/v1/website/demo-digital-hub`, data);
+      await axios.put(`${API_BASE}/v1/website/demo-digital-hub`, data);
       toast.success("Demo Digital Hub updated successfully!");
     } catch (error) {
       console.error("Error saving demo digital hub:", error);
@@ -214,14 +214,14 @@ export default function DemoDigitalHubTab() {
       // Try PUT first, if it fails try POST
       let response;
       try {
-        response = await axios.put(`${API_BASE || 'http://localhost:8080'}/api/v1/website/demo-digital-hub`, updatedData, {
+        response = await axios.put(`${API_BASE}/v1/website/demo-digital-hub`, updatedData, {
           headers: {
             'Content-Type': 'application/json'
           }
         });
       } catch (putError) {
         console.log("PUT failed, trying POST:", putError);
-        response = await axios.post(`${API_BASE || 'http://localhost:8080'}/api/v1/website/demo-digital-hub`, updatedData, {
+        response = await axios.post(`${API_BASE}/v1/website/demo-digital-hub`, updatedData, {
           headers: {
             'Content-Type': 'application/json'
           }
@@ -281,7 +281,7 @@ export default function DemoDigitalHubTab() {
       setData(updatedData);
       
       // Save to backend immediately
-      await axios.put(`${API_BASE || 'http://localhost:8080'}/api/v1/website/demo-digital-hub`, updatedData);
+      await axios.put(`${API_BASE}/v1/website/demo-digital-hub`, updatedData);
       
       toast.success("Demo course removed successfully!");
     } catch (error) {
@@ -753,7 +753,7 @@ export default function DemoDigitalHubTab() {
                     onClick={async () => {
                       try {
                         // Save to backend
-                        await axios.put(`${API_BASE || 'http://localhost:8080'}/api/v1/website/demo-digital-hub`, data);
+                        await axios.put(`${API_BASE}/v1/website/demo-digital-hub`, data);
                         setEditingMaterial(null);
                         toast.success("Course updated successfully!");
                       } catch (error) {

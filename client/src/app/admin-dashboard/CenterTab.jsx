@@ -1,10 +1,20 @@
 "use client";
 
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
+const API = getApiBase();
+const API_ORIGIN = getApiOrigin();
+
+const extractCenters = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.centers)) return payload.centers;
+  if (Array.isArray(payload?.data?.centers)) return payload.data.centers;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
 
 export default function CenterTab() {
   const [centers, setCenters] = useState([]);
@@ -16,7 +26,7 @@ export default function CenterTab() {
     setLoading(true);
     try {
       const res = await axios.get(`${API}/v1/centers/admin/all`);
-      setCenters(res.data.centers || []);
+      setCenters(extractCenters(res.data));
     } catch {
       toast.error("Failed to load centers");
     } finally {
@@ -39,8 +49,6 @@ export default function CenterTab() {
       toast.error("Approval failed");
     }
   };
-
-  const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080";
 
   return (
     <div className="p-4 space-y-4">
@@ -82,7 +90,7 @@ export default function CenterTab() {
                     <td className="border px-4 py-2">
                       {center.document ? (
                         <a
-                          href={`${BASE_URL}/${center.document.replace(
+                          href={`${API_ORIGIN}/${center.document.replace(
                             /^uploads[\/\\]?/,
                             "uploads/"
                           )}`}
