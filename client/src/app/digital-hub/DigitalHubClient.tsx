@@ -273,14 +273,6 @@ const getRandomQuestions = (
   return shuffled.slice(0, Math.min(limit, shuffled.length));
 };
 
-const sortChaptersByOrder = (chapters: ChapterData[]) =>
-  [...chapters].sort((left, right) => {
-    const leftOrder = Number(left?.order || 0);
-    const rightOrder = Number(right?.order || 0);
-    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
-    return String(left?.title || "").localeCompare(String(right?.title || ""));
-  });
-
 const mergeChapterProgress = (
   chapters: ChapterData[],
   progressSummaries: ChapterProgressSummary[] = []
@@ -289,7 +281,7 @@ const mergeChapterProgress = (
     progressSummaries.map((chapter) => [chapter.chapterId, chapter])
   );
 
-  return sortChaptersByOrder(chapters).map((chapter, index) => {
+  return (Array.isArray(chapters) ? [...chapters] : []).map((chapter, index) => {
     const summary = progressMap.get(chapter._id);
     return {
       ...chapter,

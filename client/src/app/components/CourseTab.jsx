@@ -46,25 +46,15 @@ const extractCourseRecord = (payload) => {
   return payload;
 };
 
-const sortChaptersByOrder = (chapters) =>
-  [...(Array.isArray(chapters) ? chapters : [])].sort((left, right) => {
-    const leftOrder = Number(left?.order || 0);
-    const rightOrder = Number(right?.order || 0);
-    if (leftOrder !== rightOrder) return leftOrder - rightOrder;
-    return String(left?.title || left?.name || "").localeCompare(
-      String(right?.title || right?.name || "")
-    );
-  });
-
 const mergeChaptersWithProgress = (chapters, progressPayload) => {
-  const sortedChapters = sortChaptersByOrder(chapters);
+  const orderedChapters = Array.isArray(chapters) ? [...chapters] : [];
   const progressMap = new Map(
     Array.isArray(progressPayload?.chapters)
       ? progressPayload.chapters.map((chapter) => [chapter.chapterId, chapter])
       : []
   );
 
-  return sortedChapters.map((chapter, index) => {
+  return orderedChapters.map((chapter, index) => {
     const progressEntry = progressMap.get(chapter?._id) || {};
 
     return {
