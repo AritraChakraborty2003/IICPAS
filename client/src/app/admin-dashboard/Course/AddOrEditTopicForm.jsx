@@ -157,6 +157,14 @@ const joditConfig = {
   },
 };
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
+
+const toDateTimeLocalValue = (value) => {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return "";
+  const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return localDate.toISOString().slice(0, 16);
+};
+
 export default function AddOrEditTopicForm({
   chapterId,
   chapterName,
@@ -167,6 +175,9 @@ export default function AddOrEditTopicForm({
   const editor = useRef(null);
   const [title, setTitle] = useState(topic?.title || "");
   const [content, setContent] = useState(topic?.content || "");
+  const [publishAt, setPublishAt] = useState(
+    toDateTimeLocalValue(topic?.publishAt || topic?.updatedAt || topic?.createdAt)
+  );
   const [quizFile, setQuizFile] = useState(null);
   const [quizData, setQuizData] = useState(null);
   const [videoLinks, setVideoLinks] = useState([]);
@@ -1054,6 +1065,7 @@ export default function AddOrEditTopicForm({
         await axios.put(`${API_BASE}/topics/${topic._id}`, {
           title: title.trim(),
           content,
+          publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
         });
         topicId = topic._id;
       } else {
@@ -1063,6 +1075,7 @@ export default function AddOrEditTopicForm({
           {
             title: title.trim(),
             content,
+            publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
           }
         );
         topicId = topicRes.data._id;
@@ -1087,6 +1100,7 @@ export default function AddOrEditTopicForm({
 
       setTitle("");
       setContent("");
+      setPublishAt(toDateTimeLocalValue());
       setQuizFile(null);
       setQuizData(null);
       setVideoLinks([]);
@@ -1171,6 +1185,16 @@ export default function AddOrEditTopicForm({
             onChange={(e) => setTitle(e.target.value)}
             fullWidth
             required
+          />
+
+          <TextField
+            label="Date & Time"
+            type="datetime-local"
+            fullWidth
+            value={publishAt}
+            onChange={(e) => setPublishAt(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            helperText="Managed topic date and time"
           />
 
           {/* Upload and show video links */}
