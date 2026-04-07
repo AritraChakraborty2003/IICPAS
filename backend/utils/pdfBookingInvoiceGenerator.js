@@ -53,7 +53,6 @@ const generateFallbackInvoicePDF = ({
     doc.on("error", reject);
 
     const pageWidth = doc.page.width;
-    const pageHeight = doc.page.height;
     const left = doc.page.margins.left;
     const right = pageWidth - doc.page.margins.right;
     const contentWidth = right - left;
@@ -79,25 +78,25 @@ const generateFallbackInvoicePDF = ({
 
     const labelStyle = { width: contentWidth - 48, align: "left" };
 
-    doc.rect(0, 0, pageWidth, 104).fill(colors.navy);
-    doc.fillColor("#ffffff");
-    doc.font("Helvetica-Bold").fontSize(22).text(
+    doc.roundedRect(left, 18, contentWidth, 56, 10).fillAndStroke("#ffffff", colors.border);
+    doc.fillColor(colors.navy);
+    doc.font("Helvetica-Bold").fontSize(17).text(
       companySettings?.companyName || "IICPA Institute",
-      left,
-      28
+      left + 14,
+      30
     );
-    doc.font("Helvetica").fontSize(11).text("Booking Invoice", left, 60);
+    doc.font("Helvetica").fontSize(9).fillColor(colors.muted).text("Booking Invoice", left + 14, 50);
 
-    const badgeWidth = 156;
-    doc.roundedRect(right - badgeWidth, 28, badgeWidth, 48, 12).fill(colors.blue);
-    doc.fillColor("#ffffff");
-    doc.font("Helvetica").fontSize(8).text("INVOICE NO", right - badgeWidth + 12, 38, {
-      width: badgeWidth - 24,
-      align: "left",
+    const badgeWidth = 138;
+    doc.roundedRect(right - badgeWidth - 14, 30, badgeWidth, 28, 8).fill("#f8fafc");
+    doc.fillColor(colors.muted);
+    doc.font("Helvetica").fontSize(7).text("INVOICE NO", right - badgeWidth, 36, {
+      width: badgeWidth - 18,
+      align: "right",
     });
-    doc.font("Helvetica-Bold").fontSize(13).text(invoiceNumber, right - badgeWidth + 12, 52, {
-      width: badgeWidth - 24,
-      align: "left",
+    doc.font("Helvetica-Bold").fontSize(10.5).fillColor(colors.navy).text(invoiceNumber, right - badgeWidth, 46, {
+      width: badgeWidth - 18,
+      align: "right",
     });
 
     const drawField = (x, y, w, label, value) => {
@@ -110,23 +109,23 @@ const generateFallbackInvoicePDF = ({
       return valueY + doc.heightOfString(valueText, { width: w, align: "left" }) + 8;
     };
 
-    let y = 128;
+    let y = 90;
 
     // Billed By
-    drawCard(y, 118);
-    doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("BILLED BY", left + 18, y + 16);
-    doc.font("Helvetica-Bold").fontSize(14).fillColor(colors.navy).text(
+    drawCard(y, 104);
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("BILLED BY", left + 16, y + 14);
+    doc.font("Helvetica-Bold").fontSize(11.5).fillColor(colors.navy).text(
       companySettings?.legalName || companySettings?.companyName || "IICPA Institute",
-      left + 18,
-      y + 36,
+      left + 16,
+      y + 28,
       { width: contentWidth - 36 }
     );
-    let byY = y + 58;
+    let byY = y + 44;
     if (companyAddress) {
-      doc.font("Helvetica").fontSize(10).fillColor(colors.slate).text(companyAddress, left + 18, byY, {
+      doc.font("Helvetica").fontSize(8.5).fillColor(colors.slate).text(companyAddress, left + 16, byY, {
         width: contentWidth - 36,
       });
-      byY += doc.heightOfString(companyAddress, { width: contentWidth - 36 }) + 4;
+      byY += doc.heightOfString(companyAddress, { width: contentWidth - 36 }) + 2;
     }
     const companyLines = [
       companySettings?.gstin ? `GSTIN: ${companySettings.gstin}` : "",
@@ -136,20 +135,20 @@ const generateFallbackInvoicePDF = ({
       companySettings?.phone ? `Phone: ${companySettings.phone}` : "",
     ].filter(Boolean);
     companyLines.forEach((line) => {
-      doc.font("Helvetica").fontSize(9.5).fillColor(colors.slate).text(line, left + 18, byY, {
+      doc.font("Helvetica").fontSize(8).fillColor(colors.slate).text(line, left + 16, byY, {
         width: contentWidth - 36,
       });
-      byY += 13;
+      byY += 10.5;
     });
 
     // Invoice Details
-    y += 132;
-    drawCard(y, 142, colors.bg);
-    doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("INVOICE DETAILS", left + 18, y + 16);
-    const detailColWidth = (contentWidth - 54) / 2;
-    const detailLeftX = left + 18;
-    const detailRightX = left + 18 + detailColWidth + 18;
-    let detailY = y + 38;
+    y += 114;
+    drawCard(y, 128, colors.bg);
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("INVOICE DETAILS", left + 16, y + 12);
+    const detailColWidth = (contentWidth - 50) / 2;
+    const detailLeftX = left + 16;
+    const detailRightX = left + 16 + detailColWidth + 14;
+    let detailY = y + 30;
     const detailRows = [
       ["Student", booking?.studentId?.name || "Student"],
       ["Email", booking?.studentEmail || booking?.studentId?.email || "N/A"],
@@ -157,27 +156,27 @@ const generateFallbackInvoicePDF = ({
       ["Session Type", booking?.sessionType || "N/A"],
     ];
     detailY = drawField(detailLeftX, detailY, detailColWidth, detailRows[0][0], detailRows[0][1]);
-    detailY = drawField(detailRightX, y + 38, detailColWidth, detailRows[1][0], detailRows[1][1]);
-    detailY = drawField(detailLeftX, detailY + 4, detailColWidth, detailRows[2][0], detailRows[2][1]);
-    drawField(detailRightX, detailY + 4, detailColWidth, detailRows[3][0], detailRows[3][1]);
+    detailY = drawField(detailRightX, y + 30, detailColWidth, detailRows[1][0], detailRows[1][1]);
+    detailY = drawField(detailLeftX, detailY + 2, detailColWidth, detailRows[2][0], detailRows[2][1]);
+    drawField(detailRightX, detailY + 2, detailColWidth, detailRows[3][0], detailRows[3][1]);
 
     const statusLabel = paymentType === "Balance Payment" ? "BALANCE PAYMENT" : "BOOKING PAYMENT";
-    const pillY = y + 18;
-    const pillWidth = 120;
-    const pillX = right - pillWidth - 18;
+    const pillY = y + 14;
+    const pillWidth = 112;
+    const pillX = right - pillWidth - 16;
     doc.roundedRect(pillX, pillY, pillWidth, 24, 12).fill(
       paymentType === "Balance Payment" ? colors.softAmber : colors.softGreen
     );
     doc.fillColor(paymentType === "Balance Payment" ? colors.amber : colors.green);
-    doc.font("Helvetica-Bold").fontSize(8.5).text(statusLabel, pillX, pillY + 7, {
+    doc.font("Helvetica-Bold").fontSize(7.5).text(statusLabel, pillX, pillY + 7, {
       width: pillWidth,
       align: "center",
     });
 
     // Booking Summary
-    y += 158;
-    drawCard(y, 118);
-    doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("BOOKING SUMMARY", left + 18, y + 16);
+    y += 134;
+    drawCard(y, 104);
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("BOOKING SUMMARY", left + 16, y + 12);
     const summaryLeft = [
       ["Item Type", itemTypeLabel],
       ["Payment Type", paymentType],
@@ -188,19 +187,19 @@ const generateFallbackInvoicePDF = ({
       ["Razorpay Payment ID", payment?.razorpayPaymentId || "N/A"],
       ["Remaining Balance", formatRupees(booking?.remainingAmount)],
     ];
-    let summaryLeftY = y + 40;
-    let summaryRightY = y + 40;
+    let summaryLeftY = y + 28;
+    let summaryRightY = y + 28;
     summaryLeft.forEach(([label, value]) => {
-      summaryLeftY = drawField(left + 18, summaryLeftY, detailColWidth, label, value);
+      summaryLeftY = drawField(left + 16, summaryLeftY, detailColWidth, label, value);
     });
     summaryRight.forEach(([label, value]) => {
       summaryRightY = drawField(detailRightX, summaryRightY, detailColWidth, label, value);
     });
 
     // Amounts
-    y += 136;
-    drawCard(y, 166, "#ffffff");
-    doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("AMOUNTS", left + 18, y + 16);
+    y += 118;
+    drawCard(y, 132, "#ffffff");
+    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("AMOUNTS", left + 16, y + 12);
     const amountRows = [
       ["Base Amount", formatRupees(booking?.baseAmount)],
       ["Booking Percent", `${Number(booking?.bookingPercent || 0).toFixed(2)}%`],
@@ -209,45 +208,32 @@ const generateFallbackInvoicePDF = ({
       ["Total Paid", formatRupees(booking?.paidAmount)],
     ];
 
-    const amountLeftX = left + 18;
-    const amountRightX = right - 170;
-    let amountY = y + 40;
+    const amountLeftX = left + 16;
+    const amountRightX = right - 155;
+    let amountY = y + 30;
     amountRows.forEach(([label, value], index) => {
-      doc.font("Helvetica-Bold").fontSize(10.5).fillColor(colors.slate).text(label, amountLeftX, amountY, {
-        width: contentWidth - 220,
+      doc.font("Helvetica-Bold").fontSize(9).fillColor(colors.slate).text(label, amountLeftX, amountY, {
+        width: contentWidth - 195,
       });
-      doc.font("Helvetica-Bold").fontSize(11).fillColor(index >= 3 ? colors.green : colors.navy).text(value, amountRightX, amountY, {
+      doc.font("Helvetica-Bold").fontSize(9.5).fillColor(index >= 3 ? colors.green : colors.navy).text(value, amountRightX, amountY, {
         width: 150,
         align: "right",
       });
-      amountY += 23;
+      amountY += 18;
     });
 
-    const remainingBoxY = y + 138;
-    doc.roundedRect(left + 18, remainingBoxY, contentWidth - 36, 34, 10).fill(colors.softBlue);
+    const remainingBoxY = y + 110;
+    doc.roundedRect(left + 16, remainingBoxY, contentWidth - 32, 28, 8).fill(colors.softBlue);
     doc.fillColor(colors.blue);
-    doc.font("Helvetica-Bold").fontSize(10.5).text("Remaining Balance", left + 32, remainingBoxY + 10);
-    doc.font("Helvetica-Bold").fontSize(14).text(formatRupees(booking?.remainingAmount), right - 170, remainingBoxY + 8, {
+    doc.font("Helvetica-Bold").fontSize(9).text("Remaining Balance", left + 28, remainingBoxY + 8);
+    doc.font("Helvetica-Bold").fontSize(11).text(formatRupees(booking?.remainingAmount), right - 155, remainingBoxY + 6, {
       width: 150,
       align: "right",
     });
-
-    // Notes
-    if (companySettings?.invoiceNotes) {
-      y += 180;
-      drawCard(y, 70);
-      doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("NOTES", left + 18, y + 16);
-      doc.font("Helvetica").fontSize(10).fillColor(colors.slate).text(companySettings.invoiceNotes, left + 18, y + 34, {
-        width: contentWidth - 36,
-      });
-    }
-
-    const footerY = pageHeight - 58;
-    doc.moveTo(left, footerY).lineTo(right, footerY).strokeColor(colors.border).stroke();
-    doc.font("Helvetica").fontSize(8.5).fillColor(colors.muted).text(
+    doc.font("Helvetica").fontSize(7.5).fillColor(colors.muted).text(
       "This invoice confirms the payment and enrollment for the selected session.",
       left,
-      footerY + 12,
+      748,
       { width: contentWidth, align: "center" }
     );
 
