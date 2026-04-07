@@ -1,6 +1,7 @@
 import express from "express";
 import Razorpay from "razorpay";
 import crypto from "crypto";
+import mongoose from "mongoose";
 import Transaction from "../models/Transaction.js";
 import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
@@ -297,6 +298,13 @@ const createLiveSessionBookingFromOrder = async ({
   const notes = order?.notes || {};
   const liveSessionId = String(notes.liveSessionId || "").trim();
   const email = String(notes.email || "").trim().toLowerCase();
+  const studentId = String(notes.studentId || "").trim();
+  const linkedStudent =
+    studentId && mongoose.Types.ObjectId.isValid(studentId)
+      ? await Student.findById(studentId).select("_id name email phone")
+      : email
+      ? await Student.findOne({ email }).select("_id name email phone")
+      : null;
 
   const existingBooking = await Booking.findOne({
     $or: [
@@ -316,6 +324,10 @@ const createLiveSessionBookingFromOrder = async ({
 
   if (existingBooking) {
     let changed = false;
+    if (!existingBooking.studentId && linkedStudent?._id) {
+      existingBooking.studentId = linkedStudent._id;
+      changed = true;
+    }
     if (!existingBooking.razorpayPaymentId && razorpay_payment_id) {
       existingBooking.razorpayPaymentId = razorpay_payment_id;
       changed = true;
@@ -347,6 +359,7 @@ const createLiveSessionBookingFromOrder = async ({
 
   const amount = fromPaise(Number(order?.amount || 0));
   const booking = await Booking.create({
+    studentId: linkedStudent?._id || null,
     liveSessionId,
     by: email,
     requesterName: String(notes.name || "").trim(),
@@ -511,6 +524,7 @@ router.post("/create-order", async (req, res) => {
       const email = String(req.body.email || "").trim().toLowerCase();
       const name = String(req.body.name || "").trim();
       const phone = String(req.body.phone || "").trim();
+      const studentId = String(req.body.studentId || "").trim();
       const whatsappNumber = String(
         req.body.whatsappNumber || req.body.phone || ""
       ).trim();
@@ -568,6 +582,7 @@ router.post("/create-order", async (req, res) => {
           email,
           name,
           phone,
+          studentId,
           whatsappNumber,
           sessionTitle: String(liveSession.title || "").trim(),
           paymentSource,
