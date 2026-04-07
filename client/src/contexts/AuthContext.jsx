@@ -3,16 +3,9 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useAuthHeartbeat } from "../lib/useAuthHeartbeat";
+import { getApiBase } from "../lib/apiBase";
 
 const AuthContext = createContext();
-const getApiBase = () => {
-  const rawBase =
-    process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
-
-  return rawBase.endsWith("/api")
-    ? rawBase
-    : `${rawBase.replace(/\/+$/, "")}/api`;
-};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
