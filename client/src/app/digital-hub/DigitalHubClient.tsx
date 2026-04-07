@@ -2613,7 +2613,9 @@ export default function DigitalHubClient({
                             onClick={() => {
                               if (isLocked) {
                                 setToastMessage(
-                                  "Complete the previous topic to unlock this one."
+                                  isScheduleLocked
+                                    ? `This topic is locked until ${scheduleLabel || "its scheduled time"}.`
+                                    : "Complete the previous topic to unlock this one."
                                 );
                                 setShowToast(true);
                                 setTimeout(() => setShowToast(false), 3000);
