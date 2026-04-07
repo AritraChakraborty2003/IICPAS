@@ -7,7 +7,6 @@ const UniversityCourseSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      index: true,
     },
     name: {
       type: String,
@@ -89,8 +88,6 @@ const UniversityCourseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Index for better query performance
-UniversityCourseSchema.index({ slug: 1 });
 UniversityCourseSchema.index({ category: 1 });
 UniversityCourseSchema.index({ isActive: 1 });
 

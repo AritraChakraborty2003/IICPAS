@@ -29,8 +29,6 @@ const ChatConversationSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for better query performance
-ChatConversationSchema.index({ sessionId: 1 });
 ChatConversationSchema.index({ 'userDetails.email': 1 });
 ChatConversationSchema.index({ status: 1 });
 ChatConversationSchema.index({ lastMessageAt: -1 });

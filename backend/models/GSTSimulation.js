@@ -442,8 +442,6 @@ gstInvoiceSchema.virtual("taxType").get(function () {
   return this.isInterstate ? "IGST" : "CGST+SGST";
 });
 
-// Index for better query performance
-gstInvoiceSchema.index({ invoiceNumber: 1 });
 gstInvoiceSchema.index({ "supplier.gstin": 1 });
 gstInvoiceSchema.index({ "recipient.gstin": 1 });
 gstInvoiceSchema.index({ chapterId: 1 });
