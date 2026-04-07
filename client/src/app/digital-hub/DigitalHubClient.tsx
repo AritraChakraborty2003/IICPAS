@@ -415,8 +415,15 @@ const isTopicPublished = (topic?: TopicData | null) => {
   return publishedAt.getTime() <= Date.now();
 };
 
-const filterPublishedTopics = (topics: TopicData[] = []) =>
-  topics.filter((topic) => isTopicPublished(topic));
+const formatTopicSchedule = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-IN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
 
 export default function DigitalHubClient({
   courseSlugOrId,
@@ -656,8 +663,7 @@ export default function DigitalHubClient({
   });
 
   const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
-  const publishedTopics = filterPublishedTopics(topics);
-  const visibleTopics = isDemo ? publishedTopics.slice(0, 1) : publishedTopics;
+  const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
 
   const applyProgressSummary = useCallback(
     (
@@ -709,6 +715,8 @@ export default function DigitalHubClient({
     selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
   );
   const selectedTopicIntroVideo = selectedTopic?.introVideo?.trim() || "";
+  const isSelectedTopicScheduled =
+    Boolean(selectedTopic?.publishAt) && !isTopicPublished(selectedTopic);
   const isSelectedAssignmentCompleted = Boolean(
     selectedAssignment?._id &&
       completedAssignmentIds.includes(selectedAssignment._id)
@@ -974,7 +982,7 @@ export default function DigitalHubClient({
       navigationMode: "push" | "replace" | "none" = "none",
       preferredTopicId?: string
     ) => {
-      const availableTopics = filterPublishedTopics(chapter.topics || []);
+      const availableTopics = chapter.topics || [];
       setIsIntroVideoModalOpen(false);
       setSelectedChapter(chapter);
       setTopics(availableTopics);
@@ -1006,12 +1014,15 @@ export default function DigitalHubClient({
             ? true
             : storedTopicIndex > 0 &&
               completedIds.includes(availableTopics[storedTopicIndex - 1]?._id);
+        const storedTopicPublished = storedTopic
+          ? isTopicPublished(storedTopic)
+          : false;
         const fallbackTopic = getFirstUnlockedTopic(
           { ...chapter, topics: availableTopics },
           completedIds
         );
         const firstTopic =
-          storedTopic && storedTopicUnlocked
+          storedTopic && storedTopicUnlocked && storedTopicPublished
             ? storedTopic
             : fallbackTopic || availableTopics[0];
         setSelectedTopic(firstTopic);
@@ -2587,11 +2598,14 @@ export default function DigitalHubClient({
                         Topics
                       </h3>
                       {visibleTopics.map((topic: TopicData, index) => {
-                        const isLocked =
+                        const isSequenceLocked =
                           index > 0 &&
                           !completedTopicIds.includes(
                             visibleTopics[index - 1]._id
                           );
+                        const isScheduleLocked = !isTopicPublished(topic);
+                        const isLocked = isSequenceLocked || isScheduleLocked;
+                        const scheduleLabel = formatTopicSchedule(topic.publishAt);
 
                         return (
                           <button
@@ -2632,7 +2646,16 @@ export default function DigitalHubClient({
                                   index + 1
                                 )}
                               </div>
-                              <span className="font-medium">{topic.title}</span>
+                              <div className="min-w-0 flex-1">
+                                <div className="font-medium">{topic.title}</div>
+                                {scheduleLabel ? (
+                                  <div className="mt-1 text-xs text-slate-500">
+                                    {isScheduleLocked
+                                      ? `Locked until ${scheduleLabel}`
+                                      : `Scheduled: ${scheduleLabel}`}
+                                  </div>
+                                ) : null}
+                              </div>
                               {selectedChapter?.completedTopicIds?.includes(
                                 topic._id
                               ) ? (
@@ -2811,6 +2834,20 @@ export default function DigitalHubClient({
                     }`}
                   >
                     {selectedTopic.title}
+                    {selectedTopic.publishAt ? (
+                      <span
+                        className={`ml-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+                          isTopicPublished(selectedTopic)
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        <Lock className="h-3.5 w-3.5" />
+                        {isTopicPublished(selectedTopic)
+                          ? `Scheduled ${formatTopicSchedule(selectedTopic.publishAt)}`
+                          : `Locked until ${formatTopicSchedule(selectedTopic.publishAt)}`}
+                      </span>
+                    ) : null}
                     {isDemo && (
                       <span className="ml-4 text-sm bg-amber-100 text-amber-800 px-3 py-1 rounded-full border border-amber-200">
                         DEMO MODE
@@ -2835,7 +2872,7 @@ export default function DigitalHubClient({
                         Chapter topics {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
-                      {selectedTopicIntroVideo ? (
+                      {selectedTopicIntroVideo && !isSelectedTopicScheduled ? (
                         <button
                           type="button"
                           onClick={() => setIsIntroVideoModalOpen(true)}
@@ -2845,6 +2882,31 @@ export default function DigitalHubClient({
                           Watch Intro Video
                         </button>
                       ) : null}
+                    </div>
+                  ) : null}
+
+                  {isSelectedTopicScheduled ? (
+                    <div
+                      className={`mb-6 rounded-2xl border px-5 py-4 ${
+                        isDarkMode
+                          ? "border-amber-500/30 bg-amber-500/10 text-amber-100"
+                          : "border-amber-200 bg-amber-50 text-amber-900"
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 rounded-full bg-amber-400/20 p-2">
+                          <Lock className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <div className="font-semibold">
+                            This topic is locked until{" "}
+                            {formatTopicSchedule(selectedTopic.publishAt)}
+                          </div>
+                          <div className="mt-1 text-sm opacity-90">
+                            It will appear here automatically when the schedule starts.
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ) : null}
 
@@ -2889,14 +2951,16 @@ export default function DigitalHubClient({
                       isDarkMode ? "topic-content-dark" : "topic-content-light"
                     }`}
                   >
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: topicContent,
-                      }}
-                    />
+                    {isSelectedTopicScheduled ? null : (
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: topicContent,
+                        }}
+                      />
+                    )}
 
                     {/* Demo Mode Controls */}
-                    {isDemo && (
+                    {isDemo && !isSelectedTopicScheduled && (
                       <div className="mt-8">
                         {/* Pagination Controls for Multi-page Content */}
                         {totalPages > 1 && (
@@ -2981,13 +3045,14 @@ export default function DigitalHubClient({
                     )}
 
                     {/* Quiz Questions - Directly in main content */}
-                    {quizLoading ? (
+                    {!isSelectedTopicScheduled && quizLoading ? (
                       <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="text-center text-gray-600">
                           Loading questions...
                         </div>
                       </div>
-                    ) : quizData &&
+                    ) : !isSelectedTopicScheduled &&
+                      quizData &&
                       quizData.questions &&
                       quizData.questions.length > 0 ? (
                       <div className="mt-8">
@@ -3116,7 +3181,7 @@ export default function DigitalHubClient({
                       </div>
                     )}
 
-                    {(previousTopic || nextTopic) && (
+                    {!isSelectedTopicScheduled && (previousTopic || nextTopic) && (
                       <div className="mt-8 flex items-center justify-between gap-4">
                         <div>
                           {previousTopic ? (
