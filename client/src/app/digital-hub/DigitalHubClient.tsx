@@ -310,6 +310,37 @@ const mergeChapterProgress = (
   });
 };
 
+const getChapterCompletionPercent = (chapter?: ChapterData | null) => {
+  if (!chapter) return 0;
+
+  if (chapter.isCompleted) {
+    return 100;
+  }
+
+  const explicitCompletion = Number(chapter.completion);
+  if (Number.isFinite(explicitCompletion) && explicitCompletion > 0) {
+    return Math.max(0, Math.min(100, Math.round(explicitCompletion)));
+  }
+
+  const totalItems =
+    Number(chapter.totalTopicCount || 0) +
+    Number(chapter.totalAssignmentCount || 0) +
+    Number(chapter.totalQuestionSetCount || 0);
+  if (totalItems <= 0) {
+    return 0;
+  }
+
+  const completedItems =
+    Number(chapter.completedTopicCount || 0) +
+    Number(chapter.completedAssignmentCount || 0) +
+    Number(chapter.completedQuestionSetCount || 0);
+
+  return Math.max(
+    0,
+    Math.min(100, Math.round((completedItems / totalItems) * 100))
+  );
+};
+
 const getPreferredUnlockedChapter = (chapters: ChapterData[]) => {
   const unlockedChapters = chapters.filter((chapter) => !chapter.isLocked);
   if (unlockedChapters.length === 0) {
@@ -985,7 +1016,11 @@ export default function DigitalHubClient({
         return;
       }
 
-      selectChapterContent(chapter, "push");
+      const firstTopic = getFirstUnlockedTopic(
+        chapter,
+        chapter.completedTopicIds || []
+      );
+      selectChapterContent(chapter, "push", firstTopic?._id);
     },
     [selectChapterContent]
   );
@@ -2355,7 +2390,7 @@ export default function DigitalHubClient({
                             </>
                           ) : (
                             <span className="rounded-full bg-blue-100 px-2 py-1 font-semibold text-blue-700">
-                              {chapter.completion || 0}%
+                              {getChapterCompletionPercent(chapter)}%
                             </span>
                           )}
                         </div>
