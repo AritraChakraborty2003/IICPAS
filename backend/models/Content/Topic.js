@@ -4,6 +4,7 @@ const { Schema, model } = mongoose;
 const TopicSchema = new Schema({
   title: { type: String, required: true },
   content: { type: String, required: true }, // Markdown content
+  introVideo: { type: String, default: "" }, // Optional intro video URL
   quiz: { type: Schema.Types.ObjectId, ref: "Quiz" }, // Reference to quiz
   publishAt: { type: Date, default: Date.now },
   createdAt: { type: Date, default: Date.now },

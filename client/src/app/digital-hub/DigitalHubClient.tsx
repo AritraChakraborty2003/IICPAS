@@ -132,6 +132,7 @@ import {
   ChevronDown,
   Globe,
   Lock,
+  PlayCircle,
 } from "lucide-react";
 
 type ContentKey =
@@ -175,6 +176,7 @@ interface TopicData {
   _id: string;
   title: string;
   content: string;
+  introVideo?: string;
   quiz?: string;
   publishAt?: string;
   createdAt: string;
@@ -446,6 +448,7 @@ export default function DigitalHubClient({
   const [isDesktopViewport, setIsDesktopViewport] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isIntroVideoModalOpen, setIsIntroVideoModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [ticketForm, setTicketForm] = useState({
@@ -705,6 +708,7 @@ export default function DigitalHubClient({
   const isSelectedTopicCompleted = Boolean(
     selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
   );
+  const selectedTopicIntroVideo = selectedTopic?.introVideo?.trim() || "";
   const isSelectedAssignmentCompleted = Boolean(
     selectedAssignment?._id &&
       completedAssignmentIds.includes(selectedAssignment._id)
@@ -737,6 +741,7 @@ export default function DigitalHubClient({
   const handleTopicSelect = (topic: TopicData) => {
     console.log("Topic selected:", topic);
     setSelectedTopic(topic);
+    setIsIntroVideoModalOpen(false);
     setSelectedCaseStudy(null);
     setSelectedAssignment(null);
     if (selectedChapter?._id) {
@@ -783,6 +788,7 @@ export default function DigitalHubClient({
   // Handle case study selection
   const handleCaseStudySelect = (caseStudy: CaseStudy) => {
     console.log("Case study selected:", caseStudy);
+    setIsIntroVideoModalOpen(false);
     setSelectedCaseStudy(caseStudy);
     setSelectedTopic(null);
     setSelectedAssignment(null);
@@ -792,6 +798,7 @@ export default function DigitalHubClient({
   // Handle assignment selection
   const handleAssignmentSelect = (assignment: Assignment) => {
     console.log("Assignment selected:", assignment);
+    setIsIntroVideoModalOpen(false);
     setSelectedAssignment(assignment);
     setSelectedTopic(null);
     setSelectedCaseStudy(null);
@@ -968,6 +975,7 @@ export default function DigitalHubClient({
       preferredTopicId?: string
     ) => {
       const availableTopics = filterPublishedTopics(chapter.topics || []);
+      setIsIntroVideoModalOpen(false);
       setSelectedChapter(chapter);
       setTopics(availableTopics);
       setSelectedCaseStudy(null);
@@ -1026,6 +1034,7 @@ export default function DigitalHubClient({
           loadQuizForTopic(firstTopic._id);
         }
       } else {
+        setIsIntroVideoModalOpen(false);
         setSelectedTopic(null);
         setTopicContent("No topics available for this chapter.");
         setQuizData(null);
@@ -2826,6 +2835,16 @@ export default function DigitalHubClient({
                         Chapter topics {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
+                      {selectedTopicIntroVideo ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsIntroVideoModalOpen(true)}
+                          className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                        >
+                          <PlayCircle className="h-4 w-4" />
+                          Watch Intro Video
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -3687,9 +3706,51 @@ export default function DigitalHubClient({
                 </div>
               )}
             </div>
+      </div>
+    </div>
+  </div>
+
+      {/* Intro Video Modal */}
+      {isIntroVideoModalOpen && selectedTopicIntroVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
+            onClick={() => setIsIntroVideoModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-slate-950 shadow-2xl ring-1 ring-white/10">
+            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
+              <div>
+                <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
+                  Intro Video
+                </p>
+                <h3 className="text-lg font-semibold text-white sm:text-xl">
+                  {selectedTopic?.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsIntroVideoModalOpen(false)}
+                className="rounded-full p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label="Close intro video"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="bg-black">
+              <video
+                key={selectedTopicIntroVideo}
+                controls
+                autoPlay
+                playsInline
+                className="aspect-video w-full bg-black"
+              >
+                <source src={selectedTopicIntroVideo} />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Ticket Submission Modal */}
       {isModalOpen && (

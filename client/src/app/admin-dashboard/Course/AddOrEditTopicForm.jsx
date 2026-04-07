@@ -175,6 +175,7 @@ export default function AddOrEditTopicForm({
   const editor = useRef(null);
   const [title, setTitle] = useState(topic?.title || "");
   const [content, setContent] = useState(topic?.content || "");
+  const [introVideo, setIntroVideo] = useState(topic?.introVideo || "");
   const [publishAt, setPublishAt] = useState(
     toDateTimeLocalValue(topic?.publishAt || topic?.updatedAt || topic?.createdAt)
   );
@@ -184,6 +185,7 @@ export default function AddOrEditTopicForm({
   const [imageLinks, setImageLinks] = useState([]);
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [introVideoPreviewOpen, setIntroVideoPreviewOpen] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [quizPreviewOpen, setQuizPreviewOpen] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
@@ -195,6 +197,7 @@ export default function AddOrEditTopicForm({
     videos: [],
   });
   const [loadingFiles, setLoadingFiles] = useState(false);
+  const [uploadingIntroVideo, setUploadingIntroVideo] = useState(false);
   const currentTopicId = topic?._id || "";
 
   // Debounced content update to prevent typing interruption
@@ -322,6 +325,7 @@ export default function AddOrEditTopicForm({
       console.log("Topic data received:", topic);
       setTitle(topic.title || "");
       setContent(topic.content || "");
+      setIntroVideo(topic.introVideo || "");
       setVideoLinks(topic.videos || []);
 
       // Load existing quiz data if available
@@ -909,6 +913,51 @@ export default function AddOrEditTopicForm({
     }
   };
 
+  const handleIntroVideoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 300 * 1024 * 1024) {
+      Swal.fire("Error", "Video size must be less than 300MB", "error");
+      return;
+    }
+
+    if (!file.type.startsWith("video/")) {
+      Swal.fire("Error", "Please select a valid video file", "error");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("video", file);
+    setUploadingIntroVideo(true);
+
+    try {
+      const res = await axios.post(`${STATIC_CDN_BASE}/upload/video`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const uploadedUrl =
+        res.data?.data?.cdnUrl || res.data?.videoUrl || res.data?.data?.videoUrl;
+
+      if (uploadedUrl) {
+        setIntroVideo(uploadedUrl);
+        Swal.fire({
+          title: "Intro Video Uploaded!",
+          text: "The intro video URL has been added to the topic.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+      } else {
+        Swal.fire("Error", "Failed to get video URL", "error");
+      }
+    } catch (err) {
+      console.error("Intro video upload error:", err);
+      Swal.fire("Error", err.response?.data?.error || "Upload failed", "error");
+    } finally {
+      setUploadingIntroVideo(false);
+    }
+  };
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1065,6 +1114,7 @@ export default function AddOrEditTopicForm({
         await axios.put(`${API_BASE}/topics/${topic._id}`, {
           title: title.trim(),
           content,
+          introVideo: introVideo.trim() || "",
           publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
         });
         topicId = topic._id;
@@ -1075,6 +1125,7 @@ export default function AddOrEditTopicForm({
           {
             title: title.trim(),
             content,
+            introVideo: introVideo.trim() || "",
             publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
           }
         );
@@ -1100,9 +1151,11 @@ export default function AddOrEditTopicForm({
 
       setTitle("");
       setContent("");
+      setIntroVideo("");
       setPublishAt(toDateTimeLocalValue());
       setQuizFile(null);
       setQuizData(null);
+      setIntroVideoPreviewOpen(false);
       setVideoLinks([]);
       onSaved && onSaved();
       const quizMessage =
@@ -1196,6 +1249,69 @@ export default function AddOrEditTopicForm({
             InputLabelProps={{ shrink: true }}
             helperText="Managed topic date and time"
           />
+
+          <Box
+            sx={{
+              border: "1px solid #dbeafe",
+              borderRadius: 2,
+              p: 2.5,
+              bgcolor: "#f8fbff",
+            }}
+          >
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+              mb={1.5}
+              gap={2}
+            >
+              <Typography fontWeight={700} fontSize={15}>
+                Intro Video
+              </Typography>
+              <Stack direction="row" spacing={1}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<Visibility />}
+                  onClick={() => setIntroVideoPreviewOpen(true)}
+                  disabled={!introVideo.trim()}
+                >
+                  Watch
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="inherit"
+                  onClick={() => setIntroVideo("")}
+                  disabled={!introVideo.trim()}
+                >
+                  Clear
+                </Button>
+              </Stack>
+            </Stack>
+
+            <TextField
+              label="Intro Video URL"
+              value={introVideo}
+              onChange={(e) => setIntroVideo(e.target.value)}
+              fullWidth
+              placeholder="Paste a direct video URL or upload one below"
+              helperText="This video appears above the topic content in Digital Hub."
+              sx={{ mb: 2 }}
+            />
+
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              <Button component="label" variant="contained" disabled={uploadingIntroVideo}>
+                {uploadingIntroVideo ? "Uploading..." : "Upload Intro Video"}
+                <input
+                  type="file"
+                  accept="video/*"
+                  hidden
+                  onChange={handleIntroVideoUpload}
+                />
+              </Button>
+            </Stack>
+          </Box>
 
           {/* Upload and show video links */}
           <Box>
@@ -2159,6 +2275,102 @@ export default function AddOrEditTopicForm({
               __html: processContentForPreview(content),
             }}
           />
+        </Paper>
+      </Modal>
+
+      <Modal
+        open={introVideoPreviewOpen}
+        onClose={() => setIntroVideoPreviewOpen(false)}
+        aria-labelledby="intro-video-preview-title"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 2,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1300,
+        }}
+      >
+        <Paper
+          sx={{
+            width: "92vw",
+            maxWidth: "960px",
+            maxHeight: "90vh",
+            overflow: "auto",
+            p: 3,
+            position: "relative",
+            margin: "auto",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+            borderRadius: 3,
+            backgroundColor: "#0f172a",
+            color: "#e2e8f0",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography
+              variant="h6"
+              id="intro-video-preview-title"
+              sx={{ fontWeight: 700 }}
+            >
+              Intro Video Preview
+            </Typography>
+            <IconButton
+              onClick={() => setIntroVideoPreviewOpen(false)}
+              sx={{
+                color: "#cbd5e1",
+                "&:hover": { backgroundColor: "rgba(255,255,255,0.08)" },
+              }}
+            >
+              <Close />
+            </IconButton>
+          </Box>
+
+          <Box
+            sx={{
+              borderRadius: 2,
+              overflow: "hidden",
+              bgcolor: "#020617",
+              border: "1px solid rgba(148, 163, 184, 0.25)",
+            }}
+          >
+            <video
+              key={introVideo}
+              controls
+              autoPlay
+              playsInline
+              src={introVideo}
+              style={{
+                display: "block",
+                width: "100%",
+                maxHeight: "72vh",
+                backgroundColor: "#000",
+              }}
+            >
+              Your browser does not support the video tag.
+            </video>
+          </Box>
+
+          <Typography
+            variant="body2"
+            sx={{
+              mt: 2,
+              wordBreak: "break-all",
+              color: "#94a3b8",
+            }}
+          >
+            {introVideo}
+          </Typography>
         </Paper>
       </Modal>
 
