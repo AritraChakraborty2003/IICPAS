@@ -381,6 +381,13 @@ const createLiveSessionBookingFromOrder = async ({
     paymentSource: String(notes.paymentSource || "live-session-page").trim(),
   });
 
+  if (linkedStudent) {
+    await Student.updateOne(
+      { _id: linkedStudent._id },
+      { $addToSet: { enrolledLiveSessions: liveSessionId } }
+    );
+  }
+
   return { booking, alreadyExists: false };
 };
 

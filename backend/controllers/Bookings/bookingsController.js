@@ -96,6 +96,14 @@ export const createBooking = async (req, res) => {
     date: date || null,
   });
   await booking.save();
+
+  if (linkedStudent && category === "live" && liveSessionId) {
+    await Student.updateOne(
+      { _id: linkedStudent._id },
+      { $addToSet: { enrolledLiveSessions: liveSessionId } }
+    );
+  }
+
   res.status(201).json(booking);
   // } catch (err) {
   //   res.status(500).json({ error: err.message });

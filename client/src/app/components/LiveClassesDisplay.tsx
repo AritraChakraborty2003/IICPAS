@@ -111,7 +111,7 @@ export default function LiveClassesDisplay() {
 
   useEffect(() => {
     const fetchData = async () => {
-      await getUser();
+      const currentUser = await getUser();
 
       try {
         const [liveSessionsResponse, blogsResponse] = await Promise.all([
@@ -150,9 +150,10 @@ export default function LiveClassesDisplay() {
               session.imageUrl || session.thumbnail || "/images/live-class.jpg",
             price: session.price || 0,
             category: session.category || "CA Foundation",
-            isEnrolled: user
-              ? session.enrolledStudents?.some(
-                  (student: any) => student._id === user._id
+            isEnrolled: currentUser
+              ? (currentUser.enrolledLiveSessions || []).some(
+                  (sessionId: any) =>
+                    String(sessionId) === String(session._id)
                 )
               : false,
           }));
