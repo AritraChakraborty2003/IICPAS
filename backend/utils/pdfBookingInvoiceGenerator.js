@@ -394,13 +394,14 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             background: #f8fafc;
             color: #334155;
           }
-          .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+          .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
           .field {
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
             padding: 5px 7px;
             min-height: 30px;
+            overflow: hidden;
           }
           .field .label {
             display: block;
@@ -414,7 +415,9 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             font-size: 7px;
             font-weight: 600;
             color: #0f172a;
-            word-break: break-word;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
             line-height: 1.15;
           }
           .amount-card { border: 1px solid #dbe3ee; border-radius: 10px; padding: 10px 12px; }
@@ -507,17 +510,13 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
 
             <div class="card" style="margin-bottom: 10px;">
               <div class="section-title">Booking Summary</div>
-              <div class="two-col">
-                <div class="stack">
-                  <div class="field"><span class="label">Item Type</span><div class="value">${escapeHtml(itemTypeLabel)}</div></div>
-                  <div class="field stack"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(shortRef(payment?.razorpayOrderId || "N/A"))}</div></div>
-                  <div class="field stack"><span class="label">Payment Status</span><div class="value">${escapeHtml(booking?.paymentStatus || "N/A")}</div></div>
-                </div>
-                <div class="stack">
-                  <div class="field"><span class="label">Payment Date</span><div class="value">${escapeHtml(formatDateTime(payment?.paidAt || new Date()))}</div></div>
-                  <div class="field stack"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(shortRef(payment?.razorpayPaymentId || "N/A"))}</div></div>
-                  <div class="field stack"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
-                </div>
+              <div class="summary">
+                <div class="field"><span class="label">Item Type</span><div class="value">${escapeHtml(itemTypeLabel)}</div></div>
+                <div class="field"><span class="label">Payment Type</span><div class="value">${escapeHtml(paymentType)}</div></div>
+                <div class="field"><span class="label">Payment Date</span><div class="value">${escapeHtml(formatDateTime(payment?.paidAt || new Date()))}</div></div>
+                <div class="field"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(shortRef(payment?.razorpayOrderId || "N/A"))}</div></div>
+                <div class="field"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(shortRef(payment?.razorpayPaymentId || "N/A"))}</div></div>
+                <div class="field"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
               </div>
             </div>
 
