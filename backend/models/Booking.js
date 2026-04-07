@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 const BookingSchema = new mongoose.Schema(
   {
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+      default: null,
+      index: true,
+    },
     liveSessionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "LiveSession",

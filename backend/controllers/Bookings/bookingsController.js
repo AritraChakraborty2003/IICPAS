@@ -1,5 +1,6 @@
 // controllers/Bookings/bookingsController.js
 import Booking from "../../models/Booking.js";
+import Student from "../../models/Students.js";
 
 // PATCH /api/bookings/:id/reject
 export const rejectBooking = async (req, res) => {
@@ -29,6 +30,7 @@ export const createBooking = async (req, res) => {
   // try {
 
   let {
+    studentId,
     by,
     title,
     hrs,
@@ -48,6 +50,18 @@ export const createBooking = async (req, res) => {
 
   console.log(by, title, hrs, type, category);
 
+  const linkedStudent =
+    studentId && mongoose.Types.ObjectId.isValid(studentId)
+      ? await Student.findById(studentId).select("name email phone")
+      : null;
+
+  if (linkedStudent) {
+    by = by || linkedStudent.email || "";
+    requesterName = requesterName || linkedStudent.name || "";
+    phone = phone || linkedStudent.phone || "";
+    whatsappNumber = whatsappNumber || linkedStudent.phone || "";
+  }
+
   // Validate required fields
   if (!by || !title || !hrs || !type || !category) {
     return res.status(400).json({
@@ -64,6 +78,7 @@ export const createBooking = async (req, res) => {
   }
 
   const booking = new Booking({
+    studentId: linkedStudent?._id || null,
     liveSessionId: liveSessionId || null,
     by,
     title,

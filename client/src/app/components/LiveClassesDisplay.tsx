@@ -41,6 +41,7 @@ interface User {
   _id: string;
   name?: string;
   email?: string;
+  phone?: string;
 }
 
 const MOBILE_NUMBER_REGEX = /^[6-9]\d{9}$/;
@@ -318,11 +319,24 @@ export default function LiveClassesDisplay() {
     setEnrollmentForm({
       name: user?.name || "",
       email: user?.email || "",
-      phone: "",
-      whatsappNumber: "",
+      phone: user?.phone ? normalizeMobileNumber(user.phone) : "",
+      whatsappNumber: user?.phone ? normalizeMobileNumber(user.phone) : "",
     });
     setShowEnrollModal(true);
   };
+
+  useEffect(() => {
+    if (!showEnrollModal || !selectedSession || !user) return;
+
+    setEnrollmentForm((prev) => ({
+      name: prev.name || user.name || "",
+      email: prev.email || user.email || "",
+      phone: prev.phone || (user.phone ? normalizeMobileNumber(user.phone) : ""),
+      whatsappNumber:
+        prev.whatsappNumber ||
+        (user.phone ? normalizeMobileNumber(user.phone) : ""),
+    }));
+  }, [showEnrollModal, selectedSession, user]);
 
   const closeEnrollmentModal = () => {
     setShowEnrollModal(false);
@@ -477,6 +491,7 @@ export default function LiveClassesDisplay() {
       }
 
       await axios.post(`${API}/api/bookings`, {
+        studentId: user?._id || undefined,
         liveSessionId: selectedSession._id,
         by: normalizedEmail,
         requesterName: enrollmentForm.name.trim(),
