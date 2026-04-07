@@ -76,6 +76,14 @@ const getLatestAccessibleChapter = (chapters) => {
   return unlockedChapters[unlockedChapters.length - 1];
 };
 
+const getChapterIdentifier = (chapter, fallbackIndex) =>
+  String(
+    chapter?._id ??
+      chapter?.chapterId ??
+      chapter?.id ??
+      (Number.isInteger(fallbackIndex) ? fallbackIndex : "")
+  );
+
 export default function ProfileTab({ onImageUpdated }) {
   const router = useRouter();
   const API =
@@ -590,7 +598,10 @@ export default function ProfileTab({ onImageUpdated }) {
                           ) : (
                             <div className="space-y-2">
                               {chapters.map((chapter, chapterIndex) => {
-                                const chapterId = chapter?._id || chapterIndex;
+                                const chapterId = getChapterIdentifier(
+                                  chapter,
+                                  chapterIndex
+                                );
                                 const chapterKey = `${courseId}-${chapterId}`;
                                 const chapterExpanded = Boolean(
                                   expandedProfileChapters[chapterKey]

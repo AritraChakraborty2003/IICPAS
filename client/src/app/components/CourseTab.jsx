@@ -46,6 +46,14 @@ const extractCourseRecord = (payload) => {
   return payload;
 };
 
+const getChapterIdentifier = (chapter, fallbackIndex) =>
+  String(
+    chapter?._id ??
+      chapter?.chapterId ??
+      chapter?.id ??
+      (Number.isInteger(fallbackIndex) ? fallbackIndex : "")
+  );
+
 const mergeChaptersWithProgress = (chapters, progressPayload) => {
   const orderedChapters = Array.isArray(chapters) ? [...chapters] : [];
   const progressMap = new Map(
@@ -536,7 +544,7 @@ export default function CourseTab() {
     }
   };
 
-  const handleOpenChapter = (course, chapter) => {
+  const handleOpenChapter = (course, chapter, chapterIndex) => {
     if (!chapter) return;
 
     if (chapter.isLocked) {
@@ -544,7 +552,7 @@ export default function CourseTab() {
       return;
     }
 
-    router.push(buildDigitalHubPath(course, chapter._id));
+    router.push(buildDigitalHubPath(course, getChapterIdentifier(chapter, chapterIndex)));
   };
 
   const renderForm = () => {
@@ -783,7 +791,9 @@ export default function CourseTab() {
                     <div className="mt-3 rounded-md border border-gray-200 bg-white p-3">
                       <button
                         type="button"
-                        onClick={() => handleOpenChapter(selectedCourse, chapter)}
+                        onClick={() =>
+                          handleOpenChapter(selectedCourse, chapter, index)
+                        }
                         disabled={chapter.isLocked}
                         className={`mb-3 rounded-md px-3 py-1.5 text-sm font-medium ${
                           chapter.isLocked
@@ -1390,7 +1400,9 @@ export default function CourseTab() {
                                     </span>
                                     <button
                                       type="button"
-                                      onClick={() => handleOpenChapter(course, chapter)}
+                                      onClick={() =>
+                                        handleOpenChapter(course, chapter, index)
+                                      }
                                       disabled={chapter.isLocked}
                                       className={`px-3 py-1.5 rounded-md text-xs font-medium ${
                                         chapter.isLocked
