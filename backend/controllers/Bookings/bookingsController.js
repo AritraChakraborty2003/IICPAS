@@ -1,4 +1,5 @@
 // controllers/Bookings/bookingsController.js
+import mongoose from "mongoose";
 import Booking from "../../models/Booking.js";
 import Student from "../../models/Students.js";
 
