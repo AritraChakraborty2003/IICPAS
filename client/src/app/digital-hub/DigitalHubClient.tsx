@@ -677,7 +677,7 @@ export default function DigitalHubClient({
 
         return (
           mergedChapters.find(
-            (chapter) => chapter._id === currentSelectedChapter._id
+            (chapter) => String(chapter._id) === String(currentSelectedChapter._id)
           ) || currentSelectedChapter
         );
       });
@@ -1095,7 +1095,7 @@ export default function DigitalHubClient({
           courseChapters
         );
         const refreshedChapter = mergedChapters.find(
-          (chapter) => chapter._id === selectedChapter._id
+          (chapter) => String(chapter._id) === String(selectedChapter._id)
         );
 
         const chapterCompletionMessage =
@@ -1126,7 +1126,7 @@ export default function DigitalHubClient({
             !selectedChapter.isCompleted
           ) {
             const currentChapterIndex = mergedChapters.findIndex(
-              (chapter) => chapter._id === selectedChapter._id
+              (chapter) => String(chapter._id) === String(selectedChapter._id)
             );
             const nextChapter =
               currentChapterIndex >= 0 &&
