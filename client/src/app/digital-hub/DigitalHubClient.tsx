@@ -2769,33 +2769,6 @@ export default function DigitalHubClient({
                         Chapter topics {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
-                      {selectedTopic?._id ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            markProgressItemComplete(
-                              "topic",
-                              selectedTopic._id,
-                              "Topic marked as completed."
-                            )
-                          }
-                          disabled={
-                            isSelectedTopicCompleted ||
-                            progressMutationKey === `topic:${selectedTopic._id}`
-                          }
-                          className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all ${
-                            isSelectedTopicCompleted
-                              ? "cursor-not-allowed bg-emerald-300"
-                              : "bg-emerald-600 hover:bg-emerald-700"
-                          }`}
-                        >
-                          {isSelectedTopicCompleted
-                            ? "Completed"
-                            : progressMutationKey === `topic:${selectedTopic._id}`
-                            ? "Saving..."
-                            : "Mark Topic Complete"}
-                        </button>
-                      ) : null}
                     </div>
                   ) : null}
 
