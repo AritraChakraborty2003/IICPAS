@@ -1,6 +1,7 @@
 // API utility functions for authenticated requests
+import { getApiBase } from "@/lib/apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+const API_BASE = getApiBase();
 
 // Get authentication token from localStorage
 const getAuthToken = () => {
