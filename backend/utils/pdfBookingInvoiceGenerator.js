@@ -182,7 +182,8 @@ const generateFallbackInvoicePDF = ({
 
     // Booking Summary
     y += 134;
-    drawCard(y, 104);
+    const summaryCardHeight = 126;
+    drawCard(y, summaryCardHeight);
     doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("BOOKING SUMMARY", left + 16, y + 12);
     const summaryLeft = [
       ["Item Type", itemTypeLabel],
@@ -204,7 +205,7 @@ const generateFallbackInvoicePDF = ({
     });
 
     // Amounts
-    y += 118;
+    y += summaryCardHeight + 14;
     drawCard(y, 132, "#ffffff");
     doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("AMOUNTS", left + 16, y + 12);
     const amountRows = [
@@ -402,6 +403,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             padding: 5px 7px;
             min-height: 30px;
             overflow: hidden;
+            min-width: 0;
           }
           .field .label {
             display: block;
@@ -415,9 +417,9 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             font-size: 7px;
             font-weight: 600;
             color: #0f172a;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: break-word;
             line-height: 1.15;
           }
           .amount-card { border: 1px solid #dbe3ee; border-radius: 10px; padding: 10px 12px; }
@@ -488,7 +490,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
                 <div class="section-title">Invoice Details</div>
                 <span class="pill ${paymentType === "Balance Payment" ? "amber" : "green"}">${escapeHtml(paymentType)}</span>
                 <div class="summary">
-                <div class="field">
+                  <div class="field">
                     <span class="label">Student</span>
                     <div class="value">${escapeHtml(booking?.studentId?.name || "Student")}</div>
                   </div>
