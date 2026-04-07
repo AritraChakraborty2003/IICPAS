@@ -63,7 +63,7 @@ const mergeChaptersWithProgress = (chapters, progressPayload) => {
   );
 
   return orderedChapters.map((chapter, index) => {
-    const progressEntry = progressMap.get(chapter?._id) || {};
+    const progressEntry = progressMap.get(String(chapter?._id)) || {};
 
     return {
       ...chapter,
