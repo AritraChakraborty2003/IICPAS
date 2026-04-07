@@ -22,11 +22,12 @@ const formatDateTime = (value) => {
 
 export const generateLiveSessionReceiptPDF = (booking) =>
   new Promise((resolve, reject) => {
+    const invoiceNumber = `LS-INV-${String(booking?._id || "").slice(-8).toUpperCase()}`;
     const doc = new PDFDocument({
       size: "A4",
       margin: 40,
       info: {
-        Title: `Live Session Receipt ${String(booking?._id || "").slice(-8)}`,
+        Title: `Live Session Invoice ${String(booking?._id || "").slice(-8)}`,
         Author: "IICPA Institute",
       },
     });
@@ -40,10 +41,11 @@ export const generateLiveSessionReceiptPDF = (booking) =>
     doc
       .fontSize(14)
       .fillColor("#334155")
-      .text("Live Session Payment Receipt", { align: "left" });
+      .text("Live Session Enrollment Invoice", { align: "left" });
     doc.moveDown(1);
 
-    doc.fontSize(11).fillColor("#111827").text(`Receipt ID: ${booking?._id || "N/A"}`);
+    doc.fontSize(11).fillColor("#111827").text(`Invoice No: ${invoiceNumber}`);
+    doc.text(`Booking ID: ${booking?._id || "N/A"}`);
     doc.text(`Session: ${booking?.title || "Live Session"}`);
     doc.text(`Participant: ${booking?.requesterName || "N/A"}`);
     doc.text(`Email: ${booking?.by || "N/A"}`);
@@ -62,7 +64,7 @@ export const generateLiveSessionReceiptPDF = (booking) =>
       .fontSize(10)
       .fillColor("#475569")
       .text(
-        "This receipt confirms your live session booking payment. Please keep it for your records."
+        "This invoice confirms your live session enrollment payment. Please keep it for your records."
       );
 
     doc.end();

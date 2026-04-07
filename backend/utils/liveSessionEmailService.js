@@ -11,6 +11,7 @@ export const sendLiveSessionReceiptEmail = async (booking, pdfBuffer) => {
   const studentEmail = booking?.by;
   const studentName = booking?.requesterName || "Student";
   const sessionTitle = booking?.title || "Live Session";
+  const invoiceLabel = `LS-INV-${String(booking?._id || "").slice(-8).toUpperCase()}`;
 
   if (!studentEmail) {
     throw new Error("Booking email is required to send live session receipt");
@@ -36,23 +37,24 @@ export const sendLiveSessionReceiptEmail = async (booking, pdfBuffer) => {
       address: emailConfig.auth.user,
     },
     to: studentEmail,
-    subject: `Live Session Receipt - ${sessionTitle}`,
+    subject: `Live Session Enrollment Invoice - ${sessionTitle}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto;">
         <div style="background: linear-gradient(90deg, #16a34a, #2563eb); color: #fff; padding: 18px;">
-          <h2 style="margin:0;">Live Session Booking Confirmed</h2>
+          <h2 style="margin:0;">Live Session Enrollment Confirmed</h2>
         </div>
         <div style="padding: 18px; background: #f8fafc;">
           <p>Hi ${studentName},</p>
-          <p>Your payment for <strong>${sessionTitle}</strong> has been received successfully.</p>
-          <p>Your receipt is attached to this email as a PDF.</p>
+          <p>Your enrollment for <strong>${sessionTitle}</strong> has been confirmed successfully.</p>
+          <p>Your invoice is attached to this email as a PDF for your records.</p>
+          <p><strong>Invoice No:</strong> ${invoiceLabel}</p>
           <p style="margin-top: 20px;">Thank you,<br/>IICPA Institute</p>
         </div>
       </div>
     `,
     attachments: [
       {
-        filename: `Live-Session-Receipt-${String(booking?._id || "").slice(-8)}.pdf`,
+        filename: `Live-Session-Invoice-${String(booking?._id || "").slice(-8)}.pdf`,
         content: pdfBuffer,
         contentType: "application/pdf",
       },
