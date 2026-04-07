@@ -2,12 +2,10 @@ import puppeteer from "puppeteer";
 import PDFDocument from "pdfkit";
 import InvoiceCompanySettings from "../models/InvoiceCompanySettings.js";
 
-const formatCurrency = (amount) =>
+const formatRupees = (amount) =>
   Number(amount || 0).toLocaleString("en-IN", {
-    style: "currency",
-    currency: "INR",
     maximumFractionDigits: 2,
-  });
+  }).replace(/^/, "Rs. ");
 
 const formatDateTime = (value) => {
   if (!value) return "N/A";
@@ -42,7 +40,7 @@ const generateFallbackInvoicePDF = ({
   new Promise((resolve, reject) => {
     const doc = new PDFDocument({
       size: "A4",
-      margin: 36,
+      margin: 40,
       info: {
         Title: `Booking Invoice ${invoiceNumber}`,
         Author: companySettings?.companyName || "IICPA Institute",
@@ -59,8 +57,6 @@ const generateFallbackInvoicePDF = ({
     const left = doc.page.margins.left;
     const right = pageWidth - doc.page.margins.right;
     const contentWidth = right - left;
-    const cardGap = 12;
-    const halfWidth = (contentWidth - cardGap) / 2;
     const colors = {
       navy: "#0f172a",
       slate: "#334155",
@@ -77,171 +73,179 @@ const generateFallbackInvoicePDF = ({
       softAmber: "#fffbeb",
     };
 
-    const drawRoundedCard = (x, y, w, h, fill = "#fff", stroke = colors.border) => {
-      doc.roundedRect(x, y, w, h, 12).fillAndStroke(fill, stroke);
+    const drawCard = (y, height, fill = "#ffffff") => {
+      doc.roundedRect(left, y, contentWidth, height, 14).fillAndStroke(fill, colors.border);
     };
 
-    const drawSectionTitle = (title, x, y) => {
-      doc.fontSize(11).fillColor(colors.muted).text(title.toUpperCase(), x, y);
-    };
+    const labelStyle = { width: contentWidth - 48, align: "left" };
 
-    const drawValue = (label, value, x, y, width = halfWidth) => {
-      doc.fontSize(8.5).fillColor(colors.muted).text(label, x, y, { width });
-      doc.fontSize(10.5).fillColor(colors.navy).text(value || "N/A", x, y + 12, {
-        width,
-      });
-    };
-
-    doc.rect(0, 0, pageWidth, 98).fill(colors.navy);
+    doc.rect(0, 0, pageWidth, 104).fill(colors.navy);
     doc.fillColor("#ffffff");
-    doc.fontSize(22).font("Helvetica-Bold").text(
+    doc.font("Helvetica-Bold").fontSize(22).text(
       companySettings?.companyName || "IICPA Institute",
       left,
       28
     );
-    doc.fontSize(11).font("Helvetica").text("Booking Invoice", left, 58);
+    doc.font("Helvetica").fontSize(11).text("Booking Invoice", left, 60);
 
-    const badgeWidth = 150;
-    doc.roundedRect(right - badgeWidth, 26, badgeWidth, 44, 10).fill(colors.blue);
+    const badgeWidth = 156;
+    doc.roundedRect(right - badgeWidth, 28, badgeWidth, 48, 12).fill(colors.blue);
     doc.fillColor("#ffffff");
-    doc.fontSize(8).text("INVOICE NO", right - badgeWidth + 12, 36, {
+    doc.font("Helvetica").fontSize(8).text("INVOICE NO", right - badgeWidth + 12, 38, {
       width: badgeWidth - 24,
       align: "left",
     });
-    doc.fontSize(13).font("Helvetica-Bold").text(invoiceNumber, right - badgeWidth + 12, 49, {
+    doc.font("Helvetica-Bold").fontSize(13).text(invoiceNumber, right - badgeWidth + 12, 52, {
       width: badgeWidth - 24,
       align: "left",
     });
 
-    let y = 120;
-    drawRoundedCard(left, y, halfWidth, 150, "#ffffff");
-    drawRoundedCard(left + halfWidth + cardGap, y, halfWidth, 150, "#ffffff");
-
-    doc.font("Helvetica-Bold");
-    drawSectionTitle("Billed By", left + 18, y + 16);
-    drawSectionTitle("Invoice Details", left + halfWidth + cardGap + 18, y + 16);
-
-    doc.font("Helvetica").fillColor(colors.slate);
-    let byY = y + 36;
-    if (companySettings?.legalName) {
-      doc.fontSize(11).text(companySettings.legalName, left + 18, byY, {
-        width: halfWidth - 36,
+    const drawField = (x, y, w, label, value) => {
+      const valueText = value || "N/A";
+      doc.font("Helvetica-Bold").fontSize(8.5).fillColor(colors.muted).text(label, x, y, { width: w });
+      const valueY = y + 12;
+      doc.font("Helvetica").fontSize(10.5).fillColor(colors.navy).text(valueText, x, valueY, {
+        width: w,
       });
-      byY += 16;
-    }
+      return valueY + doc.heightOfString(valueText, { width: w, align: "left" }) + 8;
+    };
+
+    let y = 128;
+
+    // Billed By
+    drawCard(y, 118);
+    doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("BILLED BY", left + 18, y + 16);
+    doc.font("Helvetica-Bold").fontSize(14).fillColor(colors.navy).text(
+      companySettings?.legalName || companySettings?.companyName || "IICPA Institute",
+      left + 18,
+      y + 36,
+      { width: contentWidth - 36 }
+    );
+    let byY = y + 58;
     if (companyAddress) {
-      doc.fontSize(9.5).fillColor(colors.muted).text(companyAddress, left + 18, byY, {
-        width: halfWidth - 36,
+      doc.font("Helvetica").fontSize(10).fillColor(colors.slate).text(companyAddress, left + 18, byY, {
+        width: contentWidth - 36,
       });
-      byY += 28;
+      byY += doc.heightOfString(companyAddress, { width: contentWidth - 36 }) + 4;
     }
-    const companyDetails = [
+    const companyLines = [
       companySettings?.gstin ? `GSTIN: ${companySettings.gstin}` : "",
       companySettings?.cin ? `CIN: ${companySettings.cin}` : "",
       companySettings?.pan ? `PAN: ${companySettings.pan}` : "",
       companySettings?.email ? `Email: ${companySettings.email}` : "",
       companySettings?.phone ? `Phone: ${companySettings.phone}` : "",
     ].filter(Boolean);
-    companyDetails.forEach((line) => {
-      doc.fontSize(9.5).fillColor(colors.slate).text(line, left + 18, byY, {
-        width: halfWidth - 36,
+    companyLines.forEach((line) => {
+      doc.font("Helvetica").fontSize(9.5).fillColor(colors.slate).text(line, left + 18, byY, {
+        width: contentWidth - 36,
       });
-      byY += 14;
+      byY += 13;
     });
 
-    const statusLabel = paymentType === "Balance Payment" ? "BALANCE" : "BOOKING";
-    const statusFill = paymentType === "Balance Payment" ? colors.softAmber : colors.softGreen;
-    doc.roundedRect(left + halfWidth + cardGap + 18, y + 38, 78, 22, 11).fill(statusFill);
+    // Invoice Details
+    y += 132;
+    drawCard(y, 142, colors.bg);
+    doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("INVOICE DETAILS", left + 18, y + 16);
+    const detailColWidth = (contentWidth - 54) / 2;
+    const detailLeftX = left + 18;
+    const detailRightX = left + 18 + detailColWidth + 18;
+    let detailY = y + 38;
+    const detailRows = [
+      ["Student", booking?.studentId?.name || "Student"],
+      ["Email", booking?.studentEmail || booking?.studentId?.email || "N/A"],
+      ["Course / Package", booking?.itemTitle || "N/A"],
+      ["Session Type", booking?.sessionType || "N/A"],
+    ];
+    detailY = drawField(detailLeftX, detailY, detailColWidth, detailRows[0][0], detailRows[0][1]);
+    detailY = drawField(detailRightX, y + 38, detailColWidth, detailRows[1][0], detailRows[1][1]);
+    detailY = drawField(detailLeftX, detailY + 4, detailColWidth, detailRows[2][0], detailRows[2][1]);
+    drawField(detailRightX, detailY + 4, detailColWidth, detailRows[3][0], detailRows[3][1]);
+
+    const statusLabel = paymentType === "Balance Payment" ? "BALANCE PAYMENT" : "BOOKING PAYMENT";
+    const pillY = y + 18;
+    const pillWidth = 120;
+    const pillX = right - pillWidth - 18;
+    doc.roundedRect(pillX, pillY, pillWidth, 24, 12).fill(
+      paymentType === "Balance Payment" ? colors.softAmber : colors.softGreen
+    );
     doc.fillColor(paymentType === "Balance Payment" ? colors.amber : colors.green);
-    doc.fontSize(9).font("Helvetica-Bold").text(statusLabel, left + halfWidth + cardGap + 18, y + 45, {
-      width: 78,
+    doc.font("Helvetica-Bold").fontSize(8.5).text(statusLabel, pillX, pillY + 7, {
+      width: pillWidth,
       align: "center",
     });
 
-    const infoStartX = left + halfWidth + cardGap + 18;
-    const infoWidth = halfWidth - 36;
-    drawValue("Student", booking?.studentId?.name || "Student", infoStartX, y + 74, infoWidth);
-    drawValue(
-      "Email",
-      booking?.studentEmail || booking?.studentId?.email || "N/A",
-      infoStartX + infoWidth / 2 + 6,
-      y + 74,
-      infoWidth / 2 - 6
-    );
-    drawValue("Course / Package", booking?.itemTitle || "N/A", infoStartX, y + 112, infoWidth);
-    drawValue("Session Type", booking?.sessionType || "N/A", infoStartX + infoWidth / 2 + 6, y + 112, infoWidth / 2 - 6);
-
-    y += 170;
-    drawRoundedCard(left, y, contentWidth, 160, colors.bg);
-    drawSectionTitle("Booking Summary", left + 18, y + 16);
-
-    const summaryTop = y + 40;
-    const summaryCols = 3;
-    const summaryColWidth = (contentWidth - 36 - (summaryCols - 1) * 10) / summaryCols;
-
-    const summaryFields = [
+    // Booking Summary
+    y += 158;
+    drawCard(y, 118);
+    doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("BOOKING SUMMARY", left + 18, y + 16);
+    const summaryLeft = [
+      ["Item Type", itemTypeLabel],
       ["Payment Type", paymentType],
       ["Payment Date", formatDateTime(payment?.paidAt || new Date())],
-      ["Item Type", itemTypeLabel],
+    ];
+    const summaryRight = [
       ["Razorpay Order ID", payment?.razorpayOrderId || "N/A"],
       ["Razorpay Payment ID", payment?.razorpayPaymentId || "N/A"],
-      ["Remaining", formatCurrency(booking?.remainingAmount)],
+      ["Remaining Balance", formatRupees(booking?.remainingAmount)],
     ];
-
-    summaryFields.forEach((field, index) => {
-      const col = index % summaryCols;
-      const row = Math.floor(index / summaryCols);
-      const x = left + 18 + col * (summaryColWidth + 10);
-      const fieldY = summaryTop + row * 40;
-      drawValue(field[0], field[1], x, fieldY, summaryColWidth);
+    let summaryLeftY = y + 40;
+    let summaryRightY = y + 40;
+    summaryLeft.forEach(([label, value]) => {
+      summaryLeftY = drawField(left + 18, summaryLeftY, detailColWidth, label, value);
+    });
+    summaryRight.forEach(([label, value]) => {
+      summaryRightY = drawField(detailRightX, summaryRightY, detailColWidth, label, value);
     });
 
-    y += 184;
-    drawRoundedCard(left, y, contentWidth, 184, "#ffffff");
-    drawSectionTitle("Amounts", left + 18, y + 16);
-
+    // Amounts
+    y += 136;
+    drawCard(y, 166, "#ffffff");
+    doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("AMOUNTS", left + 18, y + 16);
     const amountRows = [
-      ["Base Amount", formatCurrency(booking?.baseAmount)],
+      ["Base Amount", formatRupees(booking?.baseAmount)],
       ["Booking Percent", `${Number(booking?.bookingPercent || 0).toFixed(2)}%`],
-      ["Required Booking Amount", formatCurrency(booking?.bookingAmount)],
-      [`${paymentType} (Current Transaction)`, formatCurrency(payment?.amount || 0)],
-      ["Total Paid", formatCurrency(booking?.paidAmount)],
+      ["Required Booking Amount", formatRupees(booking?.bookingAmount)],
+      [`${paymentType} (Current Transaction)`, formatRupees(payment?.amount || 0)],
+      ["Total Paid", formatRupees(booking?.paidAmount)],
     ];
 
-    const amountStartY = y + 42;
-    amountRows.forEach((row, index) => {
-      const rowY = amountStartY + index * 22;
-      doc.fontSize(10.5).fillColor(colors.muted).text(row[0], left + 18, rowY, {
-        width: contentWidth - 120,
+    const amountLeftX = left + 18;
+    const amountRightX = right - 170;
+    let amountY = y + 40;
+    amountRows.forEach(([label, value], index) => {
+      doc.font("Helvetica-Bold").fontSize(10.5).fillColor(colors.slate).text(label, amountLeftX, amountY, {
+        width: contentWidth - 220,
       });
-      doc.fontSize(11).fillColor(index === 3 || index === 4 ? colors.green : colors.navy).font("Helvetica-Bold").text(row[1], right - 108, rowY, {
-        width: 90,
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(index >= 3 ? colors.green : colors.navy).text(value, amountRightX, amountY, {
+        width: 150,
         align: "right",
       });
+      amountY += 23;
     });
 
-    const remainingLabelY = amountStartY + amountRows.length * 22 + 6;
-    doc.roundedRect(left + 18, remainingLabelY, contentWidth - 36, 38, 10).fill(colors.softBlue);
+    const remainingBoxY = y + 138;
+    doc.roundedRect(left + 18, remainingBoxY, contentWidth - 36, 34, 10).fill(colors.softBlue);
     doc.fillColor(colors.blue);
-    doc.fontSize(10).font("Helvetica-Bold").text("Remaining Balance", left + 32, remainingLabelY + 12);
-    doc.fontSize(14).text(formatCurrency(booking?.remainingAmount), right - 140, remainingLabelY + 9, {
-      width: 120,
+    doc.font("Helvetica-Bold").fontSize(10.5).text("Remaining Balance", left + 32, remainingBoxY + 10);
+    doc.font("Helvetica-Bold").fontSize(14).text(formatRupees(booking?.remainingAmount), right - 170, remainingBoxY + 8, {
+      width: 150,
       align: "right",
     });
 
+    // Notes
     if (companySettings?.invoiceNotes) {
-      y += 202;
-      drawRoundedCard(left, y, contentWidth, 74, "#ffffff");
-      drawSectionTitle("Notes", left + 18, y + 16);
-      doc.fontSize(10).fillColor(colors.slate).text(companySettings.invoiceNotes, left + 18, y + 36, {
+      y += 180;
+      drawCard(y, 70);
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(colors.muted).text("NOTES", left + 18, y + 16);
+      doc.font("Helvetica").fontSize(10).fillColor(colors.slate).text(companySettings.invoiceNotes, left + 18, y + 34, {
         width: contentWidth - 36,
       });
     }
 
-    const footerY = pageHeight - 72;
+    const footerY = pageHeight - 58;
     doc.moveTo(left, footerY).lineTo(right, footerY).strokeColor(colors.border).stroke();
-    doc.fontSize(8.5).fillColor(colors.muted).text(
-      "This invoice confirms the live session booking payment. Keep this document for your records.",
+    doc.font("Helvetica").fontSize(8.5).fillColor(colors.muted).text(
+      "This invoice confirms the payment and enrollment for the selected session.",
       left,
       footerY + 12,
       { width: contentWidth, align: "center" }
@@ -296,7 +300,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
         <style>
           * { box-sizing: border-box; }
           body {
-            font-family: Inter, Arial, sans-serif;
+            font-family: Arial, sans-serif;
             color: #0f172a;
             margin: 0;
             padding: 24px;
@@ -324,11 +328,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             opacity: 0.85;
             margin-bottom: 8px;
           }
-          .hero h1 {
-            margin: 0;
-            font-size: 30px;
-            line-height: 1.1;
-          }
+          .hero h1 { margin: 0; font-size: 30px; line-height: 1.1; }
           .hero-sub {
             margin-top: 10px;
             font-size: 14px;
@@ -357,15 +357,8 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             margin-top: 4px;
             font-size: 18px;
           }
-          .content {
-            padding: 28px 32px 32px;
-          }
-          .grid2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 18px;
-          }
+          .content { padding: 28px 32px 32px; }
+          .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
           .card {
             border: 1px solid #dbe3ee;
             border-radius: 18px;
@@ -408,11 +401,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
           }
           .pill.green { background: #ecfdf5; color: #059669; }
           .pill.amber { background: #fffbeb; color: #f59e0b; }
-          .summary {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-          }
+          .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
           .field {
             background: #fff;
             border: 1px solid #e2e8f0;
@@ -434,23 +423,11 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             color: #0f172a;
             word-break: break-word;
           }
-          .amount-card {
-            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
-            border: 1px solid #dbe3ee;
-            border-radius: 18px;
-            padding: 18px;
-          }
+          .amount-card { background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%); border: 1px solid #dbe3ee; border-radius: 18px; padding: 18px; }
           .amount-rows {
             margin-top: 8px;
           }
-          .amount-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            padding: 10px 0;
-            border-bottom: 1px solid #eef2f7;
-            font-size: 14px;
-          }
+          .amount-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; }
           .amount-row:last-child {
             border-bottom: none;
           }
@@ -462,17 +439,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             font-weight: 600;
             text-align: right;
           }
-          .highlight {
-            margin-top: 14px;
-            background: linear-gradient(135deg, #eff6ff 0%, #ecfdf5 100%);
-            border: 1px solid #cbd5e1;
-            border-radius: 14px;
-            padding: 14px 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-          }
+          .highlight { margin-top: 14px; background: linear-gradient(135deg, #eff6ff 0%, #ecfdf5 100%); border: 1px solid #cbd5e1; border-radius: 14px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
           .highlight small {
             display: block;
             color: #2563eb;
@@ -523,7 +490,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
               <div class="card soft">
                 <div class="section-title">Invoice Details</div>
                 <span class="pill ${paymentType === "Balance Payment" ? "amber" : "green"}">${escapeHtml(paymentType)}</span>
-                <div class="summary" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div class="summary">
                   <div class="field">
                     <span class="label">Student</span>
                     <div class="value">${escapeHtml(booking?.studentId?.name || "Student")}</div>
@@ -561,14 +528,14 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
               <div class="amount-rows">
                 <div class="amount-row"><strong>Base Amount</strong><span>${escapeHtml(formatCurrency(booking?.baseAmount))}</span></div>
                 <div class="amount-row"><strong>Booking Percent</strong><span>${escapeHtml(Number(booking?.bookingPercent || 0).toFixed(2))}%</span></div>
-                <div class="amount-row"><strong>Required Booking Amount</strong><span>${escapeHtml(formatCurrency(booking?.bookingAmount))}</span></div>
-                <div class="amount-row"><strong>${escapeHtml(paymentType)} (Current Transaction)</strong><span>${escapeHtml(formatCurrency(paymentAmount))}</span></div>
-                <div class="amount-row"><strong>Total Paid</strong><span style="color:#059669">${escapeHtml(formatCurrency(booking?.paidAmount))}</span></div>
+                <div class="amount-row"><strong>Required Booking Amount</strong><span>${escapeHtml(formatRupees(booking?.bookingAmount))}</span></div>
+                <div class="amount-row"><strong>${escapeHtml(paymentType)} (Current Transaction)</strong><span>${escapeHtml(formatRupees(paymentAmount))}</span></div>
+                <div class="amount-row"><strong>Total Paid</strong><span style="color:#059669">${escapeHtml(formatRupees(booking?.paidAmount))}</span></div>
               </div>
               <div class="highlight">
                 <div>
                   <small>Remaining Balance</small>
-                  <strong>${escapeHtml(formatCurrency(booking?.remainingAmount))}</strong>
+                  <strong>${escapeHtml(formatRupees(booking?.remainingAmount))}</strong>
                 </div>
                 <div class="muted" style="text-align:right; max-width: 280px;">
                   Keep this invoice for your records and future reference.
