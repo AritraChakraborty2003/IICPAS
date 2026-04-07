@@ -52,6 +52,7 @@ export async function GET() {
       "/privacy",
       "/privacy-policy",
       "/profile",
+      "/quotation",
       "/refund",
       "/register",
       "/resources",
