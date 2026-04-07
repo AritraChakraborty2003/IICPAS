@@ -270,7 +270,7 @@ export const approveAndBook = async (req, res) => {
 // GET /api/bookings or /api/bookings?status=booked&by=email
 export const getAllBookings = async (req, res) => {
   try {
-    const { status, by, category, liveSessionId, hasLiveSession, paymentStatus } =
+    const { status, by, category, liveSessionId, hasLiveSession, paymentStatus, studentId } =
       req.query;
     const filter = {};
     if (status) filter.status = status;
@@ -278,6 +278,7 @@ export const getAllBookings = async (req, res) => {
     if (category) filter.category = category;
     if (paymentStatus) filter.paymentStatus = paymentStatus;
     if (liveSessionId) filter.liveSessionId = liveSessionId;
+    if (studentId) filter.studentId = studentId;
     if (String(hasLiveSession).toLowerCase() === "true") {
       filter.liveSessionId = { $ne: null };
     }
