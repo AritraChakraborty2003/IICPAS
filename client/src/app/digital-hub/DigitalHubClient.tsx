@@ -1436,30 +1436,16 @@ export default function DigitalHubClient({
           storedSelection?.chapterId || null
         );
         const fallbackChapter = getPreferredUnlockedChapter(mergedChapters);
-        const chapterToOpen =
-          requestedChapter && !requestedChapter.isLocked
-            ? requestedChapter
-            : storedChapter && !storedChapter.isLocked
-            ? storedChapter
-            : fallbackChapter;
+        const chapterToOpen = requestedChapter || storedChapter || fallbackChapter;
 
         if (!chapterToOpen) {
           return;
-        }
-
-        if (requestedChapter?.isLocked) {
-          setToastMessage(
-            "Complete the previous chapter first. Redirected to your unlocked chapter."
-          );
-          setShowToast(true);
-          setTimeout(() => setShowToast(false), 3500);
         }
 
         const needsRouteReplace =
           !isDemo &&
           (!effectiveChapterId ||
             !requestedChapter ||
-            Boolean(requestedChapter.isLocked) ||
             requestedChapter._id !== chapterToOpen._id);
         const preferredTopicId =
           storedSelection?.chapterId === chapterToOpen._id
