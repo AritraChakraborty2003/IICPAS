@@ -74,7 +74,7 @@ export default function LiveClassesDisplay() {
 
   const getUser = useCallback(async () => {
     try {
-      const response = await axios.get(`${API}/v1/students/isstudent`, {
+      const response = await axios.get(`${API}/api/v1/students/isstudent`, {
         withCredentials: true,
       });
       if (response.data?.student) {
@@ -326,7 +326,12 @@ export default function LiveClassesDisplay() {
   };
 
   useEffect(() => {
-    if (!showEnrollModal || !selectedSession || !user) return;
+    if (!showEnrollModal || !selectedSession || !user) {
+      if (showEnrollModal && selectedSession && !user) {
+        void getUser();
+      }
+      return;
+    }
 
     setEnrollmentForm((prev) => ({
       name: prev.name || user.name || "",
