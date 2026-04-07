@@ -20,6 +20,13 @@ const formatDateTime = (value) => {
   });
 };
 
+const shortRef = (value, head = 9, tail = 6) => {
+  const text = String(value || "").trim();
+  if (!text || text === "N/A") return "N/A";
+  if (text.length <= head + tail + 3) return text;
+  return `${text.slice(0, head)}...${text.slice(-tail)}`;
+};
+
 const escapeHtml = (value) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -183,8 +190,8 @@ const generateFallbackInvoicePDF = ({
       ["Payment Date", formatDateTime(payment?.paidAt || new Date())],
     ];
     const summaryRight = [
-      ["Razorpay Order ID", payment?.razorpayOrderId || "N/A"],
-      ["Razorpay Payment ID", payment?.razorpayPaymentId || "N/A"],
+      ["Razorpay Order ID", shortRef(payment?.razorpayOrderId || "N/A")],
+      ["Razorpay Payment ID", shortRef(payment?.razorpayPaymentId || "N/A")],
       ["Remaining Balance", formatRupees(booking?.remainingAmount)],
     ];
     let summaryLeftY = y + 28;
@@ -387,28 +394,28 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             background: #f8fafc;
             color: #334155;
           }
-          .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+          .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
           .field {
             background: #fff;
             border: 1px solid #e2e8f0;
             border-radius: 8px;
-            padding: 6px 8px;
-            min-height: 38px;
+            padding: 5px 7px;
+            min-height: 30px;
           }
           .field .label {
             display: block;
-            font-size: 7px;
+            font-size: 6px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: #94a3b8;
             margin-bottom: 2px;
           }
           .field .value {
-            font-size: 8px;
+            font-size: 7px;
             font-weight: 600;
             color: #0f172a;
             word-break: break-word;
-            line-height: 1.2;
+            line-height: 1.15;
           }
           .amount-card { border: 1px solid #dbe3ee; border-radius: 10px; padding: 10px 12px; }
           .amount-rows { margin-top: 2px; }
@@ -478,7 +485,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
                 <div class="section-title">Invoice Details</div>
                 <span class="pill ${paymentType === "Balance Payment" ? "amber" : "green"}">${escapeHtml(paymentType)}</span>
                 <div class="summary">
-                  <div class="field">
+                <div class="field">
                     <span class="label">Student</span>
                     <div class="value">${escapeHtml(booking?.studentId?.name || "Student")}</div>
                   </div>
@@ -503,12 +510,12 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
               <div class="two-col">
                 <div class="stack">
                   <div class="field"><span class="label">Item Type</span><div class="value">${escapeHtml(itemTypeLabel)}</div></div>
-                  <div class="field stack"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(payment?.razorpayOrderId || "N/A")}</div></div>
+                  <div class="field stack"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(shortRef(payment?.razorpayOrderId || "N/A"))}</div></div>
                   <div class="field stack"><span class="label">Payment Status</span><div class="value">${escapeHtml(booking?.paymentStatus || "N/A")}</div></div>
                 </div>
                 <div class="stack">
                   <div class="field"><span class="label">Payment Date</span><div class="value">${escapeHtml(formatDateTime(payment?.paidAt || new Date()))}</div></div>
-                  <div class="field stack"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(payment?.razorpayPaymentId || "N/A")}</div></div>
+                  <div class="field stack"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(shortRef(payment?.razorpayPaymentId || "N/A"))}</div></div>
                   <div class="field stack"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
                 </div>
               </div>
