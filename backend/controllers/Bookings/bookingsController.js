@@ -273,6 +273,7 @@ export const getAllBookings = async (req, res) => {
       filter.liveSessionId = { $ne: null };
     }
     const bookings = await Booking.find(filter)
+      .populate("studentId", "name email phone")
       .populate("liveSessionId", "title date time price")
       .sort({ createdAt: -1, start: 1 });
     res.json(bookings);
@@ -299,7 +300,9 @@ export const updateBooking = async (req, res) => {
     const booking = await Booking.findByIdAndUpdate(req.params.id, updateData, {
       new: true,
       runValidators: true,
-    }).populate("liveSessionId", "title date time price");
+    })
+      .populate("studentId", "name email phone")
+      .populate("liveSessionId", "title date time price");
 
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
