@@ -70,6 +70,7 @@ export default function LiveClassTab() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "Date TBD";
     return date.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
@@ -78,7 +79,11 @@ export default function LiveClassTab() {
   };
 
   const formatTime = (timeString) => {
+    if (!timeString || typeof timeString !== "string") return "";
+    const [hours, minutes] = timeString.split(":");
+    if (!hours || !minutes) return "";
     const time = new Date(`2000-01-01T${timeString}`);
+    if (Number.isNaN(time.getTime())) return "";
     return time.toLocaleTimeString("en-US", {
       hour: "numeric",
       minute: "2-digit",
@@ -89,7 +94,16 @@ export default function LiveClassTab() {
   const getSessionStatus = (session) => {
     const now = new Date();
     const sessionDate = new Date(session.date);
+    if (Number.isNaN(sessionDate.getTime())) return "upcoming";
+
+    if (!session.time || typeof session.time !== "string") {
+      return now < sessionDate ? "upcoming" : "completed";
+    }
+
     const sessionTime = new Date(`2000-01-01T${session.time}`);
+    if (Number.isNaN(sessionTime.getTime())) {
+      return now < sessionDate ? "upcoming" : "completed";
+    }
 
     // Combine date and time
     const sessionDateTime = new Date(sessionDate);
@@ -192,7 +206,8 @@ export default function LiveClassTab() {
                     {cls.title}
                   </h3>
                   <p className="text-sm mt-1 text-gray-700">
-                    {formatDate(cls.date)} at {formatTime(cls.time)}
+                    {formatDate(cls.date)}
+                    {formatTime(cls.time) ? ` at ${formatTime(cls.time)}` : ""}
                   </p>
                   {cls.price > 0 && (
                     <p className="text-sm mt-1 text-green-600 font-medium">
