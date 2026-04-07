@@ -278,11 +278,11 @@ const mergeChapterProgress = (
   progressSummaries: ChapterProgressSummary[] = []
 ) => {
   const progressMap = new Map(
-    progressSummaries.map((chapter) => [chapter.chapterId, chapter])
+    progressSummaries.map((chapter) => [String(chapter.chapterId), chapter])
   );
 
   return (Array.isArray(chapters) ? [...chapters] : []).map((chapter, index) => {
-    const summary = progressMap.get(chapter._id);
+    const summary = progressMap.get(String(chapter._id));
     return {
       ...chapter,
       isLocked:
