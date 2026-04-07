@@ -918,8 +918,6 @@ export default function LiveClassesDisplay() {
                     onChange={handleEnrollmentInputChange}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
                     placeholder="Enter your email address"
-                    pattern="[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}"
-                    title="Use a valid email address like user@gmail.com or info@company.com"
                     required
                   />
                 </div>
