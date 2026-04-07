@@ -289,13 +289,13 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             font-family: Arial, sans-serif;
             color: #0f172a;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background: #fff;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
           .sheet {
-            max-width: 820px;
+            max-width: 790px;
             margin: 0 auto;
             background: #ffffff;
             border-radius: 0;
@@ -303,114 +303,116 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             border: 1px solid #dbe3ee;
           }
           .header {
-            padding: 18px 22px 14px;
+            padding: 14px 18px 12px;
             border-bottom: 1px solid #dbe3ee;
             position: relative;
+            background: #fff;
           }
           .eyebrow {
-            font-size: 10px;
+            font-size: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.18em;
+            letter-spacing: 0.16em;
             color: #64748b;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
           }
           .hero h1 {
             margin: 0;
-            font-size: 20px;
+            font-size: 16px;
             line-height: 1.15;
             color: #0f172a;
           }
           .badge {
             position: absolute;
-            right: 22px;
-            top: 16px;
-            background: #eff6ff;
+            right: 18px;
+            top: 14px;
+            background: #f8fafc;
             border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            padding: 8px 12px;
-            min-width: 138px;
+            border-radius: 8px;
+            padding: 6px 10px;
+            min-width: 120px;
             text-align: right;
           }
           .badge small {
             display: block;
-            font-size: 9px;
+            font-size: 7px;
             color: #64748b;
             letter-spacing: 0.08em;
           }
           .badge strong {
             display: block;
             margin-top: 2px;
-            font-size: 13px;
-            color: #1d4ed8;
+            font-size: 10px;
+            color: #0f172a;
           }
-          .content { padding: 18px 22px 22px; }
-          .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+          .content { padding: 14px 18px 16px; }
+          .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
           .card {
             border: 1px solid #dbe3ee;
-            border-radius: 12px;
+            border-radius: 10px;
             background: #fff;
-            padding: 12px 14px;
+            padding: 10px 12px;
           }
           .section-title {
-            font-size: 10px;
+            font-size: 8px;
             font-weight: 700;
             letter-spacing: 0.14em;
             text-transform: uppercase;
             color: #64748b;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
           }
           .company-name {
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 700;
             margin-bottom: 4px;
             color: #0f172a;
           }
           .muted {
             color: #64748b;
-            font-size: 10px;
+            font-size: 8px;
             line-height: 1.45;
           }
           .mini {
-            font-size: 9px;
+            font-size: 7px;
             color: #475569;
             margin: 1px 0;
           }
           .pill {
             display: inline-block;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 999px;
-            font-size: 9px;
+            font-size: 7px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #334155;
           }
-          .pill.green { background: #ecfdf5; color: #059669; }
-          .pill.amber { background: #fffbeb; color: #f59e0b; }
-          .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+          .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
           .field {
             background: #fff;
             border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 8px 10px;
-            min-height: 48px;
+            border-radius: 8px;
+            padding: 6px 8px;
+            min-height: 38px;
           }
           .field .label {
             display: block;
-            font-size: 8px;
+            font-size: 7px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: #94a3b8;
-            margin-bottom: 3px;
+            margin-bottom: 2px;
           }
           .field .value {
-            font-size: 10px;
+            font-size: 8px;
             font-weight: 600;
             color: #0f172a;
             word-break: break-word;
-            line-height: 1.25;
+            line-height: 1.2;
           }
-          .amount-card { border: 1px solid #dbe3ee; border-radius: 12px; padding: 12px 14px; }
-          .amount-rows { margin-top: 4px; }
-          .amount-row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-bottom: 1px solid #eef2f7; font-size: 10px; }
+          .amount-card { border: 1px solid #dbe3ee; border-radius: 10px; padding: 10px 12px; }
+          .amount-rows { margin-top: 2px; }
+          .amount-row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px solid #eef2f7; font-size: 8px; }
           .amount-row:last-child { border-bottom: none; }
           .amount-row strong { color: #0f172a; font-weight: 700; }
           .amount-row span {
@@ -418,33 +420,35 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             font-weight: 600;
             text-align: right;
           }
-          .highlight { margin-top: 8px; background: #eff6ff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+          .highlight { margin-top: 6px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 9px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
           .highlight small {
             display: block;
-            color: #2563eb;
-            font-size: 8px;
+            color: #64748b;
+            font-size: 7px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             margin-bottom: 2px;
           }
           .highlight strong {
-            font-size: 12px;
-            color: #1d4ed8;
+            font-size: 10px;
+            color: #0f172a;
           }
           .footer {
-            margin-top: 10px;
-            padding-top: 10px;
+            margin-top: 8px;
+            padding-top: 8px;
             border-top: 1px solid #e2e8f0;
-            font-size: 8px;
+            font-size: 7px;
             color: #64748b;
             text-align: center;
           }
           .two-col {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
+            gap: 10px;
           }
+          .stack + .stack { margin-top: 6px; }
+          @page { size: A4; margin: 8mm; }
         </style>
       </head>
       <body>
@@ -494,18 +498,18 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
               </div>
             </div>
 
-            <div class="card" style="margin-bottom: 12px;">
+            <div class="card" style="margin-bottom: 10px;">
               <div class="section-title">Booking Summary</div>
               <div class="two-col">
-                <div>
+                <div class="stack">
                   <div class="field"><span class="label">Item Type</span><div class="value">${escapeHtml(itemTypeLabel)}</div></div>
-                  <div class="field" style="margin-top:8px;"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(payment?.razorpayOrderId || "N/A")}</div></div>
-                  <div class="field" style="margin-top:8px;"><span class="label">Payment Status</span><div class="value">${escapeHtml(booking?.paymentStatus || "N/A")}</div></div>
+                  <div class="field stack"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(payment?.razorpayOrderId || "N/A")}</div></div>
+                  <div class="field stack"><span class="label">Payment Status</span><div class="value">${escapeHtml(booking?.paymentStatus || "N/A")}</div></div>
                 </div>
-                <div>
+                <div class="stack">
                   <div class="field"><span class="label">Payment Date</span><div class="value">${escapeHtml(formatDateTime(payment?.paidAt || new Date()))}</div></div>
-                  <div class="field" style="margin-top:8px;"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(payment?.razorpayPaymentId || "N/A")}</div></div>
-                  <div class="field" style="margin-top:8px;"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
+                  <div class="field stack"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(payment?.razorpayPaymentId || "N/A")}</div></div>
+                  <div class="field stack"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
                 </div>
               </div>
             </div>
@@ -527,15 +531,6 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
                 <div class="muted" style="text-align:right; max-width: 220px;">Keep this invoice for your records.</div>
               </div>
             </div>
-
-            ${
-              companySettings?.invoiceNotes
-                ? `<div class="card" style="margin-top:10px;">
-                    <div class="section-title">Notes</div>
-                    <div class="muted">${escapeHtml(companySettings.invoiceNotes)}</div>
-                  </div>`
-                : ""
-            }
 
             <div class="footer">
               This invoice confirms the payment and enrollment for the selected session.
