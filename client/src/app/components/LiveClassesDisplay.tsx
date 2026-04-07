@@ -294,6 +294,17 @@ export default function LiveClassesDisplay() {
     }
   };
 
+  const handleJoinSession = (session: LiveClass) => {
+    if (!session.meetingLink) return;
+
+    if (session.meetingLink.startsWith("http")) {
+      window.open(session.meetingLink, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    window.location.href = session.meetingLink;
+  };
+
   const filteredClasses = liveClasses.filter((session) => {
     if (selectedTab === "upcoming") {
       return session.status === "upcoming" || session.status === "active";
@@ -545,6 +556,12 @@ export default function LiveClassesDisplay() {
             transition={{ duration: 0.3 }}
             className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 hover:shadow-md transition-all duration-200 group"
           >
+            {session.status === "live" && session.isEnrolled && !session.meetingLink && (
+              <div className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                You are enrolled, but the join link is not available yet.
+              </div>
+            )}
+
             <div className="flex justify-between items-start mb-3">
               <div
                 className={`flex items-center space-x-1 px-2 py-1 rounded-full border text-xs font-medium ${getStatusColor(
@@ -611,24 +628,35 @@ export default function LiveClassesDisplay() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (session.status === "live" && session.meetingLink) {
-                      window.open(session.meetingLink, "_blank", "noopener,noreferrer");
+                    if (session.status === "live" && session.isEnrolled && session.meetingLink) {
+                      handleJoinSession(session);
                       return;
                     }
                     if (session.isEnrolled) return;
                     openEnrollmentModal(session);
                   }}
-                  disabled={session.isEnrolled}
+                  disabled={
+                    (session.isEnrolled && session.status !== "live") ||
+                    (session.status === "live" && session.isEnrolled && !session.meetingLink)
+                  }
                   className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-1 ${
-                    session.isEnrolled
+                    (session.isEnrolled && session.status !== "live") ||
+                    (session.status === "live" && session.isEnrolled && !session.meetingLink)
                       ? "bg-green-100 text-green-700 cursor-not-allowed"
+                      : session.status === "live" && session.isEnrolled
+                      ? "bg-green-600 text-white hover:bg-green-700"
                       : "bg-[#3cd664] text-white hover:bg-[#33bb58]"
                   }`}
                 >
-                  {session.status === "live" ? (
+                  {session.status === "live" && session.isEnrolled ? (
                     <>
                       <Video className="w-3 h-3" />
-                      <span>Join Session</span>
+                      <span>Join Now</span>
+                    </>
+                  ) : session.status === "live" ? (
+                    <>
+                      <Video className="w-3 h-3" />
+                      <span>Enroll Now</span>
                     </>
                   ) : session.isEnrolled ? (
                     <>
