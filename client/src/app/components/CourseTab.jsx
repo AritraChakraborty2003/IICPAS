@@ -58,7 +58,10 @@ const mergeChaptersWithProgress = (chapters, progressPayload) => {
   const orderedChapters = Array.isArray(chapters) ? [...chapters] : [];
   const progressMap = new Map(
     Array.isArray(progressPayload?.chapters)
-      ? progressPayload.chapters.map((chapter) => [chapter.chapterId, chapter])
+      ? progressPayload.chapters.map((chapter) => [
+          String(chapter.chapterId),
+          chapter,
+        ])
       : []
   );
 

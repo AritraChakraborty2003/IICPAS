@@ -27,7 +27,10 @@ const sortChaptersByOrder = (chapters) =>
 const mergeChaptersWithProgress = (chapters, progressPayload) => {
   const progressMap = new Map(
     Array.isArray(progressPayload?.chapters)
-      ? progressPayload.chapters.map((chapter) => [chapter.chapterId, chapter])
+      ? progressPayload.chapters.map((chapter) => [
+          String(chapter.chapterId),
+          chapter,
+        ])
       : []
   );
 
