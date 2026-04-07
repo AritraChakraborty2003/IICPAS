@@ -398,6 +398,7 @@ export const updateQuotation = async (req, res) => {
     }
 
     const normalized = await normalizeQuotationPayload(req.body, req.user);
+    normalized.quoteNumber = quotation.quoteNumber;
     Object.assign(quotation, normalized);
     quotation.metadata = {
       ...(quotation.metadata || {}),

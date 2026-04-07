@@ -385,6 +385,7 @@ const wrap = (doc: jsPDF, text: string, maxWidth: number) =>
 const QuotationStudio = () => {
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [savingDraft, setSavingDraft] = useState(false);
+  const [savingQuotation, setSavingQuotation] = useState(false);
   const [recentCustomers, setRecentCustomers] = useState<CustomerRecord[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState("");
   const [state, setState] = useState<QuotationState>({
@@ -443,6 +444,28 @@ const QuotationStudio = () => {
       }
     }
 
+    const fetchCustomers = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/quotations/customers?limit=20`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        const customers = Array.isArray(response.data?.customers)
+          ? response.data.customers
+          : [];
+        if (customers.length > 0) {
+          const normalized = customers.map((customer: CustomerRecord) => ({
+            ...DEFAULT_CUSTOMER,
+            ...customer,
+            id: String(customer.id || (customer as { _id?: string })._id || createId()),
+          }));
+          setRecentCustomers(normalized);
+          localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(normalized));
+        }
+      } catch (error) {
+        console.warn("Failed to load quotation customers:", error);
+      }
+    };
+
     const fetchCompanySettings = async () => {
       try {
         const response = await axios.get(`${API_BASE}/invoice-company-settings`, {
@@ -480,6 +503,7 @@ const QuotationStudio = () => {
     };
 
     fetchCompanySettings();
+    fetchCustomers();
   }, []);
 
   const persistDraft = async () => {
@@ -578,19 +602,74 @@ const QuotationStudio = () => {
       customerName,
     };
 
-    setRecentCustomers((prev) => {
-      const filtered = prev.filter((item) => item.id !== nextRecord.id);
-      const updated = [nextRecord, ...filtered].slice(0, 12);
-      localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(updated));
-      return updated;
-    });
+    const token = localStorage.getItem("adminToken");
+    axios
+      .post(`${API_BASE}/quotations/customers`, nextRecord, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      })
+      .then((response) => {
+        const savedCustomer = {
+          ...nextRecord,
+          ...(response.data?.customer || {}),
+          id: String(response.data?.customer?._id || response.data?.customer?.id || nextRecord.id),
+        };
+        setRecentCustomers((prev) => {
+          const filtered = prev.filter((item) => item.id !== savedCustomer.id);
+          const updated = [savedCustomer, ...filtered].slice(0, 12);
+          localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(updated));
+          return updated;
+        });
+        setState((prev) => ({
+          ...prev,
+          customer: savedCustomer,
+        }));
+        toast.success("Customer saved");
+      })
+      .catch((error) => {
+        console.error("Error saving customer:", error);
+        toast.error(error?.response?.data?.message || "Failed to save customer");
+      });
+  };
 
-    setState((prev) => ({
-      ...prev,
-      customer: nextRecord,
-    }));
+  const saveQuotationToServer = async () => {
+    const token = localStorage.getItem("adminToken");
+    setSavingQuotation(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE}/quotations`,
+        {
+          ...state,
+          quoteNumber: state.meta.quoteNumber,
+          quoteDate: state.meta.quoteDate,
+          validUntil: state.meta.validUntil,
+          subject: state.meta.subject,
+          notes: state.meta.notes,
+          terms: state.meta.terms,
+          overallDiscountType: state.overallDiscountType,
+          overallDiscountValue: state.overallDiscountValue,
+        },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
 
-    toast.success("Customer saved");
+      const savedQuotation = response.data?.quotation;
+      if (savedQuotation?.quoteNumber) {
+        setState((prev) => ({
+          ...prev,
+          meta: {
+            ...prev.meta,
+            quoteNumber: savedQuotation.quoteNumber,
+          },
+        }));
+      }
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(state));
+      toast.success("Quotation saved to server");
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || "Failed to save quotation");
+    } finally {
+      setSavingQuotation(false);
+    }
   };
 
   const loadCustomer = (id: string) => {
@@ -851,6 +930,15 @@ const QuotationStudio = () => {
               >
                 <FaSave />
                 {savingDraft ? "Saving..." : "Save Draft"}
+              </button>
+              <button
+                type="button"
+                onClick={saveQuotationToServer}
+                disabled={savingQuotation}
+                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:opacity-60"
+              >
+                <FaSave />
+                {savingQuotation ? "Saving..." : "Save Quotation"}
               </button>
               <button
                 type="button"
@@ -1538,18 +1626,25 @@ const QuotationStudio = () => {
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={persistDraft}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                  >
-                    Save quotation draft
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handlePrint}
-                    className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                  >
+                <button
+                  type="button"
+                  onClick={persistDraft}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Save quotation draft
+                </button>
+                <button
+                  type="button"
+                  onClick={saveQuotationToServer}
+                  className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                >
+                  Save to server
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
                     Open print dialog
                   </button>
                   <button
