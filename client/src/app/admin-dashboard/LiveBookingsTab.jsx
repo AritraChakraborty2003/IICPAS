@@ -101,10 +101,10 @@ export default function LiveBookingsTab() {
     const result = await Swal.fire({
       title: "Edit booking",
       html: `
-        <input id="booking-name" class="swal2-input" placeholder="Name" value="${booking.requesterName || ""}" />
-        <input id="booking-email" class="swal2-input" placeholder="Email" value="${booking.by || ""}" />
-        <input id="booking-phone" class="swal2-input" placeholder="Phone" value="${booking.phone || ""}" />
-        <input id="booking-whatsapp" class="swal2-input" placeholder="WhatsApp" value="${booking.whatsappNumber || ""}" />
+        <input id="booking-name" class="swal2-input" placeholder="Name" value="${booking.studentId?.name || booking.requesterName || ""}" />
+        <input id="booking-email" class="swal2-input" placeholder="Email" value="${booking.studentId?.email || booking.by || ""}" />
+        <input id="booking-phone" class="swal2-input" placeholder="Phone" value="${booking.studentId?.phone || booking.phone || ""}" />
+        <input id="booking-whatsapp" class="swal2-input" placeholder="WhatsApp" value="${booking.whatsappNumber || booking.phone || booking.studentId?.phone || ""}" />
       `,
       focusConfirm: false,
       showCancelButton: true,
@@ -165,6 +165,8 @@ export default function LiveBookingsTab() {
       if (!query) return true;
 
       const searchableValues = [
+        booking.studentId?.name,
+        booking.studentId?.email,
         booking.liveSessionId?.title,
         booking.title,
         booking.requesterName,
@@ -345,9 +347,11 @@ export default function LiveBookingsTab() {
                       </td>
                       <td className="px-3 py-3 text-sm">
                         <p className="font-medium text-gray-900">
-                          {booking.requesterName || "N/A"}
+                          {booking.studentId?.name || booking.requesterName || "N/A"}
                         </p>
-                        <p className="text-xs text-gray-500">{booking.by || "N/A"}</p>
+                        <p className="text-xs text-gray-500">
+                          {booking.studentId?.email || booking.by || "N/A"}
+                        </p>
                       </td>
                       <td className="px-3 py-3 text-sm text-gray-700">
                         <p>{booking.phone || "No phone"}</p>
