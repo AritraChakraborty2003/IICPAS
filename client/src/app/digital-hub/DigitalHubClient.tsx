@@ -3190,6 +3190,14 @@ export default function DigitalHubClient({
                             <button
                               type="button"
                               onClick={() => {
+                                if (!isTopicPublished(previousTopic)) {
+                                  setToastMessage(
+                                    "This topic is locked until its scheduled time."
+                                  );
+                                  setShowToast(true);
+                                  setTimeout(() => setShowToast(false), 3000);
+                                  return;
+                                }
                                 handleTopicSelect(previousTopic);
                               }}
                               className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
@@ -3209,6 +3217,14 @@ export default function DigitalHubClient({
                             <button
                               type="button"
                               onClick={() => {
+                                if (!isTopicPublished(nextTopic)) {
+                                  setToastMessage(
+                                    "This topic is locked until its scheduled time."
+                                  );
+                                  setShowToast(true);
+                                  setTimeout(() => setShowToast(false), 3000);
+                                  return;
+                                }
                                 if (quizData && !quizSubmitted) {
                                   setToastMessage(
                                     "Please complete the quiz before moving to the next topic."
