@@ -84,16 +84,9 @@ export default function PaymentsTab() {
       setPayments(extractPayments(response.data));
     } catch (error: unknown) {
       console.error("Error fetching payments:", error);
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        "response" in error &&
-        (error as any).response?.status === 401
-      ) {
-        toast.error("Admin authentication required. Please login as admin.");
-      } else {
-        toast.error("Failed to fetch payments");
-      }
+      // Keep the UI quiet on fetch errors; the empty state is enough here.
+      // Authentication or backend issues are still visible in the console.
+      void error;
     } finally {
       setLoading(false);
     }
