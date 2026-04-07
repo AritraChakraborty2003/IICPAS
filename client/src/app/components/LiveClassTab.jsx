@@ -38,7 +38,17 @@ export default function LiveClassTab() {
           if (Array.isArray(enrolledSessions) && enrolledSessions.length > 0) {
             setLiveClasses(enrolledSessions);
           } else {
-            setLiveClasses(currentStudent.enrolledLiveSessions || []);
+            const bookingsResponse = await axios.get(
+              `${process.env.NEXT_PUBLIC_API_URL}/api/bookings?category=live&hasLiveSession=true&studentId=${currentStudent._id}`,
+              { withCredentials: true }
+            );
+            const bookings = Array.isArray(bookingsResponse.data)
+              ? bookingsResponse.data
+              : [];
+            const bookedSessions = bookings
+              .map((booking) => booking.liveSessionId || booking)
+              .filter(Boolean);
+            setLiveClasses(bookedSessions.length > 0 ? bookedSessions : (currentStudent.enrolledLiveSessions || []));
           }
         } else {
           // If not logged in, show all live sessions
