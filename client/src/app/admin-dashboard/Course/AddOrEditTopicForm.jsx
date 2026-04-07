@@ -1268,26 +1268,26 @@ export default function AddOrEditTopicForm({
               <Typography fontWeight={700} fontSize={15}>
                 Intro Video
               </Typography>
-              <Stack direction="row" spacing={1}>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<Visibility />}
-                  onClick={() => setIntroVideoPreviewOpen(true)}
-                  disabled={!introVideo.trim()}
-                >
-                  Watch
-                </Button>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="inherit"
-                  onClick={() => setIntroVideo("")}
-                  disabled={!introVideo.trim()}
-                >
-                  Clear
-                </Button>
-              </Stack>
+              {introVideo.trim() ? (
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<Visibility />}
+                    onClick={() => setIntroVideoPreviewOpen(true)}
+                  >
+                    Watch
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="inherit"
+                    onClick={() => setIntroVideo("")}
+                  >
+                    Clear
+                  </Button>
+                </Stack>
+              ) : null}
             </Stack>
 
             <TextField
