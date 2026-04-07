@@ -519,14 +519,14 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
                 <div class="field"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(payment?.razorpayOrderId || "N/A")}</div></div>
                 <div class="field"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(payment?.razorpayPaymentId || "N/A")}</div></div>
                 <div class="field"><span class="label">Payment Status</span><div class="value">${escapeHtml(booking?.paymentStatus || "N/A")}</div></div>
-                <div class="field"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatCurrency(booking?.remainingAmount))}</div></div>
+                <div class="field"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
               </div>
             </div>
 
             <div class="amount-card">
               <div class="section-title">Amounts</div>
               <div class="amount-rows">
-                <div class="amount-row"><strong>Base Amount</strong><span>${escapeHtml(formatCurrency(booking?.baseAmount))}</span></div>
+                <div class="amount-row"><strong>Base Amount</strong><span>${escapeHtml(formatRupees(booking?.baseAmount))}</span></div>
                 <div class="amount-row"><strong>Booking Percent</strong><span>${escapeHtml(Number(booking?.bookingPercent || 0).toFixed(2))}%</span></div>
                 <div class="amount-row"><strong>Required Booking Amount</strong><span>${escapeHtml(formatRupees(booking?.bookingAmount))}</span></div>
                 <div class="amount-row"><strong>${escapeHtml(paymentType)} (Current Transaction)</strong><span>${escapeHtml(formatRupees(paymentAmount))}</span></div>
