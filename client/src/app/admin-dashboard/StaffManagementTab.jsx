@@ -59,6 +59,7 @@ const MODULES = [
     name: "Invoice Company Settings",
     icon: "🧾",
   },
+  { id: "quotation", name: "Quotation Studio", icon: "🧾" },
   {
     id: "job-sidebar-marquee",
     name: "Jobs Sidebar Marquee",

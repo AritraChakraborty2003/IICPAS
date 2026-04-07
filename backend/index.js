@@ -95,6 +95,7 @@ import coinRoutes from "./routes/coinRoutes.js";
 import bookingSettingsRoutes from "./routes/bookingSettingsRoutes.js";
 import courseBookingRoutes from "./routes/courseBookingRoutes.js";
 import invoiceCompanySettingsRoutes from "./routes/invoiceCompanySettingsRoutes.js";
+import quotationRoutes from "./routes/quotationRoutes.js";
 import jobSidebarMarqueeSettingsRoutes from "./routes/jobSidebarMarqueeSettingsRoutes.js";
 import ourPartnersSettingsRoutes from "./routes/ourPartnersSettingsRoutes.js";
 
@@ -240,6 +241,7 @@ app.use("/api/v1/website/faq", faqRoutes);
 //Ticket Routes
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/bookings", bookingRoutes);
+app.use("/api/quotations", quotationRoutes);
 
 //Test Payment Routes
 app.use("/api/test-payment", paymentRoutes);
