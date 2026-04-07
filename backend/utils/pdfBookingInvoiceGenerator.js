@@ -206,7 +206,8 @@ const generateFallbackInvoicePDF = ({
 
     // Amounts
     y += summaryCardHeight + 14;
-    drawCard(y, 132, "#ffffff");
+    const amountCardHeight = 148;
+    drawCard(y, amountCardHeight, "#ffffff");
     doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("AMOUNTS", left + 16, y + 12);
     const amountRows = [
       ["Base Amount", formatRupees(booking?.baseAmount)],
@@ -230,7 +231,7 @@ const generateFallbackInvoicePDF = ({
       amountY += 18;
     });
 
-    const remainingBoxY = y + 110;
+    const remainingBoxY = y + 116;
     doc.roundedRect(left + 16, remainingBoxY, contentWidth - 32, 28, 8).fill(colors.softBlue);
     doc.fillColor(colors.blue);
     doc.font("Helvetica-Bold").fontSize(9).text("Remaining Balance", left + 28, remainingBoxY + 8);
