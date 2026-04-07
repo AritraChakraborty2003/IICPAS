@@ -70,10 +70,10 @@ const getLatestAccessibleChapter = (chapters) => {
     return null;
   }
 
-  return (
-    unlockedChapters.find((chapter) => !chapter?.isCompleted) ||
-    unlockedChapters[unlockedChapters.length - 1]
-  );
+  // Prefer the most recently accessible chapter instead of jumping back to
+  // the first incomplete one. This keeps "Open in Digital Hub" aligned with
+  // the chapter the student is already progressed to.
+  return unlockedChapters[unlockedChapters.length - 1];
 };
 
 export default function ProfileTab({ onImageUpdated }) {

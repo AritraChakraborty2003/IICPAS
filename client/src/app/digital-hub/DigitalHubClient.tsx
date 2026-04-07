@@ -353,6 +353,42 @@ const getPreferredUnlockedChapter = (chapters: ChapterData[]) => {
   );
 };
 
+const matchesChapterIdentifier = (
+  chapter: ChapterData | null | undefined,
+  identifier: string,
+  index?: number
+) => {
+  if (!chapter || !identifier) return false;
+
+  const normalizedIdentifier = String(identifier);
+  const candidates = [
+    chapter._id,
+    (chapter as ChapterData & { id?: string | number }).id,
+    (chapter as ChapterData & { chapterId?: string | number }).chapterId,
+    index !== undefined ? String(index) : null,
+    index !== undefined ? String(index + 1) : null,
+  ].filter(Boolean);
+
+  return candidates.some((candidate) => String(candidate) === normalizedIdentifier);
+};
+
+const findChapterByIdentifier = (
+  chapters: ChapterData[],
+  identifier?: string | null
+) => {
+  if (!identifier) return null;
+
+  return (
+    chapters.find((chapter) =>
+      matchesChapterIdentifier(chapter, identifier)
+    ) ||
+    chapters.find((chapter, index) =>
+      matchesChapterIdentifier(chapter, identifier, index)
+    ) ||
+    null
+  );
+};
+
 const getFirstUnlockedTopic = (
   chapter: ChapterData,
   completedTopicIds: string[]
@@ -1391,14 +1427,14 @@ export default function DigitalHubClient({
         }
 
         const storedSelection = loadLastSelection();
-        const requestedChapter = effectiveChapterId
-          ? mergedChapters.find((chapter) => chapter._id === effectiveChapterId)
-          : null;
-        const storedChapter = storedSelection?.chapterId
-          ? mergedChapters.find(
-              (chapter) => chapter._id === storedSelection.chapterId
-            )
-          : null;
+        const requestedChapter = findChapterByIdentifier(
+          mergedChapters,
+          effectiveChapterId
+        );
+        const storedChapter = findChapterByIdentifier(
+          mergedChapters,
+          storedSelection?.chapterId || null
+        );
         const fallbackChapter = getPreferredUnlockedChapter(mergedChapters);
         const chapterToOpen =
           requestedChapter && !requestedChapter.isLocked
