@@ -196,10 +196,6 @@ const sendReceiptForLiveSessionBooking = async (bookingId) => {
     return { sent: false, reason: "Booking missing or not paid" };
   }
 
-  if (String(booking.paymentSource || "").trim() === "live-session-page") {
-    return { sent: false, skipped: true, reason: "Email disabled for live-session-page" };
-  }
-
   if (booking.receiptSent) {
     return { sent: true, skipped: true };
   }
