@@ -23,14 +23,23 @@ export default function LiveClassTab() {
         );
         
         if (studentResponse.data.student) {
-          setStudent(studentResponse.data.student);
-          
+          const currentStudent = studentResponse.data.student;
+          setStudent(currentStudent);
+
           // Fetch enrolled live sessions for this student
           const enrolledSessionsResponse = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/enrolled-live-sessions/${studentResponse.data.student._id}`
+            `${process.env.NEXT_PUBLIC_API_URL}/api/v1/students/enrolled-live-sessions/${currentStudent._id}`,
+            { withCredentials: true }
           );
-          
-          setLiveClasses(enrolledSessionsResponse.data.enrolledLiveSessions || []);
+
+          const enrolledSessions =
+            enrolledSessionsResponse.data.enrolledLiveSessions || [];
+
+          if (Array.isArray(enrolledSessions) && enrolledSessions.length > 0) {
+            setLiveClasses(enrolledSessions);
+          } else {
+            setLiveClasses(currentStudent.enrolledLiveSessions || []);
+          }
         } else {
           // If not logged in, show all live sessions
           const response = await axios.get(
@@ -134,8 +143,8 @@ export default function LiveClassTab() {
               <p className="text-gray-500 text-lg mb-4">
                 You haven't enrolled in any live sessions yet.
               </p>
-              <p className="text-gray-400 mb-6">
-                Purchase a course with Digital Hub+ to get access to live sessions.
+                <p className="text-gray-400 mb-6">
+                Once you enroll in a live session, it will appear here.
               </p>
               <button
                 onClick={handleEnrollNewSessions}

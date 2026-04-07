@@ -419,6 +419,7 @@ export default function LiveClassesDisplay() {
           `${API}/api/test-payment/create-order`,
           {
             liveSessionId: selectedSession._id,
+            studentId: user?._id || "",
             name: enrollmentForm.name.trim(),
             email: normalizedEmail,
             phone: normalizedPhone,
