@@ -3,6 +3,7 @@ import { requireAuth, requirePermission } from "../middleware/requireAuth.js";
 import {
   createQuotation,
   deleteQuotation,
+  deleteQuotationCustomer,
   getQuotationById,
   getQuotationCustomerById,
   getQuotationCustomers,
