@@ -11,10 +11,11 @@ const getRawApiBase = () =>
 
 export const getApiBase = () => {
   const rawBase = getRawApiBase().trim();
+  const normalizedBase = rawBase.replace(/\/+$/, "");
 
-  return rawBase.endsWith("/api")
-    ? rawBase
-    : `${rawBase.replace(/\/+$/, "")}/api`;
+  return normalizedBase.endsWith("/api")
+    ? normalizedBase
+    : `${normalizedBase}/api`;
 };
 
 export const getApiOrigin = () =>
