@@ -303,172 +303,169 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
             font-family: Arial, sans-serif;
             color: #0f172a;
             margin: 0;
-            padding: 24px;
-            background: #eef2f7;
+            padding: 20px;
+            background: #fff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .sheet {
-            max-width: 920px;
+            max-width: 820px;
             margin: 0 auto;
             background: #ffffff;
-            border-radius: 24px;
+            border-radius: 0;
             overflow: hidden;
-            box-shadow: 0 24px 80px rgba(15, 23, 42, 0.12);
             border: 1px solid #dbe3ee;
           }
-          .hero {
-            padding: 28px 32px;
-            background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 55%, #059669 100%);
-            color: white;
+          .header {
+            padding: 18px 22px 14px;
+            border-bottom: 1px solid #dbe3ee;
             position: relative;
           }
           .eyebrow {
-            font-size: 12px;
+            font-size: 10px;
             text-transform: uppercase;
             letter-spacing: 0.18em;
-            opacity: 0.85;
-            margin-bottom: 8px;
+            color: #64748b;
+            margin-bottom: 6px;
           }
-          .hero h1 { margin: 0; font-size: 30px; line-height: 1.1; }
-          .hero-sub {
-            margin-top: 10px;
-            font-size: 14px;
-            opacity: 0.95;
+          .hero h1 {
+            margin: 0;
+            font-size: 20px;
+            line-height: 1.15;
+            color: #0f172a;
           }
           .badge {
             position: absolute;
-            right: 32px;
-            top: 28px;
-            background: rgba(255,255,255,0.14);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 999px;
-            padding: 12px 16px;
-            min-width: 180px;
+            right: 22px;
+            top: 16px;
+            background: #eff6ff;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 8px 12px;
+            min-width: 138px;
             text-align: right;
-            backdrop-filter: blur(10px);
           }
           .badge small {
             display: block;
-            font-size: 11px;
-            opacity: 0.8;
+            font-size: 9px;
+            color: #64748b;
             letter-spacing: 0.08em;
           }
           .badge strong {
             display: block;
-            margin-top: 4px;
-            font-size: 18px;
+            margin-top: 2px;
+            font-size: 13px;
+            color: #1d4ed8;
           }
-          .content { padding: 28px 32px 32px; }
-          .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+          .content { padding: 18px 22px 22px; }
+          .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
           .card {
             border: 1px solid #dbe3ee;
-            border-radius: 18px;
+            border-radius: 12px;
             background: #fff;
-            padding: 18px;
-          }
-          .card.soft {
-            background: #f8fafc;
+            padding: 12px 14px;
           }
           .section-title {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 700;
             letter-spacing: 0.14em;
             text-transform: uppercase;
             color: #64748b;
-            margin-bottom: 14px;
+            margin-bottom: 8px;
           }
           .company-name {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 700;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
+            color: #0f172a;
           }
           .muted {
             color: #64748b;
-            font-size: 13px;
-            line-height: 1.55;
+            font-size: 10px;
+            line-height: 1.45;
           }
           .mini {
-            font-size: 12px;
+            font-size: 9px;
             color: #475569;
-            margin: 3px 0;
+            margin: 1px 0;
           }
           .pill {
             display: inline-block;
-            padding: 6px 12px;
+            padding: 4px 10px;
             border-radius: 999px;
-            font-size: 12px;
+            font-size: 9px;
             font-weight: 700;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
           }
           .pill.green { background: #ecfdf5; color: #059669; }
           .pill.amber { background: #fffbeb; color: #f59e0b; }
-          .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+          .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
           .field {
             background: #fff;
             border: 1px solid #e2e8f0;
-            border-radius: 14px;
-            padding: 12px 14px;
-            min-height: 72px;
+            border-radius: 10px;
+            padding: 8px 10px;
+            min-height: 48px;
           }
           .field .label {
             display: block;
-            font-size: 11px;
+            font-size: 8px;
             text-transform: uppercase;
             letter-spacing: 0.08em;
             color: #94a3b8;
-            margin-bottom: 6px;
+            margin-bottom: 3px;
           }
           .field .value {
-            font-size: 14px;
+            font-size: 10px;
             font-weight: 600;
             color: #0f172a;
             word-break: break-word;
+            line-height: 1.25;
           }
-          .amount-card { background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%); border: 1px solid #dbe3ee; border-radius: 18px; padding: 18px; }
-          .amount-rows {
-            margin-top: 8px;
-          }
-          .amount-row { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; }
-          .amount-row:last-child {
-            border-bottom: none;
-          }
-          .amount-row strong {
-            color: #0f172a;
-          }
+          .amount-card { border: 1px solid #dbe3ee; border-radius: 12px; padding: 12px 14px; }
+          .amount-rows { margin-top: 4px; }
+          .amount-row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-bottom: 1px solid #eef2f7; font-size: 10px; }
+          .amount-row:last-child { border-bottom: none; }
+          .amount-row strong { color: #0f172a; font-weight: 700; }
           .amount-row span {
             color: #334155;
             font-weight: 600;
             text-align: right;
           }
-          .highlight { margin-top: 14px; background: linear-gradient(135deg, #eff6ff 0%, #ecfdf5 100%); border: 1px solid #cbd5e1; border-radius: 14px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+          .highlight { margin-top: 8px; background: #eff6ff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
           .highlight small {
             display: block;
             color: #2563eb;
-            font-size: 12px;
+            font-size: 8px;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
           .highlight strong {
-            font-size: 18px;
-            color: #0f172a;
+            font-size: 12px;
+            color: #1d4ed8;
           }
           .footer {
-            margin-top: 18px;
-            padding-top: 16px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 1px solid #e2e8f0;
-            font-size: 12px;
+            font-size: 8px;
             color: #64748b;
             text-align: center;
+          }
+          .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
           }
         </style>
       </head>
       <body>
         <div class="sheet">
-          <div class="hero">
+          <div class="header">
             <div class="eyebrow">Enrollment Invoice</div>
-            <h1>${escapeHtml(companySettings?.companyName || "IICPA Institute")}</h1>
-            <div class="hero-sub">Booking invoice for live and recorded session enrollments</div>
+            <h1>${escapeHtml(companySettings?.companyName || "IICPA Institute")} Booking Invoice</h1>
             <div class="badge">
               <small>Invoice No</small>
               <strong>${escapeHtml(invoiceNumber)}</strong>
@@ -480,14 +477,14 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
                 <div class="section-title">Billed By</div>
                 <div class="company-name">${escapeHtml(companySettings?.legalName || companySettings?.companyName || "IICPA Institute")}</div>
                 ${companyAddress ? `<div class="muted">${escapeHtml(companyAddress)}</div>` : ""}
-                <div style="margin-top: 10px;">
+                <div style="margin-top: 6px;">
                   ${companyLines
                     .filter((line) => line)
                     .map((line) => `<div class="mini">${escapeHtml(line)}</div>`)
                     .join("")}
                 </div>
               </div>
-              <div class="card soft">
+              <div class="card">
                 <div class="section-title">Invoice Details</div>
                 <span class="pill ${paymentType === "Balance Payment" ? "amber" : "green"}">${escapeHtml(paymentType)}</span>
                 <div class="summary">
@@ -511,15 +508,19 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
               </div>
             </div>
 
-            <div class="card" style="margin-bottom: 16px;">
+            <div class="card" style="margin-bottom: 12px;">
               <div class="section-title">Booking Summary</div>
-              <div class="summary">
-                <div class="field"><span class="label">Item Type</span><div class="value">${escapeHtml(itemTypeLabel)}</div></div>
-                <div class="field"><span class="label">Payment Date</span><div class="value">${escapeHtml(formatDateTime(payment?.paidAt || new Date()))}</div></div>
-                <div class="field"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(payment?.razorpayOrderId || "N/A")}</div></div>
-                <div class="field"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(payment?.razorpayPaymentId || "N/A")}</div></div>
-                <div class="field"><span class="label">Payment Status</span><div class="value">${escapeHtml(booking?.paymentStatus || "N/A")}</div></div>
-                <div class="field"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
+              <div class="two-col">
+                <div>
+                  <div class="field"><span class="label">Item Type</span><div class="value">${escapeHtml(itemTypeLabel)}</div></div>
+                  <div class="field" style="margin-top:8px;"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(payment?.razorpayOrderId || "N/A")}</div></div>
+                  <div class="field" style="margin-top:8px;"><span class="label">Payment Status</span><div class="value">${escapeHtml(booking?.paymentStatus || "N/A")}</div></div>
+                </div>
+                <div>
+                  <div class="field"><span class="label">Payment Date</span><div class="value">${escapeHtml(formatDateTime(payment?.paidAt || new Date()))}</div></div>
+                  <div class="field" style="margin-top:8px;"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(payment?.razorpayPaymentId || "N/A")}</div></div>
+                  <div class="field" style="margin-top:8px;"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
+                </div>
               </div>
             </div>
 
@@ -537,15 +538,13 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
                   <small>Remaining Balance</small>
                   <strong>${escapeHtml(formatRupees(booking?.remainingAmount))}</strong>
                 </div>
-                <div class="muted" style="text-align:right; max-width: 280px;">
-                  Keep this invoice for your records and future reference.
-                </div>
+                <div class="muted" style="text-align:right; max-width: 220px;">Keep this invoice for your records.</div>
               </div>
             </div>
 
             ${
               companySettings?.invoiceNotes
-                ? `<div class="card" style="margin-top:16px;">
+                ? `<div class="card" style="margin-top:10px;">
                     <div class="section-title">Notes</div>
                     <div class="muted">${escapeHtml(companySettings.invoiceNotes)}</div>
                   </div>`
@@ -572,7 +571,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
     return page.pdf({
       format: "A4",
       printBackground: true,
-      margin: { top: "16mm", right: "12mm", bottom: "16mm", left: "12mm" },
+      margin: { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" },
     });
   } catch (browserError) {
     console.error("Puppeteer invoice generation failed, using PDFKit fallback:", browserError.message);
