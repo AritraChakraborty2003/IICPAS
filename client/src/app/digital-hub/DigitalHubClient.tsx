@@ -3737,6 +3737,10 @@ export default function DigitalHubClient({
                                       <div className="mb-4">
                                         <video
                                           controls
+                                          controlsList="nodownload"
+                                          onContextMenu={(event) =>
+                                            event.preventDefault()
+                                          }
                                           className="w-full max-w-2xl rounded-lg"
                                         >
                                           <source
@@ -4055,8 +4059,10 @@ export default function DigitalHubClient({
               <video
                 key={selectedTopicIntroVideo}
                 controls
+                controlsList="nodownload"
                 autoPlay
                 playsInline
+                onContextMenu={(event) => event.preventDefault()}
                 className="aspect-video w-full bg-black"
               >
                 <source src={selectedTopicIntroVideo} />
