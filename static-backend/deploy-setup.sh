@@ -26,7 +26,7 @@ CDN_BASE_URL=https://cdn.iicpa.in
 
 # File Upload Limits
 MAX_IMAGE_SIZE=5242880
-MAX_VIDEO_SIZE=314572800
+MAX_VIDEO_SIZE=367001600
 
 # Allowed File Types
 ALLOWED_IMAGE_TYPES=image/jpeg,image/png,image/gif,image/webp

@@ -152,9 +152,9 @@ export default function AboutUsTab() {
       return;
     }
 
-    // Validate file size (100MB limit to match backend)
-    if (file.size > 100 * 1024 * 1024) {
-      toast.error("Video file size must be less than 100MB");
+    // Validate file size (350MB limit to match backend)
+    if (file.size > 350 * 1024 * 1024) {
+      toast.error("Video file size must be less than 350MB");
       return;
     }
 
@@ -467,7 +467,7 @@ export default function AboutUsTab() {
                     )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Supported formats: MP4, WebM, AVI. Max size: 100MB
+                    Supported formats: MP4, WebM, AVI. Max size: 350MB
                   </p>
                 </div>
               ) : (

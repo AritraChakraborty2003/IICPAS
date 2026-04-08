@@ -797,9 +797,9 @@ export default function AddOrEditTopicForm({
     const file = e.target.files[0];
     if (!file) return;
 
-    // Check file size (300MB limit for videos)
-    if (file.size > 300 * 1024 * 1024) {
-      Swal.fire("Error", "Video size must be less than 300MB", "error");
+    // Check file size (350MB limit for videos)
+    if (file.size > 350 * 1024 * 1024) {
+      Swal.fire("Error", "Video size must be less than 350MB", "error");
       return;
     }
 
@@ -859,7 +859,7 @@ export default function AddOrEditTopicForm({
     const invalidFiles = [];
 
     files.forEach((file) => {
-      if (file.size > 300 * 1024 * 1024) {
+      if (file.size > 350 * 1024 * 1024) {
         invalidFiles.push(`${file.name} (too large)`);
       } else if (!file.type.startsWith("video/")) {
         invalidFiles.push(`${file.name} (invalid type)`);
@@ -917,8 +917,8 @@ export default function AddOrEditTopicForm({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 300 * 1024 * 1024) {
-      Swal.fire("Error", "Video size must be less than 300MB", "error");
+    if (file.size > 350 * 1024 * 1024) {
+      Swal.fire("Error", "Video size must be less than 350MB", "error");
       return;
     }
 

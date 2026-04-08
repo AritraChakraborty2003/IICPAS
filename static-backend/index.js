@@ -141,7 +141,7 @@ const uploadVideo = multer({
   storage: videoStorage,
   fileFilter: videoFilter,
   limits: {
-    fileSize: parseInt(process.env.MAX_VIDEO_SIZE) || 314572800, // 300MB
+    fileSize: parseInt(process.env.MAX_VIDEO_SIZE) || 367001600, // 350MB
   },
 });
 
@@ -430,7 +430,7 @@ app.post("/upload/bulk", async (req, res) => {
       limits: {
         fileSize: Math.max(
           parseInt(process.env.MAX_IMAGE_SIZE) || 5242880,
-          parseInt(process.env.MAX_VIDEO_SIZE) || 314572800
+          parseInt(process.env.MAX_VIDEO_SIZE) || 367001600
         ),
       },
     }).array("files", 15); // Allow up to 15 files total

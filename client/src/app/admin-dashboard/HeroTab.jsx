@@ -130,9 +130,9 @@ export default function HeroTab() {
       return;
     }
 
-    // Validate file size (100MB limit)
-    if (file.size > 100 * 1024 * 1024) {
-      toast.error("Video file size must be less than 100MB");
+    // Validate file size (350MB limit)
+    if (file.size > 350 * 1024 * 1024) {
+      toast.error("Video file size must be less than 350MB");
       return;
     }
 
@@ -424,7 +424,7 @@ export default function HeroTab() {
                           {videoFile ? "Change Video" : "Upload Video"}
                         </p>
                         <p className="text-sm text-gray-500">
-                          MP4, AVI, MOV, WMV, FLV, WEBM, MKV (Max 100MB)
+                          MP4, AVI, MOV, WMV, FLV, WEBM, MKV (Max 350MB)
                         </p>
                       </div>
                     </>

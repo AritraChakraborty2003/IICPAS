@@ -5,7 +5,7 @@ A microservice for handling file uploads (images and videos) for the IICPA Insti
 ## Features
 
 - **Image Uploads**: Support for JPEG, PNG, GIF, WebP (5MB limit)
-- **Video Uploads**: Support for MP4, AVI, MOV, WMV, FLV (300MB limit)
+- **Video Uploads**: Support for MP4, AVI, MOV, WMV, FLV (350MB limit)
 - **CDN Integration**: Generates proper CDN URLs for uploaded files
 - **Database Storage**: MongoDB database for file metadata
 - **File Management**: List, upload, and delete files
@@ -292,7 +292,7 @@ static-backend/
 | `PORT`            | Server port               | 3001                                     |
 | `CDN_BASE_URL`    | CDN base URL              | https://cdn.iicpa.in                     |
 | `MAX_IMAGE_SIZE`  | Max image size in bytes   | 5242880 (5MB)                            |
-| `MAX_VIDEO_SIZE`  | Max video size in bytes   | 314572800 (300MB)                        |
+| `MAX_VIDEO_SIZE`  | Max video size in bytes   | 367001600 (350MB)                        |
 | `MONGODB_URI`     | MongoDB connection string | mongodb://localhost:27017/static_backend |
 | `MONGODB_DB_NAME` | MongoDB database name     | static_backend                           |
 
