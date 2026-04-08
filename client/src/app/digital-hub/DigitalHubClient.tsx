@@ -482,6 +482,26 @@ const getFirstAccessibleTopic = (
   return null;
 };
 
+const hardenVideoElements = (container: HTMLElement | null) => {
+  if (!container) return;
+
+  container.querySelectorAll("video").forEach((video) => {
+    video.setAttribute("controlsList", "nodownload");
+    video.setAttribute("disablePictureInPicture", "");
+    const controlsList = (video as HTMLVideoElement & {
+      controlsList?: DOMTokenList;
+    }).controlsList;
+    controlsList?.add("nodownload");
+    controlsList?.add("noplaybackrate");
+    controlsList?.add("noremoteplayback");
+    (video as HTMLVideoElement & { disableRemotePlayback?: boolean }).disableRemotePlayback = true;
+    video.oncontextmenu = (event) => {
+      event.preventDefault();
+      return false;
+    };
+  });
+};
+
 export default function DigitalHubClient({
   courseSlugOrId,
   chapterId,
@@ -533,6 +553,7 @@ export default function DigitalHubClient({
     translatePage: (languageCode: string) => void;
   } | null>(null);
   const contentScrollRef = useRef<HTMLDivElement | null>(null);
+  const topicContentRef = useRef<HTMLDivElement | null>(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
   const pendingLanguageRef = useRef<string | null>(null);
   const googleTranslateScriptRef = useRef<HTMLScriptElement | null>(null);
@@ -723,6 +744,10 @@ export default function DigitalHubClient({
     enabled: !!studentId,
     heartbeatUrl: `${API_BASE}/auth/heartbeat`,
   });
+
+  useEffect(() => {
+    hardenVideoElements(topicContentRef.current);
+  }, [topicContent, selectedTopic?._id, selectedAssignment?._id]);
 
   const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
   const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
@@ -3159,6 +3184,7 @@ export default function DigitalHubClient({
                   >
                     {isSelectedTopicLockedForBatch ? null : (
                       <div
+                        ref={topicContentRef}
                         dangerouslySetInnerHTML={{
                           __html: topicContent,
                         }}
@@ -3737,7 +3763,9 @@ export default function DigitalHubClient({
                                       <div className="mb-4">
                                         <video
                                           controls
-                                          controlsList="nodownload"
+                                          controlsList="nodownload noplaybackrate noremoteplayback"
+                                          disablePictureInPicture
+                                          disableRemotePlayback
                                           onContextMenu={(event) =>
                                             event.preventDefault()
                                           }
@@ -3762,6 +3790,7 @@ export default function DigitalHubClient({
                                     content.richTextContent && (
                                       <div
                                         className="text-slate-700"
+                                        ref={topicContentRef}
                                         dangerouslySetInnerHTML={{
                                           __html: content.richTextContent,
                                         }}
@@ -4059,7 +4088,9 @@ export default function DigitalHubClient({
               <video
                 key={selectedTopicIntroVideo}
                 controls
-                controlsList="nodownload"
+                controlsList="nodownload noplaybackrate noremoteplayback"
+                disablePictureInPicture
+                disableRemotePlayback
                 autoPlay
                 playsInline
                 onContextMenu={(event) => event.preventDefault()}
