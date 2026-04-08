@@ -798,6 +798,9 @@ export default function DigitalHubClient({
     selectedTopic,
     activeCourseEnrollmentAt
   );
+  const selectedTopicBatchMessage = isSelectedTopicLockedForBatch
+    ? "Open on next batch start"
+    : null;
   const isSelectedAssignmentCompleted = Boolean(
     selectedAssignment?._id &&
       completedAssignmentIds.includes(selectedAssignment._id)
@@ -884,7 +887,7 @@ export default function DigitalHubClient({
       if (sequenceLocked || batchLocked) {
         setToastMessage(
           batchLocked
-            ? "Locked for this batch."
+            ? "Open on next batch start."
             : "Complete the previous topic to unlock this one."
         );
         setShowToast(true);
@@ -1179,7 +1182,7 @@ export default function DigitalHubClient({
           }
         } else {
           setTopicContent(
-            "This chapter is locked for this batch until the cutoff is updated."
+            "This chapter is locked for this batch. Open on next batch start."
           );
           setTotalPages(1);
           setCurrentPage(1);
@@ -2819,7 +2822,9 @@ export default function DigitalHubClient({
                           activeCourseEnrollmentAt
                         );
                         const isLocked = isSequenceLocked || isBatchLocked;
-                        const scheduleLabel = formatTopicSchedule(topic.publishAt);
+                        const batchMessage = isBatchLocked
+                          ? "Open on next batch start"
+                          : null;
 
                         return (
                           <button
@@ -2828,7 +2833,7 @@ export default function DigitalHubClient({
                               if (isLocked) {
                                 setToastMessage(
                                   isBatchLocked
-                                    ? "Locked for this batch."
+                                    ? "Open on next batch start."
                                     : "Complete the previous topic to unlock this one."
                                 );
                                 setShowToast(true);
@@ -2864,11 +2869,9 @@ export default function DigitalHubClient({
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="font-medium">{topic.title}</div>
-                                {scheduleLabel ? (
+                                {batchMessage ? (
                                   <div className="mt-1 text-xs text-slate-500">
-                                    {isBatchLocked
-                                      ? "Locked for this batch"
-                                      : `Cutoff: ${scheduleLabel}`}
+                                    {batchMessage}
                                   </div>
                                 ) : null}
                               </div>
@@ -3050,7 +3053,7 @@ export default function DigitalHubClient({
                     }`}
                   >
                     {selectedTopic.title}
-                    {selectedTopic.publishAt ? (
+                    {selectedTopicBatchMessage ? (
                       <span
                         className={`ml-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
                           isSelectedTopicLockedForBatch
@@ -3059,9 +3062,7 @@ export default function DigitalHubClient({
                         }`}
                       >
                         <Lock className="h-3.5 w-3.5" />
-                        {isSelectedTopicLockedForBatch
-                          ? "Locked for this batch"
-                          : `Cutoff ${formatTopicSchedule(selectedTopic.publishAt)}`}
+                        {selectedTopicBatchMessage}
                       </span>
                     ) : null}
                     {isDemo && (
@@ -3115,10 +3116,10 @@ export default function DigitalHubClient({
                         </div>
                         <div>
                           <div className="font-semibold">
-                            This topic is locked for this batch.
+                            Open on next batch start.
                           </div>
                           <div className="mt-1 text-sm opacity-90">
-                            Update the cutoff date and time in admin to unlock it for this batch.
+                            This topic will unlock when the next batch starts.
                           </div>
                         </div>
                       </div>
@@ -3411,7 +3412,7 @@ export default function DigitalHubClient({
                                   )
                                 ) {
                                   setToastMessage(
-                                    "Locked for this batch."
+                                    "Open on next batch start."
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
@@ -3443,7 +3444,7 @@ export default function DigitalHubClient({
                                   )
                                 ) {
                                   setToastMessage(
-                                    "Locked for this batch."
+                                    "Open on next batch start."
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
@@ -4013,11 +4014,11 @@ export default function DigitalHubClient({
                     </div>
                     <div>
                       <h4 className="text-lg font-semibold">
-                        Locked for this batch
+                        Open on next batch start
                       </h4>
                       <p className="mt-1 text-sm text-amber-800">
                         No accessible topic is available yet for this chapter.
-                        Please wait for the cutoff to be updated by admin.
+                        Please wait for the next batch to start.
                       </p>
                     </div>
                   </div>
