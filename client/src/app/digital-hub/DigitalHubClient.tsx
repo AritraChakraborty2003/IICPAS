@@ -402,16 +402,6 @@ const findChapterByIdentifier = (
   );
 };
 
-const formatTopicSchedule = (value?: string | null) => {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("en-IN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(date);
-};
-
 const toIdString = (value?: string | { _id?: string } | null) => {
   if (!value) return "";
   if (typeof value === "string") return value;
