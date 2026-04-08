@@ -829,6 +829,44 @@ export default function DigitalHubClient({
     []
   );
 
+  // Load quiz for a specific topic
+  const loadQuizForTopic = useCallback(
+    async (topicId: string) => {
+      try {
+        console.log("Loading quiz for topic:", topicId);
+        setQuizLoading(true);
+        setQuizData(null);
+        setSelectedAnswers({});
+        setShowQuizResults(false);
+        setQuizSubmitted(false);
+        setQuizRewardSummary(null);
+
+        const response = await axios.get(`${API_BASE}/quizzes/topic/${topicId}`);
+        console.log("Quiz API response:", response.data);
+
+        if (response.data.success && response.data.quiz) {
+          const quiz = response.data.quiz as QuizData;
+          const randomizedQuestions = getRandomQuestions(quiz.questions || []);
+          const randomizedQuiz = {
+            ...quiz,
+            questions: randomizedQuestions,
+          };
+
+          console.log("Quiz loaded successfully:", randomizedQuiz);
+          setQuizData(randomizedQuiz);
+        } else {
+          console.log("No quiz found or invalid response");
+        }
+      } catch (error) {
+        console.error("Error loading quiz:", error);
+        // Quiz might not exist for this topic, which is fine
+      } finally {
+        setQuizLoading(false);
+      }
+    },
+    [API_BASE]
+  );
+
   // Handle topic selection
   const handleTopicSelect = useCallback(
     (topic: TopicData, options?: { completedTopicIds?: string[] }) => {
@@ -931,44 +969,6 @@ export default function DigitalHubClient({
     setSelectedCaseStudy(null);
     setTopicContent("");
   };
-
-  // Load quiz for a specific topic
-  const loadQuizForTopic = useCallback(
-    async (topicId: string) => {
-      try {
-        console.log("Loading quiz for topic:", topicId);
-        setQuizLoading(true);
-        setQuizData(null);
-        setSelectedAnswers({});
-        setShowQuizResults(false);
-        setQuizSubmitted(false);
-        setQuizRewardSummary(null);
-
-        const response = await axios.get(`${API_BASE}/quizzes/topic/${topicId}`);
-        console.log("Quiz API response:", response.data);
-
-        if (response.data.success && response.data.quiz) {
-          const quiz = response.data.quiz as QuizData;
-          const randomizedQuestions = getRandomQuestions(quiz.questions || []);
-          const randomizedQuiz = {
-            ...quiz,
-            questions: randomizedQuestions,
-          };
-
-          console.log("Quiz loaded successfully:", randomizedQuiz);
-          setQuizData(randomizedQuiz);
-        } else {
-          console.log("No quiz found or invalid response");
-        }
-      } catch (error) {
-        console.error("Error loading quiz:", error);
-        // Quiz might not exist for this topic, which is fine
-      } finally {
-        setQuizLoading(false);
-      }
-    },
-    [API_BASE]
-  );
 
   const fetchStudentCoins = useCallback(
     async (currentStudentId: string) => {
