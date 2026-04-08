@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
@@ -97,6 +97,17 @@ interface Assignment {
   questionSets: QuestionSet[];
   createdAt: string;
   updatedAt: string;
+}
+
+interface CourseBookingRecord {
+  _id: string;
+  courseId?: string | { _id?: string } | null;
+  itemType?: string;
+  status?: string;
+  createdAt?: string;
+  payments?: Array<{
+    paidAt?: string;
+  }>;
 }
 
 // Add Google Translate types
@@ -391,30 +402,6 @@ const findChapterByIdentifier = (
   );
 };
 
-const getFirstUnlockedTopic = (
-  chapter: ChapterData,
-  completedTopicIds: string[]
-) => {
-  const topics = chapter?.topics || [];
-  for (let index = 0; index < topics.length; index += 1) {
-    const previousTopicId = index > 0 ? topics[index - 1]._id : null;
-    const unlocked =
-      index === 0 ||
-      (previousTopicId && completedTopicIds.includes(previousTopicId));
-    if (unlocked) {
-      return topics[index] || null;
-    }
-  }
-  return topics[0] || null;
-};
-
-const isTopicPublished = (topic?: TopicData | null) => {
-  if (!topic?.publishAt) return true;
-  const publishedAt = new Date(topic.publishAt);
-  if (Number.isNaN(publishedAt.getTime())) return true;
-  return publishedAt.getTime() <= Date.now();
-};
-
 const formatTopicSchedule = (value?: string | null) => {
   if (!value) return "";
   const date = new Date(value);
@@ -423,6 +410,86 @@ const formatTopicSchedule = (value?: string | null) => {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
+};
+
+const toIdString = (value?: string | { _id?: string } | null) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && typeof value._id === "string") {
+    return value._id;
+  }
+  return "";
+};
+
+const parseDateOrNull = (value?: string | null) => {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+};
+
+const getCourseEnrollmentAt = (
+  bookings: CourseBookingRecord[],
+  courseId?: string | null
+) => {
+  if (!courseId) return null;
+
+  const normalizedCourseId = String(courseId);
+  const matches = (Array.isArray(bookings) ? bookings : []).filter(
+    (booking) =>
+      booking &&
+      booking.status !== "cancelled" &&
+      booking.itemType === "single_course" &&
+      toIdString(booking.courseId) === normalizedCourseId
+  );
+
+  const timestamps = matches
+    .map((booking) => {
+      const paymentTimestamp = booking.payments?.[0]?.paidAt || null;
+      return parseDateOrNull(paymentTimestamp || booking.createdAt || null);
+    })
+    .filter((value): value is Date => Boolean(value))
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  return timestamps[0]?.toISOString() || null;
+};
+
+const isTopicLockedForBatch = (
+  topic?: TopicData | null,
+  enrollmentAt?: string | null
+) => {
+  if (!topic?.publishAt || !enrollmentAt) return false;
+
+  const cutoffAt = new Date(topic.publishAt);
+  const enrolledAt = new Date(enrollmentAt);
+
+  if (Number.isNaN(cutoffAt.getTime()) || Number.isNaN(enrolledAt.getTime())) {
+    return false;
+  }
+
+  return enrolledAt.getTime() > cutoffAt.getTime();
+};
+
+const getFirstAccessibleTopic = (
+  chapter: ChapterData,
+  completedTopicIds: string[],
+  enrollmentAt?: string | null
+) => {
+  const topics = chapter?.topics || [];
+
+  for (let index = 0; index < topics.length; index += 1) {
+    const previousTopicId = index > 0 ? topics[index - 1]?._id : null;
+    const sequenceUnlocked =
+      index === 0 ||
+      (previousTopicId && completedTopicIds.includes(previousTopicId));
+    const batchLocked = isTopicLockedForBatch(topics[index], enrollmentAt);
+
+    if (sequenceUnlocked && !batchLocked) {
+      return topics[index] || null;
+    }
+  }
+
+  return null;
 };
 
 export default function DigitalHubClient({
@@ -653,6 +720,11 @@ export default function DigitalHubClient({
   const [studentId, setStudentId] = useState<string | null>(null);
   const [studentName, setStudentName] = useState("");
   const [authResolved, setAuthResolved] = useState(false);
+  const [studentCourseBookings, setStudentCourseBookings] = useState<
+    CourseBookingRecord[]
+  >([]);
+  const [studentCourseBookingsLoaded, setStudentCourseBookingsLoaded] =
+    useState(false);
   const [progressMutationKey, setProgressMutationKey] = useState<string | null>(
     null
   );
@@ -697,10 +769,17 @@ export default function DigitalHubClient({
   );
 
   // Derived state and common logic
-  const completedTopicIds = selectedChapter?.completedTopicIds || [];
+  const completedTopicIds = useMemo(
+    () => selectedChapter?.completedTopicIds || [],
+    [selectedChapter?.completedTopicIds]
+  );
   const completedAssignmentIds = selectedChapter?.completedAssignmentIds || [];
   const completedQuestionSetIds =
     selectedChapter?.completedQuestionSetIds || [];
+  const activeCourseEnrollmentAt = getCourseEnrollmentAt(
+    studentCourseBookings,
+    resolvedCourseId
+  );
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -715,8 +794,10 @@ export default function DigitalHubClient({
     selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
   );
   const selectedTopicIntroVideo = selectedTopic?.introVideo?.trim() || "";
-  const isSelectedTopicScheduled =
-    Boolean(selectedTopic?.publishAt) && !isTopicPublished(selectedTopic);
+  const isSelectedTopicLockedForBatch = isTopicLockedForBatch(
+    selectedTopic,
+    activeCourseEnrollmentAt
+  );
   const isSelectedAssignmentCompleted = Boolean(
     selectedAssignment?._id &&
       completedAssignmentIds.includes(selectedAssignment._id)
@@ -727,71 +808,109 @@ export default function DigitalHubClient({
     topics.every((t) => completedTopicIds.includes(t._id));
 
   // Function to split content into pages
-  const splitContentIntoPages = (content: string, maxPages: number = 3) => {
-    if (!content) return { pages: [], totalPages: 0 };
+  const splitContentIntoPages = useCallback(
+    (content: string, maxPages: number = 3) => {
+      if (!content) return { pages: [], totalPages: 0 };
 
-    // Split content by paragraphs or sections
-    const paragraphs = content.split(/(?=<h[1-6]|<\/p>|<\/div>|<\/section>)/i);
-    const pages = [];
-    const itemsPerPage = Math.ceil(paragraphs.length / maxPages);
+      // Split content by paragraphs or sections
+      const paragraphs = content.split(/(?=<h[1-6]|<\/p>|<\/div>|<\/section>)/i);
+      const pages = [];
+      const itemsPerPage = Math.ceil(paragraphs.length / maxPages);
 
-    for (let i = 0; i < paragraphs.length; i += itemsPerPage) {
-      const pageContent = paragraphs.slice(i, i + itemsPerPage).join("");
-      if (pageContent.trim()) {
-        pages.push(pageContent);
+      for (let i = 0; i < paragraphs.length; i += itemsPerPage) {
+        const pageContent = paragraphs.slice(i, i + itemsPerPage).join("");
+        if (pageContent.trim()) {
+          pages.push(pageContent);
+        }
       }
-    }
 
-    return { pages, totalPages: Math.min(pages.length, maxPages) };
-  };
+      return { pages, totalPages: Math.min(pages.length, maxPages) };
+    },
+    []
+  );
 
   // Handle topic selection
-  const handleTopicSelect = (topic: TopicData) => {
-    console.log("Topic selected:", topic);
-    setSelectedTopic(topic);
-    setIsIntroVideoModalOpen(false);
-    setSelectedCaseStudy(null);
-    setSelectedAssignment(null);
-    if (selectedChapter?._id) {
-      storeLastSelection(selectedChapter._id, topic._id);
-    }
-    scrollContentToTop();
+  const handleTopicSelect = useCallback(
+    (topic: TopicData, options?: { completedTopicIds?: string[] }) => {
+      const topicCompletionIds = options?.completedTopicIds || completedTopicIds;
+      const topicIndex = visibleTopics.findIndex(
+        (entry) => entry._id === topic._id
+      );
+      const previousTopicId =
+        topicIndex > 0 ? visibleTopics[topicIndex - 1]?._id : null;
+      const sequenceLocked =
+        topicIndex > 0 &&
+        !(previousTopicId && topicCompletionIds.includes(previousTopicId));
+      const batchLocked = isTopicLockedForBatch(topic, activeCourseEnrollmentAt);
 
-    // Decode and set topic content
-    if (topic.content) {
-      try {
-        const decodedContent = atob(topic.content);
+      if (sequenceLocked || batchLocked) {
+        setToastMessage(
+          batchLocked
+            ? "Locked for this batch."
+            : "Complete the previous topic to unlock this one."
+        );
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+        return;
+      }
 
-        if (isDemo) {
-          // For demo mode, split content into pages and limit to 1 page
-          const { pages, totalPages } = splitContentIntoPages(
-            decodedContent,
-            1
-          );
-          setTotalPages(totalPages);
-          setCurrentPage(1);
-          setTopicContent(pages[0] || "Content not available");
-          setShowDemoLimit(totalPages > 0);
-        } else {
-          // For full mode, show all content
-          setTopicContent(decodedContent);
+      console.log("Topic selected:", topic);
+      setSelectedTopic(topic);
+      setIsIntroVideoModalOpen(false);
+      setSelectedCaseStudy(null);
+      setSelectedAssignment(null);
+      if (selectedChapter?._id) {
+        storeLastSelection(selectedChapter._id, topic._id);
+      }
+      scrollContentToTop();
+
+      // Decode and set topic content
+      if (topic.content) {
+        try {
+          const decodedContent = atob(topic.content);
+
+          if (isDemo) {
+            // For demo mode, split content into pages and limit to 1 page
+            const { pages, totalPages } = splitContentIntoPages(
+              decodedContent,
+              1
+            );
+            setTotalPages(totalPages);
+            setCurrentPage(1);
+            setTopicContent(pages[0] || "Content not available");
+            setShowDemoLimit(totalPages > 0);
+          } else {
+            // For full mode, show all content
+            setTopicContent(decodedContent);
+            setTotalPages(1);
+            setCurrentPage(1);
+            setShowDemoLimit(false);
+          }
+        } catch (error) {
+          console.error("Error decoding topic content:", error);
+          setTopicContent(topic.content || "Content not available");
           setTotalPages(1);
           setCurrentPage(1);
           setShowDemoLimit(false);
         }
-      } catch (error) {
-        console.error("Error decoding topic content:", error);
-        setTopicContent(topic.content || "Content not available");
-        setTotalPages(1);
-        setCurrentPage(1);
-        setShowDemoLimit(false);
       }
-    }
 
-    // Load quiz for the selected topic
-    console.log("Calling loadQuizForTopic with topic ID:", topic._id);
-    loadQuizForTopic(topic._id);
-  };
+      // Load quiz for the selected topic
+      console.log("Calling loadQuizForTopic with topic ID:", topic._id);
+      loadQuizForTopic(topic._id);
+    },
+    [
+      activeCourseEnrollmentAt,
+      completedTopicIds,
+      isDemo,
+      loadQuizForTopic,
+      scrollContentToTop,
+      selectedChapter?._id,
+      splitContentIntoPages,
+      storeLastSelection,
+      visibleTopics,
+    ]
+  );
 
   // Handle case study selection
   const handleCaseStudySelect = (caseStudy: CaseStudy) => {
@@ -1003,9 +1122,9 @@ export default function DigitalHubClient({
 
       if (availableTopics.length > 0) {
         const completedIds = chapter.completedTopicIds || [];
-        const storedTopic =
-          preferredTopicId &&
-          availableTopics.find((topic) => topic._id === preferredTopicId);
+        const storedTopic = preferredTopicId
+          ? availableTopics.find((topic) => topic._id === preferredTopicId)
+          : null;
         const storedTopicIndex = storedTopic
           ? availableTopics.findIndex((topic) => topic._id === storedTopic._id)
           : -1;
@@ -1014,17 +1133,19 @@ export default function DigitalHubClient({
             ? true
             : storedTopicIndex > 0 &&
               completedIds.includes(availableTopics[storedTopicIndex - 1]?._id);
-        const storedTopicPublished = storedTopic
-          ? isTopicPublished(storedTopic)
-          : false;
-        const fallbackTopic = getFirstUnlockedTopic(
+        const storedTopicBatchLocked = isTopicLockedForBatch(
+          storedTopic,
+          activeCourseEnrollmentAt
+        );
+        const fallbackTopic = getFirstAccessibleTopic(
           { ...chapter, topics: availableTopics },
-          completedIds
+          completedIds,
+          activeCourseEnrollmentAt
         );
         const firstTopic =
-          storedTopic && storedTopicUnlocked && storedTopicPublished
+          storedTopic && storedTopicUnlocked && !storedTopicBatchLocked
             ? storedTopic
-            : fallbackTopic || availableTopics[0];
+            : fallbackTopic;
         setSelectedTopic(firstTopic);
         if (firstTopic?._id) {
           storeLastSelection(chapter._id, firstTopic._id);
@@ -1034,15 +1155,46 @@ export default function DigitalHubClient({
         if (firstTopic?.content) {
           try {
             const decodedContent = atob(firstTopic.content);
-            setTopicContent(decodedContent);
+            if (isDemo) {
+              const { pages, totalPages } = splitContentIntoPages(
+                decodedContent,
+                1
+              );
+              setTotalPages(totalPages);
+              setCurrentPage(1);
+              setTopicContent(pages[0] || "Content not available");
+              setShowDemoLimit(totalPages > 0);
+            } else {
+              setTopicContent(decodedContent);
+              setTotalPages(1);
+              setCurrentPage(1);
+              setShowDemoLimit(false);
+            }
           } catch (error) {
             console.error("Error decoding topic content:", error);
             setTopicContent(firstTopic.content || "Content not available");
+            setTotalPages(1);
+            setCurrentPage(1);
+            setShowDemoLimit(false);
           }
+        } else {
+          setTopicContent(
+            "This chapter is locked for this batch until the cutoff is updated."
+          );
+          setTotalPages(1);
+          setCurrentPage(1);
+          setShowDemoLimit(false);
         }
 
         if (firstTopic?._id) {
           loadQuizForTopic(firstTopic._id);
+        } else {
+          setQuizData(null);
+          setQuizLoading(false);
+          setSelectedAnswers({});
+          setQuizSubmitted(false);
+          setShowQuizResults(false);
+          setQuizRewardSummary(null);
         }
       } else {
         setIsIntroVideoModalOpen(false);
@@ -1055,11 +1207,13 @@ export default function DigitalHubClient({
       buildChapterPath,
       fetchAssignments,
       fetchCaseStudies,
+      activeCourseEnrollmentAt,
       isDemo,
       loadQuizForTopic,
       router,
       scrollContentToTop,
       storeLastSelection,
+      splitContentIntoPages,
     ]
   );
 
@@ -1072,13 +1226,14 @@ export default function DigitalHubClient({
         return;
       }
 
-      const firstTopic = getFirstUnlockedTopic(
+      const firstTopic = getFirstAccessibleTopic(
         chapter,
-        chapter.completedTopicIds || []
+        chapter.completedTopicIds || [],
+        activeCourseEnrollmentAt
       );
       selectChapterContent(chapter, "push", firstTopic?._id);
     },
-    [selectChapterContent]
+    [activeCourseEnrollmentAt, selectChapterContent]
   );
 
   const markProgressItemComplete = useCallback(
@@ -1140,7 +1295,11 @@ export default function DigitalHubClient({
             nextTopicCandidate &&
             updatedCompletedTopicIds.includes(itemId)
           ) {
-            handleTopicSelect(nextTopicCandidate);
+            if (!isTopicLockedForBatch(nextTopicCandidate, activeCourseEnrollmentAt)) {
+              handleTopicSelect(nextTopicCandidate, {
+                completedTopicIds: updatedCompletedTopicIds,
+              });
+            }
           } else if (
             refreshedChapter?.isCompleted &&
             !selectedChapter.isCompleted
@@ -1184,6 +1343,7 @@ export default function DigitalHubClient({
       selectedChapter,
       selectedTopic?._id,
       selectChapterContent,
+      activeCourseEnrollmentAt,
       studentId,
     ]
   );
@@ -1393,8 +1553,16 @@ export default function DigitalHubClient({
     const fetchCourseData = async () => {
       const chapterCourseIdentifier = resolvedCourseId || effectiveCourseSlugOrId;
 
-      if (!chapterCourseIdentifier || (!isDemo && !authResolved)) {
-        setLoading(false);
+      if (
+        !chapterCourseIdentifier ||
+        (!isDemo && !authResolved) ||
+        (!isDemo && studentId && !studentCourseBookingsLoaded)
+      ) {
+        if (!chapterCourseIdentifier || (!isDemo && !authResolved)) {
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
         return;
       }
 
@@ -1493,6 +1661,7 @@ export default function DigitalHubClient({
     isDemo,
     API_BASE,
     studentId,
+    studentCourseBookingsLoaded,
     applyProgressSummary,
     loadLastSelection,
     selectChapterContent,
@@ -1584,6 +1753,48 @@ export default function DigitalHubClient({
 
     fetchStudentContext();
   }, [API_BASE, fetchStudentCoins]);
+
+  useEffect(() => {
+    if (!authResolved) return;
+
+    if (isDemo || !studentId) {
+      setStudentCourseBookings([]);
+      setStudentCourseBookingsLoaded(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchStudentCourseBookings = async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE}/v1/course-bookings/student`,
+          {
+            withCredentials: true,
+          }
+        );
+        if (cancelled) return;
+        setStudentCourseBookings(
+          Array.isArray(response.data?.bookings) ? response.data.bookings : []
+        );
+      } catch {
+        if (!cancelled) {
+          setStudentCourseBookings([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setStudentCourseBookingsLoaded(true);
+        }
+      }
+    };
+
+    setStudentCourseBookingsLoaded(false);
+    fetchStudentCourseBookings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE, authResolved, isDemo, studentId]);
 
   useEffect(() => {
     if (!studentId || typeof window === "undefined") return undefined;
@@ -2603,8 +2814,11 @@ export default function DigitalHubClient({
                           !completedTopicIds.includes(
                             visibleTopics[index - 1]._id
                           );
-                        const isScheduleLocked = !isTopicPublished(topic);
-                        const isLocked = isSequenceLocked || isScheduleLocked;
+                        const isBatchLocked = isTopicLockedForBatch(
+                          topic,
+                          activeCourseEnrollmentAt
+                        );
+                        const isLocked = isSequenceLocked || isBatchLocked;
                         const scheduleLabel = formatTopicSchedule(topic.publishAt);
 
                         return (
@@ -2613,8 +2827,8 @@ export default function DigitalHubClient({
                             onClick={() => {
                               if (isLocked) {
                                 setToastMessage(
-                                  isScheduleLocked
-                                    ? `This topic is locked until ${scheduleLabel || "its scheduled time"}.`
+                                  isBatchLocked
+                                    ? "Locked for this batch."
                                     : "Complete the previous topic to unlock this one."
                                 );
                                 setShowToast(true);
@@ -2652,9 +2866,9 @@ export default function DigitalHubClient({
                                 <div className="font-medium">{topic.title}</div>
                                 {scheduleLabel ? (
                                   <div className="mt-1 text-xs text-slate-500">
-                                    {isScheduleLocked
-                                      ? `Locked until ${scheduleLabel}`
-                                      : `Scheduled: ${scheduleLabel}`}
+                                    {isBatchLocked
+                                      ? "Locked for this batch"
+                                      : `Cutoff: ${scheduleLabel}`}
                                   </div>
                                 ) : null}
                               </div>
@@ -2839,15 +3053,15 @@ export default function DigitalHubClient({
                     {selectedTopic.publishAt ? (
                       <span
                         className={`ml-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-                          isTopicPublished(selectedTopic)
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700"
+                          isSelectedTopicLockedForBatch
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-emerald-100 text-emerald-700"
                         }`}
                       >
                         <Lock className="h-3.5 w-3.5" />
-                        {isTopicPublished(selectedTopic)
-                          ? `Scheduled ${formatTopicSchedule(selectedTopic.publishAt)}`
-                          : `Locked until ${formatTopicSchedule(selectedTopic.publishAt)}`}
+                        {isSelectedTopicLockedForBatch
+                          ? "Locked for this batch"
+                          : `Cutoff ${formatTopicSchedule(selectedTopic.publishAt)}`}
                       </span>
                     ) : null}
                     {isDemo && (
@@ -2874,7 +3088,7 @@ export default function DigitalHubClient({
                         Chapter topics {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
-                      {selectedTopicIntroVideo && !isSelectedTopicScheduled ? (
+                      {selectedTopicIntroVideo && !isSelectedTopicLockedForBatch ? (
                         <button
                           type="button"
                           onClick={() => setIsIntroVideoModalOpen(true)}
@@ -2887,7 +3101,7 @@ export default function DigitalHubClient({
                     </div>
                   ) : null}
 
-                  {isSelectedTopicScheduled ? (
+                  {isSelectedTopicLockedForBatch ? (
                     <div
                       className={`mb-6 rounded-2xl border px-5 py-4 ${
                         isDarkMode
@@ -2901,11 +3115,10 @@ export default function DigitalHubClient({
                         </div>
                         <div>
                           <div className="font-semibold">
-                            This topic is locked until{" "}
-                            {formatTopicSchedule(selectedTopic.publishAt)}
+                            This topic is locked for this batch.
                           </div>
                           <div className="mt-1 text-sm opacity-90">
-                            It will appear here automatically when the schedule starts.
+                            Update the cutoff date and time in admin to unlock it for this batch.
                           </div>
                         </div>
                       </div>
@@ -2953,7 +3166,7 @@ export default function DigitalHubClient({
                       isDarkMode ? "topic-content-dark" : "topic-content-light"
                     }`}
                   >
-                    {isSelectedTopicScheduled ? null : (
+                    {isSelectedTopicLockedForBatch ? null : (
                       <div
                         dangerouslySetInnerHTML={{
                           __html: topicContent,
@@ -2962,7 +3175,7 @@ export default function DigitalHubClient({
                     )}
 
                     {/* Demo Mode Controls */}
-                    {isDemo && !isSelectedTopicScheduled && (
+                    {isDemo && !isSelectedTopicLockedForBatch && (
                       <div className="mt-8">
                         {/* Pagination Controls for Multi-page Content */}
                         {totalPages > 1 && (
@@ -3047,13 +3260,13 @@ export default function DigitalHubClient({
                     )}
 
                     {/* Quiz Questions - Directly in main content */}
-                    {!isSelectedTopicScheduled && quizLoading ? (
+                    {!isSelectedTopicLockedForBatch && quizLoading ? (
                       <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="text-center text-gray-600">
                           Loading questions...
                         </div>
                       </div>
-                    ) : !isSelectedTopicScheduled &&
+                    ) : !isSelectedTopicLockedForBatch &&
                       quizData &&
                       quizData.questions &&
                       quizData.questions.length > 0 ? (
@@ -3183,16 +3396,22 @@ export default function DigitalHubClient({
                       </div>
                     )}
 
-                    {!isSelectedTopicScheduled && (previousTopic || nextTopic) && (
+                    {!isSelectedTopicLockedForBatch &&
+                      (previousTopic || nextTopic) && (
                       <div className="mt-8 flex items-center justify-between gap-4">
                         <div>
                           {previousTopic ? (
                             <button
                               type="button"
                               onClick={() => {
-                                if (!isTopicPublished(previousTopic)) {
+                                if (
+                                  isTopicLockedForBatch(
+                                    previousTopic,
+                                    activeCourseEnrollmentAt
+                                  )
+                                ) {
                                   setToastMessage(
-                                    "This topic is locked until its scheduled time."
+                                    "Locked for this batch."
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
@@ -3217,9 +3436,14 @@ export default function DigitalHubClient({
                             <button
                               type="button"
                               onClick={() => {
-                                if (!isTopicPublished(nextTopic)) {
+                                if (
+                                  isTopicLockedForBatch(
+                                    nextTopic,
+                                    activeCourseEnrollmentAt
+                                  )
+                                ) {
                                   setToastMessage(
-                                    "This topic is locked until its scheduled time."
+                                    "Locked for this batch."
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
@@ -3781,6 +4005,23 @@ export default function DigitalHubClient({
                     )}
                   </div>
                 </>
+              ) : selectedChapter ? (
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-full bg-amber-400/20 p-2">
+                      <Lock className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-semibold">
+                        Locked for this batch
+                      </h4>
+                      <p className="mt-1 text-sm text-amber-800">
+                        No accessible topic is available yet for this chapter.
+                        Please wait for the cutoff to be updated by admin.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="text-center py-12">
                   <div className="text-lg text-gray-600">
