@@ -49,20 +49,10 @@ const EmailLogSchema = new mongoose.Schema({
     enum: ['pending', 'sending', 'completed', 'failed'],
     default: 'pending'
   },
+  // Keep log payload flexible to avoid blocking successful sends
+  // when the result shape varies across routes/providers.
   results: [{
-    email: String,
-    name: String,
-    type: String,
-    status: {
-      type: String,
-      enum: ['success', 'failed']
-    },
-    messageId: String,
-    error: String,
-    sentAt: {
-      type: Date,
-      default: Date.now
-    }
+    type: mongoose.Schema.Types.Mixed
   }],
   startedAt: {
     type: Date,

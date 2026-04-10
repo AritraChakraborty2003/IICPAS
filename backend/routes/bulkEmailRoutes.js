@@ -16,6 +16,10 @@ const router = express.Router();
 const createTransporter = () =>
   nodemailer.createTransport({
     ...emailConfig,
+    host: process.env.EMAIL_HOST || "smtp.gmail.com",
+    port: Number(process.env.EMAIL_PORT || 587),
+    secure: String(process.env.EMAIL_SECURE || "false") === "true",
+    family: 4,
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
