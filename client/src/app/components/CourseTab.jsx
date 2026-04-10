@@ -202,16 +202,12 @@ export default function CourseTab() {
             (course) => !purchasedCourseIds.has(course._id)
           );
 
-          // Set only purchased courses
+          setPurchasedCourses(purchasedCoursesData);
           setCourses(purchasedCoursesData);
+
           if (purchasedCoursesData.length > 0) {
             setSelectedCourse(purchasedCoursesData[0]);
             setLastAccessedCourse(purchasedCoursesData[0]);
-          } else {
-            setCourses([]);
-          }
-            setSelectedCourse(combinedCourses[0]);
-            setLastAccessedCourse(combinedCourses[0]);
           } else {
             showDemoData();
           }
