@@ -13,7 +13,13 @@ import NewsletterSubscription from "../models/NewsletterSubscription.js";
 
 const router = express.Router();
 
-const createTransporter = () => nodemailer.createTransport(emailConfig);
+const createTransporter = () =>
+  nodemailer.createTransport({
+    ...emailConfig,
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+  });
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
 
@@ -113,7 +119,6 @@ const sendEmail = async (to, subject, html, text = "") => {
   }
 
   const transporter = createTransporter();
-  await transporter.verify();
   const info = await transporter.sendMail({
     from: {
       name: "IICPA Institute",

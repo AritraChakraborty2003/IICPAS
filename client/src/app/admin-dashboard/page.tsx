@@ -533,7 +533,10 @@ function AdminDashboardContent() {
     }
 
     setTestEmailSending(true);
+    let timeoutId: number | undefined;
     try {
+      const controller = new AbortController();
+      timeoutId = window.setTimeout(() => controller.abort(), 20000);
       const response = await fetch(`${getApiBase()}/bulk-email/test-send-to`, {
         method: "POST",
         headers: {
@@ -541,6 +544,7 @@ function AdminDashboardContent() {
           Authorization: `Bearer ${token}`,
         },
         credentials: "include",
+        signal: controller.signal,
         body: JSON.stringify({
           toEmail: recipient,
           subject: "Sidebar Test Email",
@@ -560,9 +564,14 @@ function AdminDashboardContent() {
       setTestEmailRecipient("");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to send test email";
+        error instanceof DOMException && error.name === "AbortError"
+          ? "Request timed out after 20s. Please check mail server/network."
+          : error instanceof Error
+            ? error.message
+            : "Failed to send test email";
       toast.error(message);
     } finally {
+      if (timeoutId) window.clearTimeout(timeoutId);
       setTestEmailSending(false);
     }
   };
