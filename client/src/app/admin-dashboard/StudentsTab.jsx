@@ -1969,7 +1969,8 @@ function StudentProfileManagement() {
 export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("add"); // "add", "list", "access", or "profile"
+  const [activeTab, setActiveTab] = useState("add"); // "add", "list", "details", "access", or "profile"
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
 
   useEffect(() => {
     if (activeTab === "list" || activeTab === "access") {
@@ -1998,6 +1999,11 @@ export default function StudentsTab() {
       .finally(() => setLoading(false));
   };
 
+  const handleViewStudent = (student) => {
+    setSelectedStudentId(student?._id || null);
+    setActiveTab("details");
+  };
+
   return (
     <div className="w-full px-4 py-6">
       {/* Header Section */}
@@ -2022,7 +2028,7 @@ export default function StudentsTab() {
         <Button
           onClick={() => setActiveTab("list")}
           className={`flex items-center gap-2 px-6 py-3 ${
-            activeTab === "list"
+            activeTab === "list" || activeTab === "details"
               ? "bg-indigo-500 text-white shadow-lg"
               : "bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50"
           }`}
@@ -2072,8 +2078,20 @@ export default function StudentsTab() {
                 <Loader2 className="animate-spin text-indigo-500" size={36} />
               </motion.div>
             ) : (
-              <StudentsTable key="studentstable" students={students} onStudentUpdated={handleStudentAdded} />
+              <StudentsTable
+                key="studentstable"
+                students={students}
+                onStudentUpdated={handleStudentAdded}
+                onViewStudent={handleViewStudent}
+              />
             ))}
+          {activeTab === "details" && selectedStudentId && (
+            <StudentDetailsView
+              key="studentdetailsview"
+              studentId={selectedStudentId}
+              onBack={() => setActiveTab("list")}
+            />
+          )}
           {activeTab === "access" &&
             (loading ? (
               <motion.div
