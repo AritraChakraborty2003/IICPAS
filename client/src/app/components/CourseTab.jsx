@@ -1036,7 +1036,7 @@ export default function CourseTab() {
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-1 xl:min-w-[160px]">
+          <div className="grid gap-3 sm:grid-cols-1 xl:min-w-[190px]">
             <div className="rounded-2xl border border-blue-100 bg-white/90 px-4 py-3 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
                 Enrolled
@@ -1045,6 +1045,13 @@ export default function CourseTab() {
                 {purchasedCourses.length}
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => router.push("/course")}
+              className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-blue-700 hover:to-indigo-700"
+            >
+              View All Courses
+            </button>
           </div>
         </div>
       </div>
