@@ -74,6 +74,11 @@ const ensureAuthorizedStudent = (req, res) => {
   return true;
 };
 
+const objectIdEquals = (left, right) => {
+  if (!left || !right) return false;
+  return String(left) === String(right);
+};
+
 const sanitizeStudentResponse = (student) => {
   const payload = student?.toObject ? student.toObject() : { ...student };
   delete payload.password;
@@ -393,6 +398,49 @@ router.get("/isstudent", async (req, res) => {
       "-password -otp -otpExpiry"
     );
     if (!student) return res.status(404).json({ student: null });
+
+    // Self-heal: if any single-course booking is fully paid, ensure course enrollment exists.
+    const fullyPaidBookings = await CourseBooking.find({
+      studentId: student._id,
+      itemType: "single_course",
+      status: "fully_paid",
+      remainingAmount: { $lte: 0 },
+      courseId: { $ne: null },
+    }).select("courseId sessionType");
+
+    let enrollmentChanged = false;
+    fullyPaidBookings.forEach((booking) => {
+      if (!booking?.courseId) return;
+
+      if (!student.course.some((id) => objectIdEquals(id, booking.courseId))) {
+        student.course.push(booking.courseId);
+        enrollmentChanged = true;
+      }
+
+      if (booking.sessionType === "live") {
+        if (
+          !student.enrolledLiveSessions.some((id) =>
+            objectIdEquals(id, booking.courseId)
+          )
+        ) {
+          student.enrolledLiveSessions.push(booking.courseId);
+          enrollmentChanged = true;
+        }
+      } else {
+        if (
+          !student.enrolledRecordedSessions.some((id) =>
+            objectIdEquals(id, booking.courseId)
+          )
+        ) {
+          student.enrolledRecordedSessions.push(booking.courseId);
+          enrollmentChanged = true;
+        }
+      }
+    });
+
+    if (enrollmentChanged) {
+      await student.save();
+    }
 
     res.json({
       student: {

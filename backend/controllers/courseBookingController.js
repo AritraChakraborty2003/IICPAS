@@ -112,6 +112,57 @@ const getStudentFromCookie = async (req) => {
   return Student.findById(studentId).select("name email");
 };
 
+const objectIdEquals = (left, right) => {
+  if (!left || !right) return false;
+  return String(left) === String(right);
+};
+
+const syncStudentEnrollmentFromBooking = async (booking) => {
+  if (!booking) return;
+  if (booking.itemType !== "single_course") return;
+  if (!booking.courseId) return;
+
+  const isFullyPaid =
+    String(booking.status) === "fully_paid" ||
+    Number(booking.remainingAmount || 0) <= 0;
+  if (!isFullyPaid) return;
+
+  const student = await Student.findById(booking.studentId).select(
+    "course enrolledRecordedSessions enrolledLiveSessions"
+  );
+  if (!student) return;
+
+  let changed = false;
+  if (!student.course.some((id) => objectIdEquals(id, booking.courseId))) {
+    student.course.push(booking.courseId);
+    changed = true;
+  }
+
+  if (booking.sessionType === "live") {
+    if (
+      !student.enrolledLiveSessions.some((id) =>
+        objectIdEquals(id, booking.courseId)
+      )
+    ) {
+      student.enrolledLiveSessions.push(booking.courseId);
+      changed = true;
+    }
+  } else {
+    if (
+      !student.enrolledRecordedSessions.some((id) =>
+        objectIdEquals(id, booking.courseId)
+      )
+    ) {
+      student.enrolledRecordedSessions.push(booking.courseId);
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    await student.save();
+  }
+};
+
 export const createCourseBookingOrder = async (req, res) => {
   try {
     if (!ensureRazorpayConfigured(res)) return;
@@ -411,6 +462,7 @@ export const verifyCourseBookingPayment = async (req, res) => {
       if (
         booking.payments.some((entry) => entry.razorpayPaymentId === razorpayPaymentId)
       ) {
+        await syncStudentEnrollmentFromBooking(booking);
         return res.status(200).json({
           success: true,
           message: "Payment already verified",
@@ -432,6 +484,7 @@ export const verifyCourseBookingPayment = async (req, res) => {
       });
       normalizeStatus(booking);
       await booking.save();
+      await syncStudentEnrollmentFromBooking(booking);
 
       const populatedBooking = await CourseBooking.findById(booking._id).populate(
         "studentId",
@@ -518,6 +571,7 @@ export const verifyCourseBookingPayment = async (req, res) => {
       booking &&
       booking.payments.some((entry) => entry.razorpayPaymentId === razorpayPaymentId)
     ) {
+      await syncStudentEnrollmentFromBooking(booking);
       return res.status(200).json({
         success: true,
         message: "Payment already verified",
@@ -562,6 +616,7 @@ export const verifyCourseBookingPayment = async (req, res) => {
     });
     normalizeStatus(booking);
     await booking.save();
+    await syncStudentEnrollmentFromBooking(booking);
 
     const populatedBooking = await CourseBooking.findById(booking._id).populate(
       "studentId",
