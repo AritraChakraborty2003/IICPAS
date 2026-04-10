@@ -193,14 +193,27 @@ export default function CertificateTab() {
                           )}
                         </div>
 
-                        {/* Action Button */}
-                        <div className="flex justify-end w-full md:w-auto">
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-3 justify-end w-full md:w-auto">
                           <button
                             onClick={() => setSelectedCertificate({ course, isCompleted, progress })}
-                            className="flex items-center justify-center gap-2 px-6 py-2.5 bg-gray-800 text-gray-200 rounded-xl font-bold text-sm hover:bg-blue-600 hover:text-white transition-all active:scale-95 border border-white/5"
+                            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-800 text-gray-200 rounded-xl font-bold text-sm hover:bg-blue-600 hover:text-white transition-all active:scale-95 border border-white/5"
                           >
                             <FaEye className="text-xs" />
                             View
+                          </button>
+                          
+                          <button
+                            onClick={() => isCompleted && handleDownload(course.title)}
+                            disabled={!isCompleted}
+                            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 border ${
+                              isCompleted 
+                                ? "bg-blue-600/10 text-blue-400 border-blue-500/20 hover:bg-blue-600 hover:text-white" 
+                                : "bg-gray-800/30 text-gray-600 border-white/5 cursor-not-allowed opacity-50"
+                            }`}
+                          >
+                            <FaDownload className="text-xs" />
+                            Download
                           </button>
                         </div>
                       </div>
@@ -230,15 +243,19 @@ export default function CertificateTab() {
               </div>
               
               <div className="flex items-center gap-3">
-                {selectedCertificate.isCompleted && (
-                  <button
-                    onClick={() => handleDownload(selectedCertificate.course.title)}
-                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-500 transition-all shadow-lg shadow-blue-900/40 active:scale-95"
-                  >
-                    <FaDownload />
-                    Download
-                  </button>
-                )}
+                <button
+                  onClick={() => selectedCertificate.isCompleted && handleDownload(selectedCertificate.course.title)}
+                  disabled={!selectedCertificate.isCompleted}
+                  className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 border ${
+                    selectedCertificate.isCompleted 
+                      ? "bg-blue-600 text-white hover:bg-blue-500 shadow-blue-900/40" 
+                      : "bg-gray-800/50 text-gray-500 border-white/5 cursor-not-allowed opacity-50"
+                  }`}
+                >
+                  <FaDownload />
+                  Download
+                </button>
+
                 <button 
                   onClick={() => setSelectedCertificate(null)}
                   className="hidden sm:flex items-center justify-center gap-2 px-5 py-2.5 bg-white/10 text-white rounded-xl font-bold text-sm hover:bg-white/20 transition-all active:scale-95 border border-white/10"
@@ -256,7 +273,7 @@ export default function CertificateTab() {
                     src="/certificate.jpeg"
                     alt="Full Certificate"
                     className={`w-full h-full object-contain transition-all duration-1000 ${
-                      !selectedCertificate.isCompleted ? "blur-md grayscale opacity-50 scale-105" : ""
+                      !selectedCertificate.isCompleted ? "blur-[3px] grayscale opacity-60 scale-105" : ""
                     }`}
                   />
                   
