@@ -7,6 +7,7 @@ import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
 import Coupon from "../models/Coupon.js";
 import Booking from "../models/Booking.js";
+import CourseBooking from "../models/CourseBooking.js";
 import LiveSession from "../models/LiveSession/LiveSession.js";
 import { awardCoins, getCoinSettings } from "../services/coinService.js";
 import { generateLiveSessionReceiptPDF } from "../utils/pdfLiveSessionReceiptGenerator.js";
@@ -63,6 +64,7 @@ const buildRazorpayReceipt = (studentId) => {
 
 const toPaise = (amount) => Math.max(0, Math.round(Number(amount || 0) * 100));
 const fromPaise = (amountPaise) => Number((amountPaise / 100).toFixed(2));
+const activeCourseBookingStatuses = ["prebooked", "partially_paid", "fully_paid"];
 
 const syncStudentEnrollment = async (transaction) => {
   const student = await Student.findById(transaction.studentId);
@@ -673,6 +675,20 @@ router.post("/create-order", async (req, res) => {
       const uniqueCourseIds = [...new Set(normalizedCartItems.map((item) => String(item.courseId)))];
       const courses = await Course.find({ _id: { $in: uniqueCourseIds } });
       const courseMap = new Map(courses.map((course) => [String(course._id), course]));
+      const existingCourseBookings = await CourseBooking.find({
+        studentId,
+        itemType: "single_course",
+        status: { $in: activeCourseBookingStatuses },
+        paymentStatus: { $ne: "failed" },
+        remainingAmount: { $gt: 0 },
+        courseId: { $in: uniqueCourseIds },
+      }).select("courseId sessionType remainingAmount");
+      const existingBookingMap = new Map(
+        existingCourseBookings.map((booking) => [
+          `${String(booking.courseId)}:${booking.sessionType || "recorded"}`,
+          booking,
+        ])
+      );
 
       const resolvedItems = [];
       for (const item of normalizedCartItems) {
@@ -691,6 +707,22 @@ router.post("/create-order", async (req, res) => {
           return res.status(409).json({
             success: false,
             message: `${course.title} is already purchased`,
+          });
+        }
+
+        const bookingKey = `${String(item.courseId)}:${item.sessionType}`;
+        const existingBooking = existingBookingMap.get(bookingKey);
+        if (existingBooking) {
+          return res.status(409).json({
+            success: false,
+            code: "BOOKING_BALANCE_PENDING",
+            message:
+              "This course already has an active booking. Please go to your dashboard, open the Bookings page, and make the remaining balance payment. Purchase is not allowed from checkout.",
+            data: {
+              courseId: item.courseId,
+              sessionType: item.sessionType,
+              remainingAmount: Number(existingBooking.remainingAmount || 0),
+            },
           });
         }
 
@@ -911,6 +943,30 @@ router.post("/create-order", async (req, res) => {
       return res.status(409).json({
         success: false,
         message: "Course already purchased",
+      });
+    }
+
+    const existingBooking = await CourseBooking.findOne({
+      studentId,
+      itemType: "single_course",
+      courseId,
+      sessionType,
+      status: { $in: activeCourseBookingStatuses },
+      paymentStatus: { $ne: "failed" },
+      remainingAmount: { $gt: 0 },
+    }).select("remainingAmount");
+
+    if (existingBooking) {
+      return res.status(409).json({
+        success: false,
+        code: "BOOKING_BALANCE_PENDING",
+        message:
+          "This course already has an active booking. Please go to your dashboard, open the Bookings page, and make the remaining balance payment. Purchase is not allowed from checkout.",
+        data: {
+          courseId,
+          sessionType,
+          remainingAmount: Number(existingBooking.remainingAmount || 0),
+        },
       });
     }
 
