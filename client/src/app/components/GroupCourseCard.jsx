@@ -64,7 +64,7 @@ export default function GroupCourseCard({
       onClick={handleClick}
     >
       {/* Banner Image Section */}
-      <div className="relative h-48 w-full rounded-t-xl overflow-hidden">
+      <div className="relative h-48 w-full rounded-t-xl overflow-hidden bg-white">
         {imageSrc ? (
           <Image
             src={imageSrc}
@@ -73,7 +73,7 @@ export default function GroupCourseCard({
             } Group Package`}
             fill
             unoptimized
-            className="object-cover transition-transform duration-300 ease-in-out group-hover:scale-105"
+            className="object-contain transition-transform duration-300 ease-in-out group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 33vw"
             priority={index < 2}
             onError={(e) => {

@@ -886,14 +886,14 @@ export default function BuyCoursesTab() {
                       key={course._id || index}
                       className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                     >
-                      <div className="relative h-44 w-full overflow-hidden bg-slate-100">
+                      <div className="relative h-44 w-full overflow-hidden bg-white">
                         {imageSrc ? (
                           <Image
                             src={imageSrc}
                             alt={course.title || "Course"}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                            className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                            className="object-contain transition duration-300 group-hover:scale-[1.03]"
                             priority={index < 2}
                           />
                         ) : (
