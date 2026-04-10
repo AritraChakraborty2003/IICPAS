@@ -35,11 +35,35 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+const resolveRenderMeta = (booking, payment, options = {}) => {
+  const mode = options?.mode === "course_purchase" ? "course_purchase" : "booking";
+  const isCoursePurchase = mode === "course_purchase";
+  const paymentType = isCoursePurchase
+    ? "Course Purchase"
+    : payment?.paymentType === "balance"
+    ? "Balance Payment"
+    : "Booking Payment";
+
+  return {
+    mode,
+    isCoursePurchase,
+    paymentType,
+    headerTitle: isCoursePurchase ? "Course Purchase Invoice" : "Booking Invoice",
+    eyebrow: isCoursePurchase ? "Course Purchase" : "Enrollment Invoice",
+    statusLabel: isCoursePurchase
+      ? "COURSE PURCHASE"
+      : paymentType === "Balance Payment"
+      ? "BALANCE PAYMENT"
+      : "BOOKING PAYMENT",
+  };
+};
+
 const generateFallbackInvoicePDF = ({
   booking,
   payment,
   invoiceNumber,
   paymentType,
+  renderMeta,
   itemTypeLabel,
   companySettings,
   companyAddress,
@@ -49,7 +73,7 @@ const generateFallbackInvoicePDF = ({
       size: "A4",
       margin: 40,
       info: {
-        Title: `Booking Invoice ${invoiceNumber}`,
+        Title: `${renderMeta?.headerTitle || "Invoice"} ${invoiceNumber}`,
         Author: companySettings?.companyName || "IICPA Institute",
       },
     });
@@ -92,7 +116,11 @@ const generateFallbackInvoicePDF = ({
       left + 14,
       30
     );
-    doc.font("Helvetica").fontSize(9).fillColor(colors.muted).text("Booking Invoice", left + 14, 50);
+    doc
+      .font("Helvetica")
+      .fontSize(9)
+      .fillColor(colors.muted)
+      .text(renderMeta?.headerTitle || "Invoice", left + 14, 50);
 
     const badgeWidth = 138;
     doc.roundedRect(right - badgeWidth - 14, 30, badgeWidth, 28, 8).fill("#f8fafc");
@@ -180,42 +208,74 @@ const generateFallbackInvoicePDF = ({
       align: "center",
     });
 
-    // Booking Summary
+    // Summary / Address
     y += 134;
     const summaryCardHeight = 126;
     drawCard(y, summaryCardHeight);
-    doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("BOOKING SUMMARY", left + 16, y + 12);
-    const summaryLeft = [
-      ["Item Type", itemTypeLabel],
-      ["Payment Type", paymentType],
-      ["Payment Date", formatDateTime(payment?.paidAt || new Date())],
-    ];
-    const summaryRight = [
-      ["Razorpay Order ID", shortRef(payment?.razorpayOrderId || "N/A")],
-      ["Razorpay Payment ID", shortRef(payment?.razorpayPaymentId || "N/A")],
-      ["Remaining Balance", formatRupees(booking?.remainingAmount)],
-    ];
-    let summaryLeftY = y + 28;
-    let summaryRightY = y + 28;
-    summaryLeft.forEach(([label, value]) => {
-      summaryLeftY = drawField(left + 16, summaryLeftY, detailColWidth, label, value);
-    });
-    summaryRight.forEach(([label, value]) => {
-      summaryRightY = drawField(detailRightX, summaryRightY, detailColWidth, label, value);
-    });
+    if (renderMeta?.isCoursePurchase) {
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(9.5)
+        .fillColor(colors.muted)
+        .text("ADDRESS DETAILS", left + 16, y + 12);
+      drawField(
+        left + 16,
+        y + 30,
+        detailColWidth,
+        "Billing Address",
+        booking?.billingAddress || "N/A"
+      );
+      drawField(
+        detailRightX,
+        y + 30,
+        detailColWidth,
+        "Shipping Address",
+        booking?.shippingAddress || "N/A"
+      );
+    } else {
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(9.5)
+        .fillColor(colors.muted)
+        .text("BOOKING SUMMARY", left + 16, y + 12);
+      const summaryLeft = [
+        ["Item Type", itemTypeLabel],
+        ["Payment Type", paymentType],
+        ["Payment Date", formatDateTime(payment?.paidAt || new Date())],
+      ];
+      const summaryRight = [
+        ["Razorpay Order ID", shortRef(payment?.razorpayOrderId || "N/A")],
+        ["Razorpay Payment ID", shortRef(payment?.razorpayPaymentId || "N/A")],
+        ["Remaining Balance", formatRupees(booking?.remainingAmount)],
+      ];
+      let summaryLeftY = y + 28;
+      let summaryRightY = y + 28;
+      summaryLeft.forEach(([label, value]) => {
+        summaryLeftY = drawField(left + 16, summaryLeftY, detailColWidth, label, value);
+      });
+      summaryRight.forEach(([label, value]) => {
+        summaryRightY = drawField(detailRightX, summaryRightY, detailColWidth, label, value);
+      });
+    }
 
     // Amounts
     y += summaryCardHeight + 14;
     const amountCardHeight = 148;
     drawCard(y, amountCardHeight, "#ffffff");
     doc.font("Helvetica-Bold").fontSize(9.5).fillColor(colors.muted).text("AMOUNTS", left + 16, y + 12);
-    const amountRows = [
-      ["Base Amount", formatRupees(booking?.baseAmount)],
-      ["Booking Percent", `${Number(booking?.bookingPercent || 0).toFixed(2)}%`],
-      ["Required Booking Amount", formatRupees(booking?.bookingAmount)],
-      [`${paymentType} (Current Transaction)`, formatRupees(payment?.amount || 0)],
-      ["Total Paid", formatRupees(booking?.paidAmount)],
-    ];
+    const amountRows = renderMeta?.isCoursePurchase
+      ? [
+          ["Course Amount", formatRupees(booking?.baseAmount)],
+          ["Amount Paid", formatRupees(payment?.amount || 0)],
+          ["Total Paid", formatRupees(booking?.paidAmount)],
+        ]
+      : [
+          ["Base Amount", formatRupees(booking?.baseAmount)],
+          ["Booking Percent", `${Number(booking?.bookingPercent || 0).toFixed(2)}%`],
+          ["Required Booking Amount", formatRupees(booking?.bookingAmount)],
+          [`${paymentType} (Current Transaction)`, formatRupees(payment?.amount || 0)],
+          ["Total Paid", formatRupees(booking?.paidAmount)],
+        ];
 
     const amountLeftX = left + 16;
     const amountRightX = right - 155;
@@ -249,7 +309,11 @@ const generateFallbackInvoicePDF = ({
     doc.end();
   });
 
-export const generateBookingInvoicePDF = async (booking, payment = null) => {
+export const generateBookingInvoicePDF = async (
+  booking,
+  payment = null,
+  options = {}
+) => {
   let companySettings = null;
   try {
     companySettings = await InvoiceCompanySettings.getSettings();
@@ -263,7 +327,8 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
     .slice(-8)
     .toUpperCase()}`;
   const paymentAmount = Number(payment?.amount || 0);
-  const paymentType = payment?.paymentType === "balance" ? "Balance Payment" : "Booking Payment";
+  const renderMeta = resolveRenderMeta(booking, payment, options);
+  const paymentType = renderMeta.paymentType;
   const itemTypeLabel =
     booking?.itemType === "group_package" ? "Group Package" : "Single Course";
   const companyAddress = [
@@ -291,7 +356,7 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
     <html>
       <head>
         <meta charset="UTF-8" />
-        <title>Booking Invoice</title>
+        <title>${escapeHtml(renderMeta.headerTitle)}</title>
         <style>
           * { box-sizing: border-box; }
           body {
@@ -467,8 +532,10 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
       <body>
         <div class="sheet">
           <div class="header">
-            <div class="eyebrow">Enrollment Invoice</div>
-            <h1>${escapeHtml(companySettings?.companyName || "IICPA Institute")} Booking Invoice</h1>
+            <div class="eyebrow">${escapeHtml(renderMeta.eyebrow)}</div>
+            <h1>${escapeHtml(companySettings?.companyName || "IICPA Institute")} ${escapeHtml(
+    renderMeta.headerTitle
+  )}</h1>
             <div class="badge">
               <small>Invoice No</small>
               <strong>${escapeHtml(invoiceNumber)}</strong>
@@ -489,7 +556,9 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
               </div>
               <div class="card">
                 <div class="section-title">Invoice Details</div>
-                <span class="pill ${paymentType === "Balance Payment" ? "amber" : "green"}">${escapeHtml(paymentType)}</span>
+                <span class="pill ${paymentType === "Balance Payment" ? "amber" : "green"}">${escapeHtml(
+    renderMeta.statusLabel
+  )}</span>
                 <div class="summary">
                   <div class="field">
                     <span class="label">Student</span>
@@ -511,25 +580,66 @@ export const generateBookingInvoicePDF = async (booking, payment = null) => {
               </div>
             </div>
 
-            <div class="card" style="margin-bottom: 10px;">
+            ${
+              renderMeta.isCoursePurchase
+                ? `<div class="card" style="margin-bottom: 10px;">
+              <div class="section-title">Address Details</div>
+              <div class="summary" style="grid-template-columns: 1fr 1fr;">
+                <div class="field"><span class="label">Billing Address</span><div class="value">${escapeHtml(
+                  booking?.billingAddress || "N/A"
+                )}</div></div>
+                <div class="field"><span class="label">Shipping Address</span><div class="value">${escapeHtml(
+                  booking?.shippingAddress || "N/A"
+                )}</div></div>
+              </div>
+            </div>`
+                : `<div class="card" style="margin-bottom: 10px;">
               <div class="section-title">Booking Summary</div>
               <div class="summary">
                 <div class="field"><span class="label">Item Type</span><div class="value">${escapeHtml(itemTypeLabel)}</div></div>
                 <div class="field"><span class="label">Payment Type</span><div class="value">${escapeHtml(paymentType)}</div></div>
-                <div class="field"><span class="label">Payment Date</span><div class="value">${escapeHtml(formatDateTime(payment?.paidAt || new Date()))}</div></div>
-                <div class="field"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(shortRef(payment?.razorpayOrderId || "N/A"))}</div></div>
-                <div class="field"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(shortRef(payment?.razorpayPaymentId || "N/A"))}</div></div>
-                <div class="field"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(formatRupees(booking?.remainingAmount))}</div></div>
+                <div class="field"><span class="label">Payment Date</span><div class="value">${escapeHtml(
+                  formatDateTime(payment?.paidAt || new Date())
+                )}</div></div>
+                <div class="field"><span class="label">Razorpay Order ID</span><div class="value">${escapeHtml(
+                  shortRef(payment?.razorpayOrderId || "N/A")
+                )}</div></div>
+                <div class="field"><span class="label">Razorpay Payment ID</span><div class="value">${escapeHtml(
+                  shortRef(payment?.razorpayPaymentId || "N/A")
+                )}</div></div>
+                <div class="field"><span class="label">Remaining Balance</span><div class="value">${escapeHtml(
+                  formatRupees(booking?.remainingAmount)
+                )}</div></div>
               </div>
-            </div>
+            </div>`
+            }
 
             <div class="amount-card">
               <div class="section-title">Amounts</div>
               <div class="amount-rows">
-                <div class="amount-row"><strong>Base Amount</strong><span>${escapeHtml(formatRupees(booking?.baseAmount))}</span></div>
-                <div class="amount-row"><strong>Booking Percent</strong><span>${escapeHtml(Number(booking?.bookingPercent || 0).toFixed(2))}%</span></div>
-                <div class="amount-row"><strong>Required Booking Amount</strong><span>${escapeHtml(formatRupees(booking?.bookingAmount))}</span></div>
-                <div class="amount-row"><strong>${escapeHtml(paymentType)} (Current Transaction)</strong><span>${escapeHtml(formatRupees(paymentAmount))}</span></div>
+                ${
+                  renderMeta.isCoursePurchase
+                    ? `<div class="amount-row"><strong>Course Amount</strong><span>${escapeHtml(
+                        formatRupees(booking?.baseAmount)
+                      )}</span></div>
+                <div class="amount-row"><strong>Amount Paid</strong><span>${escapeHtml(
+                  formatRupees(paymentAmount)
+                )}</span></div>`
+                    : `<div class="amount-row"><strong>Base Amount</strong><span>${escapeHtml(
+                        formatRupees(booking?.baseAmount)
+                      )}</span></div>
+                <div class="amount-row"><strong>Booking Percent</strong><span>${escapeHtml(
+                  Number(booking?.bookingPercent || 0).toFixed(2)
+                )}%</span></div>
+                <div class="amount-row"><strong>Required Booking Amount</strong><span>${escapeHtml(
+                  formatRupees(booking?.bookingAmount)
+                )}</span></div>
+                <div class="amount-row"><strong>${escapeHtml(
+                  paymentType
+                )} (Current Transaction)</strong><span>${escapeHtml(
+                  formatRupees(paymentAmount)
+                )}</span></div>`
+                }
                 <div class="amount-row"><strong>Total Paid</strong><span style="color:#059669">${escapeHtml(formatRupees(booking?.paidAmount))}</span></div>
               </div>
               <div class="highlight">
