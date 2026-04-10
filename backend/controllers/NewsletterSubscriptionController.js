@@ -282,7 +282,7 @@ export const deleteSubscription = async (req, res) => {
 
 // Email sending utility
 const sendEmail = async (to, subject, html, trackingId = null) => {
-  const transporter = nodemailer.createTransporter({
+  const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: process.env.EMAIL_USER,

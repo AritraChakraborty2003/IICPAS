@@ -1429,7 +1429,7 @@ export default function AddOrEditTopicForm({
                           onClick={() => {
                             if (editor.current) {
                               const videoHtml = `<div style="text-align: center; margin: 2rem 0;">
-                                <video controls controlsList="nodownload" disablePictureInPicture oncontextmenu="return false;" style="max-width: 80%; min-width: 500px; height: auto; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 2px solid #f0f0f0;">
+                                <video controls controlsList="nodownload" disablePictureInPicture oncontextmenu="return false;" style="width: min(100%, 1000px); height: auto; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 2px solid #f0f0f0;">
                                   <source src="${file.cdn_url}" type="video/mp4">
                                   <source src="${file.cdn_url}" type="video/webm">
                                   <source src="${file.cdn_url}" type="video/ogg">
@@ -1522,7 +1522,7 @@ export default function AddOrEditTopicForm({
                         if (editor.current) {
                           // Insert video as embedded player with better formatting
                           const videoHtml = `<div style="text-align: center; margin: 2rem 0;">
-                            <video controls controlsList="nodownload" disablePictureInPicture oncontextmenu="return false;" style="max-width: 80%; min-width: 500px; height: auto; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 2px solid #f0f0f0;">
+                            <video controls controlsList="nodownload" disablePictureInPicture oncontextmenu="return false;" style="width: min(100%, 1000px); height: auto; border-radius: 12px; box-shadow: 0 8px 16px rgba(0,0,0,0.15); border: 2px solid #f0f0f0;">
                               <source src="${url}" type="video/mp4">
                               <source src="${url}" type="video/webm">
                               <source src="${url}" type="video/ogg">

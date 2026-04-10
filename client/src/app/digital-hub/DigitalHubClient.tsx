@@ -3769,7 +3769,7 @@ export default function DigitalHubClient({
                                           onContextMenu={(event) =>
                                             event.preventDefault()
                                           }
-                                          className="w-full max-w-2xl rounded-lg"
+                                          className="w-full max-w-5xl rounded-lg"
                                         >
                                           <source
                                             src={content.videoUrl}

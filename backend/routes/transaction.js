@@ -265,7 +265,7 @@ router.get("/student/my-transactions", adminAuth, async (req, res) => {
 async function sendPaymentNotificationEmail(transaction, status) {
   try {
     // Create transporter (configure with your email service)
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: "gmail", // or your email service
       auth: {
         user: process.env.EMAIL_USER,

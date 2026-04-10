@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import dotenv from "dotenv";
+import "dotenv/config";
 import collegeRoutes from "./routes/collegeRoutes.js";
 import cookieParser from "cookie-parser";
 import companyRoutes from "./routes/CompanyRoutes.js";
@@ -100,7 +100,6 @@ import jobSidebarMarqueeSettingsRoutes from "./routes/jobSidebarMarqueeSettingsR
 import ourPartnersSettingsRoutes from "./routes/ourPartnersSettingsRoutes.js";
 
 //App Configuration
-dotenv.config();
 connectDB();
 
 const app = express();
