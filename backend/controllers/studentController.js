@@ -125,17 +125,34 @@ export const updateStudentStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
-    console.log("Update student status request received for ID:", id, "Status:", status);
+    const normalizedStatus = String(status || "").trim().toLowerCase();
+    const mappedStatus =
+      normalizedStatus === "suspended" ? "inactive" : normalizedStatus;
+
+    console.log(
+      "Update student status request received for ID:",
+      id,
+      "Status:",
+      status,
+      "Mapped:",
+      mappedStatus
+    );
     
     // Validate ObjectId format
     if (!id.match(/^[0-9a-fA-F]{24}$/)) {
       console.log("Invalid ObjectId format:", id);
       return res.status(400).json({ message: "Invalid student ID format" });
     }
+
+    if (!["active", "inactive"].includes(mappedStatus)) {
+      return res.status(400).json({
+        message: "Invalid status. Allowed values: active, inactive",
+      });
+    }
     
     const student = await Student.findByIdAndUpdate(
       id,
-      { status },
+      { status: mappedStatus },
       { new: true }
     );
     
@@ -144,7 +161,12 @@ export const updateStudentStatus = async (req, res) => {
       return res.status(404).json({ message: "Student not found" });
     }
     
-    console.log("Student status updated successfully:", student.name, "New status:", status);
+    console.log(
+      "Student status updated successfully:",
+      student.name,
+      "New status:",
+      student.status
+    );
     res.status(200).json({ 
       message: "Student status updated successfully",
       student: {

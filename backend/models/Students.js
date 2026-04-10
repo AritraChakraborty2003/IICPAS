@@ -8,6 +8,13 @@ const StudentSchema = new mongoose.Schema(
     password: { type: String, required: true },
     image: { type: String }, // profile image path
     mode: { type: String }, // Digital Hub+Virtual or Digital Hub+Center
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "active",
+      lowercase: true,
+      trim: true,
+    },
     location: { type: String },
     center: { type: String },
 

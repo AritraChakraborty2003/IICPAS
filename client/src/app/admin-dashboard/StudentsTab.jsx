@@ -32,6 +32,11 @@ import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
 
 const API_BASE = getApiBase();
+const isStudentSuspended = (student) => {
+  const status = String(student?.status || "").toLowerCase();
+  return status === "inactive" || status === "suspended";
+};
+
 const extractStudents = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.students)) return payload.students;
@@ -478,9 +483,9 @@ function StudentsTable({ students, onStudentUpdated }) {
 
   // Handle suspend student
   const handleSuspendStudent = async (student) => {
-    const isCurrentlySuspended = student.status === "suspended";
+    const isCurrentlySuspended = isStudentSuspended(student);
     const action = isCurrentlySuspended ? "unsuspend" : "suspend";
-    const nextStatus = isCurrentlySuspended ? "active" : "suspended";
+    const nextStatus = isCurrentlySuspended ? "active" : "inactive";
     
     if (window.confirm(`Are you sure you want to ${action} ${student.name}?`)) {
       try {
@@ -695,7 +700,7 @@ function StudentsTable({ students, onStudentUpdated }) {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {(() => {
-                      const isSuspended = student.status === "suspended";
+                      const isSuspended = isStudentSuspended(student);
                       const isUpdating = statusUpdatingId === student._id;
 
                       return (
