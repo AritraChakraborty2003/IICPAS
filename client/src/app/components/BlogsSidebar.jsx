@@ -1,6 +1,29 @@
 "use client";
 
 import { TrendingUp, Users, Calendar, Tag } from "lucide-react";
+import Link from "next/link";
+import { getApiOrigin } from "@/lib/apiBase";
+import { getBlogSlug } from "../../lib/blogSlug";
+
+const API_ORIGIN = getApiOrigin();
+
+const getFallbackImage = (title = "") => {
+  const images = [
+    "/images/accounting.webp",
+    "/images/course.png",
+    "/images/live-class.jpg",
+    "/images/student.png",
+    "/images/university.png",
+    "/images/vr-student.jpg",
+  ];
+  const hash = String(title)
+    .split("")
+    .reduce((acc, ch) => {
+      const next = (acc << 5) - acc + ch.charCodeAt(0);
+      return next & next;
+    }, 0);
+  return images[Math.abs(hash) % images.length];
+};
 
 export default function BlogsSidebar({
   blogs,
