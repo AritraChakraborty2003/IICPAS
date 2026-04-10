@@ -49,7 +49,7 @@ function StudentDashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState("buy-courses"); // Default to Buy Courses for new students
+  const [activeTab, setActiveTab] = useState("courses"); // Default to Courses
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [student, setStudent] = useState(null);
   const [studentCoins, setStudentCoins] = useState(0);
@@ -130,7 +130,6 @@ function StudentDashboardContent() {
       dot: true,
       dotColor: "green",
     },
-    { id: "buy-courses", icon: <FaShoppingCart />, label: "Buy Courses" },
   ];
 
   useEffect(() => {
@@ -143,7 +142,6 @@ function StudentDashboardContent() {
     if (
       tab &&
       [
-        "buy-courses",
         "courses",
         "revision",
         "live",
@@ -276,8 +274,6 @@ function StudentDashboardContent() {
   // Tab rendering with memoization to prevent re-renders
   const renderTabContent = useMemo(() => {
     switch (activeTab) {
-      case "buy-courses":
-        return <BuyCoursesTab />;
       case "courses":
         return <CoursesTab />;
       case "revision":
@@ -310,7 +306,7 @@ function StudentDashboardContent() {
       case "certificates":
         return <CertificatesTab />;
       default:
-        return <BuyCoursesTab />;
+        return <CoursesTab />;
     }
   }, [activeTab, student]);
 
