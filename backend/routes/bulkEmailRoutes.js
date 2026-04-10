@@ -310,8 +310,8 @@ router.post("/test-send", requireAuth, isAdmin, async (req, res) => {
       recipientTypes: ["Test"],
       totalRecipients: 1,
       sentBy: req.user.id,
-      sentByName: req.user.name,
-      sentByEmail: req.user.email,
+      sentByName: req.user.name || req.user.fullName || "Admin",
+      sentByEmail: req.user.email || "admin@iicpa.in",
       status: "pending",
       isTestEmail: true,
     });
@@ -394,8 +394,8 @@ router.post("/test-send-to", requireAuth, isAdmin, async (req, res) => {
       recipientTypes: ["Test"],
       totalRecipients: 1,
       sentBy: req.user.id,
-      sentByName: req.user.name,
-      sentByEmail: req.user.email,
+      sentByName: req.user.name || req.user.fullName || "Admin",
+      sentByEmail: req.user.email || "admin@iicpa.in",
       status: "pending",
       isTestEmail: true,
     });
