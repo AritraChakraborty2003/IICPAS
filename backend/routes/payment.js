@@ -118,7 +118,15 @@ const sendReceiptForApprovedTransaction = async (transactionId) => {
   const { generateReceiptPDF } = await import("../utils/pdfReceiptGenerator.js");
   const { sendReceiptEmail } = await import("../utils/emailService.js");
 
-  const pdfBuffer = await generateReceiptPDF(transaction);
+  let pdfBuffer = null;
+  try {
+    pdfBuffer = await generateReceiptPDF(transaction);
+  } catch (pdfError) {
+    console.error(
+      `PDF generation failed for transaction ${transaction._id}. Sending email without attachment:`,
+      pdfError.message
+    );
+  }
   await sendReceiptEmail(transaction, pdfBuffer);
 
   transaction.receiptSent = true;

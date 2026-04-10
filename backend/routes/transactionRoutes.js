@@ -66,7 +66,15 @@ const sendReceiptForTransaction = async (transactionId) => {
   const { generateReceiptPDF } = await import("../utils/pdfReceiptGenerator.js");
   const { sendReceiptEmail } = await import("../utils/emailService.js");
 
-  const pdfBuffer = await generateReceiptPDF(transaction);
+  let pdfBuffer = null;
+  try {
+    pdfBuffer = await generateReceiptPDF(transaction);
+  } catch (pdfError) {
+    console.error(
+      `PDF generation failed for transaction ${transaction._id}. Sending email without attachment:`,
+      pdfError.message
+    );
+  }
   await sendReceiptEmail(transaction, pdfBuffer);
 
   transaction.receiptSent = true;
@@ -407,7 +415,15 @@ router.post("/admin/send-receipt/:transactionId", async (req, res) => {
 
     // Generate PDF receipt
     console.log("Generating PDF receipt for transaction:", transactionId);
-    const pdfBuffer = await generateReceiptPDF(transaction);
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generateReceiptPDF(transaction);
+    } catch (pdfError) {
+      console.error(
+        `PDF generation failed for transaction ${transactionId}. Sending email without attachment:`,
+        pdfError.message
+      );
+    }
 
     // Send email with PDF attachment
     console.log("Sending receipt email to:", transaction.studentId?.email);

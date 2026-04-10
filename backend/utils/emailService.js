@@ -11,7 +11,7 @@ const createTransporter = () => {
 };
 
 // Send invoice email with PDF attachment
-export const sendReceiptEmail = async (transaction, pdfBuffer) => {
+export const sendReceiptEmail = async (transaction, pdfBuffer = null) => {
   try {
     // Check if email is properly configured
     if (!isEmailConfigured()) {
@@ -43,6 +43,10 @@ export const sendReceiptEmail = async (transaction, pdfBuffer) => {
     if (!studentEmail) {
       throw new Error("Student email not found");
     }
+
+    const hasPdfAttachment = Boolean(
+      pdfBuffer && (Buffer.isBuffer(pdfBuffer) || pdfBuffer?.length)
+    );
 
     const mailOptions = {
       from: {
@@ -78,7 +82,13 @@ export const sendReceiptEmail = async (transaction, pdfBuffer) => {
               </p>
             </div>
             
-            <p>Your official invoice is attached to this email as a PDF document.</p>
+            <p>
+              ${
+                hasPdfAttachment
+                  ? "Your official invoice is attached to this email as a PDF document."
+                  : "Your payment is confirmed. PDF invoice attachment is temporarily unavailable and will be shared separately if needed."
+              }
+            </p>
             
             <div style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px; border-radius: 5px; margin: 15px 0;">
               <p style="margin: 0; font-size: 14px; color: #475569;">
@@ -102,13 +112,17 @@ export const sendReceiptEmail = async (transaction, pdfBuffer) => {
           </div>
         </div>
       `,
-      attachments: [
-        {
-          filename: `Invoice-${transaction._id.toString().slice(-8).toUpperCase()}.pdf`,
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        },
-      ],
+      ...(hasPdfAttachment
+        ? {
+            attachments: [
+              {
+                filename: `Invoice-${transaction._id.toString().slice(-8).toUpperCase()}.pdf`,
+                content: pdfBuffer,
+                contentType: "application/pdf",
+              },
+            ],
+          }
+        : {}),
     };
 
     const result = await transporter.sendMail(mailOptions);
