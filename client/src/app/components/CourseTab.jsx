@@ -202,18 +202,14 @@ export default function CourseTab() {
             (course) => !purchasedCourseIds.has(course._id)
           );
 
-          const purchasedWithDummy = purchasedCoursesData.some(
-            (course) => course._id === QA_DUMMY_COURSE._id
-          )
-            ? purchasedCoursesData
-            : [QA_DUMMY_COURSE, ...purchasedCoursesData];
-
-          setPurchasedCourses(purchasedWithDummy);
-
-          // Combine purchased courses and available courses
-          const combinedCourses = [...purchasedWithDummy, ...filteredAvailableCourses];
-          if (combinedCourses.length > 0) {
-            setCourses(combinedCourses);
+          // Set only purchased courses
+          setCourses(purchasedCoursesData);
+          if (purchasedCoursesData.length > 0) {
+            setSelectedCourse(purchasedCoursesData[0]);
+            setLastAccessedCourse(purchasedCoursesData[0]);
+          } else {
+            setCourses([]);
+          }
             setSelectedCourse(combinedCourses[0]);
             setLastAccessedCourse(combinedCourses[0]);
           } else {
@@ -1044,21 +1040,13 @@ export default function CourseTab() {
             </p>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[320px]">
+          <div className="grid gap-3 sm:grid-cols-1 xl:min-w-[160px]">
             <div className="rounded-2xl border border-blue-100 bg-white/90 px-4 py-3 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
                 Enrolled
               </p>
               <p className="mt-2 text-2xl font-bold text-slate-900">
                 {purchasedCourses.length}
-              </p>
-            </div>
-            <div className="rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                Available
-              </p>
-              <p className="mt-2 text-2xl font-bold text-slate-900">
-                {Math.max(courses.length - purchasedCourses.length, 0)}
               </p>
             </div>
           </div>
