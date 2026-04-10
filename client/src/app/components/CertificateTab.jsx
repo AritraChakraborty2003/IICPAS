@@ -152,7 +152,7 @@ export default function CertificateTab() {
             ) : (
               <div className="space-y-4">
                 {/* Header for the list */}
-                <div className="hidden md:grid grid-cols-[1fr_180px_120px] gap-6 px-8 py-4 bg-white/5 border-b border-white/10 text-xs font-bold uppercase tracking-widest text-gray-500">
+                <div className="hidden md:grid grid-cols-[1fr_140px_220px] gap-6 px-8 py-4 bg-white/5 border-b border-white/10 text-xs font-bold uppercase tracking-widest text-gray-500">
                   <div>Course Title</div>
                   <div className="text-center">Completion Status</div>
                   <div className="text-right">Action</div>
@@ -168,7 +168,7 @@ export default function CertificateTab() {
                       key={course._id}
                       className="group bg-[#1e293b]/50 backdrop-blur-sm rounded-2xl border border-white/5 hover:border-blue-500/20 hover:bg-[#1e293b] transition-all duration-300"
                     >
-                      <div className="flex flex-col md:grid md:grid-cols-[1fr_180px_120px] items-center gap-4 px-6 py-5 md:px-8">
+                      <div className="flex flex-col md:grid md:grid-cols-[1fr_140px_220px] items-center gap-4 px-6 py-5 md:px-8">
                         {/* Course Title */}
                         <div className="flex items-center gap-4 w-full md:w-auto">
                           <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${isCompleted ? "bg-emerald-500/10 text-emerald-400" : "bg-gray-800 text-gray-500"}`}>
@@ -181,38 +181,38 @@ export default function CertificateTab() {
 
                         {/* Progress Badge */}
                         <div className="flex flex-col items-center gap-1.5 w-full md:w-auto">
-                          <div className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          <div className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
                             isCompleted ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" : "bg-blue-500/10 text-blue-400 border border-blue-500/10"
                           }`}>
                             {isCompleted ? "Fully Completed" : `${progress}% Progress`}
                           </div>
                           {!isCompleted && (
-                            <div className="w-24 h-1 bg-gray-800 rounded-full overflow-hidden">
+                            <div className="w-20 h-1 bg-gray-800 rounded-full overflow-hidden">
                               <div className="h-full bg-blue-500" style={{ width: `${progress}%` }} />
                             </div>
                           )}
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center gap-3 justify-end w-full md:w-auto">
+                        <div className="flex items-center gap-2 justify-end w-full md:w-auto">
                           <button
                             onClick={() => setSelectedCertificate({ course, isCompleted, progress })}
-                            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gray-800 text-gray-200 rounded-xl font-bold text-sm hover:bg-blue-600 hover:text-white transition-all active:scale-95 border border-white/5"
+                            className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-gray-200 rounded-lg font-bold text-xs hover:bg-blue-600 hover:text-white transition-all active:scale-95 border border-white/10"
                           >
-                            <FaEye className="text-xs" />
+                            <FaEye className="text-[10px]" />
                             View
                           </button>
                           
                           <button
                             onClick={() => isCompleted && handleDownload(course.title)}
                             disabled={!isCompleted}
-                            className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all active:scale-95 border ${
+                            className={`flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs transition-all active:scale-95 border ${
                               isCompleted 
                                 ? "bg-blue-600/10 text-blue-400 border-blue-500/20 hover:bg-blue-600 hover:text-white" 
                                 : "bg-gray-800/30 text-gray-600 border-white/5 cursor-not-allowed opacity-50"
                             }`}
                           >
-                            <FaDownload className="text-xs" />
+                            <FaDownload className="text-[10px]" />
                             Download
                           </button>
                         </div>
