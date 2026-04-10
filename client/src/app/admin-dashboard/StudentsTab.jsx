@@ -807,6 +807,324 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
   );
 }
 
+function StudentDetailsView({ studentId, onBack }) {
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    if (!studentId) return;
+
+    const fetchOverview = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("adminToken");
+        const response = await axios.get(
+          `${API_BASE}/v1/students/admin/${studentId}/overview`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }
+        );
+        setData(response.data || null);
+      } catch (error) {
+        console.error("Error fetching student details:", error);
+        toast.error(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to fetch student details"
+        );
+        setData(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOverview();
+  }, [studentId]);
+
+  const formatDate = (value) => {
+    if (!value) return "N/A";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "N/A";
+    return parsed.toLocaleDateString("en-IN");
+  };
+
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return "N/A";
+    return parsed.toLocaleString("en-IN");
+  };
+
+  const formatCurrency = (value) =>
+    Number(value || 0).toLocaleString("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 2,
+    });
+
+  const handleDownloadBookingInvoice = async (bookingId) => {
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await axios.get(
+        `${API_ORIGIN}/api/v1/course-bookings/admin/${bookingId}/invoice`,
+        {
+          responseType: "blob",
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+      const blobUrl = window.URL.createObjectURL(new Blob([response.data]));
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = `Booking-Invoice-${String(bookingId).slice(-8).toUpperCase()}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message || "Failed to download booking invoice"
+      );
+    }
+  };
+
+  const handleDownloadReceipt = (receiptId) => {
+    const link = `${API_ORIGIN}/api/v1/students/download-receipt/${encodeURIComponent(
+      receiptId
+    )}`;
+    window.open(link, "_blank", "noopener,noreferrer");
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+        <div className="flex items-center gap-3 text-gray-600">
+          <Loader2 size={20} className="animate-spin text-indigo-500" />
+          Loading student details...
+        </div>
+      </div>
+    );
+  }
+
+  if (!data?.student) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold hover:bg-gray-50"
+        >
+          <ArrowLeft size={16} />
+          Back to View Students
+        </button>
+        <p className="text-gray-600 mt-4">Unable to load student details.</p>
+      </div>
+    );
+  }
+
+  const { student, courses = [], transactions = [], bookings = [], receipts = [] } = data;
+  const overallCompletionPercent = Number(data.overallCompletionPercent || 0);
+  const isInactive = String(student.status || "").toLowerCase() === "inactive";
+
+  return (
+    <motion.div
+      key="details"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 20 }}
+      className="w-full space-y-6"
+    >
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={onBack}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-sm font-semibold hover:bg-gray-50"
+          >
+            <ArrowLeft size={16} />
+            Back to View Students
+          </button>
+          <span
+            className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+              isInactive ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+            }`}
+          >
+            {isInactive ? "Inactive" : "Active"}
+          </span>
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-xs text-gray-500">Name</p>
+            <p className="text-sm font-semibold text-gray-900">{student.name || "N/A"}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-xs text-gray-500">Email</p>
+            <p className="text-sm font-semibold text-gray-900">{student.email || "N/A"}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-xs text-gray-500">Phone</p>
+            <p className="text-sm font-semibold text-gray-900">{student.phone || "N/A"}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-xs text-gray-500">Location</p>
+            <p className="text-sm font-semibold text-gray-900">{student.location || "N/A"}</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <p className="text-xs text-gray-500">Center</p>
+            <p className="text-sm font-semibold text-gray-900">{student.center || "N/A"}</p>
+          </div>
+          <div className="bg-indigo-50 rounded-lg p-4">
+            <p className="text-xs text-indigo-600">Overall Completion</p>
+            <p className="text-lg font-bold text-indigo-800">{overallCompletionPercent}%</p>
+          </div>
+        </div>
+
+        <p className="text-xs text-gray-500 mt-4">
+          Joined on {formatDate(student.createdAt)}
+        </p>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Purchased / Enrolled Courses</h3>
+        {courses.length === 0 ? (
+          <p className="text-sm text-gray-500">No courses found.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Course</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Completion</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {courses.map((course) => (
+                  <tr key={course._id}>
+                    <td className="px-4 py-3 text-sm text-gray-900">{course.title || "Untitled Course"}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-indigo-700">
+                      {Number(course.completionPercent || 0)}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Transactions / Receipts</h3>
+        {transactions.length === 0 ? (
+          <p className="text-sm text-gray-500">No transactions found.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Course</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Type</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Amount</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Status</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Receipt</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {transactions.map((transaction) => (
+                  <tr key={transaction._id}>
+                    <td className="px-4 py-3 text-sm text-gray-900">
+                      {transaction.courseId?.title || "N/A"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700 capitalize">
+                      {transaction.sessionType || "N/A"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {formatCurrency(transaction.amount)}
+                    </td>
+                    <td className="px-4 py-3 text-sm capitalize">{transaction.status || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {transaction.receiptSent ? "Sent" : "Not Sent"}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {formatDateTime(transaction.createdAt)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-6">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">Legacy Receipts</h4>
+          {receipts.length === 0 ? (
+            <p className="text-sm text-gray-500">No legacy receipts found.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {receipts.map((receipt) => (
+                <button
+                  key={receipt.id}
+                  onClick={() => handleDownloadReceipt(receipt.id)}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold"
+                >
+                  <Download size={14} />
+                  Receipt {receipt.id}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4">Booking Invoices</h3>
+        {bookings.length === 0 ? (
+          <p className="text-sm text-gray-500">No bookings found.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Item</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Paid</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Remaining</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Status</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Invoice</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {bookings.map((booking) => (
+                  <tr key={booking._id}>
+                    <td className="px-4 py-3 text-sm text-gray-900">{booking.itemTitle || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {formatCurrency(booking.paidAmount)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {formatCurrency(booking.remainingAmount)}
+                    </td>
+                    <td className="px-4 py-3 text-sm capitalize">{booking.status || "N/A"}</td>
+                    <td className="px-4 py-3 text-sm">
+                      {booking.invoiceSent ? "Sent" : "Not Sent"}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <button
+                        onClick={() => handleDownloadBookingInvoice(booking._id)}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold"
+                      >
+                        <Download size={14} />
+                        Download Invoice
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
 function DigitalHubAccessTab({ students, loading, onStudentUpdated }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingStudentId, setUpdatingStudentId] = useState(null);
