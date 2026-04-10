@@ -444,6 +444,16 @@ const getCourseEnrollmentAt = (
   return timestamps[0]?.toISOString() || null;
 };
 
+const getEffectiveEnrollmentAt = (
+  bookings: CourseBookingRecord[],
+  courseId?: string | null,
+  studentRegisteredAt?: string | null
+) => {
+  const bookingEnrollmentAt = getCourseEnrollmentAt(bookings, courseId);
+  if (bookingEnrollmentAt) return bookingEnrollmentAt;
+  return studentRegisteredAt || null;
+};
+
 const isTopicLockedForBatch = (
   topic?: TopicData | null,
   enrollmentAt?: string | null
@@ -730,6 +740,9 @@ export default function DigitalHubClient({
   const [points, setPoints] = useState(0);
   const [studentId, setStudentId] = useState<string | null>(null);
   const [studentName, setStudentName] = useState("");
+  const [studentRegisteredAt, setStudentRegisteredAt] = useState<string | null>(
+    null
+  );
   const [authResolved, setAuthResolved] = useState(false);
   const [studentCourseBookings, setStudentCourseBookings] = useState<
     CourseBookingRecord[]
@@ -791,9 +804,10 @@ export default function DigitalHubClient({
   const completedAssignmentIds = selectedChapter?.completedAssignmentIds || [];
   const completedQuestionSetIds =
     selectedChapter?.completedQuestionSetIds || [];
-  const activeCourseEnrollmentAt = getCourseEnrollmentAt(
+  const activeCourseEnrollmentAt = getEffectiveEnrollmentAt(
     studentCourseBookings,
-    resolvedCourseId
+    resolvedCourseId,
+    studentRegisteredAt
   );
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
@@ -1755,6 +1769,7 @@ export default function DigitalHubClient({
         if (currentStudentId) {
           setStudentId(currentStudentId);
           setStudentName(response.data?.student?.name || "");
+          setStudentRegisteredAt(response.data?.student?.createdAt || null);
           await fetchStudentCoins(currentStudentId);
           return;
         }
@@ -1766,6 +1781,7 @@ export default function DigitalHubClient({
 
       setStudentId(null);
       setStudentName("");
+      setStudentRegisteredAt(null);
       setPoints(0);
     };
 
