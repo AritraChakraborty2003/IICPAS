@@ -354,6 +354,90 @@ router.post("/test-send", requireAuth, isAdmin, async (req, res) => {
   }
 });
 
+// Send test email to a specific email ID (admin only)
+router.post("/test-send-to", requireAuth, isAdmin, async (req, res) => {
+  try {
+    const { toEmail, subject, htmlContent, textContent } = req.body;
+    const normalizedTo = normalizeEmail(toEmail);
+
+    if (!normalizedTo) {
+      return res.status(400).json({
+        success: false,
+        message: "Recipient email is required",
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedTo)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide a valid recipient email",
+      });
+    }
+
+    const finalSubject = subject?.trim() || "IICPA Test Email";
+    const finalHtml =
+      htmlContent?.trim() ||
+      `<div style="font-family: Arial, sans-serif; line-height:1.6;">
+         <h2 style="margin:0 0 8px;">IICPA Test Email</h2>
+         <p>This is a test email sent from the Admin Dashboard sidebar utility.</p>
+         <p><strong>Sent by:</strong> ${req.user?.name || "Admin"} (${req.user?.email || "N/A"})</p>
+       </div>`;
+    const finalText =
+      textContent?.trim() ||
+      `IICPA Test Email\n\nThis is a test email sent from the Admin Dashboard sidebar utility.\nSent by: ${req.user?.name || "Admin"} (${req.user?.email || "N/A"})`;
+
+    const testEmailLog = new EmailLog({
+      subject: `[TEST] ${finalSubject}`,
+      htmlContent: finalHtml,
+      textContent: finalText,
+      recipientTypes: ["Test"],
+      totalRecipients: 1,
+      sentBy: req.user.id,
+      sentByName: req.user.name,
+      sentByEmail: req.user.email,
+      status: "pending",
+      isTestEmail: true,
+    });
+    await testEmailLog.save();
+
+    const result = await sendEmail(
+      normalizedTo,
+      `[TEST] ${finalSubject}`,
+      finalHtml,
+      finalText
+    );
+
+    testEmailLog.status = "completed";
+    testEmailLog.successCount = 1;
+    testEmailLog.failureCount = 0;
+    testEmailLog.results = [
+      {
+        email: normalizedTo,
+        name: "Manual Recipient",
+        type: "Test",
+        status: "success",
+        messageId: result.messageId,
+      },
+    ];
+    testEmailLog.completedAt = new Date();
+    await testEmailLog.save();
+
+    return res.json({
+      success: true,
+      message: `Test email sent successfully to ${normalizedTo}`,
+      data: result,
+    });
+  } catch (error) {
+    console.error("Error in send test email to recipient route:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+});
+
 // Get email logs
 router.get("/logs", requireAuth, isAdmin, async (req, res) => {
   try {
