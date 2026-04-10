@@ -300,7 +300,9 @@ const generateFallbackInvoicePDF = ({
       align: "right",
     });
     doc.font("Helvetica").fontSize(7.5).fillColor(colors.muted).text(
-      "This invoice confirms the payment and enrollment for the selected session.",
+      renderMeta?.isCoursePurchase
+        ? "This invoice confirms successful course purchase."
+        : "This invoice confirms the payment and enrollment for the selected session.",
       left,
       748,
       { width: contentWidth, align: "center" }
@@ -652,7 +654,11 @@ export const generateBookingInvoicePDF = async (
             </div>
 
             <div class="footer">
-              This invoice confirms the payment and enrollment for the selected session.
+              ${
+                renderMeta.isCoursePurchase
+                  ? "This invoice confirms successful course purchase."
+                  : "This invoice confirms the payment and enrollment for the selected session."
+              }
             </div>
           </div>
         </div>
@@ -680,6 +686,7 @@ export const generateBookingInvoicePDF = async (
       payment,
       invoiceNumber,
       paymentType,
+      renderMeta,
       itemTypeLabel,
       companySettings,
       companyAddress,
