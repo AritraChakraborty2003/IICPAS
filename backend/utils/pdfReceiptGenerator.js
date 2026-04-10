@@ -1,6 +1,56 @@
 import puppeteer from "puppeteer";
 import fs from "fs";
 import path from "path";
+import PDFDocument from "pdfkit";
+
+const generateFallbackReceiptPDF = async (transaction) =>
+  new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: "A4", margin: 40 });
+      const chunks = [];
+
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
+
+      const invoiceId = transaction?._id?.toString()?.slice(-8)?.toUpperCase() || "N/A";
+      const studentName = transaction?.studentId?.name || "Student";
+      const studentEmail = transaction?.studentId?.email || "N/A";
+      const courseName = transaction?.courseId?.title || "Course";
+      const amount = Number(transaction?.amount || 0).toLocaleString("en-IN");
+      const paidAt = transaction?.approvedAt || transaction?.updatedAt || transaction?.createdAt;
+
+      doc.fontSize(22).text("IICPA Private limited", { align: "center" });
+      doc.moveDown(0.5);
+      doc.fontSize(16).text("Course Purchase Invoice", { align: "center" });
+      doc.moveDown(1.5);
+
+      doc.fontSize(11).text(`Invoice ID: ${invoiceId}`);
+      doc.text(`Date: ${paidAt ? new Date(paidAt).toLocaleString("en-IN") : new Date().toLocaleString("en-IN")}`);
+      doc.moveDown();
+
+      doc.fontSize(13).text("Bill To");
+      doc.fontSize(11).text(`Name: ${studentName}`);
+      doc.text(`Email: ${studentEmail}`);
+      doc.moveDown();
+
+      doc.fontSize(13).text("Invoice Details");
+      doc.fontSize(11).text(`Course: ${courseName}`);
+      doc.text(`Amount Paid: Rs. ${amount}`);
+      doc.text("Status: Paid");
+      doc.moveDown(1.5);
+
+      doc.fontSize(10).fillColor("#555555").text(
+        "This is a computer-generated invoice and does not require a physical signature."
+      );
+      doc.moveDown(2);
+      doc.fillColor("#000000").fontSize(10).text("Support: support@iicpa.org | www.iicpa.org");
+
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
 
 export const generateReceiptPDF = async (transaction) => {
   const html = `
@@ -351,8 +401,8 @@ export const generateReceiptPDF = async (transaction) => {
 
     return pdfBuffer;
   } catch (error) {
-    console.error("Error generating PDF:", error);
-    throw error;
+    console.error("Error generating PDF with Puppeteer. Falling back to PDFKit:", error);
+    return generateFallbackReceiptPDF(transaction);
   } finally {
     if (browser) {
       await browser.close();
