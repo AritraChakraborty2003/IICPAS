@@ -291,14 +291,16 @@ const generateFallbackInvoicePDF = ({
       amountY += 18;
     });
 
-    const remainingBoxY = y + 116;
-    doc.roundedRect(left + 16, remainingBoxY, contentWidth - 32, 28, 8).fill(colors.softBlue);
-    doc.fillColor(colors.blue);
-    doc.font("Helvetica-Bold").fontSize(9).text("Remaining Balance", left + 28, remainingBoxY + 8);
-    doc.font("Helvetica-Bold").fontSize(11).text(formatRupees(booking?.remainingAmount), right - 155, remainingBoxY + 6, {
-      width: 150,
-      align: "right",
-    });
+    if (!renderMeta?.isCoursePurchase) {
+      const remainingBoxY = y + 116;
+      doc.roundedRect(left + 16, remainingBoxY, contentWidth - 32, 28, 8).fill(colors.softBlue);
+      doc.fillColor(colors.blue);
+      doc.font("Helvetica-Bold").fontSize(9).text("Remaining Balance", left + 28, remainingBoxY + 8);
+      doc.font("Helvetica-Bold").fontSize(11).text(formatRupees(booking?.remainingAmount), right - 155, remainingBoxY + 6, {
+        width: 150,
+        align: "right",
+      });
+    }
     doc.font("Helvetica").fontSize(7.5).fillColor(colors.muted).text(
       renderMeta?.isCoursePurchase
         ? "This invoice confirms successful course purchase."
@@ -674,13 +676,17 @@ export const generateBookingInvoicePDF = async (
                 }
                 <div class="amount-row"><strong>Total Paid</strong><span style="color:#059669">${escapeHtml(formatRupees(booking?.paidAmount))}</span></div>
               </div>
-              <div class="highlight">
+              ${
+                renderMeta.isCoursePurchase
+                  ? ""
+                  : `<div class="highlight">
                 <div>
                   <small>Remaining Balance</small>
                   <strong>${escapeHtml(formatRupees(booking?.remainingAmount))}</strong>
                 </div>
                 <div class="muted" style="text-align:right; max-width: 220px;">Keep this invoice for your records.</div>
-              </div>
+              </div>`
+              }
             </div>
 
             <div class="footer">
