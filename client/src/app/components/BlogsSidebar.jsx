@@ -149,44 +149,49 @@ export default function BlogsSidebar({
         </h3>
 
         <div className="space-y-4">
-          {recentBlogs.map((blog) => (
-            <div key={blog._id} className="flex gap-3">
-              <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 flex-shrink-0">
-                <img
-                  src={
-                    blog.imageUrl?.startsWith("http")
-                      ? blog.imageUrl
-                      : blog.imageUrl
-                      ? `${process.env.NEXT_PUBLIC_API_BASE?.replace(
-                          "/api",
-                          ""
-                        )}/${blog.imageUrl}`
-                      : "/images/accounting.webp"
-                  }
-                  alt={blog.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = "/images/accounting.webp";
-                  }}
-                />
-              </div>
+          {recentBlogs.map((blog) => {
+            const imageUrl = blog.imageUrl?.startsWith("http")
+              ? blog.imageUrl
+              : blog.imageUrl
+              ? `${API_ORIGIN}${
+                  blog.imageUrl.startsWith("/")
+                    ? blog.imageUrl
+                    : "/" + blog.imageUrl
+                }`
+              : getFallbackImage(blog.title);
+            const blogSlug = getBlogSlug(blog);
+            const blogHref = blogSlug ? `/blogs/${blogSlug}` : "/blogs";
 
-              <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1">
-                  {blog.title}
-                </h4>
-                <p className="text-xs text-gray-500 flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {blog.createdAt
-                    ? new Date(blog.createdAt).toLocaleDateString("en-GB", {
-                        day: "2-digit",
-                        month: "short",
-                      })
-                    : "Recent"}
-                </p>
-              </div>
-            </div>
-          ))}
+            return (
+              <Link key={blog._id} href={blogHref} className="group flex gap-3">
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 flex-shrink-0 group-hover:ring-2 group-hover:ring-blue-500/20 transition-all duration-300">
+                  <img
+                    src={imageUrl}
+                    alt={blog.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    onError={(e) => {
+                      e.target.src = getFallbackImage(blog.title);
+                    }}
+                  />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-semibold text-gray-900 line-clamp-2 mb-1 group-hover:text-blue-600 transition-colors">
+                    {blog.title}
+                  </h4>
+                  <p className="text-xs text-gray-500 flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {blog.createdAt
+                      ? new Date(blog.createdAt).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                        })
+                      : "Recent"}
+                  </p>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
 
