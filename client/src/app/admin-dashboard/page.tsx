@@ -1,8 +1,10 @@
 "use client";
 import { getApiOrigin } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import toast from "react-hot-toast";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AlertsTab from "./AlertsTab";
 import JobsAdminPanel from "./JobsAdminPanel";
@@ -460,6 +462,8 @@ function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [testEmailRecipient, setTestEmailRecipient] = useState("");
+  const [testEmailSending, setTestEmailSending] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
     {
       "course-management": true,
@@ -513,6 +517,55 @@ function AdminDashboardContent() {
       ...prev,
       [groupId]: !prev[groupId],
     }));
+  };
+
+  const sendSidebarTestEmail = async (recipientOverride?: string) => {
+    const recipient = (recipientOverride ?? testEmailRecipient).trim();
+    if (!recipient) {
+      toast.error("Please enter recipient email ID");
+      return;
+    }
+
+    const token =
+      typeof window !== "undefined" ? localStorage.getItem("adminToken") : "";
+    if (!token) {
+      toast.error("Admin session not found. Please login again.");
+      return;
+    }
+
+    setTestEmailSending(true);
+    try {
+      const response = await fetch(`${getApiBase()}/bulk-email/test-send-to`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          toEmail: recipient,
+          subject: "Sidebar Test Email",
+          textContent:
+            "This is a test email sent from the Admin Dashboard sidebar.",
+          htmlContent:
+            "<div style='font-family:Arial,sans-serif;line-height:1.6;'><h3 style='margin:0 0 8px;'>Sidebar Test Email</h3><p>This is a test email sent from the Admin Dashboard sidebar.</p></div>",
+        }),
+      });
+
+      const result = await response.json();
+      if (!response.ok || !result?.success) {
+        throw new Error(result?.message || "Failed to send test email");
+      }
+
+      toast.success(`Test email sent to ${recipient}`);
+      setTestEmailRecipient("");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to send test email";
+      toast.error(message);
+    } finally {
+      setTestEmailSending(false);
+    }
   };
 
   // SIDEBAR: scrollable, hidden scrollbar
@@ -691,6 +744,44 @@ function AdminDashboardContent() {
           );
         })}
       </nav>
+
+      <div className="px-3 pb-3 pt-2 border-t border-blue-200/70 bg-blue-100/40">
+        {sidebarCollapsed && !isMobile ? (
+          <button
+            onClick={() => {
+              const recipient = window.prompt("Enter recipient email ID");
+              if (recipient) {
+                void sendSidebarTestEmail(recipient);
+              }
+            }}
+            disabled={testEmailSending}
+            className="w-full flex items-center justify-center py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white transition-colors disabled:opacity-60"
+            title="Send Test Email"
+          >
+            <FaEnvelope />
+          </button>
+        ) : (
+          <div className="bg-white/80 rounded-lg p-3 shadow-sm">
+            <p className="text-xs font-semibold text-gray-700 mb-2">
+              Send Test Email
+            </p>
+            <input
+              type="email"
+              value={testEmailRecipient}
+              onChange={(e) => setTestEmailRecipient(e.target.value)}
+              placeholder="Recipient email ID"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+            />
+            <button
+              onClick={() => void sendSidebarTestEmail()}
+              disabled={testEmailSending || !testEmailRecipient.trim()}
+              className="w-full py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {testEmailSending ? "Sending..." : "Send Test Email"}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 
