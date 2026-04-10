@@ -56,6 +56,13 @@ const getTokenExpiry = (token) => {
 };
 
 const router = express.Router();
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 const ensureAuthorizedStudent = (req, res) => {
   if (!req.user?.id || req.user.id !== req.params.id) {
@@ -71,6 +78,37 @@ const sanitizeStudentResponse = (student) => {
   delete payload.otp;
   delete payload.otpExpiry;
   return payload;
+};
+
+const sendWelcomeEmail = async ({ name, email }) => {
+  if (!email) return;
+
+  await transporter.sendMail({
+    from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Welcome to IICPA Institute",
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+        <div style="background: #0f172a; color: #ffffff; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">Welcome to IICPA</h1>
+        </div>
+        <div style="padding: 20px; background: #f8fafc;">
+          <p style="margin: 0 0 12px 0;">Dear ${name || "Student"},</p>
+          <p style="margin: 0 0 12px 0;">
+            Thank you for registering with <strong>IICPA Institute</strong>.
+            Your student account has been created successfully.
+          </p>
+          <p style="margin: 0 0 12px 0;">
+            You can now log in and start exploring your courses, learning resources, and student dashboard.
+          </p>
+          <p style="margin: 0;">
+            Regards,<br />
+            Team IICPA
+          </p>
+        </div>
+      </div>
+    `,
+  });
 };
 
 //Register Student
@@ -136,10 +174,22 @@ router.post("/register", async (req, res) => {
       });
     }
 
+    let welcomeEmailSent = true;
+    try {
+      await sendWelcomeEmail({ name: student.name, email: student.email });
+    } catch (emailError) {
+      welcomeEmailSent = false;
+      console.error(
+        `Failed to send welcome email to ${student.email}:`,
+        emailError.message
+      );
+    }
+
     res.status(201).json({
       message: "Registered",
       student: sanitizeStudentResponse(student),
       referralApplied: Boolean(referrer),
+      welcomeEmailSent,
     });
   } catch (err) {
     res.status(500).json({ error: "Register failed", details: err.message });
@@ -724,14 +774,6 @@ const sendReceiptEmail = async (email, pdfPath) => {
 };
 
 // === POST /course-buy/:studentId ===
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER, // Set in .env
-    pass: process.env.EMAIL_PASS,
-  },
-});
 
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
