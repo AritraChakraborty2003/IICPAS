@@ -1216,9 +1216,9 @@ const verifyAndCaptureHandler = async (req, res) => {
     const failedTransactionIds = [];
     let sentReceipts = 0;
 
-    if (!alreadyApproved) {
-      for (const txn of transactions) {
-        try {
+    for (const txn of transactions) {
+      try {
+        if (!alreadyApproved) {
           if (txn.status !== "approved") {
             txn.status = "approved";
             txn.razorpayOrderId = razorpay_order_id;
@@ -1229,7 +1229,10 @@ const verifyAndCaptureHandler = async (req, res) => {
           }
 
           await syncStudentEnrollment(txn);
+        }
 
+        // Always retry receipt send if missing, even for already-approved retries.
+        if (txn.status === "approved" && !txn.receiptSent) {
           try {
             const receiptStatus = await sendReceiptForApprovedTransaction(txn._id);
             if (receiptStatus?.sent) sentReceipts += 1;
@@ -1239,10 +1242,10 @@ const verifyAndCaptureHandler = async (req, res) => {
               receiptError
             );
           }
-        } catch (txnError) {
-          console.error("Transaction post-verify processing failed:", txnError);
-          failedTransactionIds.push(String(txn._id));
         }
+      } catch (txnError) {
+        console.error("Transaction post-verify processing failed:", txnError);
+        failedTransactionIds.push(String(txn._id));
       }
     }
 
