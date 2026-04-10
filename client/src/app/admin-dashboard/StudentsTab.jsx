@@ -13,7 +13,6 @@ import {
   Download,
   Edit,
   Trash2,
-  UserX,
   Save,
   X,
   User,
@@ -427,6 +426,7 @@ function AddStudentForm({ onSuccess }) {
 function StudentsTable({ students, onStudentUpdated }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [statusUpdatingId, setStatusUpdatingId] = useState(null);
 
   if (!students?.length)
     return (
@@ -478,15 +478,19 @@ function StudentsTable({ students, onStudentUpdated }) {
 
   // Handle suspend student
   const handleSuspendStudent = async (student) => {
-    const action = student.status === 'suspended' ? 'unsuspend' : 'suspend';
-    const actionText = student.status === 'suspended' ? 'Unsuspend' : 'Suspend';
+    const isCurrentlySuspended = student.status === "suspended";
+    const action = isCurrentlySuspended ? "unsuspend" : "suspend";
+    const nextStatus = isCurrentlySuspended ? "active" : "suspended";
     
     if (window.confirm(`Are you sure you want to ${action} ${student.name}?`)) {
       try {
+        setStatusUpdatingId(student._id);
         await axios.put(`${API_BASE}/v1/students/${student._id}/status`, {
-          status: student.status === 'suspended' ? 'active' : 'suspended'
+          status: nextStatus
         });
-        toast.success(`${student.name} has been ${action}ed successfully!`);
+        toast.success(
+          `${student.name} has been ${isCurrentlySuspended ? "unsuspended" : "suspended"} successfully!`
+        );
         if (onStudentUpdated) onStudentUpdated();
       } catch (error) {
         console.error(`Error ${action}ing student:`, error);
@@ -497,6 +501,8 @@ function StudentsTable({ students, onStudentUpdated }) {
           studentId: student._id
         });
         toast.error(`Failed to ${action} student: ${error.response?.data?.message || error.message}`);
+      } finally {
+        setStatusUpdatingId(null);
       }
     }
   };
@@ -621,6 +627,9 @@ function StudentsTable({ students, onStudentUpdated }) {
                   Registered
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Suspend
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -684,6 +693,41 @@ function StudentsTable({ students, onStudentUpdated }) {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(student.createdAt).toLocaleDateString()}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const isSuspended = student.status === "suspended";
+                      const isUpdating = statusUpdatingId === student._id;
+
+                      return (
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isSuspended}
+                            onClick={() => handleSuspendStudent(student)}
+                            disabled={isUpdating}
+                            title={isSuspended ? "Unsuspend Student" : "Suspend Student"}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              isSuspended ? "bg-red-500" : "bg-green-500"
+                            } ${isUpdating ? "opacity-60 cursor-not-allowed" : ""}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                isSuspended ? "translate-x-6" : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                          <span
+                            className={`text-xs font-semibold ${
+                              isSuspended ? "text-red-600" : "text-green-600"
+                            }`}
+                          >
+                            {isUpdating ? "Updating..." : isSuspended ? "Suspended" : "Active"}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex flex-wrap gap-1">
                       {/* Contact Actions */}
@@ -720,17 +764,6 @@ function StudentsTable({ students, onStudentUpdated }) {
                         className="bg-yellow-500 hover:bg-yellow-600 text-white p-2 rounded transition-colors flex items-center justify-center"
                       >
                         <Edit size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleSuspendStudent(student)}
-                        title={student.status === 'suspended' ? 'Unsuspend Student' : 'Suspend Student'}
-                        className={`p-2 rounded transition-colors flex items-center justify-center ${
-                          student.status === 'suspended' 
-                            ? 'bg-orange-500 hover:bg-orange-600 text-white' 
-                            : 'bg-red-500 hover:bg-red-600 text-white'
-                        }`}
-                      >
-                        <UserX size={14} />
                       </button>
                       <button
                         onClick={() => handleDeleteStudent(student)}
