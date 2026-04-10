@@ -24,24 +24,12 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import BlogsSidebar from "../components/BlogsSidebar";
 import { getBlogSlug } from "../../lib/blogSlug";
-
-const getApiBase = () => {
-  const configuredBase =
-    process.env.NEXT_PUBLIC_API_BASE ||
-    process.env.NEXT_PUBLIC_API_URL ||
-    "http://localhost:8080/api";
-
-  const trimmed = configuredBase.trim().replace(/\/+$/, "");
-  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
-};
-
-const extractBlogs = (payload) => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.blogs)) return payload.blogs;
-  if (Array.isArray(payload?.data?.blogs)) return payload.data.blogs;
-  if (Array.isArray(payload?.data)) return payload.data;
-  return [];
-};
+import { 
+  getApiBase, 
+  getApiOrigin, 
+  getFallbackImage, 
+  extractBlogs 
+} from "../../lib/blogUtils";
 
 const DUMMY_BLOGS = [
   {
