@@ -449,9 +449,20 @@ const getEffectiveEnrollmentAt = (
   courseId?: string | null,
   studentRegisteredAt?: string | null
 ) => {
-  const bookingEnrollmentAt = getCourseEnrollmentAt(bookings, courseId);
-  if (bookingEnrollmentAt) return bookingEnrollmentAt;
-  return studentRegisteredAt || null;
+  const bookingEnrollmentAt = parseDateOrNull(
+    getCourseEnrollmentAt(bookings, courseId)
+  );
+  const registeredAt = parseDateOrNull(studentRegisteredAt || null);
+
+  if (bookingEnrollmentAt && registeredAt) {
+    return bookingEnrollmentAt.getTime() > registeredAt.getTime()
+      ? bookingEnrollmentAt.toISOString()
+      : registeredAt.toISOString();
+  }
+
+  if (bookingEnrollmentAt) return bookingEnrollmentAt.toISOString();
+  if (registeredAt) return registeredAt.toISOString();
+  return null;
 };
 
 const isTopicLockedForBatch = (
