@@ -195,7 +195,7 @@ const generateFallbackInvoicePDF = ({
     detailY = drawField(detailLeftX, detailY + 2, detailColWidth, detailRows[2][0], detailRows[2][1]);
     drawField(detailRightX, detailY + 2, detailColWidth, detailRows[3][0], detailRows[3][1]);
 
-    const statusLabel = paymentType === "Balance Payment" ? "BALANCE PAYMENT" : "BOOKING PAYMENT";
+    const statusLabel = renderMeta?.statusLabel || "PAID";
     const pillY = y + 14;
     const pillWidth = 112;
     const pillX = right - pillWidth - 16;
@@ -308,6 +308,20 @@ const generateFallbackInvoicePDF = ({
       { width: contentWidth, align: "center" }
     );
 
+    // Paid stamp (bottom-left)
+    const stampX = left + 6;
+    const stampY = 740;
+    const stampW = 84;
+    const stampH = 28;
+    doc.save();
+    doc.roundedRect(stampX, stampY, stampW, stampH, 6).fillAndStroke("#ecfdf5", "#16a34a");
+    doc.fillColor("#15803d");
+    doc.font("Helvetica-Bold").fontSize(12).text("PAID", stampX, stampY + 8, {
+      width: stampW,
+      align: "center",
+    });
+    doc.restore();
+
     doc.end();
   });
 
@@ -323,13 +337,15 @@ export const generateBookingInvoicePDF = async (
     companySettings = null;
   }
 
+  const renderMeta = resolveRenderMeta(booking, payment, options);
+  const defaultPrefix = renderMeta.isCoursePurchase ? "CP" : "BK";
   const invoicePrefix =
-    String(companySettings?.invoicePrefix || "BK").trim().toUpperCase() || "BK";
+    String(companySettings?.invoicePrefix || defaultPrefix).trim().toUpperCase() ||
+    defaultPrefix;
   const invoiceNumber = `${invoicePrefix}-${String(booking?._id || "")
     .slice(-8)
     .toUpperCase()}`;
   const paymentAmount = Number(payment?.amount || 0);
-  const renderMeta = resolveRenderMeta(booking, payment, options);
   const paymentType = renderMeta.paymentType;
   const itemTypeLabel =
     booking?.itemType === "group_package" ? "Group Package" : "Single Course";
@@ -377,6 +393,7 @@ export const generateBookingInvoicePDF = async (
             border-radius: 0;
             overflow: hidden;
             border: 1px solid #dbe3ee;
+            position: relative;
           }
           .header {
             padding: 14px 18px 12px;
@@ -522,6 +539,19 @@ export const generateBookingInvoicePDF = async (
             color: #64748b;
             text-align: center;
           }
+          .paid-stamp {
+            position: absolute;
+            left: 18px;
+            bottom: 18px;
+            padding: 6px 16px;
+            border: 2px solid #16a34a;
+            border-radius: 8px;
+            background: #ecfdf5;
+            color: #15803d;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+          }
           .two-col {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -661,6 +691,7 @@ export const generateBookingInvoicePDF = async (
               }
             </div>
           </div>
+          <div class="paid-stamp">PAID</div>
         </div>
       </body>
     </html>
