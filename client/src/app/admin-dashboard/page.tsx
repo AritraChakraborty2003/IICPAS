@@ -1,6 +1,5 @@
 "use client";
-import { getApiOrigin } from "@/lib/apiBase";
-import { getApiBase } from "@/lib/apiBase";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
