@@ -359,23 +359,7 @@ export default function BlogsPage() {
                     }`}
                   >
                     {currentBlogs.map((blog, index) => {
-                      // Generate fallback image based on blog title or use default
-                      const getFallbackImage = (title) => {
-                        const images = [
-                          "/images/accounting.webp",
-                          "/images/course.png",
-                          "/images/live-class.jpg",
-                          "/images/student.png",
-                          "/images/university.png",
-                          "/images/vr-student.jpg",
-                        ];
-                        const hash = title.split("").reduce((a, b) => {
-                          a = (a << 5) - a + b.charCodeAt(0);
-                          return a & a;
-                        }, 0);
-                        return images[Math.abs(hash) % images.length];
-                      };
-
+                      const API_ORIGIN = getApiOrigin();
                       const imageUrl = blog.imageUrl?.startsWith("http")
                         ? blog.imageUrl
                         : blog.imageUrl
