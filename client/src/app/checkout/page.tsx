@@ -26,6 +26,22 @@ type Coupon = {
   isActive?: boolean;
 };
 
+type CourseBooking = {
+  _id: string;
+  itemType: "single_course" | "group_package";
+  courseId?: string | { _id?: string } | null;
+  sessionType?: "recorded" | "live" | null;
+  remainingAmount?: number;
+  status?: string;
+};
+
+type CartBookingConflict = {
+  courseId: string;
+  sessionType: "recorded" | "live";
+  courseTitle: string;
+  remainingAmount: number;
+};
+
 const isCouponExpired = (expiresAt: string) => {
   const expiry = new Date(`${expiresAt}T23:59:59`);
   return Number.isNaN(expiry.getTime()) ? true : expiry.getTime() < Date.now();
@@ -109,6 +125,7 @@ export default function CheckoutPage() {
   const [couponMessage, setCouponMessage] = useState("");
   const [isPaying, setIsPaying] = useState(false);
   const [razorpayReady, setRazorpayReady] = useState(false);
+  const [bookingConflicts, setBookingConflicts] = useState<CartBookingConflict[]>([]);
   const inputClass =
     "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition";
   const cartSubtotal = safeCartItems.reduce(
@@ -259,8 +276,73 @@ export default function CheckoutPage() {
     razorpayReady &&
     !loading &&
     !isPaying &&
+    bookingConflicts.length === 0 &&
     billingAddressValid &&
     shippingAddressValid;
+
+  useEffect(() => {
+    const fetchBookingConflicts = async () => {
+      if (!student?._id || safeCartItems.length === 0) {
+        setBookingConflicts([]);
+        return;
+      }
+
+      try {
+        const response = await axios.get(`${API_BASE}/api/v1/course-bookings/student`, {
+          withCredentials: true,
+        });
+        const bookings: CourseBooking[] = response?.data?.bookings || [];
+        const activeBookingMap = new Map<string, CourseBooking>();
+
+        bookings.forEach((booking) => {
+          if (booking.itemType !== "single_course") return;
+          const remaining = Number(booking.remainingAmount || 0);
+          const status = String(booking.status || "").toLowerCase();
+          if (remaining <= 0) return;
+          if (status === "cancelled") return;
+
+          const rawCourseId =
+            typeof booking.courseId === "object"
+              ? booking.courseId?._id
+              : booking.courseId;
+          const sessionType = booking.sessionType === "live" ? "live" : "recorded";
+          if (!rawCourseId) return;
+          activeBookingMap.set(`${String(rawCourseId)}:${sessionType}`, booking);
+        });
+
+        const conflicts = safeCartItems
+          .filter((item: any) => item?.courseId && item?.course?.title)
+          .map((item: any) => {
+            const sessionType = item.sessionType === "live" ? "live" : "recorded";
+            const key = `${String(item.courseId)}:${sessionType}`;
+            const booking = activeBookingMap.get(key);
+            if (!booking) return null;
+
+            return {
+              courseId: String(item.courseId),
+              sessionType,
+              courseTitle: String(item.course.title || "Course"),
+              remainingAmount: Number(booking.remainingAmount || 0),
+            } as CartBookingConflict;
+          })
+          .filter(Boolean) as CartBookingConflict[];
+
+        const uniqueConflicts = conflicts.filter(
+          (conflict, index, arr) =>
+            arr.findIndex(
+              (entry) =>
+                entry.courseId === conflict.courseId &&
+                entry.sessionType === conflict.sessionType
+            ) === index
+        );
+        setBookingConflicts(uniqueConflicts);
+      } catch {
+        setBookingConflicts([]);
+      }
+    };
+
+    fetchBookingConflicts();
+  }, [student?._id, safeCartItems]);
 
   const openRazorpayCheckout = (orderData: any) => {
     if (!window.Razorpay) {
@@ -337,6 +419,13 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (bookingConflicts.length > 0) {
+      alert(
+        "This course is already booked. Please go to your dashboard, open the Bookings page, and make the remaining balance payment. Purchase is not allowed from checkout."
+      );
+      return;
+    }
+
     if (!validateAddress(billingAddress)) {
       alert("Please complete your billing address before payment.");
       return;
@@ -377,6 +466,12 @@ export default function CheckoutPage() {
       openRazorpayCheckout(response.data.data);
     } catch (error: any) {
       setIsPaying(false);
+      if (error?.response?.data?.code === "BOOKING_BALANCE_PENDING") {
+        alert(
+          "This course is already booked. Please go to your dashboard, open the Bookings page, and make the remaining balance payment. Purchase is not allowed from checkout."
+        );
+        return;
+      }
       const apiMessage = error?.response?.data?.message;
       const apiError = error?.response?.data?.error;
       const apiDescription = error?.response?.data?.details?.description;
@@ -920,6 +1015,18 @@ export default function CheckoutPage() {
                       Order Summary
                     </h3>
 
+                    {bookingConflicts.length > 0 ? (
+                      <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-800">
+                        <p className="text-sm font-semibold">
+                          One or more courses in your cart already have an active booking.
+                        </p>
+                        <p className="mt-1 text-xs">
+                          Please go to your dashboard, open the Bookings page, and make the
+                          remaining balance payment. Purchase is not allowed from checkout.
+                        </p>
+                      </div>
+                    ) : null}
+
                     <div className="space-y-2 mb-4">
                       {safeCartItems.map((item: any) => {
                         const course = item.course;
@@ -997,6 +1104,12 @@ export default function CheckoutPage() {
                         {!billingAddressValid || !shippingAddressValid ? (
                           <p className="text-xs text-amber-700">
                             Complete billing and shipping details to continue.
+                          </p>
+                        ) : null}
+                        {bookingConflicts.length > 0 ? (
+                          <p className="text-xs text-amber-700">
+                            Checkout is blocked for booked course(s). Continue from Dashboard
+                            → Bookings.
                           </p>
                         ) : null}
                       </div>
