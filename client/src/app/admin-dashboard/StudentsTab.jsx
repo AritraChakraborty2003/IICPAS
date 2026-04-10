@@ -1,5 +1,5 @@
 "use client";
-import { getApiBase } from "@/lib/apiBase";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
 import React, { useEffect, useState } from "react";
 import axios from "axios";
@@ -25,6 +25,8 @@ import {
   Search,
   Unlock,
   Lock,
+  Eye,
+  ArrowLeft,
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -32,6 +34,7 @@ import * as XLSX from 'xlsx';
 import { toast } from 'react-hot-toast';
 
 const API_BASE = getApiBase();
+const API_ORIGIN = getApiOrigin();
 const isStudentSuspended = (student) => {
   const status = String(student?.status || "").toLowerCase();
   return status === "inactive" || status === "suspended";
@@ -428,7 +431,7 @@ function AddStudentForm({ onSuccess }) {
   );
 }
 
-function StudentsTable({ students, onStudentUpdated }) {
+function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
@@ -763,6 +766,13 @@ function StudentsTable({ students, onStudentUpdated }) {
                       </a>
                       
                       {/* Management Actions */}
+                      <button
+                        onClick={() => onViewStudent(student)}
+                        title="View Student Details"
+                        className="bg-cyan-500 hover:bg-cyan-600 text-white p-2 rounded transition-colors flex items-center justify-center"
+                      >
+                        <Eye size={14} />
+                      </button>
                       <button
                         onClick={() => handleEditStudent(student)}
                         title="Edit Student"

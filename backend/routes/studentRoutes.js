@@ -9,8 +9,10 @@ import {
   deleteStudent,
   updateStudentStatus,
 } from "../controllers/studentController.js";
-import { requireAuth } from "../middleware/requireAuth.js";
+import { requireAuth, requirePermission } from "../middleware/requireAuth.js";
 import { isAdmin } from "../middleware/isAdmin.js";
+import Transaction from "../models/Transaction.js";
+import CourseBooking from "../models/CourseBooking.js";
 
 //FOR PDF Import
 import PDFDocument from "pdfkit";
@@ -219,6 +221,87 @@ router.get("/", async (req, res) => {
     });
   }
 });
+
+// Get student overview for admin details page
+router.get(
+  "/admin/:id/overview",
+  requireAuth,
+  requirePermission("students", "read"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid student ID format" });
+      }
+
+      const student = await Student.findById(id)
+        .populate("course", "title")
+        .select(
+          "name email phone mode location center status course receipts createdAt updatedAt"
+        )
+        .lean();
+
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      const [transactions, bookings] = await Promise.all([
+        Transaction.find({ studentId: id })
+          .populate("courseId", "title category price")
+          .sort({ createdAt: -1 })
+          .lean(),
+        CourseBooking.find({ studentId: id })
+          .sort({ createdAt: -1 })
+          .lean(),
+      ]);
+
+      const courses = Array.isArray(student.course) ? student.course : [];
+      const coursesWithCompletion = await Promise.all(
+        courses.map(async (course) => {
+          try {
+            const progress = await getDigitalHubCourseProgress(id, course._id);
+            return {
+              _id: course._id,
+              title: course.title || "Untitled Course",
+              completionPercent: Number(progress?.overallProgress || 0),
+            };
+          } catch (error) {
+            return {
+              _id: course._id,
+              title: course.title || "Untitled Course",
+              completionPercent: 0,
+            };
+          }
+        })
+      );
+
+      const overallCompletionPercent = coursesWithCompletion.length
+        ? Math.round(
+            coursesWithCompletion.reduce(
+              (sum, course) => sum + Number(course.completionPercent || 0),
+              0
+            ) / coursesWithCompletion.length
+          )
+        : 0;
+
+      return res.json({
+        success: true,
+        student,
+        courses: coursesWithCompletion,
+        overallCompletionPercent,
+        transactions,
+        bookings,
+        receipts: Array.isArray(student.receipts) ? student.receipts : [],
+      });
+    } catch (error) {
+      console.error("Error fetching student admin overview:", error);
+      return res.status(500).json({
+        message: "Failed to fetch student overview",
+        error: error.message,
+      });
+    }
+  }
+);
 
 //Login
 router.post("/login", async (req, res) => {
