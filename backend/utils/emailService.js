@@ -82,13 +82,7 @@ export const sendReceiptEmail = async (transaction, pdfBuffer = null) => {
               </p>
             </div>
             
-            <p>
-              ${
-                hasPdfAttachment
-                  ? "Your official invoice is attached to this email as a PDF document."
-                  : "Your payment is confirmed. PDF invoice attachment is temporarily unavailable and will be shared separately if needed."
-              }
-            </p>
+            <p>Your payment has been successfully confirmed.</p>
             
             <div style="background: #f1f5f9; border: 1px solid #cbd5e1; padding: 10px; border-radius: 5px; margin: 15px 0;">
               <p style="margin: 0; font-size: 14px; color: #475569;">
