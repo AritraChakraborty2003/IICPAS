@@ -531,10 +531,7 @@ router.get("/referral-summary/:id", isStudent, async (req, res) => {
       referralFirstPurchaseCoins: Number(settings?.referralUsageCoins || 0),
       referralPromoCode: String(settings?.referralPromoCode || ""),
       referralBenefitsUsed: Boolean(student.referralBenefitsUsed),
-      referralFirstPurchaseEligible:
-        Boolean(student.referredBy) &&
-        !Boolean(student.referralBenefitsUsed) &&
-        Number(student?.course?.length || 0) === 0,
+      referralFirstPurchaseEligible: !Boolean(student.referralBenefitsUsed),
       referredCount,
       totalReferralCoins: Number(rewardSummary?.[0]?.totalCoins || 0),
       currentCoinBalance: Number(student.coinBalance || 0),
