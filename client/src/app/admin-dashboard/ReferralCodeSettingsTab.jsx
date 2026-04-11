@@ -5,14 +5,10 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-hot-toast";
 
-export default function CoinsTab() {
-  const API_BASE =
-    getApiBase();
+export default function ReferralCodeSettingsTab() {
+  const API_BASE = getApiBase();
 
   const [form, setForm] = useState({
-    quizCompleteCoins: 10,
-    testimonialApprovedCoins: 3,
-    purchaseSuccessCoins: 20,
     referralSignupCoins: 50,
     referralUsageDiscountPercent: 0,
     referralUsageCoins: 0,
@@ -26,23 +22,16 @@ export default function CoinsTab() {
         const response = await axios.get(`${API_BASE}/coins/settings`, {
           withCredentials: true,
         });
-        if (response.data?.settings) {
-          setForm({
-            quizCompleteCoins: response.data.settings.quizCompleteCoins ?? 10,
-            testimonialApprovedCoins:
-              response.data.settings.testimonialApprovedCoins ?? 3,
-            purchaseSuccessCoins:
-              response.data.settings.purchaseSuccessCoins ?? 20,
-            referralSignupCoins:
-              response.data.settings.referralSignupCoins ?? 50,
-            referralUsageDiscountPercent:
-              response.data.settings.referralUsageDiscountPercent ?? 0,
-            referralUsageCoins:
-              response.data.settings.referralUsageCoins ?? 0,
-          });
-        }
-      } catch (error) {
-        toast.error("Failed to load coin settings");
+        const settings = response.data?.settings || {};
+        setForm({
+          referralSignupCoins: Number(settings.referralSignupCoins ?? 50),
+          referralUsageDiscountPercent: Number(
+            settings.referralUsageDiscountPercent ?? 0
+          ),
+          referralUsageCoins: Number(settings.referralUsageCoins ?? 0),
+        });
+      } catch {
+        toast.error("Failed to load referral settings");
       } finally {
         setLoading(false);
       }
@@ -66,7 +55,7 @@ export default function CoinsTab() {
       await axios.post(`${API_BASE}/coins/settings`, form, {
         withCredentials: true,
       });
-      toast.success("Coin settings updated");
+      toast.success("Referral settings updated");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update settings");
     } finally {
@@ -77,80 +66,37 @@ export default function CoinsTab() {
   if (loading) {
     return (
       <div className="bg-white rounded-xl p-6 shadow-sm">
-        <p className="text-gray-600">Loading coin settings...</p>
+        <p className="text-gray-600">Loading referral settings...</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-2xl bg-white rounded-xl p-6 shadow-sm">
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Coins Settings</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        Referral Code Settings
+      </h2>
       <p className="text-sm text-gray-600 mb-6">
-        Configure how many coins students earn for each event.
+        Configure student referral reward coins and checkout discount values.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Quiz Completion Coins
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={form.quizCompleteCoins}
-            onChange={(e) => handleChange("quizCompleteCoins", e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Testimonial Approval Coins
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={form.testimonialApprovedCoins}
-            onChange={(e) =>
-              handleChange("testimonialApprovedCoins", e.target.value)
-            }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Purchase Success Coins
-          </label>
-          <input
-            type="number"
-            min="0"
-            value={form.purchaseSuccessCoins}
-            onChange={(e) =>
-              handleChange("purchaseSuccessCoins", e.target.value)
-            }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Referral Signup Coins
+            Signup Reward Coins (Referrer)
           </label>
           <input
             type="number"
             min="0"
             value={form.referralSignupCoins}
-            onChange={(e) =>
-              handleChange("referralSignupCoins", e.target.value)
-            }
+            onChange={(e) => handleChange("referralSignupCoins", e.target.value)}
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Referral Purchase Discount (%)
+            First Purchase Discount (%) for Referred Student
           </label>
           <input
             type="number"
@@ -167,7 +113,7 @@ export default function CoinsTab() {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Referral Purchase Coins
+            First Purchase Coins for Referred Student
           </label>
           <input
             type="number"
@@ -183,7 +129,7 @@ export default function CoinsTab() {
           disabled={saving}
           className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          {saving ? "Saving..." : "Save Settings"}
+          {saving ? "Saving..." : "Save Referral Settings"}
         </button>
       </form>
     </div>

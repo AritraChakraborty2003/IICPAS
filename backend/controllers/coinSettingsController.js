@@ -6,6 +6,12 @@ const normalizeNonNegativeInt = (value) => {
   return Math.floor(parsed);
 };
 
+const normalizeDiscountPercent = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0 || parsed > 100) return null;
+  return Number(parsed.toFixed(2));
+};
+
 export const getCoinSettings = async (req, res) => {
   try {
     const settings = await CoinSettings.getSettings();
@@ -22,38 +28,41 @@ export const getCoinSettings = async (req, res) => {
 
 export const updateCoinSettings = async (req, res) => {
   try {
-    const quizCompleteCoins = normalizeNonNegativeInt(req.body.quizCompleteCoins);
-    const testimonialApprovedCoins = normalizeNonNegativeInt(
-      req.body.testimonialApprovedCoins
-    );
-    const purchaseSuccessCoins = normalizeNonNegativeInt(
-      req.body.purchaseSuccessCoins
-    );
-    const referralSignupCoins = normalizeNonNegativeInt(
-      req.body.referralSignupCoins
-    );
+    const payload = req.body || {};
+    const fieldParsers = {
+      quizCompleteCoins: normalizeNonNegativeInt,
+      testimonialApprovedCoins: normalizeNonNegativeInt,
+      purchaseSuccessCoins: normalizeNonNegativeInt,
+      referralSignupCoins: normalizeNonNegativeInt,
+      referralUsageCoins: normalizeNonNegativeInt,
+      referralUsageDiscountPercent: normalizeDiscountPercent,
+    };
 
-    if (
-      quizCompleteCoins === null ||
-      testimonialApprovedCoins === null ||
-      purchaseSuccessCoins === null ||
-      referralSignupCoins === null
-    ) {
+    const settings = await CoinSettings.getSettings();
+    let hasUpdate = false;
+
+    for (const [field, parser] of Object.entries(fieldParsers)) {
+      if (payload[field] === undefined) continue;
+      hasUpdate = true;
+      const normalized = parser(payload[field]);
+      if (normalized === null) {
+        return res.status(400).json({
+          success: false,
+          message:
+            field === "referralUsageDiscountPercent"
+              ? "Referral discount must be a number between 0 and 100"
+              : `${field} must be a non-negative number`,
+        });
+      }
+      settings[field] = normalized;
+    }
+
+    if (!hasUpdate) {
       return res.status(400).json({
         success: false,
-        message: "All coin values must be non-negative numbers",
+        message: "No valid settings fields were provided",
       });
     }
-
-    let settings = await CoinSettings.findOne();
-    if (!settings) {
-      settings = new CoinSettings();
-    }
-
-    settings.quizCompleteCoins = quizCompleteCoins;
-    settings.testimonialApprovedCoins = testimonialApprovedCoins;
-    settings.purchaseSuccessCoins = purchaseSuccessCoins;
-    settings.referralSignupCoins = referralSignupCoins;
 
     await settings.save();
 

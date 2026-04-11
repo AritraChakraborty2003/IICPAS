@@ -26,6 +26,19 @@ const coinSettingsSchema = new mongoose.Schema(
       default: 50,
       min: 0,
     },
+    referralUsageDiscountPercent: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    referralUsageCoins: {
+      type: Number,
+      required: true,
+      default: 0,
+      min: 0,
+    },
   },
   { timestamps: true }
 );

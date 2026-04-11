@@ -26,6 +26,11 @@ type Coupon = {
   isActive?: boolean;
 };
 
+type ReferralConfig = {
+  referralUsageDiscountPercent: number;
+  referralUsageCoins: number;
+};
+
 type CourseBooking = {
   _id: string;
   itemType: "single_course" | "group_package";
@@ -123,6 +128,10 @@ export default function CheckoutPage() {
   const [couponFetchError, setCouponFetchError] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponMessage, setCouponMessage] = useState("");
+  const [referralConfig, setReferralConfig] = useState<ReferralConfig>({
+    referralUsageDiscountPercent: 0,
+    referralUsageCoins: 0,
+  });
   const [isPaying, setIsPaying] = useState(false);
   const [razorpayReady, setRazorpayReady] = useState(false);
   const [bookingConflicts, setBookingConflicts] = useState<CartBookingConflict[]>([]);
@@ -133,7 +142,21 @@ export default function CheckoutPage() {
     0
   );
   const couponDiscount = getCouponDiscount(cartSubtotal, appliedCoupon);
-  const finalTotal = Math.max(0, cartSubtotal - couponDiscount);
+  const isReferralBenefitEligible =
+    Boolean(student?.referredBy) && !Boolean(student?.referralBenefitsUsed);
+  const referralDiscountBase = Math.max(0, cartSubtotal - couponDiscount);
+  const referralDiscount = isReferralBenefitEligible
+    ? Math.min(
+        Math.max(
+          (referralDiscountBase *
+            Number(referralConfig.referralUsageDiscountPercent || 0)) /
+            100,
+          0
+        ),
+        referralDiscountBase
+      )
+    : 0;
+  const finalTotal = Math.max(0, cartSubtotal - couponDiscount - referralDiscount);
 
   const applyCouponByCode = (codeInput: string) => {
     const normalizedCode = codeInput.trim().toUpperCase();
@@ -226,6 +249,30 @@ export default function CheckoutPage() {
     };
 
     fetchCoupons();
+  }, []);
+
+  useEffect(() => {
+    const fetchReferralConfig = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/coins/settings`, {
+          withCredentials: true,
+        });
+        const settings = response.data?.settings || {};
+        setReferralConfig({
+          referralUsageDiscountPercent: Number(
+            settings.referralUsageDiscountPercent || 0
+          ),
+          referralUsageCoins: Number(settings.referralUsageCoins || 0),
+        });
+      } catch {
+        setReferralConfig({
+          referralUsageDiscountPercent: 0,
+          referralUsageCoins: 0,
+        });
+      }
+    };
+
+    fetchReferralConfig();
   }, []);
 
   useEffect(() => {
@@ -1076,10 +1123,24 @@ export default function CheckoutPage() {
                           - Rs {couponDiscount.toLocaleString()}
                         </span>
                       </div>
+                      {isReferralBenefitEligible ? (
+                        <div className="flex justify-between items-center text-sm mb-2">
+                          <span className="text-gray-700">Referral Discount</span>
+                          <span className="font-medium text-green-600">
+                            - Rs{" "}
+                            {referralDiscount.toLocaleString("en-IN", {
+                              maximumFractionDigits: 2,
+                            })}
+                          </span>
+                        </div>
+                      ) : null}
                       <div className="flex justify-between items-center text-xl font-semibold">
                         <span>Total</span>
                         <span className="text-green-600">
-                          Rs {finalTotal.toLocaleString()}
+                          Rs{" "}
+                          {finalTotal.toLocaleString("en-IN", {
+                            maximumFractionDigits: 2,
+                          })}
                         </span>
                       </div>
                     </div>
@@ -1096,6 +1157,14 @@ export default function CheckoutPage() {
                             ? "Processing..."
                             : `Pay Now for All Courses (Rs ${finalTotal.toLocaleString()})`}
                         </button>
+                        {isReferralBenefitEligible &&
+                        referralConfig.referralUsageCoins > 0 ? (
+                          <p className="text-xs text-emerald-700">
+                            This payment will also credit{" "}
+                            {referralConfig.referralUsageCoins} referral coins to
+                            your wallet after successful verification.
+                          </p>
+                        ) : null}
                         {!RAZORPAY_KEY ? (
                           <p className="text-xs text-red-600">
                             Razorpay key is missing. Set `NEXT_PUBLIC_RAZORPAY_KEY_ID`.

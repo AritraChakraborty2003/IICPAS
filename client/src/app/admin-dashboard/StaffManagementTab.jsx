@@ -65,6 +65,11 @@ const MODULES = [
     name: "Jobs Sidebar Marquee",
     icon: "🪄",
   },
+  {
+    id: "referral-code-settings",
+    name: "Referral Code Settings",
+    icon: "🎁",
+  },
   { id: "our-partners", name: "Our Partners", icon: "🤝" },
   { id: "bookings", name: "Bookings", icon: "🧾" },
 ];

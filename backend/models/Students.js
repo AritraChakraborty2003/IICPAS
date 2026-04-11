@@ -78,6 +78,14 @@ const StudentSchema = new mongoose.Schema(
       ref: "Student",
       default: null,
     },
+    referralBenefitsUsed: {
+      type: Boolean,
+      default: false,
+    },
+    referralBenefitsUsedAt: {
+      type: Date,
+      default: null,
+    },
     coinBalance: { type: Number, default: 0, min: 0 },
     digitalHubAccessOverride: { type: Boolean, default: false },
   },

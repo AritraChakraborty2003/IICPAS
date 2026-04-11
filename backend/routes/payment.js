@@ -65,6 +65,15 @@ const buildRazorpayReceipt = (studentId) => {
 const toPaise = (amount) => Math.max(0, Math.round(Number(amount || 0) * 100));
 const fromPaise = (amountPaise) => Number((amountPaise / 100).toFixed(2));
 const activeCourseBookingStatuses = ["prebooked", "partially_paid", "fully_paid"];
+const parseTransactionNotes = (value) => {
+  if (!value || typeof value !== "string") return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
 
 const syncStudentEnrollment = async (transaction) => {
   const student = await Student.findById(transaction.studentId);
@@ -752,6 +761,7 @@ router.post("/create-order", async (req, res) => {
 
       let appliedCoupon = null;
       let couponDiscountPaise = 0;
+      let referralDiscountPaise = 0;
       const normalizedCouponCode = String(appliedCouponCode || "")
         .trim()
         .toUpperCase();
@@ -782,7 +792,27 @@ router.post("/create-order", async (req, res) => {
         appliedCoupon = coupon;
       }
 
-      const finalTotalPaise = subtotalPaise - couponDiscountPaise;
+      const coinSettings = await getCoinSettings();
+      const referralDiscountPercent = Math.min(
+        100,
+        Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
+      );
+      const isReferralDiscountEligible =
+        Boolean(student.referredBy) && !Boolean(student.referralBenefitsUsed);
+
+      if (isReferralDiscountEligible && referralDiscountPercent > 0) {
+        const referralDiscountBasePaise = Math.max(0, subtotalPaise - couponDiscountPaise);
+        referralDiscountPaise = Math.round(
+          (referralDiscountBasePaise * referralDiscountPercent) / 100
+        );
+        referralDiscountPaise = Math.min(
+          Math.max(referralDiscountPaise, 0),
+          referralDiscountBasePaise
+        );
+      }
+
+      const totalDiscountPaise = couponDiscountPaise + referralDiscountPaise;
+      const finalTotalPaise = subtotalPaise - totalDiscountPaise;
       if (finalTotalPaise <= 0) {
         return res.status(400).json({
           success: false,
@@ -791,14 +821,14 @@ router.post("/create-order", async (req, res) => {
       }
 
       const perItemDiscountPaise = resolvedItems.map(() => 0);
-      if (couponDiscountPaise > 0 && subtotalPaise > 0) {
+      if (totalDiscountPaise > 0 && subtotalPaise > 0) {
         let allocated = 0;
         for (let index = 0; index < resolvedItems.length; index += 1) {
           if (index === resolvedItems.length - 1) {
-            perItemDiscountPaise[index] = couponDiscountPaise - allocated;
+            perItemDiscountPaise[index] = totalDiscountPaise - allocated;
           } else {
             const share = Math.floor(
-              (couponDiscountPaise * resolvedItems[index].lineSubtotalPaise) / subtotalPaise
+              (totalDiscountPaise * resolvedItems[index].lineSubtotalPaise) / subtotalPaise
             );
             perItemDiscountPaise[index] = share;
             allocated += share;
@@ -878,6 +908,10 @@ router.post("/create-order", async (req, res) => {
             additionalNotes: JSON.stringify({
               checkoutBatchId,
               couponCode: appliedCoupon?.code || "",
+              couponDiscount: fromPaise(couponDiscountPaise),
+              referralDiscount: fromPaise(referralDiscountPaise),
+              referralDiscountPercentApplied: referralDiscountPercent,
+              referralDiscountEligible: isReferralDiscountEligible,
               itemDiscount: fromPaise(itemDiscountPaise),
             }),
           }).save();
@@ -897,7 +931,13 @@ router.post("/create-order", async (req, res) => {
           totals: {
             subtotal: fromPaise(subtotalPaise),
             couponDiscount: fromPaise(couponDiscountPaise),
+            referralDiscount: fromPaise(referralDiscountPaise),
             finalTotal: fromPaise(finalTotalPaise),
+          },
+          referralBenefits: {
+            eligible: isReferralDiscountEligible,
+            discountPercent: referralDiscountPercent,
+            rewardCoins: Number(coinSettings?.referralUsageCoins || 0),
           },
         },
       });
@@ -975,7 +1015,20 @@ router.post("/create-order", async (req, res) => {
     const serverAmount = serverUnitAmount * sanitizedQuantity;
 
     const numericAmount = Number(amount) > 0 ? Number(amount) : serverAmount;
-    const finalAmount = Math.max(serverAmount, numericAmount);
+    const baseAmount = Math.max(serverAmount, numericAmount);
+    const coinSettings = await getCoinSettings();
+    const referralDiscountPercent = Math.min(
+      100,
+      Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
+    );
+    const isReferralDiscountEligible =
+      Boolean(student.referredBy) && !Boolean(student.referralBenefitsUsed);
+    const referralDiscountAmount = isReferralDiscountEligible
+      ? Number(((baseAmount * referralDiscountPercent) / 100).toFixed(2))
+      : 0;
+    const finalAmount = Number(
+      Math.max(0, baseAmount - referralDiscountAmount).toFixed(2)
+    );
 
     if (!finalAmount || finalAmount <= 0) {
       return res.status(400).json({
@@ -998,7 +1051,7 @@ router.post("/create-order", async (req, res) => {
         message: "Reusing pending order",
         data: {
           orderId: pendingExisting.razorpayOrderId,
-          amount: Math.round(finalAmount * 100),
+          amount: toPaise(pendingExisting.amount || finalAmount),
           currency,
           transactionId: pendingExisting._id,
           key: process.env.RAZORPAY_KEY_ID,
@@ -1061,7 +1114,14 @@ router.post("/create-order", async (req, res) => {
       billingAddress,
       shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
       sameAsBilling: Boolean(sameAsBilling),
-      additionalNotes: "Razorpay checkout initiated",
+      additionalNotes: JSON.stringify({
+        couponCode: "",
+        couponDiscount: 0,
+        referralDiscount: referralDiscountAmount,
+        referralDiscountPercentApplied: referralDiscountPercent,
+        referralDiscountEligible: isReferralDiscountEligible,
+        itemDiscount: referralDiscountAmount,
+      }),
     });
 
     await transaction.save();
@@ -1077,6 +1137,17 @@ router.post("/create-order", async (req, res) => {
         transactionId: transaction._id,
         transactionIds: [transaction._id],
         key: process.env.RAZORPAY_KEY_ID,
+        totals: {
+          subtotal: Number(baseAmount.toFixed(2)),
+          couponDiscount: 0,
+          referralDiscount: referralDiscountAmount,
+          finalTotal: finalAmount,
+        },
+        referralBenefits: {
+          eligible: isReferralDiscountEligible,
+          discountPercent: referralDiscountPercent,
+          rewardCoins: Number(coinSettings?.referralUsageCoins || 0),
+        },
       },
     });
   } catch (error) {
@@ -1326,12 +1397,26 @@ const verifyAndCaptureHandler = async (req, res) => {
 
     let coinAwarded = false;
     let coinsAwarded = 0;
+    let referralCoinAwarded = false;
+    let referralCoinsAwarded = 0;
+    let referralBenefitsUsedNow = false;
     let coinBalance;
     let coinAwardReason = "";
+    let referralCoinAwardReason = "";
 
     try {
       const settings = await getCoinSettings();
       const purchaseCoins = Number(settings?.purchaseSuccessCoins || 0);
+      const referralPurchaseCoins = Number(settings?.referralUsageCoins || 0);
+      const student = await Student.findById(transactions[0].studentId).select(
+        "_id referredBy referralBenefitsUsed"
+      );
+      const isReferralBenefitEligible =
+        Boolean(student?.referredBy) && !Boolean(student?.referralBenefitsUsed);
+      const referralDiscountConsumed = transactions.some((txn) => {
+        const notes = parseTransactionNotes(txn.additionalNotes);
+        return Number(notes?.referralDiscount || 0) > 0;
+      });
 
       if (purchaseCoins > 0) {
         const coinResult = await awardCoins({
@@ -1360,6 +1445,54 @@ const verifyAndCaptureHandler = async (req, res) => {
       } else {
         coinAwardReason = "purchase_coins_disabled";
       }
+
+      if (isReferralBenefitEligible && referralPurchaseCoins > 0) {
+        const referralCoinResult = await awardCoins({
+          studentId: String(transactions[0].studentId),
+          eventType: "REFERRAL_PURCHASE",
+          coins: referralPurchaseCoins,
+          metadata: {
+            razorpayOrderId: razorpay_order_id,
+            razorpayPaymentId: razorpay_payment_id,
+            transactionIds: transactions.map((txn) => String(txn._id)),
+            referralDiscountConsumed,
+          },
+          idempotencyKey: `referral_purchase:${String(
+            transactions[0].studentId
+          )}:${razorpay_order_id}:${razorpay_payment_id}`,
+        });
+
+        referralCoinAwarded = Boolean(referralCoinResult?.awarded);
+        referralCoinsAwarded = referralCoinResult?.awarded ? referralPurchaseCoins : 0;
+        if (typeof referralCoinResult?.coinBalance === "number") {
+          coinBalance = referralCoinResult.coinBalance;
+        }
+        if (!referralCoinResult?.awarded && referralCoinResult?.reason) {
+          referralCoinAwardReason = String(referralCoinResult.reason);
+        }
+      } else if (!isReferralBenefitEligible) {
+        referralCoinAwardReason = "not_eligible_or_already_used";
+      } else {
+        referralCoinAwardReason = "referral_purchase_coins_disabled";
+      }
+
+      const shouldMarkReferralBenefitsUsed =
+        isReferralBenefitEligible && (referralDiscountConsumed || referralCoinAwarded);
+      if (shouldMarkReferralBenefitsUsed) {
+        await Student.updateOne(
+          {
+            _id: transactions[0].studentId,
+            referralBenefitsUsed: { $ne: true },
+          },
+          {
+            $set: {
+              referralBenefitsUsed: true,
+              referralBenefitsUsedAt: new Date(),
+            },
+          }
+        );
+        referralBenefitsUsedNow = true;
+      }
     } catch (coinError) {
       coinAwardReason = "coin_award_failed";
       console.error("Purchase coin award failed:", {
@@ -1382,8 +1515,12 @@ const verifyAndCaptureHandler = async (req, res) => {
         receiptSentCount: sentReceipts,
         coinAwarded,
         coinsAwarded,
+        referralCoinAwarded,
+        referralCoinsAwarded,
+        referralBenefitsUsedNow,
         ...(typeof coinBalance === "number" ? { coinBalance } : {}),
         ...(coinAwardReason ? { coinAwardReason } : {}),
+        ...(referralCoinAwardReason ? { referralCoinAwardReason } : {}),
       },
     });
   } catch (error) {

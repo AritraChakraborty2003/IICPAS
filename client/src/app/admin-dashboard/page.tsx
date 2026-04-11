@@ -75,6 +75,7 @@ import {
   FaGraduationCap,
   FaCoins,
   FaFileInvoiceDollar,
+  FaGift,
 } from "react-icons/fa";
 import CompanyTab from "./CompanyTab";
 import CourseArea from "./CourseBuilder";
@@ -126,6 +127,7 @@ import LoginAccessControlTab from "./LoginAccessControlTab";
 import JobSidebarMarqueeTab from "./JobSidebarMarqueeTab";
 import LiveBookingsTab from "./LiveBookingsTab";
 import OurPartnersTab from "./OurPartnersTab";
+import ReferralCodeSettingsTab from "./ReferralCodeSettingsTab";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -364,6 +366,11 @@ const NAVIGATION_GROUPS = [
         id: "job-sidebar-marquee",
         label: "Jobs Sidebar Marquee",
         icon: <FaBriefcase />,
+      },
+      {
+        id: "referral-code-settings",
+        label: "Referral Code",
+        icon: <FaGift />,
       },
     ],
   },
@@ -824,6 +831,8 @@ function AdminDashboardContent() {
           <QuotationTab />
         ) : activeTab === "job-sidebar-marquee" ? (
           <JobSidebarMarqueeTab />
+        ) : activeTab === "referral-code-settings" ? (
+          <ReferralCodeSettingsTab />
         ) : activeTab === "our-partners" ? (
           <OurPartnersTab />
         ) : activeTab === "booking-settings" ? (
