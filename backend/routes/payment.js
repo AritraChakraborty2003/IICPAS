@@ -220,8 +220,23 @@ const sendReceiptForLiveSessionBooking = async (bookingId) => {
     return { sent: true, skipped: true };
   }
 
-  const pdfBuffer = await generateLiveSessionReceiptPDF(booking);
-  await sendLiveSessionReceiptEmail(booking, pdfBuffer);
+  let bookingForEmail = booking;
+  if (booking.liveSessionId) {
+    const liveSession = await LiveSession.findById(booking.liveSessionId)
+      .select("link time date")
+      .lean();
+    if (liveSession) {
+      bookingForEmail = {
+        ...bookingForEmail,
+        link: booking.link || liveSession.link || "",
+        time: booking.time || liveSession.time || "",
+        date: booking.date || liveSession.date || null,
+      };
+    }
+  }
+
+  const pdfBuffer = await generateLiveSessionReceiptPDF(bookingForEmail);
+  await sendLiveSessionReceiptEmail(bookingForEmail, pdfBuffer);
 
   await Booking.findByIdAndUpdate(bookingId, {
     receiptSent: true,
@@ -355,6 +370,10 @@ const createLiveSessionBookingFromOrder = async ({
       existingBooking.razorpaySignature = razorpay_signature;
       changed = true;
     }
+    if (!existingBooking.link && notes.sessionLink) {
+      existingBooking.link = String(notes.sessionLink || "").trim();
+      changed = true;
+    }
     if (!existingBooking.paymentVerifiedAt) {
       existingBooking.paymentVerifiedAt = new Date();
       changed = true;
@@ -390,6 +409,7 @@ const createLiveSessionBookingFromOrder = async ({
     category: "live",
     status: "booked",
     date: liveSession.date,
+    link: String(notes.sessionLink || liveSession.link || "").trim(),
     paymentMethod: "razorpay",
     paymentAmount: amount,
     razorpayOrderId: razorpay_order_id,
@@ -611,6 +631,7 @@ router.post("/create-order", async (req, res) => {
           studentId,
           whatsappNumber,
           sessionTitle: String(liveSession.title || "").trim(),
+          sessionLink: String(liveSession.link || "").trim(),
           paymentSource,
         },
       });
