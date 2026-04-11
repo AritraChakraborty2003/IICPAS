@@ -2,6 +2,8 @@
 import mongoose from "mongoose";
 import Booking from "../../models/Booking.js";
 import Student from "../../models/Students.js";
+import LiveSession from "../../models/LiveSession/LiveSession.js";
+import { sendLiveSessionReceiptEmail } from "../../utils/liveSessionEmailService.js";
 
 // PATCH /api/bookings/:id/reject
 export const rejectBooking = async (req, res) => {
@@ -63,6 +65,10 @@ export const createBooking = async (req, res) => {
     whatsappNumber = whatsappNumber || linkedStudent.phone || "";
   }
 
+  by = String(by || "")
+    .trim()
+    .toLowerCase();
+
   // Validate required fields
   if (!by || !title || !hrs || !type || !category) {
     return res.status(400).json({
@@ -76,6 +82,34 @@ export const createBooking = async (req, res) => {
     return res.status(400).json({
       error: "Invalid type. Must be one of: recorded, live, onsite",
     });
+  }
+
+  let liveSession = null;
+  if (category === "live") {
+    if (!liveSessionId || !mongoose.Types.ObjectId.isValid(liveSessionId)) {
+      return res.status(400).json({ error: "Valid liveSessionId is required" });
+    }
+
+    liveSession = await LiveSession.findById(liveSessionId)
+      .select("_id title date time link duration")
+      .lean();
+    if (!liveSession) {
+      return res.status(404).json({ error: "Live session not found" });
+    }
+
+    const existingBooking = await Booking.findOne({
+      liveSessionId,
+      by,
+      paymentStatus: { $in: ["paid", "free"] },
+      status: { $in: ["booked", "approved"] },
+    })
+      .select("_id")
+      .lean();
+    if (existingBooking) {
+      return res.status(409).json({
+        error: "This email is already enrolled for the selected live session",
+      });
+    }
   }
 
   const booking = new Booking({
@@ -93,7 +127,8 @@ export const createBooking = async (req, res) => {
     paymentMethod: paymentMethod || "manual",
     paymentAmount: Number(paymentAmount || 0),
     paymentStatus: paymentStatus || "pending",
-    date: date || null,
+    date: date || liveSession?.date || null,
+    link: liveSession?.link || "",
   });
   await booking.save();
 
@@ -102,6 +137,31 @@ export const createBooking = async (req, res) => {
       { _id: linkedStudent._id },
       { $addToSet: { enrolledLiveSessions: liveSessionId } }
     );
+  }
+
+  const isFreeLiveEnrollment =
+    category === "live" &&
+    ["booked", "approved"].includes(String(booking.status || "").toLowerCase()) &&
+    (String(booking.paymentStatus || "").toLowerCase() === "free" ||
+      Number(booking.paymentAmount || 0) <= 0);
+
+  if (isFreeLiveEnrollment) {
+    try {
+      await sendLiveSessionReceiptEmail(
+        {
+          ...booking.toObject(),
+          link: booking.link || liveSession?.link || "",
+          time: liveSession?.time || "",
+          date: booking.date || liveSession?.date || null,
+        },
+        null
+      );
+      booking.receiptSent = true;
+      booking.receiptSentAt = new Date();
+      await booking.save();
+    } catch (emailError) {
+      console.error("Free live session email send failed:", emailError);
+    }
   }
 
   res.status(201).json(booking);
