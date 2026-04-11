@@ -137,7 +137,7 @@ export default function ReferAndEarnTab({ student }) {
       ? `I earn ${summary.referralRewardCoins} coins when a new student signs up. `
       : "";
     const firstPurchaseBenefit = summary.referralFirstPurchaseDiscountPercent
-      ? `You get ${summary.referralFirstPurchaseDiscountPercent}% off on your first purchase. `
+      ? `You get ${summary.referralFirstPurchaseDiscountPercent}% off on first use. `
       : "";
 
     return `Join IICPA Institute with my referral link. ${rewardText}${firstPurchaseBenefit}Use code ${summary.referralCode} while registering.`;
@@ -292,7 +292,7 @@ export default function ReferAndEarnTab({ student }) {
 
             <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100/75">
-                First Purchase Benefit (Referred Student)
+                Referral Benefit (One-Time Use)
               </p>
               <p className="mt-2 text-sm text-blue-50/90">
                 Discount:{" "}
@@ -306,10 +306,10 @@ export default function ReferAndEarnTab({ student }) {
               </p>
               <p className="mt-1 text-xs text-blue-100/80">
                 {summary.referralFirstPurchaseEligible
-                  ? "Available for your first purchase."
+                  ? "Available for one-time use."
                   : summary.referralBenefitsUsed
-                  ? "Already used on your first purchase."
-                  : "Applicable when you join with a referral and make first purchase."}
+                  ? "Already used for this account."
+                  : "Applicable once per user."}
               </p>
             </div>
 

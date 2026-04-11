@@ -145,12 +145,10 @@ export default function CheckoutPage() {
     0
   );
   const couponDiscount = getCouponDiscount(cartSubtotal, appliedCoupon);
-  const isFirstPurchase =
-    !Boolean(student?.referralBenefitsUsed) &&
-    Number(student?.course?.length || 0) === 0;
+  const isFirstUse = !Boolean(student?.referralBenefitsUsed);
   const isReferralBenefitEligible =
     (Boolean(student?.referredBy) || Boolean(appliedReferralCode)) &&
-    isFirstPurchase;
+    isFirstUse;
   const referralDiscountBase = Math.max(0, cartSubtotal - couponDiscount);
   const referralDiscount = isReferralBenefitEligible
     ? Math.min(
@@ -177,10 +175,10 @@ export default function CheckoutPage() {
     }
 
     if (normalizedReferralCode && normalizedCode === normalizedReferralCode) {
-      if (!isFirstPurchase) {
+      if (!isFirstUse) {
         setAppliedCoupon(null);
         setAppliedReferralCode("");
-        setCouponMessage("Referral code is valid only for first purchase.");
+        setCouponMessage("Referral code can be used only once per user.");
         return;
       }
 
