@@ -798,7 +798,9 @@ router.post("/create-order", async (req, res) => {
         Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
       );
       const isReferralDiscountEligible =
-        Boolean(student.referredBy) && !Boolean(student.referralBenefitsUsed);
+        Boolean(student.referredBy) &&
+        !Boolean(student.referralBenefitsUsed) &&
+        Number(student?.course?.length || 0) === 0;
 
       if (isReferralDiscountEligible && referralDiscountPercent > 0) {
         const referralDiscountBasePaise = Math.max(0, subtotalPaise - couponDiscountPaise);
@@ -1022,7 +1024,9 @@ router.post("/create-order", async (req, res) => {
       Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
     );
     const isReferralDiscountEligible =
-      Boolean(student.referredBy) && !Boolean(student.referralBenefitsUsed);
+      Boolean(student.referredBy) &&
+      !Boolean(student.referralBenefitsUsed) &&
+      Number(student?.course?.length || 0) === 0;
     const referralDiscountAmount = isReferralDiscountEligible
       ? Number(((baseAmount * referralDiscountPercent) / 100).toFixed(2))
       : 0;
@@ -1411,8 +1415,14 @@ const verifyAndCaptureHandler = async (req, res) => {
       const student = await Student.findById(transactions[0].studentId).select(
         "_id referredBy referralBenefitsUsed"
       );
+      const referralBenefitDeclaredEligible = transactions.some((txn) => {
+        const notes = parseTransactionNotes(txn.additionalNotes);
+        return Boolean(notes?.referralDiscountEligible);
+      });
       const isReferralBenefitEligible =
-        Boolean(student?.referredBy) && !Boolean(student?.referralBenefitsUsed);
+        Boolean(student?.referredBy) &&
+        !Boolean(student?.referralBenefitsUsed) &&
+        referralBenefitDeclaredEligible;
       const referralDiscountConsumed = transactions.some((txn) => {
         const notes = parseTransactionNotes(txn.additionalNotes);
         return Number(notes?.referralDiscount || 0) > 0;
@@ -1476,8 +1486,7 @@ const verifyAndCaptureHandler = async (req, res) => {
         referralCoinAwardReason = "referral_purchase_coins_disabled";
       }
 
-      const shouldMarkReferralBenefitsUsed =
-        isReferralBenefitEligible && (referralDiscountConsumed || referralCoinAwarded);
+      const shouldMarkReferralBenefitsUsed = isReferralBenefitEligible;
       if (shouldMarkReferralBenefitsUsed) {
         await Student.updateOne(
           {

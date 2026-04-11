@@ -39,6 +39,12 @@ const coinSettingsSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    referralPromoCode: {
+      type: String,
+      default: "",
+      trim: true,
+      uppercase: true,
+    },
   },
   { timestamps: true }
 );

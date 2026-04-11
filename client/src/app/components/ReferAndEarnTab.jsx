@@ -50,6 +50,10 @@ const maskEmail = (email = "") => {
 const defaultSummary = {
   referralCode: "",
   referralRewardCoins: 0,
+  referralFirstPurchaseDiscountPercent: 0,
+  referralFirstPurchaseCoins: 0,
+  referralBenefitsUsed: false,
+  referralFirstPurchaseEligible: false,
   referredCount: 0,
   totalReferralCoins: 0,
   currentCoinBalance: 0,
@@ -130,9 +134,16 @@ export default function ReferAndEarnTab({ student }) {
     const rewardText = summary.referralRewardCoins
       ? `I earn ${summary.referralRewardCoins} coins when a new student signs up. `
       : "";
+    const firstPurchaseBenefit = summary.referralFirstPurchaseDiscountPercent
+      ? `You get ${summary.referralFirstPurchaseDiscountPercent}% off on your first purchase. `
+      : "";
 
-    return `Join IICPA Institute with my referral link. ${rewardText}Use code ${summary.referralCode} while registering.`;
-  }, [summary.referralCode, summary.referralRewardCoins]);
+    return `Join IICPA Institute with my referral link. ${rewardText}${firstPurchaseBenefit}Use code ${summary.referralCode} while registering.`;
+  }, [
+    summary.referralCode,
+    summary.referralRewardCoins,
+    summary.referralFirstPurchaseDiscountPercent,
+  ]);
 
   const handleCopy = async (value, field) => {
     if (!value) return;
@@ -269,6 +280,29 @@ export default function ReferAndEarnTab({ student }) {
                 {copyState === "code" ? <FaCheckCircle className="text-blue-300" /> : <FaCopy />}
                 <span>{copyState === "code" ? "Copied Code" : "Copy Code"}</span>
               </button>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100/75">
+                First Purchase Benefit (Referred Student)
+              </p>
+              <p className="mt-2 text-sm text-blue-50/90">
+                Discount:{" "}
+                <span className="font-semibold">
+                  {Number(summary.referralFirstPurchaseDiscountPercent || 0)}%
+                </span>{" "}
+                | Wallet Coins:{" "}
+                <span className="font-semibold">
+                  {Number(summary.referralFirstPurchaseCoins || 0)}
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-blue-100/80">
+                {summary.referralFirstPurchaseEligible
+                  ? "Available for your first purchase."
+                  : summary.referralBenefitsUsed
+                  ? "Already used on your first purchase."
+                  : "Applicable when you join with a referral and make first purchase."}
+              </p>
             </div>
           </div>
         </div>

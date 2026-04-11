@@ -78,6 +78,16 @@ const StudentSchema = new mongoose.Schema(
       ref: "Student",
       default: null,
     },
+    referredViaAdminCode: {
+      type: Boolean,
+      default: false,
+    },
+    adminReferralCodeUsed: {
+      type: String,
+      default: "",
+      trim: true,
+      uppercase: true,
+    },
     referralBenefitsUsed: {
       type: Boolean,
       default: false,

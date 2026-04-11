@@ -486,7 +486,7 @@ router.get("/referral-summary/:id", isStudent, async (req, res) => {
     }
 
     const student = await Student.findById(req.params.id).select(
-      "name email referralCode referredBy coinBalance"
+      "name email referralCode referredBy referralBenefitsUsed coinBalance course"
     );
 
     if (!student) {
@@ -525,6 +525,15 @@ router.get("/referral-summary/:id", isStudent, async (req, res) => {
     return res.json({
       referralCode,
       referralRewardCoins: Number(settings?.referralSignupCoins || 0),
+      referralFirstPurchaseDiscountPercent: Number(
+        settings?.referralUsageDiscountPercent || 0
+      ),
+      referralFirstPurchaseCoins: Number(settings?.referralUsageCoins || 0),
+      referralBenefitsUsed: Boolean(student.referralBenefitsUsed),
+      referralFirstPurchaseEligible:
+        Boolean(student.referredBy) &&
+        !Boolean(student.referralBenefitsUsed) &&
+        Number(student?.course?.length || 0) === 0,
       referredCount,
       totalReferralCoins: Number(rewardSummary?.[0]?.totalCoins || 0),
       currentCoinBalance: Number(student.coinBalance || 0),
