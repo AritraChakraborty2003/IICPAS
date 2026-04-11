@@ -112,7 +112,7 @@ export default function ReferralCodeSettingsTab() {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            First Purchase Discount (%) for Referred Student
+            One-Time Use Discount (%) for Referred Student
           </label>
           <input
             type="number"
@@ -129,7 +129,7 @@ export default function ReferralCodeSettingsTab() {
 
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            First Purchase Coins for Referred Student
+            One-Time Use Coins for Referred Student
           </label>
           <input
             type="number"
