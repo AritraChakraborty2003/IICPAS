@@ -29,6 +29,7 @@ type Coupon = {
 type ReferralConfig = {
   referralUsageDiscountPercent: number;
   referralUsageCoins: number;
+  referralPromoCode: string;
 };
 
 type CourseBooking = {
@@ -127,10 +128,12 @@ export default function CheckoutPage() {
   const [couponsLoading, setCouponsLoading] = useState(true);
   const [couponFetchError, setCouponFetchError] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [appliedReferralCode, setAppliedReferralCode] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
   const [referralConfig, setReferralConfig] = useState<ReferralConfig>({
     referralUsageDiscountPercent: 0,
     referralUsageCoins: 0,
+    referralPromoCode: "",
   });
   const [isPaying, setIsPaying] = useState(false);
   const [razorpayReady, setRazorpayReady] = useState(false);
@@ -142,8 +145,12 @@ export default function CheckoutPage() {
     0
   );
   const couponDiscount = getCouponDiscount(cartSubtotal, appliedCoupon);
+  const isFirstPurchase =
+    !Boolean(student?.referralBenefitsUsed) &&
+    Number(student?.course?.length || 0) === 0;
   const isReferralBenefitEligible =
-    Boolean(student?.referredBy) && !Boolean(student?.referralBenefitsUsed);
+    (Boolean(student?.referredBy) || Boolean(appliedReferralCode)) &&
+    isFirstPurchase;
   const referralDiscountBase = Math.max(0, cartSubtotal - couponDiscount);
   const referralDiscount = isReferralBenefitEligible
     ? Math.min(
@@ -160,10 +167,30 @@ export default function CheckoutPage() {
 
   const applyCouponByCode = (codeInput: string) => {
     const normalizedCode = codeInput.trim().toUpperCase();
+    const normalizedReferralCode = String(referralConfig.referralPromoCode || "")
+      .trim()
+      .toUpperCase();
+
     if (!normalizedCode) {
       setCouponMessage("Please enter a coupon code.");
       return;
     }
+
+    if (normalizedReferralCode && normalizedCode === normalizedReferralCode) {
+      if (!isFirstPurchase) {
+        setAppliedCoupon(null);
+        setAppliedReferralCode("");
+        setCouponMessage("Referral code is valid only for first purchase.");
+        return;
+      }
+
+      setAppliedCoupon(null);
+      setAppliedReferralCode(normalizedCode);
+      setCouponCode(normalizedCode);
+      setCouponMessage(`${normalizedCode} applied as referral code.`);
+      return;
+    }
+
     if (couponsLoading) {
       setCouponMessage("Coupons are still loading. Please wait a moment.");
       return;
@@ -175,17 +202,20 @@ export default function CheckoutPage() {
 
     if (!matchedCoupon) {
       setAppliedCoupon(null);
+      setAppliedReferralCode("");
       setCouponMessage("Invalid coupon code.");
       return;
     }
 
     if (isCouponExpired(matchedCoupon.expiresAt)) {
       setAppliedCoupon(null);
+      setAppliedReferralCode("");
       setCouponMessage("This coupon has expired.");
       return;
     }
 
     setAppliedCoupon(matchedCoupon);
+    setAppliedReferralCode("");
     setCouponCode(matchedCoupon.code);
     setCouponMessage(`${matchedCoupon.code} applied successfully.`);
   };
@@ -263,11 +293,15 @@ export default function CheckoutPage() {
             settings.referralUsageDiscountPercent || 0
           ),
           referralUsageCoins: Number(settings.referralUsageCoins || 0),
+          referralPromoCode: String(settings.referralPromoCode || "")
+            .trim()
+            .toUpperCase(),
         });
       } catch {
         setReferralConfig({
           referralUsageDiscountPercent: 0,
           referralUsageCoins: 0,
+          referralPromoCode: "",
         });
       }
     };
@@ -501,7 +535,7 @@ export default function CheckoutPage() {
           billingAddress,
           shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
           sameAsBilling,
-          appliedCouponCode: appliedCoupon?.code || "",
+          appliedCouponCode: appliedReferralCode || appliedCoupon?.code || "",
         },
         { withCredentials: true }
       );
@@ -966,6 +1000,14 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-600 mb-3">
                       Select a student coupon and apply it at checkout.
                     </p>
+                    {referralConfig.referralPromoCode ? (
+                      <p className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                        Referral code available:{" "}
+                        <span className="font-semibold">
+                          {referralConfig.referralPromoCode}
+                        </span>
+                      </p>
+                    ) : null}
 
                     <div className="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
                       {couponsLoading ? (
@@ -1047,7 +1089,7 @@ export default function CheckoutPage() {
                     {couponMessage ? (
                       <p
                         className={`mt-2 text-sm ${
-                          appliedCoupon
+                          appliedCoupon || appliedReferralCode
                             ? "text-green-700"
                             : "text-red-600"
                         }`}
