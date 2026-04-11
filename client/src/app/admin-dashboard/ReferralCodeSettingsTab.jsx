@@ -12,6 +12,7 @@ export default function ReferralCodeSettingsTab() {
     referralSignupCoins: 50,
     referralUsageDiscountPercent: 0,
     referralUsageCoins: 0,
+    referralPromoCode: "",
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -29,6 +30,7 @@ export default function ReferralCodeSettingsTab() {
             settings.referralUsageDiscountPercent ?? 0
           ),
           referralUsageCoins: Number(settings.referralUsageCoins ?? 0),
+          referralPromoCode: String(settings.referralPromoCode ?? ""),
         });
       } catch {
         toast.error("Failed to load referral settings");
@@ -40,11 +42,23 @@ export default function ReferralCodeSettingsTab() {
     fetchSettings();
   }, [API_BASE]);
 
-  const handleChange = (key, value) => {
+  const handleNumberChange = (key, value) => {
     const parsed = Number(value);
     setForm((prev) => ({
       ...prev,
       [key]: Number.isFinite(parsed) && parsed >= 0 ? parsed : 0,
+    }));
+  };
+
+  const handleCodeChange = (value) => {
+    const normalized = String(value || "")
+      .toUpperCase()
+      .replace(/[^A-Z0-9_-]/g, "")
+      .slice(0, 30);
+
+    setForm((prev) => ({
+      ...prev,
+      referralPromoCode: normalized,
     }));
   };
 
@@ -89,7 +103,9 @@ export default function ReferralCodeSettingsTab() {
             type="number"
             min="0"
             value={form.referralSignupCoins}
-            onChange={(e) => handleChange("referralSignupCoins", e.target.value)}
+            onChange={(e) =>
+              handleNumberChange("referralSignupCoins", e.target.value)
+            }
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -105,7 +121,7 @@ export default function ReferralCodeSettingsTab() {
             step="0.01"
             value={form.referralUsageDiscountPercent}
             onChange={(e) =>
-              handleChange("referralUsageDiscountPercent", e.target.value)
+              handleNumberChange("referralUsageDiscountPercent", e.target.value)
             }
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -119,9 +135,27 @@ export default function ReferralCodeSettingsTab() {
             type="number"
             min="0"
             value={form.referralUsageCoins}
-            onChange={(e) => handleChange("referralUsageCoins", e.target.value)}
+            onChange={(e) =>
+              handleNumberChange("referralUsageCoins", e.target.value)
+            }
             className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Referral Promo Code (Show in Student Dashboard)
+          </label>
+          <input
+            type="text"
+            value={form.referralPromoCode}
+            onChange={(e) => handleCodeChange(e.target.value)}
+            placeholder="E.g. IICPA2026"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Allowed: A-Z, 0-9, underscore (_) and hyphen (-). Max 30 chars.
+          </p>
         </div>
 
         <button

@@ -12,6 +12,14 @@ const normalizeDiscountPercent = (value) => {
   return Number(parsed.toFixed(2));
 };
 
+const normalizeReferralPromoCode = (value) => {
+  if (value === undefined || value === null) return "";
+  const normalized = String(value).trim().toUpperCase();
+  if (!normalized) return "";
+  if (!/^[A-Z0-9_-]{3,30}$/.test(normalized)) return null;
+  return normalized;
+};
+
 export const getCoinSettings = async (req, res) => {
   try {
     const settings = await CoinSettings.getSettings();
@@ -36,6 +44,7 @@ export const updateCoinSettings = async (req, res) => {
       referralSignupCoins: normalizeNonNegativeInt,
       referralUsageCoins: normalizeNonNegativeInt,
       referralUsageDiscountPercent: normalizeDiscountPercent,
+      referralPromoCode: normalizeReferralPromoCode,
     };
 
     const settings = await CoinSettings.getSettings();
@@ -51,6 +60,8 @@ export const updateCoinSettings = async (req, res) => {
           message:
             field === "referralUsageDiscountPercent"
               ? "Referral discount must be a number between 0 and 100"
+              : field === "referralPromoCode"
+              ? "Referral code must be 3-30 characters and use letters, numbers, _ or -"
               : `${field} must be a non-negative number`,
         });
       }

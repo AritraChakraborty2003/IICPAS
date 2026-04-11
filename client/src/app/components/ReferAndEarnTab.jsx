@@ -49,6 +49,7 @@ const maskEmail = (email = "") => {
 
 const defaultSummary = {
   referralCode: "",
+  referralPromoCode: "",
   referralRewardCoins: 0,
   referralFirstPurchaseDiscountPercent: 0,
   referralFirstPurchaseCoins: 0,
@@ -304,6 +305,31 @@ export default function ReferAndEarnTab({ student }) {
                   : "Applicable when you join with a referral and make first purchase."}
               </p>
             </div>
+
+            {summary.referralPromoCode ? (
+              <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100/75">
+                  Admin Referral Promo Code
+                </p>
+                <p className="mt-2 break-all text-lg font-black tracking-[0.2em] text-white">
+                  {summary.referralPromoCode}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => handleCopy(summary.referralPromoCode, "promo-code")}
+                  className="mt-3 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
+                >
+                  {copyState === "promo-code" ? (
+                    <FaCheckCircle className="text-blue-300" />
+                  ) : (
+                    <FaCopy />
+                  )}
+                  <span>
+                    {copyState === "promo-code" ? "Copied Promo Code" : "Copy Promo Code"}
+                  </span>
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </section>

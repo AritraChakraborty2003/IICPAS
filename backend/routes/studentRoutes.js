@@ -529,6 +529,7 @@ router.get("/referral-summary/:id", isStudent, async (req, res) => {
         settings?.referralUsageDiscountPercent || 0
       ),
       referralFirstPurchaseCoins: Number(settings?.referralUsageCoins || 0),
+      referralPromoCode: String(settings?.referralPromoCode || ""),
       referralBenefitsUsed: Boolean(student.referralBenefitsUsed),
       referralFirstPurchaseEligible:
         Boolean(student.referredBy) &&
