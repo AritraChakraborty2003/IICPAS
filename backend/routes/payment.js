@@ -765,8 +765,21 @@ router.post("/create-order", async (req, res) => {
       const normalizedCouponCode = String(appliedCouponCode || "")
         .trim()
         .toUpperCase();
+      const coinSettings = await getCoinSettings();
+      const normalizedReferralPromoCode = String(
+        coinSettings?.referralPromoCode || ""
+      )
+        .trim()
+        .toUpperCase();
+      const isReferralPromoCodeApplied =
+        Boolean(normalizedCouponCode) &&
+        Boolean(normalizedReferralPromoCode) &&
+        normalizedCouponCode === normalizedReferralPromoCode;
+      const isFirstPurchase =
+        !Boolean(student.referralBenefitsUsed) &&
+        Number(student?.course?.length || 0) === 0;
 
-      if (normalizedCouponCode) {
+      if (normalizedCouponCode && !isReferralPromoCodeApplied) {
         const coupon = await Coupon.findOne({
           code: normalizedCouponCode,
           isActive: true,
@@ -792,15 +805,25 @@ router.post("/create-order", async (req, res) => {
         appliedCoupon = coupon;
       }
 
-      const coinSettings = await getCoinSettings();
+      if (isReferralPromoCodeApplied && !isFirstPurchase) {
+        return res.status(400).json({
+          success: false,
+          message: "Referral promo code is valid only for first purchase",
+        });
+      }
+
       const referralDiscountPercent = Math.min(
         100,
         Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
       );
       const isReferralDiscountEligible =
-        Boolean(student.referredBy) &&
-        !Boolean(student.referralBenefitsUsed) &&
-        Number(student?.course?.length || 0) === 0;
+        (Boolean(student.referredBy) && isFirstPurchase) ||
+        (isReferralPromoCodeApplied && isFirstPurchase);
+      const referralBenefitTrigger = isReferralPromoCodeApplied
+        ? "promo_code"
+        : Boolean(student.referredBy) && isFirstPurchase
+        ? "referred_signup"
+        : "none";
 
       if (isReferralDiscountEligible && referralDiscountPercent > 0) {
         const referralDiscountBasePaise = Math.max(0, subtotalPaise - couponDiscountPaise);
@@ -914,6 +937,10 @@ router.post("/create-order", async (req, res) => {
               referralDiscount: fromPaise(referralDiscountPaise),
               referralDiscountPercentApplied: referralDiscountPercent,
               referralDiscountEligible: isReferralDiscountEligible,
+              referralPromoCodeApplied: isReferralPromoCodeApplied
+                ? normalizedCouponCode
+                : "",
+              referralBenefitTrigger,
               itemDiscount: fromPaise(itemDiscountPaise),
             }),
           }).save();
@@ -940,6 +967,8 @@ router.post("/create-order", async (req, res) => {
             eligible: isReferralDiscountEligible,
             discountPercent: referralDiscountPercent,
             rewardCoins: Number(coinSettings?.referralUsageCoins || 0),
+            trigger: referralBenefitTrigger,
+            promoCodeApplied: isReferralPromoCodeApplied ? normalizedCouponCode : "",
           },
         },
       });
@@ -1019,14 +1048,46 @@ router.post("/create-order", async (req, res) => {
     const numericAmount = Number(amount) > 0 ? Number(amount) : serverAmount;
     const baseAmount = Math.max(serverAmount, numericAmount);
     const coinSettings = await getCoinSettings();
+    const normalizedAppliedCode = String(appliedCouponCode || "")
+      .trim()
+      .toUpperCase();
+    const normalizedReferralPromoCode = String(
+      coinSettings?.referralPromoCode || ""
+    )
+      .trim()
+      .toUpperCase();
+    const isReferralPromoCodeApplied =
+      Boolean(normalizedAppliedCode) &&
+      Boolean(normalizedReferralPromoCode) &&
+      normalizedAppliedCode === normalizedReferralPromoCode;
+    const isFirstPurchase =
+      !Boolean(student.referralBenefitsUsed) &&
+      Number(student?.course?.length || 0) === 0;
+    if (normalizedAppliedCode && !isReferralPromoCodeApplied) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid or unsupported code",
+      });
+    }
+    if (isReferralPromoCodeApplied && !isFirstPurchase) {
+      return res.status(400).json({
+        success: false,
+        message: "Referral promo code is valid only for first purchase",
+      });
+    }
+
     const referralDiscountPercent = Math.min(
       100,
       Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
     );
     const isReferralDiscountEligible =
-      Boolean(student.referredBy) &&
-      !Boolean(student.referralBenefitsUsed) &&
-      Number(student?.course?.length || 0) === 0;
+      (Boolean(student.referredBy) && isFirstPurchase) ||
+      (isReferralPromoCodeApplied && isFirstPurchase);
+    const referralBenefitTrigger = isReferralPromoCodeApplied
+      ? "promo_code"
+      : Boolean(student.referredBy) && isFirstPurchase
+      ? "referred_signup"
+      : "none";
     const referralDiscountAmount = isReferralDiscountEligible
       ? Number(((baseAmount * referralDiscountPercent) / 100).toFixed(2))
       : 0;
@@ -1124,6 +1185,10 @@ router.post("/create-order", async (req, res) => {
         referralDiscount: referralDiscountAmount,
         referralDiscountPercentApplied: referralDiscountPercent,
         referralDiscountEligible: isReferralDiscountEligible,
+        referralPromoCodeApplied: isReferralPromoCodeApplied
+          ? normalizedAppliedCode
+          : "",
+        referralBenefitTrigger,
         itemDiscount: referralDiscountAmount,
       }),
     });
@@ -1151,6 +1216,8 @@ router.post("/create-order", async (req, res) => {
           eligible: isReferralDiscountEligible,
           discountPercent: referralDiscountPercent,
           rewardCoins: Number(coinSettings?.referralUsageCoins || 0),
+          trigger: referralBenefitTrigger,
+          promoCodeApplied: isReferralPromoCodeApplied ? normalizedAppliedCode : "",
         },
       },
     });
@@ -1420,9 +1487,7 @@ const verifyAndCaptureHandler = async (req, res) => {
         return Boolean(notes?.referralDiscountEligible);
       });
       const isReferralBenefitEligible =
-        Boolean(student?.referredBy) &&
-        !Boolean(student?.referralBenefitsUsed) &&
-        referralBenefitDeclaredEligible;
+        !Boolean(student?.referralBenefitsUsed) && referralBenefitDeclaredEligible;
       const referralDiscountConsumed = transactions.some((txn) => {
         const notes = parseTransactionNotes(txn.additionalNotes);
         return Number(notes?.referralDiscount || 0) > 0;
