@@ -284,7 +284,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const fetchReferralConfig = async () => {
       try {
-        const response = await axios.get(`${API_BASE}/coins/settings`, {
+        const response = await axios.get(`${API_BASE}/api/coins/settings`, {
           withCredentials: true,
         });
         const settings = response.data?.settings || {};
