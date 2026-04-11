@@ -775,9 +775,7 @@ router.post("/create-order", async (req, res) => {
         Boolean(normalizedCouponCode) &&
         Boolean(normalizedReferralPromoCode) &&
         normalizedCouponCode === normalizedReferralPromoCode;
-      const isFirstPurchase =
-        !Boolean(student.referralBenefitsUsed) &&
-        Number(student?.course?.length || 0) === 0;
+      const isFirstUse = !Boolean(student.referralBenefitsUsed);
 
       if (normalizedCouponCode && !isReferralPromoCodeApplied) {
         const coupon = await Coupon.findOne({
@@ -805,10 +803,10 @@ router.post("/create-order", async (req, res) => {
         appliedCoupon = coupon;
       }
 
-      if (isReferralPromoCodeApplied && !isFirstPurchase) {
+      if (isReferralPromoCodeApplied && !isFirstUse) {
         return res.status(400).json({
           success: false,
-          message: "Referral promo code is valid only for first purchase",
+          message: "Referral promo code can be used only once per user",
         });
       }
 
@@ -817,11 +815,11 @@ router.post("/create-order", async (req, res) => {
         Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
       );
       const isReferralDiscountEligible =
-        (Boolean(student.referredBy) && isFirstPurchase) ||
-        (isReferralPromoCodeApplied && isFirstPurchase);
+        (Boolean(student.referredBy) && isFirstUse) ||
+        (isReferralPromoCodeApplied && isFirstUse);
       const referralBenefitTrigger = isReferralPromoCodeApplied
         ? "promo_code"
-        : Boolean(student.referredBy) && isFirstPurchase
+        : Boolean(student.referredBy) && isFirstUse
         ? "referred_signup"
         : "none";
 
@@ -1060,19 +1058,17 @@ router.post("/create-order", async (req, res) => {
       Boolean(normalizedAppliedCode) &&
       Boolean(normalizedReferralPromoCode) &&
       normalizedAppliedCode === normalizedReferralPromoCode;
-    const isFirstPurchase =
-      !Boolean(student.referralBenefitsUsed) &&
-      Number(student?.course?.length || 0) === 0;
+    const isFirstUse = !Boolean(student.referralBenefitsUsed);
     if (normalizedAppliedCode && !isReferralPromoCodeApplied) {
       return res.status(400).json({
         success: false,
         message: "Invalid or unsupported code",
       });
     }
-    if (isReferralPromoCodeApplied && !isFirstPurchase) {
+    if (isReferralPromoCodeApplied && !isFirstUse) {
       return res.status(400).json({
         success: false,
-        message: "Referral promo code is valid only for first purchase",
+        message: "Referral promo code can be used only once per user",
       });
     }
 
@@ -1081,11 +1077,11 @@ router.post("/create-order", async (req, res) => {
       Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
     );
     const isReferralDiscountEligible =
-      (Boolean(student.referredBy) && isFirstPurchase) ||
-      (isReferralPromoCodeApplied && isFirstPurchase);
+      (Boolean(student.referredBy) && isFirstUse) ||
+      (isReferralPromoCodeApplied && isFirstUse);
     const referralBenefitTrigger = isReferralPromoCodeApplied
       ? "promo_code"
-      : Boolean(student.referredBy) && isFirstPurchase
+      : Boolean(student.referredBy) && isFirstUse
       ? "referred_signup"
       : "none";
     const referralDiscountAmount = isReferralDiscountEligible
