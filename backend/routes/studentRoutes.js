@@ -38,6 +38,13 @@ import {
   getDigitalHubCourseProgress,
   markDigitalHubCompletion,
 } from "../services/digitalHubProgressService.js";
+import {
+  isWhatsAppConfigured,
+  normalizeWhatsAppRecipient,
+} from "../config/whatsappConfig.js";
+import { sendWhatsAppTemplateMessage } from "../services/whatsappService.js";
+
+const WELCOME_WHATSAPP_TEMPLATE_NAME = "iicpa_welcome_message_1";
 
 dotenv.config();
 
@@ -132,7 +139,18 @@ router.post("/register", async (req, res) => {
   } = req.body;
 
   try {
-    const existing = await Student.findOne({ email });
+    const normalizedName = String(name || "").trim();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedPhone = String(phone || "").trim();
+    const normalizedWhatsAppPhone = normalizeWhatsAppRecipient(normalizedPhone);
+
+    if (!normalizedName || !normalizedEmail || !normalizedPhone || !password) {
+      return res.status(400).json({
+        message: "Name, email, phone, and password are required",
+      });
+    }
+
+    const existing = await Student.findOne({ email: normalizedEmail });
     if (existing)
       return res.status(400).json({ message: "Email already exists" });
 
@@ -153,14 +171,14 @@ router.post("/register", async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const student = new Student({
-      name,
-      email,
-      phone,
+      name: normalizedName,
+      email: normalizedEmail,
+      phone: normalizedPhone,
       password: hashed,
       mode,
       location,
       center,
-      referralCode: await generateUniqueReferralCode(name || email),
+      referralCode: await generateUniqueReferralCode(normalizedName || normalizedEmail),
       referredBy: referrer?._id || null,
     });
     await student.save();
@@ -192,11 +210,34 @@ router.post("/register", async (req, res) => {
       );
     }
 
+    let welcomeWhatsAppSent = false;
+    if (normalizedWhatsAppPhone && isWhatsAppConfigured()) {
+      try {
+        await sendWhatsAppTemplateMessage({
+          to: normalizedWhatsAppPhone,
+          templateName: WELCOME_WHATSAPP_TEMPLATE_NAME,
+          bodyParameters: [
+            {
+              type: "text",
+              text: student.name || "Student",
+            },
+          ],
+        });
+        welcomeWhatsAppSent = true;
+      } catch (whatsAppError) {
+        console.error(
+          `Failed to send WhatsApp welcome message to ${student.phone}:`,
+          whatsAppError.message
+        );
+      }
+    }
+
     res.status(201).json({
       message: "Registered",
       student: sanitizeStudentResponse(student),
       referralApplied: Boolean(referrer),
       welcomeEmailSent,
+      welcomeWhatsAppSent,
     });
   } catch (err) {
     res.status(500).json({ error: "Register failed", details: err.message });

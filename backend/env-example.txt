@@ -22,5 +22,15 @@ EMAIL_PORT=587
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASS=your_app_password
 
+# WhatsApp Cloud API Configuration
+# Student/lead phone numbers are stored in the existing `phone` field on the user record.
+# Meta credentials should stay in environment variables, not the database.
+WHATSAPP_API_VERSION=v20.0
+WHATSAPP_PHONE_NUMBER_ID=your_whatsapp_phone_number_id
+WHATSAPP_WABA_ID=your_whatsapp_business_account_id
+WHATSAPP_ACCESS_TOKEN=your_meta_access_token
+WHATSAPP_TEMPLATE_LANGUAGE=en_US
+WHATSAPP_DEFAULT_COUNTRY_CODE=91
+
 # Other configurations
 API_BASE_URL=http://localhost:8080/api
