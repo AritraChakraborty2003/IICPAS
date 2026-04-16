@@ -237,6 +237,10 @@ app.use("/api/v1/website/study-material", studyMaterialRoutes);
 import faqRoutes from "./routes/WebsiteRoutes/faqRoutes.js";
 app.use("/api/v1/website/faq", faqRoutes);
 
+//Demo Digital Hub Routes
+import demoDigitalHubRoutes from "./routes/WebsiteRoutes/demoDigitalHubRoutes.js";
+app.use("/api/v1/website/demo-digital-hub", demoDigitalHubRoutes);
+
 //Ticket Routes
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/bookings", bookingRoutes);
