@@ -12,6 +12,7 @@ declare module "lucide-react" {
   export const Award: React.ComponentType<any>;
   export const Calendar: React.ComponentType<any>;
   export const Video: React.ComponentType<any>;
+  export const AlertCircle: React.ComponentType<any>;
   export const FileText: React.ComponentType<any>;
   export const BarChart3: React.ComponentType<any>;
   export const GraduationCap: React.ComponentType<any>;

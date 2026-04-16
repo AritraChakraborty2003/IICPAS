@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Video,
@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 import toast from "react-hot-toast";
 import { getBlogSlug } from "../../lib/blogSlug";
+import LoginModal from "./LoginModal";
 
 interface LiveClass {
   _id: string;
@@ -60,6 +61,10 @@ export default function LiveClassesDisplay() {
   const [blogs, setBlogs] = useState<any[]>([]);
   const [selectedSession, setSelectedSession] = useState<LiveClass | null>(null);
   const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingEnrollmentSession, setPendingEnrollmentSession] =
+    useState<LiveClass | null>(null);
+  const didLoginFromEnrollmentRef = useRef(false);
   const [isSubmittingEnrollment, setIsSubmittingEnrollment] = useState(false);
   const [isRazorpayReady, setIsRazorpayReady] = useState(false);
   const [enrollmentSuccessMessage, setEnrollmentSuccessMessage] = useState("");
@@ -314,16 +319,42 @@ export default function LiveClassesDisplay() {
     return session.status === selectedTab;
   });
 
-  const openEnrollmentModal = (session: LiveClass) => {
+  const openEnrollmentModal = (
+    session: LiveClass,
+    currentUser: User | null = user
+  ) => {
     setSelectedSession(session);
     setEnrollmentSuccessMessage("");
     setEnrollmentForm({
-      name: user?.name || "",
-      email: user?.email || "",
-      phone: user?.phone ? normalizeMobileNumber(user.phone) : "",
-      whatsappNumber: user?.phone ? normalizeMobileNumber(user.phone) : "",
+      name: currentUser?.name || "",
+      email: currentUser?.email || "",
+      phone: currentUser?.phone ? normalizeMobileNumber(currentUser.phone) : "",
+      whatsappNumber: currentUser?.phone
+        ? normalizeMobileNumber(currentUser.phone)
+        : "",
     });
     setShowEnrollModal(true);
+  };
+
+  const promptLoginForEnrollment = (session: LiveClass) => {
+    setSelectedSession(null);
+    setPendingEnrollmentSession(session);
+    didLoginFromEnrollmentRef.current = false;
+    setEnrollmentSuccessMessage(
+      "Please log in or register to enroll in this live session."
+    );
+    setShowLoginModal(true);
+    toast.error("Please log in or register to enroll in this live session.");
+  };
+
+  const handleAuthSuccess = async () => {
+    const currentUser = await getUser();
+    const sessionToEnroll = pendingEnrollmentSession;
+
+    if (sessionToEnroll && currentUser) {
+      setPendingEnrollmentSession(null);
+      openEnrollmentModal(sessionToEnroll, currentUser);
+    }
   };
 
   useEffect(() => {
@@ -351,6 +382,36 @@ export default function LiveClassesDisplay() {
     setEnrollmentSuccessMessage("");
   };
 
+  const closeLoginModal = () => {
+    setShowLoginModal(false);
+    if (didLoginFromEnrollmentRef.current) {
+      didLoginFromEnrollmentRef.current = false;
+      return;
+    }
+
+    if (!user) {
+      setPendingEnrollmentSession(null);
+    }
+  };
+
+  const handleEnrollClick = async (session: LiveClass) => {
+    if (session.status === "live" && session.isEnrolled && session.meetingLink) {
+      handleJoinSession(session);
+      return;
+    }
+
+    if (session.isEnrolled) return;
+
+    const currentUser = user || (await getUser());
+    if (!currentUser) {
+      promptLoginForEnrollment(session);
+      return;
+    }
+
+    setPendingEnrollmentSession(null);
+    openEnrollmentModal(session, currentUser);
+  };
+
   const handleEnrollmentInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
@@ -369,6 +430,12 @@ export default function LiveClassesDisplay() {
   ) => {
     e.preventDefault();
     if (!selectedSession) return;
+    const currentUser = user || (await getUser());
+    if (!currentUser) {
+      closeEnrollmentModal();
+      promptLoginForEnrollment(selectedSession);
+      return;
+    }
     const normalizedEmail = enrollmentForm.email.trim().toLowerCase();
     const normalizedPhone = normalizeMobileNumber(enrollmentForm.phone);
     const normalizedWhatsappNumber = enrollmentForm.whatsappNumber.trim()
@@ -419,7 +486,7 @@ export default function LiveClassesDisplay() {
           `${API}/api/test-payment/create-order`,
           {
             liveSessionId: selectedSession._id,
-            studentId: user?._id || "",
+            studentId: currentUser._id,
             name: enrollmentForm.name.trim(),
             email: normalizedEmail,
             phone: normalizedPhone,
@@ -498,7 +565,7 @@ export default function LiveClassesDisplay() {
       }
 
       await axios.post(`${API}/api/bookings`, {
-        studentId: user?._id || undefined,
+        studentId: currentUser._id,
         liveSessionId: selectedSession._id,
         by: normalizedEmail,
         requesterName: enrollmentForm.name.trim(),
@@ -650,12 +717,7 @@ export default function LiveClassesDisplay() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (session.status === "live" && session.isEnrolled && session.meetingLink) {
-                      handleJoinSession(session);
-                      return;
-                    }
-                    if (session.isEnrolled) return;
-                    openEnrollmentModal(session);
+                    void handleEnrollClick(session);
                   }}
                   disabled={
                     (session.isEnrolled && session.status !== "live") ||
@@ -976,6 +1038,16 @@ export default function LiveClassesDisplay() {
           </div>
         </div>
       )}
+
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={closeLoginModal}
+        onLoginSuccess={() => {
+          didLoginFromEnrollmentRef.current = true;
+          setShowLoginModal(false);
+          void handleAuthSuccess();
+        }}
+      />
     </div>
   );
 }
