@@ -8,6 +8,7 @@ import {
   getAdminCourseBookings,
   resendBookingInvoice,
   downloadBookingInvoice,
+  downloadPublicBookingInvoice,
 } from "../controllers/courseBookingController.js";
 
 const router = express.Router();
@@ -23,6 +24,7 @@ router.post(
   requirePermission("bookings", "update"),
   resendBookingInvoice
 );
+router.get("/public/:id/invoice", downloadPublicBookingInvoice);
 router.get("/:id/invoice", isStudent, downloadBookingInvoice);
 router.get(
   "/admin/:id/invoice",

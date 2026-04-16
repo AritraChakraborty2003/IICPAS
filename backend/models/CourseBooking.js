@@ -122,6 +122,22 @@ const courseBookingSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    invoiceSentPaymentId: {
+      type: String,
+      default: "",
+    },
+    whatsappInvoiceSent: {
+      type: Boolean,
+      default: false,
+    },
+    whatsappInvoiceSentAt: {
+      type: Date,
+      default: null,
+    },
+    whatsappInvoiceSentPaymentId: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

@@ -32,15 +32,15 @@ const getInvoiceLinkSecret = () =>
       ""
   ).trim();
 
-const createInvoiceSignature = ({ transactionId, paymentId }) => {
+const createInvoiceSignature = ({ recordId, paymentId }) => {
   const secret = getInvoiceLinkSecret();
-  if (!secret || !transactionId || !paymentId) {
+  if (!secret || !recordId || !paymentId) {
     return "";
   }
 
   return crypto
     .createHmac("sha256", secret)
-    .update(`${transactionId}:${paymentId}`)
+    .update(`${recordId}:${paymentId}`)
     .digest("hex");
 };
 
@@ -63,7 +63,7 @@ export const buildTransactionInvoiceDownloadUrl = ({
   baseUrl = "",
 }) => {
   const resolvedBaseUrl = normalizeBaseUrl(baseUrl) || resolveApiBaseUrl();
-  const token = createInvoiceSignature({ transactionId, paymentId });
+  const token = createInvoiceSignature({ recordId: transactionId, paymentId });
 
   if (!resolvedBaseUrl || !token || !transactionId || !paymentId) {
     return "";
@@ -80,4 +80,35 @@ export const verifyTransactionInvoiceDownloadToken = ({
   transactionId,
   paymentId,
   token,
-}) => safeCompare(createInvoiceSignature({ transactionId, paymentId }), token);
+}) => safeCompare(
+  createInvoiceSignature({ recordId: transactionId, paymentId }),
+  token
+);
+
+export const buildCourseBookingInvoiceDownloadUrl = ({
+  bookingId,
+  paymentId,
+  baseUrl = "",
+}) => {
+  const resolvedBaseUrl = normalizeBaseUrl(baseUrl) || resolveApiBaseUrl();
+  const token = createInvoiceSignature({ recordId: bookingId, paymentId });
+
+  if (!resolvedBaseUrl || !token || !bookingId || !paymentId) {
+    return "";
+  }
+
+  return `${resolvedBaseUrl}/v1/course-bookings/public/${encodeURIComponent(
+    bookingId
+  )}/invoice?paymentId=${encodeURIComponent(paymentId)}&token=${encodeURIComponent(
+    token
+  )}`;
+};
+
+export const verifyCourseBookingInvoiceDownloadToken = ({
+  bookingId,
+  paymentId,
+  token,
+}) => safeCompare(
+  createInvoiceSignature({ recordId: bookingId, paymentId }),
+  token
+);

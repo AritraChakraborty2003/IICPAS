@@ -6,6 +6,15 @@ import GroupPricing from "../models/GroupPricing.js";
 import Student from "../models/Students.js";
 import BookingSettings from "../models/BookingSettings.js";
 import CourseBooking from "../models/CourseBooking.js";
+import {
+  buildCourseBookingInvoiceDownloadUrl,
+  verifyCourseBookingInvoiceDownloadToken,
+} from "../services/invoiceLinkService.js";
+import {
+  isWhatsAppConfigured,
+  normalizeWhatsAppRecipient,
+} from "../config/whatsappConfig.js";
+import { sendWhatsAppTemplateMessage } from "../services/whatsappService.js";
 import { generateBookingInvoicePDF } from "../utils/pdfBookingInvoiceGenerator.js";
 import { sendBookingInvoiceEmail } from "../utils/bookingEmailService.js";
 
@@ -23,6 +32,9 @@ try {
 
 const toPaise = (amount) => Math.max(0, Math.round(Number(amount || 0) * 100));
 const fromPaise = (amount) => Number((Number(amount || 0) / 100).toFixed(2));
+const COURSE_PURCHASE_WHATSAPP_TEMPLATE_NAME =
+  process.env.WHATSAPP_COURSE_PURCHASE_TEMPLATE_NAME ||
+  "course_purchase_invoice_iicpa";
 
 const ensureRazorpayConfigured = (res) => {
   if (!razorpay) {
@@ -34,6 +46,24 @@ const ensureRazorpayConfigured = (res) => {
     return false;
   }
   return true;
+};
+
+const resolveRequestApiBaseUrl = (req) => {
+  const forwardedProto = String(req.headers["x-forwarded-proto"] || "")
+    .split(",")[0]
+    .trim();
+  const protocol = forwardedProto || req.protocol || "https";
+  const forwardedHost = String(req.headers["x-forwarded-host"] || "")
+    .split(",")[0]
+    .trim();
+  const host = forwardedHost || req.get("host") || "";
+
+  if (!host) {
+    return "";
+  }
+
+  const baseUrl = `${protocol}://${host}`.replace(/\/+$/, "");
+  return baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
 };
 
 const getSingleCourseBaseAmount = (course, sessionType = "recorded") => {
@@ -109,7 +139,7 @@ const createOrderNotes = (payload) => {
 const getStudentFromCookie = async (req) => {
   const studentId = req.user?.id;
   if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) return null;
-  return Student.findById(studentId).select("name email");
+  return Student.findById(studentId).select("name email phone");
 };
 
 const objectIdEquals = (left, right) => {
@@ -161,6 +191,172 @@ const syncStudentEnrollmentFromBooking = async (booking) => {
   if (changed) {
     await student.save();
   }
+};
+
+const buildCourseBookingInvoiceComponents = ({
+  studentName,
+  courseTitle,
+  invoiceUrl,
+}) => [
+  {
+    type: "header",
+    parameters: [
+      {
+        type: "document",
+        document: {
+          link: invoiceUrl,
+          filename: "invoice.pdf",
+        },
+      },
+    ],
+  },
+  {
+    type: "body",
+    parameters: [
+      {
+        type: "text",
+        text: studentName || "Student",
+      },
+      {
+        type: "text",
+        text: courseTitle || "Course",
+      },
+    ],
+  },
+];
+
+const sendCourseBookingWhatsAppInvoice = async (
+  booking,
+  payment,
+  { publicApiBaseUrl = "" } = {}
+) => {
+  if (!isWhatsAppConfigured()) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: "WhatsApp is not configured",
+    };
+  }
+
+  const invoiceUrl = buildCourseBookingInvoiceDownloadUrl({
+    bookingId: String(booking?._id || ""),
+    paymentId: String(payment?.razorpayPaymentId || ""),
+    baseUrl: publicApiBaseUrl,
+  });
+
+  if (!invoiceUrl) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: "Public invoice URL is not configured",
+    };
+  }
+
+  const recipient = normalizeWhatsAppRecipient(
+    booking?.studentId?.phone || booking?.studentPhone || ""
+  );
+  if (!recipient) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: "Student phone number is not available",
+    };
+  }
+
+  const response = await sendWhatsAppTemplateMessage({
+    to: recipient,
+    templateName: COURSE_PURCHASE_WHATSAPP_TEMPLATE_NAME,
+    components: buildCourseBookingInvoiceComponents({
+      studentName: booking?.studentId?.name || "Student",
+      courseTitle: booking?.itemTitle || "Course",
+      invoiceUrl,
+    }),
+  });
+
+  if (response?.skipped) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: response?.reason || "WhatsApp is not configured",
+    };
+  }
+
+  return {
+    sent: true,
+    skipped: false,
+    response,
+  };
+};
+
+const sendCourseBookingInvoiceNotifications = async (
+  booking,
+  payment,
+  { publicApiBaseUrl = "" } = {}
+) => {
+  const currentPaymentId = String(payment?.razorpayPaymentId || "").trim();
+  const shouldSendEmail =
+    !currentPaymentId || booking?.invoiceSentPaymentId !== currentPaymentId;
+  const shouldSendWhatsApp =
+    !currentPaymentId ||
+    booking?.whatsappInvoiceSentPaymentId !== currentPaymentId;
+  let pdfBuffer = null;
+  let emailSent = false;
+  let whatsappSent = false;
+
+  if (shouldSendEmail) {
+    try {
+      pdfBuffer = await generateBookingInvoicePDF(booking, payment);
+    } catch (pdfError) {
+      console.error(
+        `PDF generation failed for booking ${booking?._id}. Sending email without attachment:`,
+        pdfError.message
+      );
+    }
+
+    try {
+      await sendBookingInvoiceEmail(booking, pdfBuffer);
+      booking.invoiceSent = true;
+      booking.invoiceSentAt = new Date();
+      booking.invoiceSentPaymentId = currentPaymentId;
+      emailSent = true;
+    } catch (emailError) {
+      console.error(
+        `Failed to send booking email invoice for ${booking?._id}:`,
+        emailError
+      );
+    }
+  }
+
+  if (shouldSendWhatsApp) {
+    try {
+      const whatsappResult = await sendCourseBookingWhatsAppInvoice(
+        booking,
+        payment,
+        { publicApiBaseUrl }
+      );
+      if (whatsappResult?.skipped) {
+        console.warn(
+          `WhatsApp booking invoice skipped for ${booking?._id}: ${whatsappResult.reason || "unknown reason"}`
+        );
+      } else {
+        booking.whatsappInvoiceSent = true;
+        booking.whatsappInvoiceSentAt = new Date();
+        booking.whatsappInvoiceSentPaymentId = currentPaymentId;
+        whatsappSent = true;
+      }
+    } catch (whatsappError) {
+      console.error(
+        `Failed to send WhatsApp booking invoice for ${booking?._id}:`,
+        whatsappError
+      );
+    }
+  }
+
+  if (emailSent || whatsappSent) {
+    await booking.save();
+  }
+
+  return { emailSent, whatsappSent };
 };
 
 export const createCourseBookingOrder = async (req, res) => {
@@ -434,6 +630,7 @@ export const verifyCourseBookingPayment = async (req, res) => {
       razorpay.orders.fetch(razorpayOrderId),
       razorpay.payments.fetch(razorpayPaymentId),
     ]);
+    const publicApiBaseUrl = resolveRequestApiBaseUrl(req);
 
     const paidAmount = fromPaise(payment?.amount || order?.amount || 0);
     const notes = order?.notes || {};
@@ -463,6 +660,28 @@ export const verifyCourseBookingPayment = async (req, res) => {
         booking.payments.some((entry) => entry.razorpayPaymentId === razorpayPaymentId)
       ) {
         await syncStudentEnrollmentFromBooking(booking);
+        const existingPayment =
+          booking.payments.find(
+            (entry) => entry.razorpayPaymentId === razorpayPaymentId
+          ) || null;
+        const populatedBooking = await CourseBooking.findById(booking._id).populate(
+          "studentId",
+          "name email phone"
+        );
+        try {
+          await sendCourseBookingInvoiceNotifications(
+            populatedBooking,
+            existingPayment,
+            {
+              publicApiBaseUrl,
+            }
+          );
+        } catch (invoiceError) {
+          console.error(
+            "Invoice generation/email failed for duplicate balance payment:",
+            invoiceError
+          );
+        }
         return res.status(200).json({
           success: true,
           message: "Payment already verified",
@@ -488,18 +707,19 @@ export const verifyCourseBookingPayment = async (req, res) => {
 
       const populatedBooking = await CourseBooking.findById(booking._id).populate(
         "studentId",
-        "name email"
+        "name email phone"
       );
 
       try {
-        const invoiceBuffer = await generateBookingInvoicePDF(
+        const latestPayment =
+          populatedBooking.payments[populatedBooking.payments.length - 1] || null;
+        await sendCourseBookingInvoiceNotifications(
           populatedBooking,
-          populatedBooking.payments[populatedBooking.payments.length - 1]
+          latestPayment,
+          {
+            publicApiBaseUrl,
+          }
         );
-        await sendBookingInvoiceEmail(populatedBooking, invoiceBuffer);
-        populatedBooking.invoiceSent = true;
-        populatedBooking.invoiceSentAt = new Date();
-        await populatedBooking.save();
       } catch (invoiceError) {
         console.error("Invoice generation/email failed for balance payment:", invoiceError);
       }
@@ -572,6 +792,28 @@ export const verifyCourseBookingPayment = async (req, res) => {
       booking.payments.some((entry) => entry.razorpayPaymentId === razorpayPaymentId)
     ) {
       await syncStudentEnrollmentFromBooking(booking);
+      const existingPayment =
+        booking.payments.find(
+          (entry) => entry.razorpayPaymentId === razorpayPaymentId
+        ) || null;
+      const populatedBooking = await CourseBooking.findById(booking._id).populate(
+        "studentId",
+        "name email phone"
+      );
+      try {
+        await sendCourseBookingInvoiceNotifications(
+          populatedBooking,
+          existingPayment,
+          {
+            publicApiBaseUrl,
+          }
+        );
+      } catch (invoiceError) {
+        console.error(
+          "Invoice generation/email failed for duplicate booking payment:",
+          invoiceError
+        );
+      }
       return res.status(200).json({
         success: true,
         message: "Payment already verified",
@@ -620,18 +862,15 @@ export const verifyCourseBookingPayment = async (req, res) => {
 
     const populatedBooking = await CourseBooking.findById(booking._id).populate(
       "studentId",
-      "name email"
+      "name email phone"
     );
 
     try {
-      const invoiceBuffer = await generateBookingInvoicePDF(
-        populatedBooking,
-        populatedBooking.payments[populatedBooking.payments.length - 1]
-      );
-      await sendBookingInvoiceEmail(populatedBooking, invoiceBuffer);
-      populatedBooking.invoiceSent = true;
-      populatedBooking.invoiceSentAt = new Date();
-      await populatedBooking.save();
+      const latestPayment =
+        populatedBooking.payments[populatedBooking.payments.length - 1] || null;
+      await sendCourseBookingInvoiceNotifications(populatedBooking, latestPayment, {
+        publicApiBaseUrl,
+      });
     } catch (invoiceError) {
       console.error("Invoice generation/email failed for booking payment:", invoiceError);
     }
@@ -765,7 +1004,7 @@ export const downloadBookingInvoice = async (req, res) => {
   try {
     const booking = await CourseBooking.findById(req.params.id).populate(
       "studentId",
-      "name email"
+      "name email phone"
     );
     if (!booking) {
       return res.status(404).json({
@@ -801,6 +1040,72 @@ export const downloadBookingInvoice = async (req, res) => {
     return res.send(buffer);
   } catch (error) {
     console.error("Failed to download booking invoice:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to download invoice",
+      error: error.message,
+    });
+  }
+};
+
+export const downloadPublicBookingInvoice = async (req, res) => {
+  try {
+    const bookingId = String(req.params.id || "").trim();
+    const paymentId = String(req.query.paymentId || "").trim();
+    const token = String(req.query.token || "").trim();
+
+    if (!bookingId || !paymentId || !token) {
+      return res.status(400).json({
+        success: false,
+        message: "bookingId, paymentId, and token are required",
+      });
+    }
+
+    if (
+      !verifyCourseBookingInvoiceDownloadToken({
+        bookingId,
+        paymentId,
+        token,
+      })
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid invoice link",
+      });
+    }
+
+    const booking = await CourseBooking.findById(bookingId).populate(
+      "studentId",
+      "name email phone"
+    );
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found",
+      });
+    }
+
+    const latestPayment =
+      booking.payments?.find((entry) => entry.razorpayPaymentId === paymentId) ||
+      null;
+    if (!latestPayment) {
+      return res.status(404).json({
+        success: false,
+        message: "Payment not found for this booking",
+      });
+    }
+
+    const buffer = await generateBookingInvoicePDF(booking, latestPayment);
+    const fileName = `Booking-Invoice-${String(booking._id)
+      .slice(-8)
+      .toUpperCase()}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Length", buffer.length);
+    return res.send(buffer);
+  } catch (error) {
+    console.error("Failed to download public booking invoice:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to download invoice",
