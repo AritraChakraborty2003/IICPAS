@@ -111,8 +111,6 @@ const faqSchema = new mongoose.Schema(
   }
 );
 
-// Index for better performance
-faqSchema.index({ slug: 1 });
 faqSchema.index({ isActive: 1 });
 
 // Pre-save middleware to update lastUpdated

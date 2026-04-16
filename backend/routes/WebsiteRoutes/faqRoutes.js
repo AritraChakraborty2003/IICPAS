@@ -4,6 +4,59 @@ import { requireAuth } from "../../middleware/requireAuth.js";
 import { isAdmin } from "../../middleware/isAdmin.js";
 
 const router = express.Router();
+const FAQ_SLUG = "faq";
+
+const normalizeFaqPayload = (body = {}) => {
+  const meta = body.meta || {};
+  const normalized = {
+    ...body,
+    slug: body.slug || FAQ_SLUG,
+    isActive: body.isActive ?? true,
+    lastUpdated: new Date(),
+  };
+
+  if (meta.title ?? body.metaTitle) {
+    normalized.metaTitle = meta.title ?? body.metaTitle;
+  }
+
+  if (meta.description ?? body.metaDescription) {
+    normalized.metaDescription = meta.description ?? body.metaDescription;
+  }
+
+  if (Array.isArray(meta.keywords) && meta.keywords.length > 0) {
+    normalized.metaKeywords = meta.keywords;
+  } else if (Array.isArray(body.metaKeywords) && body.metaKeywords.length > 0) {
+    normalized.metaKeywords = body.metaKeywords;
+  } else if (typeof meta.keywords === "string" && meta.keywords.trim()) {
+    normalized.metaKeywords = meta.keywords
+      .split(",")
+      .map((keyword) => keyword.trim())
+      .filter(Boolean);
+  }
+
+  return normalized;
+};
+
+const upsertFaq = async (body = {}) => {
+  const faqData = normalizeFaqPayload(body);
+
+  let faq =
+    (await FAQ.findOne({ slug: faqData.slug }).sort({ updatedAt: -1 })) ||
+    (await FAQ.findOne({ isActive: true }).sort({ updatedAt: -1 })) ||
+    (await FAQ.findOne().sort({ updatedAt: -1 }));
+
+  if (!faq) {
+    await FAQ.updateMany({}, { isActive: false });
+    faq = new FAQ(faqData);
+  } else {
+    faq.set(faqData);
+    faq.isActive = true;
+    await FAQ.updateMany({ _id: { $ne: faq._id } }, { isActive: false });
+  }
+
+  await faq.save();
+  return faq;
+};
 
 // Get FAQ data for frontend
 router.get("/", async (req, res) => {
@@ -190,14 +243,7 @@ router.get("/admin/:id", requireAuth, isAdmin, async (req, res) => {
 // Create new FAQ
 router.post("/admin/create", requireAuth, isAdmin, async (req, res) => {
   try {
-    const faqData = req.body;
-
-    // Deactivate all existing FAQs
-    await FAQ.updateMany({}, { isActive: false });
-
-    // Create new FAQ
-    const faq = new FAQ(faqData);
-    await faq.save();
+    const faq = await upsertFaq(req.body);
 
     res.status(201).json({
       success: true,
@@ -217,11 +263,7 @@ router.post("/admin/create", requireAuth, isAdmin, async (req, res) => {
 // Update FAQ
 router.put("/admin/:id", requireAuth, isAdmin, async (req, res) => {
   try {
-    const faqData = req.body;
-    const faq = await FAQ.findByIdAndUpdate(req.params.id, faqData, {
-      new: true,
-      runValidators: true,
-    });
+    const faq = await FAQ.findById(req.params.id);
 
     if (!faq) {
       return res.status(404).json({
@@ -229,6 +271,12 @@ router.put("/admin/:id", requireAuth, isAdmin, async (req, res) => {
         message: "FAQ not found",
       });
     }
+
+    const faqData = normalizeFaqPayload(req.body);
+    faq.set(faqData);
+    faq.isActive = true;
+    await FAQ.updateMany({ _id: { $ne: faq._id } }, { isActive: false });
+    await faq.save();
 
     res.status(200).json({
       success: true,
