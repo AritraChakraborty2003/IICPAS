@@ -158,8 +158,11 @@ export default function CertificateTab() {
                   const isCompleted = progress >= 100;
 
                   return (
-                    <div
+                    <motion.div
                       key={course._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      whileHover={{ y: -5 }}
                       className="group relative flex flex-col bg-[#1e293b]/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:border-blue-500/50 hover:shadow-[0_20px_50px_-15px_rgba(59,130,246,0.2)] transition-all duration-500"
                     >
                       {/* Card Header Preview */}
@@ -246,7 +249,7 @@ export default function CertificateTab() {
                           </button>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
