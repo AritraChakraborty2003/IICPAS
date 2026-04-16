@@ -120,6 +120,7 @@ function StudentDashboardContent() {
     { id: "recorded", icon: <FaPlay />, label: "Recorded Sessions", dot: true },
     { id: "news", icon: <FaNewspaper />, label: "News" },
     { id: "testimonial", icon: <FaQuoteLeft />, label: "Testimonial" },
+    { id: "my-payments", icon: <FaWallet />, label: "My Payments" },
     { id: "bookings", icon: <FaFileAlt />, label: "Bookings" },
     { id: "refer-earn", icon: <FaGift />, label: "Refer & Earn" },
     { id: "support", icon: <FaHeadset />, label: "Support" },
@@ -148,6 +149,7 @@ function StudentDashboardContent() {
         "recorded",
         "news",
         "testimonial",
+        "my-payments",
         "bookings",
         "refer-earn",
         "support",
@@ -295,6 +297,15 @@ function StudentDashboardContent() {
         );
       case "invoices":
         return <StudentInvoicesTab />;
+      case "my-payments":
+        return (
+          <StudentInvoicesTab
+            title="My Payments"
+            description="All payment records, invoices, and transaction references for your student account."
+            loadingMessage="Loading payment history..."
+            emptyMessage="No payment records found."
+          />
+        );
       case "bookings":
         return <StudentBookingsTab />;
       case "refer-earn":

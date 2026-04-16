@@ -119,9 +119,21 @@ export default function LiveClassesDisplay() {
   useEffect(() => {
     const fetchData = async () => {
       const currentUser = await getUser();
+      const studentBookingsPromise = currentUser?._id
+        ? axios.get(`${API}/api/bookings`, {
+            params: {
+              studentId: currentUser._id,
+              category: "live",
+              hasLiveSession: true,
+            },
+          }).catch((error) => {
+            console.warn("Failed to load live session bookings:", error);
+            return { data: [] };
+          })
+        : Promise.resolve({ data: [] });
 
       try {
-        const [liveSessionsResponse, blogsResponse] = await Promise.all([
+        const [liveSessionsResponse, blogsResponse, studentBookingsResponse] = await Promise.all([
           fetch(`${API}/api/live-sessions`, {
             method: "GET",
             headers: { "Content-Type": "application/json" },
@@ -132,7 +144,21 @@ export default function LiveClassesDisplay() {
             headers: { "Content-Type": "application/json" },
             credentials: "include",
           }),
+          studentBookingsPromise,
         ]);
+
+        const studentBookings = Array.isArray(studentBookingsResponse.data)
+          ? studentBookingsResponse.data
+          : Array.isArray(studentBookingsResponse.data?.bookings)
+          ? studentBookingsResponse.data.bookings
+          : [];
+        const bookingLookup = new Map<string, string>();
+        studentBookings.forEach((booking: any) => {
+          const liveSessionId =
+            booking?.liveSessionId?._id || booking?.liveSessionId || "";
+          if (!liveSessionId) return;
+          bookingLookup.set(String(liveSessionId), String(booking._id));
+        });
 
         if (liveSessionsResponse.ok) {
           const data = await liveSessionsResponse.json();
@@ -157,10 +183,14 @@ export default function LiveClassesDisplay() {
               session.imageUrl || session.thumbnail || "/images/live-class.jpg",
             price: session.price || 0,
             category: session.category || "CA Foundation",
+            bookingId: bookingLookup.get(String(session._id)),
             isEnrolled: currentUser
-              ? (currentUser.enrolledLiveSessions || []).some(
-                  (sessionId: any) =>
-                    String(sessionId) === String(session._id)
+              ? Boolean(
+                  bookingLookup.get(String(session._id)) ||
+                    (currentUser.enrolledLiveSessions || []).some(
+                      (sessionId: any) =>
+                        String(sessionId) === String(session._id)
+                    )
                 )
               : false,
           }));

@@ -1,6 +1,6 @@
 "use client";
 import { getApiOrigin } from "@/lib/apiBase";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Swal from "sweetalert2";
 import {
   Button,
@@ -20,6 +20,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import DownloadIcon from "@mui/icons-material/Download";
 import ViewListIcon from "@mui/icons-material/ViewList";
@@ -30,6 +31,27 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useAuth } from "@/contexts/AuthContext";
 
 const API = getApiOrigin();
+const CONFIRMED_PAYMENT_STATUSES = new Set([
+  "paid",
+  "captured",
+  "completed",
+  "verified",
+  "free",
+]);
+const CONFIRMED_BOOKING_STATUSES = new Set(["booked", "approved"]);
+
+const getBookingLiveSessionId = (booking) =>
+  String(booking?.liveSessionId?._id || booking?.liveSessionId || "");
+
+const isConfirmedLiveEnrollment = (booking) => {
+  const paymentStatus = String(booking?.paymentStatus || "").toLowerCase();
+  const bookingStatus = String(booking?.status || "").toLowerCase();
+
+  return (
+    CONFIRMED_PAYMENT_STATUSES.has(paymentStatus) &&
+    CONFIRMED_BOOKING_STATUSES.has(bookingStatus)
+  );
+};
 
 export default function LiveSesionAdmin() {
   const [tab, setTab] = useState("list");
@@ -39,6 +61,7 @@ export default function LiveSesionAdmin() {
   const [loading, setLoading] = useState(false);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
   const [selectedSessions, setSelectedSessions] = useState([]);
   const [form, setForm] = useState({
     title: "",
@@ -365,6 +388,9 @@ export default function LiveSesionAdmin() {
 
       if (res.ok) {
         fetchSessions();
+        if (String(selectedSessionId) === String(id)) {
+          setSelectedSessionId(null);
+        }
         Swal.fire("Deleted!", "Session deleted.", "success");
       } else if (res.status === 401) {
         showTokenError("Session expired. Please log in again.");
@@ -525,6 +551,14 @@ export default function LiveSesionAdmin() {
 
         await Promise.all(deletePromises);
         await fetchSessions();
+        if (
+          selectedSessionId &&
+          selectedSessions.some(
+            (sessionId) => String(sessionId) === String(selectedSessionId)
+          )
+        ) {
+          setSelectedSessionId(null);
+        }
         setSelectedSessions([]);
         Swal.fire(
           "Deleted!",
@@ -537,10 +571,35 @@ export default function LiveSesionAdmin() {
     }
   };
 
+  const selectedSession = useMemo(
+    () =>
+      sessions.find((session) => String(session._id) === String(selectedSessionId)) ||
+      null,
+    [sessions, selectedSessionId]
+  );
+
+  const filteredSessionBookings = useMemo(() => {
+    if (!selectedSessionId) return sessionBookings;
+
+    const selectedId = String(selectedSessionId);
+    return sessionBookings.filter(
+      (booking) =>
+        isConfirmedLiveEnrollment(booking) &&
+        getBookingLiveSessionId(booking) === selectedId
+    );
+  }, [sessionBookings, selectedSessionId]);
+
   const getBookingCountForSession = (sessionId) =>
     sessionBookings.filter(
-      (booking) => booking.liveSessionId?._id === sessionId || booking.liveSessionId === sessionId
+      (booking) =>
+        isConfirmedLiveEnrollment(booking) &&
+        getBookingLiveSessionId(booking) === String(sessionId)
     ).length;
+
+  const handleViewSessionBookings = (sessionId) => {
+    setSelectedSessionId(sessionId);
+    setTab("bookings");
+  };
 
   const handleEditBooking = async (booking) => {
     const result = await Swal.fire({
@@ -630,7 +689,10 @@ export default function LiveSesionAdmin() {
             <Button
               variant="outlined"
               sx={{ borderColor: "#0f265c", color: "#0f265c" }}
-              onClick={() => setTab("bookings")}
+              onClick={() => {
+                setSelectedSessionId(null);
+                setTab("bookings");
+              }}
             >
               View Bookings ({sessionBookings.length})
             </Button>
@@ -726,7 +788,10 @@ export default function LiveSesionAdmin() {
                 fontWeight: 600,
                 px: 3,
               }}
-              onClick={() => setTab("list")}
+              onClick={() => {
+                setSelectedSessionId(null);
+                setTab("list");
+              }}
             >
               ← Back to Sessions
             </Button>
@@ -814,6 +879,11 @@ export default function LiveSesionAdmin() {
                           </Tooltip>
                         </>
                       )}
+                      <Tooltip title="View enrolled users">
+                        <IconButton onClick={() => handleViewSessionBookings(s._id)}>
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
                     </div>
                     <div className="flex items-center gap-1">
                       <Switch
@@ -933,132 +1003,162 @@ export default function LiveSesionAdmin() {
       )}
 
       {tab === "bookings" && (
-        <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: "#f5f5f5" }}>
-                <TableCell sx={{ fontWeight: "bold" }}>Session</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Payment</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Booked On</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Contact</TableCell>
-                <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {bookingsLoading ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    <CircularProgress size={24} />
-                  </TableCell>
+        <>
+          {selectedSessionId && (
+            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                  Viewing enrolled users
+                </p>
+                <p className="text-lg font-semibold text-gray-900">
+                  {selectedSession?.title || "Selected live session"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {filteredSessionBookings.length} confirmed enrollment
+                  {filteredSessionBookings.length === 1 ? "" : "s"}
+                </p>
+              </div>
+              <Button
+                variant="outlined"
+                sx={{ borderColor: "#0f265c", color: "#0f265c" }}
+                onClick={() => setSelectedSessionId(null)}
+              >
+                Show all bookings
+              </Button>
+            </div>
+          )}
+
+          <TableContainer component={Paper} sx={{ boxShadow: 3 }}>
+            <Table>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "#f5f5f5" }}>
+                  <TableCell sx={{ fontWeight: "bold" }}>Session</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Name</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Payment</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Booked On</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Contact</TableCell>
+                  <TableCell sx={{ fontWeight: "bold" }}>Actions</TableCell>
                 </TableRow>
-              ) : sessionBookings.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} align="center">
-                    No live session bookings found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sessionBookings.map((booking) => (
-                  <TableRow key={booking._id} hover>
-                    <TableCell>
-                      <div className="font-medium">
-                        {booking.liveSessionId?.title || booking.title}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {booking.liveSessionId?.date
-                          ? new Date(booking.liveSessionId.date).toDateString()
-                          : booking.date
-                          ? new Date(booking.date).toDateString()
-                          : "Date not set"}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">
-                        {booking.requesterName || "N/A"}
-                      </div>
-                      <div className="text-xs text-gray-500">{booking.by || "N/A"}</div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium capitalize">
-                        {booking.paymentStatus || "pending"}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        ₹{booking.paymentAmount || 0}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {booking.paymentVerifiedAt
-                        ? new Date(booking.paymentVerifiedAt).toLocaleString()
-                        : new Date(booking.createdAt).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        {booking.phone ? (
-                          <Tooltip title={booking.phone}>
-                            <IconButton
-                              size="small"
-                              component="a"
-                              href={`tel:${booking.phone}`}
-                            >
-                              <PhoneIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        ) : null}
-                        {(booking.whatsappNumber || booking.phone) ? (
-                          <Tooltip title={booking.whatsappNumber || booking.phone}>
-                            <IconButton
-                              size="small"
-                              component="a"
-                              href={`https://wa.me/${String(
-                                booking.whatsappNumber || booking.phone
-                              ).replace(/[^\d]/g, "")}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <WhatsAppIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        ) : null}
-                        {booking.by ? (
-                          <Tooltip title={booking.by}>
-                            <IconButton
-                              size="small"
-                              component="a"
-                              href={`mailto:${booking.by}`}
-                            >
-                              <EmailIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        ) : null}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Tooltip title="Edit booking">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEditBooking(booking)}
-                          >
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete booking">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteBooking(booking._id)}
-                          >
-                            <DeleteIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </div>
+              </TableHead>
+              <TableBody>
+                {bookingsLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      <CircularProgress size={24} />
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                ) : filteredSessionBookings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center">
+                      {selectedSessionId
+                        ? "No confirmed enrollments found for this session."
+                        : "No live session bookings found."}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredSessionBookings.map((booking) => (
+                    <TableRow key={booking._id} hover>
+                      <TableCell>
+                        <div className="font-medium">
+                          {booking.liveSessionId?.title || booking.title}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {booking.liveSessionId?.date
+                            ? new Date(booking.liveSessionId.date).toDateString()
+                            : booking.date
+                            ? new Date(booking.date).toDateString()
+                            : "Date not set"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">
+                          {booking.studentId?.name || booking.requesterName || "N/A"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {booking.studentId?.email || booking.by || "N/A"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm font-medium capitalize">
+                          {booking.paymentStatus || "pending"}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          ₹{booking.paymentAmount || 0}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {booking.paymentVerifiedAt
+                          ? new Date(booking.paymentVerifiedAt).toLocaleString()
+                          : new Date(booking.createdAt).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          {booking.phone ? (
+                            <Tooltip title={booking.phone}>
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={`tel:${booking.phone}`}
+                              >
+                                <PhoneIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          ) : null}
+                          {(booking.whatsappNumber || booking.phone) ? (
+                            <Tooltip title={booking.whatsappNumber || booking.phone}>
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={`https://wa.me/${String(
+                                  booking.whatsappNumber || booking.phone
+                                ).replace(/[^\d]/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <WhatsAppIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          ) : null}
+                          {booking.by ? (
+                            <Tooltip title={booking.by}>
+                              <IconButton
+                                size="small"
+                                component="a"
+                                href={`mailto:${booking.by}`}
+                              >
+                                <EmailIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Tooltip title="Edit booking">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEditBooking(booking)}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete booking">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteBooking(booking._id)}
+                            >
+                              <DeleteIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </>
       )}
 
       {tab === "create" && (
