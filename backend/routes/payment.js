@@ -9,6 +9,7 @@ import Coupon from "../models/Coupon.js";
 import Booking from "../models/Booking.js";
 import CourseBooking from "../models/CourseBooking.js";
 import LiveSession from "../models/LiveSession/LiveSession.js";
+import isStudent from "../middleware/isStudent.js";
 import { awardCoins, getCoinSettings } from "../services/coinService.js";
 import { generateLiveSessionReceiptPDF } from "../utils/pdfLiveSessionReceiptGenerator.js";
 import { sendLiveSessionReceiptEmail } from "../utils/liveSessionEmailService.js";
@@ -1698,6 +1699,63 @@ router.get("/receipts/booking/:bookingId", async (req, res) => {
     });
   }
 });
+
+router.get(
+  "/receipts/booking/:bookingId/download",
+  isStudent,
+  async (req, res) => {
+    try {
+      const booking = await Booking.findById(req.params.bookingId)
+        .populate("studentId", "name email")
+        .populate("liveSessionId", "title date time link");
+
+      if (!booking || !booking.liveSessionId) {
+        return res.status(404).json({
+          success: false,
+          message: "Invoice not found",
+        });
+      }
+
+      const student = await Student.findById(req.user.id).select("_id email");
+      const bookingStudentId = String(booking.studentId?._id || booking.studentId || "");
+      const bookingEmail = String(booking.by || "").trim().toLowerCase();
+      const studentEmail = String(student?.email || "").trim().toLowerCase();
+
+      if (
+        bookingStudentId !== String(req.user.id) &&
+        (!studentEmail || bookingEmail !== studentEmail)
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "You are not allowed to access this invoice",
+        });
+      }
+
+      const pdfBuffer = await generateLiveSessionReceiptPDF({
+        ...booking.toObject(),
+        link: booking.link || booking.liveSessionId?.link || "",
+        time: booking.time || booking.liveSessionId?.time || "",
+        date: booking.date || booking.liveSessionId?.date || null,
+      });
+
+      const fileName = `Live-Session-Invoice-${String(booking._id)
+        .slice(-8)
+        .toUpperCase()}.pdf`;
+
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+      res.setHeader("Content-Length", pdfBuffer.length);
+      return res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Failed to download live session invoice:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to download invoice",
+        error: error.message,
+      });
+    }
+  }
+);
 
 router.get("/receipts", async (req, res) => {
   try {

@@ -36,6 +36,7 @@ interface LiveClass {
   price: number;
   category: string;
   isEnrolled?: boolean;
+  bookingId?: string;
 }
 
 interface User {
@@ -66,6 +67,7 @@ export default function LiveClassesDisplay() {
     useState<LiveClass | null>(null);
   const didLoginFromEnrollmentRef = useRef(false);
   const [isSubmittingEnrollment, setIsSubmittingEnrollment] = useState(false);
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState("");
   const [isRazorpayReady, setIsRazorpayReady] = useState(false);
   const [enrollmentSuccessMessage, setEnrollmentSuccessMessage] = useState("");
   const [enrollmentForm, setEnrollmentForm] = useState({
@@ -75,7 +77,7 @@ export default function LiveClassesDisplay() {
     whatsappNumber: "",
   });
 
-  const API = process.env.NEXT_PUBLIC_API_URL;
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   const getUser = useCallback(async () => {
     try {
@@ -336,6 +338,76 @@ export default function LiveClassesDisplay() {
     setShowEnrollModal(true);
   };
 
+  const updateSessionEnrollment = (
+    sessionId: string,
+    bookingId?: string | null
+  ) => {
+    setLiveClasses((prev) =>
+      prev.map((session) =>
+        session._id === sessionId
+          ? {
+              ...session,
+              isEnrolled: true,
+              bookingId: bookingId || session.bookingId,
+              enrolledCount: (session.enrolledCount || 0) + 1,
+            }
+          : session
+      )
+    );
+
+    setSelectedSession((prev) =>
+      prev && prev._id === sessionId
+        ? {
+            ...prev,
+            isEnrolled: true,
+            bookingId: bookingId || prev.bookingId,
+            enrolledCount: (prev.enrolledCount || 0) + 1,
+          }
+        : prev
+    );
+  };
+
+  const buildInvoiceDownloadUrl = (bookingId: string) =>
+    `${API}/api/test-payment/receipts/booking/${bookingId}/download`;
+
+  const handleDownloadInvoice = async (session: LiveClass) => {
+    if (!session.bookingId) {
+      toast.error("Invoice is not available yet.");
+      return;
+    }
+
+    setDownloadingInvoiceId(session._id);
+    try {
+      const response = await axios.get(
+        buildInvoiceDownloadUrl(session.bookingId),
+        {
+          withCredentials: true,
+          responseType: "blob",
+        }
+      );
+
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const blobUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = blobUrl;
+      anchor.download = `Live-Session-Invoice-${String(session.bookingId)
+        .slice(-8)
+        .toUpperCase()}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error: any) {
+      console.error("Failed to download live session invoice:", error);
+      toast.error(
+        error?.response?.data?.message ||
+          "Unable to download invoice right now."
+      );
+    } finally {
+      setDownloadingInvoiceId("");
+    }
+  };
+
   const promptLoginForEnrollment = (session: LiveClass) => {
     setSelectedSession(null);
     setPendingEnrollmentSession(session);
@@ -378,6 +450,7 @@ export default function LiveClassesDisplay() {
   const closeEnrollmentModal = () => {
     setShowEnrollModal(false);
     setSelectedSession(null);
+    setPendingEnrollmentSession(null);
     setIsSubmittingEnrollment(false);
     setEnrollmentSuccessMessage("");
   };
@@ -535,18 +608,13 @@ export default function LiveClassesDisplay() {
                 );
               }
 
-              setLiveClasses((prev) =>
-                prev.map((session) =>
-                  session._id === selectedSession._id
-                    ? {
-                        ...session,
-                        isEnrolled: true,
-                        enrolledCount: (session.enrolledCount || 0) + 1,
-                      }
-                    : session
-                )
+              updateSessionEnrollment(
+                selectedSession._id,
+                verificationResponse.data?.data?.bookingId
               );
-              setEnrollmentSuccessMessage("Payment successful. Your booking is confirmed.");
+              setEnrollmentSuccessMessage(
+                "Payment successful. Your booking is confirmed."
+              );
             } catch (verificationError: any) {
               console.error("Payment verification failed:", verificationError);
               setEnrollmentSuccessMessage(
@@ -564,7 +632,7 @@ export default function LiveClassesDisplay() {
         return;
       }
 
-      await axios.post(`${API}/api/bookings`, {
+      const bookingResponse = await axios.post(`${API}/api/bookings`, {
         studentId: currentUser._id,
         liveSessionId: selectedSession._id,
         by: normalizedEmail,
@@ -580,19 +648,14 @@ export default function LiveClassesDisplay() {
         date: selectedSession.date,
       });
 
-      setLiveClasses((prev) =>
-        prev.map((session) =>
-          session._id === selectedSession._id
-            ? {
-                ...session,
-                isEnrolled: true,
-                enrolledCount: (session.enrolledCount || 0) + 1,
-              }
-            : session
-        )
+      updateSessionEnrollment(
+        selectedSession._id,
+        bookingResponse.data?._id || bookingResponse.data?.bookingId
       );
       toast.success("Enrolled successfully");
-      closeEnrollmentModal();
+      setEnrollmentSuccessMessage(
+        "Enrolled successfully. Your invoice is ready for download."
+      );
     } catch (error) {
       console.error("Failed to store enrollment:", error);
       setEnrollmentSuccessMessage(
@@ -714,46 +777,56 @@ export default function LiveClassesDisplay() {
               )}
 
               <div className="pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => {
-                    void handleEnrollClick(session);
-                  }}
-                  disabled={
-                    (session.isEnrolled && session.status !== "live") ||
-                    (session.status === "live" && session.isEnrolled && !session.meetingLink)
-                  }
-                  className={`w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-1 ${
-                    (session.isEnrolled && session.status !== "live") ||
-                    (session.status === "live" && session.isEnrolled && !session.meetingLink)
-                      ? "bg-green-100 text-green-700 cursor-not-allowed"
-                      : session.status === "live" && session.isEnrolled
-                      ? "bg-green-600 text-white hover:bg-green-700"
-                      : "bg-[#3cd664] text-white hover:bg-[#33bb58]"
-                  }`}
-                >
-                  {session.status === "live" && session.isEnrolled ? (
-                    <>
-                      <Video className="w-3 h-3" />
-                      <span>Join Now</span>
-                    </>
-                  ) : session.status === "live" ? (
-                    <>
-                      <Video className="w-3 h-3" />
-                      <span>Enroll Now</span>
-                    </>
-                  ) : session.isEnrolled ? (
-                    <>
-                      <CheckCircle className="w-3 h-3" />
-                      <span>Enrolled</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="w-3 h-3" />
-                      <span>Enroll Now</span>
-                    </>
-                  )}
-                </button>
+                {session.isEnrolled ? (
+                  <div className="space-y-2">
+                    {session.status === "live" && session.meetingLink ? (
+                      <button
+                        type="button"
+                        onClick={() => handleJoinSession(session)}
+                        className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 flex items-center justify-center space-x-1"
+                      >
+                        <Video className="w-3 h-3" />
+                        <span>Join Now</span>
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full rounded-lg bg-green-100 px-3 py-2 text-sm font-medium text-green-700 cursor-not-allowed flex items-center justify-center space-x-1"
+                      >
+                        <CheckCircle className="w-3 h-3" />
+                        <span>Enrolled</span>
+                      </button>
+                    )}
+
+                    {session.bookingId ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleDownloadInvoice(session);
+                        }}
+                        disabled={downloadingInvoiceId === session._id}
+                        className="w-full rounded-lg border border-[#3cd664] bg-white px-3 py-2 text-sm font-medium text-[#1f7a3e] transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {downloadingInvoiceId === session._id
+                          ? "Downloading..."
+                          : "Download Invoice"}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleEnrollClick(session);
+                    }}
+                    disabled={false}
+                    className="w-full py-2 px-3 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center space-x-1 bg-[#3cd664] text-white hover:bg-[#33bb58]"
+                  >
+                    <Play className="w-3 h-3" />
+                    <span>Enroll Now</span>
+                  </button>
+                )}
               </div>
             </div>
           </motion.div>
@@ -925,115 +998,145 @@ export default function LiveClassesDisplay() {
             </div>
 
             <div className="px-6 py-5">
-              {enrollmentSuccessMessage ? (
-                <div
-                  className={`rounded-xl border px-4 py-4 text-sm font-medium ${
-                    /(successful|confirmed|sent)/i.test(enrollmentSuccessMessage)
-                      ? "border-green-200 bg-green-50 text-green-700"
-                      : "border-red-200 bg-red-50 text-red-700"
-                  }`}
-                >
-                  {enrollmentSuccessMessage}
-                </div>
-              ) : null}
+              {selectedSession.isEnrolled ? (
+                <div className="mt-4 space-y-4">
+                  {enrollmentSuccessMessage ? (
+                    <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-sm font-medium text-green-700">
+                      {enrollmentSuccessMessage}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-4 text-sm font-medium text-green-700">
+                      Enrollment completed successfully.
+                    </div>
+                  )}
 
-              <form onSubmit={handleEnrollmentSubmit} className="mt-4 space-y-4">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={enrollmentForm.name}
-                    onChange={handleEnrollmentInputChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
-                    placeholder="Enter your full name"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={enrollmentForm.phone}
-                    onChange={handleEnrollmentInputChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
-                    placeholder="Enter your 10-digit mobile number"
-                    inputMode="numeric"
-                    pattern="[6-9][0-9]{9}"
-                    maxLength={10}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={enrollmentForm.email}
-                    onChange={handleEnrollmentInputChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
-                    placeholder="Enter your email address"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    WhatsApp Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="whatsappNumber"
-                    value={enrollmentForm.whatsappNumber}
-                    onChange={handleEnrollmentInputChange}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
-                    placeholder="Enter 10-digit WhatsApp number"
-                    inputMode="numeric"
-                    pattern="[6-9][0-9]{9}"
-                    maxLength={10}
-                  />
-                </div>
-
-                <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
-                  Session Date: {formatDate(selectedSession.date)}
-                </div>
-
-                {selectedSession.price > 0 ? (
-                  <div className="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
-                    Pay now: ₹{selectedSession.price.toLocaleString()}
+                  <div className={selectedSession.bookingId ? "flex gap-3" : ""}>
+                    {selectedSession.bookingId ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleDownloadInvoice(selectedSession);
+                        }}
+                        disabled={downloadingInvoiceId === selectedSession._id}
+                        className="flex-1 rounded-lg border border-[#3cd664] px-4 py-2.5 text-sm font-medium text-[#1f7a3e] transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        {downloadingInvoiceId === selectedSession._id
+                          ? "Downloading..."
+                          : "Download Invoice"}
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={closeEnrollmentModal}
+                      className={
+                        selectedSession.bookingId
+                          ? "flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                          : "w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                      }
+                    >
+                      Close
+                    </button>
                   </div>
-                ) : null}
-
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={closeEnrollmentModal}
-                    className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSubmittingEnrollment}
-                    className="flex-1 rounded-lg bg-[#3cd664] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#33bb58] disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {isSubmittingEnrollment
-                      ? "Processing..."
-                      : selectedSession.price > 0
-                      ? `Pay ₹${selectedSession.price}`
-                      : "Enroll Now"}
-                  </button>
                 </div>
-              </form>
+              ) : (
+                <form onSubmit={handleEnrollmentSubmit} className="mt-4 space-y-4">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={enrollmentForm.name}
+                      onChange={handleEnrollmentInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                      placeholder="Enter your full name"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={enrollmentForm.phone}
+                      onChange={handleEnrollmentInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                      placeholder="Enter your 10-digit mobile number"
+                      inputMode="numeric"
+                      pattern="[6-9][0-9]{9}"
+                      maxLength={10}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Email Address
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={enrollmentForm.email}
+                      onChange={handleEnrollmentInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                      placeholder="Enter your email address"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      WhatsApp Number
+                    </label>
+                    <input
+                      type="tel"
+                      name="whatsappNumber"
+                      value={enrollmentForm.whatsappNumber}
+                      onChange={handleEnrollmentInputChange}
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none transition focus:border-[#3cd664] focus:ring-2 focus:ring-[#3cd664]/20"
+                      placeholder="Enter 10-digit WhatsApp number"
+                      inputMode="numeric"
+                      pattern="[6-9][0-9]{9}"
+                      maxLength={10}
+                    />
+                  </div>
+
+                  <div className="rounded-xl bg-gray-50 px-4 py-3 text-sm text-gray-600">
+                    Session Date: {formatDate(selectedSession.date)}
+                  </div>
+
+                  {selectedSession.price > 0 ? (
+                    <div className="rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
+                      Pay now: ₹{selectedSession.price.toLocaleString()}
+                    </div>
+                  ) : null}
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={closeEnrollmentModal}
+                      className="flex-1 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingEnrollment}
+                      className="flex-1 rounded-lg bg-[#3cd664] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#33bb58] disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {isSubmittingEnrollment
+                        ? "Processing..."
+                        : selectedSession.price > 0
+                        ? `Pay ₹${selectedSession.price}`
+                        : "Enroll Now"}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           </div>
         </div>
