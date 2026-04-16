@@ -34,6 +34,11 @@ const FAILURE_STATUSES = new Set([
   "expired",
 ]);
 
+const isDownloadableApprovedStatus = (value) => {
+  const normalized = normalizeStatus(value);
+  return normalized === "approved" || SUCCESS_STATUSES.has(normalized);
+};
+
 const getArrayFromResponse = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.transactions)) return payload.transactions;
@@ -166,6 +171,13 @@ const getInvoiceDownloadConfig = (invoice) => {
     return {
       url: `${API_BASE}/api/v1/course-bookings/${encodeURIComponent(rawId)}/invoice`,
       fileName: `Booking-Invoice-${rawId.slice(-8).toUpperCase()}.pdf`,
+    };
+  }
+
+  if (rawId && raw?.sessionType && raw?.courseId && isDownloadableApprovedStatus(invoice?.status || raw?.status)) {
+    return {
+      url: `${API_BASE}/api/v1/transactions/${encodeURIComponent(rawId)}/invoice`,
+      fileName: `Invoice-${rawId.slice(-8).toUpperCase()}.pdf`,
     };
   }
 
@@ -621,6 +633,7 @@ export default function StudentInvoicesTab({
               <tbody className="divide-y divide-gray-100 bg-white">
                 {invoices.map((invoice) => {
                   const downloadConfig = getInvoiceDownloadConfig(invoice);
+                  const hasInvoiceDownload = Boolean(downloadConfig?.url);
 
                   return (
                     <tr key={invoice.id}>
@@ -631,7 +644,7 @@ export default function StudentInvoicesTab({
                         <div className="mt-1 text-xs text-gray-500">
                           {invoice.invoiceSent
                             ? "Invoice sent"
-                            : invoice.invoiceUrl
+                            : hasInvoiceDownload
                             ? "Invoice available"
                             : "Invoice pending"}
                           {invoice.invoiceSentAt

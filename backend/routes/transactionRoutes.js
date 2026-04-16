@@ -84,6 +84,54 @@ const sendReceiptForTransaction = async (transactionId) => {
   return { sent: true, skipped: false };
 };
 
+router.get("/:transactionId/invoice", isStudent, async (req, res) => {
+  try {
+    const transaction = await Transaction.findById(req.params.transactionId)
+      .populate("studentId", "name email")
+      .populate("courseId", "title category price");
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: "Transaction not found",
+      });
+    }
+
+    if (transaction.status !== "approved") {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice can only be downloaded for approved transactions",
+      });
+    }
+
+    if (
+      String(transaction.studentId?._id || transaction.studentId || "") !==
+      String(req.user?.id || "")
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not allowed to access this invoice",
+      });
+    }
+
+    const { generateReceiptPDF } = await import("../utils/pdfReceiptGenerator.js");
+    const pdfBuffer = await generateReceiptPDF(transaction);
+    const fileName = `Invoice-${String(transaction._id).slice(-8).toUpperCase()}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Failed to download transaction invoice:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to download invoice",
+      error: error.message,
+    });
+  }
+});
+
 // Get current student's invoice/transaction history
 router.get("/student", isStudent, async (req, res) => {
   try {
