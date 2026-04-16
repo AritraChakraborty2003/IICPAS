@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -109,6 +110,96 @@ const formatLabel = (value) => {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
+const resolveUrl = (url) => {
+  const text = String(url || "").trim();
+  if (!text) return "";
+
+  if (text.startsWith("http://") || text.startsWith("https://")) {
+    return text;
+  }
+
+  try {
+    return new URL(text, API_BASE).toString();
+  } catch {
+    return text;
+  }
+};
+
+const sanitizeFileName = (value) =>
+  String(value || "invoice")
+    .trim()
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80) || "invoice";
+
+const getInvoiceDownloadConfig = (invoice) => {
+  const invoiceUrl = String(invoice?.invoiceUrl || "").trim();
+  if (invoiceUrl) {
+    return {
+      url: resolveUrl(invoiceUrl),
+      fileName: `${sanitizeFileName(invoice?.invoiceLabel || invoice?.transactionRef || invoice?.course || "invoice")}.pdf`,
+    };
+  }
+
+  const raw = invoice?.raw || {};
+  const rawId = String(raw?._id || "").trim();
+  const bookingId = String(raw?.bookingId || raw?.booking?.bookingId || "").trim();
+
+  const hasCourseBookingShape =
+    Array.isArray(raw?.payments) ||
+    Object.prototype.hasOwnProperty.call(raw || {}, "remainingAmount") ||
+    Object.prototype.hasOwnProperty.call(raw || {}, "bookingAmount") ||
+    Object.prototype.hasOwnProperty.call(raw || {}, "itemType");
+
+  if (bookingId && raw?.liveSessionId) {
+    return {
+      url: `${API_BASE}/api/test-payment/receipts/booking/${encodeURIComponent(
+        bookingId
+      )}/download`,
+      fileName: `Live-Session-Invoice-${bookingId.slice(-8).toUpperCase()}.pdf`,
+    };
+  }
+
+  if (rawId && hasCourseBookingShape) {
+    return {
+      url: `${API_BASE}/api/v1/course-bookings/${encodeURIComponent(rawId)}/invoice`,
+      fileName: `Booking-Invoice-${rawId.slice(-8).toUpperCase()}.pdf`,
+    };
+  }
+
+  return null;
+};
+
+const downloadBlob = async (url, fileName) => {
+  const response = await axios.get(url, {
+    withCredentials: true,
+    responseType: "blob",
+  });
+
+  const blob = response.data instanceof Blob ? response.data : new Blob([response.data]);
+  const blobUrl = window.URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = blobUrl;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.URL.revokeObjectURL(blobUrl);
+};
+
+const readBlobErrorMessage = async (error) => {
+  const blob = error?.response?.data;
+  if (!(blob instanceof Blob)) return "";
+
+  try {
+    const text = await blob.text();
+    const parsed = JSON.parse(text);
+    return String(parsed?.message || "").trim();
+  } catch {
+    return "";
+  }
 };
 
 const normalizePaymentRecord = (item, index) => {
@@ -299,6 +390,7 @@ export default function StudentInvoicesTab({
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -410,6 +502,29 @@ export default function StudentInvoicesTab({
 
   const hasInvoices = useMemo(() => invoices.length > 0, [invoices]);
 
+  const handleDownloadInvoice = async (invoice) => {
+    const downloadConfig = getInvoiceDownloadConfig(invoice);
+    if (!downloadConfig?.url) {
+      toast.error("Invoice download is not available for this record.");
+      return;
+    }
+
+    try {
+      setDownloadingInvoiceId(invoice.id);
+      await downloadBlob(downloadConfig.url, downloadConfig.fileName);
+    } catch (downloadError) {
+      console.error("Failed to download invoice:", downloadError);
+      const parsedMessage = await readBlobErrorMessage(downloadError);
+      toast.error(
+        parsedMessage ||
+          downloadError?.response?.data?.message ||
+          "Unable to download invoice"
+      );
+    } finally {
+      setDownloadingInvoiceId("");
+    }
+  };
+
   const summaryCards = [
     {
       label: "Total Paid",
@@ -498,54 +613,82 @@ export default function StudentInvoicesTab({
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
                     Date
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 bg-white">
-                {invoices.map((invoice) => (
-                  <tr key={invoice.id}>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="font-medium text-gray-900">
-                        {invoice.invoiceLabel}
-                      </div>
-                      <div className="mt-1 text-xs text-gray-500">
-                        {invoice.invoiceSent
-                          ? "Invoice sent"
-                          : invoice.invoiceUrl
-                          ? "Invoice available"
-                          : "Invoice pending"}
-                        {invoice.invoiceSentAt
-                          ? ` • ${formatDate(invoice.invoiceSentAt)}`
-                          : ""}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-800">
-                      {invoice.course}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                      {formatMoney(invoice.amount)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      <div className="font-mono text-xs leading-5">
-                        {invoice.transactionRef}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {formatLabel(invoice.paymentMethod)}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusClass(
-                          invoice.status
-                        )}`}
-                      >
-                        {formatLabel(invoice.status)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700">
-                      {formatDate(invoice.date)}
-                    </td>
-                  </tr>
-                ))}
+                {invoices.map((invoice) => {
+                  const downloadConfig = getInvoiceDownloadConfig(invoice);
+
+                  return (
+                    <tr key={invoice.id}>
+                      <td className="px-4 py-3 text-sm">
+                        <div className="font-medium text-gray-900">
+                          {invoice.invoiceLabel}
+                        </div>
+                        <div className="mt-1 text-xs text-gray-500">
+                          {invoice.invoiceSent
+                            ? "Invoice sent"
+                            : invoice.invoiceUrl
+                            ? "Invoice available"
+                            : "Invoice pending"}
+                          {invoice.invoiceSentAt
+                            ? ` • ${formatDate(invoice.invoiceSentAt)}`
+                            : ""}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-800">
+                        {invoice.course}
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {formatMoney(invoice.amount)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        <div className="font-mono text-xs leading-5">
+                          {invoice.transactionRef}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {formatLabel(invoice.paymentMethod)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${getStatusClass(
+                            invoice.status
+                          )}`}
+                        >
+                          {formatLabel(invoice.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {formatDate(invoice.date)}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadInvoice(invoice)}
+                          disabled={
+                            !downloadConfig?.url ||
+                            downloadingInvoiceId === invoice.id
+                          }
+                          aria-label={`Download invoice for ${invoice.invoiceLabel}`}
+                          className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                            downloadConfig?.url &&
+                            downloadingInvoiceId !== invoice.id
+                              ? "bg-blue-600 text-white hover:bg-blue-700"
+                              : "cursor-not-allowed bg-gray-100 text-gray-400"
+                          }`}
+                        >
+                          {downloadingInvoiceId === invoice.id
+                            ? "Downloading..."
+                            : "Download invoice"}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
