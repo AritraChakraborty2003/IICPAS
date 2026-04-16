@@ -67,11 +67,54 @@ const extractBookings = (payload) => {
   return [];
 };
 
+const extractSessions = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.sessions)) return payload.sessions;
+  if (Array.isArray(payload?.data?.sessions)) return payload.data.sessions;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const DEFAULT_REMINDER_TIME_ZONE = "Asia/Kolkata";
+const DEFAULT_REMINDER_LEAD_TIME_MINUTES = 30;
+const DEFAULT_REMINDER_BATCH_SIZE = 5;
+const DEFAULT_REMINDER_BATCH_DELAY_SECONDS = 1;
+
+const formatSessionTimeRange = (session) => {
+  if (!session) return "";
+  const dateLabel = formatDateTime(session.date);
+  const timeLabel = String(session.time || "").trim();
+  return timeLabel ? `${dateLabel} | ${timeLabel}` : dateLabel;
+};
+
+const getReminderDefaults = (session, timeZone = DEFAULT_REMINDER_TIME_ZONE) => {
+  const settings = session?.reminderSettings || {};
+
+  return {
+    leadTimeMinutes: String(
+      settings.leadTimeMinutes ?? DEFAULT_REMINDER_LEAD_TIME_MINUTES
+    ),
+    batchSize: String(settings.batchSize ?? DEFAULT_REMINDER_BATCH_SIZE),
+    batchDelaySeconds: String(
+      settings.batchDelaySeconds ?? DEFAULT_REMINDER_BATCH_DELAY_SECONDS
+    ),
+    timezone: settings.timezone || timeZone || DEFAULT_REMINDER_TIME_ZONE,
+  };
+};
+
 export default function LiveBookingsTab() {
   const [bookings, setBookings] = useState([]);
+  const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSessionId, setSelectedSessionId] = useState("");
+  const [reminderForm, setReminderForm] = useState(
+    getReminderDefaults(null, DEFAULT_REMINDER_TIME_ZONE)
+  );
+  const [savingReminder, setSavingReminder] = useState(false);
+  const [reminderError, setReminderError] = useState("");
 
   const fetchBookings = async () => {
     setLoading(true);
@@ -93,9 +136,166 @@ export default function LiveBookingsTab() {
     }
   };
 
+  const fetchSessions = async () => {
+    setSessionsLoading(true);
+    try {
+      const token = localStorage.getItem("adminToken");
+      const response = await axios.get(`${API_URL}/api/live-sessions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setSessions(extractSessions(response.data));
+    } catch (error) {
+      console.error("Failed to fetch live sessions:", error);
+      toast.error("Failed to fetch live sessions");
+      setSessions([]);
+    } finally {
+      setSessionsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchBookings();
+    fetchSessions();
   }, []);
+
+  useEffect(() => {
+    if (!sessions.length) {
+      setSelectedSessionId("");
+      return;
+    }
+
+    const selectedExists = sessions.some(
+      (session) => String(session._id) === String(selectedSessionId)
+    );
+    if (selectedExists) return;
+
+    const preferredSession =
+      sessions.find((session) => String(session.status || "").toLowerCase() === "upcoming") ||
+      sessions[0];
+    setSelectedSessionId(String(preferredSession?._id || ""));
+  }, [sessions, selectedSessionId]);
+
+  const selectedSession = useMemo(() => {
+    if (!selectedSessionId) return null;
+    return (
+      sessions.find((session) => String(session._id) === String(selectedSessionId)) ||
+      null
+    );
+  }, [sessions, selectedSessionId]);
+
+  useEffect(() => {
+    setReminderForm(
+      getReminderDefaults(
+        selectedSession,
+        DEFAULT_REMINDER_TIME_ZONE
+      )
+    );
+    setReminderError("");
+  }, [selectedSession]);
+
+  const reminderTimezone =
+    selectedSession?.reminderSettings?.timezone || DEFAULT_REMINDER_TIME_ZONE;
+  const reminderStatus = String(
+    selectedSession?.reminderSettings?.status || ""
+  ).toLowerCase();
+  const reminderIsLocked = ["sending", "sent"].includes(reminderStatus);
+  const reminderSchedulingDisabled =
+    !selectedSession ||
+    String(selectedSession?.status || "").toLowerCase() !== "upcoming" ||
+    reminderIsLocked;
+  const reminderSendAtLabel = selectedSession?.reminderSettings?.sendAt
+    ? formatDateTime(selectedSession.reminderSettings.sendAt)
+    : "";
+  const reminderScheduleLabel = selectedSession
+    ? formatSessionTimeRange(selectedSession)
+    : "";
+
+  const handleSaveReminderSettings = async () => {
+    if (!selectedSession) {
+      Swal.fire(
+        "Select a session",
+        "Choose a live session before saving reminder settings.",
+        "info"
+      );
+      return;
+    }
+
+    const sessionStatus = String(selectedSession.status || "").toLowerCase();
+    if (sessionStatus !== "upcoming") {
+      Swal.fire(
+        "Reminder disabled",
+        `Scheduling is only available for upcoming live sessions. This session is scheduled for ${reminderScheduleLabel}.`,
+        "warning"
+      );
+      return;
+    }
+
+    if (reminderIsLocked) {
+      Swal.fire(
+        "Reminder locked",
+        "This reminder is already sending or has already been sent.",
+        "info"
+      );
+      return;
+    }
+
+    const leadTimeMinutes = Math.trunc(Number(reminderForm.leadTimeMinutes));
+    const batchSize = Math.trunc(Number(reminderForm.batchSize));
+    const batchDelaySeconds = Math.trunc(Number(reminderForm.batchDelaySeconds));
+
+    if (!Number.isFinite(leadTimeMinutes) || leadTimeMinutes < 1) {
+      setReminderError("Lead time must be at least 1 minute.");
+      return;
+    }
+
+    if (!Number.isFinite(batchSize) || batchSize < 1) {
+      setReminderError("Chunk size must be at least 1.");
+      return;
+    }
+
+    if (!Number.isFinite(batchDelaySeconds) || batchDelaySeconds < 0) {
+      setReminderError("Batch delay cannot be negative.");
+      return;
+    }
+
+    try {
+      setSavingReminder(true);
+      setReminderError("");
+
+      const token = localStorage.getItem("adminToken");
+      const res = await axios.patch(
+        `${API_URL}/api/live-sessions/${selectedSession._id}`,
+        {
+          reminderSettings: {
+            leadTimeMinutes,
+            batchSize,
+            batchDelaySeconds,
+            timezone: reminderTimezone,
+          },
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!res.data) {
+        throw new Error("Failed to save reminder settings");
+      }
+
+      await fetchSessions();
+      toast.success("Reminder settings saved");
+    } catch (error) {
+      console.error("Save reminder settings error:", error);
+      const errorMessage =
+        error?.response?.data?.error ||
+        error?.message ||
+        "Failed to save reminder settings";
+      setReminderError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setSavingReminder(false);
+    }
+  };
 
   const handleEditBooking = async (booking) => {
     const result = await Swal.fire({
@@ -220,13 +420,212 @@ export default function LiveBookingsTab() {
               Record of all live session enrollments with payment and contact details.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={fetchBookings}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-          >
-            Refresh
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={fetchBookings}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+            >
+              Refresh bookings
+            </button>
+            <button
+              type="button"
+              onClick={fetchSessions}
+              className="rounded-lg border border-blue-200 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50"
+            >
+              {sessionsLoading ? "Loading sessions..." : "Refresh sessions"}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Reminder scheduler
+              </p>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Send WhatsApp reminder before the live session
+              </h3>
+              <p className="text-sm text-slate-600">
+                Choose a live session, set the reminder lead time, chunk size,
+                and delay between batches.
+              </p>
+              <p className="mt-1 text-sm text-slate-700">
+                <span className="font-semibold">Session:</span>{" "}
+                {selectedSession?.title || "Select a live session"}
+              </p>
+              <p className="text-sm text-slate-700">
+                <span className="font-semibold">Date and time:</span>{" "}
+                {reminderScheduleLabel || "Select a session to show date and time."}
+              </p>
+              <p className="text-xs text-slate-500">
+                Timezone: {reminderTimezone}
+              </p>
+            </div>
+
+            <div className="w-full lg:max-w-sm">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Session to schedule
+              </label>
+              <select
+                value={selectedSessionId}
+                onChange={(event) => setSelectedSessionId(event.target.value)}
+                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500"
+              >
+                <option value="">Select a live session</option>
+                {sessions.map((session) => (
+                  <option key={session._id} value={session._id}>
+                    {session.title} • {formatSessionTimeRange(session)}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500">
+                Pick the live session you want to schedule a reminder for.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Reminder status
+              </p>
+              <p className="mt-1 text-sm font-semibold text-slate-900">
+                {reminderStatus || "not scheduled"}
+              </p>
+              {reminderSendAtLabel ? (
+                <p className="text-xs text-slate-500">Sends at {reminderSendAtLabel}</p>
+              ) : null}
+              {selectedSession?.reminderSettings?.recipientCount ? (
+                <p className="text-xs text-slate-500">
+                  Confirmed recipients: {selectedSession.reminderSettings.recipientCount}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4 md:col-span-2">
+              {reminderSchedulingDisabled ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {reminderIsLocked
+                    ? "This reminder is already sending or has already been sent."
+                    : selectedSession
+                    ? `Scheduling is disabled for this session because it is not upcoming. Live session date and time: ${reminderScheduleLabel}.`
+                    : "Select a live session to enable scheduling. The reminder inputs will stay disabled until you choose one."}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+                  This session is upcoming, so the reminder inputs below are enabled.
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Send reminder before start (minutes)
+              </label>
+              <input
+                type="number"
+                min="1"
+                disabled={reminderSchedulingDisabled}
+                value={reminderForm.leadTimeMinutes}
+                onChange={(event) =>
+                  setReminderForm((prev) => ({
+                    ...prev,
+                    leadTimeMinutes: event.target.value,
+                  }))
+                }
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Chunk size
+              </label>
+              <div className="mb-2 flex gap-2">
+                {[5, 10].map((size) => (
+                  <button
+                    key={size}
+                    type="button"
+                    disabled={reminderSchedulingDisabled}
+                    onClick={() =>
+                      setReminderForm((prev) => ({
+                        ...prev,
+                        batchSize: String(size),
+                      }))
+                    }
+                    className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                      Number(reminderForm.batchSize) === size
+                        ? "border-blue-700 bg-blue-700 text-white"
+                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="number"
+                min="1"
+                disabled={reminderSchedulingDisabled}
+                value={reminderForm.batchSize}
+                onChange={(event) =>
+                  setReminderForm((prev) => ({
+                    ...prev,
+                    batchSize: event.target.value,
+                  }))
+                }
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Default chunk size is 5 emails per batch.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Delay between batches (seconds)
+              </label>
+              <input
+                type="number"
+                min="0"
+                disabled={reminderSchedulingDisabled}
+                value={reminderForm.batchDelaySeconds}
+                onChange={(event) =>
+                  setReminderForm((prev) => ({
+                    ...prev,
+                    batchDelaySeconds: event.target.value,
+                  }))
+                }
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-500"
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Default delay is 1 second between batches.
+              </p>
+            </div>
+          </div>
+
+          {reminderError ? (
+            <p className="mt-3 text-sm font-medium text-red-600">{reminderError}</p>
+          ) : null}
+
+          <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <p className="text-sm text-slate-600">
+              Reminders go only to confirmed enrollments for the selected live
+              session.
+            </p>
+            <button
+              type="button"
+              onClick={handleSaveReminderSettings}
+              disabled={savingReminder || reminderSchedulingDisabled}
+              className="rounded-lg bg-[#0f265c] px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#0b1e49] disabled:cursor-not-allowed disabled:bg-slate-400"
+            >
+              {savingReminder ? "Saving..." : "Save reminder settings"}
+            </button>
+          </div>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-4 xl:grid-cols-5">
