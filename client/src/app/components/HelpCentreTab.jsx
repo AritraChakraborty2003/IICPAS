@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import axios from "axios";
 import { 
   FaQuestionCircle, 
   FaSearch, 
@@ -11,78 +12,87 @@ import {
   FaComments,
   FaChevronDown,
   FaChevronUp,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaGraduationCap,
+  FaCreditCard,
+  FaUser,
+  FaCertificate
 } from "react-icons/fa";
+import { toast } from "react-hot-toast";
+
+// Icon mapping for dynamic categories
+const iconMap = {
+  FaQuestionCircle: <FaQuestionCircle />,
+  FaGraduationCap: <FaGraduationCap />,
+  FaCreditCard: <FaCreditCard />,
+  FaUser: <FaUser />,
+  FaBook: <FaBook />,
+  FaCertificate: <FaCertificate />,
+};
 
 export default function HelpCentreTab() {
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedFAQ, setExpandedFAQ] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [faqCategories, setFaqCategories] = useState([]);
+  const [heroData, setHeroData] = useState({
+    title: "Help Centre",
+    subtitle: "Find answers to common questions and get support"
+  });
 
-  const faqData = [
-    {
-      id: 1,
-      category: "account",
-      question: "How do I reset my password?",
-      answer: "To reset your password, click on 'Forgot Password' on the login page, enter your email address, and follow the instructions sent to your email."
-    },
-    {
-      id: 2,
-      category: "courses",
-      question: "How do I access my enrolled courses?",
-      answer: "Once logged in, go to the 'Courses' section in your dashboard. All your enrolled courses will be listed there with access to materials and live sessions."
-    },
-    {
-      id: 3,
-      category: "certificates",
-      question: "When will I receive my certificate?",
-      answer: "Certificates are typically issued within 7-10 business days after course completion. You can track the status in the 'Certificates' section."
-    },
-    {
-      id: 4,
-      category: "technical",
-      question: "I'm having trouble accessing live classes. What should I do?",
-      answer: "Please check your internet connection and browser compatibility. Clear your browser cache and try using Chrome or Firefox. If issues persist, contact technical support."
-    },
-    {
-      id: 5,
-      category: "payment",
-      question: "How can I make a payment for my course?",
-      answer: "You can make payments through our secure payment gateway using credit/debit cards, net banking, or UPI. All transactions are encrypted and secure."
-    },
-    {
-      id: 6,
-      category: "account",
-      question: "How do I update my profile information?",
-      answer: "Go to your profile section, click on 'Edit Profile', make your changes, and save. Some information may require verification before being updated."
+  const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+  const fetchHelpData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await axios.get(`${API}/api/v1/website/faq`);
+      if (res.data) {
+        if (res.data.hero) setHeroData(res.data.hero);
+        if (res.data.categories) setFaqCategories(res.data.categories);
+      }
+    } catch (error) {
+      console.error("Error fetching help data:", error);
+      toast.error("Failed to load help center content");
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [API]);
 
-  const categories = [
-    { id: "all", name: "All Topics", icon: <FaBook /> },
-    { id: "account", name: "Account", icon: <FaQuestionCircle /> },
-    { id: "courses", name: "Courses", icon: <FaBook /> },
-    { id: "certificates", name: "Certificates", icon: <FaQuestionCircle /> },
-    { id: "technical", name: "Technical", icon: <FaQuestionCircle /> },
-    { id: "payment", name: "Payment", icon: <FaQuestionCircle /> }
-  ];
+  useEffect(() => {
+    fetchHelpData();
+  }, [fetchHelpData]);
 
-  const filteredFAQs = faqData.filter(faq => {
-    const matchesCategory = selectedCategory === "all" || faq.category === selectedCategory;
+  // Flattened FAQs for searching
+  const allFAQs = faqCategories.flatMap(cat => 
+    cat.faqs.map(faq => ({ ...faq, categoryTitle: cat.title }))
+  );
+
+  const filteredFAQs = allFAQs.filter(faq => {
+    const matchesCategory = selectedCategory === "all" || faq.categoryTitle === selectedCategory;
     const matchesSearch = faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          faq.answer.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
-  const toggleFAQ = (id) => {
-    setExpandedFAQ(expandedFAQ === id ? null : id);
+  const toggleFAQ = (index) => {
+    setExpandedFAQ(expandedFAQ === index ? null : index);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+        <p className="text-gray-500">Loading help center...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Help Centre</h1>
-        <p className="text-gray-600">Find answers to common questions and get support</p>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">{heroData.title}</h1>
+        <p className="text-gray-600">{heroData.subtitle}</p>
       </div>
 
       {/* Search Bar */}
@@ -106,7 +116,7 @@ export default function HelpCentreTab() {
             <div className="p-3 bg-blue-100 rounded-lg">
               <FaVideo className="text-blue-600 text-xl" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 ml-3">Video Tutorials</h3>
+            <h3 className="text-lg font-semibold text-gray-900 ml-3">Updates & Tutorials</h3>
           </div>
           <p className="text-gray-600 mb-4">Watch step-by-step video guides to get started</p>
           <button className="text-blue-600 hover:text-blue-700 font-medium flex items-center gap-2">
@@ -119,11 +129,11 @@ export default function HelpCentreTab() {
             <div className="p-3 bg-green-100 rounded-lg">
               <FaComments className="text-green-600 text-xl" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 ml-3">Live Chat</h3>
+            <h3 className="text-lg font-semibold text-gray-900 ml-3">Support Ticket</h3>
           </div>
-          <p className="text-gray-600 mb-4">Chat with our support team in real-time</p>
+          <p className="text-gray-600 mb-4">Found an issue? Submit a support ticket</p>
           <button className="text-green-600 hover:text-green-700 font-medium flex items-center gap-2">
-            Start Chat <FaExternalLinkAlt className="text-sm" />
+            Submit Ticket <FaExternalLinkAlt className="text-sm" />
           </button>
         </div>
 
@@ -145,18 +155,28 @@ export default function HelpCentreTab() {
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Browse by Category</h2>
         <div className="flex flex-wrap gap-3">
-          {categories.map((category) => (
+          <button
+            onClick={() => setSelectedCategory("all")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+              selectedCategory === "all"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            <FaBook /> All Topics
+          </button>
+          {faqCategories.map((category, idx) => (
             <button
-              key={category.id}
-              onClick={() => setSelectedCategory(category.id)}
+              key={idx}
+              onClick={() => setSelectedCategory(category.title)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                selectedCategory === category.id
+                selectedCategory === category.title
                   ? "bg-blue-600 text-white"
                   : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {category.icon}
-              {category.name}
+              {iconMap[category.icon] || <FaQuestionCircle />}
+              {category.title}
             </button>
           ))}
         </div>
@@ -170,23 +190,23 @@ export default function HelpCentreTab() {
         
         <div className="divide-y divide-gray-200">
           {filteredFAQs.length > 0 ? (
-            filteredFAQs.map((faq) => (
-              <div key={faq.id} className="p-6">
+            filteredFAQs.map((faq, idx) => (
+              <div key={idx} className="p-6">
                 <button
-                  onClick={() => toggleFAQ(faq.id)}
+                  onClick={() => toggleFAQ(idx)}
                   className="w-full text-left flex items-center justify-between hover:bg-gray-50 p-2 rounded-lg transition-colors"
                 >
                   <h3 className="text-lg font-medium text-gray-900 pr-4">{faq.question}</h3>
-                  {expandedFAQ === faq.id ? (
+                  {expandedFAQ === idx ? (
                     <FaChevronUp className="text-gray-400 flex-shrink-0" />
                   ) : (
                     <FaChevronDown className="text-gray-400 flex-shrink-0" />
                   )}
                 </button>
                 
-                {expandedFAQ === faq.id && (
+                {expandedFAQ === idx && (
                   <div className="mt-4 pl-2">
-                    <p className="text-gray-600 leading-relaxed">{faq.answer}</p>
+                    <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{faq.answer}</p>
                   </div>
                 )}
               </div>
@@ -209,7 +229,7 @@ export default function HelpCentreTab() {
             </div>
             <div>
               <p className="font-medium text-gray-900">Phone Support</p>
-              <p className="text-gray-600">+91 9876543210</p>
+              <p className="text-gray-600">+91 97736 10185</p>
               <p className="text-sm text-gray-500">Mon-Fri, 9 AM - 6 PM</p>
             </div>
           </div>
@@ -220,7 +240,7 @@ export default function HelpCentreTab() {
             </div>
             <div>
               <p className="font-medium text-gray-900">Email Support</p>
-              <p className="text-gray-600">support@iicpas.com</p>
+              <p className="text-gray-600">info@iicpa.in</p>
               <p className="text-sm text-gray-500">Response within 24 hours</p>
             </div>
           </div>

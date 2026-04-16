@@ -54,13 +54,13 @@ const navLinks = [
       { name: "Contact", href: "/contact" },
       { name: "About", href: "/about" },
       { name: "Demo Digital Hub", href: "/demo-digital-hub" },
-      { name: "FAQ", href: "/faq" },
+      { name: "Help Center", href: "/help" },
     ],
   },
   { name: "Live Session", href: "/live-session" },
 ];
 
-export default function Header({ showMarquee = true, topOffset }) {
+export default function Header({ showMarquee = true, topOffset = null }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
