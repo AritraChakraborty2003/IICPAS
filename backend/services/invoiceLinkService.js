@@ -112,3 +112,35 @@ export const verifyCourseBookingInvoiceDownloadToken = ({
   createInvoiceSignature({ recordId: bookingId, paymentId }),
   token
 );
+
+/**
+ * For the generic Booking model (Live Session enrollments)
+ */
+export const buildBookingInvoiceDownloadUrl = ({
+  bookingId,
+  paymentId,
+  baseUrl = "",
+}) => {
+  const resolvedBaseUrl = normalizeBaseUrl(baseUrl) || resolveApiBaseUrl();
+  const token = createInvoiceSignature({ recordId: bookingId, paymentId });
+
+  if (!resolvedBaseUrl || !token || !bookingId || !paymentId) {
+    return "";
+  }
+
+  return `${resolvedBaseUrl}/v1/payments/receipts/booking/${encodeURIComponent(
+    bookingId
+  )}/download/public?paymentId=${encodeURIComponent(
+    paymentId
+  )}&token=${encodeURIComponent(token)}`;
+};
+
+export const verifyBookingInvoiceDownloadToken = ({
+  bookingId,
+  paymentId,
+  token,
+}) =>
+  safeCompare(
+    createInvoiceSignature({ recordId: bookingId, paymentId }),
+    token
+  );

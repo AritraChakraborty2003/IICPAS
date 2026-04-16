@@ -15,6 +15,8 @@ import { awardCoins, getCoinSettings } from "../services/coinService.js";
 import {
   buildTransactionInvoiceDownloadUrl,
   verifyTransactionInvoiceDownloadToken,
+  buildBookingInvoiceDownloadUrl,
+  verifyBookingInvoiceDownloadToken,
 } from "../services/invoiceLinkService.js";
 import { sendWhatsAppTemplateMessage } from "../services/whatsappService.js";
 import { generateLiveSessionReceiptPDF } from "../utils/pdfLiveSessionReceiptGenerator.js";
@@ -75,6 +77,9 @@ const activeCourseBookingStatuses = ["prebooked", "partially_paid", "fully_paid"
 const COURSE_PURCHASE_WHATSAPP_TEMPLATE_NAME =
   process.env.WHATSAPP_COURSE_PURCHASE_TEMPLATE_NAME ||
   "course_purchase_invoice_iicpa";
+const LIVE_SESSION_WHATSAPP_TEMPLATE_NAME =
+  process.env.WHATSAPP_LIVE_SESSION_TEMPLATE_NAME ||
+  "live_session_enrollment_iicpa";
 const resolveRequestApiBaseUrl = (req) => {
   const forwardedProto = String(req.headers["x-forwarded-proto"] || "")
     .split(",")[0]
@@ -170,6 +175,85 @@ const sendCoursePurchaseWhatsAppInvoice = async (
     components: buildCoursePurchaseInvoiceComponents({
       studentName,
       courseTitle,
+      invoiceUrl,
+    }),
+  });
+
+  if (response?.skipped) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: response?.reason || "WhatsApp is not configured",
+    };
+  }
+
+  return {
+    sent: true,
+    skipped: false,
+    response,
+  };
+};
+
+const buildLiveSessionInvoiceComponents = ({ studentName, invoiceUrl }) => [
+  {
+    type: "header",
+    parameters: [
+      {
+        type: "document",
+        document: {
+          link: invoiceUrl,
+          filename: "invoice.pdf",
+        },
+      },
+    ],
+  },
+  {
+    type: "body",
+    parameters: [
+      {
+        type: "text",
+        text: studentName || "Student",
+      },
+    ],
+  },
+];
+
+const sendLiveSessionWhatsAppInvoice = async (
+  booking,
+  { publicApiBaseUrl = "" } = {}
+) => {
+  const invoiceUrl = buildBookingInvoiceDownloadUrl({
+    bookingId: String(booking?._id || ""),
+    paymentId: String(booking?.razorpayPaymentId || ""),
+    baseUrl: publicApiBaseUrl,
+  });
+
+  if (!invoiceUrl) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: "Public invoice URL is not configured",
+    };
+  }
+
+  const recipient = normalizeWhatsAppRecipient(
+    booking?.whatsappNumber || booking?.phone || ""
+  );
+  if (!recipient) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: "Recipient phone number is not available",
+    };
+  }
+
+  const studentName = booking?.requesterName || "Student";
+
+  const response = await sendWhatsAppTemplateMessage({
+    to: recipient,
+    templateName: LIVE_SESSION_WHATSAPP_TEMPLATE_NAME,
+    components: buildLiveSessionInvoiceComponents({
+      studentName,
       invoiceUrl,
     }),
   });
@@ -373,15 +457,28 @@ const normalizeLiveSessionReceipt = (booking) => {
   };
 };
 
-const sendReceiptForLiveSessionBooking = async (bookingId) => {
+const sendReceiptForLiveSessionBooking = async (
+  bookingId,
+  { publicApiBaseUrl = "" } = {}
+) => {
   const booking = await Booking.findById(bookingId).lean();
   if (!booking || booking.paymentStatus !== "paid") {
     return { sent: false, reason: "Booking missing or not paid" };
   }
 
-  if (booking.receiptSent) {
+  const needsEmail = !booking.receiptSent;
+  const needsWhatsApp = !booking.whatsappReceiptSent;
+
+  if (!needsEmail && !needsWhatsApp) {
     return { sent: true, skipped: true };
   }
+
+  const result = {
+    sent: false,
+    emailSent: false,
+    whatsappSent: false,
+    skipped: false,
+  };
 
   let bookingForEmail = booking;
   if (booking.liveSessionId) {
@@ -398,15 +495,52 @@ const sendReceiptForLiveSessionBooking = async (bookingId) => {
     }
   }
 
-  const pdfBuffer = await generateLiveSessionReceiptPDF(bookingForEmail);
-  await sendLiveSessionReceiptEmail(bookingForEmail, pdfBuffer);
+  if (needsEmail) {
+    try {
+      const pdfBuffer = await generateLiveSessionReceiptPDF(bookingForEmail);
+      await sendLiveSessionReceiptEmail(bookingForEmail, pdfBuffer);
 
-  await Booking.findByIdAndUpdate(bookingId, {
-    receiptSent: true,
-    receiptSentAt: new Date(),
-  });
+      await Booking.findByIdAndUpdate(bookingId, {
+        receiptSent: true,
+        receiptSentAt: new Date(),
+      });
+      result.sent = true;
+      result.emailSent = true;
+    } catch (emailError) {
+      console.error(
+        `Failed to send email receipt for booking ${bookingId}:`,
+        emailError
+      );
+    }
+  }
 
-  return { sent: true, skipped: false };
+  if (needsWhatsApp) {
+    try {
+      const whatsappResult = await sendLiveSessionWhatsAppInvoice(booking, {
+        publicApiBaseUrl,
+      });
+      if (whatsappResult?.skipped) {
+        result.skipped = true;
+        console.warn(
+          `WhatsApp invoice skipped for booking ${bookingId}: ${whatsappResult.reason || "unknown reason"}`
+        );
+      } else {
+        await Booking.findByIdAndUpdate(bookingId, {
+          whatsappReceiptSent: true,
+          whatsappReceiptSentAt: new Date(),
+        });
+        result.sent = true;
+        result.whatsappSent = true;
+      }
+    } catch (whatsappError) {
+      console.error(
+        `Failed to send WhatsApp invoice for booking ${bookingId}:`,
+        whatsappError
+      );
+    }
+  }
+
+  return result;
 };
 
 const verifyRazorpaySignature = ({
@@ -1430,6 +1564,8 @@ const verifyAndCaptureHandler = async (req, res) => {
   try {
     if (!ensureRazorpayConfigured(res)) return;
 
+    const publicApiBaseUrl = resolveRequestApiBaseUrl(req);
+
     const {
       razorpay_order_id,
       razorpay_payment_id,
@@ -1497,7 +1633,9 @@ const verifyAndCaptureHandler = async (req, res) => {
         });
 
         try {
-          await sendReceiptForLiveSessionBooking(booking._id);
+          await sendReceiptForLiveSessionBooking(booking._id, {
+            publicApiBaseUrl,
+          });
         } catch (receiptError) {
           console.error(
             "Live session receipt send failed after payment verification:",
@@ -1601,7 +1739,6 @@ const verifyAndCaptureHandler = async (req, res) => {
 
     const failedTransactionIds = [];
     let sentReceipts = 0;
-    const publicApiBaseUrl = resolveRequestApiBaseUrl(req);
 
     for (const txn of transactions) {
       try {
@@ -1931,6 +2068,82 @@ router.get("/receipts/transaction/:transactionId/download", async (req, res) => 
     return res.send(pdfBuffer);
   } catch (error) {
     console.error("Failed to download transaction invoice:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to download invoice",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/receipts/booking/:bookingId/download/public", async (req, res) => {
+  try {
+    const bookingId = String(req.params.bookingId || "").trim();
+    const paymentId = String(req.query.paymentId || "").trim();
+    const token = String(req.query.token || "").trim();
+
+    if (!bookingId || !paymentId || !token) {
+      return res.status(400).json({
+        success: false,
+        message: "bookingId, paymentId, and token are required",
+      });
+    }
+
+    if (
+      !verifyBookingInvoiceDownloadToken({
+        bookingId,
+        paymentId,
+        token,
+      })
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid invoice link",
+      });
+    }
+
+    const booking = await Booking.findById(bookingId)
+      .populate("studentId", "name email")
+      .populate("liveSessionId", "title date time link");
+
+    if (!booking || !booking.liveSessionId) {
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found",
+      });
+    }
+
+    if (booking.paymentStatus !== "paid") {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice can only be downloaded for paid bookings",
+      });
+    }
+
+    if (String(booking.razorpayPaymentId || "") !== paymentId) {
+      return res.status(403).json({
+        success: false,
+        message: "Invoice link does not match this booking",
+      });
+    }
+
+    const pdfBuffer = await generateLiveSessionReceiptPDF({
+      ...booking.toObject(),
+      link: booking.link || booking.liveSessionId?.link || "",
+      time: booking.time || booking.liveSessionId?.time || "",
+      date: booking.date || booking.liveSessionId?.date || null,
+    });
+
+    const fileName = `Live-Session-Invoice-${String(booking._id)
+      .slice(-8)
+      .toUpperCase()}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Failed to download live session invoice:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to download invoice",
