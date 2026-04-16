@@ -1,5 +1,6 @@
 import Chapter from "../../models/Content/Chapter.js";
 import Course from "../../models/Content/Course.js";
+import { POPULATE_TOPICS_WITH_LESSONS } from "../../utils/topicPopulation.js";
 
 export const getChaptersByCourse = async (req, res) => {
   try {
@@ -21,7 +22,7 @@ export const getChaptersByCourse = async (req, res) => {
 
     const chapters = await Chapter.find({
       _id: { $in: course.chapters },
-    }).populate("topics");
+    }).populate(POPULATE_TOPICS_WITH_LESSONS);
     res.json(chapters);
   } catch (error) {
     console.error("Error fetching chapters:", error);
@@ -30,9 +31,16 @@ export const getChaptersByCourse = async (req, res) => {
 };
 
 export const getChapter = async (req, res) => {
-  const chapter = await Chapter.findById(req.params.id).populate("topics");
-  if (!chapter) return res.status(404).json({ error: "Chapter not found" });
-  res.json(chapter);
+  try {
+    const chapter = await Chapter.findById(req.params.id).populate(
+      POPULATE_TOPICS_WITH_LESSONS
+    );
+    if (!chapter) return res.status(404).json({ error: "Chapter not found" });
+    res.json(chapter);
+  } catch (error) {
+    console.error("Error fetching chapter:", error);
+    res.status(500).json({ error: "Failed to fetch chapter" });
+  }
 };
 
 export const createChapter = async (req, res) => {

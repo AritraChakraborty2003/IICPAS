@@ -1,13 +1,11 @@
 import Course from "../../models/Content/Course.js";
 import Student from "../../models/Students.js";
+import { POPULATE_TOPICS_WITH_LESSONS } from "../../utils/topicPopulation.js";
 
 export const getAllCourses = async (req, res) => {
   const courses = await Course.find().populate({
     path: "chapters",
-    populate: {
-      path: "topics",
-      model: "Topic",
-    },
+    populate: POPULATE_TOPICS_WITH_LESSONS,
   });
   res.json(courses);
 };
@@ -21,6 +19,7 @@ export const getStudentCourses = async (req, res) => {
       path: "course",
       populate: {
         path: "chapters",
+        populate: POPULATE_TOPICS_WITH_LESSONS,
       },
     });
 
@@ -47,10 +46,7 @@ export const getAvailableCourses = async (req, res) => {
     // Get all active courses
     const courses = await Course.find({ status: "Active" }).populate({
       path: "chapters",
-      populate: {
-        path: "topics",
-        model: "Topic",
-      },
+      populate: POPULATE_TOPICS_WITH_LESSONS,
     });
     res.json(courses);
   } catch (error) {
@@ -71,19 +67,13 @@ export const getCourse = async (req, res) => {
       // If it's a valid ObjectId, search by _id
       course = await Course.findById(id).populate({
         path: "chapters",
-        populate: {
-          path: "topics",
-          model: "Topic",
-        },
+        populate: POPULATE_TOPICS_WITH_LESSONS,
       });
     } else {
       // If it's not a valid ObjectId, search by slug
       course = await Course.findOne({ slug: id }).populate({
         path: "chapters",
-        populate: {
-          path: "topics",
-          model: "Topic",
-        },
+        populate: POPULATE_TOPICS_WITH_LESSONS,
       });
     }
 

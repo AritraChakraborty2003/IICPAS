@@ -22,6 +22,7 @@ import CaseStudyBuilder from "../../components/CaseStudyBuilder";
 import AssignmentBuilder from "../../components/AssignmentBuilder";
 import AssignmentsList from "../../components/AssignmentsList";
 import CaseStudiesList from "../../components/CaseStudiesList";
+import TopicLessonsPanel from "./TopicLessonsPanel";
 
 const MySwal = withReactContent(Swal);
 const API_BASE = getApiBase();
@@ -275,6 +276,23 @@ export default function TopicList({
           }}
         />
       </Box>
+
+      {/* Enhanced Assignments List */}
+      <TopicLessonsPanel
+        chapterId={chapterId}
+        chapterName={chapterName}
+        kind="recorded"
+        topics={topics}
+        onRefresh={fetchTopics}
+      />
+
+      <TopicLessonsPanel
+        chapterId={chapterId}
+        chapterName={chapterName}
+        kind="live"
+        topics={topics}
+        onRefresh={fetchTopics}
+      />
 
       {/* Enhanced Assignments List */}
       <Box sx={{ mt: 4 }}>

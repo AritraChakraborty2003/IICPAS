@@ -2,6 +2,7 @@ import express from "express";
 import Chapter from "../../models/Content/Chapter.js";
 import Topic from "../../models/Content/Topic.js";
 import Course from "../../models/Content/Course.js";
+import { POPULATE_TOPICS_WITH_LESSONS, TOPIC_LESSON_POPULATE } from "../../utils/topicPopulation.js";
 
 const router = express.Router();
 
@@ -17,18 +18,12 @@ router.get("/course/:courseId", async (req, res) => {
     if (isValidObjectId) {
       course = await Course.findById(courseId).populate({
         path: "chapters",
-        populate: {
-          path: "topics",
-          model: "Topic",
-        },
+        populate: POPULATE_TOPICS_WITH_LESSONS,
       });
     } else {
       course = await Course.findOne({ slug: courseId }).populate({
         path: "chapters",
-        populate: {
-          path: "topics",
-          model: "Topic",
-        },
+        populate: POPULATE_TOPICS_WITH_LESSONS,
       });
     }
 
@@ -51,7 +46,10 @@ router.get("/:chapterId", async (req, res) => {
   try {
     const { chapterId } = req.params;
 
-    const chapter = await Chapter.findById(chapterId);
+    const chapter = await Chapter.findById(chapterId).populate({
+      path: "topics",
+      populate: TOPIC_LESSON_POPULATE,
+    });
     if (!chapter) {
       return res.status(404).json({ message: "Chapter not found" });
     }
@@ -68,7 +66,10 @@ router.get("/:chapterId/topics", async (req, res) => {
   try {
     const { chapterId } = req.params;
 
-    const chapter = await Chapter.findById(chapterId).populate("topics");
+    const chapter = await Chapter.findById(chapterId).populate({
+      path: "topics",
+      populate: TOPIC_LESSON_POPULATE,
+    });
 
     if (!chapter) {
       return res.status(404).json({ message: "Chapter not found" });
@@ -89,7 +90,7 @@ router.get("/topics/:topicId", async (req, res) => {
   try {
     const { topicId } = req.params;
 
-    const topic = await Topic.findById(topicId);
+    const topic = await Topic.findById(topicId).populate(TOPIC_LESSON_POPULATE);
 
     if (!topic) {
       return res.status(404).json({ message: "Topic not found" });

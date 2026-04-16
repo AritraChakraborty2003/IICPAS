@@ -24,6 +24,7 @@ import {
 } from "react-icons/fa";
 import { Lock } from "lucide-react";
 import StarRating from "./StarRating";
+import TopicLessonsDisplay from "./TopicLessonsDisplay";
 import { toast } from "react-hot-toast";
 
 const extractCourseList = (payload) => {
@@ -834,6 +835,10 @@ export default function CourseTab() {
                                     No subtopics
                                   </p>
                                 )}
+                                <TopicLessonsDisplay
+                                  topic={topic}
+                                  isLocked={Boolean(chapter.isLocked)}
+                                />
                               </li>
                             );
                           })}
@@ -1460,6 +1465,10 @@ export default function CourseTab() {
                                                     No subtopics
                                                   </p>
                                                 )}
+                                                <TopicLessonsDisplay
+                                                  topic={topic}
+                                                  isLocked={Boolean(chapter.isLocked)}
+                                                />
                                               </div>
                                             </div>
                                           );

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
+import TopicLessonsDisplay from "../components/TopicLessonsDisplay";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 import { getApiBase } from "@/lib/apiBase";
 
@@ -188,6 +189,26 @@ interface TopicData {
   title: string;
   content: string;
   introVideo?: string;
+  lessons?: Array<{
+    _id?: string;
+    kind?: "recorded" | "live";
+    title?: string;
+    order?: number;
+    status?: string;
+    publishAt?: string;
+    sourceType?: string;
+    sourceUrl?: string;
+    liveSessionId?:
+      | string
+      | {
+          _id?: string;
+          title?: string;
+          date?: string;
+          time?: string;
+          link?: string;
+        }
+      | null;
+  }>;
   quiz?: string;
   publishAt?: string;
   createdAt: string;
@@ -3209,14 +3230,20 @@ export default function DigitalHubClient({
                       isDarkMode ? "topic-content-dark" : "topic-content-light"
                     }`}
                   >
-                    {isSelectedTopicLockedForBatch ? null : (
-                      <div
-                        ref={topicContentRef}
-                        dangerouslySetInnerHTML={{
-                          __html: topicContent,
-                        }}
-                      />
-                    )}
+                  {isSelectedTopicLockedForBatch ? null : (
+                    <div
+                      ref={topicContentRef}
+                      dangerouslySetInnerHTML={{
+                        __html: topicContent,
+                      }}
+                    />
+                  )}
+
+                  <TopicLessonsDisplay
+                    topic={selectedTopic}
+                    isLocked={isSelectedTopicLockedForBatch}
+                    showLegacyIntroVideo={false}
+                  />
 
                     {/* Demo Mode Controls */}
                     {isDemo && !isSelectedTopicLockedForBatch && (
