@@ -44,6 +44,7 @@ import metaTagRoutes from "./routes/metatagsRoute.js";
 import jobRoutes from "./routes/jobRoutes.js";
 import aboutRoutes from "./routes/WebsiteRoutes/aboutRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
+import { startLiveSessionReminderScheduler } from "./services/liveSessionReminderScheduler.js";
 
 //TicketRoutes
 import ticketRoutes from "./routes/TicketRoutes.js";
@@ -357,6 +358,7 @@ io.on("connection", (socket) => {
 
 // Make io available globally for use in controllers
 global.io = io;
+startLiveSessionReminderScheduler();
 //Contact Info Routes
 app.use("/api/contact-info", contactLimiter, contactInfoRoutes);
 

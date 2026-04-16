@@ -1,6 +1,70 @@
 import LiveSession from "../../models/LiveSession/LiveSession.js";
 import Student from "../../models/Students.js";
 import Booking from "../../models/Booking.js";
+import {
+  computeReminderSendAt,
+  DEFAULT_REMINDER_BATCH_DELAY_SECONDS,
+  DEFAULT_REMINDER_BATCH_SIZE,
+  DEFAULT_REMINDER_LEAD_TIME_MINUTES,
+  DEFAULT_REMINDER_TIME_ZONE,
+  REMINDER_JOB_STATUS,
+  toIntegerInRange,
+} from "../../utils/liveSessionReminderHelpers.js";
+
+const buildReminderSettingsPayload = ({
+  currentReminderSettings = {},
+  sessionDate,
+  sessionTime,
+  incomingReminderSettings = null,
+}) => {
+  const existingReminderObject =
+    currentReminderSettings?.toObject?.() || currentReminderSettings || {};
+
+  const timezone = String(
+    incomingReminderSettings?.timezone ||
+      existingReminderObject.timezone ||
+      DEFAULT_REMINDER_TIME_ZONE
+  ).trim() || DEFAULT_REMINDER_TIME_ZONE;
+
+  const leadTimeMinutes = toIntegerInRange(
+    incomingReminderSettings?.leadTimeMinutes ??
+      existingReminderObject.leadTimeMinutes,
+    DEFAULT_REMINDER_LEAD_TIME_MINUTES,
+    { min: 1 }
+  );
+
+  const batchSize = toIntegerInRange(
+    incomingReminderSettings?.batchSize ?? existingReminderObject.batchSize,
+    DEFAULT_REMINDER_BATCH_SIZE,
+    { min: 1 }
+  );
+
+  const batchDelaySeconds = toIntegerInRange(
+    incomingReminderSettings?.batchDelaySeconds ??
+      existingReminderObject.batchDelaySeconds,
+    DEFAULT_REMINDER_BATCH_DELAY_SECONDS,
+    { min: 0 }
+  );
+
+  const sendAt = computeReminderSendAt({
+    date: sessionDate,
+    time: sessionTime,
+    leadTimeMinutes,
+    timeZone: timezone,
+  });
+
+  return {
+    leadTimeMinutes,
+    batchSize,
+    batchDelaySeconds,
+    timezone,
+    sendAt,
+    status: REMINDER_JOB_STATUS.QUEUED,
+    sentAt: null,
+    lastError: "",
+    recipientCount: 0,
+  };
+};
 
 export const createLiveSession = async (req, res) => {
   try {
@@ -302,11 +366,66 @@ export const unenrollFromLiveSession = async (req, res) => {
 
 export const updateLiveSession = async (req, res) => {
   try {
+    const currentSession = await LiveSession.findById(req.params.id);
+    if (!currentSession) return res.status(404).json({ error: "Session not found" });
+
     // Ensure imageUrl is set to thumbnail if not provided
     const updateData = {
       ...req.body,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
     };
+
+    const incomingReminderSettings = req.body.reminderSettings || null;
+    const existingReminderSettings = currentSession.reminderSettings || {};
+    const nextSessionDate = req.body.date ?? currentSession.date;
+    const nextSessionTime = req.body.time ?? currentSession.time;
+    const existingReminderStatus = String(
+      existingReminderSettings.status || ""
+    ).toLowerCase();
+
+    if (incomingReminderSettings) {
+      if (
+        existingReminderStatus === REMINDER_JOB_STATUS.SENDING ||
+        existingReminderStatus === REMINDER_JOB_STATUS.SENT
+      ) {
+        return res.status(400).json({
+          error: "Reminder already sent or currently sending",
+        });
+      }
+
+      const reminderSettings = buildReminderSettingsPayload({
+        currentReminderSettings: existingReminderSettings,
+        sessionDate: nextSessionDate,
+        sessionTime: nextSessionTime,
+        incomingReminderSettings,
+      });
+
+      if (!reminderSettings.sendAt) {
+        return res
+          .status(400)
+          .json({ error: "Unable to calculate reminder send time" });
+      }
+
+      updateData.reminderSettings = reminderSettings;
+    } else if (
+      existingReminderStatus === REMINDER_JOB_STATUS.QUEUED &&
+      (Object.prototype.hasOwnProperty.call(req.body, "date") ||
+        Object.prototype.hasOwnProperty.call(req.body, "time"))
+    ) {
+      const reminderSettings = buildReminderSettingsPayload({
+        currentReminderSettings: existingReminderSettings,
+        sessionDate: nextSessionDate,
+        sessionTime: nextSessionTime,
+      });
+
+      if (!reminderSettings.sendAt) {
+        return res
+          .status(400)
+          .json({ error: "Unable to calculate reminder send time" });
+      }
+
+      updateData.reminderSettings = reminderSettings;
+    }
 
     const session = await LiveSession.findByIdAndUpdate(
       req.params.id,

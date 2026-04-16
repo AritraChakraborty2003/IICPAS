@@ -31,6 +31,10 @@ import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useAuth } from "@/contexts/AuthContext";
 
 const API = getApiOrigin();
+const DEFAULT_REMINDER_TIME_ZONE = "Asia/Kolkata";
+const DEFAULT_REMINDER_LEAD_TIME_MINUTES = 30;
+const DEFAULT_REMINDER_BATCH_SIZE = 5;
+const DEFAULT_REMINDER_BATCH_DELAY_SECONDS = 1;
 const CONFIRMED_PAYMENT_STATUSES = new Set([
   "paid",
   "captured",
@@ -53,6 +57,74 @@ const isConfirmedLiveEnrollment = (booking) => {
   );
 };
 
+const formatDateWithTimeZone = (value, timeZone = DEFAULT_REMINDER_TIME_ZONE) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      timeZone,
+    }).format(date);
+  } catch {
+    return new Intl.DateTimeFormat("en-IN", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(date);
+  }
+};
+
+const formatDateTimeWithTimeZone = (
+  value,
+  timeZone = DEFAULT_REMINDER_TIME_ZONE
+) => {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+      timeZone,
+    }).format(date);
+  } catch {
+    return new Intl.DateTimeFormat("en-IN", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).format(date);
+  }
+};
+
+const getReminderDefaults = (session, timeZone = DEFAULT_REMINDER_TIME_ZONE) => {
+  const settings = session?.reminderSettings || {};
+
+  return {
+    leadTimeMinutes: String(
+      settings.leadTimeMinutes ?? DEFAULT_REMINDER_LEAD_TIME_MINUTES
+    ),
+    batchSize: String(settings.batchSize ?? DEFAULT_REMINDER_BATCH_SIZE),
+    batchDelaySeconds: String(
+      settings.batchDelaySeconds ?? DEFAULT_REMINDER_BATCH_DELAY_SECONDS
+    ),
+    timezone: settings.timezone || timeZone || DEFAULT_REMINDER_TIME_ZONE,
+  };
+};
+
 export default function LiveSesionAdmin() {
   const [tab, setTab] = useState("list");
   const [viewMode, setViewMode] = useState("cards"); // "cards" or "table"
@@ -62,6 +134,11 @@ export default function LiveSesionAdmin() {
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [editId, setEditId] = useState(null);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [reminderForm, setReminderForm] = useState(
+    getReminderDefaults(null, DEFAULT_REMINDER_TIME_ZONE)
+  );
+  const [savingReminder, setSavingReminder] = useState(false);
+  const [reminderError, setReminderError] = useState("");
   const [selectedSessions, setSelectedSessions] = useState([]);
   const [form, setForm] = useState({
     title: "",
@@ -78,7 +155,7 @@ export default function LiveSesionAdmin() {
   });
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const { hasPermission } = useAuth();
+  const { hasPermission, user } = useAuth();
 
   // Helper function to check if token is valid
   const checkTokenValidity = () => {
@@ -578,6 +655,24 @@ export default function LiveSesionAdmin() {
     [sessions, selectedSessionId]
   );
 
+  useEffect(() => {
+    if (!selectedSession) {
+      setReminderForm(
+        getReminderDefaults(null, user?.preferences?.timezone || DEFAULT_REMINDER_TIME_ZONE)
+      );
+      setReminderError("");
+      return;
+    }
+
+    setReminderForm(
+      getReminderDefaults(
+        selectedSession,
+        user?.preferences?.timezone || DEFAULT_REMINDER_TIME_ZONE
+      )
+    );
+    setReminderError("");
+  }, [selectedSession, user?.preferences?.timezone]);
+
   const filteredSessionBookings = useMemo(() => {
     if (!selectedSessionId) return sessionBookings;
 
@@ -599,6 +694,102 @@ export default function LiveSesionAdmin() {
   const handleViewSessionBookings = (sessionId) => {
     setSelectedSessionId(sessionId);
     setTab("bookings");
+  };
+
+  const handleSaveReminderSettings = async () => {
+    if (!selectedSession) return;
+
+    const sessionStatus = String(selectedSession.status || "").toLowerCase();
+    const reminderStatus = String(
+      selectedSession.reminderSettings?.status || ""
+    ).toLowerCase();
+
+    if (sessionStatus !== "upcoming") {
+      Swal.fire(
+        "Reminder disabled",
+        `Scheduling is only available for upcoming live sessions. This session is scheduled for ${formatDateWithTimeZone(
+          selectedSession.date,
+          reminderForm.timezone
+        )}, ${formatTimeRange(selectedSession.time)}.`,
+        "warning"
+      );
+      return;
+    }
+
+    if (reminderStatus === "sending" || reminderStatus === "sent") {
+      Swal.fire(
+        "Reminder locked",
+        "This reminder is already sending or has already been sent.",
+        "info"
+      );
+      return;
+    }
+
+    const leadTimeMinutes = Math.trunc(Number(reminderForm.leadTimeMinutes));
+    const batchSize = Math.trunc(Number(reminderForm.batchSize));
+    const batchDelaySeconds = Math.trunc(Number(reminderForm.batchDelaySeconds));
+
+    if (!Number.isFinite(leadTimeMinutes) || leadTimeMinutes < 1) {
+      setReminderError("Lead time must be at least 1 minute.");
+      return;
+    }
+
+    if (!Number.isFinite(batchSize) || batchSize < 1) {
+      setReminderError("Chunk size must be at least 1.");
+      return;
+    }
+
+    if (!Number.isFinite(batchDelaySeconds) || batchDelaySeconds < 0) {
+      setReminderError("Batch delay cannot be negative.");
+      return;
+    }
+
+    try {
+      setSavingReminder(true);
+      setReminderError("");
+
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      const res = await fetch(`${API}/api/live-sessions/${selectedSession._id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reminderSettings: {
+            leadTimeMinutes,
+            batchSize,
+            batchDelaySeconds,
+            timezone:
+              reminderForm.timezone ||
+              user?.preferences?.timezone ||
+              DEFAULT_REMINDER_TIME_ZONE,
+          },
+        }),
+      });
+
+      if (!res.ok) {
+        let errorMessage = "Failed to save reminder settings";
+        try {
+          const errorData = await res.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // ignore parse issues
+        }
+        throw new Error(errorMessage);
+      }
+
+      await fetchSessions();
+      Swal.fire("Success", "Reminder settings saved.", "success");
+    } catch (error) {
+      const errorMessage = error?.message || "Failed to save reminder settings";
+      setReminderError(errorMessage);
+      Swal.fire("Error", errorMessage, "error");
+    } finally {
+      setSavingReminder(false);
+    }
   };
 
   const handleEditBooking = async (booking) => {
