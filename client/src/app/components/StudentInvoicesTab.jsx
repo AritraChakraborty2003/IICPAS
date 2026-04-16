@@ -371,7 +371,7 @@ export default function StudentInvoicesTab({
         if (!cancelled) {
           setInvoices(mergedRecords);
         }
-      } catch (fetchError) {
+      } catch {
         if (!cancelled) {
           setError("Unable to load payment history right now.");
           setInvoices([]);
