@@ -109,6 +109,14 @@ const TransactionSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  whatsappReceiptSent: {
+    type: Boolean,
+    default: false,
+  },
+  whatsappReceiptSentAt: {
+    type: Date,
+    default: null,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

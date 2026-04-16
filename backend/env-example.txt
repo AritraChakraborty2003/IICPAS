@@ -31,6 +31,8 @@ WHATSAPP_WABA_ID=your_whatsapp_business_account_id
 WHATSAPP_ACCESS_TOKEN=your_meta_access_token
 WHATSAPP_TEMPLATE_LANGUAGE=en_US
 WHATSAPP_DEFAULT_COUNTRY_CODE=91
+# Optional but recommended for signed invoice links
+INVOICE_LINK_SECRET=your_invoice_link_secret_here
 
 # Other configurations
 API_BASE_URL=http://localhost:8080/api

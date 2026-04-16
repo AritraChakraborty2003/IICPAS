@@ -10,7 +10,13 @@ import Booking from "../models/Booking.js";
 import CourseBooking from "../models/CourseBooking.js";
 import LiveSession from "../models/LiveSession/LiveSession.js";
 import isStudent from "../middleware/isStudent.js";
+import { normalizeWhatsAppRecipient } from "../config/whatsappConfig.js";
 import { awardCoins, getCoinSettings } from "../services/coinService.js";
+import {
+  buildTransactionInvoiceDownloadUrl,
+  verifyTransactionInvoiceDownloadToken,
+} from "../services/invoiceLinkService.js";
+import { sendWhatsAppTemplateMessage } from "../services/whatsappService.js";
 import { generateLiveSessionReceiptPDF } from "../utils/pdfLiveSessionReceiptGenerator.js";
 import { sendLiveSessionReceiptEmail } from "../utils/liveSessionEmailService.js";
 
@@ -66,6 +72,26 @@ const buildRazorpayReceipt = (studentId) => {
 const toPaise = (amount) => Math.max(0, Math.round(Number(amount || 0) * 100));
 const fromPaise = (amountPaise) => Number((amountPaise / 100).toFixed(2));
 const activeCourseBookingStatuses = ["prebooked", "partially_paid", "fully_paid"];
+const COURSE_PURCHASE_WHATSAPP_TEMPLATE_NAME =
+  process.env.WHATSAPP_COURSE_PURCHASE_TEMPLATE_NAME ||
+  "course_purchase_invoice_iicpa";
+const resolveRequestApiBaseUrl = (req) => {
+  const forwardedProto = String(req.headers["x-forwarded-proto"] || "")
+    .split(",")[0]
+    .trim();
+  const protocol = forwardedProto || req.protocol || "https";
+  const forwardedHost = String(req.headers["x-forwarded-host"] || "")
+    .split(",")[0]
+    .trim();
+  const host = forwardedHost || req.get("host") || "";
+
+  if (!host) {
+    return "";
+  }
+
+  const baseUrl = `${protocol}://${host}`.replace(/\/+$/, "");
+  return baseUrl.endsWith("/api") ? baseUrl : `${baseUrl}/api`;
+};
 const parseTransactionNotes = (value) => {
   if (!value || typeof value !== "string") return {};
   try {
@@ -74,6 +100,93 @@ const parseTransactionNotes = (value) => {
   } catch {
     return {};
   }
+};
+
+const buildCoursePurchaseInvoiceComponents = ({
+  studentName,
+  courseTitle,
+  invoiceUrl,
+}) => [
+  {
+    type: "header",
+    parameters: [
+      {
+        type: "document",
+        document: {
+          link: invoiceUrl,
+          filename: "invoice.pdf",
+        },
+      },
+    ],
+  },
+  {
+    type: "body",
+    parameters: [
+      {
+        type: "text",
+        text: studentName || "Student",
+      },
+      {
+        type: "text",
+        text: courseTitle || "Course",
+      },
+    ],
+  },
+];
+
+const sendCoursePurchaseWhatsAppInvoice = async (
+  transaction,
+  { publicApiBaseUrl = "" } = {}
+) => {
+  const invoiceUrl = buildTransactionInvoiceDownloadUrl({
+    transactionId: String(transaction?._id || ""),
+    paymentId: String(transaction?.razorpayPaymentId || ""),
+    baseUrl: publicApiBaseUrl,
+  });
+
+  if (!invoiceUrl) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: "Public invoice URL is not configured",
+    };
+  }
+
+  const recipient = normalizeWhatsAppRecipient(transaction?.studentId?.phone || "");
+  if (!recipient) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: "Student phone number is not available",
+    };
+  }
+
+  const studentName = transaction?.studentId?.name || "Student";
+  const courseTitle = transaction?.courseId?.title || "Course";
+
+  const response = await sendWhatsAppTemplateMessage({
+    to: recipient,
+    templateName: COURSE_PURCHASE_WHATSAPP_TEMPLATE_NAME,
+    components: buildCoursePurchaseInvoiceComponents({
+      studentName,
+      courseTitle,
+      invoiceUrl,
+    }),
+  });
+
+  if (response?.skipped) {
+    return {
+      sent: false,
+      skipped: true,
+      reason: response?.reason || "WhatsApp is not configured",
+    };
+  }
+
+  return {
+    sent: true,
+    skipped: false,
+    response,
+  };
 };
 
 const syncStudentEnrollment = async (transaction) => {
@@ -114,38 +227,87 @@ const syncStudentEnrollment = async (transaction) => {
   return student;
 };
 
-const sendReceiptForApprovedTransaction = async (transactionId) => {
+const sendReceiptForApprovedTransaction = async (
+  transactionId,
+  { publicApiBaseUrl = "" } = {}
+) => {
   const transaction = await Transaction.findById(transactionId)
-    .populate("studentId", "name email")
+    .populate("studentId", "name email phone")
     .populate("courseId", "title category price");
 
   if (!transaction || transaction.status !== "approved") {
     return { sent: false, reason: "Transaction missing or not approved" };
   }
 
-  if (transaction.receiptSent) {
+  const needsEmail = !transaction.receiptSent;
+  const needsWhatsApp = !transaction.whatsappReceiptSent;
+
+  if (!needsEmail && !needsWhatsApp) {
     return { sent: true, skipped: true };
   }
 
-  const { generateReceiptPDF } = await import("../utils/pdfReceiptGenerator.js");
-  const { sendReceiptEmail } = await import("../utils/emailService.js");
+  const result = {
+    sent: false,
+    emailSent: false,
+    whatsappSent: false,
+    skipped: false,
+  };
 
-  let pdfBuffer = null;
-  try {
-    pdfBuffer = await generateReceiptPDF(transaction);
-  } catch (pdfError) {
-    console.error(
-      `PDF generation failed for transaction ${transaction._id}. Sending email without attachment:`,
-      pdfError.message
-    );
+  if (needsEmail) {
+    const { generateReceiptPDF } = await import("../utils/pdfReceiptGenerator.js");
+    const { sendReceiptEmail } = await import("../utils/emailService.js");
+
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generateReceiptPDF(transaction);
+    } catch (pdfError) {
+      console.error(
+        `PDF generation failed for transaction ${transaction._id}. Sending email without attachment:`,
+        pdfError.message
+      );
+    }
+
+    try {
+      await sendReceiptEmail(transaction, pdfBuffer);
+      transaction.receiptSent = true;
+      transaction.receiptSentAt = new Date();
+      await transaction.save();
+      result.sent = true;
+      result.emailSent = true;
+    } catch (emailError) {
+      console.error(
+        `Failed to send email receipt for transaction ${transaction._id}:`,
+        emailError
+      );
+    }
   }
-  await sendReceiptEmail(transaction, pdfBuffer);
 
-  transaction.receiptSent = true;
-  transaction.receiptSentAt = new Date();
-  await transaction.save();
+  if (needsWhatsApp) {
+    try {
+      const whatsappResult = await sendCoursePurchaseWhatsAppInvoice(transaction, {
+        publicApiBaseUrl,
+      });
+      if (whatsappResult?.skipped) {
+        result.skipped = true;
+        console.warn(
+          `WhatsApp invoice skipped for transaction ${transaction._id}: ${whatsappResult.reason || "unknown reason"}`
+        );
+      } else {
+        transaction.whatsappReceiptSent = true;
+        transaction.whatsappReceiptSentAt = new Date();
+        await transaction.save();
+        result.sent = true;
+        result.whatsappSent = true;
+      }
+    } catch (whatsappError) {
+      console.error(
+        `Failed to send WhatsApp invoice for transaction ${transaction._id}:`,
+        whatsappError
+      );
+    }
+  }
 
-  return { sent: true, skipped: false };
+  return result;
 };
 
 const ensureRazorpayConfigured = (res) => {
@@ -1439,6 +1601,7 @@ const verifyAndCaptureHandler = async (req, res) => {
 
     const failedTransactionIds = [];
     let sentReceipts = 0;
+    const publicApiBaseUrl = resolveRequestApiBaseUrl(req);
 
     for (const txn of transactions) {
       try {
@@ -1455,10 +1618,15 @@ const verifyAndCaptureHandler = async (req, res) => {
           await syncStudentEnrollment(txn);
         }
 
-        // Always retry receipt send if missing, even for already-approved retries.
-        if (txn.status === "approved" && !txn.receiptSent) {
+        // Retry receipt delivery if either email or WhatsApp is still pending.
+        if (
+          txn.status === "approved" &&
+          (!txn.receiptSent || !txn.whatsappReceiptSent)
+        ) {
           try {
-            const receiptStatus = await sendReceiptForApprovedTransaction(txn._id);
+            const receiptStatus = await sendReceiptForApprovedTransaction(txn._id, {
+              publicApiBaseUrl,
+            });
             if (receiptStatus?.sent) sentReceipts += 1;
           } catch (receiptError) {
             console.error(
@@ -1695,6 +1863,77 @@ router.get("/receipts/booking/:bookingId", async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch receipt",
+      error: error.message,
+    });
+  }
+});
+
+router.get("/receipts/transaction/:transactionId/download", async (req, res) => {
+  try {
+    const transactionId = String(req.params.transactionId || "").trim();
+    const paymentId = String(req.query.paymentId || "").trim();
+    const token = String(req.query.token || "").trim();
+
+    if (!transactionId || !paymentId || !token) {
+      return res.status(400).json({
+        success: false,
+        message: "transactionId, paymentId, and token are required",
+      });
+    }
+
+    if (
+      !verifyTransactionInvoiceDownloadToken({
+        transactionId,
+        paymentId,
+        token,
+      })
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Invalid invoice link",
+      });
+    }
+
+    const transaction = await Transaction.findById(transactionId)
+      .populate("studentId", "name email phone")
+      .populate("courseId", "title category price");
+
+    if (!transaction) {
+      return res.status(404).json({
+        success: false,
+        message: "Invoice not found",
+      });
+    }
+
+    if (transaction.status !== "approved") {
+      return res.status(400).json({
+        success: false,
+        message: "Invoice can only be downloaded for approved transactions",
+      });
+    }
+
+    if (String(transaction.razorpayPaymentId || "") !== paymentId) {
+      return res.status(403).json({
+        success: false,
+        message: "Invoice link does not match this transaction",
+      });
+    }
+
+    const { generateReceiptPDF } = await import("../utils/pdfReceiptGenerator.js");
+    const pdfBuffer = await generateReceiptPDF(transaction);
+    const fileName = `Course-Purchase-Invoice-${String(transaction._id)
+      .slice(-8)
+      .toUpperCase()}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Failed to download transaction invoice:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to download invoice",
       error: error.message,
     });
   }

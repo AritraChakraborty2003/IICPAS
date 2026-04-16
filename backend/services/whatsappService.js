@@ -10,6 +10,7 @@ const buildWhatsAppTemplatePayload = ({
   templateName,
   languageCode = whatsappConfig.templateLanguage,
   bodyParameters = [],
+  components = null,
 }) => ({
   messaging_product: "whatsapp",
   to,
@@ -19,14 +20,17 @@ const buildWhatsAppTemplatePayload = ({
     language: {
       code: languageCode,
     },
-    components: bodyParameters.length
-      ? [
-          {
-            type: "body",
-            parameters: bodyParameters,
-          },
-        ]
-      : [],
+    components:
+      Array.isArray(components) && components.length
+        ? components
+        : bodyParameters.length
+        ? [
+            {
+              type: "body",
+              parameters: bodyParameters,
+            },
+          ]
+        : [],
   },
 });
 
@@ -35,6 +39,7 @@ export const sendWhatsAppTemplateMessage = async ({
   templateName,
   languageCode,
   bodyParameters = [],
+  components = null,
 }) => {
   if (!isWhatsAppConfigured()) {
     return {
@@ -57,6 +62,7 @@ export const sendWhatsAppTemplateMessage = async ({
     templateName,
     languageCode,
     bodyParameters,
+    components,
   });
 
   const url = `https://graph.facebook.com/${whatsappConfig.apiVersion}/${whatsappConfig.phoneNumberId}/messages`;
