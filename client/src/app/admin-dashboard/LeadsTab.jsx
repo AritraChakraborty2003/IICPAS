@@ -304,9 +304,9 @@ export default function LeadsTab() {
       </div>
 
       {/* Leads Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overflow-y-auto max-h-[70vh] rounded-lg custom-scrollbar">
         <table className="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <thead className="bg-gray-100 text-gray-700 text-sm">
+          <thead className="bg-gray-100 text-gray-700 text-sm sticky top-0 z-10">
             <tr>
               <th className="text-left px-4 py-3 border-b">Name</th>
               <th className="text-left px-4 py-3 border-b">Phone</th>

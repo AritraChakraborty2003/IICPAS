@@ -186,6 +186,7 @@ export default function AddOrEditTopicForm({
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [introVideoPreviewOpen, setIntroVideoPreviewOpen] = useState(false);
+  const [introVideoSaving, setIntroVideoSaving] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
   const [quizPreviewOpen, setQuizPreviewOpen] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
@@ -479,6 +480,122 @@ export default function AddOrEditTopicForm({
       editor.current = editorInstance;
       setEditorReady(true);
     }
+  };
+
+  const buildTopicPayload = (overrides = {}) => {
+    const introVideoValue =
+      overrides.introVideo !== undefined ? overrides.introVideo : introVideo;
+
+    return {
+      title: title.trim(),
+      content,
+      introVideo: introVideoValue.trim() || "",
+      publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
+    };
+  };
+
+  const persistIntroVideoUpdate = async (nextIntroVideo) => {
+    if (!topic?._id) {
+      return null;
+    }
+
+    const response = await axios.put(
+      `${API_BASE}/topics/${topic._id}`,
+      {
+        introVideo: (nextIntroVideo || "").trim() || "",
+      }
+    );
+
+    return response.data;
+  };
+
+  const saveIntroVideoLink = async (nextIntroVideo, successMessage) => {
+    const normalizedIntroVideo = (nextIntroVideo || "").trim();
+
+    if (!topic?._id) {
+      return false;
+    }
+
+    setIntroVideoSaving(true);
+    try {
+      await persistIntroVideoUpdate(normalizedIntroVideo);
+      setIntroVideo(normalizedIntroVideo);
+      onSaved && onSaved();
+      Swal.fire("Success", successMessage, "success");
+      return true;
+    } catch (error) {
+      console.error("Error updating intro video link:", error);
+      Swal.fire("Error", "Failed to save intro video link.", "error");
+      return false;
+    } finally {
+      setIntroVideoSaving(false);
+    }
+  };
+
+  const handleIntroVideoLinkUpdate = async () => {
+    const normalizedIntroVideo = introVideo.trim();
+
+    if (!normalizedIntroVideo) {
+      Swal.fire("Validation", "Intro video URL is required", "warning");
+      return;
+    }
+
+    if (!topic?._id) {
+      Swal.fire(
+        "Save Topic First",
+        "Create the topic once before saving the intro video link separately.",
+        "info"
+      );
+      return;
+    }
+
+    await saveIntroVideoLink(normalizedIntroVideo, "Intro video link updated!");
+  };
+
+  const getIntroVideoPreview = (url) => {
+    const normalizedUrl = (url || "").trim();
+
+    if (!normalizedUrl) return null;
+
+    const youtubeMatch = normalizedUrl.match(
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/
+    );
+    if (
+      normalizedUrl.includes("youtube.com") ||
+      normalizedUrl.includes("youtu.be")
+    ) {
+      const videoId = youtubeMatch?.[1];
+      if (videoId) {
+        return {
+          type: "iframe",
+          src: `https://www.youtube.com/embed/${videoId}`,
+          label: "YouTube video",
+        };
+      }
+    }
+
+    const vimeoMatch = normalizedUrl.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (normalizedUrl.includes("vimeo.com") && vimeoMatch?.[1]) {
+      return {
+        type: "iframe",
+        src: `https://player.vimeo.com/video/${vimeoMatch[1]}`,
+        label: "Vimeo video",
+      };
+    }
+
+    if (/\.(mp4|webm|ogg|mov|m4v|avi|wmv|flv|mkv)(\?.*)?$/i.test(normalizedUrl)) {
+      return {
+        type: "video",
+        src: normalizedUrl,
+        label: "Direct video",
+      };
+    }
+
+    return {
+      type: "link",
+      href: normalizedUrl,
+      label: "Video link",
+    };
   };
 
   // Preserve scroll position when opening/closing modal
@@ -941,12 +1058,19 @@ export default function AddOrEditTopicForm({
 
       if (uploadedUrl) {
         setIntroVideo(uploadedUrl);
-        Swal.fire({
-          title: "Intro Video Uploaded!",
-          text: "The intro video URL has been added to the topic.",
-          icon: "success",
-          confirmButtonText: "OK",
-        });
+        if (topic?._id) {
+          await saveIntroVideoLink(
+            uploadedUrl,
+            "Intro video uploaded and link updated!"
+          );
+        } else {
+          Swal.fire({
+            title: "Intro Video Uploaded!",
+            text: "The intro video URL has been added to the form. Save the topic to persist it.",
+            icon: "success",
+            confirmButtonText: "OK",
+          });
+        }
       } else {
         Swal.fire("Error", "Failed to get video URL", "error");
       }
@@ -1109,25 +1233,16 @@ export default function AddOrEditTopicForm({
     setSaving(true);
     try {
       let topicId;
+      const payload = buildTopicPayload();
       if (topic) {
         // Update existing topic
-        await axios.put(`${API_BASE}/topics/${topic._id}`, {
-          title: title.trim(),
-          content,
-          introVideo: introVideo.trim() || "",
-          publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
-        });
+        await axios.put(`${API_BASE}/topics/${topic._id}`, payload);
         topicId = topic._id;
       } else {
         // Create new topic
         const topicRes = await axios.post(
           `${API_BASE}/topics/by-chapter/${chapterId}`,
-          {
-            title: title.trim(),
-            content,
-            introVideo: introVideo.trim() || "",
-            publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
-          }
+          payload
         );
         topicId = topicRes.data._id;
       }
@@ -1171,6 +1286,8 @@ export default function AddOrEditTopicForm({
     }
     setSaving(false);
   };
+
+  const introVideoPreview = getIntroVideoPreview(introVideo);
 
   return (
     <Box
@@ -1281,6 +1398,17 @@ export default function AddOrEditTopicForm({
                   <Button
                     size="small"
                     variant="outlined"
+                    color="primary"
+                    onClick={handleIntroVideoLinkUpdate}
+                    disabled={
+                      introVideoSaving || uploadingIntroVideo || !topic?._id
+                    }
+                  >
+                    {introVideoSaving ? "Saving..." : "Update Link"}
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
                     color="inherit"
                     onClick={() => setIntroVideo("")}
                   >
@@ -1296,13 +1424,21 @@ export default function AddOrEditTopicForm({
               onChange={(e) => setIntroVideo(e.target.value)}
               fullWidth
               placeholder="Paste a direct video URL or upload one below"
-              helperText="This video appears above the topic content in Digital Hub."
+              helperText="Paste a direct video URL or upload one below. Use Update Link to save changes immediately for existing topics."
               sx={{ mb: 2 }}
             />
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              <Button component="label" variant="contained" disabled={uploadingIntroVideo}>
-                {uploadingIntroVideo ? "Uploading..." : "Upload Intro Video"}
+              <Button
+                component="label"
+                variant="contained"
+                disabled={uploadingIntroVideo || introVideoSaving}
+              >
+                {uploadingIntroVideo
+                  ? "Uploading..."
+                  : introVideoSaving
+                  ? "Saving..."
+                  : "Upload Intro Video"}
                 <input
                   type="file"
                   accept="video/*"
@@ -2344,21 +2480,57 @@ export default function AddOrEditTopicForm({
               border: "1px solid rgba(148, 163, 184, 0.25)",
             }}
           >
-            <video
-              key={introVideo}
-              controls
-              autoPlay
-              playsInline
-              src={introVideo}
-              style={{
-                display: "block",
-                width: "100%",
-                maxHeight: "72vh",
-                backgroundColor: "#000",
-              }}
-            >
-              Your browser does not support the video tag.
-            </video>
+            {introVideoPreview?.type === "iframe" ? (
+              <iframe
+                title={introVideoPreview.label}
+                src={introVideoPreview.src}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                style={{
+                  display: "block",
+                  width: "100%",
+                  minHeight: "72vh",
+                  border: 0,
+                  backgroundColor: "#000",
+                }}
+              />
+            ) : introVideoPreview?.type === "video" ? (
+              <video
+                key={introVideo}
+                controls
+                autoPlay
+                playsInline
+                src={introVideoPreview.src}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  maxHeight: "72vh",
+                  backgroundColor: "#000",
+                }}
+              >
+                Your browser does not support the video tag.
+              </video>
+            ) : introVideoPreview?.type === "link" ? (
+              <Box
+                sx={{
+                  p: 4,
+                  textAlign: "center",
+                  color: "#cbd5e1",
+                }}
+              >
+                <Typography sx={{ mb: 1 }}>
+                  This intro video is a link and cannot be played inline.
+                </Typography>
+                <Link
+                  href={introVideoPreview.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ color: "#60a5fa", fontWeight: 600 }}
+                >
+                  Open video link
+                </Link>
+              </Box>
+            ) : null}
           </Box>
 
           <Typography
