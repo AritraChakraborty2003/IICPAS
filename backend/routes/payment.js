@@ -76,7 +76,7 @@ const fromPaise = (amountPaise) => Number((amountPaise / 100).toFixed(2));
 const activeCourseBookingStatuses = ["prebooked", "partially_paid", "fully_paid"];
 const COURSE_PURCHASE_WHATSAPP_TEMPLATE_NAME =
   process.env.WHATSAPP_COURSE_PURCHASE_TEMPLATE_NAME ||
-  "course_purchase_invoice_iicpa";
+  "txq_payment_share_1";
 const LIVE_SESSION_WHATSAPP_TEMPLATE_NAME =
   process.env.WHATSAPP_LIVE_SESSION_TEMPLATE_NAME ||
   "live_session_enrollment_iicpa";
@@ -133,7 +133,7 @@ const buildCoursePurchaseInvoiceComponents = ({
       },
       {
         type: "text",
-        text: courseTitle || "Course",
+        text: "Invoice",
       },
     ],
   },
