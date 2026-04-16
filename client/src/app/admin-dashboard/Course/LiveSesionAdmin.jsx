@@ -871,6 +871,30 @@ export default function LiveSesionAdmin() {
     }
   };
 
+  const reminderTimezone =
+    selectedSession?.reminderSettings?.timezone ||
+    user?.preferences?.timezone ||
+    DEFAULT_REMINDER_TIME_ZONE;
+  const reminderStatus = String(
+    selectedSession?.reminderSettings?.status || ""
+  ).toLowerCase();
+  const reminderIsLocked = ["sending", "sent"].includes(reminderStatus);
+  const reminderSchedulingDisabled =
+    !selectedSession ||
+    String(selectedSession?.status || "").toLowerCase() !== "upcoming" ||
+    reminderIsLocked;
+  const reminderSendAtLabel = selectedSession?.reminderSettings?.sendAt
+    ? formatDateTimeWithTimeZone(
+        selectedSession.reminderSettings.sendAt,
+        reminderTimezone
+      )
+    : "";
+  const reminderScheduleLabel = selectedSession
+    ? `${formatDateWithTimeZone(selectedSession.date, reminderTimezone)} | ${formatTimeRange(
+        selectedSession.time
+      )}`
+    : "";
+
   return (
     <div className="w-[75vw] mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
@@ -1216,6 +1240,191 @@ export default function LiveSesionAdmin() {
               >
                 Show all bookings
               </Button>
+            </div>
+          )}
+
+          {selectedSession && (
+            <div
+              className={`mb-4 rounded-2xl border px-4 py-4 shadow-sm ${
+                reminderSchedulingDisabled
+                  ? "border-amber-200 bg-amber-50"
+                  : "border-slate-200 bg-white"
+              }`}
+            >
+              <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Reminder scheduler
+                  </p>
+                  <h3 className="text-lg font-semibold text-slate-900">
+                    Send reminder before the live session
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    {selectedSession.title || "Selected live session"}
+                  </p>
+                  <p className="text-sm text-slate-600">
+                    {reminderScheduleLabel}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Timezone: {reminderTimezone}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Reminder status
+                  </p>
+                  <p className="text-sm font-medium text-slate-900">
+                    {reminderStatus || "not scheduled"}
+                  </p>
+                  {reminderSendAtLabel ? (
+                    <p className="text-xs text-slate-500">
+                      Sends at {reminderSendAtLabel}
+                    </p>
+                  ) : null}
+                  {selectedSession.reminderSettings?.recipientCount ? (
+                    <p className="text-xs text-slate-500">
+                      Confirmed recipients:{" "}
+                      {selectedSession.reminderSettings.recipientCount}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              {reminderSchedulingDisabled ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-100 px-4 py-3 text-sm text-amber-900">
+                  {reminderIsLocked
+                    ? "This reminder is already sending or has already been sent."
+                    : `Scheduling is disabled for this session because it is not upcoming. Live session date and time: ${reminderScheduleLabel}.`}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Send reminder before start (minutes)
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      value={reminderForm.leadTimeMinutes}
+                      onChange={(e) =>
+                        setReminderForm((prev) => ({
+                          ...prev,
+                          leadTimeMinutes: e.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Chunk size
+                    </label>
+                    <div className="mb-2 flex gap-2">
+                      {[5, 10].map((size) => (
+                        <Button
+                          key={size}
+                          size="small"
+                          variant={
+                            Number(reminderForm.batchSize) === size
+                              ? "contained"
+                              : "outlined"
+                          }
+                          sx={{
+                            minWidth: 72,
+                            bgcolor:
+                              Number(reminderForm.batchSize) === size
+                                ? "#0f265c"
+                                : "transparent",
+                            borderColor: "#0f265c",
+                            color:
+                              Number(reminderForm.batchSize) === size
+                                ? "white"
+                                : "#0f265c",
+                            "&:hover": {
+                              bgcolor:
+                                Number(reminderForm.batchSize) === size
+                                  ? "#0b1e49"
+                                  : "rgba(15, 38, 92, 0.04)",
+                            },
+                          }}
+                          onClick={() =>
+                            setReminderForm((prev) => ({
+                              ...prev,
+                              batchSize: String(size),
+                            }))
+                          }
+                        >
+                          {size}
+                        </Button>
+                      ))}
+                    </div>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      value={reminderForm.batchSize}
+                      onChange={(e) =>
+                        setReminderForm((prev) => ({
+                          ...prev,
+                          batchSize: e.target.value,
+                        }))
+                      }
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Default is 5 emails per batch.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-medium text-slate-700">
+                      Delay between batches (seconds)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
+                      value={reminderForm.batchDelaySeconds}
+                      onChange={(e) =>
+                        setReminderForm((prev) => ({
+                          ...prev,
+                          batchDelaySeconds: e.target.value,
+                        }))
+                      }
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Default is 1 second between batches.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {reminderError ? (
+                <p className="mt-3 text-sm font-medium text-red-600">
+                  {reminderError}
+                </p>
+              ) : null}
+
+              {!reminderSchedulingDisabled ? (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-slate-600">
+                    Reminders go only to confirmed enrollments for this session.
+                  </p>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      bgcolor: "#0f265c",
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      px: 3,
+                    }}
+                    onClick={handleSaveReminderSettings}
+                    disabled={savingReminder}
+                  >
+                    {savingReminder ? "Saving..." : "Save reminder settings"}
+                  </Button>
+                </div>
+              ) : null}
             </div>
           )}
 
