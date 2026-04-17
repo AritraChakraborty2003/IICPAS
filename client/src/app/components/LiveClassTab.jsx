@@ -103,7 +103,10 @@ const sortByDateThenTitle = (a, b) => {
   return String(a?.title || "").localeCompare(String(b?.title || ""));
 };
 
-export default function LiveClassTab() {
+export default function LiveClassTab({
+  selectedLiveSessionId = "",
+  onClearSelectedLiveSession = () => {},
+}) {
   const [liveClasses, setLiveClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -249,6 +252,20 @@ export default function LiveClassTab() {
     [chapterOptions, selectedChapterId]
   );
 
+  const selectedSidebarSession = useMemo(
+    () =>
+      liveClasses.find(
+        (session) => String(session?._id) === String(selectedLiveSessionId)
+      ) || null,
+    [liveClasses, selectedLiveSessionId]
+  );
+
+  useEffect(() => {
+    if (!selectedSidebarSession) return;
+    setSelectedCourseId(getCourseId(selectedSidebarSession));
+    setSelectedChapterId(getChapterId(selectedSidebarSession));
+  }, [selectedSidebarSession]);
+
   useEffect(() => {
     if (!selectedCourse) {
       setSelectedChapterId("");
@@ -270,6 +287,10 @@ export default function LiveClassTab() {
   }, [chapterOptions, selectedChapterId, selectedCourse]);
 
   const filteredLiveClasses = useMemo(() => {
+    if (selectedSidebarSession) {
+      return [selectedSidebarSession];
+    }
+
     return liveClasses
       .filter((session) => {
         if (!selectedCourseId) return true;
@@ -280,7 +301,7 @@ export default function LiveClassTab() {
         return String(getChapterId(session)) === String(selectedChapterId);
       })
       .sort(sortByDateThenTitle);
-  }, [liveClasses, selectedCourseId, selectedChapterId]);
+  }, [liveClasses, selectedCourseId, selectedChapterId, selectedSidebarSession]);
 
   const handleEnrollNewSessions = () => {
     router.push("/live-session");
@@ -443,16 +464,32 @@ export default function LiveClassTab() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-6">
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
-                {selectedCourse?.title || "All Live Sessions"}
+                {selectedSidebarSession
+                  ? selectedSidebarSession.title
+                  : selectedCourse?.title || "All Live Sessions"}
               </h2>
               <p className="text-sm text-gray-500">
-                {selectedChapter
+                {selectedSidebarSession ? (
+                  <>
+                    {getCourseTitle(selectedSidebarSession)} •{" "}
+                    {getChapterTitle(selectedSidebarSession)}
+                  </>
+                ) : selectedChapter
                   ? `Chapter: ${selectedChapter.title}`
                   : selectedCourse
                   ? "Choose a chapter to narrow the sessions."
                   : "Choose a course and chapter to narrow the sessions."}
               </p>
             </div>
+            {selectedSidebarSession ? (
+              <button
+                type="button"
+                onClick={onClearSelectedLiveSession}
+                className="self-start rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-100"
+              >
+                Back to all classes
+              </button>
+            ) : null}
             <div className="text-sm text-gray-500">
               Showing {filteredLiveClasses.length} session{filteredLiveClasses.length !== 1 ? "s" : ""}
             </div>

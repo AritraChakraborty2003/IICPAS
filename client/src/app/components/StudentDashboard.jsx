@@ -56,6 +56,10 @@ function StudentDashboardContent() {
   const [walletPaidAmount, setWalletPaidAmount] = useState(0);
   const [checkingAuth, setCheckingAuth] = useState(false); // Initialize as false to prevent initial blinking
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [liveSessions, setLiveSessions] = useState([]);
+  const [loadingLiveSessions, setLoadingLiveSessions] = useState(false);
+  const [liveSessionsExpanded, setLiveSessionsExpanded] = useState(true);
+  const [selectedLiveSessionId, setSelectedLiveSessionId] = useState("");
 
   // Ticket modal state
   const [showTicketModal, setShowTicketModal] = useState(false);
@@ -112,6 +116,27 @@ function StudentDashboardContent() {
     }
   };
 
+  const fetchLiveSessions = async () => {
+    try {
+      setLoadingLiveSessions(true);
+      const response = await axios.get(`${API}/api/live-sessions`);
+      const sessions = Array.isArray(response.data) ? response.data : [];
+      const visibleSessions = sessions.filter(
+        (session) =>
+          session.status === "active" ||
+          session.status === "upcoming" ||
+          session.status === "live" ||
+          session.status === "completed"
+      );
+      setLiveSessions(visibleSessions);
+    } catch (error) {
+      console.error("Failed to fetch live sessions:", error);
+      setLiveSessions([]);
+    } finally {
+      setLoadingLiveSessions(false);
+    }
+  };
+
   // Sidebar tabs
   const tabs = [
     { id: "courses", icon: <FaBook />, label: "Courses" },
@@ -136,6 +161,16 @@ function StudentDashboardContent() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    fetchLiveSessions();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab !== "live") {
+      setSelectedLiveSessionId("");
+    }
+  }, [activeTab]);
 
   // Handle URL tab parameter
   useEffect(() => {
@@ -281,7 +316,12 @@ function StudentDashboardContent() {
       case "revision":
         return <RevisionTab />;
       case "live":
-        return <LiveClassTab />;
+        return (
+          <LiveClassTab
+            selectedLiveSessionId={selectedLiveSessionId}
+            onClearSelectedLiveSession={() => setSelectedLiveSessionId("")}
+          />
+        );
       case "recorded":
         return <RecordedSessionTab />;
       case "news":
@@ -319,7 +359,22 @@ function StudentDashboardContent() {
       default:
         return <CoursesTab />;
     }
-  }, [activeTab, student]);
+  }, [activeTab, selectedLiveSessionId, student]);
+
+  const handleTabSelect = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId !== "live") {
+      setSelectedLiveSessionId("");
+    }
+    setIsDrawerOpen(false);
+  };
+
+  const handleLiveSessionSelect = (sessionId) => {
+    setActiveTab("live");
+    setSelectedLiveSessionId(sessionId);
+    setLiveSessionsExpanded(true);
+    setIsDrawerOpen(false);
+  };
 
   const SidebarContent = () => (
     <div className="h-full flex flex-col">
@@ -416,22 +471,88 @@ function StudentDashboardContent() {
           sidebarCollapsed ? "px-1" : "px-3"
         } custom-scrollbar`}
       >
-        {tabs.map((tab) => (
-          <div key={tab.id}>
-            <NavItem
-              icon={tab.icon}
-              label={sidebarCollapsed ? "" : tab.label}
-              active={activeTab === tab.id}
-              dot={tab.dot}
-              dotColor={tab.dotColor}
-              collapsed={sidebarCollapsed}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setIsDrawerOpen(false);
-              }}
-            />
-          </div>
-        ))}
+        {tabs.map((tab) => {
+          if (tab.id !== "live") {
+            return (
+              <div key={tab.id}>
+                <NavItem
+                  icon={tab.icon}
+                  label={sidebarCollapsed ? "" : tab.label}
+                  active={activeTab === tab.id}
+                  dot={tab.dot}
+                  dotColor={tab.dotColor}
+                  collapsed={sidebarCollapsed}
+                  onClick={() => handleTabSelect(tab.id)}
+                />
+              </div>
+            );
+          }
+
+          return (
+            <div key={tab.id}>
+              <NavItem
+                icon={tab.icon}
+                label={sidebarCollapsed ? "" : tab.label}
+                active={activeTab === tab.id}
+                dot={tab.dot}
+                dotColor={tab.dotColor}
+                collapsed={sidebarCollapsed}
+                onClick={() => {
+                  setActiveTab("live");
+                  setLiveSessionsExpanded((prev) => !prev);
+                  setIsDrawerOpen(false);
+                }}
+              />
+
+              {!sidebarCollapsed && activeTab === "live" && liveSessionsExpanded && (
+                <div className="ml-3 mb-3 border-l border-blue-200 pl-3 space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => handleLiveSessionSelect("")}
+                    className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                      !selectedLiveSessionId
+                        ? "bg-blue-50 text-blue-700 font-semibold"
+                        : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                    }`}
+                  >
+                    All Live Classes
+                  </button>
+
+                  {loadingLiveSessions ? (
+                    <div className="px-3 py-2 text-sm text-gray-500">
+                      Loading live classes...
+                    </div>
+                  ) : liveSessions.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-gray-500">
+                      No live classes saved yet.
+                    </div>
+                  ) : (
+                    liveSessions.map((session) => (
+                      <button
+                        key={session._id}
+                        type="button"
+                        onClick={() => handleLiveSessionSelect(session._id)}
+                        className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
+                          String(selectedLiveSessionId) === String(session._id)
+                            ? "bg-blue-50 text-blue-700 font-semibold"
+                            : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                        }`}
+                      >
+                        <div className="truncate">{session.title}</div>
+                        <div className="truncate text-xs text-gray-400">
+                          {session.courseId?.title ||
+                            session.category ||
+                            "General"}{" "}
+                          • {session.chapterId?.title || "No chapter"}
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
     </div>
   );
