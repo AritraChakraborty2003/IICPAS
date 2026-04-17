@@ -116,7 +116,7 @@ function StudentDashboardContent() {
   const tabs = [
     { id: "courses", icon: <FaBook />, label: "Courses" },
     { id: "revision", icon: <FaBook />, label: "Assessment" },
-    { id: "live", icon: <FaVideo />, label: "Live Class", dot: true },
+    { id: "live", icon: <FaVideo />, label: "Live Session", dot: true },
     { id: "recorded", icon: <FaPlay />, label: "Recorded Sessions", dot: true },
     { id: "news", icon: <FaNewspaper />, label: "News" },
     { id: "testimonial", icon: <FaQuoteLeft />, label: "Testimonial" },

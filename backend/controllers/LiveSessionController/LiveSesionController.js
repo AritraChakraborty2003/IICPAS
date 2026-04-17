@@ -1,6 +1,9 @@
+import mongoose from "mongoose";
 import LiveSession from "../../models/LiveSession/LiveSession.js";
 import Student from "../../models/Students.js";
 import Booking from "../../models/Booking.js";
+import Course from "../../models/Content/Course.js";
+import Chapter from "../../models/Content/Chapter.js";
 import {
   computeReminderSendAt,
   DEFAULT_REMINDER_BATCH_DELAY_SECONDS,
@@ -66,15 +69,92 @@ const buildReminderSettingsPayload = ({
   };
 };
 
+const normalizeOptionalId = (value) => {
+  if (value === null || value === undefined) return undefined;
+  const normalized = String(value).trim();
+  return normalized ? normalized : undefined;
+};
+
+const populateLiveSession = (query) =>
+  query
+    .populate("courseId", "title slug category")
+    .populate("chapterId", "title order")
+    .populate("enrolledStudents", "name email");
+
+const validateCourseChapterSelection = async (courseId, chapterId) => {
+  const normalizedCourseId = normalizeOptionalId(courseId);
+  const normalizedChapterId = normalizeOptionalId(chapterId);
+
+  if (normalizedCourseId && !mongoose.Types.ObjectId.isValid(normalizedCourseId)) {
+    return { error: "Invalid courseId" };
+  }
+
+  if (normalizedChapterId && !mongoose.Types.ObjectId.isValid(normalizedChapterId)) {
+    return { error: "Invalid chapterId" };
+  }
+
+  let courseDoc = null;
+  let chapterDoc = null;
+
+  if (normalizedCourseId) {
+    courseDoc = await Course.findById(normalizedCourseId).select("chapters title");
+    if (!courseDoc) {
+      return { error: "Selected course not found" };
+    }
+  }
+
+  if (normalizedChapterId) {
+    chapterDoc = await Chapter.findById(normalizedChapterId).select("title");
+    if (!chapterDoc) {
+      return { error: "Selected chapter not found" };
+    }
+  }
+
+  if (normalizedCourseId && normalizedChapterId) {
+    const chapterMatchesCourse = Array.isArray(courseDoc?.chapters)
+      ? courseDoc.chapters.some(
+          (chapter) => String(chapter) === String(normalizedChapterId)
+        )
+      : false;
+
+    if (!chapterMatchesCourse) {
+      return {
+        error: "Selected chapter does not belong to the selected course",
+      };
+    }
+  }
+
+  return { courseId: normalizedCourseId, chapterId: normalizedChapterId };
+};
+
 export const createLiveSession = async (req, res) => {
   try {
+    const selection = await validateCourseChapterSelection(
+      req.body.courseId,
+      req.body.chapterId
+    );
+
+    if (selection.error) {
+      return res.status(400).json({ error: selection.error });
+    }
+
     // Ensure imageUrl is set to thumbnail if not provided
     const sessionData = {
       ...req.body,
+      courseId: selection.courseId,
+      chapterId: selection.chapterId,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
     };
 
+    if (!sessionData.courseId) delete sessionData.courseId;
+    if (!sessionData.chapterId) delete sessionData.chapterId;
+
     const session = await LiveSession.create(sessionData);
+    await session.populate([
+      { path: "courseId", select: "title slug category" },
+      { path: "chapterId", select: "title order" },
+      { path: "enrolledStudents", select: "name email" },
+    ]);
     res.status(201).json(session);
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -83,10 +163,7 @@ export const createLiveSession = async (req, res) => {
 
 export const getAllLiveSessions = async (req, res) => {
   try {
-    const sessions = await LiveSession.find().populate(
-      "enrolledStudents",
-      "name email"
-    );
+    const sessions = await populateLiveSession(LiveSession.find());
     const sessionIds = sessions.map((session) => session._id);
     const paidBookings = await Booking.aggregate([
       {
@@ -174,9 +251,8 @@ export const getAllLiveSessions = async (req, res) => {
 
 export const getLiveSessionById = async (req, res) => {
   try {
-    const session = await LiveSession.findById(req.params.id).populate(
-      "enrolledStudents",
-      "name email"
+    const session = await populateLiveSession(
+      LiveSession.findById(req.params.id)
     );
     if (!session) return res.status(404).json({ error: "Session not found" });
 
@@ -369,11 +445,29 @@ export const updateLiveSession = async (req, res) => {
     const currentSession = await LiveSession.findById(req.params.id);
     if (!currentSession) return res.status(404).json({ error: "Session not found" });
 
+    const selection = await validateCourseChapterSelection(
+      Object.prototype.hasOwnProperty.call(req.body, "courseId")
+        ? req.body.courseId
+        : currentSession.courseId,
+      Object.prototype.hasOwnProperty.call(req.body, "chapterId")
+        ? req.body.chapterId
+        : currentSession.chapterId
+    );
+
+    if (selection.error) {
+      return res.status(400).json({ error: selection.error });
+    }
+
     // Ensure imageUrl is set to thumbnail if not provided
     const updateData = {
       ...req.body,
+      courseId: selection.courseId,
+      chapterId: selection.chapterId,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
     };
+
+    if (!updateData.courseId) delete updateData.courseId;
+    if (!updateData.chapterId) delete updateData.chapterId;
 
     const incomingReminderSettings = req.body.reminderSettings || null;
     const existingReminderSettings = currentSession.reminderSettings || {};
@@ -427,10 +521,12 @@ export const updateLiveSession = async (req, res) => {
       updateData.reminderSettings = reminderSettings;
     }
 
-    const session = await LiveSession.findByIdAndUpdate(
+    const session = await populateLiveSession(
+      LiveSession.findByIdAndUpdate(
       req.params.id,
       updateData,
       { new: true }
+      )
     );
     if (!session) return res.status(404).json({ error: "Session not found" });
     res.status(200).json(session);

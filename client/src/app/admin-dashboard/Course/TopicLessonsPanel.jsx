@@ -73,6 +73,29 @@ const createEmptyForm = (kind, topics) => ({
   isLegacyIntro: false,
 });
 
+const extractCourses = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.courses)) return payload.courses;
+  if (Array.isArray(payload?.data?.courses)) return payload.data.courses;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const extractChapters = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.chapters)) return payload.chapters;
+  if (Array.isArray(payload?.data?.chapters)) return payload.data.chapters;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const resolveObjectId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._id) return String(value._id);
+  return "";
+};
+
 export default function TopicLessonsPanel({
   chapterId,
   chapterName,
@@ -86,6 +109,12 @@ export default function TopicLessonsPanel({
   const [uploading, setUploading] = useState(false);
   const [liveSessions, setLiveSessions] = useState([]);
   const [loadingSessions, setLoadingSessions] = useState(false);
+  const [courses, setCourses] = useState([]);
+  const [chapters, setChapters] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [loadingChapters, setLoadingChapters] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState("");
+  const [selectedChapterId, setSelectedChapterId] = useState("");
 
   const rows = useMemo(
     () => buildTopicLessonRows(topics, kind),
@@ -114,15 +143,62 @@ export default function TopicLessonsPanel({
     }
   }, [kind]);
 
+  const loadCourses = useCallback(async () => {
+    try {
+      setLoadingCourses(true);
+      const response = await axios.get(`${API_BASE}/courses`);
+      setCourses(extractCourses(response.data));
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      setCourses([]);
+    } finally {
+      setLoadingCourses(false);
+    }
+  }, []);
+
+  const loadChapters = useCallback(async (courseId) => {
+    if (!courseId) {
+      setChapters([]);
+      return;
+    }
+
+    try {
+      setLoadingChapters(true);
+      const response = await axios.get(`${API_BASE}/chapters/course/${courseId}`);
+      setChapters(extractChapters(response.data));
+    } catch (error) {
+      console.error("Error fetching chapters:", error);
+      setChapters([]);
+    } finally {
+      setLoadingChapters(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (kind === "live") {
       loadLiveSessions();
+      loadCourses();
     }
-  }, [kind, loadLiveSessions]);
+  }, [kind, loadLiveSessions, loadCourses]);
+
+  useEffect(() => {
+    if (!dialogOpen) return;
+
+    if (!selectedCourseId) {
+      setChapters([]);
+      setSelectedChapterId("");
+      return;
+    }
+
+    loadChapters(selectedCourseId);
+  }, [dialogOpen, selectedCourseId, loadChapters]);
 
   useEffect(() => {
     if (!dialogOpen) {
       setForm(createEmptyForm(kind, topics));
+      setSelectedCourseId("");
+      setSelectedChapterId("");
+      setChapters([]);
     }
   }, [dialogOpen, kind, topics]);
 
@@ -161,6 +237,10 @@ export default function TopicLessonsPanel({
       row?.liveSessionId && typeof row.liveSessionId === "object"
         ? row.liveSessionId._id
         : row?.liveSessionId || "";
+    const existingLiveSession =
+      row?.liveSessionId && typeof row.liveSessionId === "object"
+        ? row.liveSessionId
+        : null;
 
     setForm({
       topicId: row?.topicId || "",
@@ -178,6 +258,8 @@ export default function TopicLessonsPanel({
       originalLessonId: row?.lessonId || "",
       isLegacyIntro: Boolean(row?.isLegacyIntro),
     });
+    setSelectedCourseId(resolveObjectId(existingLiveSession?.courseId));
+    setSelectedChapterId(resolveObjectId(existingLiveSession?.chapterId));
     setDialogOpen(true);
   };
 
@@ -272,6 +354,26 @@ export default function TopicLessonsPanel({
     if (!url) return;
     window.open(url, "_blank", "noopener,noreferrer");
   };
+
+  const availableLiveSessions = useMemo(() => {
+    if (kind !== "live") return liveSessions;
+    if (!selectedCourseId && !selectedChapterId) return liveSessions;
+
+    return liveSessions.filter((session) => {
+      const sessionCourseId = resolveObjectId(session?.courseId);
+      const sessionChapterId = resolveObjectId(session?.chapterId);
+
+      if (selectedChapterId) {
+        return sessionChapterId === selectedChapterId;
+      }
+
+      if (selectedCourseId) {
+        return sessionCourseId === selectedCourseId;
+      }
+
+      return true;
+    });
+  }, [kind, liveSessions, selectedCourseId, selectedChapterId]);
 
   const handleSave = async () => {
     if (!form.topicId) {
@@ -801,32 +903,101 @@ export default function TopicLessonsPanel({
               ) : (
                 <Stack spacing={2} sx={{ mt: 1 }}>
                   {form.sourceMode === "liveSession" ? (
-                    <FormControl fullWidth>
-                      <InputLabel>Live Session</InputLabel>
-                      <Select
-                        label="Live Session"
-                        value={form.liveSessionId}
-                        onChange={(event) => {
-                          const nextSessionId = event.target.value;
-                          const session = liveSessions.find(
-                            (item) => String(item?._id) === String(nextSessionId)
-                          );
-                          setForm((current) => ({
-                            ...current,
-                            liveSessionId: nextSessionId,
-                            sourceUrl: session?.link || current.sourceUrl || "",
-                            title: current.title || session?.title || "",
-                          }));
-                        }}
-                        disabled={loadingSessions}
-                      >
-                        {liveSessions.map((session) => (
-                          <MenuItem key={session._id} value={session._id}>
-                            {session.title} • {formatTopicLessonDateTime(session.date)}
+                    <>
+                      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                        <FormControl fullWidth>
+                          <InputLabel>Course</InputLabel>
+                          <Select
+                            label="Course"
+                            value={selectedCourseId}
+                            onChange={(event) => {
+                              const nextCourseId = event.target.value;
+                              setSelectedCourseId(nextCourseId);
+                              setForm((current) => ({
+                                ...current,
+                                liveSessionId: "",
+                                sourceUrl: "",
+                              }));
+                            }}
+                            disabled={loadingCourses}
+                          >
+                            <MenuItem value="">
+                              {loadingCourses ? "Loading courses..." : "Select course"}
+                            </MenuItem>
+                            {courses.map((course) => (
+                              <MenuItem key={course._id} value={course._id}>
+                                {course.title || course.name || course.slug || course._id}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+
+                        <FormControl fullWidth>
+                          <InputLabel>Chapter</InputLabel>
+                          <Select
+                            label="Chapter"
+                            value={selectedChapterId}
+                            onChange={(event) => {
+                              const nextChapterId = event.target.value;
+                              setSelectedChapterId(nextChapterId);
+                              setForm((current) => ({
+                                ...current,
+                                liveSessionId: "",
+                                sourceUrl: "",
+                              }));
+                            }}
+                            disabled={!selectedCourseId || loadingChapters}
+                          >
+                            <MenuItem value="">
+                              {!selectedCourseId
+                                ? "Choose course first"
+                                : loadingChapters
+                                ? "Loading chapters..."
+                                : "Select chapter"}
+                            </MenuItem>
+                            {chapters.map((chapter) => (
+                              <MenuItem key={chapter._id} value={chapter._id}>
+                                {chapter.title}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Stack>
+
+                      <FormControl fullWidth>
+                        <InputLabel>Live Session</InputLabel>
+                        <Select
+                          label="Live Session"
+                          value={form.liveSessionId}
+                          onChange={(event) => {
+                            const nextSessionId = event.target.value;
+                            const session = availableLiveSessions.find(
+                              (item) => String(item?._id) === String(nextSessionId)
+                            );
+                            setSelectedCourseId(resolveObjectId(session?.courseId));
+                            setSelectedChapterId(resolveObjectId(session?.chapterId));
+                            setForm((current) => ({
+                              ...current,
+                              liveSessionId: nextSessionId,
+                              sourceUrl: session?.link || current.sourceUrl || "",
+                              title: current.title || session?.title || "",
+                            }));
+                          }}
+                          disabled={loadingSessions}
+                        >
+                          <MenuItem value="">
+                            {selectedChapterId
+                              ? "Select live session"
+                              : "Select a course and chapter first"}
                           </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
+                          {availableLiveSessions.map((session) => (
+                            <MenuItem key={session._id} value={session._id}>
+                              {session.title} • {formatTopicLessonDateTime(session.date)}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </>
                   ) : (
                     <TextField
                       label="Live Link"
@@ -844,7 +1015,7 @@ export default function TopicLessonsPanel({
 
                   {form.sourceMode === "liveSession" ? (
                     <Alert severity="info">
-                      Live session details will be pulled from the selected session.
+                      Choose a course, then a chapter, then the live session linked to that chapter.
                     </Alert>
                   ) : null}
                 </Stack>

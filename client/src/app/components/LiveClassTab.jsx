@@ -129,9 +129,9 @@ export default function LiveClassTab() {
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-80px)] px-6 py-8 bg-white text-black overflow-y-auto">
-        <h1 className="text-2xl font-semibold mb-8">Live Classes</h1>
+        <h1 className="text-2xl font-semibold mb-8">Live Sessions</h1>
         <div className="flex items-center justify-center py-12">
-          <div className="text-gray-500 text-lg">Loading live classes...</div>
+          <div className="text-gray-500 text-lg">Loading live sessions...</div>
         </div>
       </div>
     );
@@ -140,7 +140,7 @@ export default function LiveClassTab() {
   if (error) {
     return (
       <div className="min-h-[calc(100vh-80px)] px-6 py-8 bg-white text-black overflow-y-auto">
-        <h1 className="text-2xl font-semibold mb-8">Live Classes</h1>
+        <h1 className="text-2xl font-semibold mb-8">Live Sessions</h1>
         <div className="flex items-center justify-center py-12">
           <div className="text-red-500 text-lg">{error}</div>
         </div>
@@ -151,7 +151,7 @@ export default function LiveClassTab() {
   return (
     <div className="min-h-[calc(100vh-80px)] px-6 py-8 bg-white text-black overflow-y-auto">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-semibold">Live Classes</h1>
+        <h1 className="text-2xl font-semibold">Live Sessions</h1>
         <button
           onClick={handleEnrollNewSessions}
           className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"

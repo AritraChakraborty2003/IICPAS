@@ -47,6 +47,29 @@ const CONFIRMED_BOOKING_STATUSES = new Set(["booked", "approved"]);
 const getBookingLiveSessionId = (booking) =>
   String(booking?.liveSessionId?._id || booking?.liveSessionId || "");
 
+const extractCourses = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.courses)) return payload.courses;
+  if (Array.isArray(payload?.data?.courses)) return payload.data.courses;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const extractChapters = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.chapters)) return payload.chapters;
+  if (Array.isArray(payload?.data?.chapters)) return payload.data.chapters;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const resolveObjectId = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object" && value._id) return String(value._id);
+  return "";
+};
+
 const isConfirmedLiveEnrollment = (booking) => {
   const paymentStatus = String(booking?.paymentStatus || "").toLowerCase();
   const bookingStatus = String(booking?.status || "").toLowerCase();
@@ -130,6 +153,10 @@ export default function LiveSesionAdmin() {
   const [viewMode, setViewMode] = useState("cards"); // "cards" or "table"
   const [sessions, setSessions] = useState([]);
   const [sessionBookings, setSessionBookings] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [chapters, setChapters] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
+  const [loadingChapters, setLoadingChapters] = useState(false);
   const [loading, setLoading] = useState(false);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -153,10 +180,28 @@ export default function LiveSesionAdmin() {
     category: "",
     maxParticipants: "",
     thumbnail: "",
+    courseId: "",
+    chapterId: "",
   });
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const { hasPermission, user } = useAuth();
+
+  const selectedCourse = useMemo(
+    () =>
+      courses.find(
+        (course) => String(course?._id) === String(form.courseId)
+      ) || null,
+    [courses, form.courseId]
+  );
+
+  const selectedChapter = useMemo(
+    () =>
+      chapters.find(
+        (chapter) => String(chapter?._id) === String(form.chapterId)
+      ) || null,
+    [chapters, form.chapterId]
+  );
 
   // Helper function to check if token is valid
   const checkTokenValidity = () => {
@@ -209,6 +254,7 @@ export default function LiveSesionAdmin() {
   useEffect(() => {
     fetchSessions();
     fetchSessionBookings();
+    fetchCourses();
 
     // Debug: Check authentication status
     console.log("🔍 Auth Debug - Component loaded");
@@ -223,6 +269,15 @@ export default function LiveSesionAdmin() {
     console.log("🔍 Auth Debug - API Base:", API);
     console.log("🔍 Auth Debug - Environment:", process.env.NODE_ENV);
   }, []);
+
+  useEffect(() => {
+    if (!form.courseId) {
+      setChapters([]);
+      return;
+    }
+
+    fetchChaptersForCourse(form.courseId);
+  }, [form.courseId]);
 
   const fetchSessions = async () => {
     try {
@@ -273,6 +328,67 @@ export default function LiveSesionAdmin() {
       console.error("Fetch bookings error:", err);
     } finally {
       setBookingsLoading(false);
+    }
+  };
+
+  const fetchCourses = async () => {
+    try {
+      setLoadingCourses(true);
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      const res = await fetch(`${API}/api/courses`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setCourses(extractCourses(data));
+      } else if (res.status === 401) {
+        showTokenError("Session expired. Please log in again.");
+      } else {
+        console.error("Fetch courses failed:", res.status);
+      }
+    } catch (err) {
+      console.error("Fetch courses error:", err);
+    } finally {
+      setLoadingCourses(false);
+    }
+  };
+
+  const fetchChaptersForCourse = async (courseId) => {
+    if (!courseId) {
+      setChapters([]);
+      return;
+    }
+
+    try {
+      setLoadingChapters(true);
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      const res = await fetch(`${API}/api/chapters/course/${courseId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setChapters(extractChapters(data));
+      } else if (res.status === 401) {
+        showTokenError("Session expired. Please log in again.");
+      } else {
+        setChapters([]);
+        console.error("Fetch chapters failed:", res.status);
+      }
+    } catch (err) {
+      console.error("Fetch chapters error:", err);
+      setChapters([]);
+    } finally {
+      setLoadingChapters(false);
     }
   };
 
@@ -366,6 +482,8 @@ export default function LiveSesionAdmin() {
       category: form.category,
       maxParticipants: Number(form.maxParticipants),
       thumbnail: thumbnailUrl,
+      courseId: form.courseId || "",
+      chapterId: form.chapterId || "",
     };
 
     const token = checkTokenValidity();
@@ -438,6 +556,8 @@ export default function LiveSesionAdmin() {
         category: session.category || "",
         maxParticipants: session.maxParticipants || "",
         thumbnail: session.thumbnail || "",
+        courseId: resolveObjectId(session.courseId),
+        chapterId: resolveObjectId(session.chapterId),
       });
       setEditId(id);
       setTab("create");
@@ -521,6 +641,8 @@ export default function LiveSesionAdmin() {
       category: "",
       maxParticipants: "",
       thumbnail: "",
+      courseId: "",
+      chapterId: "",
     });
     setEditId(null);
     setUploadedImage(null);
@@ -574,12 +696,23 @@ export default function LiveSesionAdmin() {
     );
 
     // Create CSV content
-    const headers = ["Title", "Date", "Time", "Link", "Price", "Status"];
+    const headers = [
+      "Title",
+      "Course",
+      "Chapter",
+      "Date",
+      "Time",
+      "Link",
+      "Price",
+      "Status",
+    ];
     const csvContent = [
       headers.join(","),
       ...selectedData.map((session) =>
         [
           `"${session.title}"`,
+          `"${session.courseId?.title || session.courseTitle || ""}"`,
+          `"${session.chapterId?.title || session.chapterTitle || ""}"`,
           new Date(session.date).toDateString(),
           `"${session.time}"`,
           `"${session.link}"`,
@@ -1098,6 +1231,14 @@ export default function LiveSesionAdmin() {
                     {s.instructor || "Not specified"}
                   </div>
                   <div className="text-sm text-gray-500 mb-1">
+                    <strong>Course:</strong>{" "}
+                    {s.courseId?.title || s.courseTitle || "Unassigned"}
+                  </div>
+                  <div className="text-sm text-gray-500 mb-1">
+                    <strong>Chapter:</strong>{" "}
+                    {s.chapterId?.title || s.chapterTitle || "Unassigned"}
+                  </div>
+                  <div className="text-sm text-gray-500 mb-1">
                     <strong>Category:</strong> {s.category || "General"}
                   </div>
                   <div className="text-sm text-gray-500 mb-1">
@@ -1176,6 +1317,8 @@ export default function LiveSesionAdmin() {
                     <TableCell sx={{ fontWeight: "bold" }}>
                       Instructor
                     </TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Course</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Chapter</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Category</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Date</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Time</TableCell>
@@ -1200,6 +1343,12 @@ export default function LiveSesionAdmin() {
                       <TableCell>{session.title}</TableCell>
                       <TableCell>
                         {session.instructor || "Not specified"}
+                      </TableCell>
+                      <TableCell>
+                        {session.courseId?.title || session.courseTitle || "Unassigned"}
+                      </TableCell>
+                      <TableCell>
+                        {session.chapterId?.title || session.chapterTitle || "Unassigned"}
                       </TableCell>
                       <TableCell>{session.category || "General"}</TableCell>
                       <TableCell>
@@ -1645,6 +1794,135 @@ export default function LiveSesionAdmin() {
           autoComplete="off"
           onSubmit={handleSubmit}
         >
+          <div className="md:col-span-2 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div>
+                <label className="block font-semibold mb-2">Course</label>
+                <select
+                  className="w-full border px-4 py-3 rounded-lg bg-gray-50"
+                  value={form.courseId}
+                  onChange={(e) =>
+                    setForm((current) => ({
+                      ...current,
+                      courseId: e.target.value,
+                      chapterId: "",
+                    }))
+                  }
+                >
+                  <option value="">
+                    {loadingCourses ? "Loading courses..." : "Select course"}
+                  </option>
+                  {courses.map((course) => (
+                    <option key={course._id} value={course._id}>
+                      {course.title || course.name || course.slug || course._id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-2">Chapter</label>
+                <select
+                  className="w-full border px-4 py-3 rounded-lg bg-gray-50 disabled:bg-gray-100"
+                  value={form.chapterId}
+                  disabled={!form.courseId || loadingChapters}
+                  onChange={(e) =>
+                    setForm((current) => ({
+                      ...current,
+                      chapterId: e.target.value,
+                    }))
+                  }
+                >
+                  <option value="">
+                    {!form.courseId
+                      ? "Choose a course first"
+                      : loadingChapters
+                      ? "Loading chapters..."
+                      : "Select chapter"}
+                  </option>
+                  {chapters.map((chapter) => (
+                    <option key={chapter._id} value={chapter._id}>
+                      {chapter.title}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-2 text-xs text-gray-500">
+                  Chapters are loaded from the selected course.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-slate-700">
+                    Available Chapters
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {selectedCourse
+                      ? `Click a chapter to attach it to this live session.`
+                      : "Select a course to view its chapters."}
+                  </p>
+                </div>
+                {selectedCourse ? (
+                  <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+                    {selectedCourse.title || selectedCourse.name || "Selected course"}
+                  </div>
+                ) : null}
+                {selectedChapter ? (
+                  <div className="mt-2 text-xs text-slate-500">
+                    Selected chapter: {selectedChapter.title}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-4 max-h-64 overflow-y-auto space-y-2">
+                {!form.courseId ? (
+                  <p className="text-sm text-slate-500">
+                    Choose a course to load its chapters.
+                  </p>
+                ) : loadingChapters ? (
+                  <p className="text-sm text-slate-500">Loading chapters...</p>
+                ) : chapters.length === 0 ? (
+                  <p className="text-sm text-slate-500">
+                    No chapters found for this course.
+                  </p>
+                ) : (
+                  chapters.map((chapter) => {
+                    const isActive = String(chapter._id) === String(form.chapterId);
+
+                    return (
+                      <button
+                        key={chapter._id}
+                        type="button"
+                        onClick={() =>
+                          setForm((current) => ({
+                            ...current,
+                            chapterId: chapter._id,
+                          }))
+                        }
+                        className={`w-full rounded-xl border px-4 py-3 text-left transition ${
+                          isActive
+                            ? "border-green-500 bg-green-50"
+                            : "border-slate-200 bg-slate-50 hover:bg-slate-100"
+                        }`}
+                      >
+                        <div className="font-medium text-slate-800">
+                          {chapter.title}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          {chapter.order !== undefined && chapter.order !== null
+                            ? `Chapter order: ${chapter.order}`
+                            : "Saved chapter"}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+
           {[
             "title",
             "instructor",
