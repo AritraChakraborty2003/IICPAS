@@ -2,6 +2,10 @@ import Topic from "../../models/Content/Topic.js";
 import Chapter from "../../models/Content/Chapter.js";
 import { TOPIC_LESSON_POPULATE } from "../../utils/topicPopulation.js";
 import { normalizeTopicLessons } from "../../utils/topicLessonNormalizer.js";
+import fs from "fs/promises";
+import path from "path";
+import uploadWordDocument from "../../middleware/wordDocumentUpload.js";
+import { convertWordDocumentToHtml } from "../../utils/wordImport.js";
 
 export const getTopicsByChapter = async (req, res) => {
   try {
@@ -85,4 +89,42 @@ export const deleteTopic = async (req, res) => {
   // Remove topic from any chapter
   await Chapter.updateMany({}, { $pull: { topics: topic._id } });
   res.json({ message: "Topic deleted" });
+};
+
+export const importWordContent = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "A Word document is required" });
+    }
+
+    const originalName = req.file.originalname || "imported-document";
+    const filePath = req.file.path;
+
+    try {
+      const result = await convertWordDocumentToHtml(filePath, originalName);
+      return res.json({
+        success: true,
+        html: result.html,
+        pageBreakCount: result.pageBreakCount,
+        pageCount: result.pageCount,
+        warnings: result.warnings,
+        sourceDocument: {
+          ...result.sourceDocument,
+          originalName,
+          mimeType: req.file.mimetype,
+          size: req.file.size,
+          uploadedFileName: path.basename(filePath),
+        },
+      });
+    } finally {
+      await fs.unlink(filePath).catch(() => {});
+    }
+  } catch (error) {
+    console.error("Word import failed:", error);
+    return res.status(400).json({
+      error:
+        error?.message ||
+        "Failed to import the Word document. Please try another file.",
+    });
+  }
 };

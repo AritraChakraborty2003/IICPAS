@@ -23,6 +23,14 @@ import {
   DragIndicator,
 } from "@mui/icons-material";
 import dynamic from "next/dynamic";
+import WordImportControls from "./WordImportControls";
+import WordDocumentPreview from "./WordDocumentPreview";
+import {
+  importWordDocument,
+  mergeImportedWordContent,
+  buildWordImportSummary,
+  buildImportedSourceDocument,
+} from "./wordImportUtils";
 
 // Dynamically import drag and drop components to avoid SSR issues
 const DragDropContext = dynamic(
@@ -119,37 +127,46 @@ const joditConfig = {
   ],
   events: {
     afterInit: function (editor) {
-      // Override the list commands to ensure they work
+      // Preserve Jodit's native list behavior when there is no selection.
       const originalExecCommand = editor.execCommand;
+
+      const insertListFromSelection = (
+        tag,
+        nativeCommand,
+        showUI,
+        value
+      ) => {
+        const selection = editor.selection;
+        if (!selection) {
+          return originalExecCommand.call(editor, nativeCommand, showUI, value);
+        }
+
+        const selectedText = selection.getText();
+        if (!selectedText || !selectedText.trim()) {
+          return originalExecCommand.call(editor, nativeCommand, showUI, value);
+        }
+
+        const lines = selectedText.split(/\r?\n/).map((line) => line.trimEnd());
+        const listItems = lines.map((line) => `<li>${line || "<br>"}</li>`).join("");
+        selection.insertHTML(`<${tag}>${listItems}</${tag}>`);
+        return true;
+      };
+
       editor.execCommand = function (command, showUI, value) {
-        if (command === "insertUnorderedList") {
-          const selection = editor.selection;
-          const selectedText = selection.getText();
-
-          if (selectedText) {
-            // If text is selected, wrap it in list items
-            const lines = selectedText.split("\n");
-            const listItems = lines.map((line) => `<li>${line}</li>`).join("");
-            selection.insertHTML(`<ul>${listItems}</ul>`);
-          } else {
-            // If no text selected, insert a bullet point
-            selection.insertHTML("<ul><li>• </li></ul>");
-          }
-          return true;
-        } else if (command === "insertOrderedList") {
-          const selection = editor.selection;
-          const selectedText = selection.getText();
-
-          if (selectedText) {
-            // If text is selected, wrap it in list items
-            const lines = selectedText.split("\n");
-            const listItems = lines.map((line) => `<li>${line}</li>`).join("");
-            selection.insertHTML(`<ol>${listItems}</ol>`);
-          } else {
-            // If no text selected, insert a numbered point
-            selection.insertHTML("<ol><li>1. </li></ul>");
-          }
-          return true;
+        if (command === "insertUnorderedList" || command === "ul") {
+          return insertListFromSelection(
+            "ul",
+            "insertUnorderedList",
+            showUI,
+            value
+          );
+        } else if (command === "insertOrderedList" || command === "ol") {
+          return insertListFromSelection(
+            "ol",
+            "insertOrderedList",
+            showUI,
+            value
+          );
         }
         return originalExecCommand.call(this, command, showUI, value);
       };
@@ -176,6 +193,9 @@ export default function AddOrEditTopicForm({
   const [title, setTitle] = useState(topic?.title || "");
   const [content, setContent] = useState(topic?.content || "");
   const [introVideo, setIntroVideo] = useState(topic?.introVideo || "");
+  const [sourceDocument, setSourceDocument] = useState(
+    topic?.sourceDocument || null
+  );
   const [publishAt, setPublishAt] = useState(
     toDateTimeLocalValue(topic?.publishAt || topic?.updatedAt || topic?.createdAt)
   );
@@ -190,6 +210,9 @@ export default function AddOrEditTopicForm({
   const [scrollPosition, setScrollPosition] = useState(0);
   const [quizPreviewOpen, setQuizPreviewOpen] = useState(false);
   const [editorReady, setEditorReady] = useState(false);
+  const [wordImporting, setWordImporting] = useState(false);
+  const [wordImportMode, setWordImportMode] = useState("replace");
+  const [wordImportSummary, setWordImportSummary] = useState(null);
   const [quizEditorOpen, setQuizEditorOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [editingQuestionIndex, setEditingQuestionIndex] = useState(-1);
@@ -327,6 +350,7 @@ export default function AddOrEditTopicForm({
       setTitle(topic.title || "");
       setContent(topic.content || "");
       setIntroVideo(topic.introVideo || "");
+      setSourceDocument(topic.sourceDocument || null);
       setVideoLinks(topic.videos || []);
 
       // Load existing quiz data if available
@@ -491,7 +515,81 @@ export default function AddOrEditTopicForm({
       content,
       introVideo: introVideoValue.trim() || "",
       publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
+      sourceDocument: sourceDocument || undefined,
     };
+  };
+
+  const handleWordFileSelected = async (file) => {
+    if (!chapterId) {
+      Swal.fire(
+        "Missing Chapter",
+        "Please select a chapter before importing a Word document.",
+        "warning"
+      );
+      return;
+    }
+
+    setWordImporting(true);
+    try {
+      const result = await importWordDocument({ chapterId, file });
+      const importMode = wordImportMode || "replace";
+      const currentContent = content || "";
+
+      if (importMode === "replace" && currentContent.trim()) {
+        const confirmReplace = await Swal.fire({
+          title: "Replace existing content?",
+          text: "This will replace the current editor content with the imported Word document.",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonText: "Replace",
+          cancelButtonText: "Cancel",
+        });
+
+        if (!confirmReplace.isConfirmed) {
+          return;
+        }
+      }
+
+      const mergedContent = mergeImportedWordContent({
+        currentContent,
+        importedContent: result.html || "",
+        importMode,
+      });
+
+      const nextSourceDocument = buildImportedSourceDocument({
+        result,
+        file,
+        importMode,
+      });
+
+      setContent(mergedContent);
+      setSourceDocument(nextSourceDocument);
+      setWordImportSummary(
+        buildWordImportSummary(result, file.name, importMode)
+      );
+
+      if (editor.current && typeof editor.current.value !== "undefined") {
+        editor.current.value = mergedContent;
+      }
+
+      Swal.fire({
+        title: "Word Imported",
+        text: `${file.name} converted successfully and loaded into the editor.`,
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+    } catch (error) {
+      console.error("Word import error:", error);
+      Swal.fire(
+        "Import Failed",
+        error?.response?.data?.error ||
+          error?.message ||
+          "Failed to import the Word document.",
+        "error"
+      );
+    } finally {
+      setWordImporting(false);
+    }
   };
 
   const persistIntroVideoUpdate = async (nextIntroVideo) => {
@@ -1267,11 +1365,13 @@ export default function AddOrEditTopicForm({
       setTitle("");
       setContent("");
       setIntroVideo("");
+      setSourceDocument(null);
       setPublishAt(toDateTimeLocalValue());
       setQuizFile(null);
       setQuizData(null);
       setIntroVideoPreviewOpen(false);
       setVideoLinks([]);
+      setWordImportSummary(null);
       onSaved && onSaved();
       const quizMessage =
         quizData?.length > 0 ? ` with ${quizData.length} quiz questions` : "";
@@ -2030,6 +2130,15 @@ export default function AddOrEditTopicForm({
             </Stack>
           </Box>
 
+          <WordImportControls
+            importMode={wordImportMode}
+            onImportModeChange={setWordImportMode}
+            onFileSelected={handleWordFileSelected}
+            onPreview={() => setPreviewOpen(true)}
+            importing={wordImporting}
+            importSummary={wordImportSummary}
+          />
+
           {/* Jodit Editor */}
           <Box>
             <Typography
@@ -2322,95 +2431,111 @@ export default function AddOrEditTopicForm({
 
           <Box
             id="preview-modal-description"
-            sx={{
-              fontSize: "1rem",
-              lineHeight: 1.7,
-              color: "#2d3748",
-              "& h1": {
-                fontSize: "2rem",
-                fontWeight: 700,
-                color: "#1a202c",
-                marginTop: "2rem",
-                marginBottom: "1rem",
-                borderBottom: "3px solid #3182ce",
-                paddingBottom: "0.5rem",
-              },
-              "& h2": {
-                fontSize: "1.5rem",
-                fontWeight: 600,
-                color: "#1a202c",
-                marginTop: "1.5rem",
-                marginBottom: "0.75rem",
-                borderBottom: "2px solid #e2e8f0",
-                paddingBottom: "0.25rem",
-              },
-              "& h3": {
-                fontSize: "1.25rem",
-                fontWeight: 600,
-                color: "#1a202c",
-                marginTop: "1.25rem",
-                marginBottom: "0.5rem",
-              },
-              "& p": {
-                marginBottom: "1rem",
-                lineHeight: 1.7,
-              },
-              "& img": {
-                display: "block",
-                margin: "1.5rem auto",
-                maxWidth: "100%",
-                height: "auto",
-                borderRadius: "8px",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              },
-              "& video": {
-                display: "block",
-                margin: "1.5rem auto",
-                maxWidth: "100%",
-                height: "auto",
-                borderRadius: "8px",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              },
-              "& iframe": {
-                display: "block",
-                margin: "1.5rem auto",
-                maxWidth: "100%",
-                borderRadius: "8px",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-              },
-              "& ul, & ol": {
-                marginBottom: "1rem",
-                paddingLeft: "1.5rem",
-              },
-              "& li": {
-                marginBottom: "0.5rem",
-                lineHeight: 1.6,
-              },
-              "& table": {
-                width: "100%",
-                borderCollapse: "collapse",
-                marginBottom: "1.5rem",
-                borderRadius: "8px",
-                overflow: "hidden",
-                boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-              },
-              "& td, & th": {
-                padding: "0.75rem",
-                border: "1px solid #e2e8f0",
-                textAlign: "left",
-              },
-              "& th": {
-                backgroundColor: "#f7fafc",
-                fontWeight: 600,
-              },
-              "& *": {
-                maxWidth: "100%",
-              },
-            }}
-            dangerouslySetInnerHTML={{
-              __html: processContentForPreview(content),
-            }}
-          />
+            sx={{ fontSize: "1rem", lineHeight: 1.7, color: "#2d3748" }}
+          >
+            {sourceDocument ? (
+              <WordDocumentPreview
+                html={content}
+                fileName={sourceDocument?.originalName || ""}
+                pageCount={
+                  sourceDocument?.pageCount ||
+                  wordImportSummary?.pageCount ||
+                  1
+                }
+                warnings={
+                  sourceDocument?.warnings || wordImportSummary?.warnings || []
+                }
+              />
+            ) : (
+              <Box
+                sx={{
+                  "& h1": {
+                    fontSize: "2rem",
+                    fontWeight: 700,
+                    color: "#1a202c",
+                    marginTop: "2rem",
+                    marginBottom: "1rem",
+                    borderBottom: "3px solid #3182ce",
+                    paddingBottom: "0.5rem",
+                  },
+                  "& h2": {
+                    fontSize: "1.5rem",
+                    fontWeight: 600,
+                    color: "#1a202c",
+                    marginTop: "1.5rem",
+                    marginBottom: "0.75rem",
+                    borderBottom: "2px solid #e2e8f0",
+                    paddingBottom: "0.25rem",
+                  },
+                  "& h3": {
+                    fontSize: "1.25rem",
+                    fontWeight: 600,
+                    color: "#1a202c",
+                    marginTop: "1.25rem",
+                    marginBottom: "0.5rem",
+                  },
+                  "& p": {
+                    marginBottom: "1rem",
+                    lineHeight: 1.7,
+                  },
+                  "& img": {
+                    display: "block",
+                    margin: "1.5rem auto",
+                    maxWidth: "100%",
+                    height: "auto",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  },
+                  "& video": {
+                    display: "block",
+                    margin: "1.5rem auto",
+                    maxWidth: "100%",
+                    height: "auto",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  },
+                  "& iframe": {
+                    display: "block",
+                    margin: "1.5rem auto",
+                    maxWidth: "100%",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+                  },
+                  "& ul, & ol": {
+                    marginBottom: "1rem",
+                    paddingLeft: "1.5rem",
+                  },
+                  "& li": {
+                    marginBottom: "0.5rem",
+                    lineHeight: 1.6,
+                  },
+                  "& table": {
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    marginBottom: "1.5rem",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+                  },
+                  "& td, & th": {
+                    padding: "0.75rem",
+                    border: "1px solid #e2e8f0",
+                    textAlign: "left",
+                  },
+                  "& th": {
+                    backgroundColor: "#f7fafc",
+                    fontWeight: 600,
+                  },
+                  "& *": {
+                    maxWidth: "100%",
+                  },
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: processContentForPreview(content),
+                }}
+              />
+            )}
+          </Box>
         </Paper>
       </Modal>
 
