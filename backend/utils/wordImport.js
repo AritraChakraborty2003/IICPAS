@@ -20,6 +20,18 @@ ensureDirSync(PUBLIC_IMPORT_DIR);
 const normalizeWhitespace = (value) =>
   value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
+const getBaseName = (filePathOrName) => {
+  const safeName = filePathOrName || "";
+  const ext = path.extname(safeName);
+  return path.basename(safeName, ext);
+};
+
+const normalizeResourceKey = (value) =>
+  (value || "")
+    .split("#")[0]
+    .split("?")[0]
+    .replace(/\\/g, "/");
+
 const mergeStyles = (existing = "", incoming = "") => {
   const styles = new Map();
 
@@ -198,10 +210,22 @@ const rewriteResourceUrls = (html, resourceMap) =>
         return match;
       }
 
-      const resourceKey = normalized.startsWith("file:")
-        ? path.basename(decodeURIComponent(new URL(normalized).pathname || ""))
-        : path.basename(normalized);
-      const rewritten = resourceMap.get(normalized) || resourceMap.get(resourceKey);
+      let resourceKey = path.basename(normalized);
+      if (normalized.startsWith("file:")) {
+        try {
+          resourceKey = path.basename(
+            decodeURIComponent(new URL(normalized).pathname || "")
+          );
+        } catch (_error) {
+          resourceKey = path.basename(normalized.replace(/^file:/i, ""));
+        }
+      }
+
+      const rewritten =
+        resourceMap.get(normalized) ||
+        resourceMap.get(normalizeResourceKey(resourceKey)) ||
+        resourceMap.get(resourceKey) ||
+        resourceMap.get(resourceKey.replace(/\\/g, "/"));
       if (!rewritten) {
         return match;
       }
@@ -292,34 +316,119 @@ const estimatePageCount = (html, pageBreakCount) => {
   return Math.max(explicitPages || 1, heuristicPages);
 };
 
+const findConvertedHtmlFile = async (rootDir, originalName) => {
+  const baseName = getBaseName(originalName);
+  const candidateNames = [
+    "converted.html",
+    `${baseName}.html`,
+    `${baseName}.htm`,
+  ].filter(Boolean);
+
+  for (const candidate of candidateNames) {
+    const candidatePath = path.join(rootDir, candidate);
+    if (await fsp
+      .access(candidatePath)
+      .then(() => true)
+      .catch(() => false)) {
+      return candidatePath;
+    }
+  }
+
+  const entries = await fsp.readdir(rootDir, { withFileTypes: true });
+  const htmlFiles = entries
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .filter((name) => /\.html?$/i.test(name));
+
+  if (htmlFiles.length > 0) {
+    return path.join(rootDir, htmlFiles[0]);
+  }
+
+  return null;
+};
+
+const runConversionCommand = async ({
+  command,
+  args,
+  outputHtmlPath,
+  tempDir,
+}) => {
+  await execFileAsync(command, args, {
+    timeout: 60000,
+    maxBuffer: 20 * 1024 * 1024,
+  });
+
+  if (outputHtmlPath) {
+    try {
+      await fsp.access(outputHtmlPath);
+      return outputHtmlPath;
+    } catch (_error) {
+      // Fall through and try to discover the produced HTML file.
+    }
+  }
+
+  return findConvertedHtmlFile(tempDir, args[args.length - 1]);
+};
+
 export const convertWordDocumentToHtml = async (filePath, originalName) => {
   const tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), "iicpa-word-"));
   const importId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
   const outputHtmlPath = path.join(tempDir, "converted.html");
+  let convertedHtmlPath = null;
 
   try {
-    try {
-      await execFileAsync(
-        "textutil",
-        ["-convert", "html", "-output", outputHtmlPath, filePath],
-        { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }
-      );
-    } catch (error) {
-      if (error?.code === "ENOENT") {
+    const conversionAttempts = [
+      {
+        command: "textutil",
+        args: ["-convert", "html", "-output", outputHtmlPath, filePath],
+        outputHtmlPath,
+      },
+      {
+        command: "libreoffice",
+        args: ["--headless", "--convert-to", "html", "--outdir", tempDir, filePath],
+        outputHtmlPath: null,
+      },
+      {
+        command: "soffice",
+        args: ["--headless", "--convert-to", "html", "--outdir", tempDir, filePath],
+        outputHtmlPath: null,
+      },
+    ];
+
+    let lastError = null;
+    for (const attempt of conversionAttempts) {
+      try {
+        convertedHtmlPath = await runConversionCommand({
+          command: attempt.command,
+          args: attempt.args,
+          outputHtmlPath: attempt.outputHtmlPath,
+          tempDir,
+        });
+
+        if (convertedHtmlPath) {
+          break;
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (!convertedHtmlPath) {
+      if (lastError?.code === "ENOENT") {
         throw new Error(
-          "Word import is not available on this server because the macOS textutil command is missing."
+          "Word import is unavailable because neither macOS textutil nor LibreOffice/soffice is installed on this server."
         );
       }
 
       throw new Error(
-        error?.stderr?.toString?.().trim() ||
-          error?.message ||
+        lastError?.stderr?.toString?.().trim() ||
+          lastError?.message ||
           "Failed to convert the Word document."
       );
     }
 
-    const rawHtml = await fsp.readFile(outputHtmlPath, "utf8");
-    const resourceFiles = await collectResourceFiles(tempDir, outputHtmlPath);
+    const rawHtml = await fsp.readFile(convertedHtmlPath, "utf8");
+    const resourceFiles = await collectResourceFiles(tempDir, convertedHtmlPath);
     const resourceMap = await copyResourceFiles(resourceFiles, tempDir, importId);
 
     let html = normalizeTextutilOutput(normalizeWhitespace(rawHtml));
