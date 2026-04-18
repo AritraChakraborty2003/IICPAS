@@ -36,19 +36,18 @@ const TopicSchema = new Schema({
   content: { type: String, required: true }, // HTML content for rich text
   introVideo: { type: String, default: "" }, // Optional intro video URL
   sourceDocument: {
-    originalName: { type: String, default: "" },
-    mimeType: { type: String, default: "" },
-    size: { type: Number, default: 0 },
-    extension: { type: String, default: "" },
-    pageCount: { type: Number, default: 1 },
-    pageBreakCount: { type: Number, default: 0 },
+    originalName: { type: String },
+    mimeType: { type: String },
+    size: { type: Number },
+    extension: { type: String },
+    pageCount: { type: Number },
+    pageBreakCount: { type: Number },
     importMode: {
       type: String,
       enum: ["replace", "append"],
-      default: "replace",
     },
-    warnings: { type: [String], default: [] },
-    importedAt: { type: Date, default: null },
+    warnings: { type: [String] },
+    importedAt: { type: Date },
   },
   lessons: { type: [TopicLessonSchema], default: [] },
   quiz: { type: Schema.Types.ObjectId, ref: "Quiz" }, // Reference to quiz
