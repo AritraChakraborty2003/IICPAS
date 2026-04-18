@@ -433,7 +433,7 @@ const stripHtmlToPlainText = (value) =>
     .trim();
 
 const BULLET_MARKER_PATTERN = /^(?:[•◦▪‣∙·]|\u2022|\u25e6|\u25aa|\u25ab)\s*/i;
-const ARROW_MARKER_PATTERN = /^(?:[➤➢➔➜➡]|\u27a4|\u27a2|\u2794|\u279c|\u27a1|>>)\s*/i;
+const ARROW_MARKER_PATTERN = /^(?:[➤➢➔➜➡]|\u27a4|\u27a2|\u2794|\u279c|\u27a1|>>|>\s?>)\s*/i;
 const ORDERED_MARKER_PATTERN = /^(\d+)[.)]\s*/i;
 
 const stripLeadingSpaceArtifacts = (value) =>
@@ -451,8 +451,9 @@ const stripListMarkerFromLineHtml = (lineHtml, kind) => {
       ""
     );
   } else if (kind === "ul-arrow") {
+    // Strip both arrow-specific markers and standard bullets if we are forcing arrow style
     cleaned = cleaned.replace(
-      /^(?:[➤➢➔➜➡]|\u27a4|\u27a2|\u2794|\u279c|\u27a1|>>)\s*/i,
+      /^(?:[➤➢➔➜➡]|\u27a4|\u27a2|\u2794|\u279c|\u27a1|>>|>\s?>|[•◦▪‣∙·]|\u2022|\u25e6|\u25aa|\u25ab|&bull;|&#8226;)\s*/i,
       ""
     );
   } else if (kind === "ol") {
@@ -526,12 +527,12 @@ const normalizeWordListMarkup = (html) => {
   const isBlockBreaker = (token) =>
     /^<(table|ul|ol|blockquote|pre|div|h[1-6]|hr|br)\b/i.test(token);
 
-  let output = "";
+  let lastMeaningfulText = "";
   let openListKind = null;
 
   const closeOpenList = () => {
     if (openListKind) {
-      output += `</${openListKind}>`;
+      output += `</${openListKind === "ul-arrow" ? "ul" : openListKind}>`;
       openListKind = null;
     }
   };
@@ -566,13 +567,35 @@ const normalizeWordListMarkup = (html) => {
     }
 
     if (!isParagraphToken(token)) {
+      const plainText = stripHtmlTags(token).trim();
+      if (plainText) {
+        lastMeaningfulText = plainText;
+      }
       closeOpenList();
       output += token;
       continue;
     }
 
-    const candidate = getParagraphListCandidate(token);
+    let candidate = getParagraphListCandidate(token);
+
+    // Heuristic: If a list follows a paragraph that looks like "Key Points", 
+    // treat it as an arrow list even if markers are standard bullets.
+    if (candidate && /key\s*points/i.test(lastMeaningfulText)) {
+      candidate.kind = "ul-arrow";
+      // Re-strip using the new kind
+      const innerHtml = token.match(/^<p\b([^>]*)>([\s\S]*?)<\/p>$/i)?.[2] || "";
+      const lines = innerHtml
+        .split(/<br\b[^>]*\/?>/i)
+        .map((line) => line.trim())
+        .filter((line) => stripHtmlToPlainText(line));
+      candidate.items = lines.map((line) => stripListMarkerFromLineHtml(line, "ul-arrow"));
+    }
+
     if (!candidate) {
+      const plainText = stripHtmlTags(token).trim();
+      if (plainText) {
+        lastMeaningfulText = plainText;
+      }
       closeOpenList();
       output += token;
       continue;
@@ -592,6 +615,10 @@ const normalizeWordListMarkup = (html) => {
       Boolean(openListKind === candidate.kind);
 
     if (!shouldConvertToList) {
+      const plainText = stripHtmlTags(token).trim();
+      if (plainText) {
+        lastMeaningfulText = plainText;
+      }
       closeOpenList();
       output += token;
       continue;
