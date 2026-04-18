@@ -79,13 +79,116 @@ const collectCssRules = (cssText) => {
   return rules;
 };
 
-const inlineTextutilStyles = (html, cssText) => {
-  const tagStyles = new Map();
-  const classStyles = new Map();
+const decodeCssContentValue = (rawValue) => {
+  let value = (rawValue || "").trim();
+  if (!value) return "";
+
+  const quotedMatch = value.match(/^(['"])([\s\S]*)\1$/);
+  if (quotedMatch) {
+    value = quotedMatch[2];
+  }
+
+  value = value.replace(/\\([0-9a-fA-F]{1,6})\s?/g, (_match, hex) =>
+    String.fromCodePoint(Number.parseInt(hex, 16))
+  );
+  value = value.replace(/\\([\\'"nrtfb])/g, (_match, escaped) => {
+    switch (escaped) {
+      case "n":
+        return "\n";
+      case "r":
+        return "\r";
+      case "t":
+        return "\t";
+      case "f":
+        return "\f";
+      case "b":
+        return "\b";
+      case "\\":
+        return "\\";
+      case '"':
+        return '"';
+      case "'":
+        return "'";
+      default:
+        return escaped;
+    }
+  });
+  value = value.replace(/\\(.)/g, "$1");
+  return value;
+};
+
+const extractBeforeContentRules = (cssText) => {
+  const rules = [];
 
   for (const { selector, declarations } of collectCssRules(cssText)) {
     const normalized = selector.replace(/\s+/g, " ").trim();
-    if (/[\s>:+~]/.test(normalized)) {
+    const pseudoMatch = normalized.match(/^(.+?)(::?before)$/i);
+    if (!pseudoMatch) continue;
+
+    const baseSelector = pseudoMatch[1].trim();
+    if (!baseSelector || /[\s>:+~]/.test(baseSelector)) {
+      continue;
+    }
+
+    const contentMatch = declarations.match(/content\s*:\s*([^;]+)(?:;|$)/i);
+    if (!contentMatch) continue;
+
+    const rawContent = contentMatch[1].trim();
+    const isCounter = /counter\s*\(/i.test(rawContent);
+    const prefix = isCounter ? "" : decodeCssContentValue(rawContent);
+
+    if (!prefix && !isCounter) {
+      continue;
+    }
+
+    rules.push({
+      selector: baseSelector,
+      prefix,
+      isCounter,
+    });
+  }
+
+  return rules;
+};
+
+const selectorMatchesElement = (selector, tagName, attributes) => {
+  const normalized = (selector || "").replace(/\s+/g, " ").trim().toLowerCase();
+  if (!normalized || /[\s>:+~]/.test(normalized)) {
+    return false;
+  }
+
+  const tag = tagName.toLowerCase();
+  const classAttrMatch = attributes.match(/\sclass=(["'])([^"']+)\1/i);
+  const classNames = classAttrMatch
+    ? classAttrMatch[2].split(/\s+/).map((name) => name.toLowerCase())
+    : [];
+
+  if (normalized === tag) {
+    return true;
+  }
+
+  const classMatch = normalized.match(/^([a-z0-9-]+)?\.([a-z0-9_-]+)$/i);
+  if (classMatch) {
+    const selectorTag = (classMatch[1] || "").toLowerCase();
+    const selectorClass = classMatch[2].toLowerCase();
+    if (selectorTag && selectorTag !== tag) {
+      return false;
+    }
+    return classNames.includes(selectorClass);
+  }
+
+  return false;
+};
+
+const inlineTextutilStyles = (html, cssText) => {
+  const tagStyles = new Map();
+  const classStyles = new Map();
+  const beforeRules = extractBeforeContentRules(cssText);
+  const beforeRuleCounts = new Map();
+
+  for (const { selector, declarations } of collectCssRules(cssText)) {
+    const normalized = selector.replace(/\s+/g, " ").trim();
+    if (/[\s>+~]/.test(normalized) || /:(?!before\b|:before\b)/i.test(normalized)) {
       continue;
     }
 
@@ -114,6 +217,7 @@ const inlineTextutilStyles = (html, cssText) => {
     const tag = tagName.toLowerCase();
     const classAttrMatch = attributes.match(/\sclass=(["'])([^"']+)\1/i);
     const styleAttrMatch = attributes.match(/\sstyle=(["'])([\s\S]*?)\1/i);
+    let prefix = "";
 
     let mergedStyle = styleAttrMatch ? styleAttrMatch[2] : "";
     const classNames = classAttrMatch ? classAttrMatch[2].split(/\s+/) : [];
@@ -131,6 +235,22 @@ const inlineTextutilStyles = (html, cssText) => {
       }
     }
 
+    for (const rule of beforeRules) {
+      if (!selectorMatchesElement(rule.selector, tagName, attributes)) {
+        continue;
+      }
+
+      const count = beforeRuleCounts.get(rule.selector) || 0;
+      beforeRuleCounts.set(rule.selector, count + 1);
+
+      prefix = rule.isCounter
+        ? `${count + 1}. `
+        : rule.prefix.endsWith(" ")
+        ? rule.prefix
+        : `${rule.prefix} `;
+      break;
+    }
+
     let nextAttributes = attributes;
     if (mergedStyle) {
       if (styleAttrMatch) {
@@ -143,7 +263,7 @@ const inlineTextutilStyles = (html, cssText) => {
       }
     }
 
-    return `<${closing}${tagName}${nextAttributes}>`;
+    return `<${closing}${tagName}${nextAttributes}>${prefix}`;
   };
 
   return html.replace(
