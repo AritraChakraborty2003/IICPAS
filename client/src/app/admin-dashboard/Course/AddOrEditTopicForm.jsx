@@ -125,53 +125,6 @@ const joditConfig = {
     "|",
     "fullsize",
   ],
-  events: {
-    afterInit: function (editor) {
-      // Preserve Jodit's native list behavior when there is no selection.
-      const originalExecCommand = editor.execCommand;
-
-      const insertListFromSelection = (
-        tag,
-        nativeCommand,
-        showUI,
-        value
-      ) => {
-        const selection = editor.selection;
-        if (!selection) {
-          return originalExecCommand.call(editor, nativeCommand, showUI, value);
-        }
-
-        const selectedText = selection.getText();
-        if (!selectedText || !selectedText.trim()) {
-          return originalExecCommand.call(editor, nativeCommand, showUI, value);
-        }
-
-        const lines = selectedText.split(/\r?\n/).map((line) => line.trimEnd());
-        const listItems = lines.map((line) => `<li>${line || "<br>"}</li>`).join("");
-        selection.insertHTML(`<${tag}>${listItems}</${tag}>`);
-        return true;
-      };
-
-      editor.execCommand = function (command, showUI, value) {
-        if (command === "insertUnorderedList" || command === "ul") {
-          return insertListFromSelection(
-            "ul",
-            "insertUnorderedList",
-            showUI,
-            value
-          );
-        } else if (command === "insertOrderedList" || command === "ol") {
-          return insertListFromSelection(
-            "ol",
-            "insertOrderedList",
-            showUI,
-            value
-          );
-        }
-        return originalExecCommand.call(this, command, showUI, value);
-      };
-    },
-  },
 };
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 

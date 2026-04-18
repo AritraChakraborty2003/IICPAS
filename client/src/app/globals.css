@@ -1209,16 +1209,54 @@ body::-webkit-scrollbar-thumb:hover {
 /* Make Jodit font and size popups readable */
 .jodit-popup {
   max-width: min(92vw, 420px);
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  border-radius: 8px !important;
+  z-index: 10000 !important;
 }
 
 .jodit-popup__content {
   min-width: 280px;
+  background: #ffffff !important;
+  border-radius: 8px !important;
 }
 
 .jodit-popup .jodit-toolbar-select,
 .jodit-popup .jodit-select,
 .jodit-popup .jodit-ui-select__wrapper {
   min-width: 240px;
+}
+
+/* Fix dropdown item visibility - targeting lists specifically to avoid breaking color pickers */
+.jodit-popup .jodit-ui-list .jodit-ui-list-item,
+.jodit-popup .jodit-ui-list .jodit-list__item,
+.jodit-popup .jodit-ui-list .jodit-ui-button,
+.jodit-popup .jodit-ui-list .jodit-toolbar-button {
+  color: #1f2937 !important;
+  background-color: #ffffff !important;
+  opacity: 1 !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 8px 12px !important;
+  width: 100% !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+}
+
+.jodit-popup .jodit-ui-list .jodit-ui-list-item:hover,
+.jodit-popup .jodit-ui-list .jodit-list__item:hover,
+.jodit-popup .jodit-ui-list .jodit-ui-button:hover,
+.jodit-popup .jodit-ui-list .jodit-toolbar-button:hover {
+  background-color: #f3f4f6 !important;
+  color: #000000 !important;
+}
+
+.jodit-popup .jodit-toolbar-select__text,
+.jodit-popup .jodit-ui-button__text,
+.jodit-popup .jodit-list__item-text {
+  color: inherit !important;
 }
 
 .jodit-popup .jodit-toolbar-select__text {
@@ -1233,6 +1271,7 @@ body::-webkit-scrollbar-thumb:hover {
    Tailwind preflight removes default list styling globally, so Word-imported
    HTML needs explicit overrides where rich content is rendered. */
 .jodit-wysiwyg ul,
+.ql-editor ul,
 .word-page-content ul {
   list-style: disc outside !important;
   padding-left: 1.5rem !important;
@@ -1240,6 +1279,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .jodit-wysiwyg ol,
+.ql-editor ol,
 .word-page-content ol {
   list-style: decimal outside !important;
   padding-left: 1.5rem !important;
@@ -1247,6 +1287,7 @@ body::-webkit-scrollbar-thumb:hover {
 }
 
 .jodit-wysiwyg li,
+.ql-editor li,
 .word-page-content li {
   display: list-item !important;
 }
