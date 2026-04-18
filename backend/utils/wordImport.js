@@ -176,10 +176,6 @@ const stripUnsafeMarkup = (html) => {
     /\s(href|src)\s*=\s*(["'])\s*javascript:[\s\S]*?\2/gi,
     ""
   );
-  sanitized = sanitized.replace(
-    /\s(href|src)\s*=\s*(["'])\s*file:[\s\S]*?\2/gi,
-    ""
-  );
   return sanitized;
 };
 
@@ -202,7 +198,10 @@ const rewriteResourceUrls = (html, resourceMap) =>
         return match;
       }
 
-      const rewritten = resourceMap.get(normalized) || resourceMap.get(path.basename(normalized));
+      const resourceKey = normalized.startsWith("file:")
+        ? path.basename(decodeURIComponent(new URL(normalized).pathname || ""))
+        : path.basename(normalized);
+      const rewritten = resourceMap.get(normalized) || resourceMap.get(resourceKey);
       if (!rewritten) {
         return match;
       }
