@@ -546,6 +546,9 @@ export default function AddOrEditTopicForm({
     setWordImporting(true);
     try {
       const result = await importWordDocument({ chapterId, file });
+      if (!result?.html || !result.html.trim()) {
+        throw new Error("The Word document could not be converted into editable content.");
+      }
       const importMode = wordImportMode || "replace";
       const currentContent = content || "";
 
