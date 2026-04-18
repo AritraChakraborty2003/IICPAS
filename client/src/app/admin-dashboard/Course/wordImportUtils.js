@@ -13,11 +13,7 @@ export const importWordDocument = async ({
   const response = await axios.post(
     `${API_BASE}/topics/by-chapter/${chapterId}/import-word`,
     formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
+    {}
   );
 
   return response.data;
@@ -39,7 +35,7 @@ const isPageBreakNode = (node) => {
     return true;
   }
 
-  return /page-break-before\s*:\s*always|break-before\s*:\s*page/i.test(style);
+  return false;
 };
 
 export const splitHtmlIntoPages = (html) => {
@@ -67,18 +63,29 @@ export const splitHtmlIntoPages = (html) => {
   };
 
   Array.from(body.childNodes).forEach((node) => {
-    if (isPageBreakNode(node)) {
-      flushCurrent();
-      return;
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const style = (node.getAttribute("style") || "").toLowerCase();
+      const hasBreakBefore = /page-break-before\s*:\s*always|break-before\s*:\s*page/i.test(
+        style
+      );
+      const hasBreakAfter = /page-break-after\s*:\s*always|break-after\s*:\s*page/i.test(
+        style
+      );
+
+      if (hasBreakBefore) {
+        flushCurrent();
+        appendNode(node);
+        return;
+      }
+
+      if (hasBreakAfter) {
+        appendNode(node);
+        flushCurrent();
+        return;
+      }
     }
 
-    if (
-      node.nodeType === Node.ELEMENT_NODE &&
-      /page-break-after\s*:\s*always|break-after\s*:\s*page/i.test(
-        (node.getAttribute("style") || "").toLowerCase()
-      )
-    ) {
-      appendNode(node);
+    if (isPageBreakNode(node)) {
       flushCurrent();
       return;
     }
