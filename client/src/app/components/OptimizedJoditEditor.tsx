@@ -95,6 +95,7 @@ export default function OptimizedJoditEditor({
       "|",
       "ul",
       "ol",
+      "arrowlist",
       "|",
       "outdent",
       "indent",
@@ -128,6 +129,7 @@ export default function OptimizedJoditEditor({
       "|",
       "ul",
       "ol",
+      "arrowlist",
       "|",
       "font",
       "fontsize",
@@ -147,6 +149,7 @@ export default function OptimizedJoditEditor({
       "|",
       "ul",
       "ol",
+      "arrowlist",
       "|",
       "image",
       "link",
@@ -156,6 +159,30 @@ export default function OptimizedJoditEditor({
     ],
 
     buttonsXS: ["bold", "italic", "|", "image", "link"],
+
+    controls: {
+      arrowlist: {
+        icon: "➤",
+        tooltip: "Arrow List",
+        exec: (editor: any) => {
+          const list =
+            editor.selection.ancestor("ul") || editor.selection.ancestor("ol");
+          if (list) {
+            if (list.classList.contains("arrow-list")) {
+              list.classList.remove("arrow-list");
+            } else {
+              list.classList.add("arrow-list");
+            }
+          } else {
+            editor.execCommand("insertUnorderedList");
+            setTimeout(() => {
+              const newList = editor.selection.ancestor("ul");
+              if (newList) newList.classList.add("arrow-list");
+            }, 10);
+          }
+        },
+      },
+    },
 
     // Custom events for performance optimization
     events: {

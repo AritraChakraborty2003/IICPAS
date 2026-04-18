@@ -102,6 +102,7 @@ const joditConfig = {
     "|",
     "ul",
     "ol",
+    "arrowlist",
     "|",
     "outdent",
     "indent",
@@ -125,6 +126,29 @@ const joditConfig = {
     "|",
     "fullsize",
   ],
+  controls: {
+    arrowlist: {
+      icon: "➤",
+      tooltip: "Arrow List",
+      exec: (editor) => {
+        const list =
+          editor.selection.ancestor("ul") || editor.selection.ancestor("ol");
+        if (list) {
+          if (list.classList.contains("arrow-list")) {
+            list.classList.remove("arrow-list");
+          } else {
+            list.classList.add("arrow-list");
+          }
+        } else {
+          editor.execCommand("insertUnorderedList");
+          setTimeout(() => {
+            const newList = editor.selection.ancestor("ul");
+            if (newList) newList.classList.add("arrow-list");
+          }, 10);
+        }
+      },
+    },
+  },
 };
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
@@ -749,7 +773,9 @@ export default function AddOrEditTopicForm({
     const lists = tempDiv.querySelectorAll("ul, ol");
     lists.forEach((list) => {
       list.style.marginBottom = "1rem";
-      list.style.paddingLeft = "1.5rem";
+      if (!list.classList.contains("arrow-list")) {
+        list.style.paddingLeft = "1.5rem";
+      }
     });
 
     // Style list items
@@ -757,6 +783,9 @@ export default function AddOrEditTopicForm({
     listItems.forEach((li) => {
       li.style.marginBottom = "0.5rem";
       li.style.lineHeight = "1.6";
+      if (li.parentElement?.classList.contains("arrow-list")) {
+        li.style.listStyleType = "none";
+      }
     });
 
     // Style tables

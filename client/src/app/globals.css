@@ -1292,6 +1292,70 @@ body::-webkit-scrollbar-thumb:hover {
   display: list-item !important;
 }
 
+/* Premium Arrow List Styles */
+.arrow-list,
+.jodit-wysiwyg ul.arrow-list,
+.ql-editor ul.arrow-list,
+.word-page-content ul.arrow-list {
+  list-style: none !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+}
+
+.arrow-list li,
+.jodit-wysiwyg ul.arrow-list li,
+.ql-editor ul.arrow-list li,
+.word-page-content ul.arrow-list li {
+  position: relative !important;
+  padding-left: 1.75rem !important;
+  list-style: none !important;
+  display: block !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.arrow-list li::before,
+.jodit-wysiwyg ul.arrow-list li::before,
+.ql-editor ul.arrow-list li::before,
+.word-page-content ul.arrow-list li::before {
+  content: "➤" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  color: #3b82f6 !important; /* Premium blue */
+  font-size: 1.1rem !important;
+  line-height: 1.6 !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 1.6rem !important;
+}
+
+/* Also support arrows for ol if they have the class */
+.jodit-wysiwyg ol.arrow-list,
+.ql-editor ol.arrow-list,
+.word-page-content ol.arrow-list {
+  list-style: none !important;
+  padding-left: 0 !important;
+}
+
+.jodit-wysiwyg ol.arrow-list li,
+.ql-editor ol.arrow-list li,
+.word-page-content ol.arrow-list li {
+  position: relative !important;
+  padding-left: 1.75rem !important;
+  list-style: none !important;
+  display: block !important;
+}
+
+.jodit-wysiwyg ol.arrow-list li::before,
+.ql-editor ol.arrow-list li::before,
+.word-page-content ol.arrow-list li::before {
+  content: "➤" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0 !important;
+  color: #3b82f6 !important;
+}
+
 @keyframes pulse-warning {
   0%,
   100% {

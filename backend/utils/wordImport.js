@@ -433,6 +433,7 @@ const stripHtmlToPlainText = (value) =>
     .trim();
 
 const BULLET_MARKER_PATTERN = /^(?:[•◦▪‣∙·]|\u2022|\u25e6|\u25aa|\u25ab)\s*/i;
+const ARROW_MARKER_PATTERN = /^(?:[➤➢➔➜➡]|\u27a4|\u27a2|\u2794|\u279c|\u27a1|>>)\s*/i;
 const ORDERED_MARKER_PATTERN = /^(\d+)[.)]\s*/i;
 
 const stripLeadingSpaceArtifacts = (value) =>
@@ -449,6 +450,11 @@ const stripListMarkerFromLineHtml = (lineHtml, kind) => {
       /^(?:[•◦▪‣∙·]|\u2022|\u25e6|\u25aa|\u25ab|&bull;|&#8226;)\s*/i,
       ""
     );
+  } else if (kind === "ul-arrow") {
+    cleaned = cleaned.replace(
+      /^(?:[➤➢➔➜➡]|\u27a4|\u27a2|\u2794|\u279c|\u27a1|>>)\s*/i,
+      ""
+    );
   } else if (kind === "ol") {
     cleaned = cleaned.replace(/^\d+[.)]\s*/i, "");
   }
@@ -459,6 +465,10 @@ const stripListMarkerFromLineHtml = (lineHtml, kind) => {
 const classifyListLine = (lineHtml) => {
   const plainText = stripHtmlToPlainText(lineHtml);
   if (!plainText) return null;
+
+  if (ARROW_MARKER_PATTERN.test(plainText)) {
+    return "ul-arrow";
+  }
 
   if (BULLET_MARKER_PATTERN.test(plainText)) {
     return "ul";
@@ -529,7 +539,9 @@ const normalizeWordListMarkup = (html) => {
   const openList = (kind) => {
     if (openListKind !== kind) {
       closeOpenList();
-      output += `<${kind}>`;
+      const tag = kind === "ul-arrow" ? "ul" : kind;
+      const className = kind === "ul-arrow" ? ' class="arrow-list"' : "";
+      output += `<${tag}${className}>`;
       openListKind = kind;
     }
   };
