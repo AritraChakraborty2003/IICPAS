@@ -1,12 +1,30 @@
 "use client";
 import { getApiBase } from "@/lib/apiBase";
 import React, { useState } from "react";
-import { Box, Button, TextField, Typography, Stack } from "@mui/material";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Stack,
+  Modal,
+  Paper,
+  IconButton,
+} from "@mui/material";
 import * as XLSX from "xlsx";
 import ReactQuill from "react-quill-new";
 import "react-quill-new/dist/quill.snow.css";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { Close } from "@mui/icons-material";
+import WordImportControls from "./WordImportControls";
+import WordDocumentPreview from "./WordDocumentPreview";
+import {
+  importWordDocument,
+  mergeImportedWordContent,
+  buildWordImportSummary,
+  buildImportedSourceDocument,
+} from "./wordImportUtils";
 
 const API_BASE = getApiBase();
 
@@ -50,9 +68,14 @@ export default function AddTopicForm({
 }) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [sourceDocument, setSourceDocument] = useState(null);
   const [quizFile, setQuizFile] = useState(null);
   const [quizData, setQuizData] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [wordImporting, setWordImporting] = useState(false);
+  const [wordImportMode, setWordImportMode] = useState("replace");
+  const [wordImportSummary, setWordImportSummary] = useState(null);
 
   // Excel parsing for quiz (works with .xls, .xlsx)
   const handleQuizUpload = (e) => {
@@ -84,6 +107,75 @@ export default function AddTopicForm({
     reader.readAsArrayBuffer(file);
   };
 
+  const handleWordFileSelected = async (file) => {
+    if (!chapterId) {
+      Swal.fire(
+        "Missing Chapter",
+        "Please select a chapter before importing a Word document.",
+        "warning"
+      );
+      return;
+    }
+
+    setWordImporting(true);
+    try {
+      const result = await importWordDocument({ chapterId, file });
+      const importMode = wordImportMode || "replace";
+      const currentContent = content || "";
+
+      if (importMode === "replace" && currentContent.trim()) {
+        const confirmReplace = await Swal.fire({
+          title: "Replace existing content?",
+          text: "This will replace the current content with the imported Word document.",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonText: "Replace",
+          cancelButtonText: "Cancel",
+        });
+
+        if (!confirmReplace.isConfirmed) {
+          return;
+        }
+      }
+
+      const mergedContent = mergeImportedWordContent({
+        currentContent,
+        importedContent: result.html || "",
+        importMode,
+      });
+
+      const nextSourceDocument = buildImportedSourceDocument({
+        result,
+        file,
+        importMode,
+      });
+
+      setContent(mergedContent);
+      setSourceDocument(nextSourceDocument);
+      setWordImportSummary(
+        buildWordImportSummary(result, file.name, importMode)
+      );
+
+      Swal.fire({
+        title: "Word Imported",
+        text: `${file.name} converted successfully and loaded into the editor.`,
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+    } catch (error) {
+      console.error("Word import error:", error);
+      Swal.fire(
+        "Import Failed",
+        error?.response?.data?.error ||
+          error?.message ||
+          "Failed to import the Word document.",
+        "error"
+      );
+    } finally {
+      setWordImporting(false);
+    }
+  };
+
   // Form submission: create topic first, then quiz (if any)
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -100,6 +192,7 @@ export default function AddTopicForm({
           chapterId,
           title: title.trim(),
           content, // HTML + Base64 images/videos
+          sourceDocument: sourceDocument || undefined,
         }
       );
       const topicId = topicRes.data._id;
@@ -115,8 +208,10 @@ export default function AddTopicForm({
       // Reset form and notify
       setTitle("");
       setContent("");
+      setSourceDocument(null);
       setQuizFile(null);
       setQuizData(null);
+      setWordImportSummary(null);
       onAdded && onAdded();
       Swal.fire("Success!", "Topic added successfully.", "success");
     } catch (err) {
@@ -150,6 +245,15 @@ export default function AddTopicForm({
             fullWidth
             required
             inputProps={{ style: { fontSize: 18, fontWeight: 500 } }}
+          />
+
+          <WordImportControls
+            importMode={wordImportMode}
+            onImportModeChange={setWordImportMode}
+            onFileSelected={handleWordFileSelected}
+            onPreview={() => setPreviewOpen(true)}
+            importing={wordImporting}
+            importSummary={wordImportSummary}
           />
 
           {/* Quill Editor */}
@@ -233,6 +337,96 @@ export default function AddTopicForm({
           </Stack>
         </Stack>
       </form>
+
+      <Modal
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        aria-labelledby="topic-preview-title"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          p: 2,
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1300,
+        }}
+      >
+        <Paper
+          sx={{
+            width: "92vw",
+            maxWidth: "1100px",
+            maxHeight: "90vh",
+            overflow: "auto",
+            p: 3,
+            position: "relative",
+            margin: "auto",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.35)",
+            borderRadius: 3,
+            backgroundColor: "#ffffff",
+          }}
+        >
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
+            <Typography variant="h6" id="topic-preview-title">
+              {title || "Untitled Topic"}
+            </Typography>
+            <IconButton onClick={() => setPreviewOpen(false)}>
+              <Close />
+            </IconButton>
+          </Box>
+
+          {sourceDocument ? (
+            <WordDocumentPreview
+              html={content}
+              fileName={sourceDocument?.originalName || ""}
+              pageCount={sourceDocument?.pageCount || 1}
+              warnings={sourceDocument?.warnings || []}
+            />
+          ) : (
+            <Box
+              sx={{
+                fontSize: "1rem",
+                lineHeight: 1.7,
+                color: "#2d3748",
+                "& h1": {
+                  fontSize: "2rem",
+                  fontWeight: 700,
+                  marginTop: "2rem",
+                  marginBottom: "1rem",
+                },
+                "& p": {
+                  marginBottom: "1rem",
+                },
+                "& img": {
+                  display: "block",
+                  margin: "1.5rem auto",
+                  maxWidth: "100%",
+                  height: "auto",
+                },
+                "& ul, & ol": {
+                  marginBottom: "1rem",
+                  paddingLeft: "1.5rem",
+                },
+                "& table": {
+                  width: "100%",
+                  borderCollapse: "collapse",
+                },
+              }}
+              dangerouslySetInnerHTML={{ __html: content }}
+            />
+          )}
+        </Paper>
+      </Modal>
     </Box>
   );
 }

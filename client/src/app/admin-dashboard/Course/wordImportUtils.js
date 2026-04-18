@@ -23,9 +23,6 @@ export const importWordDocument = async ({
   return response.data;
 };
 
-const pageBreakPattern =
-  /page-break-before\s*:\s*always|page-break-after\s*:\s*always|break-before\s*:\s*page|break-after\s*:\s*page/i;
-
 const isPageBreakNode = (node) => {
   if (!node || node.nodeType !== Node.ELEMENT_NODE) return false;
 
@@ -42,7 +39,7 @@ const isPageBreakNode = (node) => {
     return true;
   }
 
-  return pageBreakPattern.test(style);
+  return /page-break-before\s*:\s*always|break-before\s*:\s*page/i.test(style);
 };
 
 export const splitHtmlIntoPages = (html) => {
@@ -77,7 +74,6 @@ export const splitHtmlIntoPages = (html) => {
 
     if (
       node.nodeType === Node.ELEMENT_NODE &&
-      pageBreakPattern.test((node.getAttribute("style") || "").toLowerCase()) &&
       /page-break-after\s*:\s*always|break-after\s*:\s*page/i.test(
         (node.getAttribute("style") || "").toLowerCase()
       )
@@ -123,10 +119,6 @@ export const mergeImportedWordContent = ({
 
   const pageBreakHtml =
     '<div class="word-page-break" data-word-page-break="true" style="page-break-before: always;"></div>';
-
-  if (normalizedCurrent.endsWith("page-break-before: always;")) {
-    return `${normalizedCurrent}\n${normalizedImported}`;
-  }
 
   return `${normalizedCurrent}\n${pageBreakHtml}\n${normalizedImported}`;
 };

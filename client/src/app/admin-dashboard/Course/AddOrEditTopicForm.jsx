@@ -351,6 +351,17 @@ export default function AddOrEditTopicForm({
       setContent(topic.content || "");
       setIntroVideo(topic.introVideo || "");
       setSourceDocument(topic.sourceDocument || null);
+      setWordImportSummary(
+        topic.sourceDocument
+          ? {
+              fileName: topic.sourceDocument.originalName || "Imported Word",
+              importMode: topic.sourceDocument.importMode || "replace",
+              pageCount: topic.sourceDocument.pageCount || 1,
+              pageBreakCount: topic.sourceDocument.pageBreakCount || 0,
+              warnings: topic.sourceDocument.warnings || [],
+            }
+          : null
+      );
       setVideoLinks(topic.videos || []);
 
       // Load existing quiz data if available
@@ -360,6 +371,9 @@ export default function AddOrEditTopicForm({
       } else {
         console.log("Topic has no quiz");
       }
+    } else {
+      setSourceDocument(null);
+      setWordImportSummary(null);
     }
 
     // Fetch uploaded files when component mounts

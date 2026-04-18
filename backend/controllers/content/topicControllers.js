@@ -4,7 +4,6 @@ import { TOPIC_LESSON_POPULATE } from "../../utils/topicPopulation.js";
 import { normalizeTopicLessons } from "../../utils/topicLessonNormalizer.js";
 import fs from "fs/promises";
 import path from "path";
-import uploadWordDocument from "../../middleware/wordDocumentUpload.js";
 import { convertWordDocumentToHtml } from "../../utils/wordImport.js";
 
 export const getTopicsByChapter = async (req, res) => {
