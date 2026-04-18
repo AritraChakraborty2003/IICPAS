@@ -126,6 +126,14 @@ export const mergeImportedWordContent = ({
 
   const pageBreakHtml =
     '<div class="word-page-break" data-word-page-break="true" style="page-break-before: always;"></div>';
+  const endsWithPageBreak =
+    /data-word-page-break\s*=\s*["']true["']/i.test(normalizedCurrent) ||
+    /page-break-before\s*:\s*always/i.test(normalizedCurrent) ||
+    /break-before\s*:\s*page/i.test(normalizedCurrent);
+
+  if (endsWithPageBreak) {
+    return `${normalizedCurrent}\n${normalizedImported}`;
+  }
 
   return `${normalizedCurrent}\n${pageBreakHtml}\n${normalizedImported}`;
 };

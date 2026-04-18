@@ -299,11 +299,25 @@ export const convertWordDocumentToHtml = async (filePath, originalName) => {
   const outputHtmlPath = path.join(tempDir, "converted.html");
 
   try {
-    await execFileAsync(
-      "textutil",
-      ["-convert", "html", "-output", outputHtmlPath, filePath],
-      { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }
-    );
+    try {
+      await execFileAsync(
+        "textutil",
+        ["-convert", "html", "-output", outputHtmlPath, filePath],
+        { timeout: 30000, maxBuffer: 20 * 1024 * 1024 }
+      );
+    } catch (error) {
+      if (error?.code === "ENOENT") {
+        throw new Error(
+          "Word import is not available on this server because the macOS textutil command is missing."
+        );
+      }
+
+      throw new Error(
+        error?.stderr?.toString?.().trim() ||
+          error?.message ||
+          "Failed to convert the Word document."
+      );
+    }
 
     const rawHtml = await fsp.readFile(outputHtmlPath, "utf8");
     const resourceFiles = await collectResourceFiles(tempDir, outputHtmlPath);
@@ -340,4 +354,3 @@ export const convertWordDocumentToHtml = async (filePath, originalName) => {
 };
 
 export const getSupportedWordExtensions = () => [".doc", ".docx"];
-
