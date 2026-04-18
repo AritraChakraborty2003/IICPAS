@@ -24,7 +24,6 @@ const isPageBreakNode = (node) => {
 
   const element = node;
   const className = (element.className || "").toString().toLowerCase();
-  const style = (element.getAttribute("style") || "").toLowerCase();
   const tagName = element.tagName.toLowerCase();
 
   if (tagName === "hr" && className.includes("word-page-break")) {
