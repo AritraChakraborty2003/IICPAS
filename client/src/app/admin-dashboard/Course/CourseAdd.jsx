@@ -89,6 +89,63 @@ export default function CourseAddTab({ onBack }) {
     enterMode: "BR",
     useSearch: false,
     showXPathInStatusbar: false,
+    buttons: [
+      "source",
+      "|",
+      "bold",
+      "strikethrough",
+      "underline",
+      "italic",
+      "|",
+      "ul",
+      "ol",
+      "arrowlist",
+      "|",
+      "outdent",
+      "indent",
+      "|",
+      "font",
+      "fontsize",
+      "brush",
+      "paragraph",
+      "|",
+      "image",
+      "link",
+      "table",
+      "|",
+      "align",
+      "undo",
+      "redo",
+      "|",
+      "hr",
+      "eraser",
+      "copyformat",
+      "|",
+      "fullsize",
+    ],
+    controls: {
+      arrowlist: {
+        icon: "➤",
+        tooltip: "Arrow List",
+        exec: (editor) => {
+          const list =
+            editor.selection.ancestor("ul") || editor.selection.ancestor("ol");
+          if (list) {
+            if (list.classList.contains("arrow-list")) {
+              list.classList.remove("arrow-list");
+            } else {
+              list.classList.add("arrow-list");
+            }
+          } else {
+            editor.execCommand("insertUnorderedList");
+            setTimeout(() => {
+              const newList = editor.selection.ancestor("ul");
+              if (newList) newList.classList.add("arrow-list");
+            }, 10);
+          }
+        },
+      },
+    },
   };
 
   useEffect(() => {
