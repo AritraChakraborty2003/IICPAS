@@ -420,6 +420,17 @@ export default function AddTopicForm({
                   marginBottom: "1rem",
                   paddingLeft: "1.5rem",
                 },
+                "& ul": {
+                  listStyleType: "disc",
+                  listStylePosition: "outside",
+                },
+                "& ol": {
+                  listStyleType: "decimal",
+                  listStylePosition: "outside",
+                },
+                "& li": {
+                  display: "list-item",
+                },
                 "& table": {
                   width: "100%",
                   borderCollapse: "collapse",

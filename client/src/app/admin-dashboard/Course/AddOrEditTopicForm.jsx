@@ -2518,14 +2518,23 @@ export default function AddOrEditTopicForm({
                     borderRadius: "8px",
                     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
                   },
-                  "& ul, & ol": {
-                    marginBottom: "1rem",
-                    paddingLeft: "1.5rem",
-                  },
-                  "& li": {
-                    marginBottom: "0.5rem",
-                    lineHeight: 1.6,
-                  },
+                "& ul, & ol": {
+                  marginBottom: "1rem",
+                  paddingLeft: "1.5rem",
+                },
+                "& ul": {
+                  listStyleType: "disc",
+                  listStylePosition: "outside",
+                },
+                "& ol": {
+                  listStyleType: "decimal",
+                  listStylePosition: "outside",
+                },
+                "& li": {
+                  marginBottom: "0.5rem",
+                  lineHeight: 1.6,
+                  display: "list-item",
+                },
                   "& table": {
                     width: "100%",
                     borderCollapse: "collapse",

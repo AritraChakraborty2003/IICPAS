@@ -1206,6 +1206,51 @@ body::-webkit-scrollbar-thumb:hover {
   transition: all 0.2s ease;
 }
 
+/* Make Jodit font and size popups readable */
+.jodit-popup {
+  max-width: min(92vw, 420px);
+}
+
+.jodit-popup__content {
+  min-width: 280px;
+}
+
+.jodit-popup .jodit-toolbar-select,
+.jodit-popup .jodit-select,
+.jodit-popup .jodit-ui-select__wrapper {
+  min-width: 240px;
+}
+
+.jodit-popup .jodit-toolbar-select__text {
+  white-space: nowrap;
+}
+
+.jodit-popup .jodit-ui-select__input {
+  min-width: 0;
+}
+
+/* Restore semantic list markers inside content editors and previews.
+   Tailwind preflight removes default list styling globally, so Word-imported
+   HTML needs explicit overrides where rich content is rendered. */
+.jodit-wysiwyg ul,
+.word-page-content ul {
+  list-style: disc outside !important;
+  padding-left: 1.5rem !important;
+  margin: 0.75rem 0 1rem !important;
+}
+
+.jodit-wysiwyg ol,
+.word-page-content ol {
+  list-style: decimal outside !important;
+  padding-left: 1.5rem !important;
+  margin: 0.75rem 0 1rem !important;
+}
+
+.jodit-wysiwyg li,
+.word-page-content li {
+  display: list-item !important;
+}
+
 @keyframes pulse-warning {
   0%,
   100% {

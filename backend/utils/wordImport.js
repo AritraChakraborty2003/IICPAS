@@ -406,11 +406,207 @@ const extractWarningNotes = (html) => {
   return warnings;
 };
 
+const decodeHtmlEntities = (value) => {
+  let decoded = value || "";
+  decoded = decoded.replace(/&nbsp;/gi, " ");
+  decoded = decoded.replace(/&amp;/gi, "&");
+  decoded = decoded.replace(/&lt;/gi, "<");
+  decoded = decoded.replace(/&gt;/gi, ">");
+  decoded = decoded.replace(/&quot;/gi, '"');
+  decoded = decoded.replace(/&#39;/gi, "'");
+  decoded = decoded.replace(/&#(\d+);/g, (_match, decimal) =>
+    String.fromCodePoint(Number.parseInt(decimal, 10))
+  );
+  decoded = decoded.replace(/&#x([0-9a-f]+);/gi, (_match, hex) =>
+    String.fromCodePoint(Number.parseInt(hex, 16))
+  );
+  return decoded;
+};
+
+const stripHtmlToPlainText = (value) =>
+  decodeHtmlEntities(
+    value
+      .replace(/<br\b[^>]*\/?>/gi, "\n")
+      .replace(/<[^>]+>/g, " ")
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+
+const BULLET_MARKER_PATTERN = /^(?:[•◦▪‣∙·]|\u2022|\u25e6|\u25aa|\u25ab)\s*/i;
+const ORDERED_MARKER_PATTERN = /^(\d+)[.)]\s*/i;
+
+const stripLeadingSpaceArtifacts = (value) =>
+  value.replace(
+    /^(?:\s|&nbsp;|&#160;|<span[^>]*class=(["'])Apple-converted-space\1[^>]*>(?:\s|&nbsp;|&#160;)*<\/span>)*/gi,
+    ""
+  );
+
+const stripListMarkerFromLineHtml = (lineHtml, kind) => {
+  let cleaned = stripLeadingSpaceArtifacts((lineHtml || "").trim());
+
+  if (kind === "ul") {
+    cleaned = cleaned.replace(
+      /^(?:[•◦▪‣∙·]|\u2022|\u25e6|\u25aa|\u25ab|&bull;|&#8226;)\s*/i,
+      ""
+    );
+  } else if (kind === "ol") {
+    cleaned = cleaned.replace(/^\d+[.)]\s*/i, "");
+  }
+
+  return cleaned.trim();
+};
+
+const classifyListLine = (lineHtml) => {
+  const plainText = stripHtmlToPlainText(lineHtml);
+  if (!plainText) return null;
+
+  if (BULLET_MARKER_PATTERN.test(plainText)) {
+    return "ul";
+  }
+
+  if (ORDERED_MARKER_PATTERN.test(plainText)) {
+    return "ol";
+  }
+
+  return null;
+};
+
+const getParagraphListCandidate = (paragraphHtml) => {
+  const paragraphMatch = paragraphHtml.match(/^<p\b([^>]*)>([\s\S]*?)<\/p>$/i);
+  if (!paragraphMatch) return null;
+
+  const attributes = paragraphMatch[1] || "";
+  const innerHtml = paragraphMatch[2] || "";
+  const styleAttrMatch = attributes.match(/\sstyle=(["'])([\s\S]*?)\1/i);
+  const liStyle = styleAttrMatch ? styleAttrMatch[2] : "";
+
+  const lines = innerHtml
+    .split(/<br\b[^>]*\/?>/i)
+    .map((line) => line.trim())
+    .filter((line) => stripHtmlToPlainText(line));
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  const kinds = lines.map((line) => classifyListLine(line));
+  if (kinds.some((kind) => !kind)) {
+    return null;
+  }
+
+  const primaryKind = kinds[0];
+  if (!kinds.every((kind) => kind === primaryKind)) {
+    return null;
+  }
+
+  return {
+    kind: primaryKind,
+    items: lines.map((line) => stripListMarkerFromLineHtml(line, primaryKind)),
+    style: liStyle,
+  };
+};
+
+const normalizeWordListMarkup = (html) => {
+  const tokenRegex =
+    /<table\b[\s\S]*?<\/table>|<ul\b[\s\S]*?<\/ul>|<ol\b[\s\S]*?<\/ol>|<blockquote\b[\s\S]*?<\/blockquote>|<pre\b[\s\S]*?<\/pre>|<div\b[\s\S]*?<\/div>|<h[1-6]\b[\s\S]*?<\/h[1-6]>|<p\b[\s\S]*?<\/p>|<hr\b[^>]*\/?>|<br\b[^>]*\/?>|<!--[\s\S]*?-->|[^<]+/gi;
+  const tokens = html.match(tokenRegex) || [html];
+
+  const isWhitespaceToken = (token) => /^[\s\u00a0]*$/.test(token);
+  const isParagraphToken = (token) => /^<p\b/i.test(token);
+  const isBlockBreaker = (token) =>
+    /^<(table|ul|ol|blockquote|pre|div|h[1-6]|hr|br)\b/i.test(token);
+
+  let output = "";
+  let openListKind = null;
+
+  const closeOpenList = () => {
+    if (openListKind) {
+      output += `</${openListKind}>`;
+      openListKind = null;
+    }
+  };
+
+  const openList = (kind) => {
+    if (openListKind !== kind) {
+      closeOpenList();
+      output += `<${kind}>`;
+      openListKind = kind;
+    }
+  };
+
+  const findNextMeaningfulTokenIndex = (startIndex) => {
+    for (let index = startIndex; index < tokens.length; index += 1) {
+      const token = tokens[index];
+      if (isWhitespaceToken(token) || token.startsWith("<!--")) {
+        continue;
+      }
+      return index;
+    }
+    return -1;
+  };
+
+  for (let index = 0; index < tokens.length; index += 1) {
+    const token = tokens[index];
+
+    if (isWhitespaceToken(token)) {
+      output += token;
+      continue;
+    }
+
+    if (!isParagraphToken(token)) {
+      closeOpenList();
+      output += token;
+      continue;
+    }
+
+    const candidate = getParagraphListCandidate(token);
+    if (!candidate) {
+      closeOpenList();
+      output += token;
+      continue;
+    }
+
+    const nextMeaningfulIndex = findNextMeaningfulTokenIndex(index + 1);
+    const nextToken =
+      nextMeaningfulIndex >= 0 ? tokens[nextMeaningfulIndex] : null;
+    const nextCandidate =
+      nextToken && isParagraphToken(nextToken)
+        ? getParagraphListCandidate(nextToken)
+        : null;
+
+    const shouldConvertToList =
+      candidate.items.length > 1 ||
+      Boolean(nextCandidate && nextCandidate.kind === candidate.kind) ||
+      Boolean(openListKind === candidate.kind);
+
+    if (!shouldConvertToList) {
+      closeOpenList();
+      output += token;
+      continue;
+    }
+
+    openList(candidate.kind);
+    const liStyle = candidate.style ? ` style="${candidate.style}"` : "";
+
+    candidate.items.forEach((item) => {
+      output += `<li${liStyle}>${item || "<br>"}</li>`;
+    });
+
+    if (!nextCandidate || nextCandidate.kind !== candidate.kind) {
+      closeOpenList();
+    }
+  }
+
+  closeOpenList();
+  return output;
+};
+
 const normalizeTextutilOutput = (html) => {
   const headStyles = extractHeadStyle(html);
   const bodyHtml = extractBodyHtml(html);
   const inlined = inlineTextutilStyles(bodyHtml, headStyles);
-  return stripUnsafeMarkup(inlined).trim();
+  const sanitized = stripUnsafeMarkup(inlined).trim();
+  return normalizeWordListMarkup(sanitized);
 };
 
 const countPageBreakMarkers = (html) => {
