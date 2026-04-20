@@ -2,6 +2,7 @@
 "use client";
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import dynamic from "next/dynamic";
+import { DEFAULT_CONTENT_FONT_FAMILY } from "../utils/contentFontFamily";
 
 // Debounce utility function
 const debounce = (func: (...args: any[]) => void, wait: number) => {
@@ -80,6 +81,7 @@ export default function OptimizedJoditEditor({
     showCharsCounter: false,
     showWordsCounter: false,
     showXPathInStatusbar: false,
+    editorClassName: "lucida-sans-content",
     askBeforePasteHTML: false,
     askBeforePasteFromWord: false,
     defaultActionOnPaste: "insert_clear_html" as any,
@@ -204,8 +206,7 @@ export default function OptimizedJoditEditor({
           editorElement.style.minHeight = `${height}px`;
           editorElement.style.fontSize = "16px";
           editorElement.style.lineHeight = "1.6";
-          editorElement.style.fontFamily =
-            "system-ui, -apple-system, sans-serif";
+          editorElement.style.fontFamily = DEFAULT_CONTENT_FONT_FAMILY;
         }
 
         // Optimize container performance
@@ -402,8 +403,8 @@ export default function OptimizedJoditEditor({
 
         .optimized-jodit-editor :global(.jodit-wysiwyg) {
           padding: 16px;
-          font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-            Roboto, sans-serif;
+          font-family: "Lucida Sans", "Lucida Sans Unicode", "Lucida Grande",
+            "Noto Sans", sans-serif;
         }
 
         .optimized-jodit-editor :global(.jodit-wysiwyg:focus) {

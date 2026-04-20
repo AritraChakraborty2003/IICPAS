@@ -271,11 +271,12 @@ export default function AddTopicForm({
             >
               Content (Rich text, images, video, color...)
             </Typography>
-            <div
-              style={{
-                resize: "vertical",
-                overflow: "auto",
-                minHeight: 180,
+          <div
+            className="lucida-sans-content"
+            style={{
+              resize: "vertical",
+              overflow: "auto",
+              minHeight: 180,
                 maxHeight: 800,
                 borderRadius: 10,
                 background: "#fafbfc",
@@ -288,6 +289,7 @@ export default function AddTopicForm({
                 onChange={setContent}
                 modules={quillModules}
                 formats={quillFormats}
+                className="lucida-sans-content"
                 style={{
                   height: "100%",
                   border: "none",

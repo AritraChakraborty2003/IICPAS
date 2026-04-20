@@ -47,6 +47,7 @@ export default function QuillEditor({
       formats={formats}
       theme="snow"
       placeholder={placeholder}
+      className="lucida-sans-content"
       style={{ minHeight: height, marginBottom: 16 }}
     />
   );
