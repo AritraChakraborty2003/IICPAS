@@ -1209,7 +1209,9 @@ body::-webkit-scrollbar-thumb:hover {
 
 /* Make Jodit font and size popups readable */
 .jodit-popup {
-  max-width: min(92vw, 420px);
+  min-width: 360px;
+  width: min(96vw, 680px);
+  max-width: min(96vw, 680px);
   max-height: min(80vh, 560px);
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
@@ -1222,7 +1224,8 @@ body::-webkit-scrollbar-thumb:hover {
 
 .jodit-popup__content {
   min-width: 0;
-  max-width: min(92vw, 420px);
+  width: 100%;
+  max-width: min(96vw, 680px);
   background: #ffffff !important;
   border-radius: 8px !important;
   overflow: hidden !important;
