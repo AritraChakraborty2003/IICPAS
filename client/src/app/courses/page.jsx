@@ -168,6 +168,7 @@ export default function QuillWithVideoPreview() {
         modules={quillModules}
         formats={formats}
         theme="snow"
+        className="lucida-sans-content"
       />
 
       {/* Video Preview Modal */}
