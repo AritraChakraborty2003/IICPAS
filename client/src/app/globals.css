@@ -1322,7 +1322,7 @@ body::-webkit-scrollbar-thumb:hover {
 .word-page-content,
 .topic-content-light,
 .topic-content-dark {
-  font-family: "Noto Sans", "Lucida Grande", "Segoe UI", sans-serif !important;
+  font-family: "Roboto", "Lucida Grande", "Segoe UI", sans-serif !important;
 }
 
 /* Restore semantic list markers inside content editors and previews.
