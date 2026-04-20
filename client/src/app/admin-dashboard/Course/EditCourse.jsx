@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import Select from "react-select";
 import axios from "axios";
 import dynamic from "next/dynamic";
+import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
@@ -14,6 +15,13 @@ const API_BASE = getApiBase();
 const ALLOWED_IMAGE_ACCEPT =
   ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
 const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
+const RICH_TEXT_FIELDS = new Set([
+  "description",
+  "examCert",
+  "caseStudy",
+  "seoDescription",
+  "metaDescription",
+]);
 
 const CATEGORY_OPTIONS = [
   { value: "Accounting", label: "Accounting" },
@@ -33,6 +41,7 @@ export default function EditCourse({ courseId, onBack }) {
   const joditConfig = {
     readonly: false,
     height: 200,
+    editorClassName: "lucida-sans-content",
     uploader: {
       insertImageAsBase64URI: true,
       accept: ALLOWED_IMAGE_ACCEPT,
@@ -342,6 +351,12 @@ export default function EditCourse({ courseId, onBack }) {
         )
           return;
         if (v !== null && v !== undefined) fd.append(k, v);
+        if (v !== null && v !== undefined) {
+          fd.append(
+            k,
+            RICH_TEXT_FIELDS.has(k) ? normalizeDefaultContentFont(v) : v
+          );
+        }
       });
 
       // Add simulations data

@@ -4,6 +4,7 @@ import Select from "react-select";
 import axios from "axios";
 import { FaArrowLeft, FaPlus } from "react-icons/fa";
 import dynamic from "next/dynamic";
+import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
@@ -11,6 +12,13 @@ const API_BASE = getApiBase();
 const ALLOWED_IMAGE_ACCEPT =
   ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
 const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
+const RICH_TEXT_FIELDS = new Set([
+  "description",
+  "examCert",
+  "caseStudy",
+  "seoDescription",
+  "metaDescription",
+]);
 
 const initialForm = {
   category: null,
@@ -74,6 +82,7 @@ export default function CourseAddTab({ onBack }) {
   const joditConfig = {
     readonly: false,
     height: 200,
+    editorClassName: "lucida-sans-content",
     uploader: {
       insertImageAsBase64URI: true,
       accept: ALLOWED_IMAGE_ACCEPT,
@@ -301,7 +310,10 @@ export default function CourseAddTab({ onBack }) {
         } else if (typeof v === "object") {
           fd.append(k, JSON.stringify(v));
         } else {
-          fd.append(k, v);
+          fd.append(
+            k,
+            RICH_TEXT_FIELDS.has(k) ? normalizeDefaultContentFont(v) : v
+          );
         }
       });
 

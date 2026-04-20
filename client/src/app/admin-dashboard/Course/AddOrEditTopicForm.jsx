@@ -327,7 +327,7 @@ export default function AddOrEditTopicForm({
     if (topic) {
       console.log("Topic data received:", topic);
       setTitle(topic.title || "");
-      setContent(topic.content || "");
+      setContent(normalizeDefaultContentFont(topic.content || ""));
       setIntroVideo(topic.introVideo || "");
       setSourceDocument(topic.sourceDocument || null);
       setWordImportSummary(
