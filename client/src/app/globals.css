@@ -1149,7 +1149,8 @@ body::-webkit-scrollbar-thumb:hover {
   border: none;
   outline: none;
   padding: 16px 20px;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: "Lucida Sans", "Lucida Sans Unicode", "Lucida Grande",
+    "Noto Sans", sans-serif;
   font-size: 15px;
   line-height: 1.6;
   resize: vertical;
@@ -1208,37 +1209,40 @@ body::-webkit-scrollbar-thumb:hover {
 
 /* Make Jodit font and size popups readable */
 .jodit-popup {
-  max-width: min(96vw, 520px);
+  max-width: min(92vw, 420px);
+  max-height: min(80vh, 560px);
   background: #ffffff !important;
   border: 1px solid #e2e8f0 !important;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
   border-radius: 8px !important;
   z-index: 10000 !important;
-  overflow: visible !important;
+  overflow: auto !important;
 }
 
 .jodit-popup__content {
-  min-width: 340px;
-  max-width: min(96vw, 520px);
+  min-width: 0;
+  max-width: min(92vw, 420px);
   background: #ffffff !important;
   border-radius: 8px !important;
-  overflow: visible !important;
+  overflow: hidden !important;
 }
 
 .jodit-popup .jodit-toolbar-select,
 .jodit-popup .jodit-select,
 .jodit-popup .jodit-ui-select__wrapper {
-  min-width: 320px;
-  width: max-content;
-  max-width: min(92vw, 480px);
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .jodit-popup .jodit-ui-list {
-  min-width: 320px;
-  width: max-content;
-  max-width: min(92vw, 480px);
-  overflow: visible !important;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: min(70vh, 440px);
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 /* Fix dropdown item visibility - targeting lists specifically to avoid breaking color pickers */
@@ -1257,7 +1261,7 @@ body::-webkit-scrollbar-thumb:hover {
   height: auto !important;
   text-align: left !important;
   justify-content: flex-start !important;
-  overflow: visible !important;
+  overflow: hidden !important;
   white-space: nowrap !important;
 }
 
@@ -1275,8 +1279,8 @@ body::-webkit-scrollbar-thumb:hover {
 .jodit-popup .jodit-ui-button__text,
 .jodit-popup .jodit-list__item-text {
   color: inherit !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   white-space: nowrap !important;
   min-width: 0 !important;
   flex: 1 1 auto !important;
@@ -1289,11 +1293,12 @@ body::-webkit-scrollbar-thumb:hover {
 
 .jodit-popup .jodit-toolbar-select__text {
   min-width: 0;
+  max-width: 100%;
 }
 
 .jodit-popup .jodit-ui-select__input {
   min-width: 0;
-  overflow: visible !important;
+  overflow: hidden !important;
 }
 
 .jodit-popup .jodit-toolbar-button,

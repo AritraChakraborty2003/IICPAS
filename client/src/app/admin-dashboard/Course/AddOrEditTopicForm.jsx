@@ -32,6 +32,7 @@ import {
   buildImportedSourceDocument,
 } from "./wordImportUtils";
 import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
+import { joditFontControl } from "../../utils/joditFontConfig";
 
 // Dynamically import drag and drop components to avoid SSR issues
 const DragDropContext = dynamic(
@@ -129,6 +130,7 @@ const joditConfig = {
     "fullsize",
   ],
   controls: {
+    font: joditFontControl,
     arrowlist: {
       icon: "➤",
       tooltip: "Arrow List",

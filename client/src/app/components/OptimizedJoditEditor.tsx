@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useCallback, useState } from "react";
 import dynamic from "next/dynamic";
 import { DEFAULT_CONTENT_FONT_FAMILY } from "../utils/contentFontFamily";
+import { joditFontControl } from "../utils/joditFontConfig";
 
 // Debounce utility function
 const debounce = (func: (...args: any[]) => void, wait: number) => {
@@ -163,6 +164,7 @@ export default function OptimizedJoditEditor({
     buttonsXS: ["bold", "italic", "|", "image", "link"],
 
     controls: {
+      font: joditFontControl,
       arrowlist: {
         icon: "➤",
         tooltip: "Arrow List",

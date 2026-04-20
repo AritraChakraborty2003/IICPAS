@@ -10,6 +10,7 @@ import {
 } from "@/utils/sweetAlert";
 import dynamic from "next/dynamic";
 import { normalizeDefaultContentFont } from "../utils/contentFontFamily";
+import { joditFontControl } from "../utils/joditFontConfig";
 
 const API_BASE =
   getApiBase();
@@ -105,6 +106,9 @@ const joditConfig = {
     "|",
     "fullsize",
   ],
+  controls: {
+    font: joditFontControl,
+  },
 };
 
 export default function BlogComponent() {
@@ -251,7 +255,7 @@ export default function BlogComponent() {
     setForm({
       title: blog.title || "",
       author: blog.author || "",
-      content: blog.content || "",
+      content: normalizeDefaultContentFont(blog.content || ""),
       image: null,
       previewUrl: blog.imageUrl
         ? `${API_ORIGIN}${

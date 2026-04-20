@@ -47,8 +47,30 @@ export const splitHtmlIntoPages = (html) => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(`<body>${html}</body>`, "text/html");
   const body = doc.body;
+  const defaultFontWrapper = body.querySelector(
+    '[data-default-content-font="true"]'
+  );
+  const sourceRoot =
+    defaultFontWrapper && body.childNodes.length === 1
+      ? defaultFontWrapper
+      : body;
   const pages = [];
   let currentHtml = "";
+  const flattenedNodes = [];
+
+  const collectNodes = (node) => {
+    if (
+      node.nodeType === Node.ELEMENT_NODE &&
+      node.getAttribute("data-default-content-font") === "true"
+    ) {
+      Array.from(node.childNodes).forEach(collectNodes);
+      return;
+    }
+
+    flattenedNodes.push(node);
+  };
+
+  Array.from(sourceRoot.childNodes).forEach(collectNodes);
 
   const flushCurrent = () => {
     if (currentHtml.trim()) {
@@ -61,7 +83,7 @@ export const splitHtmlIntoPages = (html) => {
     currentHtml += node.outerHTML || node.textContent || "";
   };
 
-  Array.from(body.childNodes).forEach((node) => {
+  flattenedNodes.forEach((node) => {
     if (node.nodeType === Node.ELEMENT_NODE) {
       const style = (node.getAttribute("style") || "").toLowerCase();
       const hasBreakBefore = /page-break-before\s*:\s*always|break-before\s*:\s*page/i.test(

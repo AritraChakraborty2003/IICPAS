@@ -5,6 +5,7 @@ import axios from "axios";
 import { FaArrowLeft, FaPlus } from "react-icons/fa";
 import dynamic from "next/dynamic";
 import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
+import { joditFontControl } from "../../utils/joditFontConfig";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 
@@ -132,11 +133,12 @@ export default function CourseAddTab({ onBack }) {
       "|",
       "fullsize",
     ],
-    controls: {
-      arrowlist: {
-        icon: "➤",
-        tooltip: "Arrow List",
-        exec: (editor) => {
+  controls: {
+    font: joditFontControl,
+    arrowlist: {
+      icon: "➤",
+      tooltip: "Arrow List",
+      exec: (editor) => {
           const list =
             editor.selection.ancestor("ul") || editor.selection.ancestor("ol");
           if (list) {

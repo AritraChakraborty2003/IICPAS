@@ -5,6 +5,7 @@ import Select from "react-select";
 import axios from "axios";
 import dynamic from "next/dynamic";
 import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
+import { joditFontControl } from "../../utils/joditFontConfig";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
@@ -21,7 +22,6 @@ const RICH_TEXT_FIELDS = new Set([
   "caseStudy",
   "assignment",
   "seoDescription",
-  "metaDescription",
 ]);
 
 const CATEGORY_OPTIONS = [
@@ -93,6 +93,7 @@ export default function EditCourse({ courseId, onBack }) {
       "fullsize",
     ],
     controls: {
+      font: joditFontControl,
       arrowlist: {
         icon: "➤",
         tooltip: "Arrow List",
@@ -147,7 +148,7 @@ export default function EditCourse({ courseId, onBack }) {
         seoDescription: normalizeDefaultContentFont(c.seoDescription || ""),
         metaTitle: c.metaTitle || "",
         metaKeywords: c.metaKeywords || "",
-        metaDescription: normalizeDefaultContentFont(c.metaDescription || ""),
+        metaDescription: c.metaDescription || "",
         image: null,
         imageUrl: c.image || "",
         // Pricing fields for both live and recorded sessions
