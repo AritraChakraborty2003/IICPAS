@@ -8,10 +8,10 @@ import {
   getTopicLessonSourceUrl,
   isTopicLessonVisible,
 } from "@/lib/topicLessons";
+import { DEFAULT_CONTENT_FONT_FAMILY } from "../utils/contentFontFamily";
 import { PlayCircle, Radio, CalendarDays, ExternalLink } from "lucide-react";
 
-const DIGITAL_HUB_FONT_STACK =
-  '"Roboto", "Lucida Grande", "Segoe UI", sans-serif';
+const DIGITAL_HUB_FONT_STACK = DEFAULT_CONTENT_FONT_FAMILY;
 
 const LessonList = ({ title, rows, actionLabel, actionTone = "blue" }) => {
   if (!rows.length) return null;

@@ -6,6 +6,10 @@ import AccountingExperimentCard from "../components/AccountingExperimentCard";
 import TopicLessonsDisplay from "../components/TopicLessonsDisplay";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
 import { getApiBase } from "@/lib/apiBase";
+import {
+  DEFAULT_CONTENT_FONT_FAMILY,
+  normalizeDefaultContentFont,
+} from "../utils/contentFontFamily";
 
 // Type definitions
 interface Task {
@@ -544,6 +548,11 @@ const hardenVideoElements = (container: HTMLElement | null) => {
   });
 };
 
+const DIGITAL_HUB_FONT_STACK = DEFAULT_CONTENT_FONT_FAMILY;
+
+const normalizeDigitalHubContent = (html: string) =>
+  normalizeDefaultContentFont(html, DIGITAL_HUB_FONT_STACK);
+
 export default function DigitalHubClient({
   courseSlugOrId,
   chapterId,
@@ -747,6 +756,10 @@ export default function DigitalHubClient({
   const [totalPages, setTotalPages] = useState(1);
   const [showDemoLimit, setShowDemoLimit] = useState(false);
   const [showPurchasePopup, setShowPurchasePopup] = useState(false);
+  const normalizedTopicContent = useMemo(
+    () => normalizeDigitalHubContent(topicContent),
+    [topicContent]
+  );
 
   // New state for case studies and assignments
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
@@ -3229,12 +3242,13 @@ export default function DigitalHubClient({
                     className={`digital-hub-content bg-white border border-stone-200 rounded-2xl p-4 text-base leading-relaxed shadow-sm text-slate-900 sm:p-6 sm:text-lg lg:p-8 ${
                       isDarkMode ? "topic-content-dark" : "topic-content-light"
                     }`}
+                    style={{ fontFamily: DIGITAL_HUB_FONT_STACK }}
                   >
                   {isSelectedTopicLockedForBatch ? null : (
                     <div
                       ref={topicContentRef}
                       dangerouslySetInnerHTML={{
-                        __html: topicContent,
+                        __html: normalizedTopicContent,
                       }}
                     />
                   )}
@@ -3836,7 +3850,12 @@ export default function DigitalHubClient({
                                     )}
                                   {content.type === "text" &&
                                     content.textContent && (
-                                      <div className="digital-hub-content text-slate-700 whitespace-pre-wrap">
+                                      <div
+                                        className="digital-hub-content text-slate-700 whitespace-pre-wrap"
+                                        style={{
+                                          fontFamily: DIGITAL_HUB_FONT_STACK,
+                                        }}
+                                      >
                                         {content.textContent}
                                       </div>
                                     )}
@@ -3846,7 +3865,9 @@ export default function DigitalHubClient({
                                         className="digital-hub-content text-slate-700"
                                         ref={topicContentRef}
                                         dangerouslySetInnerHTML={{
-                                          __html: content.richTextContent,
+                                          __html: normalizeDigitalHubContent(
+                                            content.richTextContent
+                                          ),
                                         }}
                                       />
                                     )}
@@ -4431,64 +4452,9 @@ export default function DigitalHubClient({
       )}
 
       <style jsx global>{`
-        .topic-content-light h1,
-        .topic-content-light h2,
-        .topic-content-light h3,
-        .topic-content-light h4,
-        .topic-content-light h5,
-        .topic-content-light h6,
-        .topic-content-dark h1,
-        .topic-content-dark h2,
-        .topic-content-dark h3,
-        .topic-content-dark h4,
-        .topic-content-dark h5,
-        .topic-content-dark h6,
-        .digital-hub-content h1,
-        .digital-hub-content h2,
-        .digital-hub-content h3,
-        .digital-hub-content h4,
-        .digital-hub-content h5,
-        .digital-hub-content h6 {
-          font-family: "Roboto", "Lucida Grande", "Segoe UI", sans-serif !important;
-        }
-
         .digital-hub-content,
-        .digital-hub-content p,
-        .digital-hub-content li,
-        .digital-hub-content td,
-        .digital-hub-content th,
-        .digital-hub-content span,
-        .digital-hub-content a,
-        .digital-hub-content div,
-        .digital-hub-content strong,
-        .digital-hub-content em,
-        .digital-hub-content b,
-        .digital-hub-content i,
-        .topic-content-light,
-        .topic-content-light p,
-        .topic-content-light li,
-        .topic-content-light td,
-        .topic-content-light th,
-        .topic-content-light span,
-        .topic-content-light a,
-        .topic-content-light div,
-        .topic-content-light strong,
-        .topic-content-light em,
-        .topic-content-light b,
-        .topic-content-light i,
-        .topic-content-dark,
-        .topic-content-dark p,
-        .topic-content-dark li,
-        .topic-content-dark td,
-        .topic-content-dark th,
-        .topic-content-dark span,
-        .topic-content-dark a,
-        .topic-content-dark div,
-        .topic-content-dark strong,
-        .topic-content-dark em,
-        .topic-content-dark b,
-        .topic-content-dark i {
-          font-family: "Roboto", "Lucida Grande", "Segoe UI", sans-serif !important;
+        .digital-hub-content * {
+          font-family: ${DIGITAL_HUB_FONT_STACK} !important;
         }
 
         .digital-hub-content h1,
