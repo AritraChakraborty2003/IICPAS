@@ -527,6 +527,7 @@ const normalizeWordListMarkup = (html) => {
   const isBlockBreaker = (token) =>
     /^<(table|ul|ol|blockquote|pre|div|h[1-6]|hr|br)\b/i.test(token);
 
+  let output = "";
   let lastMeaningfulText = "";
   let openListKind = null;
 
