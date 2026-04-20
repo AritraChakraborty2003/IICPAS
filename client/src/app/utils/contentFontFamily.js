@@ -1,5 +1,5 @@
 export const DEFAULT_CONTENT_FONT_FAMILY =
-  '"Lucida Sans Unicode", "Lucida Grande", sans-serif';
+  '"Noto Sans", "Lucida Grande", sans-serif';
 
 export const DEFAULT_CONTENT_FONT_CLASS = "default-content-font";
 

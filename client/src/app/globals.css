@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css?family=Roboto:400,700&display=swap");
 @import url("https://fonts.googleapis.com/css?family=Georgia:400,700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 /* Content protection is opt-in via body[data-copy-protected="true"] */
@@ -1149,7 +1150,7 @@ body::-webkit-scrollbar-thumb:hover {
   border: none;
   outline: none;
   padding: 16px 20px;
-  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+  font-family: "Noto Sans", "Lucida Grande", sans-serif;
   font-size: 15px;
   line-height: 1.6;
   resize: vertical;
@@ -1321,7 +1322,7 @@ body::-webkit-scrollbar-thumb:hover {
 .word-page-content,
 .topic-content-light,
 .topic-content-dark {
-  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif !important;
+  font-family: "Noto Sans", "Lucida Grande", sans-serif !important;
 }
 
 /* Restore semantic list markers inside content editors and previews.
