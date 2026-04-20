@@ -407,7 +407,7 @@ const extractWarningNotes = (html) => {
 };
 
 const DEFAULT_CONTENT_FONT_FAMILY =
-  '"Noto Sans", "Lucida Grande", sans-serif';
+  '"Segoe UI", "Lucida Grande", sans-serif';
 
 const normalizeDefaultContentFont = (
   html,
