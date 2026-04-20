@@ -208,7 +208,11 @@ export default function OptimizedJoditEditor({
           editorElement.style.minHeight = `${height}px`;
           editorElement.style.fontSize = "16px";
           editorElement.style.lineHeight = "1.6";
-          editorElement.style.fontFamily = DEFAULT_CONTENT_FONT_FAMILY;
+          editorElement.style.setProperty(
+            "font-family",
+            DEFAULT_CONTENT_FONT_FAMILY,
+            "important"
+          );
         }
 
         // Optimize container performance
@@ -405,7 +409,12 @@ export default function OptimizedJoditEditor({
 
         .optimized-jodit-editor :global(.jodit-wysiwyg) {
           padding: 16px;
-          font-family: "Roboto", "Lucida Grande", "Segoe UI", sans-serif;
+          font-family: ${DEFAULT_CONTENT_FONT_FAMILY};
+        }
+
+        .optimized-jodit-editor :global(.jodit-wysiwyg *),
+        .optimized-jodit-editor :global(.jodit-wysiwyg [style]) {
+          font-family: ${DEFAULT_CONTENT_FONT_FAMILY} !important;
         }
 
         .optimized-jodit-editor :global(.jodit-wysiwyg:focus) {

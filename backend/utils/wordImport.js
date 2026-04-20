@@ -408,6 +408,8 @@ const extractWarningNotes = (html) => {
 
 const DEFAULT_CONTENT_FONT_FAMILY =
   '"Roboto", "Lucida Grande", "Segoe UI", sans-serif';
+const FONT_FAMILY_REGEX = /(?:^|;)\s*font-family\s*:\s*[^;]+/gi;
+const FONT_SHORTHAND_REGEX = /(?:^|;)\s*font\s*:\s*[^;]+/gi;
 
 const normalizeDefaultContentFont = (
   html,
@@ -420,7 +422,8 @@ const normalizeDefaultContentFont = (
     styleAttributeRegex,
     (_match, quote, styleValue) => {
       const cleanedStyle = (styleValue || "")
-        .replace(/(?:^|;)\s*font-family\s*:\s*[^;]+/gi, "")
+        .replace(FONT_FAMILY_REGEX, "")
+        .replace(FONT_SHORTHAND_REGEX, "")
         .replace(/;;+/g, ";")
         .replace(/^\s*;\s*|\s*;\s*$/g, "")
         .trim();
@@ -431,7 +434,8 @@ const normalizeDefaultContentFont = (
 
       return ` style=${quote}${nextStyle}${quote}`;
     }
-  );
+  ).replace(/<\s*font\b/gi, "<span")
+    .replace(/<\/\s*font\s*>/gi, "</span>");
 
   if (/data-default-content-font=["']true["']/i.test(cleanedHtml)) {
     return cleanedHtml;

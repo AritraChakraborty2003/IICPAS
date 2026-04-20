@@ -1317,6 +1317,7 @@ body::-webkit-scrollbar-thumb:hover {
 .default-content-font,
 .lucida-sans-content,
 .lucida-sans-content .jodit-wysiwyg,
+.lucida-sans-content .jodit-wysiwyg *,
 .lucida-sans-content .ql-editor,
 .lucida-sans-content [contenteditable="true"],
 .word-page-content,
