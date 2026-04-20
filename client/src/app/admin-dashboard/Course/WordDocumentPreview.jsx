@@ -52,7 +52,7 @@ export default function WordDocumentPreview({
               }}
             >
               <div
-                className="word-page-content text-[12pt] leading-[1.6] text-slate-900"
+                className="word-page-content default-content-font text-[12pt] leading-[1.6] text-slate-900"
                 style={{
                   fontFamily: DEFAULT_CONTENT_FONT_FAMILY,
                 }}
