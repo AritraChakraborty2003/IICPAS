@@ -1,5 +1,5 @@
 const DEFAULT_FONT_LIST = {
-  '"Lucida Sans Unicode", "Noto Sans", sans-serif': "Lucida Sans Unicode",
+  '"Lucida Sans Unicode", "Lucida Grande", sans-serif': "Lucida Sans Unicode",
   "": "Default",
   "Arial, Helvetica, sans-serif": "Arial",
   "'Courier New', Courier, monospace": "Courier New",

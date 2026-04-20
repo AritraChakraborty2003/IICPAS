@@ -1149,7 +1149,7 @@ body::-webkit-scrollbar-thumb:hover {
   border: none;
   outline: none;
   padding: 16px 20px;
-  font-family: "Lucida Sans Unicode", "Noto Sans", sans-serif;
+  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif;
   font-size: 15px;
   line-height: 1.6;
   resize: vertical;
@@ -1321,7 +1321,7 @@ body::-webkit-scrollbar-thumb:hover {
 .word-page-content,
 .topic-content-light,
 .topic-content-dark {
-  font-family: "Lucida Sans Unicode", "Noto Sans", sans-serif !important;
+  font-family: "Lucida Sans Unicode", "Lucida Grande", sans-serif !important;
 }
 
 /* Restore semantic list markers inside content editors and previews.
