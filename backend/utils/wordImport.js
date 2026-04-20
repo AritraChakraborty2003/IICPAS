@@ -407,7 +407,7 @@ const extractWarningNotes = (html) => {
 };
 
 const DEFAULT_CONTENT_FONT_FAMILY =
-  'Lucida Sans, "Lucida Sans Unicode", "Lucida Grande", "Noto Sans", sans-serif';
+  '"Lucida Sans Unicode", "Noto Sans", sans-serif';
 
 const normalizeDefaultContentFont = (
   html,

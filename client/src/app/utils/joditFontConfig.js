@@ -1,5 +1,5 @@
 const DEFAULT_FONT_LIST = {
-  "'Lucida Sans Unicode', 'Lucida Grande', sans-serif": "Lucida Sans Unicode",
+  '"Lucida Sans Unicode", "Noto Sans", sans-serif': "Lucida Sans Unicode",
   "": "Default",
   "Arial, Helvetica, sans-serif": "Arial",
   "'Courier New', Courier, monospace": "Courier New",
@@ -20,7 +20,22 @@ const trimFontFamilyName = (value) => {
 export const joditFontControl = {
   list: DEFAULT_FONT_LIST,
   textTemplate: (_editor, value) => {
-    return !value ? "Default" : trimFontFamilyName(value);
+    if (!value) return "Default";
+    if (/lucida\s+grande|lucida\s+sans\s+unicode/i.test(value)) {
+      return "Lucida Sans Unicode";
+    }
+
+    return trimFontFamilyName(value);
+  },
+  data: {
+    cssRule: "font-family",
+    normalize: (value) =>
+      (value || "")
+        .toLowerCase()
+        .replace(/['"]+/g, "")
+        .replace(/lucida\s+grande/g, "lucida sans unicode")
+        .replace(/lucida\s+sans unicode/g, "lucida sans unicode")
+        .replace(/[^a-z0-9-]+/g, ","),
   },
   childTemplate: (_editor, key, value) => {
     let isAvailable = false;

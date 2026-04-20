@@ -405,8 +405,7 @@ export default function OptimizedJoditEditor({
 
         .optimized-jodit-editor :global(.jodit-wysiwyg) {
           padding: 16px;
-          font-family: "Lucida Sans", "Lucida Sans Unicode", "Lucida Grande",
-            "Noto Sans", sans-serif;
+          font-family: "Lucida Sans Unicode", "Noto Sans", sans-serif;
         }
 
         .optimized-jodit-editor :global(.jodit-wysiwyg:focus) {
