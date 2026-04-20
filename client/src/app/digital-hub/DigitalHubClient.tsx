@@ -3226,7 +3226,7 @@ export default function DigitalHubClient({
                   )}
 
                   <div
-                    className={`bg-white border border-stone-200 rounded-2xl p-4 text-base leading-relaxed shadow-sm text-slate-900 sm:p-6 sm:text-lg lg:p-8 ${
+                    className={`digital-hub-content bg-white border border-stone-200 rounded-2xl p-4 text-base leading-relaxed shadow-sm text-slate-900 sm:p-6 sm:text-lg lg:p-8 ${
                       isDarkMode ? "topic-content-dark" : "topic-content-light"
                     }`}
                   >
@@ -3836,14 +3836,14 @@ export default function DigitalHubClient({
                                     )}
                                   {content.type === "text" &&
                                     content.textContent && (
-                                      <div className="text-slate-700 whitespace-pre-wrap">
+                                      <div className="digital-hub-content text-slate-700 whitespace-pre-wrap">
                                         {content.textContent}
                                       </div>
                                     )}
                                   {content.type === "rich" &&
                                     content.richTextContent && (
                                       <div
-                                        className="text-slate-700"
+                                        className="digital-hub-content text-slate-700"
                                         ref={topicContentRef}
                                         dangerouslySetInnerHTML={{
                                           __html: content.richTextContent,
@@ -4436,10 +4436,84 @@ export default function DigitalHubClient({
         .topic-content-light h3,
         .topic-content-light h4,
         .topic-content-light h5,
-        .topic-content-light h6 {
+        .topic-content-light h6,
+        .topic-content-dark h1,
+        .topic-content-dark h2,
+        .topic-content-dark h3,
+        .topic-content-dark h4,
+        .topic-content-dark h5,
+        .topic-content-dark h6,
+        .digital-hub-content h1,
+        .digital-hub-content h2,
+        .digital-hub-content h3,
+        .digital-hub-content h4,
+        .digital-hub-content h5,
+        .digital-hub-content h6 {
+          font-family: "Roboto", "Lucida Grande", "Segoe UI", sans-serif !important;
+        }
+
+        .digital-hub-content,
+        .digital-hub-content p,
+        .digital-hub-content li,
+        .digital-hub-content td,
+        .digital-hub-content th,
+        .digital-hub-content span,
+        .digital-hub-content a,
+        .digital-hub-content div,
+        .digital-hub-content strong,
+        .digital-hub-content em,
+        .digital-hub-content b,
+        .digital-hub-content i,
+        .topic-content-light,
+        .topic-content-light p,
+        .topic-content-light li,
+        .topic-content-light td,
+        .topic-content-light th,
+        .topic-content-light span,
+        .topic-content-light a,
+        .topic-content-light div,
+        .topic-content-light strong,
+        .topic-content-light em,
+        .topic-content-light b,
+        .topic-content-light i,
+        .topic-content-dark,
+        .topic-content-dark p,
+        .topic-content-dark li,
+        .topic-content-dark td,
+        .topic-content-dark th,
+        .topic-content-dark span,
+        .topic-content-dark a,
+        .topic-content-dark div,
+        .topic-content-dark strong,
+        .topic-content-dark em,
+        .topic-content-dark b,
+        .topic-content-dark i {
+          font-family: "Roboto", "Lucida Grande", "Segoe UI", sans-serif !important;
+        }
+
+        .digital-hub-content h1,
+        .digital-hub-content h2,
+        .digital-hub-content h3,
+        .digital-hub-content h4,
+        .digital-hub-content h5,
+        .digital-hub-content h6,
+        .topic-content-light h1,
+        .topic-content-light h2,
+        .topic-content-light h3,
+        .topic-content-light h4,
+        .topic-content-light h5,
+        .topic-content-light h6,
+        .topic-content-dark h1,
+        .topic-content-dark h2,
+        .topic-content-dark h3,
+        .topic-content-dark h4,
+        .topic-content-dark h5,
+        .topic-content-dark h6 {
           color: #1d4ed8 !important;
         }
 
+        .digital-hub-content ul li::marker,
+        .digital-hub-content ol li::marker,
         .topic-content-light ul li::marker,
         .topic-content-light ol li::marker {
           color: #f59e0b !important;
@@ -4463,6 +4537,7 @@ export default function DigitalHubClient({
           border-color: #bfdbfe !important;
         }
 
+        .digital-hub-content table,
         .topic-content-light table,
         .topic-content-dark table {
           width: 100% !important;
@@ -4472,6 +4547,8 @@ export default function DigitalHubClient({
           background: transparent !important;
         }
 
+        .digital-hub-content th,
+        .digital-hub-content td,
         .topic-content-light th,
         .topic-content-light td,
         .topic-content-dark th,
@@ -4485,6 +4562,7 @@ export default function DigitalHubClient({
           word-break: break-word !important;
         }
 
+        .digital-hub-content th,
         .topic-content-light th,
         .topic-content-dark th {
           font-weight: 700 !important;
@@ -4492,16 +4570,19 @@ export default function DigitalHubClient({
           color: #0f172a !important;
         }
 
+        .digital-hub-content tr:nth-child(even) td,
         .topic-content-light tr:nth-child(even) td,
         .topic-content-dark tr:nth-child(even) td {
           background: rgba(248, 250, 252, 0.65) !important;
         }
 
+        .digital-hub-content tbody tr:hover td,
         .topic-content-light tbody tr:hover td,
         .topic-content-dark tbody tr:hover td {
           background: rgba(239, 246, 255, 0.75) !important;
         }
 
+        .digital-hub-content img,
         .topic-content-light img,
         .topic-content-dark img {
           border: none !important;
@@ -4513,6 +4594,7 @@ export default function DigitalHubClient({
           height: auto !important;
         }
 
+        .digital-hub-content img[style],
         .topic-content-light img[style],
         .topic-content-dark img[style] {
           border: none !important;
