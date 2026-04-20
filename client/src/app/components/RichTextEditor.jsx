@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import { DEFAULT_CONTENT_FONT_FAMILY } from "../utils/contentFontFamily";
 import { 
   FaBold, 
   FaItalic, 
@@ -192,16 +193,16 @@ const RichTextEditor = ({
       <div className="relative">
         {isPreview ? (
           <div 
-            className="p-4 min-h-[400px] bg-white"
-            style={{ height }}
+            className="p-4 min-h-[400px] bg-white lucida-sans-content"
+            style={{ height, fontFamily: DEFAULT_CONTENT_FONT_FAMILY }}
             dangerouslySetInnerHTML={{ __html: getPreviewContent() }}
           />
         ) : (
           <div
             ref={editorRef}
             contentEditable
-            className="p-4 min-h-[400px] bg-white focus:outline-none"
-            style={{ height }}
+            className="p-4 min-h-[400px] bg-white focus:outline-none lucida-sans-content"
+            style={{ height, fontFamily: DEFAULT_CONTENT_FONT_FAMILY }}
             onInput={handleContentChange}
             onBlur={handleContentChange}
             data-placeholder={placeholder}

@@ -2,6 +2,7 @@
 import React, { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import "react-quill-new/dist/quill.snow.css";
+import { DEFAULT_CONTENT_FONT_FAMILY } from "../utils/contentFontFamily";
 
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
 
@@ -109,7 +110,8 @@ const Editor = ({ value, onChange, uploadApi }) => {
       modules={modules}
       formats={formats}
       theme="snow"
-      className="bg-white"
+      className="bg-white lucida-sans-content"
+      style={{ fontFamily: DEFAULT_CONTENT_FONT_FAMILY }}
     />
   );
 };
