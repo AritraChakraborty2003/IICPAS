@@ -1,5 +1,5 @@
 const DEFAULT_FONT_LIST = {
-  '"Segoe UI", "Lucida Grande", sans-serif': "Segoe UI",
+  '"Noto Sans", "Lucida Grande", "Segoe UI", sans-serif': "Noto Sans",
   "": "Default",
   "Arial, Helvetica, sans-serif": "Arial",
   "'Courier New', Courier, monospace": "Courier New",
@@ -21,8 +21,8 @@ export const joditFontControl = {
   list: DEFAULT_FONT_LIST,
   textTemplate: (_editor, value) => {
     if (!value) return "Default";
-    if (/segoe\s+ui/i.test(value) || /lucida\s+grande/i.test(value)) {
-      return "Segoe UI";
+    if (/noto\s+sans/i.test(value) || /lucida\s+grande/i.test(value) || /segoe\s+ui/i.test(value)) {
+      return "Noto Sans";
     }
 
     return trimFontFamilyName(value);
@@ -33,8 +33,9 @@ export const joditFontControl = {
       (value || "")
         .toLowerCase()
         .replace(/['"]+/g, "")
-        .replace(/lucida\s+grande/g, "segoe ui")
-        .replace(/segoe\s+ui/g, "segoe ui")
+        .replace(/lucida\s+grande/g, "noto sans")
+        .replace(/segoe\s+ui/g, "noto sans")
+        .replace(/noto\s+sans/g, "noto sans")
         .replace(/[^a-z0-9-]+/g, ","),
   },
   childTemplate: (_editor, key, value) => {
