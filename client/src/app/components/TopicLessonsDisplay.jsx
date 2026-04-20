@@ -10,6 +10,9 @@ import {
 } from "@/lib/topicLessons";
 import { PlayCircle, Radio, CalendarDays, ExternalLink } from "lucide-react";
 
+const DIGITAL_HUB_FONT_STACK =
+  '"Roboto", "Lucida Grande", "Segoe UI", sans-serif';
+
 const LessonList = ({ title, rows, actionLabel, actionTone = "blue" }) => {
   if (!rows.length) return null;
 
@@ -137,7 +140,7 @@ export default function TopicLessonsDisplay({
   }
 
   return (
-    <div className="mt-6 space-y-4">
+    <div className="mt-6 space-y-4" style={{ fontFamily: DIGITAL_HUB_FONT_STACK }}>
       {visibleRecorded.length > 0 ? (
         <LessonList
           title="Recorded Classes"
