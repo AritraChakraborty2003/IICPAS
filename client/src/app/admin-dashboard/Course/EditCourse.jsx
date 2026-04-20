@@ -350,7 +350,6 @@ export default function EditCourse({ courseId, onBack }) {
           ].includes(k)
         )
           return;
-        if (v !== null && v !== undefined) fd.append(k, v);
         if (v !== null && v !== undefined) {
           fd.append(
             k,
