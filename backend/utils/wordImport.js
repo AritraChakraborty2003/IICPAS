@@ -407,7 +407,7 @@ const extractWarningNotes = (html) => {
 };
 
 const DEFAULT_CONTENT_FONT_FAMILY =
-  '"Roboto", "Lucida Grande", "Segoe UI", sans-serif';
+  '"Roboto", sans-serif';
 const FONT_FAMILY_REGEX = /(?:^|;)\s*font-family\s*:\s*[^;]+/gi;
 
 const normalizeDefaultContentFont = (

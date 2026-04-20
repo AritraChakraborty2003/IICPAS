@@ -1,5 +1,5 @@
 export const DEFAULT_CONTENT_FONT_FAMILY =
-  '"Roboto", "Lucida Grande", "Segoe UI", sans-serif';
+  '"Roboto", sans-serif';
 
 export const DEFAULT_CONTENT_FONT_CLASS = "default-content-font";
 

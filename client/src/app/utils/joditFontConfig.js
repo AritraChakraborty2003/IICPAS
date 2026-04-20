@@ -1,5 +1,5 @@
 const DEFAULT_FONT_LIST = {
-  '"Roboto", "Lucida Grande", "Segoe UI", sans-serif': "Roboto",
+  '"Roboto", sans-serif': "Roboto",
   "": "Default",
   "Arial, Helvetica, sans-serif": "Arial",
   "'Courier New', Courier, monospace": "Courier New",
@@ -21,7 +21,11 @@ export const joditFontControl = {
   list: DEFAULT_FONT_LIST,
   textTemplate: (_editor, value) => {
     if (!value) return "Default";
-    if (/roboto/i.test(value) || /lucida\s+grande/i.test(value) || /segoe\s+ui/i.test(value)) {
+    if (
+      /roboto/i.test(value) ||
+      /lucida\s+grande/i.test(value) ||
+      /segoe\s+ui/i.test(value)
+    ) {
       return "Roboto";
     }
 
