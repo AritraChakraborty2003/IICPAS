@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import { splitHtmlIntoPages } from "./wordImportUtils";
+import { DEFAULT_CONTENT_FONT_FAMILY } from "../../utils/contentFontFamily";
 
 export default function WordDocumentPreview({
   html,
@@ -53,8 +54,7 @@ export default function WordDocumentPreview({
               <div
                 className="word-page-content text-[12pt] leading-[1.6] text-slate-900"
                 style={{
-                  fontFamily:
-                    '"Times New Roman", Times, serif, "Noto Serif", serif',
+                  fontFamily: DEFAULT_CONTENT_FONT_FAMILY,
                 }}
                 dangerouslySetInnerHTML={{ __html: pageHtml }}
               />
@@ -68,4 +68,3 @@ export default function WordDocumentPreview({
     </div>
   );
 }
-

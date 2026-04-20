@@ -9,6 +9,7 @@ import {
   showError,
 } from "@/utils/sweetAlert";
 import dynamic from "next/dynamic";
+import { normalizeDefaultContentFont } from "../utils/contentFontFamily";
 
 const API_BASE =
   getApiBase();
@@ -59,6 +60,7 @@ const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
 const joditConfig = {
   readonly: false,
   height: 400,
+  editorClassName: "lucida-sans-content",
   uploader: {
     insertImageAsBase64URI: true,
     accept: ALLOWED_IMAGE_ACCEPT,
@@ -300,7 +302,7 @@ export default function BlogComponent() {
       const formData = new FormData();
       formData.append("title", form.title);
       formData.append("author", form.author);
-      formData.append("content", form.content);
+      formData.append("content", normalizeDefaultContentFont(form.content));
       if (form.image) {
         formData.append("image", form.image);
       }

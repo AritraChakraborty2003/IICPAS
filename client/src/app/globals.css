@@ -1305,6 +1305,19 @@ body::-webkit-scrollbar-thumb:hover {
   overflow: visible !important;
 }
 
+/* Default content font for editor bodies and imported HTML */
+.default-content-font,
+.lucida-sans-content,
+.lucida-sans-content .jodit-wysiwyg,
+.lucida-sans-content .ql-editor,
+.lucida-sans-content [contenteditable="true"],
+.word-page-content,
+.topic-content-light,
+.topic-content-dark {
+  font-family: "Lucida Sans", "Lucida Sans Unicode", "Lucida Grande",
+    "Noto Sans", sans-serif !important;
+}
+
 /* Restore semantic list markers inside content editors and previews.
    Tailwind preflight removes default list styling globally, so Word-imported
    HTML needs explicit overrides where rich content is rendered. */

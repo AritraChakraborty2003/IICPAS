@@ -25,6 +25,7 @@ import {
   buildWordImportSummary,
   buildImportedSourceDocument,
 } from "./wordImportUtils";
+import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
 
 const API_BASE = getApiBase();
 
@@ -123,6 +124,7 @@ export default function AddTopicForm({
       if (!result?.html || !result.html.trim()) {
         throw new Error("The Word document could not be converted into editable content.");
       }
+      const normalizedImportedContent = normalizeDefaultContentFont(result.html || "");
       const importMode = wordImportMode || "replace";
       const currentContent = content || "";
 
@@ -143,7 +145,7 @@ export default function AddTopicForm({
 
       const mergedContent = mergeImportedWordContent({
         currentContent,
-        importedContent: result.html || "",
+        importedContent: normalizedImportedContent,
         importMode,
       });
 
@@ -194,7 +196,7 @@ export default function AddTopicForm({
         {
           chapterId,
           title: title.trim(),
-          content, // HTML + Base64 images/videos
+          content: normalizeDefaultContentFont(content), // HTML + Base64 images/videos
           sourceDocument: sourceDocument || undefined,
         }
       );

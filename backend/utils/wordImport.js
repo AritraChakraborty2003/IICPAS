@@ -406,6 +406,40 @@ const extractWarningNotes = (html) => {
   return warnings;
 };
 
+const DEFAULT_CONTENT_FONT_FAMILY =
+  'Lucida Sans, "Lucida Sans Unicode", "Lucida Grande", "Noto Sans", sans-serif';
+
+const normalizeDefaultContentFont = (
+  html,
+  fontFamily = DEFAULT_CONTENT_FONT_FAMILY
+) => {
+  if (!html) return html;
+
+  const styleAttributeRegex = /\sstyle=(["'])([\s\S]*?)\1/gi;
+  const cleanedHtml = html.replace(
+    styleAttributeRegex,
+    (_match, quote, styleValue) => {
+      const cleanedStyle = (styleValue || "")
+        .replace(/(?:^|;)\s*font-family\s*:\s*[^;]+/gi, "")
+        .replace(/;;+/g, ";")
+        .replace(/^\s*;\s*|\s*;\s*$/g, "")
+        .trim();
+
+      const nextStyle = cleanedStyle
+        ? `${cleanedStyle}; font-family: ${fontFamily}`
+        : `font-family: ${fontFamily}`;
+
+      return ` style=${quote}${nextStyle}${quote}`;
+    }
+  );
+
+  if (/data-default-content-font=["']true["']/i.test(cleanedHtml)) {
+    return cleanedHtml;
+  }
+
+  return `<div class="default-content-font" data-default-content-font="true" style="font-family: ${fontFamily};">${cleanedHtml}</div>`;
+};
+
 const decodeHtmlEntities = (value) => {
   let decoded = value || "";
   decoded = decoded.replace(/&nbsp;/gi, " ");
@@ -791,6 +825,8 @@ export const convertWordDocumentToHtml = async (filePath, originalName) => {
     if (resourceMap.size > 0) {
       html = rewriteResourceUrls(html, resourceMap);
     }
+
+    html = normalizeDefaultContentFont(html);
 
     const pageBreakCount = countPageBreakMarkers(html);
     const warnings = extractWarningNotes(html);

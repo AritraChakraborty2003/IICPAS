@@ -31,6 +31,7 @@ import {
   buildWordImportSummary,
   buildImportedSourceDocument,
 } from "./wordImportUtils";
+import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
 
 // Dynamically import drag and drop components to avoid SSR issues
 const DragDropContext = dynamic(
@@ -77,6 +78,7 @@ console.log(STATIC_CDN_BASE);
 const joditConfig = {
   readonly: false,
   height: 300,
+  editorClassName: "lucida-sans-content",
   uploader: {
     insertImageAsBase64URI: true,
     accept: ALLOWED_IMAGE_ACCEPT,
@@ -503,7 +505,7 @@ export default function AddOrEditTopicForm({
 
     return {
       title: title.trim(),
-      content,
+      content: normalizeDefaultContentFont(content),
       introVideo: introVideoValue.trim() || "",
       publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
       sourceDocument: sourceDocument || undefined,
@@ -526,6 +528,7 @@ export default function AddOrEditTopicForm({
       if (!result?.html || !result.html.trim()) {
         throw new Error("The Word document could not be converted into editable content.");
       }
+      const normalizedImportedContent = normalizeDefaultContentFont(result.html || "");
       const importMode = wordImportMode || "replace";
       const currentContent = content || "";
 
@@ -546,7 +549,7 @@ export default function AddOrEditTopicForm({
 
       const mergedContent = mergeImportedWordContent({
         currentContent,
-        importedContent: result.html || "",
+        importedContent: normalizedImportedContent,
         importMode,
       });
 
