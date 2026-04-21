@@ -4461,46 +4461,66 @@ export default function DigitalHubClient({
         .digital-hub-content h1,
         .topic-content-light h1,
         .topic-content-dark h1 {
-          font-size: 2.5rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 1.5rem !important;
-          color: #1255cc !important;
+          font-size: 2.25rem !important;
+          line-height: 1.25 !important;
+          margin: 1.5rem 0 1rem !important;
+          color: #1e293b !important;
         }
 
         .digital-hub-content h2,
         .topic-content-light h2,
         .topic-content-dark h2 {
-          font-size: 2rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 1.25rem !important;
-          color: #1255cc !important;
+          font-size: 1.875rem !important;
+          line-height: 1.25 !important;
+          margin: 1.25rem 0 0.75rem !important;
+          color: #1e293b !important;
         }
 
         .digital-hub-content h3,
         .topic-content-light h3,
         .topic-content-dark h3 {
-          font-size: 1.75rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 1rem !important;
-          color: #1255cc !important;
+          font-size: 1.5rem !important;
+          line-height: 1.3 !important;
+          margin: 1rem 0 0.5rem !important;
+          color: #1e293b !important;
         }
 
         .digital-hub-content h4,
         .topic-content-light h4,
         .topic-content-dark h4 {
-          font-size: 1.5rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 0.75rem !important;
-          color: #1255cc !important;
+          font-size: 1.25rem !important;
+          line-height: 1.3 !important;
+          margin: 0.75rem 0 0.5rem !important;
+          color: #1e293b !important;
         }
 
         .digital-hub-content h5,
         .topic-content-light h5,
         .topic-content-dark h5 {
-          font-size: 1.25rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 0.5rem !important;
-          color: #1255cc !important;
+          font-size: 1.125rem !important;
+          line-height: 1.4 !important;
+          margin: 0.5rem 0 0.25rem !important;
+          color: #1e293b !important;
+        }
+
+        .digital-hub-content h6,
+        .topic-content-light h6,
+        .topic-content-dark h6 {
+          font-size: 1rem !important;
+          line-height: 1.4 !important;
+          margin: 0.5rem 0 0.25rem !important;
+          color: #1e293b !important;
+          text-transform: uppercase;
+        }
+
+        .digital-hub-content p,
+        .topic-content-light p,
+        .topic-content-dark p {
+          font-size: 1rem !important;
+          line-height: 1.6 !important;
+          margin-bottom: 1rem !important;
+          color: #374151 !important;
+        }
 
         .digital-hub-content ol li::marker,
         .topic-content-light ul li::marker,
