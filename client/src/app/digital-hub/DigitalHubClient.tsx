@@ -4451,5 +4451,166 @@ export default function DigitalHubClient({
           </div>
         </div>
       )}
+      <style jsx global>{`
+        .digital-hub-content,
+        .digital-hub-content * {
+          font-family: ${DIGITAL_HUB_FONT_STACK} !important;
+        }
 
+        .digital-hub-content h1,
+        .topic-content-light h1,
+        .topic-content-dark h1 {
+          font-size: 2.5rem !important;
+          line-height: 1.2 !important;
+          margin-bottom: 1.5rem !important;
+          color: #1255cc !important;
+        }
 
+        .digital-hub-content h2,
+        .topic-content-light h2,
+        .topic-content-dark h2 {
+          font-size: 2rem !important;
+          line-height: 1.2 !important;
+          margin-bottom: 1.25rem !important;
+          color: #1255cc !important;
+        }
+
+        .digital-hub-content h3,
+        .topic-content-light h3,
+        .topic-content-dark h3 {
+          font-size: 1.75rem !important;
+          line-height: 1.2 !important;
+          margin-bottom: 1rem !important;
+          color: #1255cc !important;
+        }
+
+        .digital-hub-content h4,
+        .topic-content-light h4,
+        .topic-content-dark h4 {
+          font-size: 1.5rem !important;
+          line-height: 1.2 !important;
+          margin-bottom: 0.75rem !important;
+          color: #1255cc !important;
+        }
+
+        .digital-hub-content h5,
+        .topic-content-light h5,
+        .topic-content-dark h5 {
+          font-size: 1.25rem !important;
+          line-height: 1.2 !important;
+          margin-bottom: 0.5rem !important;
+          color: #1255cc !important;
+        }
+
+        .digital-hub-content h6,
+        .topic-content-light h6,
+        .topic-content-dark h6 {
+          font-size: 1.1rem !important;
+          line-height: 1.2 !important;
+          margin-bottom: 0.5rem !important;
+          color: #1255cc !important;
+        }
+
+        .digital-hub-content p,
+        .topic-content-light p,
+        .topic-content-dark p {
+          line-height: 1.8 !important;
+          margin-bottom: 1.75rem !important;
+        }
+
+        .digital-hub-content ul li::marker,
+        .digital-hub-content ol li::marker,
+        .topic-content-light ul li::marker,
+        .topic-content-light ol li::marker {
+          color: #f59e0b !important;
+          font-weight: 700;
+        }
+
+        .topic-content-light .bg-green-500 {
+          background-color: #fbbf24 !important;
+        }
+
+        .topic-content-light .text-green-800,
+        .topic-content-light .text-green-700 {
+          color: #1255cc !important;
+        }
+
+        .topic-content-light .bg-green-50 {
+          background-color: #eff6ff !important;
+        }
+
+        .topic-content-light .border-green-200 {
+          border-color: #bfdbfe !important;
+        }
+
+        .digital-hub-content table,
+        .topic-content-light table,
+        .topic-content-dark table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          margin: 1.5rem 0 !important;
+          table-layout: auto !important;
+          background: transparent !important;
+        }
+
+        .digital-hub-content th,
+        .digital-hub-content td,
+        .topic-content-light th,
+        .topic-content-light td,
+        .topic-content-dark th,
+        .topic-content-dark td {
+          border: 1px solid #e5e7eb !important;
+          padding: 12px 10px !important;
+          vertical-align: top !important;
+          text-align: left !important;
+          line-height: 1.5 !important;
+          white-space: normal !important;
+          word-break: break-word !important;
+          font-size: 1.1rem !important;
+        }
+
+        .digital-hub-content th,
+        .topic-content-light th,
+        .topic-content-dark th {
+          font-weight: 700 !important;
+          background: #f8fafc !important;
+          color: #0f172a !important;
+        }
+
+        .digital-hub-content tr:nth-child(even) td,
+        .topic-content-light tr:nth-child(even) td,
+        .topic-content-dark tr:nth-child(even) td {
+          background: rgba(248, 250, 252, 0.65) !important;
+        }
+
+        .digital-hub-content tbody tr:hover td,
+        .topic-content-light tbody tr:hover td,
+        .topic-content-dark tbody tr:hover td {
+          background: rgba(239, 246, 255, 0.75) !important;
+        }
+
+        .digital-hub-content img,
+        .topic-content-light img,
+        .topic-content-dark img {
+          border: none !important;
+          box-shadow: none !important;
+          background: transparent !important;
+          border-radius: 0 !important;
+          min-width: 0 !important;
+          max-width: 100% !important;
+          height: auto !important;
+        }
+
+        .digital-hub-content img[style],
+        .topic-content-light img[style],
+        .topic-content-dark img[style] {
+          border: none !important;
+          box-shadow: none !important;
+          background: transparent !important;
+          border-radius: 0 !important;
+          min-width: 0 !important;
+        }
+      `}</style>
+    </div>
+  );
+}
