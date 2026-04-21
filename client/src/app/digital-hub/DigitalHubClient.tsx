@@ -4501,11 +4501,7 @@ export default function DigitalHubClient({
           line-height: 1.2 !important;
           margin-bottom: 0.5rem !important;
           color: #1255cc !important;
-        }
 
-
-
-        .digital-hub-content ul li::marker,
         .digital-hub-content ol li::marker,
         .topic-content-light ul li::marker,
         .topic-content-light ol li::marker {
