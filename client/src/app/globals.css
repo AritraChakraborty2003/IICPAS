@@ -1331,7 +1331,10 @@ body::-webkit-scrollbar-thumb:hover {
    HTML needs explicit overrides where rich content is rendered. */
 .jodit-wysiwyg ul,
 .ql-editor ul,
-.word-page-content ul {
+.word-page-content ul,
+.digital-hub-content ul,
+.topic-content-light ul,
+.topic-content-dark ul {
   list-style: disc outside !important;
   padding-left: 1.5rem !important;
   margin: 0.75rem 0 1rem !important;
@@ -1339,7 +1342,10 @@ body::-webkit-scrollbar-thumb:hover {
 
 .jodit-wysiwyg ol,
 .ql-editor ol,
-.word-page-content ol {
+.word-page-content ol,
+.digital-hub-content ol,
+.topic-content-light ol,
+.topic-content-dark ol {
   list-style: decimal outside !important;
   padding-left: 1.5rem !important;
   margin: 0.75rem 0 1rem !important;
@@ -1347,7 +1353,10 @@ body::-webkit-scrollbar-thumb:hover {
 
 .jodit-wysiwyg li,
 .ql-editor li,
-.word-page-content li {
+.word-page-content li,
+.digital-hub-content li,
+.topic-content-light li,
+.topic-content-dark li {
   display: list-item !important;
 }
 
@@ -1355,7 +1364,10 @@ body::-webkit-scrollbar-thumb:hover {
 .arrow-list,
 .jodit-wysiwyg ul.arrow-list,
 .ql-editor ul.arrow-list,
-.word-page-content ul.arrow-list {
+.word-page-content ul.arrow-list,
+.digital-hub-content ul.arrow-list,
+.topic-content-light ul.arrow-list,
+.topic-content-dark ul.arrow-list {
   list-style: none !important;
   padding-left: 0 !important;
   margin-left: 0 !important;
@@ -1364,7 +1376,10 @@ body::-webkit-scrollbar-thumb:hover {
 .arrow-list li,
 .jodit-wysiwyg ul.arrow-list li,
 .ql-editor ul.arrow-list li,
-.word-page-content ul.arrow-list li {
+.word-page-content ul.arrow-list li,
+.digital-hub-content ul.arrow-list li,
+.topic-content-light ul.arrow-list li,
+.topic-content-dark ul.arrow-list li {
   position: relative !important;
   padding-left: 1.75rem !important;
   list-style: none !important;
@@ -1375,7 +1390,10 @@ body::-webkit-scrollbar-thumb:hover {
 .arrow-list li::before,
 .jodit-wysiwyg ul.arrow-list li::before,
 .ql-editor ul.arrow-list li::before,
-.word-page-content ul.arrow-list li::before {
+.word-page-content ul.arrow-list li::before,
+.digital-hub-content ul.arrow-list li::before,
+.topic-content-light ul.arrow-list li::before,
+.topic-content-dark ul.arrow-list li::before {
   content: "➤" !important;
   position: absolute !important;
   left: 0 !important;
@@ -1391,14 +1409,20 @@ body::-webkit-scrollbar-thumb:hover {
 /* Also support arrows for ol if they have the class */
 .jodit-wysiwyg ol.arrow-list,
 .ql-editor ol.arrow-list,
-.word-page-content ol.arrow-list {
+.word-page-content ol.arrow-list,
+.digital-hub-content ol.arrow-list,
+.topic-content-light ol.arrow-list,
+.topic-content-dark ol.arrow-list {
   list-style: none !important;
   padding-left: 0 !important;
 }
 
 .jodit-wysiwyg ol.arrow-list li,
 .ql-editor ol.arrow-list li,
-.word-page-content ol.arrow-list li {
+.word-page-content ol.arrow-list li,
+.digital-hub-content ol.arrow-list li,
+.topic-content-light ol.arrow-list li,
+.topic-content-dark ol.arrow-list li {
   position: relative !important;
   padding-left: 1.75rem !important;
   list-style: none !important;
@@ -1407,7 +1431,10 @@ body::-webkit-scrollbar-thumb:hover {
 
 .jodit-wysiwyg ol.arrow-list li::before,
 .ql-editor ol.arrow-list li::before,
-.word-page-content ol.arrow-list li::before {
+.word-page-content ol.arrow-list li::before,
+.digital-hub-content ol.arrow-list li::before,
+.topic-content-light ol.arrow-list li::before,
+.topic-content-dark ol.arrow-list li::before {
   content: "➤" !important;
   position: absolute !important;
   left: 0 !important;
