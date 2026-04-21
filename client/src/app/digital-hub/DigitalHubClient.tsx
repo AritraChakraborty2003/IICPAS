@@ -4515,7 +4515,6 @@ export default function DigitalHubClient({
         .topic-content-light p,
         .topic-content-dark p {
           line-height: 1.8 !important;
-          margin-bottom: 1.75rem !important;
         }
 
         .digital-hub-content ul li::marker,
