@@ -10,6 +10,13 @@ import {
   DEFAULT_CONTENT_FONT_FAMILY,
   normalizeDefaultContentFont,
 } from "../utils/contentFontFamily";
+import {
+  buildTopicLessonRows,
+  formatTopicLessonDateTime,
+  getTopicLessonSourceLabel,
+  getTopicLessonSourceUrl,
+  isTopicLessonVisible,
+} from "@/lib/topicLessons";
 
 // Type definitions
 interface Task {
@@ -149,6 +156,9 @@ import {
   Globe,
   Lock,
   PlayCircle,
+  Radio,
+  CalendarDays,
+  ExternalLink,
 } from "lucide-react";
 
 type ContentKey =
@@ -584,6 +594,7 @@ export default function DigitalHubClient({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isIntroVideoModalOpen, setIsIntroVideoModalOpen] = useState(false);
+  const [isLiveSessionsModalOpen, setIsLiveSessionsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [ticketForm, setTicketForm] = useState({
@@ -3176,6 +3187,18 @@ export default function DigitalHubClient({
                           Watch Intro Video
                         </button>
                       ) : null}
+
+                      {/* New: Watch Live Videos Button */}
+                      {!isSelectedTopicLockedForBatch && selectedTopic?.lessons?.some(l => l.kind === "live") ? (
+                        <button
+                          type="button"
+                          onClick={() => setIsLiveSessionsModalOpen(true)}
+                          className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
+                        >
+                          <Radio className="h-4 w-4" />
+                          Watch Live Videos
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -4140,6 +4163,116 @@ export default function DigitalHubClient({
           <div
             className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
             onClick={() => setIsIntroVideoModalOpen(false)}
+
+      {/* Live Sessions Modal */}
+      {isLiveSessionsModalOpen && selectedTopic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
+            onClick={() => setIsLiveSessionsModalOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
+              <div>
+                <p className="text-sm font-medium uppercase tracking-[0.2em] text-emerald-600">
+                  Live Sessions
+                </p>
+                <h3 className="text-lg font-semibold text-slate-900 sm:text-xl">
+                  {selectedTopic?.title}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsLiveSessionsModalOpen(false)}
+                className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Close live sessions"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto p-4 sm:p-6">
+              <div className="space-y-4">
+                {buildTopicLessonRows(selectedTopic ? [selectedTopic] : [], "live")
+                  .filter(row => isTopicLessonVisible(row))
+                  .map((row) => {
+                    const url = getTopicLessonSourceUrl(row);
+                    const sourceLabel = getTopicLessonSourceLabel(row);
+                    const liveSession = row.liveSessionId && typeof row.liveSessionId === "object" ? row.liveSessionId : null;
+                    
+                    return (
+                      <div
+                        key={row.id}
+                        className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100"
+                      >
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white">
+                                <Radio className="h-3.5 w-3.5" />
+                                Live
+                              </span>
+                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                                {sourceLabel}
+                              </span>
+                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                                Order {row.order}
+                              </span>
+                            </div>
+
+                            <h4 className="mt-2 text-base font-semibold text-slate-900">
+                              {row.title}
+                            </h4>
+
+                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                              <span className="inline-flex items-center gap-1">
+                                <CalendarDays className="h-3.5 w-3.5" />
+                                Publish: {formatTopicLessonDateTime(row.publishAt)}
+                              </span>
+                              {liveSession ? (
+                                <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
+                                  <CalendarDays className="h-3.5 w-3.5" />
+                                  Session: {formatTopicLessonDateTime(liveSession.date)}
+                                  {liveSession.time ? ` • ${liveSession.time}` : ""}
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
+                              disabled={!url}
+                              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition shadow-sm ${
+                                url ? "bg-emerald-600 hover:bg-emerald-700 hover:shadow-md" : "cursor-not-allowed bg-slate-300"
+                              }`}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              Join Live Session
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                
+                {buildTopicLessonRows(selectedTopic ? [selectedTopic] : [], "live")
+                  .filter(row => isTopicLessonVisible(row)).length === 0 && (
+                  <div className="py-12 text-center">
+                    <Radio className="mx-auto h-12 w-12 text-slate-200" />
+                    <p className="mt-4 text-slate-500">No active live sessions available for this topic.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center sm:px-6">
+              <p className="text-xs text-slate-500">
+                Join live sessions to interact with instructors and fellow students.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
           />
           <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-slate-950 shadow-2xl ring-1 ring-white/10">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
