@@ -1103,6 +1103,61 @@ export default function DigitalHubClient({
     topics.length > 0 &&
     topics.every((t) => completedTopicIds.includes(t._id));
 
+  const tourCardStyle = useMemo<React.CSSProperties>(() => {
+    if (typeof window === "undefined" || !isDesktopViewport || !tourTargetRect) {
+      return {};
+    }
+
+    const cardWidth = 360;
+    const estimatedHeight = 280;
+    const viewportPadding = 20;
+    const gap = 20;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    let left = tourTargetRect.right + gap;
+    if (left + cardWidth > viewportWidth - viewportPadding) {
+      left = tourTargetRect.left - cardWidth - gap;
+    }
+    if (left < viewportPadding) {
+      left = Math.min(
+        Math.max(
+          viewportPadding,
+          tourTargetRect.left + tourTargetRect.width / 2 - cardWidth / 2
+        ),
+        viewportWidth - cardWidth - viewportPadding
+      );
+    }
+
+    let top = tourTargetRect.top;
+    if (top + estimatedHeight > viewportHeight - viewportPadding) {
+      top = viewportHeight - estimatedHeight - viewportPadding;
+    }
+    if (top < viewportPadding) {
+      top = viewportPadding;
+    }
+
+    return {
+      width: `${cardWidth}px`,
+      maxWidth: `calc(100vw - ${viewportPadding * 2}px)`,
+      top: `${top}px`,
+      left: `${left}px`,
+    };
+  }, [isDesktopViewport, tourTargetRect]);
+
+  const spotlightStyle = useMemo<React.CSSProperties | undefined>(() => {
+    if (!tourTargetRect) return undefined;
+
+    const padding = isDesktopViewport ? 12 : 8;
+    return {
+      top: `${Math.max(8, tourTargetRect.top - padding)}px`,
+      left: `${Math.max(8, tourTargetRect.left - padding)}px`,
+      width: `${tourTargetRect.width + padding * 2}px`,
+      height: `${tourTargetRect.height + padding * 2}px`,
+      boxShadow: "0 0 0 9999px rgba(15, 23, 42, 0.50)",
+    };
+  }, [isDesktopViewport, tourTargetRect]);
+
   // Function to split content into pages
   const splitContentIntoPages = useCallback(
     (content: string, maxPages: number = 3) => {
@@ -2007,6 +2062,112 @@ export default function DigitalHubClient({
   }, [selectedChapter]);
 
   useEffect(() => {
+    if (
+      isDemo ||
+      !authResolved ||
+      loading ||
+      !selectedChapter?._id ||
+      !selectedTopic?._id
+    ) {
+      setTourReady(false);
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setTourReady(Boolean(contentScrollRef.current && studyAreaRef.current));
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [
+    authResolved,
+    isDemo,
+    loading,
+    selectedChapter?._id,
+    selectedTopic?._id,
+    topicContent,
+  ]);
+
+  useEffect(() => {
+    if (
+      !tourReady ||
+      isDemo ||
+      !authResolved ||
+      !selectedChapter?._id ||
+      !selectedTopic?._id ||
+      isTourOpen
+    ) {
+      return;
+    }
+
+    if (readTourSeenState()?.seen) {
+      return;
+    }
+
+    openTour();
+  }, [
+    authResolved,
+    isDemo,
+    isTourOpen,
+    openTour,
+    readTourSeenState,
+    selectedChapter?._id,
+    selectedTopic?._id,
+    tourReady,
+  ]);
+
+  useEffect(() => {
+    if (!isTourOpen) return undefined;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeTour();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.requestAnimationFrame(() => {
+      tourDialogRef.current?.focus();
+    });
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [closeTour, isTourOpen]);
+
+  useEffect(() => {
+    if (!isTourOpen) return undefined;
+
+    const syncPosition = () => {
+      const target = getActiveTourTarget();
+      if (target) {
+        target.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "nearest",
+        });
+      }
+      window.requestAnimationFrame(syncTourTargetRect);
+    };
+
+    syncPosition();
+
+    const timeoutId = window.setTimeout(syncPosition, 320);
+    const scrollContainer = contentScrollRef.current;
+    window.addEventListener("resize", syncPosition);
+    window.addEventListener("scroll", syncPosition, true);
+    scrollContainer?.addEventListener("scroll", syncPosition, { passive: true });
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener("resize", syncPosition);
+      window.removeEventListener("scroll", syncPosition, true);
+      scrollContainer?.removeEventListener("scroll", syncPosition);
+    };
+  }, [getActiveTourTarget, isTourOpen, syncTourTargetRect, tourStepIndex]);
+
+  useEffect(() => {
     const fetchCoinSettings = async () => {
       try {
         const response = await axios.get(`${API_BASE}/coins/settings`);
@@ -2807,7 +2968,10 @@ export default function DigitalHubClient({
         } px-2 py-3 shadow-sm backdrop-blur sm:px-3 lg:px-4`}
       >
         <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div
+            ref={headerBrandRef}
+            className="flex min-w-0 items-center gap-2 sm:gap-3"
+          >
             <div
               className={`flex shrink-0 items-center gap-2 rounded-xl border px-3 py-2 sm:px-4 ${
                 isDarkMode
@@ -2842,7 +3006,10 @@ export default function DigitalHubClient({
             ) : null}
           </div>
 
-          <div className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-3 lg:w-auto lg:flex-nowrap lg:gap-4">
+          <div
+            ref={progressPointsRef}
+            className="grid w-full min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-3 lg:w-auto lg:flex-nowrap lg:gap-4"
+          >
             {/* Progress Bar */}
             <div className="col-span-2 flex items-center justify-between gap-2 sm:col-span-1 sm:justify-start">
               <div className="h-2 flex-1 rounded-full bg-stone-200 sm:w-24 sm:flex-none lg:w-32">
@@ -2857,7 +3024,11 @@ export default function DigitalHubClient({
             </div>
 
             {/* Custom Language Dropdown */}
-            <div className="relative min-w-0 shrink notranslate" translate="no">
+            <div
+              ref={languageDropdownRef}
+              className="relative min-w-0 shrink notranslate"
+              translate="no"
+            >
               <button
                 type="button"
                 onClick={() => setLanguageDropdownOpen(!languageDropdownOpen)}
@@ -2899,7 +3070,10 @@ export default function DigitalHubClient({
             </div>
 
             {/* Chapters Dropdown - Moved to Header */}
-            <div className="relative col-span-2 min-w-0 shrink sm:col-span-1">
+            <div
+              ref={chapterDropdownRef}
+              className="relative col-span-2 min-w-0 shrink sm:col-span-1"
+            >
               <button
                 onClick={() => setChapterDropdownOpen(!chapterDropdownOpen)}
                 className={`flex w-full min-w-0 items-center justify-between rounded-xl border px-3 py-2 text-sm font-medium transition-all duration-300 sm:min-w-[220px] sm:max-w-[260px] lg:min-w-[260px] lg:max-w-[320px] ${
@@ -2975,6 +3149,18 @@ export default function DigitalHubClient({
               )}
             </div>
 
+            <button
+              type="button"
+              onClick={openTour}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
+                isDarkMode
+                  ? "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                  : "border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
+              }`}
+            >
+              Tour
+            </button>
+
             {/* Points Badge */}
             <div
               className={`flex shrink-0 items-center justify-center rounded-full border px-3 py-1.5 ${
@@ -2994,6 +3180,7 @@ export default function DigitalHubClient({
       <div className="relative flex h-[calc(100vh-89px)] min-h-0">
         {/* Narrow Left Sidebar */}
         <div
+          ref={quickActionsRef}
           className={`w-12 sm:w-16 transition-colors duration-300 ${
             isDarkMode
               ? "bg-slate-900 border-slate-800"
@@ -3004,7 +3191,7 @@ export default function DigitalHubClient({
           {/* Navigation Icons */}
           <div className="flex flex-col items-center space-y-6">
             <button
-              onClick={() => setHamburgerOpen(!hamburgerOpen)}
+              onClick={toggleHamburgerMenu}
               className={`p-2 rounded-lg transition-colors ${
                 isDarkMode ? "hover:bg-slate-800" : "hover:bg-stone-200"
               }`}
@@ -3071,7 +3258,7 @@ export default function DigitalHubClient({
             type="button"
             aria-label="Close sidebar overlay"
             className="absolute inset-0 z-30 bg-slate-950/30 backdrop-blur-[1px] lg:hidden"
-            onClick={() => setHamburgerOpen(false)}
+            onClick={() => setHamburgerOpenState(false)}
           />
         ) : null}
 
@@ -3092,7 +3279,10 @@ export default function DigitalHubClient({
           } border-r h-full shrink-0 notranslate`}
           translate="no"
         >
-          <div className="h-full w-80 overflow-y-auto overflow-x-hidden p-4">
+          <div
+            ref={topicsPanelRef}
+            className="h-full w-80 overflow-y-auto overflow-x-hidden p-4"
+          >
             <div className="mb-4 flex items-start justify-between gap-3">
               <h2
                 className={`text-lg font-semibold ${
@@ -3104,7 +3294,7 @@ export default function DigitalHubClient({
               {hamburgerOpen ? (
                 <button
                   type="button"
-                  onClick={() => setHamburgerOpen(false)}
+                  onClick={() => setHamburgerOpenState(false)}
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
                     isDarkMode
                       ? "border-slate-700 bg-slate-800 text-slate-200 hover:bg-slate-700"
@@ -3350,7 +3540,7 @@ export default function DigitalHubClient({
             isDarkMode ? "bg-slate-950" : "bg-stone-50"
           }`}
         >
-          <div className="w-full">
+          <div ref={studyAreaRef} className="w-full">
             {/* Content Display */}
             <div className="prose max-w-none">
               {loading ? (
