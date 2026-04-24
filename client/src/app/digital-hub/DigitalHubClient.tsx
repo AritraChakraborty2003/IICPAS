@@ -4587,6 +4587,7 @@ export default function DigitalHubClient({
         .digital-hub-content,
         .digital-hub-content * {
           font-family: ${DIGITAL_HUB_FONT_STACK} !important;
+          color: #4b5563 !important;
         }
 
         .digital-hub-content h1,
@@ -4645,20 +4646,32 @@ export default function DigitalHubClient({
 
         .digital-hub-content p,
         .topic-content-light p,
-        .topic-content-dark p {
+        .topic-content-dark p,
+        .digital-hub-content li,
+        .topic-content-light li,
+        .topic-content-dark li {
           line-height: 1.8 !important;
+          color: #4b5563 !important;
+        }
+
+        .digital-hub-content strong,
+        .digital-hub-content b,
+        .topic-content-light strong,
+        .topic-content-light b {
+          color: #1f2937 !important;
+          font-weight: 700;
         }
 
         .digital-hub-content ul li::marker,
         .digital-hub-content ol li::marker,
         .topic-content-light ul li::marker,
         .topic-content-light ol li::marker {
-          color: #f59e0b !important;
+          color: #000000 !important;
           font-weight: 700;
         }
 
         .topic-content-light .bg-green-500 {
-          background-color: #fbbf24 !important;
+          background-color: #000000 !important;
         }
 
         .topic-content-light .text-green-800,
