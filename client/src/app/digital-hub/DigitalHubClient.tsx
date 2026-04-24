@@ -4584,10 +4584,13 @@ export default function DigitalHubClient({
         </div>
       )}
       <style jsx global>{`
-        .digital-hub-content,
-        .digital-hub-content * {
+        .digital-hub-content {
           font-family: ${DIGITAL_HUB_FONT_STACK} !important;
           color: #4b5563 !important;
+        }
+        
+        .digital-hub-content * {
+          font-family: ${DIGITAL_HUB_FONT_STACK} !important;
         }
 
         .digital-hub-content h1,
@@ -4658,7 +4661,7 @@ export default function DigitalHubClient({
         .digital-hub-content b,
         .topic-content-light strong,
         .topic-content-light b {
-          color: #1f2937 !important;
+          color: #1255cc !important;
           font-weight: 700;
         }
 
