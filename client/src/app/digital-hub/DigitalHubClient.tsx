@@ -1371,6 +1371,42 @@ export default function DigitalHubClient({
     [activeTourStep.id, isDesktopViewport, isTourOpen]
   );
 
+  const goToTourStep = useCallback(
+    (nextIndex: number) => {
+      const boundedIndex = Math.max(
+        0,
+        Math.min(nextIndex, DIGITAL_HUB_TOUR_STEPS.length - 1)
+      );
+      const nextStep = DIGITAL_HUB_TOUR_STEPS[boundedIndex];
+
+      if (activeTourStep.id === "topics" && nextStep.id !== "topics") {
+        restoreTourSidebarState();
+      }
+
+      if (!isDesktopViewport && nextStep.id === "topics") {
+        if (!hamburgerOpen) {
+          tourPreviousSidebarOpenRef.current = false;
+          tourSidebarManualOverrideRef.current = false;
+          setTourSidebarWasAutoOpened(true);
+          setHamburgerOpenState(true, "tour");
+        } else {
+          tourPreviousSidebarOpenRef.current = true;
+          setTourSidebarWasAutoOpened(false);
+          tourSidebarManualOverrideRef.current = false;
+        }
+      }
+
+      setTourStepIndex(boundedIndex);
+    },
+    [
+      activeTourStep.id,
+      hamburgerOpen,
+      isDesktopViewport,
+      restoreTourSidebarState,
+      setHamburgerOpenState,
+    ]
+  );
+
   const toggleHamburgerMenu = useCallback(() => {
     setHamburgerOpenState(!hamburgerOpen);
   }, [hamburgerOpen, setHamburgerOpenState]);
