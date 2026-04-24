@@ -37,6 +37,7 @@ import NewsTab from "./NewsTab";
 import LiveClassTab from "../components/LiveClassTab";
 import LiveClassListTab from "../components/LiveClassListTab";
 import RecordedSessionTab from "./RecordedSessionTab";
+import RecordedClassListTab from "./RecordedClassListTab";
 import ProfileTab from "../components/ProfileTab";
 import TestimonialTab from "./TestimonialTab";
 import StudentInvoicesTab from "./StudentInvoicesTab";
@@ -123,6 +124,7 @@ function StudentDashboardContent() {
     { id: "revision", icon: <FaBook />, label: "Assessment" },
     { id: "live", icon: <FaVideo />, label: "Live Session", dot: true },
     { id: "live-class", icon: <FaPlay />, label: "Live Class", dot: true },
+    { id: "recorded-class", icon: <FaVideo />, label: "Recorded Class", dot: true },
     { id: "recorded", icon: <FaPlay />, label: "Recorded Sessions", dot: true },
     { id: "news", icon: <FaNewspaper />, label: "News" },
     { id: "testimonial", icon: <FaQuoteLeft />, label: "Testimonial" },
@@ -153,6 +155,7 @@ function StudentDashboardContent() {
         "revision",
         "live",
         "live-class",
+        "recorded-class",
         "recorded",
         "news",
         "testimonial",
@@ -291,6 +294,8 @@ function StudentDashboardContent() {
         return <LiveClassTab />;
       case "live-class":
         return <LiveClassListTab />;
+      case "recorded-class":
+        return <RecordedClassListTab student={student} />;
       case "recorded":
         return <RecordedSessionTab />;
       case "news":

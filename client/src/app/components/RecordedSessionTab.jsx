@@ -152,7 +152,7 @@ export default function RecordedSessionTab() {
                     </h3>
                   </div>
 
-                  <p className="text-sm text-gray-600 mb-3">
+                  <p className="text-sm text-gray-600 mb-3 line-clamp-3">
                     {stripHtml(course.description) || "Recorded course content"}
                   </p>
 
