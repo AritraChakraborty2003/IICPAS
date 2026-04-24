@@ -59,7 +59,7 @@ const toDateTimeLocalValue = (value) => {
 const defaultSourceMode = (kind) => (kind === "live" ? "liveSession" : "link");
 
 const createEmptyForm = (kind, topics) => ({
-  topicId: topics?.[0]?._id || "",
+  topicIds: topics?.[0]?._id ? [topics[0]._id] : [],
   title: "",
   order: 1,
   status: "active",
@@ -226,7 +226,7 @@ export default function TopicLessonsPanel({
 
     setForm({
       ...createEmptyForm(kind, topics),
-      topicId: defaultTopic,
+      topicIds: defaultTopic ? [defaultTopic] : [],
       order: Number.isFinite(nextOrder) ? nextOrder + 1 : 1,
     });
     setDialogOpen(true);
@@ -243,7 +243,7 @@ export default function TopicLessonsPanel({
         : null;
 
     setForm({
-      topicId: row?.topicId || "",
+      topicIds: row?.topicId ? [row.topicId] : [],
       title: row?.title || "",
       order: Number(row?.order || 1),
       status: row?.status || "active",
@@ -376,20 +376,14 @@ export default function TopicLessonsPanel({
   }, [kind, liveSessions, selectedCourseId, selectedChapterId]);
 
   const handleSave = async () => {
-    if (!form.topicId) {
-      MySwal.fire("Validation", "Please choose a topic.", "warning");
+    if (!form.topicIds || form.topicIds.length === 0) {
+      MySwal.fire("Validation", "Please choose at least one topic.", "warning");
       return;
     }
 
     const title = form.title.trim();
     if (!title) {
       MySwal.fire("Validation", "Lesson title is required.", "warning");
-      return;
-    }
-
-    const topic = topics.find((entry) => entry?._id === form.topicId);
-    if (!topic) {
-      MySwal.fire("Validation", "Selected topic was not found.", "warning");
       return;
     }
 
@@ -444,49 +438,44 @@ export default function TopicLessonsPanel({
             : "",
       };
 
-      const originalTopicId = form.originalTopicId || form.topicId;
-      const originalLessonId = form.originalLessonId || "";
-      const targetTopicId = form.topicId;
-      const sourceTopic = topics.find((entry) => entry?._id === originalTopicId);
+      const originalTopicId = form.originalTopicId;
+      const originalLessonId = form.originalLessonId;
+      const targetTopicIds = form.topicIds;
 
-      const targetSource = topics.find((entry) => entry?._id === targetTopicId);
-      const currentLessons = Array.isArray(targetSource?.lessons)
-        ? [...targetSource.lessons]
-        : [];
+      // Handle each target topic
+      for (const targetTopicId of targetTopicIds) {
+        const targetTopic = topics.find((t) => t?._id === targetTopicId);
+        if (!targetTopic) continue;
 
-      let nextLessons;
-      if (originalLessonId && String(originalTopicId) === String(targetTopicId)) {
-        nextLessons = currentLessons.map((lesson) =>
-          String(lesson?._id) === String(originalLessonId)
-            ? {
-                ...lesson,
-                ...lessonPayload,
-              }
-            : lesson
-        );
-      } else {
-        nextLessons = [
-          ...currentLessons,
-          {
-            ...lessonPayload,
-          },
-        ];
+        const currentLessons = Array.isArray(targetTopic.lessons)
+          ? [...targetTopic.lessons]
+          : [];
+
+        let nextLessons;
+        if (originalLessonId && String(originalTopicId) === String(targetTopicId)) {
+          // Update existing lesson in its original topic
+          nextLessons = currentLessons.map((lesson) =>
+            String(lesson?._id) === String(originalLessonId)
+              ? { ...lesson, ...lessonPayload }
+              : lesson
+          );
+        } else {
+          // Add as a new lesson to this topic
+          nextLessons = [...currentLessons, { ...lessonPayload }];
+        }
+
+        await updateTopicLessons(targetTopicId, nextLessons);
       }
 
-      if (originalLessonId && String(originalTopicId) === String(targetTopicId)) {
-        nextLessons = nextLessons.map((lesson) => ({
-          ...lesson,
-          sourceType: lesson.sourceType || defaultSourceMode(kind),
-        }));
-      }
-
-      await updateTopicLessons(targetTopicId, nextLessons);
-
-      if (originalLessonId && sourceTopic && originalTopicId !== targetTopicId) {
-        const sourceLessons = (Array.isArray(sourceTopic.lessons) ? sourceTopic.lessons : []).filter(
-          (lesson) => String(lesson?._id) !== String(originalLessonId)
-        );
-        await updateTopicLessons(sourceTopic._id, sourceLessons);
+      // If it was an edit and the original topic is no longer in the selected list, remove it
+      if (originalLessonId && originalTopicId && !targetTopicIds.includes(originalTopicId)) {
+        const sourceTopic = topics.find((t) => t?._id === originalTopicId);
+        if (sourceTopic) {
+          const remainingLessons = (Array.isArray(sourceTopic.lessons) ? sourceTopic.lessons : []).filter(
+            (lesson) => String(lesson?._id) !== String(originalLessonId)
+          );
+          await updateTopicLessons(sourceTopic._id, remainingLessons);
+        }
       }
 
       await onRefresh?.();
@@ -734,27 +723,45 @@ export default function TopicLessonsPanel({
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ pt: 1 }}>
             <FormControl fullWidth>
-              <InputLabel>Topic</InputLabel>
+              <InputLabel>Topics</InputLabel>
               <Select
-                label="Topic"
-                value={form.topicId}
+                multiple
+                label="Topics"
+                value={form.topicIds}
                 onChange={(event) => {
-                  const nextTopicId = event.target.value;
-                  const nextTopic = topics.find((topic) => topic?._id === nextTopicId);
-                  const nextLessonCount = Math.max(
-                    0,
-                    ...(Array.isArray(nextTopic?.lessons)
-                      ? nextTopic.lessons
-                          .filter((lesson) => lesson?.kind === kind)
-                          .map((lesson) => Number(lesson?.order || 0))
-                      : [0])
-                  );
-                  setForm((current) => ({
-                    ...current,
-                    topicId: nextTopicId,
-                    order: current.originalLessonId ? current.order : nextLessonCount + 1,
-                  }));
+                  const nextTopicIds = event.target.value;
+                  // If adding a new lesson, try to pick an order based on the first selected topic
+                  if (!form.originalLessonId && nextTopicIds.length > 0) {
+                    const firstTopicId = nextTopicIds[0];
+                    const firstTopic = topics.find((t) => t?._id === firstTopicId);
+                    const nextOrder = Math.max(
+                      0,
+                      ...(Array.isArray(firstTopic?.lessons)
+                        ? firstTopic.lessons
+                            .filter((l) => l?.kind === kind)
+                            .map((l) => Number(l?.order || 0))
+                        : [0])
+                    );
+                    setForm((current) => ({
+                      ...current,
+                      topicIds: nextTopicIds,
+                      order: nextOrder + 1,
+                    }));
+                  } else {
+                    setForm((current) => ({
+                      ...current,
+                      topicIds: nextTopicIds,
+                    }));
+                  }
                 }}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((id) => {
+                      const topic = topics.find(t => t._id === id);
+                      return <Chip key={id} label={topic?.title || id} size="small" />;
+                    })}
+                  </Box>
+                )}
               >
                 {topicOptions.map((topic) => (
                   <MenuItem key={topic._id} value={topic._id}>

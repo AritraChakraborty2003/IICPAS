@@ -273,8 +273,26 @@ interface ChapterProgressSummary {
   completedQuestionSetIds: string[];
 }
 
+interface TourStep {
+  id:
+    | "welcome"
+    | "progress"
+    | "language"
+    | "chapters"
+    | "actions"
+    | "topics"
+    | "study";
+  title: string;
+  description: string;
+}
+
+interface TourSeenState {
+  seen: boolean;
+}
+
 const QUIZ_QUESTION_LIMIT = 5;
 const LAST_SELECTION_STORAGE_KEY = "digitalHub:lastSelection";
+const DIGITAL_HUB_TOUR_STORAGE_PREFIX = "digital-hub-client-tour:v1";
 
 const extractCourseRecord = (payload: unknown): Record<string, unknown> | null => {
   if (!payload || typeof payload !== "object") return null;
@@ -559,6 +577,51 @@ const hardenVideoElements = (container: HTMLElement | null) => {
   });
 };
 
+const DIGITAL_HUB_TOUR_STEPS: TourStep[] = [
+  {
+    id: "welcome",
+    title: "Welcome",
+    description:
+      "This is your Digital Hub home. It helps you confirm the active learning workspace and student context.",
+  },
+  {
+    id: "progress",
+    title: "Track progress",
+    description:
+      "Use this section to monitor completion and keep an eye on your current points while you move through the course.",
+  },
+  {
+    id: "language",
+    title: "Choose language",
+    description:
+      "Change the reading language here whenever you want a translated view of the current topic content.",
+  },
+  {
+    id: "chapters",
+    title: "Switch chapters",
+    description:
+      "Open the chapter selector to move across the course and confirm which chapter is currently active.",
+  },
+  {
+    id: "actions",
+    title: "Quick actions",
+    description:
+      "These shortcuts control the menu, dashboard back navigation, dark mode, and support ticket access.",
+  },
+  {
+    id: "topics",
+    title: "Browse topics",
+    description:
+      "Use the topics panel to move through the chapter in order and unlock the next topic as you progress.",
+  },
+  {
+    id: "study",
+    title: "Study area",
+    description:
+      "This is the main learning space where topic content, supporting lessons, and practice questions appear together.",
+  },
+];
+
 const DIGITAL_HUB_FONT_STACK = DEFAULT_CONTENT_FONT_FAMILY;
 
 const normalizeDigitalHubContent = (html: string) =>
@@ -617,11 +680,26 @@ export default function DigitalHubClient({
   } | null>(null);
   const contentScrollRef = useRef<HTMLDivElement | null>(null);
   const topicContentRef = useRef<HTMLDivElement | null>(null);
+  const headerBrandRef = useRef<HTMLDivElement | null>(null);
+  const progressPointsRef = useRef<HTMLDivElement | null>(null);
+  const languageDropdownRef = useRef<HTMLDivElement | null>(null);
+  const chapterDropdownRef = useRef<HTMLDivElement | null>(null);
+  const quickActionsRef = useRef<HTMLDivElement | null>(null);
+  const topicsPanelRef = useRef<HTMLDivElement | null>(null);
+  const studyAreaRef = useRef<HTMLDivElement | null>(null);
+  const tourDialogRef = useRef<HTMLDivElement | null>(null);
   const [isTranslateReady, setIsTranslateReady] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
+  const [tourStepIndex, setTourStepIndex] = useState(0);
+  const [tourReady, setTourReady] = useState(false);
+  const [tourSidebarWasAutoOpened, setTourSidebarWasAutoOpened] = useState(false);
+  const [tourTargetRect, setTourTargetRect] = useState<DOMRect | null>(null);
   const pendingLanguageRef = useRef<string | null>(null);
   const googleTranslateScriptRef = useRef<HTMLScriptElement | null>(null);
   const googleTranslateStyleRef = useRef<HTMLStyleElement | null>(null);
   const isTranslateTeardownDoneRef = useRef(false);
+  const tourPreviousSidebarOpenRef = useRef(false);
+  const tourSidebarManualOverrideRef = useRef(false);
 
   const applyLanguageToGoogleWidget = useCallback((languageCode: string) => {
     if (typeof document === "undefined") return false;
@@ -808,6 +886,132 @@ export default function DigitalHubClient({
     useState(false);
   const [progressMutationKey, setProgressMutationKey] = useState<string | null>(
     null
+  );
+  const activeTourStep =
+    DIGITAL_HUB_TOUR_STEPS[tourStepIndex] || DIGITAL_HUB_TOUR_STEPS[0];
+  const tourStorageKey = `${DIGITAL_HUB_TOUR_STORAGE_PREFIX}:${
+    studentId || "anonymous"
+  }:${effectiveCourseSlugOrId}`;
+
+  const readTourSeenState = useCallback((): TourSeenState | null => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.localStorage.getItem(tourStorageKey);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as TourSeenState;
+      return parsed && typeof parsed === "object" ? parsed : null;
+    } catch {
+      return null;
+    }
+  }, [tourStorageKey]);
+
+  const markTourSeen = useCallback(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        tourStorageKey,
+        JSON.stringify({ seen: true } satisfies TourSeenState)
+      );
+    } catch {
+      // Ignore write failures.
+    }
+  }, [tourStorageKey]);
+
+  const getActiveTourTarget = useCallback(() => {
+    switch (activeTourStep.id) {
+      case "welcome":
+        return headerBrandRef.current;
+      case "progress":
+        return progressPointsRef.current;
+      case "language":
+        return languageDropdownRef.current;
+      case "chapters":
+        return chapterDropdownRef.current;
+      case "actions":
+        return quickActionsRef.current;
+      case "topics":
+        return topicsPanelRef.current;
+      case "study":
+        return studyAreaRef.current;
+      default:
+        return null;
+    }
+  }, [activeTourStep.id]);
+
+  const syncTourTargetRect = useCallback(() => {
+    const target = getActiveTourTarget();
+    if (!target) {
+      setTourTargetRect(null);
+      return;
+    }
+    setTourTargetRect(target.getBoundingClientRect());
+  }, [getActiveTourTarget]);
+
+  const restoreTourSidebarState = useCallback(() => {
+    if (isDesktopViewport) {
+      setTourSidebarWasAutoOpened(false);
+      tourSidebarManualOverrideRef.current = false;
+      return;
+    }
+    if (tourSidebarWasAutoOpened && !tourSidebarManualOverrideRef.current) {
+      setHamburgerOpen(tourPreviousSidebarOpenRef.current);
+    }
+    setTourSidebarWasAutoOpened(false);
+    tourSidebarManualOverrideRef.current = false;
+  }, [isDesktopViewport, tourSidebarWasAutoOpened]);
+
+  const closeTour = useCallback(
+    (markSeen: boolean = true) => {
+      restoreTourSidebarState();
+      setIsTourOpen(false);
+      setTourStepIndex(0);
+      setTourTargetRect(null);
+      if (markSeen) {
+        markTourSeen();
+      }
+    },
+    [markTourSeen, restoreTourSidebarState]
+  );
+
+  const openTour = useCallback(() => {
+    setTourStepIndex(0);
+    setIsTourOpen(true);
+  }, []);
+
+  const goToTourStep = useCallback(
+    (nextIndex: number) => {
+      const boundedIndex = Math.max(
+        0,
+        Math.min(nextIndex, DIGITAL_HUB_TOUR_STEPS.length - 1)
+      );
+      const nextStep = DIGITAL_HUB_TOUR_STEPS[boundedIndex];
+
+      if (activeTourStep.id === "topics" && nextStep.id !== "topics") {
+        restoreTourSidebarState();
+      }
+
+      if (!isDesktopViewport && nextStep.id === "topics") {
+        if (!hamburgerOpen) {
+          tourPreviousSidebarOpenRef.current = false;
+          tourSidebarManualOverrideRef.current = false;
+          setTourSidebarWasAutoOpened(true);
+          setHamburgerOpenState(true, "tour");
+        } else {
+          tourPreviousSidebarOpenRef.current = true;
+          setTourSidebarWasAutoOpened(false);
+          tourSidebarManualOverrideRef.current = false;
+        }
+      }
+
+      setTourStepIndex(boundedIndex);
+    },
+    [
+      activeTourStep.id,
+      hamburgerOpen,
+      isDesktopViewport,
+      restoreTourSidebarState,
+      setHamburgerOpenState,
+    ]
   );
 
   useAuthHeartbeat({
@@ -1133,11 +1337,30 @@ export default function DigitalHubClient({
     setIsDarkMode(!isDarkMode);
   };
 
+  const setHamburgerOpenState = useCallback(
+    (nextOpen: boolean, source: "user" | "tour" = "user") => {
+      if (
+        source === "user" &&
+        isTourOpen &&
+        activeTourStep.id === "topics" &&
+        !isDesktopViewport
+      ) {
+        tourSidebarManualOverrideRef.current = true;
+      }
+      setHamburgerOpen(nextOpen);
+    },
+    [activeTourStep.id, isDesktopViewport, isTourOpen]
+  );
+
+  const toggleHamburgerMenu = useCallback(() => {
+    setHamburgerOpenState(!hamburgerOpen);
+  }, [hamburgerOpen, setHamburgerOpenState]);
+
   const closeSidebarIfMobile = useCallback(() => {
     if (!isDesktopViewport) {
-      setHamburgerOpen(false);
+      setHamburgerOpenState(false);
     }
-  }, [isDesktopViewport]);
+  }, [isDesktopViewport, setHamburgerOpenState]);
 
   // Fetch case studies for a chapter
   const fetchCaseStudies = useCallback(
