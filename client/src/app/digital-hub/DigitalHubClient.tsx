@@ -156,8 +156,6 @@ import {
   ChevronDown,
   Globe,
   Lock,
-  CirclePlay,
-  RadioTower,
   Calendar,
   ExternalLink,
 } from "lucide-react";
@@ -3601,7 +3599,7 @@ export default function DigitalHubClient({
                           onClick={() => setIsIntroVideoModalOpen(true)}
                           className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                         >
-                          <CirclePlay className="h-4 w-4" />
+                          <BookOpen className="h-4 w-4" />
                           Watch Intro Video
                         </button>
                       ) : null}
@@ -3613,7 +3611,7 @@ export default function DigitalHubClient({
                           onClick={() => setIsLiveSessionsModalOpen(true)}
                           className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
                         >
-                          <RadioTower className="h-4 w-4" />
+                          <Target className="h-4 w-4" />
                           Watch Live Videos
                         </button>
                       ) : null}
@@ -4775,7 +4773,7 @@ export default function DigitalHubClient({
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white">
-                                <RadioTower className="h-3.5 w-3.5" />
+                                <Target className="h-3.5 w-3.5" />
                                 Live
                               </span>
                               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
@@ -4826,7 +4824,7 @@ export default function DigitalHubClient({
                 {buildTopicLessonRows(selectedTopic ? [selectedTopic] : [], "live")
                   .filter(row => isTopicLessonVisible(row)).length === 0 && (
                   <div className="py-12 text-center">
-                    <RadioTower className="mx-auto h-12 w-12 text-slate-200" />
+                    <Target className="mx-auto h-12 w-12 text-slate-200" />
                     <p className="mt-4 text-slate-500">No active live sessions available for this topic.</p>
                   </div>
                 )}
