@@ -4665,6 +4665,13 @@ export default function DigitalHubClient({
           font-weight: 700;
         }
 
+        .digital-hub-content li strong,
+        .digital-hub-content li b,
+        .topic-content-light li strong,
+        .topic-content-light li b {
+          color: #1f2937 !important;
+        }
+
         .digital-hub-content ul li::marker,
         .digital-hub-content ol li::marker,
         .topic-content-light ul li::marker,
