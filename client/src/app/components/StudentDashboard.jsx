@@ -43,6 +43,7 @@ import StudentInvoicesTab from "./StudentInvoicesTab";
 import StudentBookingsTab from "./StudentBookingsTab";
 import ReferAndEarnTab from "./ReferAndEarnTab";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
+import { useStudentAutoLogout } from "../../hooks/useStudentAutoLogout";
 
 const Drawer = dynamic(() => import("react-modern-drawer"), { ssr: false });
 
@@ -74,6 +75,9 @@ function StudentDashboardContent() {
     enabled: !!student,
     heartbeatUrl: `${API}/api/auth/heartbeat`,
   });
+
+  // Auto logout after 2 hours of inactivity
+  useStudentAutoLogout(student?._id, API);
 
   const getStudentImageUrl = (imagePath) => {
     if (!imagePath || typeof imagePath !== "string") return "";

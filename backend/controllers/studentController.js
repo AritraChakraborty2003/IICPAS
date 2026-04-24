@@ -57,9 +57,10 @@ export const loginStudent = async (req, res) => {
         email: student.email,
       },
       process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      { expiresIn: process.env.JWT_EXPIRES_IN || "2h" }
     );
 
+    res
       .cookie("token", token, {
         httpOnly: true,
         secure: isProd,

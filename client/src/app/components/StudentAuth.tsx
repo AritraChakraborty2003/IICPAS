@@ -138,8 +138,10 @@ export default function StudentAuthForm() {
         const wasOnWishlist = referrer.includes("/wishlist");
 
         if (redirectTo === "wishlist" || wasOnWishlist) {
+          localStorage.setItem("student_last_activity", Date.now().toString());
           window.location.replace("/wishlist");
         } else {
+          localStorage.setItem("student_last_activity", Date.now().toString());
           window.location.href = "/student-dashboard";
         }
       }, 500);

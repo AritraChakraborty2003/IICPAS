@@ -5,6 +5,7 @@ import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
 import TopicLessonsDisplay from "../components/TopicLessonsDisplay";
 import { useAuthHeartbeat } from "../../lib/useAuthHeartbeat";
+import { useStudentAutoLogout } from "../../hooks/useStudentAutoLogout";
 import { getApiBase } from "@/lib/apiBase";
 import {
   DEFAULT_CONTENT_FONT_FAMILY,
@@ -813,6 +814,9 @@ export default function DigitalHubClient({
     enabled: !!studentId,
     heartbeatUrl: `${API_BASE}/auth/heartbeat`,
   });
+
+  // Auto logout after 2 hours of inactivity
+  useStudentAutoLogout(studentId, API_BASE);
 
   useEffect(() => {
     hardenVideoElements(topicContentRef.current);
