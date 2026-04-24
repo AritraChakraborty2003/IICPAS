@@ -4574,6 +4574,116 @@ export default function DigitalHubClient({
     </div>
   </div>
 
+      {isTourOpen && (
+        <div className="fixed inset-0 z-[70]">
+          <button
+            type="button"
+            aria-label="Close Digital Hub Client Tour"
+            className="absolute inset-0 cursor-default bg-slate-950/45"
+            onClick={() => closeTour()}
+          />
+
+          {spotlightStyle ? (
+            <div
+              className="pointer-events-none absolute rounded-[28px] border-2 border-white/90 bg-white/10 shadow-[0_0_0_1px_rgba(255,255,255,0.35)] transition-all duration-300"
+              style={spotlightStyle}
+            />
+          ) : null}
+
+          <div
+            ref={tourDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="digital-hub-tour-title"
+            tabIndex={-1}
+            style={isDesktopViewport && tourTargetRect ? tourCardStyle : undefined}
+            className={`fixed z-[71] overflow-hidden rounded-[24px] border border-blue-100 bg-white shadow-2xl outline-none ${
+              isDesktopViewport
+                ? tourTargetRect
+                  ? ""
+                  : "left-1/2 top-1/2 w-[360px] max-w-[calc(100vw-40px)] -translate-x-1/2 -translate-y-1/2"
+                : "bottom-4 left-4 right-4"
+            }`}
+          >
+            <div className="border-b border-slate-200 bg-gradient-to-r from-blue-50 via-white to-blue-50 px-5 py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-600">
+                    Step {tourStepIndex + 1} of {DIGITAL_HUB_TOUR_STEPS.length}
+                  </p>
+                  <h2
+                    id="digital-hub-tour-title"
+                    className="mt-2 text-xl font-bold text-slate-900"
+                  >
+                    Digital Hub Client Tour
+                  </h2>
+                  <p className="mt-1 text-sm font-semibold text-slate-700">
+                    {activeTourStep.title}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => closeTour()}
+                  className="rounded-full p-2 text-slate-400 transition-colors hover:bg-white hover:text-slate-600"
+                  aria-label="Close tour"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="px-5 py-5">
+              <p className="text-sm leading-6 text-slate-600">
+                {activeTourStep.description}
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-slate-50 px-5 py-4">
+              <button
+                type="button"
+                onClick={() => closeTour()}
+                className="text-sm font-semibold text-slate-500 transition-colors hover:text-slate-700"
+              >
+                Skip
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => goToTourStep(tourStepIndex - 1)}
+                  disabled={tourStepIndex === 0}
+                  className={`rounded-xl border px-4 py-2 text-sm font-semibold transition-colors ${
+                    tourStepIndex === 0
+                      ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  Previous
+                </button>
+
+                {tourStepIndex === DIGITAL_HUB_TOUR_STEPS.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => closeTour()}
+                    className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                  >
+                    Finish
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => goToTourStep(tourStepIndex + 1)}
+                    className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                  >
+                    Next
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Intro Video Modal */}
       {isIntroVideoModalOpen && selectedTopicIntroVideo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
