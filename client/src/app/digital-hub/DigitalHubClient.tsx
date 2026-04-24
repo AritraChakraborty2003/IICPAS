@@ -313,7 +313,7 @@ const extractCourseRecord = (payload: unknown): Record<string, unknown> | null =
     candidate.data.course &&
     typeof candidate.data.course === "object"
   ) {
-    return candidate.data.course;
+    return candidate.data.course as Record<string, unknown>;
   }
 
   if (candidate.data && typeof candidate.data === "object" && !Array.isArray(candidate.data)) {
@@ -977,42 +977,6 @@ export default function DigitalHubClient({
     setTourStepIndex(0);
     setIsTourOpen(true);
   }, []);
-
-  const goToTourStep = useCallback(
-    (nextIndex: number) => {
-      const boundedIndex = Math.max(
-        0,
-        Math.min(nextIndex, DIGITAL_HUB_TOUR_STEPS.length - 1)
-      );
-      const nextStep = DIGITAL_HUB_TOUR_STEPS[boundedIndex];
-
-      if (activeTourStep.id === "topics" && nextStep.id !== "topics") {
-        restoreTourSidebarState();
-      }
-
-      if (!isDesktopViewport && nextStep.id === "topics") {
-        if (!hamburgerOpen) {
-          tourPreviousSidebarOpenRef.current = false;
-          tourSidebarManualOverrideRef.current = false;
-          setTourSidebarWasAutoOpened(true);
-          setHamburgerOpenState(true, "tour");
-        } else {
-          tourPreviousSidebarOpenRef.current = true;
-          setTourSidebarWasAutoOpened(false);
-          tourSidebarManualOverrideRef.current = false;
-        }
-      }
-
-      setTourStepIndex(boundedIndex);
-    },
-    [
-      activeTourStep.id,
-      hamburgerOpen,
-      isDesktopViewport,
-      restoreTourSidebarState,
-      setHamburgerOpenState,
-    ]
-  );
 
   useAuthHeartbeat({
     enabled: !!studentId,
