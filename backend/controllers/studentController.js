@@ -60,12 +60,11 @@ export const loginStudent = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
-    res
       .cookie("token", token, {
         httpOnly: true,
         secure: isProd,
         sameSite: isProd ? "None" : "Lax",
-        maxAge: 3 * 24 * 60 * 60 * 1000, // 3 days
+        maxAge: 2 * 60 * 60 * 1000, // 2 hours
       })
       .status(200)
       .json({
