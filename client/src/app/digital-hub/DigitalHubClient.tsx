@@ -156,9 +156,9 @@ import {
   ChevronDown,
   Globe,
   Lock,
-  PlayCircle,
-  Radio,
-  CalendarDays,
+  CirclePlay,
+  RadioTower,
+  Calendar,
   ExternalLink,
 } from "lucide-react";
 
@@ -981,6 +981,7 @@ export default function DigitalHubClient({
   useAuthHeartbeat({
     enabled: !!studentId,
     heartbeatUrl: `${API_BASE}/auth/heartbeat`,
+    getHeaders: () => undefined,
   });
 
   // Auto logout after 2 hours of inactivity
@@ -3600,7 +3601,7 @@ export default function DigitalHubClient({
                           onClick={() => setIsIntroVideoModalOpen(true)}
                           className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
                         >
-                          <PlayCircle className="h-4 w-4" />
+                          <CirclePlay className="h-4 w-4" />
                           Watch Intro Video
                         </button>
                       ) : null}
@@ -3612,7 +3613,7 @@ export default function DigitalHubClient({
                           onClick={() => setIsLiveSessionsModalOpen(true)}
                           className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
                         >
-                          <Radio className="h-4 w-4" />
+                          <RadioTower className="h-4 w-4" />
                           Watch Live Videos
                         </button>
                       ) : null}
@@ -4774,7 +4775,7 @@ export default function DigitalHubClient({
                           <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white">
-                                <Radio className="h-3.5 w-3.5" />
+                                <RadioTower className="h-3.5 w-3.5" />
                                 Live
                               </span>
                               <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
@@ -4791,12 +4792,12 @@ export default function DigitalHubClient({
 
                             <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                               <span className="inline-flex items-center gap-1">
-                                <CalendarDays className="h-3.5 w-3.5" />
+                                <Calendar className="h-3.5 w-3.5" />
                                 Publish: {formatTopicLessonDateTime(row.publishAt)}
                               </span>
                               {liveSession ? (
                                 <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
-                                  <CalendarDays className="h-3.5 w-3.5" />
+                                  <Calendar className="h-3.5 w-3.5" />
                                   Session: {formatTopicLessonDateTime(liveSession.date)}
                                   {liveSession.time ? ` • ${liveSession.time}` : ""}
                                 </span>
@@ -4825,7 +4826,7 @@ export default function DigitalHubClient({
                 {buildTopicLessonRows(selectedTopic ? [selectedTopic] : [], "live")
                   .filter(row => isTopicLessonVisible(row)).length === 0 && (
                   <div className="py-12 text-center">
-                    <Radio className="mx-auto h-12 w-12 text-slate-200" />
+                    <RadioTower className="mx-auto h-12 w-12 text-slate-200" />
                     <p className="mt-4 text-slate-500">No active live sessions available for this topic.</p>
                   </div>
                 )}
