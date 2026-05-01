@@ -5179,7 +5179,7 @@ export default function DigitalHubClient({
         .digital-hub-content li,
         .topic-content-light li,
         .topic-content-dark li {
-          line-height: 1.65 !important;
+          line-height: 1.12 !important;
           color: #4b5563 !important;
         }
 
