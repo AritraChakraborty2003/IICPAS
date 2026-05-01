@@ -5179,8 +5179,20 @@ export default function DigitalHubClient({
         .digital-hub-content li,
         .topic-content-light li,
         .topic-content-dark li {
-          line-height: 1.8 !important;
+          line-height: 1.65 !important;
           color: #4b5563 !important;
+        }
+
+        .digital-hub-content p,
+        .topic-content-light p,
+        .topic-content-dark p {
+          margin-bottom: 0.75rem !important;
+        }
+
+        .digital-hub-content p:last-child,
+        .topic-content-light p:last-child,
+        .topic-content-dark p:last-child {
+          margin-bottom: 0 !important;
         }
 
         .digital-hub-content strong,
