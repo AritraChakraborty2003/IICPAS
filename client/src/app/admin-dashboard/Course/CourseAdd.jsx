@@ -74,6 +74,20 @@ const initialForm = {
   },
 };
 
+const normalizeCategoryOptions = (categories = []) =>
+  categories
+    .filter((category) => category?.category)
+    .map((category) => ({
+      value: String(category.category).trim(),
+      label: String(category.category).trim(),
+    }))
+    .filter(
+      (option, index, self) =>
+        self.findIndex(
+          (item) => item.value.toLowerCase() === option.value.toLowerCase()
+        ) === index
+    );
+
 export default function CourseAddTab({ onBack }) {
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [form, setForm] = useState(initialForm);
@@ -159,20 +173,28 @@ export default function CourseAddTab({ onBack }) {
     },
   };
 
-  useEffect(() => {
-    // Load categories
-    axios
-      .get(`${API_BASE}/categories`)
-      .then((res) => {
-        setCategoryOptions(
-          res.data.map((c) => ({
-            value: c.category,
-            label: c.category,
-          }))
-        );
-      })
-      .catch(() => setCategoryOptions([]));
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/categories`);
+      const options = normalizeCategoryOptions(
+        Array.isArray(res.data) ? res.data : []
+      );
+      setCategoryOptions(options);
+    } catch {
+      setCategoryOptions([]);
+    }
   }, []);
+
+  useEffect(() => {
+    loadCategories();
+
+    const handleFocus = () => {
+      loadCategories();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [loadCategories]);
 
   const handleCategoryChange = (option) =>
     setForm((f) => ({ ...f, category: option }));

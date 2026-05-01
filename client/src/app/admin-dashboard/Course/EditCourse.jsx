@@ -24,13 +24,19 @@ const RICH_TEXT_FIELDS = new Set([
   "seoDescription",
 ]);
 
-const CATEGORY_OPTIONS = [
-  { value: "Accounting", label: "Accounting" },
-  { value: "Taxation", label: "Taxation" },
-  { value: "HR", label: "HR" },
-  { value: "Finance", label: "Finance" },
-  { value: "US CMA", label: "US CMA" },
-];
+const normalizeCategoryOptions = (categories = []) =>
+  categories
+    .filter((category) => category?.category)
+    .map((category) => {
+      const value = String(category.category).trim();
+      return { value, label: value };
+    })
+    .filter(
+      (option, index, self) =>
+        self.findIndex(
+          (item) => item.value.toLowerCase() === option.value.toLowerCase()
+        ) === index
+    );
 
 export default function EditCourse({ courseId, onBack }) {
   const [form, setForm] = useState(null);
@@ -38,6 +44,7 @@ export default function EditCourse({ courseId, onBack }) {
   const [mounted, setMounted] = useState(false);
   const [simulations, setSimulations] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [categoryOptions, setCategoryOptions] = useState([]);
 
   const joditConfig = {
     readonly: false,
@@ -123,15 +130,36 @@ export default function EditCourse({ courseId, onBack }) {
     setForm((prevForm) => ({ ...prevForm, [field]: value }));
   };
 
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/categories`);
+      const options = normalizeCategoryOptions(
+        Array.isArray(res.data) ? res.data : []
+      );
+      setCategoryOptions(options);
+    } catch {
+      setCategoryOptions([]);
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
+    loadCategories();
+
+    const handleFocus = () => {
+      loadCategories();
+    };
+
+    window.addEventListener("focus", handleFocus);
 
     // Load course data
     axios.get(`${API_BASE}/courses/${courseId}`).then((res) => {
       const c = res.data;
+      const currentCategory = c.category ? String(c.category).trim() : "";
       setForm({
-        category:
-          CATEGORY_OPTIONS.find((opt) => opt.value === c.category) || null,
+        category: currentCategory
+          ? { value: currentCategory, label: currentCategory }
+          : null,
         title: c.title || "",
         slug: c.slug || "",
         price: c.price || "",
@@ -168,7 +196,9 @@ export default function EditCourse({ courseId, onBack }) {
       // Load simulations
       setSimulations(c.simulations || []);
     });
-  }, [courseId]);
+
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [courseId, loadCategories]);
 
   if (!form || !mounted) return <div className="p-8">Loading course...</div>;
 
@@ -189,6 +219,19 @@ export default function EditCourse({ courseId, onBack }) {
 
   const handleCategoryChange = (option) =>
     setForm((f) => ({ ...f, category: option }));
+
+  const resolvedCategoryOptions = (() => {
+    const currentCategory = form?.category?.value?.trim();
+    if (!currentCategory) return categoryOptions;
+    if (
+      categoryOptions.some(
+        (option) => option.value.toLowerCase() === currentCategory.toLowerCase()
+      )
+    ) {
+      return categoryOptions;
+    }
+    return [{ value: currentCategory, label: currentCategory }, ...categoryOptions];
+  })();
 
   // Simulation image upload handler
   const handleSimulationImageUpload = async (file) => {
@@ -394,9 +437,10 @@ export default function EditCourse({ courseId, onBack }) {
           <div className="space-y-4">
             <label>Category</label>
             <Select
-              options={CATEGORY_OPTIONS}
+              options={resolvedCategoryOptions}
               value={form.category}
               onChange={handleCategoryChange}
+              placeholder="Select category"
             />
             <label>Title</label>
             <input
