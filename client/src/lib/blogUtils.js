@@ -40,3 +40,28 @@ export const extractBlogs = (payload) => {
   if (Array.isArray(payload?.data)) return payload.data;
   return [];
 };
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+export const formatTextAsParagraphs = (value = "") => {
+  const text = String(value).trim();
+  if (!text) return "";
+
+  const paragraphs = text
+    .split(/\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  return paragraphs
+    .map((paragraph) => {
+      const safeParagraph = escapeHtml(paragraph).replace(/\n/g, "<br />");
+      return `<p>${safeParagraph}</p>`;
+    })
+    .join("");
+};

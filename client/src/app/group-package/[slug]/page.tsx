@@ -17,6 +17,7 @@ import LoginModal from "../../components/LoginModal";
 import SimpleCheckoutModal from "../../../components/SimpleCheckoutModal";
 import jsPDF from "jspdf";
 import axios from "axios";
+import { formatTextAsParagraphs } from "../../../lib/blogUtils";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const API_BASE = `${SERVER_BASE}/api`;
@@ -287,7 +288,9 @@ export default function GroupPackagePage({
               <div
                 className="mb-6 text-sm leading-relaxed text-gray-700"
                 dangerouslySetInnerHTML={{
-                  __html: pkg.description || "No description available.",
+                  __html:
+                    formatTextAsParagraphs(pkg.description) ||
+                    "<p>No description available.</p>",
                 }}
               />
 

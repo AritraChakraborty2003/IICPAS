@@ -142,6 +142,18 @@ export default function BlogsPage() {
   // Calculate total pages
   const totalPages = Math.ceil(filteredBlogs.length / blogsPerPage);
 
+  const getResultsRangeLabel = () => {
+    if (filteredBlogs.length === 0) return "0-0";
+
+    const start = currentPage === 1 ? 0 : (currentPage - 1) * blogsPerPage + 1;
+    const end =
+      currentPage === 1
+        ? Math.min(blogsPerPage, filteredBlogs.length)
+        : Math.min(currentPage * blogsPerPage, filteredBlogs.length);
+
+    return `${start}-${end}`;
+  };
+
   // Generate page numbers
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) {
@@ -294,8 +306,7 @@ export default function BlogsPage() {
 
                 {/* Results Count */}
                 <div className="text-sm text-gray-600 bg-white/60 backdrop-blur-md px-4 py-2 rounded-xl border border-gray-200">
-                  Showing {currentBlogs.length} of {filteredBlogs.length}{" "}
-                  articles
+                  {getResultsRangeLabel()} of {filteredBlogs.length} articles
                 </div>
               </div>
             </motion.div>

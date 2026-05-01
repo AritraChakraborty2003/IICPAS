@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { formatTextAsParagraphs } from "@/lib/blogUtils";
 
 const normalizeImageSrc = (rawImage, apiUrl) => {
   if (!rawImage || typeof rawImage !== "string") return null;
@@ -123,9 +124,12 @@ export default function GroupCourseCard({
 
         {/* Description */}
         {groupPricing.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {groupPricing.description}
-          </p>
+          <div
+            className="text-sm text-gray-600 line-clamp-2"
+            dangerouslySetInnerHTML={{
+              __html: formatTextAsParagraphs(groupPricing.description),
+            }}
+          />
         )}
 
         {/* Course Count Display */}

@@ -33,6 +33,7 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { toast } from "react-hot-toast";
+import { formatTextAsParagraphs } from "@/lib/blogUtils";
 
 const MySwal = withReactContent(Swal);
 const API_BASE = getApiBase();
@@ -522,12 +523,14 @@ const GroupPricingTab = ({ onBack }) => {
 
                   {item.description && (
                     <Typography
+                      component="div"
                       variant="body2"
                       color="text.secondary"
-                      sx={{ mb: 2 }}
-                    >
-                      {item.description}
-                    </Typography>
+                      sx={{ mb: 2, "& p": { margin: "0 0 8px 0" } }}
+                      dangerouslySetInnerHTML={{
+                        __html: formatTextAsParagraphs(item.description),
+                      }}
+                    />
                   )}
 
                   <Typography
