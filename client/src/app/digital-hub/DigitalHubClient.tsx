@@ -5186,13 +5186,30 @@ export default function DigitalHubClient({
         .digital-hub-content p,
         .topic-content-light p,
         .topic-content-dark p {
-          margin-bottom: 0.75rem !important;
+          margin-bottom: 0.35rem !important;
         }
 
         .digital-hub-content p:last-child,
         .topic-content-light p:last-child,
         .topic-content-dark p:last-child {
           margin-bottom: 0 !important;
+        }
+
+        .digital-hub-content ul,
+        .digital-hub-content ol,
+        .topic-content-light ul,
+        .topic-content-light ol,
+        .topic-content-dark ul,
+        .topic-content-dark ol {
+          margin-top: 0.35rem !important;
+          margin-bottom: 0.5rem !important;
+          padding-left: 1.5rem !important;
+        }
+
+        .digital-hub-content li,
+        .topic-content-light li,
+        .topic-content-dark li {
+          margin-bottom: 0.2rem !important;
         }
 
         .digital-hub-content strong,
