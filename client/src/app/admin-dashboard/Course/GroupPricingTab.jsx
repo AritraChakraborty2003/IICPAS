@@ -282,28 +282,6 @@ const GroupPricingTab = ({ onBack }) => {
       return;
     }
 
-    if (!editingItem) {
-      const existingAtLevel = groupPricing.find(
-        (item) =>
-          item?.level === formData.level &&
-          String(item?.status || "Active").toLowerCase() === "active"
-      );
-
-      if (existingAtLevel) {
-        toast.error(
-          `Group pricing for ${formData.level} already exists. Please edit the existing record instead.`,
-          {
-            style: {
-              zIndex: 9999,
-              position: "top-center",
-            },
-          }
-        );
-        handleEdit(existingAtLevel);
-        return;
-      }
-    }
-
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("groupName", formData.groupName);

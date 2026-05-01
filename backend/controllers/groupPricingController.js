@@ -289,27 +289,6 @@ export const createGroupPricing = async (req, res) => {
       });
     }
 
-    // Check if group pricing already exists for this level
-    const existingGroupPricing = await GroupPricing.findOne({
-      level: level,
-      status: "Active",
-    });
-
-    if (existingGroupPricing) {
-      console.log("=== DUPLICATE GROUP PRICING FOUND ===");
-      console.log("Existing group pricing for level:", level);
-      console.log("Existing ID:", existingGroupPricing._id);
-      console.log("Existing name:", existingGroupPricing.groupName);
-      console.log("====================================");
-      return res.status(400).json({
-        success: false,
-        message: `Group pricing already exists for ${level}. Please update the existing record (ID: ${existingGroupPricing._id}) or delete it first.`,
-        existingRecordId: existingGroupPricing._id,
-        existingRecordName: existingGroupPricing.groupName,
-        action: "update_or_delete_existing",
-      });
-    }
-
     // Generate slug from groupName
     const slug = groupName
       .toLowerCase()
@@ -376,6 +355,15 @@ export const createGroupPricing = async (req, res) => {
   } catch (error) {
     console.error("Error creating group pricing:", error);
     console.error("Error stack:", error.stack);
+
+    if (error?.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "A group pricing package with this name already exists. Please choose a different group name.",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to create group pricing",
@@ -585,6 +573,15 @@ export const updateGroupPricing = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating group pricing:", error);
+
+    if (error?.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "A group pricing package with this name already exists. Please choose a different group name.",
+      });
+    }
+
     res.status(500).json({
       success: false,
       message: "Failed to update group pricing",
@@ -627,19 +624,25 @@ export const getGroupPricingByLevel = async (req, res) => {
   try {
     const { level } = req.params;
 
-    const groupPricing = await GroupPricing.findOne({
+    const groupPricing = await GroupPricing.find({
       level: level,
       status: "Active",
-    }).populate("courseIds", "title category level price");
+    })
+      .populate("courseIds", "title category level price")
+      .sort({ createdAt: -1, groupName: 1 });
 
-    if (!groupPricing) {
+    if (!groupPricing.length) {
       return res.status(404).json({
         success: false,
-        message: "Group pricing not found for this level",
+        message: "No active group pricing found for this level",
       });
     }
 
-    res.json(groupPricing);
+    res.json({
+      success: true,
+      level,
+      groupPricing,
+    });
   } catch (error) {
     console.error("Error fetching group pricing by level:", error);
     res.status(500).json({
