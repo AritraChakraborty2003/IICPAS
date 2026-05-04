@@ -253,7 +253,9 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const { hasPermission, user } = useAuth();
-  const landingDraftKey = draftKey || buildLiveSessionLandingDraftKey(editId || "new");
+  const landingDraftKey = editId
+    ? buildLiveSessionLandingDraftKey(editId)
+    : draftKey || buildLiveSessionLandingDraftKey("new");
 
   const selectedCourse = useMemo(
     () =>
