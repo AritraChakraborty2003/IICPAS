@@ -209,10 +209,9 @@ export default function PreviewLandingPageClient() {
       </button>
 
       <LiveSessionLandingPage
-        sessionId={draft ? undefined : sessionId || undefined}
+        sessionId={sessionId || draft?.editId || undefined}
         session={session}
         draftLandingPage={draftLandingPage}
-        previewMode
         showHeader
         showFooter={false}
         overrideTitle={draft?.form?.title || ""}
