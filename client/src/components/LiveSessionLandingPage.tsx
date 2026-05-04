@@ -291,7 +291,7 @@ function LiveSessionLandingPage({
       <main className="w-full">
         <section className="overflow-hidden bg-white">
           <div className="relative w-full">
-            <div className="relative h-[420px] w-full overflow-hidden bg-slate-200 md:h-[720px]">
+            <div className="relative h-[340px] w-full overflow-hidden bg-slate-200 md:h-[560px]">
               <img
                 src={landingPage.heroImage}
                 alt={landingPage.headline}
@@ -299,21 +299,21 @@ function LiveSessionLandingPage({
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />
 
-              <div className="absolute inset-x-0 top-10 md:top-16">
-                <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-4 text-center">
+              <div className="absolute inset-x-0 top-8 md:top-12">
+                <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 text-center">
                   <div className="inline-flex flex-wrap items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
-                    <span className="bg-sky-800 px-4 py-2 text-2xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-5xl">
+                    <span className="bg-sky-800 px-4 py-2 text-xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-4xl">
                       {heroPrimaryText}
                     </span>
-                    <span className="bg-orange-500 px-4 py-2 text-2xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-5xl">
+                    <span className="bg-orange-500 px-4 py-2 text-xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-4xl">
                       {heroSecondaryText}
                     </span>
                   </div>
                   <div className="inline-flex flex-wrap items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)]">
-                    <span className="bg-sky-800 px-4 py-2 text-lg font-bold leading-none text-white md:px-6 md:py-3 md:text-2xl">
+                    <span className="bg-sky-800 px-4 py-2 text-base font-bold leading-none text-white md:px-6 md:py-3 md:text-xl">
                       {landingPage.formLabel || "IICPA"}
                     </span>
-                    <span className="bg-orange-500 px-4 py-2 text-lg font-bold leading-none text-white md:px-6 md:py-3 md:text-2xl">
+                    <span className="bg-orange-500 px-4 py-2 text-base font-bold leading-none text-white md:px-6 md:py-3 md:text-xl">
                       {landingPage.ctaText || "Get Free Preview"}
                     </span>
                   </div>
