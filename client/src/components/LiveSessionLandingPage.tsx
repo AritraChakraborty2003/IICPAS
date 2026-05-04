@@ -295,7 +295,7 @@ function LiveSessionLandingPage({
               <img
                 src={landingPage.heroImage}
                 alt={landingPage.headline}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain object-center bg-slate-200"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />
 
