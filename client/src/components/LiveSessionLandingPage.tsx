@@ -48,6 +48,7 @@ type LeadFormState = {
   whatsappNumber: string;
   company: string;
   message: string;
+  receiveNotifications: boolean;
 };
 
 type NormalizedLeadValues = {
@@ -82,6 +83,7 @@ const emptyForm = (): LeadFormState => ({
   whatsappNumber: "",
   company: "",
   message: "",
+  receiveNotifications: true,
 });
 
 const MOBILE_NUMBER_REGEX = /^[6-9]\d{9}$/;
@@ -750,19 +752,24 @@ function LiveSessionLandingPage({
                       placeholder="Optional"
                     />
                   </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Company / Institute
-                    </label>
+
+                  {/* Receive notifications checkbox */}
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:bg-slate-100">
                     <input
-                      value={form.company}
+                      type="checkbox"
+                      checked={form.receiveNotifications}
                       onChange={(e) =>
-                        setForm((current) => ({ ...current, company: e.target.value }))
+                        setForm((current) => ({
+                          ...current,
+                          receiveNotifications: e.target.checked,
+                        }))
                       }
-                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
-                      placeholder="Optional"
+                      className="mt-0.5 h-4 w-4 accent-emerald-600"
                     />
-                  </div>
+                    <span className="text-sm leading-snug text-slate-700">
+                      Receive latest notifications &amp; updates about this session via WhatsApp / Email
+                    </span>
+                  </label>
 
                   <button
                     type="button"
