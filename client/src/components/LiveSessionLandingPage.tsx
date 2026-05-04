@@ -691,16 +691,7 @@ function LiveSessionLandingPage({
                   {landingPage.formDescription}
                 </p>
 
-                <button
-                  type="button"
-                  disabled={previewMode || paying}
-                  className="mt-5 w-full rounded-none bg-emerald-600 px-4 py-3 text-sm font-semibold tracking-[0.08em] text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  onClick={handlePayNow}
-                >
-                  {previewMode ? "Preview only" : paying ? "Starting..." : payNowLabel}
-                </button>
-
-                <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+                <form className="mt-6 space-y-4">
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-slate-700">
                       Name *
@@ -774,20 +765,42 @@ function LiveSessionLandingPage({
                   </div>
 
                   <button
-                    type="submit"
-                    disabled={previewMode || submitting}
-                    className="mt-2 w-full rounded-none bg-[#f4a261] px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#ef9552] disabled:cursor-not-allowed disabled:opacity-50"
+                    type="button"
+                    disabled={previewMode || paying || submitting}
+                    className="mt-4 w-full rounded-none bg-emerald-600 px-4 py-3 text-sm font-bold uppercase tracking-[0.10em] text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    onClick={handlePayNow}
                   >
                     {previewMode
-                      ? "Preview only"
-                      : submitting
-                      ? "Submitting..."
-                      : landingPage.ctaText}
+                      ? "Pay Now"
+                      : paying || submitting
+                      ? "Processing..."
+                      : payNowLabel}
                   </button>
 
                   {submitted ? (
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                      {landingPage.thankYouText}
+                    <div className="mt-4 space-y-3">
+                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        {landingPage.thankYouText}
+                      </div>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+                        Send confirmation to enrollee
+                      </p>
+                      <div className="flex gap-3">
+                        <a
+                          href={`https://wa.me/${form.whatsappNumber || form.phone}?text=${encodeURIComponent(`Hi ${form.name},%0AYour enrollment for *${session?.title || landingPage.headline}* is confirmed!%0AThank you for enrolling. Our team will reach out shortly with the session details.%0A%0A— IICPA Institute`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 rounded-none border border-emerald-600 bg-white px-3 py-2 text-center text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                        >
+                          📲 WhatsApp
+                        </a>
+                        <a
+                          href={`mailto:${form.email}?subject=${encodeURIComponent(`Enrollment Confirmed – ${session?.title || landingPage.headline}`)}&body=${encodeURIComponent(`Hi ${form.name},\n\nYour enrollment for "${session?.title || landingPage.headline}" is confirmed.\n\nOur team will reach out shortly with session details.\n\nThank you,\nIICPA Institute`)}`}
+                          className="flex-1 rounded-none border border-sky-600 bg-white px-3 py-2 text-center text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+                        >
+                          ✉️ Email
+                        </a>
+                      </div>
                     </div>
                   ) : null}
                 </form>
