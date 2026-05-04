@@ -27,6 +27,7 @@ type LiveSessionRecord = {
   subtitle?: string;
   instructor?: string;
   description?: string;
+  price?: number | string;
   imageUrl?: string;
   thumbnail?: string;
   category?: string;
@@ -197,6 +198,10 @@ function LiveSessionLandingPage({
     heroHeadlineWords.length > 2
       ? heroHeadlineWords.slice(2).join(" ")
       : landingPage.subheadline || "Landing Page";
+  const sessionPrice = Number(session?.price || 0);
+  const payNowLabel = Number.isFinite(sessionPrice) && sessionPrice > 0
+    ? `Pay Now ₹${sessionPrice.toLocaleString("en-IN")}`
+    : "Pay Now";
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -410,6 +415,32 @@ function LiveSessionLandingPage({
                 <p className="text-sm leading-7 text-slate-600">
                   {landingPage.formDescription}
                 </p>
+
+                <button
+                  type="button"
+                  className="mt-5 w-full rounded-none bg-[#0f265c] px-4 py-3 text-sm font-semibold tracking-[0.08em] text-white transition hover:bg-[#13306f]"
+                  onClick={() => {
+                    if (previewMode) return;
+                    if (session?.price || sessionPrice) {
+                      const payLink =
+                        session?.link ||
+                        session?.paymentLink ||
+                        session?.checkoutUrl ||
+                        "";
+                      if (payLink) {
+                        window.location.href = payLink;
+                        return;
+                      }
+                    }
+                    Swal.fire(
+                      "Payment",
+                      "Payment link is not configured for this live session yet.",
+                      "info"
+                    );
+                  }}
+                >
+                  {payNowLabel}
+                </button>
 
                 <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
                   <div>
