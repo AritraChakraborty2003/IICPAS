@@ -5,7 +5,13 @@ import Footer from "@/app/components/Footer";
 import { getApiOrigin } from "@/lib/apiBase";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Swal from "sweetalert2";
-import { FaInstagram, FaLinkedin, FaTwitter, FaYoutube } from "react-icons/fa";
+import {
+  FaFacebook,
+  FaInstagram,
+  FaLinkedin,
+  FaTwitter,
+  FaYoutube,
+} from "react-icons/fa";
 
 type LandingPageConfig = {
   heroImage?: string;
@@ -121,6 +127,12 @@ const resolveLandingPage = (
 };
 
 const SOCIAL_LINKS = [
+  {
+    label: "Facebook",
+    href: "https://www.facebook.com/profile.php?id=61581453864987",
+    icon: FaFacebook,
+    bgClass: "bg-[#1877f2]",
+  },
   {
     label: "LinkedIn",
     href: "https://linkedin.com/company/iicpa-institute",
