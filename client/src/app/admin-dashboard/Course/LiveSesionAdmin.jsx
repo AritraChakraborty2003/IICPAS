@@ -1420,14 +1420,13 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
             {editId ? (
               <Button
                 variant="outlined"
-                component="a"
-                href={
-                  typeof window !== "undefined"
-                    ? `${window.location.origin}/live-session/landing/${editId}`
-                    : `/live-session/landing/${editId}`
-                }
-                target="_blank"
-                rel="noopener noreferrer"
+                onClick={() => {
+                  const currentDraftKey = persistLandingDraft();
+                  const previewUrl = `/live-session/landing/preview?draftKey=${encodeURIComponent(
+                    currentDraftKey
+                  )}&sessionId=${encodeURIComponent(editId || "")}`;
+                  window.open(previewUrl, "_blank", "noopener,noreferrer");
+                }}
                 sx={{
                   borderColor: "#16a34a",
                   color: "#16a34a",
