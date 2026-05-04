@@ -266,7 +266,7 @@ function LiveSessionLandingPage({
             forceVisible
             showMarquee={false}
             simple
-            rightText="Live Session Landing Page"
+            rightText="Live Session"
           />
         ) : null}
         <div className="mx-auto flex min-h-[60vh] max-w-6xl items-center justify-center px-4">
@@ -286,7 +286,7 @@ function LiveSessionLandingPage({
             forceVisible
             showMarquee={false}
             simple
-            rightText="Live Session Landing Page"
+            rightText="Live Session"
           />
         ) : null}
         <div className="mx-auto flex min-h-[60vh] max-w-6xl items-center justify-center px-4">
@@ -305,7 +305,7 @@ function LiveSessionLandingPage({
           forceVisible
           showMarquee={false}
           simple
-          rightText="Live Session Landing Page"
+          rightText="Live Session"
         />
       ) : null}
 
