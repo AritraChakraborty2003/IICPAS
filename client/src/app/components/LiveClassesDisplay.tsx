@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 import { getBlogSlug } from "../../lib/blogSlug";
 import LoginModal from "./LoginModal";
 
@@ -54,6 +55,7 @@ const normalizeMobileNumber = (value: string) =>
   value.replace(/\D/g, "").slice(0, 10);
 
 export default function LiveClassesDisplay() {
+  const router = useRouter();
   const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
   const [selectedTab, setSelectedTab] = useState<
     "upcoming" | "live" | "completed"
@@ -503,16 +505,7 @@ export default function LiveClassesDisplay() {
       return;
     }
 
-    if (session.isEnrolled) return;
-
-    const currentUser = user || (await getUser());
-    if (!currentUser) {
-      promptLoginForEnrollment(session);
-      return;
-    }
-
-    setPendingEnrollmentSession(null);
-    openEnrollmentModal(session, currentUser);
+    router.push(`/live-session/landing/${session._id}`);
   };
 
   const handleEnrollmentInputChange = (

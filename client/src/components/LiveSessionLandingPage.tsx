@@ -3,7 +3,7 @@
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
 import { getApiOrigin } from "@/lib/apiBase";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Swal from "sweetalert2";
 import {
   FaFacebook,
@@ -45,6 +45,7 @@ type LeadFormState = {
   name: string;
   email: string;
   phone: string;
+  whatsappNumber: string;
   company: string;
   message: string;
 };
@@ -67,9 +68,17 @@ const emptyForm = (): LeadFormState => ({
   name: "",
   email: "",
   phone: "",
+  whatsappNumber: "",
   company: "",
   message: "",
 });
+
+const MOBILE_NUMBER_REGEX = /^[6-9]\d{9}$/;
+const ALLOWED_EMAIL_REGEX =
+  /^[a-zA-Z0-9](?:[a-zA-Z0-9._%+-]{0,62}[a-zA-Z0-9])@(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/i;
+
+const normalizeMobileNumber = (value: string) =>
+  value.replace(/\D/g, "").slice(0, 10);
 
 const resolveLandingPage = (
   session: LiveSessionRecord | null,
@@ -177,7 +186,9 @@ function LiveSessionLandingPage({
   const [error, setError] = useState("");
   const [form, setForm] = useState<LeadFormState>(emptyForm);
   const [submitting, setSubmitting] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const lastSavedLeadSignatureRef = useRef("");
 
   useEffect(() => {
     setSession(incomingSession);
@@ -241,56 +252,264 @@ function LiveSessionLandingPage({
   const sessionPrice = Number(session?.price || 0);
   const payNowLabel = Number.isFinite(sessionPrice) && sessionPrice > 0
     ? `Pay Now ₹${sessionPrice.toLocaleString("en-IN")}`
-    : "Pay Now";
+    : "Enroll Now";
+
+  const normalizeFormValues = () => {
+    const name = form.name.trim();
+    const email = form.email.trim().toLowerCase();
+    const phone = normalizeMobileNumber(form.phone);
+    const whatsappNumber = form.whatsappNumber.trim()
+      ? normalizeMobileNumber(form.whatsappNumber)
+      : phone;
+
+    if (!name || !email || !phone) {
+      return {
+        error: "Please enter your name, email, and phone number.",
+      } as const;
+    }
+
+    if (!ALLOWED_EMAIL_REGEX.test(email)) {
+      return {
+        error:
+          "Please enter a valid email address like user@gmail.com or info@company.com.",
+      } as const;
+    }
+
+    if (!MOBILE_NUMBER_REGEX.test(phone)) {
+      return {
+        error:
+          "Please enter a valid 10-digit mobile number starting with 6, 7, 8, or 9.",
+      } as const;
+    }
+
+    if (form.whatsappNumber.trim() && !MOBILE_NUMBER_REGEX.test(whatsappNumber)) {
+      return {
+        error:
+          "Please enter a valid 10-digit WhatsApp number starting with 6, 7, 8, or 9.",
+      } as const;
+    }
+
+    return {
+      name,
+      email,
+      phone,
+      whatsappNumber,
+      company: form.company.trim(),
+      message: form.message.trim(),
+    } as const;
+  };
+
+  const buildLeadPayload = (
+    values: ReturnType<typeof normalizeFormValues> extends { error: string }
+      ? never
+      : {
+          name: string;
+          email: string;
+          phone: string;
+          whatsappNumber: string;
+          company: string;
+          message: string;
+        }
+  ) => ({
+    name: values.name,
+    email: values.email,
+    phone: values.phone,
+    message:
+      values.message || `Landing page enquiry for ${landingPage.headline}`,
+    type: "live-session-landing",
+    source: "live-session-landing-page",
+    course: session?.title || "",
+    landingPageSessionId: session?._id || sessionId || "",
+    landingPageUrl: leadUrl,
+    landingPageTitle: landingPage.headline,
+    whatsappNumber: values.whatsappNumber,
+    company: values.company,
+  });
+
+  const saveLeadRecord = async (
+    values: ReturnType<typeof normalizeFormValues> extends { error: string }
+      ? never
+      : {
+          name: string;
+          email: string;
+          phone: string;
+          whatsappNumber: string;
+          company: string;
+          message: string;
+        },
+    { force = false }: { force?: boolean } = {}
+  ) => {
+    const leadPayload = buildLeadPayload(values);
+    const signature = JSON.stringify(leadPayload);
+
+    if (!force && lastSavedLeadSignatureRef.current === signature) {
+      return;
+    }
+
+    const response = await fetch(`${API_ORIGIN}/api/leads`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(leadPayload),
+    });
+
+    if (!response.ok) {
+      throw new Error("Unable to submit enquiry");
+    }
+
+    lastSavedLeadSignatureRef.current = signature;
+  };
+
+  const startPaidEnrollment = async (
+    values: ReturnType<typeof normalizeFormValues> extends { error: string }
+      ? never
+      : {
+          name: string;
+          email: string;
+          phone: string;
+          whatsappNumber: string;
+          company: string;
+          message: string;
+        }
+  ) => {
+    const liveSessionId = session?._id || sessionId || "";
+    if (!liveSessionId) {
+      throw new Error("Live session is not available for payment");
+    }
+
+    if (!isNaN(sessionPrice) && sessionPrice <= 0) {
+      return;
+    }
+
+    if (!isNaN(sessionPrice) && sessionPrice > 0) {
+      if (!sessionPrice || !Number.isFinite(sessionPrice)) {
+        throw new Error("Session price is missing");
+      }
+    }
+
+    if (!isNaN(sessionPrice) && sessionPrice > 0) {
+      if (!isNaN(sessionPrice) && sessionPrice > 0) {
+        if (!previewMode) {
+          if (!(window as any).Razorpay) {
+            throw new Error("Razorpay checkout is not available right now");
+          }
+
+          const orderResponse = await fetch(
+            `${API_ORIGIN}/api/test-payment/create-order`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                liveSessionId,
+                name: values.name,
+                email: values.email,
+                phone: values.phone,
+                whatsappNumber: values.whatsappNumber,
+                price: sessionPrice,
+                paymentSource: "live-session-landing-page",
+              }),
+            }
+          );
+
+          const orderJson = await orderResponse.json().catch(() => null);
+          const orderData = orderJson?.data;
+
+          if (!orderResponse.ok || !orderJson?.success || !orderData?.orderId) {
+            throw new Error(
+              orderJson?.message || "Failed to create payment order"
+            );
+          }
+
+          const razorpay = new (window as any).Razorpay({
+            key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+            amount: orderData.amount,
+            currency: orderData.currency || "INR",
+            name: "IICPA Institute",
+            description: session?.title || landingPage.headline,
+            order_id: orderData.orderId,
+            prefill: {
+              name: values.name,
+              email: values.email,
+              contact: values.phone,
+            },
+            theme: {
+              color: "#16a34a",
+            },
+            modal: {
+              ondismiss: () => {
+                setPaying(false);
+              },
+            },
+            handler: async (response: any) => {
+              try {
+                const verificationResponse = await fetch(
+                  `${API_ORIGIN}/api/test-payment/verify-and-capture`,
+                  {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(response),
+                  }
+                );
+                const verificationJson = await verificationResponse.json().catch(
+                  () => null
+                );
+
+                if (!verificationResponse.ok || !verificationJson?.success) {
+                  throw new Error(
+                    verificationJson?.message ||
+                      "Payment verification failed"
+                  );
+                }
+
+                setSubmitted(true);
+                Swal.fire(
+                  "Success",
+                  "Payment successful. Your booking is confirmed.",
+                  "success"
+                );
+              } catch (verificationError) {
+                console.error("Payment verification failed:", verificationError);
+                Swal.fire(
+                  "Error",
+                  verificationError instanceof Error
+                    ? verificationError.message
+                    : "Payment verification failed. Please contact support.",
+                  "error"
+                );
+              } finally {
+                setPaying(false);
+              }
+            },
+          });
+
+          razorpay.open();
+        }
+      }
+    }
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (previewMode) return;
 
-    const cleanName = form.name.trim();
-    const cleanEmail = form.email.trim();
-    const cleanPhone = form.phone.trim();
-
-    if (!cleanName || !cleanEmail || !cleanPhone) {
-      Swal.fire(
-        "Missing details",
-        "Please enter your name, email, and phone number.",
-        "warning"
-      );
-      return;
-    }
-
     try {
       setSubmitting(true);
-      const payload = {
-        name: cleanName,
-        email: cleanEmail,
-        phone: cleanPhone,
-        message:
-          form.message.trim() ||
-          `Landing page enquiry for ${landingPage.headline}`,
-        type: "live-session-landing",
-        source: "live-session-landing-page",
-        course: session?.title || "",
-        landingPageSessionId: session?._id || sessionId || "",
-        landingPageUrl: leadUrl,
-        landingPageTitle: landingPage.headline,
-      };
-
-      const response = await fetch(`${API_ORIGIN}/api/leads`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Unable to submit enquiry");
+      const values = normalizeFormValues();
+      if ("error" in values) {
+        throw new Error(values.error);
       }
+      await saveLeadRecord(values, { force: true });
 
       setSubmitted(true);
-      setForm(emptyForm());
+      setForm((current) => ({
+        ...current,
+        message: "",
+      }));
       Swal.fire("Success", landingPage.thankYouText, "success");
     } catch (err) {
       Swal.fire(
@@ -300,6 +519,36 @@ function LiveSessionLandingPage({
       );
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handlePayNow = async () => {
+    if (previewMode) return;
+
+    try {
+      setPaying(true);
+      const values = normalizeFormValues();
+      if ("error" in values) {
+        throw new Error(values.error);
+      }
+
+      await saveLeadRecord(values);
+
+      if (sessionPrice <= 0) {
+        setSubmitted(true);
+        Swal.fire("Success", landingPage.thankYouText, "success");
+        return;
+      }
+
+      await startPaidEnrollment(values);
+    } catch (err) {
+      Swal.fire(
+        "Error",
+        err instanceof Error ? err.message : "Unable to start payment",
+        "error"
+      );
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -386,7 +635,7 @@ function LiveSessionLandingPage({
                 alt={landingPage.headline}
                 className="h-full w-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-black/10" />
+              <div className="absolute inset-0 bg-black/20" />
 
               <div className="absolute inset-x-0 top-[56%] -translate-y-1/2">
                 <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 text-center">
@@ -481,28 +730,11 @@ function LiveSessionLandingPage({
 
                 <button
                   type="button"
-                  className="mt-5 w-full rounded-none bg-[#0f265c] px-4 py-3 text-sm font-semibold tracking-[0.08em] text-white transition hover:bg-[#13306f]"
-                  onClick={() => {
-                    if (previewMode) return;
-                    if (session?.price || sessionPrice) {
-                      const payLink =
-                        session?.link ||
-                        session?.paymentLink ||
-                        session?.checkoutUrl ||
-                        "";
-                      if (payLink) {
-                        window.location.href = payLink;
-                        return;
-                      }
-                    }
-                    Swal.fire(
-                      "Payment",
-                      "Payment link is not configured for this live session yet.",
-                      "info"
-                    );
-                  }}
+                  disabled={previewMode || paying}
+                  className="mt-5 w-full rounded-none bg-emerald-600 px-4 py-3 text-sm font-semibold tracking-[0.08em] text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={handlePayNow}
                 >
-                  {payNowLabel}
+                  {previewMode ? "Preview only" : paying ? "Starting..." : payNowLabel}
                 </button>
 
                 <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
@@ -545,6 +777,23 @@ function LiveSessionLandingPage({
                       }
                       className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
                       placeholder="Phone number"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      WhatsApp Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={form.whatsappNumber}
+                      onChange={(e) =>
+                        setForm((current) => ({
+                          ...current,
+                          whatsappNumber: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      placeholder="Optional"
                     />
                   </div>
                   <div>
