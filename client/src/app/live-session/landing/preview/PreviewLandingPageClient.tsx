@@ -44,7 +44,7 @@ const getLandingPageDefaults = (
   authorCode: landingPage.authorCode || "IICPA",
   authorText: landingPage.authorText || "",
   ctaText: landingPage.ctaText || "Get Free Preview",
-  formHeading: landingPage.formHeading || "Enroll now",
+  formHeading: landingPage.formHeading || "Enroll Now",
   formDescription:
     landingPage.formDescription ||
     "Share your details and our team will reach out shortly.",

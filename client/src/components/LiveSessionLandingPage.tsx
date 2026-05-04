@@ -206,6 +206,11 @@ function LiveSessionLandingPage({
   }, [incomingSession]);
 
   useEffect(() => {
+    lastSavedLeadSignatureRef.current = "";
+    setSubmitted(false);
+  }, [sessionId]);
+
+  useEffect(() => {
     if (!sessionId || incomingSession) return;
 
     let cancelled = false;
@@ -468,10 +473,6 @@ function LiveSessionLandingPage({
       await saveLeadRecord(values, { force: true });
 
       setSubmitted(true);
-      setForm((current) => ({
-        ...current,
-        message: "",
-      }));
       Swal.fire("Success", landingPage.thankYouText, "success");
     } catch (err) {
       Swal.fire(
