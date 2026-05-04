@@ -88,8 +88,10 @@ export default function PreviewLandingPageClient() {
         setLoading(true);
         if (draftKey) {
           const stored = readLiveSessionLandingDraft(draftKey);
-          if (!cancelled) setDraft(stored);
-          return;
+          if (stored) {
+            if (!cancelled) setDraft(stored);
+            return;
+          }
         }
 
         if (!sessionId) {
