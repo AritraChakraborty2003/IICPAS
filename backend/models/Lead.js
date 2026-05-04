@@ -6,6 +6,8 @@ const LeadSchema = new mongoose.Schema(
     name: { type: String, required: true },
     email: { type: String, required: false },
     phone: { type: String, required: true },
+    whatsappNumber: { type: String, default: "" },
+    company: { type: String, default: "" },
     message: { type: String, required: false }, // Made optional for admission course
     course: { type: String, required: false }, // Added course field for admission leads
     type: { type: String, required: true }, // string field for category
