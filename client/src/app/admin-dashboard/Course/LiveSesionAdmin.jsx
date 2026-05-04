@@ -643,7 +643,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     if (res.ok) {
       await fetchSessions();
       clearLiveSessionLandingDraft(
-        buildLiveSessionLandingDraftKey(editId || "new")
+        draftKey || buildLiveSessionLandingDraftKey(editId || "new")
       );
       clearLiveSessionLandingDraft(buildLiveSessionLandingDraftKey("new"));
       resetForm();
@@ -663,7 +663,8 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   };
 
   const persistLandingDraft = () => {
-    const currentDraftKey = buildLiveSessionLandingDraftKey(editId || "new");
+    const currentDraftKey =
+      draftKey || buildLiveSessionLandingDraftKey(editId || "new");
     writeLiveSessionLandingDraft(currentDraftKey, {
       editId: editId || "",
       tab,
@@ -800,7 +801,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
 
   const resetForm = () => {
     clearLiveSessionLandingDraft(
-      buildLiveSessionLandingDraftKey(editId || "new")
+      draftKey || buildLiveSessionLandingDraftKey(editId || "new")
     );
     clearLiveSessionLandingDraft(buildLiveSessionLandingDraftKey("new"));
     setForm({

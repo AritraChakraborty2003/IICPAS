@@ -3,7 +3,6 @@
 import LiveSessionLandingPage from "@/components/LiveSessionLandingPage";
 import { getApiOrigin } from "@/lib/apiBase";
 import {
-  buildLiveSessionLandingDraftKey,
   readLiveSessionLandingDraft,
 } from "@/lib/liveSessionLandingDraft";
 import { useEffect, useMemo, useState } from "react";
