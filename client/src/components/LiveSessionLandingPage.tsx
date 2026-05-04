@@ -614,7 +614,7 @@ function LiveSessionLandingPage({
                     <span className="bg-sky-800 px-4 py-2 text-base font-bold leading-none text-white md:px-6 md:py-3 md:text-xl">
                       {landingPage.formLabel || "IICPA"}
                     </span>
-                    <span className="bg-green-600 px-4 py-2 text-base font-bold leading-none text-white md:px-6 md:py-3 md:text-xl">
+                    <span className="bg-green-600 px-4 py-2 text-sm font-bold leading-none text-white md:px-6 md:py-3 md:text-lg">
                       {landingPage.ctaText || "Get Free Preview"}
                     </span>
                   </div>
