@@ -2395,14 +2395,14 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                     />
                   </div>
 
-                  {(form.landingPage.heroImage || imagePreview) && (
+                  {form.landingPage.heroImage && (
                     <div className="lg:col-span-2">
                       <label className="block font-semibold mb-2">
                         Hero Image Preview
                       </label>
                       <div className="rounded-lg border border-slate-200 bg-white p-4">
                         <img
-                          src={form.landingPage.heroImage || imagePreview}
+                          src={form.landingPage.heroImage}
                           alt="Hero preview"
                           className="h-40 w-full max-w-xl rounded-lg object-cover"
                           onError={(e) => {
