@@ -61,6 +61,7 @@ const getDraftSession = (draft: LiveSessionLandingDraft | null) => {
     title: form.title || "Live Session Landing Page",
     instructor: form.instructor || "",
     description: form.description || "",
+    price: Number(form.price || 0),
     imageUrl:
       draft?.imagePreview ||
       form.thumbnail ||
