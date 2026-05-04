@@ -306,7 +306,7 @@ function LiveSessionLandingPage({
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />
 
-              <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+              <div className="absolute inset-x-0 top-[56%] -translate-y-1/2">
                 <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 text-center">
                   <div className="inline-flex flex-wrap items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
                     <span className="bg-sky-800 px-4 py-2 text-xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-4xl">
