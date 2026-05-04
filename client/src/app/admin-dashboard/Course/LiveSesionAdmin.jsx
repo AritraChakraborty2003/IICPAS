@@ -1417,13 +1417,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
             >
               ← Back to Sessions
             </Button>
-            <Button
-              variant="outlined"
-              sx={{ borderColor: "#0f265c", color: "#0f265c", borderRadius: 2, fontWeight: 600, px: 3 }}
-              onClick={() => setLandingPreviewOpen(true)}
-            >
-              Preview Landing Page
-            </Button>
             {editId ? (
               <Button
                 variant="outlined"

@@ -291,11 +291,11 @@ function LiveSessionLandingPage({
       <main className="w-full">
         <section className="overflow-hidden bg-white">
           <div className="relative w-full">
-            <div className="relative h-[340px] w-full overflow-hidden bg-slate-200 md:h-[560px]">
+            <div className="relative aspect-[2400/1050] w-full overflow-hidden bg-slate-200">
               <img
                 src={landingPage.heroImage}
                 alt={landingPage.headline}
-                className="h-full w-full object-contain object-center bg-slate-200"
+                className="h-full w-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />
 
