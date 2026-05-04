@@ -3,6 +3,7 @@
 import LiveSessionLandingPage from "@/components/LiveSessionLandingPage";
 import { getApiOrigin } from "@/lib/apiBase";
 import {
+  type LiveSessionLandingDraft,
   readLiveSessionLandingDraft,
 } from "@/lib/liveSessionLandingDraft";
 import { useEffect, useMemo, useState } from "react";
@@ -11,7 +12,22 @@ import { X } from "lucide-react";
 
 const API_ORIGIN = getApiOrigin();
 
-const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
+type SessionLike = {
+  _id?: string;
+  title?: string;
+  subtitle?: string;
+  description?: string;
+  instructor?: string;
+  imageUrl?: string;
+  thumbnail?: string;
+  category?: string;
+  landingPage?: Record<string, any>;
+};
+
+const getLandingPageDefaults = (
+  landingPage: Record<string, any> = {},
+  session: SessionLike = {}
+) => ({
   heroImage:
     landingPage.heroImage ||
     session.imageUrl ||
@@ -38,7 +54,7 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
     "Thank you. Our team will contact you shortly.",
 });
 
-const getDraftSession = (draft) => {
+const getDraftSession = (draft: LiveSessionLandingDraft | null) => {
   const form = draft?.form || {};
   return {
     _id: draft?.editId || "draft",
@@ -77,7 +93,7 @@ export default function PreviewLandingPageClient() {
   const sessionId = searchParams.get("sessionId") || "";
   const returnTo =
     searchParams.get("returnTo") || "/admin-dashboard?tab=live-session";
-  const [draft, setDraft] = useState(null);
+  const [draft, setDraft] = useState<LiveSessionLandingDraft | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -1,4 +1,6 @@
 export type LiveSessionLandingDraft = {
+  editId?: string;
+  tab?: string;
   form?: Record<string, any>;
   imagePreview?: string;
   uploadedImageName?: string;
