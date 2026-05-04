@@ -810,12 +810,24 @@ function LiveSessionLandingPage({
                       <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                         {landingPage.thankYouText}
                       </div>
+
+                      {bookingId ? (
+                        <a
+                          href={`${API_ORIGIN}/api/test-payment/receipts/booking/${bookingId}/download`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex w-full items-center justify-center gap-2 rounded-none bg-sky-700 px-4 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-sky-800"
+                        >
+                          ⬇ Download Invoice / Receipt
+                        </a>
+                      ) : null}
+
                       <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
                         Send confirmation to enrollee
                       </p>
                       <div className="flex gap-3">
                         <a
-                          href={`https://wa.me/${form.whatsappNumber || form.phone}?text=${encodeURIComponent(`Hi ${form.name},%0AYour enrollment for *${session?.title || landingPage.headline}* is confirmed!%0AThank you for enrolling. Our team will reach out shortly with the session details.%0A%0A— IICPA Institute`)}`}
+                          href={`https://wa.me/${form.whatsappNumber || form.phone}?text=${encodeURIComponent(`Hi ${form.name},\nYour enrollment for *${session?.title || landingPage.headline}* is confirmed! 🎉\n\nThank you for enrolling with IICPA Institute. Our team will reach out shortly with session details.\n\nFor any queries, reply to this message.\n\n— IICPA Institute`)}`}
                           target="_blank"
                           rel="noreferrer"
                           className="flex-1 rounded-none border border-emerald-600 bg-white px-3 py-2 text-center text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
@@ -823,7 +835,7 @@ function LiveSessionLandingPage({
                           📲 WhatsApp
                         </a>
                         <a
-                          href={`mailto:${form.email}?subject=${encodeURIComponent(`Enrollment Confirmed – ${session?.title || landingPage.headline}`)}&body=${encodeURIComponent(`Hi ${form.name},\n\nYour enrollment for "${session?.title || landingPage.headline}" is confirmed.\n\nOur team will reach out shortly with session details.\n\nThank you,\nIICPA Institute`)}`}
+                          href={`mailto:${form.email}?subject=${encodeURIComponent(`Enrollment Confirmed – ${session?.title || landingPage.headline}`)}&body=${encodeURIComponent(`Hi ${form.name},\n\nYour enrollment for "${session?.title || landingPage.headline}" is confirmed!\n\nThank you for enrolling with IICPA Institute. Our team will reach out shortly with session details and your joining link.\n\nFor invoice/receipt, please visit your student dashboard or reply to this email.\n\nWarm regards,\nIICPA Institute Team`)}`}
                           className="flex-1 rounded-none border border-sky-600 bg-white px-3 py-2 text-center text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
                         >
                           ✉️ Email
