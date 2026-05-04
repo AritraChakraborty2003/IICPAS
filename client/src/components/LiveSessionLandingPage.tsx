@@ -331,6 +331,7 @@ function LiveSessionLandingPage({
     landingPageTitle: landingPage.headline,
     whatsappNumber: values.whatsappNumber,
     company: values.company,
+    receiveNotifications: form.receiveNotifications,
   });
 
   const saveLeadRecord = async (
