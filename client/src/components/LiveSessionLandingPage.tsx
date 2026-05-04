@@ -201,6 +201,7 @@ function LiveSessionLandingPage({
   const [submitting, setSubmitting] = useState(false);
   const [paying, setPaying] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [bookingId, setBookingId] = useState("");
   const lastSavedLeadSignatureRef = useRef("");
 
   useEffect(() => {
@@ -439,10 +440,15 @@ function LiveSessionLandingPage({
             );
           }
 
+          const newBookingId =
+            verificationJson?.data?.bookingId ||
+            verificationJson?.bookingId ||
+            "";
+          if (newBookingId) setBookingId(newBookingId);
           setSubmitted(true);
           Swal.fire(
-            "Success",
-            "Payment successful. Your booking is confirmed.",
+            "Payment Confirmed! 🎉",
+            "Your booking is confirmed. Check below to download your invoice or notify the enrollee.",
             "success"
           );
         } catch (verificationError) {
