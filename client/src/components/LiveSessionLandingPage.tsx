@@ -9,9 +9,9 @@ import {
   FaFacebook,
   FaInstagram,
   FaLinkedin,
-  FaTwitter,
   FaYoutube,
 } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 
 type LandingPageConfig = {
   heroImage?: string;
@@ -174,9 +174,9 @@ const SOCIAL_LINKS = [
     bgClass: "bg-[#ff0000]",
   },
   {
-    label: "Twitter",
+    label: "X",
     href: "https://twitter.com/iicpainstitute",
-    icon: FaTwitter,
+    icon: FaXTwitter,
     bgClass: "bg-[#111827]",
   },
 ] as const;
