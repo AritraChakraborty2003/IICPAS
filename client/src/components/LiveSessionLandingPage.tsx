@@ -753,6 +753,20 @@ function LiveSessionLandingPage({
                     />
                   </div>
 
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Company / Institute
+                    </label>
+                    <input
+                      value={form.company}
+                      onChange={(e) =>
+                        setForm((current) => ({ ...current, company: e.target.value }))
+                      }
+                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      placeholder="Optional"
+                    />
+                  </div>
+
                   {/* Receive notifications checkbox */}
                   <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:bg-slate-100">
                     <input
