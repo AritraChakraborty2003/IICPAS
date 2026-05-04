@@ -273,104 +273,136 @@ function LiveSessionLandingPage({
   }
 
   return (
-    <div className={`min-h-screen bg-[#f6f8fc] text-slate-900 ${className}`}>
+    <div className={`min-h-screen bg-[#eef4fb] text-slate-900 ${className}`}>
       {showHeader ? <Header forceVisible showMarquee={false} /> : null}
 
-      <main className="overflow-hidden">
-        <section className="relative bg-gradient-to-b from-slate-950 via-slate-900 to-slate-800 text-white">
-          <div className="absolute inset-0 opacity-30">
-            <div className="absolute -left-24 top-12 h-64 w-64 rounded-full bg-cyan-400 blur-3xl" />
-            <div className="absolute right-0 top-0 h-80 w-80 rounded-full bg-orange-500 blur-3xl" />
-          </div>
-
-          <div className="relative mx-auto grid max-w-7xl gap-10 px-4 py-12 md:py-16 lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/80 backdrop-blur">
-                IICPA Live Session
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              </div>
-
-              <div className="space-y-4">
-                <h1 className="max-w-3xl text-4xl font-black leading-tight tracking-tight md:text-5xl">
+      <main className="mx-auto max-w-6xl px-4 py-8 lg:px-8 lg:py-10">
+        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
+          <div className="border-b border-slate-100 bg-white px-5 py-4 md:px-8">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
+                  IICPA Live Session
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                </div>
+                <h1 className="mt-4 max-w-4xl text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-5xl">
                   {landingPage.headline}
                 </h1>
-                <p className="max-w-2xl text-base leading-8 text-white/80 md:text-lg">
+                <p className="mt-3 max-w-3xl text-base leading-8 text-slate-600 md:text-lg">
                   {landingPage.subheadline}
                 </p>
               </div>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 md:min-w-[220px]">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  Session
+                </p>
+                <p className="mt-1 text-base font-semibold text-slate-900">
+                  {session?.title || "Live Session"}
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  {bodyParagraphs[0] ||
+                    "A clean, shareable landing page for session lead generation."}
+                </p>
+              </div>
+            </div>
+          </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-3xl border border-white/10 bg-white/8 p-5 backdrop-blur">
-                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">
+          <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
+            <div className="relative bg-slate-100">
+              <div className="relative h-[300px] w-full overflow-hidden md:h-[420px]">
+                <img
+                  src={landingPage.heroImage}
+                  alt={landingPage.headline}
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/55 via-slate-950/20 to-transparent p-5 md:p-7">
+                  <div className="max-w-xl rounded-2xl bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
+                      {landingPage.formLabel}
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-700">
+                      {landingPage.formDescription}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-4 border-t border-slate-100 bg-[#f8fbff] px-5 py-6 md:px-8 md:py-8 lg:grid-cols-2">
+                <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                     Author
                   </p>
-                  <p className="mt-2 text-2xl font-bold">{landingPage.authorName}</p>
-                  <div className="mt-3 inline-flex rounded-full bg-cyan-400/15 px-3 py-1 text-xs font-semibold text-cyan-200">
+                  <p className="mt-2 text-2xl font-bold text-slate-900">
+                    {landingPage.authorName}
+                  </p>
+                  <div className="mt-3 inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800">
                     {landingPage.authorCode}
                   </div>
-                  <p className="mt-3 text-sm leading-7 text-white/75">
+                  <p className="mt-4 text-sm leading-7 text-slate-600">
                     {landingPage.authorText}
                   </p>
                 </div>
-                <div className="rounded-3xl border border-white/10 bg-white/8 p-5 backdrop-blur">
-                  <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/60">
-                    Session
+
+                <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                    What you will see
                   </p>
-                  <p className="mt-2 text-2xl font-bold">
-                    {session?.title || "Live Session"}
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-white/75">
-                    {bodyParagraphs[0] || "Lead capture page for live session promotion."}
-                  </p>
+                  <div className="mt-3 space-y-3 text-sm leading-7 text-slate-600">
+                    {bodyParagraphs.slice(0, 3).map((paragraph, index) => (
+                      <p key={`${index}-${paragraph}`}>{paragraph}</p>
+                    ))}
+                    {!bodyParagraphs.length ? (
+                      <p>
+                        {session?.description ||
+                          "This landing page is designed to capture leads and route them into the right follow-up flow."}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[2rem] border border-white/10 bg-white p-4 text-slate-900 shadow-[0_30px_80px_rgba(15,23,42,0.25)]">
-              <div className="overflow-hidden rounded-[1.5rem]">
-                <img
-                  src={landingPage.heroImage}
-                  alt={landingPage.headline}
-                  className="h-56 w-full object-cover md:h-64"
-                />
-              </div>
-
-              <div className="-mt-10 rounded-[1.5rem] bg-white px-5 pb-5 pt-12">
+            <div className="border-t border-slate-100 bg-white p-5 md:p-8 lg:border-l lg:border-t-0">
+              <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm md:p-7">
                 <div className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">
                   {landingPage.formLabel}
                 </div>
-                <h2 className="mt-4 text-2xl font-bold">{landingPage.formHeading}</h2>
+                <h2 className="mt-4 text-2xl font-bold text-slate-900">
+                  {landingPage.formHeading}
+                </h2>
                 <p className="mt-2 text-sm leading-7 text-slate-600">
                   {landingPage.formDescription}
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Name *
-                    </label>
-                    <input
-                      value={form.name}
-                      onChange={(e) =>
-                        setForm((current) => ({ ...current, name: e.target.value }))
-                      }
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-cyan-500"
-                      placeholder="Your name"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) =>
-                        setForm((current) => ({ ...current, email: e.target.value }))
-                      }
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-cyan-500"
-                      placeholder="Your email"
-                    />
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        Name *
+                      </label>
+                      <input
+                        value={form.name}
+                        onChange={(e) =>
+                          setForm((current) => ({ ...current, name: e.target.value }))
+                        }
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
+                        placeholder="Your name"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        value={form.email}
+                        onChange={(e) =>
+                          setForm((current) => ({ ...current, email: e.target.value }))
+                        }
+                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
+                        placeholder="Your email"
+                      />
+                    </div>
                   </div>
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -382,7 +414,7 @@ function LiveSessionLandingPage({
                       onChange={(e) =>
                         setForm((current) => ({ ...current, phone: e.target.value }))
                       }
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-cyan-500"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
                       placeholder="Phone number"
                     />
                   </div>
@@ -395,7 +427,7 @@ function LiveSessionLandingPage({
                       onChange={(e) =>
                         setForm((current) => ({ ...current, company: e.target.value }))
                       }
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-cyan-500"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
                       placeholder="Optional"
                     />
                   </div>
@@ -409,7 +441,7 @@ function LiveSessionLandingPage({
                         setForm((current) => ({ ...current, message: e.target.value }))
                       }
                       rows={4}
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none transition focus:border-cyan-500"
+                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
                       placeholder="Tell us what you are looking for"
                     />
                   </div>
@@ -417,7 +449,7 @@ function LiveSessionLandingPage({
                   <button
                     type="submit"
                     disabled={previewMode || submitting}
-                    className="w-full rounded-2xl bg-gradient-to-r from-cyan-600 to-blue-700 px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="w-full rounded-2xl bg-[#f4a261] px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#ef9552] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {previewMode
                       ? "Preview only"
@@ -435,39 +467,13 @@ function LiveSessionLandingPage({
               </div>
             </div>
           </div>
-        </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-12 lg:px-8">
-          <div className="grid gap-6 lg:grid-cols-[1fr_0.9fr]">
-            <div className="rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-700">
-                What this page covers
+          <div className="border-t border-slate-100 bg-[#0f8fb3] px-5 py-10 text-white md:px-8">
+            <div className="mx-auto max-w-4xl text-center">
+              <p className="text-sm leading-8 text-white/90 md:text-base">
+                {landingPage.authorText ||
+                  "This page is optimized for clean lead capture, strong trust signals, and a simple next step for visitors."}
               </p>
-              <div className="mt-4 space-y-4 text-sm leading-8 text-slate-600">
-                {bodyParagraphs.map((paragraph, index) => (
-                  <p key={`${index}-${paragraph}`}>{paragraph}</p>
-                ))}
-              </div>
-            </div>
-            <div className="rounded-[2rem] border border-slate-200 bg-slate-950 p-8 text-white shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/50">
-                Lead capture focus
-              </p>
-              <h3 className="mt-3 text-2xl font-bold">Built for Google lead generation</h3>
-              <p className="mt-3 text-sm leading-8 text-white/70">
-                The form captures name, email, phone, and optional context so your team can follow up on session interest quickly.
-              </p>
-              <div className="mt-6 grid gap-3 text-sm text-white/80">
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  Captures live-session interest from a shareable public URL
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  Tags submissions for the existing lead pipeline
-                </div>
-                <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  Reuses the same content for admin preview and public publish
-                </div>
-              </div>
             </div>
           </div>
         </section>
