@@ -288,31 +288,10 @@ function LiveSessionLandingPage({
     <div className={`min-h-screen bg-[#eef4fb] text-slate-900 ${className}`}>
       {showHeader ? <Header forceVisible showMarquee={false} /> : null}
 
-      <main className="mx-auto max-w-6xl px-4 py-8 lg:px-8 lg:py-10">
-        <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
-          <div className="border-b border-slate-100 bg-white px-5 py-4 md:px-8">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm font-black tracking-[0.22em] text-slate-700">
-                  IICPA
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    IICPA Institute
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    Live session landing page preview
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">
-                open. flexible. everywhere.
-              </p>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="relative h-[420px] w-full overflow-hidden bg-slate-200 md:h-[620px]">
+      <main className="w-full">
+        <section className="overflow-hidden bg-white">
+          <div className="relative w-full">
+            <div className="relative h-[420px] w-full overflow-hidden bg-slate-200 md:h-[720px]">
               <img
                 src={landingPage.heroImage}
                 alt={landingPage.headline}
@@ -320,7 +299,7 @@ function LiveSessionLandingPage({
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />
 
-              <div className="absolute inset-x-0 top-12 md:top-16">
+              <div className="absolute inset-x-0 top-10 md:top-16">
                 <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-4 text-center">
                   <div className="inline-flex flex-wrap items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
                     <span className="bg-sky-800 px-4 py-2 text-2xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-5xl">
@@ -358,8 +337,8 @@ function LiveSessionLandingPage({
             </div>
           </div>
 
-          <div className="grid gap-0 lg:grid-cols-[1fr_0.95fr]">
-            <div className="border-t border-slate-100 bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
+          <div className="grid gap-0 border-t border-slate-100 lg:grid-cols-[1fr_0.95fr]">
+            <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
                 <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -395,7 +374,7 @@ function LiveSessionLandingPage({
               </div>
             </div>
 
-            <div className="border-t border-slate-100 bg-white p-5 md:p-8 lg:border-l lg:border-t-0">
+            <div className="bg-white p-5 md:p-8 lg:border-l lg:border-t-0">
               <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm md:p-7">
                 <div className="mx-auto mb-4 w-full max-w-[340px] rounded-none bg-[#175a84] px-6 py-5 text-center text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)]">
                   <p className="text-lg font-medium">
