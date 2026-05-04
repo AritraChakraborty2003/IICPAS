@@ -331,7 +331,7 @@ function LiveSessionLandingPage({
                     <span className="bg-sky-800 px-4 py-2 text-xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-4xl">
                       {heroPrimaryText}
                     </span>
-                    <span className="bg-orange-500 px-4 py-2 text-xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-4xl">
+                    <span className="bg-green-600 px-4 py-2 text-xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-4xl">
                       {heroSecondaryText}
                     </span>
                   </div>
@@ -339,7 +339,7 @@ function LiveSessionLandingPage({
                     <span className="bg-sky-800 px-4 py-2 text-base font-bold leading-none text-white md:px-6 md:py-3 md:text-xl">
                       {landingPage.formLabel || "IICPA"}
                     </span>
-                    <span className="bg-orange-500 px-4 py-2 text-base font-bold leading-none text-white md:px-6 md:py-3 md:text-xl">
+                    <span className="bg-green-600 px-4 py-2 text-base font-bold leading-none text-white md:px-6 md:py-3 md:text-xl">
                       {landingPage.ctaText || "Get Free Preview"}
                     </span>
                   </div>
@@ -501,7 +501,7 @@ function LiveSessionLandingPage({
                   <button
                     type="submit"
                     disabled={previewMode || submitting}
-                    className="mt-2 w-full rounded-none bg-[#f4a261] px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#ef9552] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-2 w-full rounded-none bg-green-600 px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {previewMode
                       ? "Preview only"
