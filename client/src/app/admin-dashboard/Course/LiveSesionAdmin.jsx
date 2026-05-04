@@ -745,6 +745,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       setTab("create");
       setImagePreview(session.thumbnail || "");
       setUploadedImage(null);
+      setLandingHeroUploading(false);
     }
   };
 
@@ -832,6 +833,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     setEditId(null);
     setUploadedImage(null);
     setImagePreview("");
+    setLandingHeroUploading(false);
   };
 
   const updateLandingPageField = (field, value) => {
