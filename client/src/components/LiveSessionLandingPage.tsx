@@ -50,6 +50,17 @@ type LeadFormState = {
   message: string;
 };
 
+type NormalizedLeadValues = {
+  name: string;
+  email: string;
+  phone: string;
+  whatsappNumber: string;
+  company: string;
+  message: string;
+};
+
+type ValidationResult = NormalizedLeadValues | { error: string };
+
 type LiveSessionLandingPageProps = {
   sessionId?: string;
   session?: LiveSessionRecord | null;
@@ -254,7 +265,7 @@ function LiveSessionLandingPage({
     ? `Pay Now ₹${sessionPrice.toLocaleString("en-IN")}`
     : "Enroll Now";
 
-  const normalizeFormValues = () => {
+  const normalizeFormValues = (): ValidationResult => {
     const name = form.name.trim();
     const email = form.email.trim().toLowerCase();
     const phone = normalizeMobileNumber(form.phone);
@@ -299,18 +310,7 @@ function LiveSessionLandingPage({
     } as const;
   };
 
-  const buildLeadPayload = (
-    values: ReturnType<typeof normalizeFormValues> extends { error: string }
-      ? never
-      : {
-          name: string;
-          email: string;
-          phone: string;
-          whatsappNumber: string;
-          company: string;
-          message: string;
-        }
-  ) => ({
+  const buildLeadPayload = (values: NormalizedLeadValues) => ({
     name: values.name,
     email: values.email,
     phone: values.phone,
@@ -327,16 +327,7 @@ function LiveSessionLandingPage({
   });
 
   const saveLeadRecord = async (
-    values: ReturnType<typeof normalizeFormValues> extends { error: string }
-      ? never
-      : {
-          name: string;
-          email: string;
-          phone: string;
-          whatsappNumber: string;
-          company: string;
-          message: string;
-        },
+    values: NormalizedLeadValues,
     { force = false }: { force?: boolean } = {}
   ) => {
     const leadPayload = buildLeadPayload(values);
@@ -361,136 +352,107 @@ function LiveSessionLandingPage({
     lastSavedLeadSignatureRef.current = signature;
   };
 
-  const startPaidEnrollment = async (
-    values: ReturnType<typeof normalizeFormValues> extends { error: string }
-      ? never
-      : {
-          name: string;
-          email: string;
-          phone: string;
-          whatsappNumber: string;
-          company: string;
-          message: string;
-        }
-  ) => {
+  const startPaidEnrollment = async (values: NormalizedLeadValues) => {
     const liveSessionId = session?._id || sessionId || "";
     if (!liveSessionId) {
       throw new Error("Live session is not available for payment");
     }
 
-    if (!isNaN(sessionPrice) && sessionPrice <= 0) {
+    if (!Number.isFinite(sessionPrice) || sessionPrice <= 0) {
       return;
     }
 
-    if (!isNaN(sessionPrice) && sessionPrice > 0) {
-      if (!sessionPrice || !Number.isFinite(sessionPrice)) {
-        throw new Error("Session price is missing");
-      }
+    if (!(window as any).Razorpay) {
+      throw new Error("Razorpay checkout is not available right now");
     }
 
-    if (!isNaN(sessionPrice) && sessionPrice > 0) {
-      if (!isNaN(sessionPrice) && sessionPrice > 0) {
-        if (!previewMode) {
-          if (!(window as any).Razorpay) {
-            throw new Error("Razorpay checkout is not available right now");
-          }
+    const orderResponse = await fetch(`${API_ORIGIN}/api/test-payment/create-order`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        liveSessionId,
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        whatsappNumber: values.whatsappNumber,
+        price: sessionPrice,
+        paymentSource: "live-session-landing-page",
+      }),
+    });
 
-          const orderResponse = await fetch(
-            `${API_ORIGIN}/api/test-payment/create-order`,
+    const orderJson = await orderResponse.json().catch(() => null);
+    const orderData = orderJson?.data;
+
+    if (!orderResponse.ok || !orderJson?.success || !orderData?.orderId) {
+      throw new Error(orderJson?.message || "Failed to create payment order");
+    }
+
+    const razorpay = new (window as any).Razorpay({
+      key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
+      amount: orderData.amount,
+      currency: orderData.currency || "INR",
+      name: "IICPA Institute",
+      description: session?.title || landingPage.headline,
+      order_id: orderData.orderId,
+      prefill: {
+        name: values.name,
+        email: values.email,
+        contact: values.phone,
+      },
+      theme: {
+        color: "#16a34a",
+      },
+      modal: {
+        ondismiss: () => {
+          setPaying(false);
+        },
+      },
+      handler: async (response: any) => {
+        try {
+          const verificationResponse = await fetch(
+            `${API_ORIGIN}/api/test-payment/verify-and-capture`,
             {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({
-                liveSessionId,
-                name: values.name,
-                email: values.email,
-                phone: values.phone,
-                whatsappNumber: values.whatsappNumber,
-                price: sessionPrice,
-                paymentSource: "live-session-landing-page",
-              }),
+              body: JSON.stringify(response),
             }
           );
+          const verificationJson = await verificationResponse.json().catch(
+            () => null
+          );
 
-          const orderJson = await orderResponse.json().catch(() => null);
-          const orderData = orderJson?.data;
-
-          if (!orderResponse.ok || !orderJson?.success || !orderData?.orderId) {
+          if (!verificationResponse.ok || !verificationJson?.success) {
             throw new Error(
-              orderJson?.message || "Failed to create payment order"
+              verificationJson?.message || "Payment verification failed"
             );
           }
 
-          const razorpay = new (window as any).Razorpay({
-            key: orderData.key || process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "",
-            amount: orderData.amount,
-            currency: orderData.currency || "INR",
-            name: "IICPA Institute",
-            description: session?.title || landingPage.headline,
-            order_id: orderData.orderId,
-            prefill: {
-              name: values.name,
-              email: values.email,
-              contact: values.phone,
-            },
-            theme: {
-              color: "#16a34a",
-            },
-            modal: {
-              ondismiss: () => {
-                setPaying(false);
-              },
-            },
-            handler: async (response: any) => {
-              try {
-                const verificationResponse = await fetch(
-                  `${API_ORIGIN}/api/test-payment/verify-and-capture`,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(response),
-                  }
-                );
-                const verificationJson = await verificationResponse.json().catch(
-                  () => null
-                );
-
-                if (!verificationResponse.ok || !verificationJson?.success) {
-                  throw new Error(
-                    verificationJson?.message ||
-                      "Payment verification failed"
-                  );
-                }
-
-                setSubmitted(true);
-                Swal.fire(
-                  "Success",
-                  "Payment successful. Your booking is confirmed.",
-                  "success"
-                );
-              } catch (verificationError) {
-                console.error("Payment verification failed:", verificationError);
-                Swal.fire(
-                  "Error",
-                  verificationError instanceof Error
-                    ? verificationError.message
-                    : "Payment verification failed. Please contact support.",
-                  "error"
-                );
-              } finally {
-                setPaying(false);
-              }
-            },
-          });
-
-          razorpay.open();
+          setSubmitted(true);
+          Swal.fire(
+            "Success",
+            "Payment successful. Your booking is confirmed.",
+            "success"
+          );
+        } catch (verificationError) {
+          console.error("Payment verification failed:", verificationError);
+          Swal.fire(
+            "Error",
+            verificationError instanceof Error
+              ? verificationError.message
+              : "Payment verification failed. Please contact support.",
+            "error"
+          );
+        } finally {
+          setPaying(false);
         }
-      }
-    }
+      },
+    });
+
+    razorpay.open();
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
