@@ -105,7 +105,7 @@ const resolveLandingPage = (
       "Trusted by learners looking for practical finance and accounting guidance.",
     ctaText: draftLandingPage?.ctaText || base.ctaText || "Get Free Preview",
     formHeading:
-      draftLandingPage?.formHeading || base.formHeading || "Start your enquiry",
+      draftLandingPage?.formHeading || base.formHeading || "Enroll Now",
     formDescription:
       draftLandingPage?.formDescription ||
       base.formDescription ||

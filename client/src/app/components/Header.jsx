@@ -64,6 +64,8 @@ export default function Header({
   showMarquee = true,
   topOffset = null,
   forceVisible = false,
+  simple = false,
+  rightText = "Live Session Landing Page",
 }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -437,164 +439,174 @@ export default function Header({
             <img src="/images/logo.png" alt="IICPA Logo" className="h-10" />
           </Link>
 
-          {/* Navigation - Desktop Only */}
-          <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
-            {navLinks.map((item) =>
-              item.children ? (
-                <div key={item.name} className="relative group">
-                  <button className="flex items-center gap-1 py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm">
-                    {item.name}
-                    <svg
-                      className="w-2.5 h-2.5 transition-transform group-hover:rotate-180"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </button>
-                  <div className="absolute left-0 top-full w-56 pt-2 z-50 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all">
-                    <div className="bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden">
-                    {item.children.map((child) =>
-                      child.isHeader ? (
-                        <div
-                          key={child.name}
-                          className="px-3 py-2 text-xs font-bold text-gray-700 bg-gray-50 cursor-default"
+          {simple ? (
+            <div className="flex items-center gap-3 flex-1 justify-end">
+              <span className="text-sm font-medium text-slate-600 md:text-base">
+                {rightText}
+              </span>
+            </div>
+          ) : (
+            <>
+              {/* Navigation - Desktop Only */}
+              <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
+                {navLinks.map((item) =>
+                  item.children ? (
+                    <div key={item.name} className="relative group">
+                      <button className="flex items-center gap-1 py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm">
+                        {item.name}
+                        <svg
+                          className="w-2.5 h-2.5 transition-transform group-hover:rotate-180"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
                         >
-                          {child.name}
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </button>
+                      <div className="absolute left-0 top-full w-56 pt-2 z-50 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all">
+                        <div className="bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden">
+                        {item.children.map((child) =>
+                          child.isHeader ? (
+                            <div
+                              key={child.name}
+                              className="px-3 py-2 text-xs font-bold text-gray-700 bg-gray-50 cursor-default"
+                            >
+                              {child.name}
+                            </div>
+                          ) : child.href ? (
+                            <Link
+                              key={child.name}
+                              href={child.href}
+                              className="block px-3 py-2.5 text-xs hover:bg-green-50"
+                            >
+                              {child.name}
+                            </Link>
+                          ) : (
+                            <Link
+                              key={child.name}
+                              href={child.href}
+                              className="block px-3 py-2.5 text-xs hover:bg-green-50"
+                            >
+                              {child.name}
+                            </Link>
+                          )
+                        )}
                         </div>
-                      ) : child.href ? (
-                        <Link
-                          key={child.name}
-                          href={child.href}
-                          className="block px-3 py-2.5 text-xs hover:bg-green-50"
-                        >
-                          {child.name}
-                        </Link>
-                      ) : (
-                        <Link
-                          key={child.name}
-                          href={child.href}
-                          className="block px-3 py-2.5 text-xs hover:bg-green-50"
-                        >
-                          {child.name}
-                        </Link>
-                      )
-                    )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ) : (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm ${
-                    pathname === item.href ? "text-green-600 bg-green-50" : ""
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              )
-            )}
-          </nav>
+                  ) : (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm ${
+                        pathname === item.href ? "text-green-600 bg-green-50" : ""
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  )
+                )}
+              </nav>
 
-          {/* Right side - Desktop Only */}
-	          <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
-            {/* Cart Icon - Show for all users */}
-            <button
-              onClick={() => setCartDrawer(true)}
-              className="relative p-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-            >
-              <ShoppingCart size={18} />
-              {cartCourses.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
-                  {(() => {
-                    const count = cartCourses.reduce(
-                      (total, item) => total + (item.quantity || 1),
-                      0
-                    );
-                    return count;
-                  })()}
-                </span>
-              )}
-	            </button>
-
-		            {!isAdmin && (
-		              <Link
-		                href="/booking"
-		                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
-		              >
-		                Register Now
-		              </Link>
-		            )}
-
-	            {isAdmin ? (
-	              <Link
-	                href="/admin-dashboard"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm"
-              >
-                Admin Dashboard
-              </Link>
-	            ) : student ? (
-	              <div className="relative profile-dropdown">
+              {/* Right side - Desktop Only */}
+	              <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
+                {/* Cart Icon - Show for all users */}
                 <button
-                  onClick={() => setShowProfileDropdown(!showProfileDropdown)}
-                  className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md text-sm"
+                  onClick={() => setCartDrawer(true)}
+                  className="relative p-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
                 >
-                  <User size={18} />
-                  <span>{student.name}</span>
-                  <ChevronDown size={14} />
+                  <ShoppingCart size={18} />
+                  {cartCourses.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-green-600 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center font-medium">
+                      {(() => {
+                        const count = cartCourses.reduce(
+                          (total, item) => total + (item.quantity || 1),
+                          0
+                        );
+                        return count;
+                      })()}
+                    </span>
+                  )}
                 </button>
-                {showProfileDropdown && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg border">
-                    <Link
-                      href="/student-dashboard"
-                      className="flex items-center gap-2 px-4 py-2 text-xs hover:bg-green-50"
-                    >
-                      <Settings size={14} />
-                      Dashboard
-                    </Link>
-                    <Link
-                      href="/student-dashboard"
-                      className="flex items-center gap-2 px-4 py-2 text-xs hover:bg-green-50"
-                    >
-                      <BookOpen size={14} />
-                      My Courses
-                    </Link>
+
+                {!isAdmin && (
+                  <Link
+                    href="/booking"
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
+                  >
+                    Register Now
+                  </Link>
+                )}
+
+                {isAdmin ? (
+                  <Link
+                    href="/admin-dashboard"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm"
+                  >
+                    Admin Dashboard
+                  </Link>
+                ) : student ? (
+                  <div className="relative profile-dropdown">
                     <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 w-full text-left"
+                      onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+                      className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-md text-sm"
                     >
-                      <LogOut size={14} />
-                      Logout
+                      <User size={18} />
+                      <span>{student.name}</span>
+                      <ChevronDown size={14} />
                     </button>
+                    {showProfileDropdown && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg border">
+                        <Link
+                          href="/student-dashboard"
+                          className="flex items-center gap-2 px-4 py-2 text-xs hover:bg-green-50"
+                        >
+                          <Settings size={14} />
+                          Dashboard
+                        </Link>
+                        <Link
+                          href="/student-dashboard"
+                          className="flex items-center gap-2 px-4 py-2 text-xs hover:bg-green-50"
+                        >
+                          <BookOpen size={14} />
+                          My Courses
+                        </Link>
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-2 px-4 py-2 text-xs text-red-600 hover:bg-red-50 w-full text-left"
+                        >
+                          <LogOut size={14} />
+                          Logout
+                        </button>
+                      </div>
+                    )}
                   </div>
+                ) : (
+                  <>
+                    <Link
+                      href="/student-login"
+                      className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm"
+                    >
+                      Digital Hub
+                    </Link>
+                  </>
                 )}
               </div>
-	            ) : (
-	              <>
-	                <Link
-	                  href="/student-login"
-	                  className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm"
-                >
-                  Digital Hub
-                </Link>
-              </>
-            )}
-          </div>
 
-          {/* Mobile menu button */}
-          <button
-            className="lg:hidden text-gray-800 p-1.5 hover:bg-gray-100 rounded-md flex-shrink-0 ml-2"
-            onClick={() => setDrawerOpen(true)}
-          >
-            <Menu size={20} />
-          </button>
+              {/* Mobile menu button */}
+              <button
+                className="lg:hidden text-gray-800 p-1.5 hover:bg-gray-100 rounded-md flex-shrink-0 ml-2"
+                onClick={() => setDrawerOpen(true)}
+              >
+                <Menu size={20} />
+              </button>
+            </>
+          )}
         </div>
       </header>
 
