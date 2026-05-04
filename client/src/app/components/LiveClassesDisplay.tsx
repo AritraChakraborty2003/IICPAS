@@ -505,7 +505,10 @@ export default function LiveClassesDisplay() {
       return;
     }
 
-    router.push(`/live-session/landing/${session._id}`);
+    const draftKey = `iicpa-live-session-landing-draft:${session._id}`;
+    router.push(
+      `/live-session/landing/preview?draftKey=${encodeURIComponent(draftKey)}&sessionId=${encodeURIComponent(session._id)}`
+    );
   };
 
   const handleEnrollmentInputChange = (
