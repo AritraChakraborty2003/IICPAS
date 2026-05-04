@@ -4,6 +4,7 @@ import { getApiOrigin } from "@/lib/apiBase";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { useSearchParams } from "next/navigation";
 import AlertsTab from "./AlertsTab";
 import JobsAdminPanel from "./JobsAdminPanel";
 import TestimonialAdmin from "./Course/TestimonialAdmin";
@@ -464,7 +465,10 @@ const NAVIGATION_GROUPS = [
 
 function AdminDashboardContent() {
   const { user, canAccess, logout, isPrivilegedAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState("");
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") || "";
+  const landingDraftKey = searchParams.get("draftKey") || "";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>(
@@ -780,7 +784,7 @@ function AdminDashboardContent() {
 
         {/* Permission-based content rendering */}
         {activeTab === "live-session" ? (
-          <LiveSessionAdmin />
+          <LiveSessionAdmin draftKey={landingDraftKey} />
         ) : activeTab === "live-bookings" ? (
           <LiveBookingsTab />
         ) : activeTab === "enquiries" ? (

@@ -29,7 +29,13 @@ import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useAuth } from "@/contexts/AuthContext";
-import LiveSessionLandingPage from "@/components/LiveSessionLandingPage";
+import { useRouter } from "next/navigation";
+import {
+  buildLiveSessionLandingDraftKey,
+  clearLiveSessionLandingDraft,
+  readLiveSessionLandingDraft,
+  writeLiveSessionLandingDraft,
+} from "@/lib/liveSessionLandingDraft";
 
 const API = getApiOrigin();
 const DEFAULT_REMINDER_TIME_ZONE = "Asia/Kolkata";
@@ -121,6 +127,14 @@ const getLandingPageDraft = (form, heroImageFallback = "") => ({
     "Thank you. Our team will contact you shortly.",
 });
 
+const dataUrlToFile = async (dataUrl, fileName, mimeType) => {
+  const response = await fetch(dataUrl);
+  const blob = await response.blob();
+  return new File([blob], fileName, {
+    type: mimeType || blob.type || "application/octet-stream",
+  });
+};
+
 const isConfirmedLiveEnrollment = (booking) => {
   const paymentStatus = String(booking?.paymentStatus || "").toLowerCase();
   const bookingStatus = String(booking?.status || "").toLowerCase();
@@ -199,7 +213,8 @@ const getReminderDefaults = (session, timeZone = DEFAULT_REMINDER_TIME_ZONE) => 
   };
 };
 
-export default function LiveSesionAdmin() {
+export default function LiveSesionAdmin({ draftKey = "" } = {}) {
+  const router = useRouter();
   const [tab, setTab] = useState("list");
   const [viewMode, setViewMode] = useState("cards"); // "cards" or "table"
   const [sessions, setSessions] = useState([]);
@@ -237,8 +252,8 @@ export default function LiveSesionAdmin() {
   });
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
-  const [landingPreviewOpen, setLandingPreviewOpen] = useState(false);
   const { hasPermission, user } = useAuth();
+  const landingDraftKey = draftKey || buildLiveSessionLandingDraftKey(editId || "new");
 
   const selectedCourse = useMemo(
     () =>
