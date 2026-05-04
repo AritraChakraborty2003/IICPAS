@@ -213,6 +213,33 @@ const getReminderDefaults = (session, timeZone = DEFAULT_REMINDER_TIME_ZONE) => 
   };
 };
 
+const uploadImageFile = async (file, token, apiBase = API) => {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await fetch(`${apiBase}/api/upload/image`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    let errorMessage = "Failed to upload image";
+    try {
+      const errorData = await response.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch {
+      // Fall back to the default error message.
+    }
+    throw new Error(errorMessage);
+  }
+
+  const data = await response.json();
+  return data.imageUrl || data.relativePath || "";
+};
+
 export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   const router = useRouter();
   const [tab, setTab] = useState("list");
@@ -252,6 +279,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   });
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [landingHeroUploading, setLandingHeroUploading] = useState(false);
   const { hasPermission, user } = useAuth();
   const landingDraftKey = editId
     ? buildLiveSessionLandingDraftKey(editId)
@@ -538,9 +566,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     // If image is uploaded, upload it first
     if (uploadedImage) {
       try {
-        const formData = new FormData();
-        formData.append("image", uploadedImage);
-
         const token = checkTokenValidity();
 
         if (!token) {
@@ -548,61 +573,40 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
           return;
         }
 
-        console.log(
-          "Uploading image with token:",
-          token ? "Token present" : "No token"
-        );
-        console.log("Upload URL:", `${API}/api/upload/image`);
+        thumbnailUrl = await uploadImageFile(uploadedImage, token);
+        Swal.fire("Success!", "Image uploaded successfully!", "success");
+      } catch (error) {
+        console.error("Image upload failed:", error);
+        Swal.fire("Error", error.message || "Failed to upload image", "error");
+        setLoading(false);
+        return;
+      }
+    }
 
-        const uploadResponse = await fetch(`${API}/api/upload/image`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        });
-
-        if (uploadResponse.ok) {
-          const uploadData = await uploadResponse.json();
-          console.log("Upload response:", uploadData);
-          thumbnailUrl = uploadData.imageUrl || uploadData.relativePath;
-          console.log("Using thumbnail URL:", thumbnailUrl);
-          Swal.fire("Success!", "Image uploaded successfully!", "success");
-        } else {
-          // Handle different HTTP status codes
-          let errorMessage = "Failed to upload image";
-
-          try {
-            const errorData = await uploadResponse.json();
-            console.error("Upload failed:", errorData);
-
-            if (uploadResponse.status === 401) {
-              errorMessage = "Authentication failed. Please log in again.";
-              // Clear the invalid token and redirect to login
-              localStorage.removeItem("adminToken");
-              localStorage.removeItem("adminUser");
-              setTimeout(() => {
-                window.location.href = "/admin-login";
-              }, 2000);
-            } else if (uploadResponse.status === 403) {
-              errorMessage = "Access denied. Admin privileges required.";
-            } else {
-              errorMessage = errorData.error || errorMessage;
-            }
-          } catch (parseError) {
-            console.error("Failed to parse error response:", parseError);
-            if (uploadResponse.status === 401) {
-              errorMessage = "Authentication failed. Please log in again.";
-            }
-          }
-
-          Swal.fire("Error", errorMessage, "error");
+    let landingHeroImageUrl = form.landingPage.heroImage;
+    if (
+      landingHeroImageUrl &&
+      landingHeroImageUrl.startsWith("data:image/") &&
+      landingHeroImageUrl.includes(";base64,")
+    ) {
+      try {
+        const token = checkTokenValidity();
+        if (!token) {
           setLoading(false);
           return;
         }
+
+        const fileName = `landing-hero-${Date.now()}.png`;
+        const mimeType = landingHeroImageUrl.match(/^data:(image\/[^;]+);base64,/)?.[1];
+        const restoredFile = await dataUrlToFile(
+          landingHeroImageUrl,
+          fileName,
+          mimeType
+        );
+        landingHeroImageUrl = await uploadImageFile(restoredFile, token);
       } catch (error) {
-        console.error("Image upload failed:", error);
-        Swal.fire("Error", "Failed to upload image", "error");
+        console.error("Landing hero image upload failed:", error);
+        Swal.fire("Error", error.message || "Failed to upload landing hero image", "error");
         setLoading(false);
         return;
       }
@@ -621,7 +625,16 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       thumbnail: thumbnailUrl,
       courseId: form.courseId || "",
       chapterId: form.chapterId || "",
-      landingPage: getLandingPageDraft(form, thumbnailUrl),
+      landingPage: getLandingPageDraft(
+        {
+          ...form,
+          landingPage: {
+            ...form.landingPage,
+            heroImage: landingHeroImageUrl || form.landingPage.heroImage,
+          },
+        },
+        thumbnailUrl
+      ),
     };
 
     const token = checkTokenValidity();
@@ -829,6 +842,31 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
         [field]: value,
       },
     }));
+  };
+
+  const handleLandingHeroImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const token = checkTokenValidity();
+    if (!token) return;
+
+    try {
+      setLandingHeroUploading(true);
+      const uploadedUrl = await uploadImageFile(file, token);
+      updateLandingPageField("heroImage", uploadedUrl);
+      Swal.fire("Success!", "Hero image uploaded successfully!", "success");
+    } catch (error) {
+      console.error("Landing hero image upload failed:", error);
+      Swal.fire(
+        "Error",
+        error.message || "Failed to upload hero image",
+        "error"
+      );
+    } finally {
+      setLandingHeroUploading(false);
+      e.target.value = "";
+    }
   };
 
   const handleImageUpload = (e) => {
@@ -2309,8 +2347,75 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <label className="block font-semibold mb-1">
+                      Hero Image
+                    </label>
+                    <p className="text-sm text-slate-500">
+                      Upload an image or paste a URL for the landing-page hero.
+                    </p>
+                  </div>
+                  {landingHeroUploading ? (
+                    <span className="text-sm font-medium text-slate-500">
+                      Uploading...
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload Hero Image File
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLandingHeroImageUpload}
+                      className="w-full border px-4 py-3 rounded-lg bg-white"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      Supported formats: JPG, PNG, GIF. The image is uploaded immediately.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold mb-2">
+                      Hero Image URL
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border px-4 py-3 rounded-lg bg-white"
+                      placeholder="https://example.com/image.jpg"
+                      value={form.landingPage.heroImage || ""}
+                      onChange={(e) =>
+                        updateLandingPageField("heroImage", e.target.value)
+                      }
+                    />
+                  </div>
+
+                  {(form.landingPage.heroImage || imagePreview) && (
+                    <div className="lg:col-span-2">
+                      <label className="block font-semibold mb-2">
+                        Hero Image Preview
+                      </label>
+                      <div className="rounded-lg border border-slate-200 bg-white p-4">
+                        <img
+                          src={form.landingPage.heroImage || imagePreview}
+                          alt="Hero preview"
+                          className="h-40 w-full max-w-xl rounded-lg object-cover"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {[
-                { field: "heroImage", label: "Hero Image URL", type: "text" },
                 { field: "headline", label: "Hero Headline", type: "text" },
                 { field: "subheadline", label: "Hero Subheadline", type: "text" },
                 { field: "authorName", label: "Author Name", type: "text" },
