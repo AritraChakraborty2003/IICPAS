@@ -94,7 +94,7 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
   authorCode: landingPage.authorCode || "IICPA",
   authorText: landingPage.authorText || "",
   ctaText: landingPage.ctaText || "Get Free Preview",
-  formHeading: landingPage.formHeading || "Enroll now",
+  formHeading: landingPage.formHeading || "Enroll Now",
   formDescription:
     landingPage.formDescription ||
     "Share your details and our team will reach out shortly.",
@@ -117,7 +117,7 @@ const getLandingPageDraft = (form, heroImageFallback = "") => ({
   authorCode: form.landingPage.authorCode || "IICPA",
   authorText: form.landingPage.authorText || "",
   ctaText: form.landingPage.ctaText || "Get Free Preview",
-  formHeading: form.landingPage.formHeading || "Enroll now",
+  formHeading: form.landingPage.formHeading || "Enroll Now",
   formDescription:
     form.landingPage.formDescription ||
     "Share your details and our team will reach out shortly.",
