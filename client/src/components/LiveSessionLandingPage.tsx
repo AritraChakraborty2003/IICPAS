@@ -261,7 +261,14 @@ function LiveSessionLandingPage({
   if (loading) {
     return (
       <div className={`min-h-screen bg-slate-50 ${className}`}>
-        {showHeader ? <Header forceVisible showMarquee={false} /> : null}
+        {showHeader ? (
+          <Header
+            forceVisible
+            showMarquee={false}
+            simple
+            rightText="Live Session Landing Page"
+          />
+        ) : null}
         <div className="mx-auto flex min-h-[60vh] max-w-6xl items-center justify-center px-4">
           <div className="rounded-2xl border border-slate-200 bg-white px-6 py-4 text-slate-600 shadow-sm">
             Loading landing page...
@@ -274,7 +281,14 @@ function LiveSessionLandingPage({
   if (error && !session) {
     return (
       <div className={`min-h-screen bg-slate-50 ${className}`}>
-        {showHeader ? <Header forceVisible showMarquee={false} /> : null}
+        {showHeader ? (
+          <Header
+            forceVisible
+            showMarquee={false}
+            simple
+            rightText="Live Session Landing Page"
+          />
+        ) : null}
         <div className="mx-auto flex min-h-[60vh] max-w-6xl items-center justify-center px-4">
           <div className="rounded-2xl border border-red-200 bg-red-50 px-6 py-4 text-red-700 shadow-sm">
             {error}
