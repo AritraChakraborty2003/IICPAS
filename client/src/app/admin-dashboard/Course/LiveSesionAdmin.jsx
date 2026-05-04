@@ -1252,21 +1252,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
         reminderTargetSession.time
       )}`
     : "";
-  const landingPreviewSession = {
-    _id: editId || "draft",
-    title: form.title,
-    instructor: form.instructor,
-    description: form.description,
-    imageUrl: imagePreview || form.thumbnail || form.landingPage.heroImage,
-    thumbnail: imagePreview || form.thumbnail || form.landingPage.heroImage,
-    category: form.category,
-    landingPage: getLandingPageDraft(form, imagePreview || form.thumbnail),
-  };
-  const landingPreviewUrl =
-    editId && typeof window !== "undefined"
-      ? `${window.location.origin}/live-session/landing/${editId}`
-      : "";
-
   return (
     <div className="w-[75vw] mx-auto py-10">
       <div className="flex justify-between items-center mb-8">
@@ -2320,7 +2305,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
               <Button
                 variant="outlined"
                 sx={{ borderColor: "#0f265c", color: "#0f265c" }}
-                onClick={() => setLandingPreviewOpen(true)}
+                onClick={handlePreviewLandingPage}
               >
                 Preview
               </Button>
@@ -2427,53 +2412,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
         </form>
       )}
 
-      {landingPreviewOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
-          <div className="relative flex h-[92vh] w-full max-w-[1400px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  Landing Page Preview
-                </h3>
-                <p className="text-sm text-slate-500">
-                  Review the public page before publishing it.
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                {landingPreviewUrl ? (
-                  <a
-                    href={landingPreviewUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-xl border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
-                  >
-                    Open public page
-                  </a>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => setLandingPreviewOpen(false)}
-                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
-                >
-                  Close
-                </button>
-              </div>
-            </div>
-            <div className="min-h-0 flex-1 overflow-y-auto bg-slate-100">
-              <LiveSessionLandingPage
-                sessionId={editId || undefined}
-                session={landingPreviewSession}
-                draftLandingPage={getLandingPageDraft(form)}
-                previewMode
-                showHeader
-                showFooter={false}
-                overrideTitle={form.title}
-                overrideUrl={landingPreviewUrl}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
     </div>
   );
 }
