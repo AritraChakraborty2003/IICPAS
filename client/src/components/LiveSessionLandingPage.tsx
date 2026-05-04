@@ -344,7 +344,7 @@ function LiveSessionLandingPage({
           <div className="grid gap-0 border-t border-slate-100 lg:grid-cols-[1fr_0.95fr]">
             <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-[1.5rem] bg-white p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                     Author
                   </p>
@@ -359,7 +359,7 @@ function LiveSessionLandingPage({
                   </p>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-[1.5rem] bg-white p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                     What you will see
                   </p>
@@ -379,7 +379,7 @@ function LiveSessionLandingPage({
             </div>
 
             <div className="bg-white p-5 md:p-8 lg:border-l lg:border-t-0">
-              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm md:p-7">
+              <div className="rounded-[1.5rem] bg-white p-5 md:p-7">
                 <div className="mx-auto mb-4 w-full max-w-[340px] rounded-none bg-[#175a84] px-6 py-5 text-center text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)]">
                   <p className="text-lg font-medium">
                     {landingPage.formHeading}
