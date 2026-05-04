@@ -5,6 +5,7 @@ import Footer from "@/app/components/Footer";
 import { getApiOrigin } from "@/lib/apiBase";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Swal from "sweetalert2";
+import { FaInstagram, FaLinkedin, FaTwitter, FaYoutube } from "react-icons/fa";
 
 type LandingPageConfig = {
   heroImage?: string;
@@ -118,6 +119,33 @@ const resolveLandingPage = (
       "Thank you. Our team will contact you shortly.",
   };
 };
+
+const SOCIAL_LINKS = [
+  {
+    label: "LinkedIn",
+    href: "https://linkedin.com/company/iicpa-institute",
+    icon: FaLinkedin,
+    bgClass: "bg-[#0a66c2]",
+  },
+  {
+    label: "Instagram",
+    href: "https://instagram.com/iicpainstitute",
+    icon: FaInstagram,
+    bgClass: "bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af]",
+  },
+  {
+    label: "YouTube",
+    href: "https://youtube.com/@iicpainstitute",
+    icon: FaYoutube,
+    bgClass: "bg-[#ff0000]",
+  },
+  {
+    label: "Twitter",
+    href: "https://twitter.com/iicpainstitute",
+    icon: FaTwitter,
+    bgClass: "bg-[#111827]",
+  },
+] as const;
 
 function LiveSessionLandingPage({
   sessionId,
@@ -313,6 +341,29 @@ function LiveSessionLandingPage({
           rightText="Live Session"
         />
       ) : null}
+
+      <aside
+        className="fixed right-0 top-1/2 z-50 hidden -translate-y-1/2 md:flex"
+        aria-label="Social media links"
+      >
+        <div className="pointer-events-auto overflow-hidden rounded-l-2xl border border-slate-200/80 bg-white/90 p-2 shadow-[0_18px_40px_rgba(15,23,42,0.18)] backdrop-blur-md">
+          <div className="flex flex-col gap-2">
+            {SOCIAL_LINKS.map(({ label, href, icon: Icon, bgClass }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Follow us on ${label}`}
+                title={label}
+                className={`group flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform duration-200 hover:-translate-x-1 hover:scale-105 ${bgClass}`}
+              >
+                <Icon className="h-5 w-5" />
+              </a>
+            ))}
+          </div>
+        </div>
+      </aside>
 
       <main className="w-full">
         <section className="overflow-hidden bg-white">
