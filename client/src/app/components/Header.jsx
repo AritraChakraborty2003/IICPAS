@@ -65,7 +65,7 @@ export default function Header({
   topOffset = null,
   forceVisible = false,
   simple = false,
-  rightText = "Live Session Landing Page",
+  rightText = "Live Session",
 }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
