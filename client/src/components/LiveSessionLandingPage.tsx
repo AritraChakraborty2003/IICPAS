@@ -81,13 +81,13 @@ const resolveLandingPage = (
       base.headline ||
       overrideTitle ||
       session?.title ||
-      "Live Session Landing Page",
+      "Live Session",
     subheadline:
       draftLandingPage?.subheadline ||
       base.subheadline ||
       session?.subtitle ||
       session?.description ||
-      "Register your interest and get session updates in one place.",
+      "Register your interest and get updates.",
     bodyContent:
       draftLandingPage?.bodyContent ||
       base.bodyContent ||
