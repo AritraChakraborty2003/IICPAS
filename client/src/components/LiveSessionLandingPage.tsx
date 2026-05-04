@@ -323,7 +323,7 @@ function LiveSessionLandingPage({
                 alt={landingPage.headline}
                 className="h-full w-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />
+              <div className="absolute inset-0 bg-black/10" />
 
               <div className="absolute inset-x-0 top-[56%] -translate-y-1/2">
                 <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 text-center">
