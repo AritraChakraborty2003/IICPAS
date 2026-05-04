@@ -497,7 +497,7 @@ function LiveSessionLandingPage({
 
       await saveLeadRecord(values);
 
-      if (sessionPrice <= 0) {
+      if (!Number.isFinite(sessionPrice) || sessionPrice <= 0) {
         setSubmitted(true);
         Swal.fire("Success", landingPage.thankYouText, "success");
         return;
