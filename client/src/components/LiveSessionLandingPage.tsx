@@ -185,6 +185,18 @@ function LiveSessionLandingPage({
     .split(/\n+/)
     .map((part) => part.trim())
     .filter(Boolean);
+  const heroHeadlineWords = (landingPage.headline || session?.title || "Live Session")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const heroPrimaryText =
+    heroHeadlineWords.length > 2
+      ? heroHeadlineWords.slice(0, 2).join(" ")
+      : heroHeadlineWords.join(" ") || "Live Session";
+  const heroSecondaryText =
+    heroHeadlineWords.length > 2
+      ? heroHeadlineWords.slice(2).join(" ")
+      : landingPage.subheadline || "Landing Page";
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -280,55 +292,76 @@ function LiveSessionLandingPage({
         <section className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.08)]">
           <div className="border-b border-slate-100 bg-white px-5 py-4 md:px-8">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-sky-700">
-                  IICPA Live Session
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-sm font-black tracking-[0.22em] text-slate-700">
+                  IICPA
                 </div>
-                <h1 className="mt-4 max-w-4xl text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-5xl">
-                  {landingPage.headline}
-                </h1>
-                <p className="mt-3 max-w-3xl text-base leading-8 text-slate-600 md:text-lg">
-                  {landingPage.subheadline}
-                </p>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    IICPA Institute
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    Live session landing page preview
+                  </p>
+                </div>
               </div>
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 md:min-w-[220px]">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-                  Session
-                </p>
-                <p className="mt-1 text-base font-semibold text-slate-900">
-                  {session?.title || "Live Session"}
-                </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
-                  {bodyParagraphs[0] ||
-                    "A clean, shareable landing page for session lead generation."}
-                </p>
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-orange-500">
+                open. flexible. everywhere.
+              </p>
             </div>
           </div>
 
-          <div className="grid gap-0 lg:grid-cols-[1.05fr_0.95fr]">
-            <div className="relative bg-slate-100">
-              <div className="relative h-[300px] w-full overflow-hidden md:h-[420px]">
-                <img
-                  src={landingPage.heroImage}
-                  alt={landingPage.headline}
-                  className="h-full w-full object-cover"
-                />
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/55 via-slate-950/20 to-transparent p-5 md:p-7">
-                  <div className="max-w-xl rounded-2xl bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">
-                      {landingPage.formLabel}
-                    </p>
-                    <p className="mt-1 text-sm leading-6 text-slate-700">
-                      {landingPage.formDescription}
-                    </p>
+          <div className="relative">
+            <div className="relative h-[420px] w-full overflow-hidden bg-slate-200 md:h-[620px]">
+              <img
+                src={landingPage.heroImage}
+                alt={landingPage.headline}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/25" />
+
+              <div className="absolute inset-x-0 top-12 md:top-16">
+                <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 px-4 text-center">
+                  <div className="inline-flex flex-wrap items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
+                    <span className="bg-sky-800 px-4 py-2 text-2xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-5xl">
+                      {heroPrimaryText}
+                    </span>
+                    <span className="bg-orange-500 px-4 py-2 text-2xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-5xl">
+                      {heroSecondaryText}
+                    </span>
+                  </div>
+                  <div className="inline-flex flex-wrap items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)]">
+                    <span className="bg-sky-800 px-4 py-2 text-lg font-bold leading-none text-white md:px-6 md:py-3 md:text-2xl">
+                      {landingPage.formLabel || "IICPA"}
+                    </span>
+                    <span className="bg-orange-500 px-4 py-2 text-lg font-bold leading-none text-white md:px-6 md:py-3 md:text-2xl">
+                      {landingPage.ctaText || "Get Free Preview"}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-4 border-t border-slate-100 bg-[#f8fbff] px-5 py-6 md:px-8 md:py-8 lg:grid-cols-2">
-                <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="absolute inset-x-0 bottom-0 px-4 pb-5 md:px-8 md:pb-8">
+                <div className="mx-auto max-w-5xl rounded-2xl bg-slate-900/80 px-5 py-4 text-white backdrop-blur-sm">
+                  <div className="grid gap-4 md:grid-cols-[auto_1fr] md:items-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/15 bg-white/10 text-xl font-black">
+                      I
+                    </div>
+                    <p className="text-sm leading-7 text-white/90 md:text-base">
+                      {landingPage.subheadline ||
+                        bodyParagraphs[0] ||
+                        "A clean landing page that captures interest and guides visitors into the right follow-up flow."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-0 lg:grid-cols-[1fr_0.95fr]">
+            <div className="border-t border-slate-100 bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
+              <div className="space-y-5">
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                     Author
                   </p>
@@ -343,7 +376,7 @@ function LiveSessionLandingPage({
                   </p>
                 </div>
 
-                <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                     What you will see
                   </p>
@@ -363,46 +396,44 @@ function LiveSessionLandingPage({
             </div>
 
             <div className="border-t border-slate-100 bg-white p-5 md:p-8 lg:border-l lg:border-t-0">
-              <div className="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm md:p-7">
-                <div className="inline-flex rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white">
-                  {landingPage.formLabel}
+              <div className="rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm md:p-7">
+                <div className="mx-auto mb-4 w-full max-w-[340px] rounded-none bg-[#175a84] px-6 py-5 text-center text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)]">
+                  <p className="text-lg font-medium">
+                    {landingPage.formHeading}
+                  </p>
                 </div>
-                <h2 className="mt-4 text-2xl font-bold text-slate-900">
-                  {landingPage.formHeading}
-                </h2>
-                <p className="mt-2 text-sm leading-7 text-slate-600">
+
+                <p className="text-sm leading-7 text-slate-600">
                   {landingPage.formDescription}
                 </p>
 
                 <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-700">
-                        Name *
-                      </label>
-                      <input
-                        value={form.name}
-                        onChange={(e) =>
-                          setForm((current) => ({ ...current, name: e.target.value }))
-                        }
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
-                        placeholder="Your name"
-                      />
-                    </div>
-                    <div>
-                      <label className="mb-2 block text-sm font-semibold text-slate-700">
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        value={form.email}
-                        onChange={(e) =>
-                          setForm((current) => ({ ...current, email: e.target.value }))
-                        }
-                        className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
-                        placeholder="Your email"
-                      />
-                    </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Name *
+                    </label>
+                    <input
+                      value={form.name}
+                      onChange={(e) =>
+                        setForm((current) => ({ ...current, name: e.target.value }))
+                      }
+                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={form.email}
+                      onChange={(e) =>
+                        setForm((current) => ({ ...current, email: e.target.value }))
+                      }
+                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      placeholder="Your email"
+                    />
                   </div>
                   <div>
                     <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -414,7 +445,7 @@ function LiveSessionLandingPage({
                       onChange={(e) =>
                         setForm((current) => ({ ...current, phone: e.target.value }))
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
+                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
                       placeholder="Phone number"
                     />
                   </div>
@@ -427,29 +458,15 @@ function LiveSessionLandingPage({
                       onChange={(e) =>
                         setForm((current) => ({ ...current, company: e.target.value }))
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
+                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
                       placeholder="Optional"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Message
-                    </label>
-                    <textarea
-                      value={form.message}
-                      onChange={(e) =>
-                        setForm((current) => ({ ...current, message: e.target.value }))
-                      }
-                      rows={4}
-                      className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 outline-none transition focus:border-sky-500 focus:bg-white"
-                      placeholder="Tell us what you are looking for"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={previewMode || submitting}
-                    className="w-full rounded-2xl bg-[#f4a261] px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#ef9552] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-2 w-full rounded-none bg-[#f4a261] px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-white transition hover:bg-[#ef9552] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {previewMode
                       ? "Preview only"
@@ -468,7 +485,7 @@ function LiveSessionLandingPage({
             </div>
           </div>
 
-          <div className="border-t border-slate-100 bg-[#0f8fb3] px-5 py-10 text-white md:px-8">
+          <div className="border-t border-slate-100 bg-[#0f8fb3] px-5 py-8 text-white md:px-8">
             <div className="mx-auto max-w-4xl text-center">
               <p className="text-sm leading-8 text-white/90 md:text-base">
                 {landingPage.authorText ||
