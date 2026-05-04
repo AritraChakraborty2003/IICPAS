@@ -286,7 +286,14 @@ function LiveSessionLandingPage({
 
   return (
     <div className={`min-h-screen bg-[#eef4fb] text-slate-900 ${className}`}>
-      {showHeader ? <Header forceVisible showMarquee={false} /> : null}
+      {showHeader ? (
+        <Header
+          forceVisible
+          showMarquee={false}
+          simple
+          rightText="Live Session Landing Page"
+        />
+      ) : null}
 
       <main className="w-full">
         <section className="overflow-hidden bg-white">
