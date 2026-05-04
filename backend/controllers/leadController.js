@@ -3,8 +3,30 @@ import Lead from "../models/Lead.js";
 
 export const createLead = async (req, res) => {
   try {
-    const { name, email, phone, message, type } = req.body;
-    const newLead = new Lead({ name, email, phone, message, type });
+    const {
+      name,
+      email,
+      phone,
+      message,
+      type,
+      source,
+      landingPageSessionId,
+      landingPageUrl,
+      landingPageTitle,
+      course,
+    } = req.body;
+    const newLead = new Lead({
+      name,
+      email,
+      phone,
+      message,
+      type,
+      source,
+      landingPageSessionId,
+      landingPageUrl,
+      landingPageTitle,
+      course,
+    });
     await newLead.save();
     res.status(201).json({ success: true, lead: newLead });
   } catch (err) {

@@ -29,6 +29,7 @@ import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useAuth } from "@/contexts/AuthContext";
+import LiveSessionLandingPage from "@/components/LiveSessionLandingPage";
 
 const API = getApiOrigin();
 const DEFAULT_REMINDER_TIME_ZONE = "Asia/Kolkata";
@@ -69,6 +70,56 @@ const resolveObjectId = (value) => {
   if (typeof value === "object" && value._id) return String(value._id);
   return "";
 };
+
+const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
+  heroImage:
+    landingPage.heroImage ||
+    session.imageUrl ||
+    session.thumbnail ||
+    "/images/live-class.jpg",
+  headline: landingPage.headline || session.title || "",
+  subheadline:
+    landingPage.subheadline ||
+    session.subtitle ||
+    session.description ||
+    "",
+  bodyContent: landingPage.bodyContent || session.description || "",
+  authorName: landingPage.authorName || session.instructor || "",
+  authorCode: landingPage.authorCode || "IICPA",
+  authorText: landingPage.authorText || "",
+  ctaText: landingPage.ctaText || "Get Free Preview",
+  formHeading: landingPage.formHeading || "Start your enquiry",
+  formDescription:
+    landingPage.formDescription ||
+    "Share your details and our team will reach out shortly.",
+  formLabel: landingPage.formLabel || "Lead Form",
+  thankYouText:
+    landingPage.thankYouText ||
+    "Thank you. Our team will contact you shortly.",
+});
+
+const getLandingPageDraft = (form, heroImageFallback = "") => ({
+  heroImage:
+    form.landingPage.heroImage || heroImageFallback || form.thumbnail || "",
+  headline: form.landingPage.headline || form.title || "",
+  subheadline:
+    form.landingPage.subheadline || form.description || "",
+  bodyContent:
+    form.landingPage.bodyContent || form.description || "",
+  authorName:
+    form.landingPage.authorName || form.instructor || "",
+  authorCode: form.landingPage.authorCode || "IICPA",
+  authorText: form.landingPage.authorText || "",
+  ctaText: form.landingPage.ctaText || "Get Free Preview",
+  formHeading: form.landingPage.formHeading || "Start your enquiry",
+  formDescription:
+    form.landingPage.formDescription ||
+    "Share your details and our team will reach out shortly.",
+  formLabel: form.landingPage.formLabel || "Lead Form",
+  thankYouText:
+    form.landingPage.thankYouText ||
+    "Thank you. Our team will contact you shortly.",
+});
 
 const isConfirmedLiveEnrollment = (booking) => {
   const paymentStatus = String(booking?.paymentStatus || "").toLowerCase();
@@ -182,9 +233,11 @@ export default function LiveSesionAdmin() {
     thumbnail: "",
     courseId: "",
     chapterId: "",
+    landingPage: getLandingPageDefaults(),
   });
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [landingPreviewOpen, setLandingPreviewOpen] = useState(false);
   const { hasPermission, user } = useAuth();
 
   const selectedCourse = useMemo(
@@ -484,6 +537,7 @@ export default function LiveSesionAdmin() {
       thumbnail: thumbnailUrl,
       courseId: form.courseId || "",
       chapterId: form.chapterId || "",
+      landingPage: getLandingPageDraft(form, thumbnailUrl),
     };
 
     const token = checkTokenValidity();
@@ -558,6 +612,7 @@ export default function LiveSesionAdmin() {
         thumbnail: session.thumbnail || "",
         courseId: resolveObjectId(session.courseId),
         chapterId: resolveObjectId(session.chapterId),
+        landingPage: getLandingPageDefaults(session.landingPage, session),
       });
       setEditId(id);
       setTab("create");
@@ -643,10 +698,22 @@ export default function LiveSesionAdmin() {
       thumbnail: "",
       courseId: "",
       chapterId: "",
+      landingPage: getLandingPageDefaults(),
     });
     setEditId(null);
     setUploadedImage(null);
     setImagePreview("");
+    setLandingPreviewOpen(false);
+  };
+
+  const updateLandingPageField = (field, value) => {
+    setForm((current) => ({
+      ...current,
+      landingPage: {
+        ...current.landingPage,
+        [field]: value,
+      },
+    }));
   };
 
   const handleImageUpload = (e) => {
@@ -1067,6 +1134,20 @@ export default function LiveSesionAdmin() {
         reminderTargetSession.time
       )}`
     : "";
+  const landingPreviewSession = {
+    _id: editId || "draft",
+    title: form.title,
+    instructor: form.instructor,
+    description: form.description,
+    imageUrl: imagePreview || form.thumbnail || form.landingPage.heroImage,
+    thumbnail: imagePreview || form.thumbnail || form.landingPage.heroImage,
+    category: form.category,
+    landingPage: getLandingPageDraft(form, imagePreview || form.thumbnail),
+  };
+  const landingPreviewUrl =
+    editId && typeof window !== "undefined"
+      ? `${window.location.origin}/live-session/landing/${editId}`
+      : "";
 
   return (
     <div className="w-[75vw] mx-auto py-10">
@@ -1180,9 +1261,51 @@ export default function LiveSesionAdmin() {
                 setSelectedSessionId(null);
                 setTab("list");
               }}
+              >
+                ← Back to Sessions
+              </Button>
+          </div>
+        ) : tab === "create" ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="contained"
+              sx={{ bgcolor: "#0f265c", borderRadius: 2, fontWeight: 600, px: 3 }}
+              onClick={() => {
+                setTab("list");
+                resetForm();
+              }}
             >
               ← Back to Sessions
             </Button>
+            <Button
+              variant="outlined"
+              sx={{ borderColor: "#0f265c", color: "#0f265c", borderRadius: 2, fontWeight: 600, px: 3 }}
+              onClick={() => setLandingPreviewOpen(true)}
+            >
+              Preview Landing Page
+            </Button>
+            {editId ? (
+              <Button
+                variant="outlined"
+                component="a"
+                href={
+                  typeof window !== "undefined"
+                    ? `${window.location.origin}/live-session/landing/${editId}`
+                    : `/live-session/landing/${editId}`
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{
+                  borderColor: "#16a34a",
+                  color: "#16a34a",
+                  borderRadius: 2,
+                  fontWeight: 600,
+                  px: 3,
+                }}
+              >
+                Open Public Page
+              </Button>
+            ) : null}
           </div>
         ) : (
           <Button
@@ -2066,6 +2189,99 @@ export default function LiveSesionAdmin() {
             </div>
           </div>
 
+          <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-lg font-semibold text-slate-900">
+                  Landing Page Builder
+                </p>
+                <p className="text-sm text-slate-500">
+                  Configure the public lead page that will be shared for Google lead capture.
+                </p>
+              </div>
+              <Button
+                variant="outlined"
+                sx={{ borderColor: "#0f265c", color: "#0f265c" }}
+                onClick={() => setLandingPreviewOpen(true)}
+              >
+                Preview
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              {[
+                { field: "heroImage", label: "Hero Image URL", type: "text" },
+                { field: "headline", label: "Hero Headline", type: "text" },
+                { field: "subheadline", label: "Hero Subheadline", type: "text" },
+                { field: "authorName", label: "Author Name", type: "text" },
+                { field: "authorCode", label: "Author Code", type: "text" },
+                { field: "ctaText", label: "CTA Text", type: "text" },
+                { field: "formHeading", label: "Form Heading", type: "text" },
+                { field: "formLabel", label: "Form Label", type: "text" },
+              ].map(({ field, label, type }) => (
+                <div key={field}>
+                  <label className="block font-semibold mb-2">{label}</label>
+                  <input
+                    type={type}
+                    className="w-full border px-4 py-3 rounded-lg bg-gray-50"
+                    value={form.landingPage[field] || ""}
+                    placeholder={label}
+                    onChange={(e) => updateLandingPageField(field, e.target.value)}
+                  />
+                </div>
+              ))}
+
+              <div className="lg:col-span-2">
+                <label className="block font-semibold mb-2">Hero / Body Content</label>
+                <textarea
+                  className="w-full border px-4 py-3 rounded-lg bg-gray-50 min-h-32"
+                  value={form.landingPage.bodyContent || ""}
+                  placeholder="Add the content that appears below the hero section"
+                  onChange={(e) => updateLandingPageField("bodyContent", e.target.value)}
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block font-semibold mb-2">Author Text</label>
+                <textarea
+                  className="w-full border px-4 py-3 rounded-lg bg-gray-50 min-h-24"
+                  value={form.landingPage.authorText || ""}
+                  placeholder="A short author bio or trust statement"
+                  onChange={(e) => updateLandingPageField("authorText", e.target.value)}
+                />
+              </div>
+
+              <div className="lg:col-span-2">
+                <label className="block font-semibold mb-2">Form Description</label>
+                <textarea
+                  className="w-full border px-4 py-3 rounded-lg bg-gray-50 min-h-24"
+                  value={form.landingPage.formDescription || ""}
+                  placeholder="Explain what the visitor gets after sharing details"
+                  onChange={(e) =>
+                    updateLandingPageField("formDescription", e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold mb-2">Thank You Text</label>
+                <input
+                  type="text"
+                  className="w-full border px-4 py-3 rounded-lg bg-gray-50"
+                  value={form.landingPage.thankYouText || ""}
+                  placeholder="Thank you message"
+                  onChange={(e) =>
+                    updateLandingPageField("thankYouText", e.target.value)
+                  }
+                />
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 lg:col-span-2">
+                Fields `name`, `email`, and `phone` are included in the public lead form by default.
+              </div>
+            </div>
+          </div>
+
           <div className="md:col-span-2 mt-8">
             <Button
               type="submit"
@@ -2092,6 +2308,54 @@ export default function LiveSesionAdmin() {
           </div>
         </form>
       )}
+
+      {landingPreviewOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 py-6">
+          <div className="relative flex h-[92vh] w-full max-w-[1400px] flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">
+                  Landing Page Preview
+                </h3>
+                <p className="text-sm text-slate-500">
+                  Review the public page before publishing it.
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {landingPreviewUrl ? (
+                  <a
+                    href={landingPreviewUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl border border-emerald-600 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                  >
+                    Open public page
+                  </a>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => setLandingPreviewOpen(false)}
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto bg-slate-100">
+              <LiveSessionLandingPage
+                sessionId={editId || undefined}
+                session={landingPreviewSession}
+                draftLandingPage={getLandingPageDraft(form)}
+                previewMode
+                showHeader
+                showFooter={false}
+                overrideTitle={form.title}
+                overrideUrl={landingPreviewUrl}
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -60,7 +60,11 @@ const navLinks = [
   { name: "Live Session", href: "/live-session" },
 ];
 
-export default function Header({ showMarquee = true, topOffset = null }) {
+export default function Header({
+  showMarquee = true,
+  topOffset = null,
+  forceVisible = false,
+}) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -79,7 +83,7 @@ export default function Header({ showMarquee = true, topOffset = null }) {
 
   const isDashboardPage =
     pathname.includes("-dashboard") || pathname.includes("/dashboard");
-  if (isDashboardPage) return null;
+  if (isDashboardPage && !forceVisible) return null;
 
   const fetchStudentAndCart = async () => {
     try {
