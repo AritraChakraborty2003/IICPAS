@@ -799,6 +799,10 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   };
 
   const resetForm = () => {
+    clearLiveSessionLandingDraft(
+      buildLiveSessionLandingDraftKey(editId || "new")
+    );
+    clearLiveSessionLandingDraft(buildLiveSessionLandingDraftKey("new"));
     setForm({
       title: "",
       instructor: "",
@@ -818,7 +822,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     setEditId(null);
     setUploadedImage(null);
     setImagePreview("");
-    setLandingPreviewOpen(false);
   };
 
   const updateLandingPageField = (field, value) => {
