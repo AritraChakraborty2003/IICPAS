@@ -347,6 +347,73 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     fetchChaptersForCourse(form.courseId);
   }, [form.courseId]);
 
+  useEffect(() => {
+    if (!draftKey) return;
+
+    let cancelled = false;
+    const storedDraft = readLiveSessionLandingDraft(draftKey);
+
+    const hydrateDraft = async () => {
+      if (!storedDraft?.form) return;
+
+      const nextForm = {
+        title: "",
+        instructor: "",
+        description: "",
+        startTime: "",
+        endTime: "",
+        date: "",
+        link: "",
+        price: "",
+        category: "",
+        maxParticipants: "",
+        thumbnail: "",
+        courseId: "",
+        chapterId: "",
+        landingPage: getLandingPageDefaults(),
+        ...storedDraft.form,
+        landingPage: getLandingPageDefaults(
+          storedDraft.form?.landingPage || {},
+          storedDraft.form
+        ),
+      };
+
+      setForm(nextForm);
+      setEditId(storedDraft.editId || null);
+      setTab(storedDraft.tab || "create");
+      setImagePreview(storedDraft.imagePreview || "");
+
+      if (
+        storedDraft.imagePreview?.startsWith("data:") &&
+        storedDraft.uploadedImageName
+      ) {
+        try {
+          const restoredFile = await dataUrlToFile(
+            storedDraft.imagePreview,
+            storedDraft.uploadedImageName,
+            storedDraft.uploadedImageType
+          );
+          if (!cancelled) {
+            setUploadedImage(restoredFile);
+          }
+        } catch (error) {
+          console.warn("Failed to restore uploaded landing image:", error);
+          if (!cancelled) {
+            setUploadedImage(null);
+          }
+        }
+      } else if (!cancelled) {
+        setUploadedImage(null);
+      }
+    };
+
+    hydrateDraft();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [draftKey]);
+
   const fetchSessions = async () => {
     try {
       const token = checkTokenValidity();
@@ -575,6 +642,10 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
 
     if (res.ok) {
       await fetchSessions();
+      clearLiveSessionLandingDraft(
+        buildLiveSessionLandingDraftKey(editId || "new")
+      );
+      clearLiveSessionLandingDraft(buildLiveSessionLandingDraftKey("new"));
       resetForm();
       setTab("list");
       Swal.fire(
@@ -589,6 +660,35 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       Swal.fire("Error", errorData.error || "Failed to save session", "error");
     }
     setLoading(false);
+  };
+
+  const persistLandingDraft = () => {
+    const currentDraftKey = buildLiveSessionLandingDraftKey(editId || "new");
+    writeLiveSessionLandingDraft(currentDraftKey, {
+      editId: editId || "",
+      tab,
+      form: {
+        ...form,
+        landingPage: getLandingPageDraft(form, imagePreview || form.thumbnail),
+      },
+      imagePreview: imagePreview || form.thumbnail || "",
+      uploadedImageName: uploadedImage?.name || "",
+      uploadedImageType: uploadedImage?.type || "",
+    });
+    return currentDraftKey;
+  };
+
+  const handlePreviewLandingPage = () => {
+    const currentDraftKey = persistLandingDraft();
+    const returnTo = `/admin-dashboard?tab=live-session&draftKey=${encodeURIComponent(
+      currentDraftKey
+    )}`;
+    const previewUrl = `/live-session/landing/preview?draftKey=${encodeURIComponent(
+      currentDraftKey
+    )}&sessionId=${encodeURIComponent(editId || "")}&returnTo=${encodeURIComponent(
+      returnTo
+    )}`;
+    router.push(previewUrl);
   };
 
   const formatTimeRange = (timeRange) => {
