@@ -169,11 +169,11 @@ export default function BlogsSidebar({
 
             return (
               <Link key={blog._id} href={blogHref} className="group flex gap-3">
-                <div className="w-16 h-16 rounded-xl overflow-hidden bg-gradient-to-br from-gray-200 to-gray-300 flex-shrink-0 group-hover:ring-2 group-hover:ring-blue-500/20 transition-all duration-300">
+                <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-100 p-1 flex-shrink-0 group-hover:ring-2 group-hover:ring-blue-500/20 transition-all duration-300">
                   <img
                     src={imageUrl}
                     alt={blog.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    className="h-full w-full rounded-lg object-contain object-center transition-transform duration-500 group-hover:scale-[1.03]"
                     onError={(e) => {
                       e.target.src = getFallbackImage(blog.title);
                     }}

@@ -405,14 +405,14 @@ export default function BlogsPage() {
 
                           {/* Image Container with Advanced Effects */}
                           <motion.div
-                            className="relative overflow-hidden h-40"
+                            className="relative aspect-[16/10] overflow-hidden bg-slate-100 p-2"
                             whileHover={{ scale: 1.05 }}
                             transition={{ duration: 0.3, ease: "easeOut" }}
                           >
                             <img
                               src={imageUrl}
                               alt={blog.title}
-                              className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                              className="h-full w-full rounded-xl object-contain object-center transition-all duration-700 group-hover:scale-[1.03] group-hover:brightness-105"
                               onError={(e) => {
                                 e.target.src = getFallbackImage(blog.title);
                               }}
@@ -595,11 +595,11 @@ export default function BlogsPage() {
                         >
                           <div className="flex flex-col md:flex-row">
                             {/* Image Container for List View */}
-                            <div className="relative md:w-60 h-40 md:h-full overflow-hidden">
+                            <div className="relative aspect-[16/10] overflow-hidden bg-slate-100 p-2 md:w-60 md:shrink-0">
                               <img
                                 src={imageUrl}
                                 alt={blog.title}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                className="h-full w-full rounded-lg object-contain object-center transition-transform duration-300 group-hover:scale-[1.03]"
                                 onError={(e) => {
                                   e.target.src = getFallbackImage(blog.title);
                                 }}
