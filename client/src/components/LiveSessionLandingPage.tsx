@@ -26,6 +26,13 @@ type LandingPageConfig = {
   formDescription?: string;
   formLabel?: string;
   thankYouText?: string;
+  socialLinks?: {
+    facebook?: string;
+    linkedin?: string;
+    instagram?: string;
+    youtube?: string;
+    twitter?: string;
+  };
 };
 
 type LiveSessionRecord = {
@@ -145,37 +152,67 @@ const resolveLandingPage = (
       draftLandingPage?.thankYouText ||
       base.thankYouText ||
       "Thank you. Our team will contact you shortly.",
+    socialLinks: {
+      facebook:
+        draftLandingPage?.socialLinks?.facebook ??
+        base.socialLinks?.facebook ??
+        "",
+      linkedin:
+        draftLandingPage?.socialLinks?.linkedin ??
+        base.socialLinks?.linkedin ??
+        "",
+      instagram:
+        draftLandingPage?.socialLinks?.instagram ??
+        base.socialLinks?.instagram ??
+        "",
+      youtube:
+        draftLandingPage?.socialLinks?.youtube ??
+        base.socialLinks?.youtube ??
+        "",
+      twitter:
+        draftLandingPage?.socialLinks?.twitter ??
+        base.socialLinks?.twitter ??
+        "",
+    },
   };
 };
 
-const SOCIAL_LINKS = [
+const DEFAULT_SOCIAL_LINKS = {
+  facebook: "https://www.facebook.com/profile.php?id=61581453864987",
+  linkedin: "https://linkedin.com/company/iicpa-institute",
+  instagram: "https://instagram.com/iicpainstitute",
+  youtube: "https://youtube.com/@iicpainstitute",
+  twitter: "https://twitter.com/iicpainstitute",
+} as const;
+
+const SOCIAL_LINK_META = [
   {
+    key: "facebook" as const,
     label: "Facebook",
-    href: "https://www.facebook.com/profile.php?id=61581453864987",
     icon: FaFacebook,
     bgClass: "bg-[#1877f2]",
   },
   {
+    key: "linkedin" as const,
     label: "LinkedIn",
-    href: "https://linkedin.com/company/iicpa-institute",
     icon: FaLinkedin,
     bgClass: "bg-[#0a66c2]",
   },
   {
+    key: "instagram" as const,
     label: "Instagram",
-    href: "https://instagram.com/iicpainstitute",
     icon: FaInstagram,
     bgClass: "bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af]",
   },
   {
+    key: "youtube" as const,
     label: "YouTube",
-    href: "https://youtube.com/@iicpainstitute",
     icon: FaYoutube,
     bgClass: "bg-[#ff0000]",
   },
   {
+    key: "twitter" as const,
     label: "X",
-    href: "https://twitter.com/iicpainstitute",
     icon: FaXTwitter,
     bgClass: "bg-[#111827]",
   },
@@ -581,19 +618,25 @@ function LiveSessionLandingPage({
       >
         <div className="pointer-events-auto overflow-hidden rounded-l-2xl border border-slate-200/80 bg-white/90 p-2 shadow-[0_18px_40px_rgba(15,23,42,0.18)] backdrop-blur-md">
           <div className="flex flex-col gap-2">
-            {SOCIAL_LINKS.map(({ label, href, icon: Icon, bgClass }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Follow us on ${label}`}
-                title={label}
-                className={`group flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform duration-200 hover:-translate-x-1 hover:scale-105 ${bgClass}`}
-              >
-                <Icon className="h-5 w-5" />
-              </a>
-            ))}
+            {SOCIAL_LINK_META.map(({ key, label, icon: Icon, bgClass }) => {
+              const href =
+                landingPage.socialLinks?.[key] ||
+                DEFAULT_SOCIAL_LINKS[key];
+              if (!href) return null;
+              return (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Follow us on ${label}`}
+                  title={label}
+                  className={`group flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform duration-200 hover:-translate-x-1 hover:scale-105 ${bgClass}`}
+                >
+                  <Icon className="h-5 w-5" />
+                </a>
+              );
+            })}
           </div>
         </div>
       </aside>

@@ -102,6 +102,13 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
   thankYouText:
     landingPage.thankYouText ||
     "Thank you. Our team will contact you shortly.",
+  socialLinks: {
+    facebook: landingPage.socialLinks?.facebook || "",
+    linkedin: landingPage.socialLinks?.linkedin || "",
+    instagram: landingPage.socialLinks?.instagram || "",
+    youtube: landingPage.socialLinks?.youtube || "",
+    twitter: landingPage.socialLinks?.twitter || "",
+  },
 });
 
 const getLandingPageDraft = (form, heroImageFallback = "") => ({
@@ -125,6 +132,13 @@ const getLandingPageDraft = (form, heroImageFallback = "") => ({
   thankYouText:
     form.landingPage.thankYouText ||
     "Thank you. Our team will contact you shortly.",
+  socialLinks: {
+    facebook: form.landingPage.socialLinks?.facebook || "",
+    linkedin: form.landingPage.socialLinks?.linkedin || "",
+    instagram: form.landingPage.socialLinks?.instagram || "",
+    youtube: form.landingPage.socialLinks?.youtube || "",
+    twitter: form.landingPage.socialLinks?.twitter || "",
+  },
 });
 
 const dataUrlToFile = async (dataUrl, fileName, mimeType) => {
@@ -2474,6 +2488,41 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                     updateLandingPageField("thankYouText", e.target.value)
                   }
                 />
+              </div>
+
+              {/* Social Media Links */}
+              <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <p className="font-semibold mb-1">Social Media Links</p>
+                <p className="text-sm text-slate-500 mb-4">
+                  These links appear as icons on the landing page sidebar. Leave blank to hide a platform.
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {[
+                    { key: "facebook", label: "Facebook", placeholder: "https://facebook.com/yourpage", emoji: "🔵" },
+                    { key: "linkedin", label: "LinkedIn", placeholder: "https://linkedin.com/company/yourcompany", emoji: "🔷" },
+                    { key: "instagram", label: "Instagram", placeholder: "https://instagram.com/yourhandle", emoji: "📸" },
+                    { key: "youtube", label: "YouTube", placeholder: "https://youtube.com/@yourchannel", emoji: "🔴" },
+                    { key: "twitter", label: "X (Twitter)", placeholder: "https://twitter.com/yourhandle", emoji: "⬛" },
+                  ].map(({ key, label, placeholder, emoji }) => (
+                    <div key={key}>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        {emoji} {label}
+                      </label>
+                      <input
+                        type="url"
+                        className="w-full border px-3 py-2 rounded-lg bg-white text-sm"
+                        placeholder={placeholder}
+                        value={form.landingPage.socialLinks?.[key] || ""}
+                        onChange={(e) =>
+                          updateLandingPageField("socialLinks", {
+                            ...form.landingPage.socialLinks,
+                            [key]: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 lg:col-span-2">
