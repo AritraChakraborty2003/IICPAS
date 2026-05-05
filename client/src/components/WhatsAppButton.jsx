@@ -12,7 +12,7 @@ const WhatsAppButton = () => {
     : "bottom-4 right-24";
 
   // WhatsApp configuration - you can change this number
-  const whatsappNumber = "+1234567890"; // Replace with your actual WhatsApp number
+  const whatsappNumber = "919593330999"; // IICPA WhatsApp number
   const whatsappMessage =
     "Hi! I'm interested in your courses. Can you help me?";
 
