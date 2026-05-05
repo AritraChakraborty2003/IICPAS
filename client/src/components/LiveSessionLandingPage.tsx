@@ -656,20 +656,39 @@ function LiveSessionLandingPage({
               <div className="absolute inset-0 bg-black/20" />
 
               <div className="absolute inset-0 flex items-center justify-center px-4">
-                <div className="mx-auto flex w-full max-w-[94vw] flex-col items-stretch gap-2 rounded-[1.5rem] border border-white/20 bg-slate-950/20 p-2 text-center shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur-md sm:max-w-5xl sm:items-center sm:gap-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:text-center sm:shadow-none sm:backdrop-blur-0">
-                  <div className="flex w-full flex-col overflow-hidden rounded-[1.1rem] shadow-[0_16px_40px_rgba(15,23,42,0.25)] sm:w-auto sm:flex-row sm:items-stretch sm:rounded-lg">
-                    <span className="w-full bg-sky-800 px-4 py-3 text-center text-[clamp(1.15rem,5vw,1.8rem)] font-extrabold leading-tight tracking-[-0.03em] text-white sm:w-auto sm:px-6 sm:py-3 sm:text-4xl sm:leading-none">
+                <div className="mx-auto flex w-full max-w-[94vw] flex-col items-center gap-3 rounded-[1.5rem] border border-white/25 bg-slate-950/20 px-4 py-4 text-center shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur-md sm:max-w-5xl sm:gap-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none sm:backdrop-blur-0">
+                  <div className="inline-flex items-center rounded-full border border-white/20 bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-white/90 shadow-[0_8px_20px_rgba(15,23,42,0.12)] sm:hidden">
+                    {landingPage.formLabel || "IICPA"}
+                  </div>
+
+                  <div className="flex w-full flex-col items-center gap-2 rounded-[1.25rem] bg-white/10 px-4 py-4 text-center shadow-[0_18px_40px_rgba(15,23,42,0.18)] sm:w-auto sm:flex-row sm:items-stretch sm:gap-0 sm:rounded-lg sm:bg-transparent sm:px-0 sm:py-0 sm:text-center sm:shadow-none">
+                    <span className="w-full text-[clamp(1.45rem,7vw,2rem)] font-black leading-[1.02] tracking-[-0.05em] text-white drop-shadow-[0_2px_8px_rgba(15,23,42,0.35)] sm:w-auto sm:bg-sky-800 sm:px-6 sm:py-3 sm:text-4xl sm:leading-none sm:tracking-normal sm:drop-shadow-none">
                       {heroPrimaryText}
                     </span>
-                    <span className="w-full bg-green-600 px-4 py-3 text-center text-[clamp(1.15rem,5vw,1.8rem)] font-extrabold leading-tight tracking-[-0.03em] text-white sm:w-auto sm:px-6 sm:py-3 sm:text-4xl sm:leading-none">
+                    <span className="w-full text-[clamp(1.35rem,6.4vw,1.85rem)] font-black leading-[1.02] tracking-[-0.05em] text-emerald-300 drop-shadow-[0_2px_8px_rgba(15,23,42,0.35)] sm:w-auto sm:bg-green-600 sm:px-6 sm:py-3 sm:text-4xl sm:leading-none sm:tracking-normal sm:text-white sm:drop-shadow-none">
                       {heroSecondaryText}
                     </span>
                   </div>
-                  <div className="flex w-full flex-col overflow-hidden rounded-[1.1rem] shadow-[0_16px_40px_rgba(15,23,42,0.22)] sm:w-auto sm:flex-row sm:items-stretch sm:rounded-lg">
-                    <span className="w-full bg-sky-800 px-4 py-2.5 text-center text-sm font-bold leading-tight text-white sm:w-auto sm:px-6 sm:py-3 sm:text-xl sm:leading-none">
+
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/12 px-3 py-1.5 text-[11px] font-medium text-white/85 backdrop-blur sm:hidden">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    {landingPage.ctaText || "Get Free Preview"}
+                  </div>
+
+                  <div className="hidden sm:flex sm:w-auto sm:flex-row sm:items-stretch sm:overflow-hidden sm:rounded-lg sm:shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
+                    <span className="bg-sky-800 px-6 py-3 text-4xl font-extrabold leading-none text-white">
+                      {heroPrimaryText}
+                    </span>
+                    <span className="bg-green-600 px-6 py-3 text-4xl font-extrabold leading-none text-white">
+                      {heroSecondaryText}
+                    </span>
+                  </div>
+
+                  <div className="hidden sm:flex sm:w-auto sm:flex-row sm:items-stretch sm:overflow-hidden sm:rounded-lg sm:shadow-[0_16px_40px_rgba(15,23,42,0.22)]">
+                    <span className="bg-sky-800 px-6 py-3 text-xl font-bold leading-none text-white">
                       {landingPage.formLabel || "IICPA"}
                     </span>
-                    <span className="w-full bg-green-600 px-4 py-2.5 text-center text-xs font-bold leading-tight text-white sm:w-auto sm:px-6 sm:py-3 sm:text-lg sm:leading-none">
+                    <span className="bg-green-600 px-6 py-3 text-lg font-bold leading-none text-white">
                       {landingPage.ctaText || "Get Free Preview"}
                     </span>
                   </div>
