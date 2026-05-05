@@ -683,7 +683,7 @@ function LiveSessionLandingPage({
 
                   <div className="hidden sm:flex sm:flex-col sm:items-start sm:gap-4">
                     <div className="flex w-auto flex-row items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
-                      <span className="bg-sky-800 px-6 py-3 text-4xl font-extrabold leading-none text-white lg:text-5xl xl:text-6xl">
+                      <span className="bg-sky-800 px-5 py-2.5 text-3xl font-extrabold leading-none text-white lg:px-6 lg:py-3 lg:text-4xl xl:text-5xl">
                         {heroHeadlineText}
                       </span>
                     </div>
