@@ -248,21 +248,20 @@ export const deleteUserLoginAccessOverride = async ({ role, userId }) => {
     throw new Error("User not found");
   }
 
-  const deleted = await LoginAccessControl.findOneAndDelete({
+  await cfg.model.deleteOne({ _id: objectId });
+
+  const deletedAccess = await LoginAccessControl.findOneAndDelete({
     role,
     userId: objectId,
   });
 
-  const baseActive = cfg.baseActive(user);
   return {
     user_id: user._id,
     role,
     name: cfg.displayName(user),
     email: cfg.email(user),
-    baseStatus: baseActive ? "active" : "inactive",
-    overrideStatus: "active",
-    effectiveStatus: baseActive ? "active" : "inactive",
-    deleted: Boolean(deleted),
+    deletedUser: true,
+    deletedAccess: Boolean(deletedAccess),
   };
 };
 
