@@ -94,7 +94,7 @@ export default function BlogDetailClient({ blog, allBlogs }) {
   if (!blogToRender) {
     return (
       <>
-        <Header />
+        <Header topOffset={40} />
         <div className="min-h-screen bg-white flex items-center justify-center">
           <div className="text-center">
             <div className="text-6xl mb-6">📝</div>
@@ -164,10 +164,10 @@ export default function BlogDetailClient({ blog, allBlogs }) {
 
   return (
     <>
-      <Header />
+      <Header topOffset={40} />
       <section className="relative bg-gradient-to-b from-slate-50 via-white to-slate-100">
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.12),transparent_40%),radial-gradient(circle_at_top_left,rgba(34,197,94,0.1),transparent_35%)]" />
-        <div className="relative max-w-[1500px] mx-auto px-4 sm:px-6 md:px-8 pt-8 pb-16">
+        <div className="relative max-w-[1500px] mx-auto px-4 sm:px-6 md:px-8 pt-24 sm:pt-28 md:pt-32 pb-16">
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
             <Link href="/" className="hover:text-emerald-600 transition">
               Home
@@ -181,7 +181,7 @@ export default function BlogDetailClient({ blog, allBlogs }) {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
-            <article className="mt-10 lg:mt-14 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-5 sm:p-8 lg:p-10">
+            <article className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-5 sm:p-8 lg:p-10">
               <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-600 mb-5">
                 <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 font-medium">
                   <Tag className="w-3 h-3" />
