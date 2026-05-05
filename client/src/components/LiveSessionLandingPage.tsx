@@ -734,21 +734,21 @@ function LiveSessionLandingPage({
               </div>
             </div>
 
-            <div className="bg-white p-5 md:p-8 lg:border-l lg:border-t-0">
-              <div className="rounded-[1.5rem] bg-white p-5 md:p-7">
-                <div className="mx-auto mb-4 w-full max-w-[340px] rounded-none bg-[#175a84] px-6 py-5 text-center text-white shadow-[0_12px_28px_rgba(15,23,42,0.12)]">
-                  <p className="text-lg font-medium">
+            <div className="bg-white px-4 py-5 md:p-8 lg:border-l lg:border-t-0">
+              <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)] md:p-7 md:shadow-none">
+                <div className="mx-auto mb-4 w-full max-w-full rounded-[1rem] bg-[#175a84] px-5 py-3.5 text-center text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] sm:max-w-[340px] sm:rounded-none sm:px-6 sm:py-5">
+                  <p className="text-base font-semibold tracking-[-0.02em] sm:text-lg sm:font-medium">
                     {landingPage.formHeading}
                   </p>
                 </div>
 
-                <p className="text-sm leading-7 text-slate-600">
+                <p className="text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
                   {landingPage.formDescription}
                 </p>
 
-                <form className="mt-6 space-y-4">
+                <form className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
                       Name *
                     </label>
                     <input
@@ -756,12 +756,12 @@ function LiveSessionLandingPage({
                       onChange={(e) =>
                         setForm((current) => ({ ...current, name: e.target.value }))
                       }
-                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
                       placeholder="Your name"
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
                       Email *
                     </label>
                     <input
@@ -770,12 +770,12 @@ function LiveSessionLandingPage({
                       onChange={(e) =>
                         setForm((current) => ({ ...current, email: e.target.value }))
                       }
-                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
                       placeholder="Your email"
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
                       Phone *
                     </label>
                     <input
@@ -784,12 +784,12 @@ function LiveSessionLandingPage({
                       onChange={(e) =>
                         setForm((current) => ({ ...current, phone: e.target.value }))
                       }
-                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
                       placeholder="Phone number"
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
                       WhatsApp Number
                     </label>
                     <input
@@ -801,13 +801,13 @@ function LiveSessionLandingPage({
                           whatsappNumber: e.target.value,
                         }))
                       }
-                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
                       placeholder="Optional"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
                       Company / Institute
                     </label>
                     <input
@@ -815,13 +815,13 @@ function LiveSessionLandingPage({
                       onChange={(e) =>
                         setForm((current) => ({ ...current, company: e.target.value }))
                       }
-                      className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-sky-500"
+                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
                       placeholder="Optional"
                     />
                   </div>
 
                   {/* Receive notifications checkbox */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 transition hover:bg-slate-100">
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition hover:bg-slate-100 sm:px-4 sm:py-3">
                     <input
                       type="checkbox"
                       checked={form.receiveNotifications}
@@ -833,7 +833,7 @@ function LiveSessionLandingPage({
                       }
                       className="mt-0.5 h-4 w-4 accent-emerald-600"
                     />
-                    <span className="text-sm leading-snug text-slate-700">
+                    <span className="text-[13px] leading-snug text-slate-700 sm:text-sm">
                       Receive latest notifications &amp; updates about this session via WhatsApp / Email
                     </span>
                   </label>
@@ -841,7 +841,7 @@ function LiveSessionLandingPage({
                   <button
                     type="button"
                     disabled={previewMode || paying || submitting}
-                    className="mt-4 w-full rounded-none bg-emerald-600 px-4 py-3 text-sm font-bold uppercase tracking-[0.10em] text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-4 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold tracking-[0.04em] text-white shadow-[0_12px_24px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-none sm:font-bold sm:uppercase sm:tracking-[0.10em] sm:shadow-none"
                     onClick={handlePayNow}
                   >
                     {previewMode
@@ -853,7 +853,7 @@ function LiveSessionLandingPage({
 
                   {submitted ? (
                     <div className="mt-4 space-y-3">
-                      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                         {landingPage.thankYouText}
                       </div>
 
@@ -862,7 +862,7 @@ function LiveSessionLandingPage({
                           href={`${API_ORIGIN}/api/test-payment/receipts/booking/${bookingId}/download`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex w-full items-center justify-center gap-2 rounded-none bg-sky-700 px-4 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-sky-800"
+                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-800 sm:rounded-none sm:font-bold sm:uppercase sm:tracking-wide"
                         >
                           ⬇ Download Invoice / Receipt
                         </a>
@@ -876,13 +876,13 @@ function LiveSessionLandingPage({
                           href={`https://wa.me/${form.whatsappNumber || form.phone}?text=${encodeURIComponent(`Hi ${form.name},\nYour enrollment for *${session?.title || landingPage.headline}* is confirmed! 🎉\n\nThank you for enrolling with IICPA Institute. Our team will reach out shortly with session details.\n\nFor any queries, reply to this message.\n\n— IICPA Institute`)}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex-1 rounded-none border border-emerald-600 bg-white px-3 py-2 text-center text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50"
+                          className="flex-1 rounded-xl border border-emerald-600 bg-white px-3 py-2 text-center text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 sm:rounded-none"
                         >
                           📲 WhatsApp
                         </a>
                         <a
                           href={`mailto:${form.email}?subject=${encodeURIComponent(`Enrollment Confirmed – ${session?.title || landingPage.headline}`)}&body=${encodeURIComponent(`Hi ${form.name},\n\nYour enrollment for "${session?.title || landingPage.headline}" is confirmed!\n\nThank you for enrolling with IICPA Institute. Our team will reach out shortly with session details and your joining link.\n\nFor invoice/receipt, please visit your student dashboard or reply to this email.\n\nWarm regards,\nIICPA Institute Team`)}`}
-                          className="flex-1 rounded-none border border-sky-600 bg-white px-3 py-2 text-center text-xs font-semibold text-sky-700 transition hover:bg-sky-50"
+                          className="flex-1 rounded-xl border border-sky-600 bg-white px-3 py-2 text-center text-xs font-semibold text-sky-700 transition hover:bg-sky-50 sm:rounded-none"
                         >
                           ✉️ Email
                         </a>
