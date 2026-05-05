@@ -65,7 +65,6 @@ export default function Header({
   topOffset = null,
   forceVisible = false,
   simple = false,
-  rightText = "Live Session",
 }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
@@ -440,11 +439,7 @@ export default function Header({
           </Link>
 
           {simple ? (
-            <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
-              <span className="max-w-[8rem] truncate text-[11px] font-medium leading-tight text-slate-600 sm:max-w-none sm:text-sm md:text-base">
-                {rightText}
-              </span>
-            </div>
+            <div className="flex-1" />
           ) : (
             <>
               {/* Navigation - Desktop Only */}
