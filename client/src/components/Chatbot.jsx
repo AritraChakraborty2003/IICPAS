@@ -468,7 +468,7 @@ const Chatbot = () => {
                             ))}
                             {courses.length > 5 && (
                               <a
-                                href="/courses"
+                                href="/course"
                                 className="block text-center text-[10px] font-bold text-green-600 hover:underline"
                               >
                                 VIEW ALL COURSES
