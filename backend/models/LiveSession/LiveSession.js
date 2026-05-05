@@ -23,6 +23,7 @@ const liveSessionSchema = new mongoose.Schema(
       headline: { type: String, default: "" },
       subheadline: { type: String, default: "" },
       bodyContent: { type: String, default: "" },
+      authorImage: { type: String, default: "" },
       authorName: { type: String, default: "" },
       authorCode: { type: String, default: "" },
       authorText: { type: String, default: "" },
