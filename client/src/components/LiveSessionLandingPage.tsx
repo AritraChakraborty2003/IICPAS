@@ -649,24 +649,24 @@ function LiveSessionLandingPage({
               <div className="absolute inset-0 flex items-center justify-center px-4">
                 <div className="mx-auto w-full max-w-[94vw] sm:max-w-5xl">
                   <div className="sm:hidden">
-                    <div className="mx-auto flex flex-col items-center gap-3 rounded-[1.5rem] border border-white/18 bg-slate-950/92 px-4 py-4 text-center shadow-[0_24px_60px_rgba(15,23,42,0.30)]">
+                    <div className="mx-auto mt-2 flex flex-col items-center gap-3 rounded-[1.5rem] border border-white/18 bg-slate-950/92 px-4 py-4 text-center shadow-[0_24px_60px_rgba(15,23,42,0.30)]">
                       <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/85">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
                         {landingPage.formLabel || "IICPA"}
                       </div>
 
                       <div className="space-y-1">
-                        <h1 className="text-[clamp(1.4rem,6.8vw,1.95rem)] font-black leading-[1.05] tracking-[-0.05em] text-white drop-shadow-[0_2px_8px_rgba(15,23,42,0.32)]">
+                        <h1 className="text-[clamp(1.22rem,5.8vw,1.72rem)] font-black leading-[1.02] tracking-[-0.05em] text-white drop-shadow-[0_2px_8px_rgba(15,23,42,0.32)]">
                           {heroHeadlineText}
                         </h1>
-                        <p className="text-[clamp(1rem,4.8vw,1.3rem)] font-semibold leading-[1.08] tracking-[-0.03em] text-emerald-300 drop-shadow-[0_2px_8px_rgba(15,23,42,0.28)]">
+                        <p className="mt-1 text-[clamp(0.9rem,4vw,1.08rem)] font-semibold leading-[1.14] tracking-[-0.03em] text-emerald-300 drop-shadow-[0_2px_8px_rgba(15,23,42,0.28)]">
                           {landingPage.subheadline ||
                             bodyParagraphs[0] ||
                             "Register your interest and get updates about this live session."}
                         </p>
                       </div>
 
-                      <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/12 px-3 py-1.5 text-[11px] font-medium text-emerald-100">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/12 px-3 py-1.5 text-[10px] font-medium text-emerald-100">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
                         {landingPage.ctaText || "Get Free Preview"}
                       </div>
@@ -695,20 +695,20 @@ function LiveSessionLandingPage({
             </div>
           </div>
 
-          <div className="grid gap-0 border-t border-slate-100 lg:grid-cols-[1fr_0.95fr]">
+          <div className="mt-4 grid gap-0 border-t border-slate-100 lg:mt-0 lg:grid-cols-[1fr_0.95fr]">
             <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
                 <div className="rounded-[1.5rem] bg-white p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                     Author
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-slate-900">
+                  <p className="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">
                     {landingPage.authorName}
                   </p>
-                  <div className="mt-3 inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800">
+                  <div className="mt-3 inline-flex rounded-full bg-sky-100 px-3 py-1 text-[11px] font-semibold text-sky-800 sm:text-xs">
                     {landingPage.authorCode}
                   </div>
-                  <p className="mt-4 text-sm leading-7 text-slate-600">
+                  <p className="mt-4 text-xs leading-6 text-slate-600 sm:text-sm sm:leading-7">
                     {landingPage.authorText}
                   </p>
                 </div>
