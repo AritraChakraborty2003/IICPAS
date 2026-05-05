@@ -602,7 +602,7 @@ function LiveSessionLandingPage({
 
   return (
     <div
-      className={`min-h-screen overflow-x-hidden bg-[#eef4fb] text-slate-900 ${pageTopPadding} ${className}`}
+      className={`min-h-screen overflow-x-hidden bg-slate-50 text-slate-900 ${pageTopPadding} ${className}`}
     >
       {showHeader ? (
         <Header
@@ -612,346 +612,275 @@ function LiveSessionLandingPage({
         />
       ) : null}
 
-      <aside
-        className="fixed right-0 top-1/2 z-50 hidden -translate-y-1/2 md:flex"
-        aria-label="Social media links"
-      >
-        <div className="pointer-events-auto overflow-hidden rounded-l-2xl border border-slate-200/80 bg-white/90 p-2 shadow-[0_18px_40px_rgba(15,23,42,0.18)] backdrop-blur-md">
-          <div className="flex flex-col gap-2">
-            {SOCIAL_LINK_META.map(({ key, label, icon: Icon, bgClass }) => {
-              const href =
-                landingPage.socialLinks?.[key] ||
-                DEFAULT_SOCIAL_LINKS[key];
-              if (!href) return null;
-              return (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`Follow us on ${label}`}
-                  title={label}
-                  className={`group flex h-12 w-12 items-center justify-center rounded-full text-white transition-transform duration-200 hover:-translate-x-1 hover:scale-105 ${bgClass}`}
-                >
-                  <Icon className="h-5 w-5" />
-                </a>
-              );
-            })}
-          </div>
-        </div>
-      </aside>
-
       <main className="w-full">
-        <section className="overflow-hidden bg-white">
-          <div className="relative w-full">
-            <div className="relative aspect-[4/5] w-full overflow-hidden bg-slate-200 sm:aspect-[2400/1050]">
-              <img
-                src={landingPage.heroImage}
-                alt={landingPage.headline}
-                className="h-full w-full object-cover object-center"
-              />
-              <div className="absolute inset-0 bg-black/20" />
-
-              <div className="absolute inset-0 flex items-center justify-center px-4 sm:justify-start sm:px-10 lg:px-16">
-                <div className="mx-auto w-full max-w-[94vw] sm:mx-0 sm:max-w-5xl">
-                  <div className="sm:hidden">
-                    <div className="mx-auto mt-2 flex flex-col items-center gap-3 rounded-[1.5rem] border border-white/18 bg-slate-950/92 px-4 py-5 text-center shadow-[0_24px_60px_rgba(15,23,42,0.30)]">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.28em] text-white/85">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        {landingPage.formLabel || "IICPA"}
-                      </div>
-
-                      <div className="space-y-3">
-                        <h1 className="mx-auto max-w-[12ch] text-[clamp(1.18rem,5.6vw,1.62rem)] font-black leading-[1.02] tracking-[-0.05em] text-white drop-shadow-[0_2px_8px_rgba(15,23,42,0.32)]">
-                          {heroHeadlineText}
-                        </h1>
-                        <div className="mx-auto max-w-[25ch] rounded-2xl border border-white/10 bg-white/5 px-3 py-2 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
-                          <p className="text-[clamp(0.74rem,3.1vw,0.88rem)] font-medium leading-[1.35] tracking-[-0.02em] text-cyan-100">
-                            {landingPage.subheadline ||
-                              bodyParagraphs[0] ||
-                              "Register your interest and get updates about this live session."}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/12 px-3 py-1.5 text-[10px] font-medium text-emerald-100">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                        {landingPage.ctaText || "Get Free Preview"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="hidden sm:flex sm:flex-col sm:items-start sm:gap-4">
-                    <div className="flex w-auto flex-row items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
-                      <span className="bg-sky-800 px-5 py-2.5 text-2xl font-extrabold leading-none text-white lg:px-6 lg:py-3 lg:text-3xl xl:text-4xl">
-                        {heroHeadlineText}
-                      </span>
-                    </div>
-
-                    <div className="flex w-auto flex-row items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)]">
-                      <span className="bg-sky-800 px-5 py-2.5 text-lg font-bold leading-none text-white lg:px-6 lg:py-3 lg:text-xl xl:text-2xl">
-                        {landingPage.formLabel || "IICPA"}
-                      </span>
-                      <span className="bg-green-600 px-5 py-2.5 text-base font-bold leading-none text-white lg:px-6 lg:py-3 lg:text-lg xl:text-xl">
-                        {landingPage.ctaText || "Get Free Preview"}
-                      </span>
-                    </div>
-                  </div>
+        <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+            <div className="space-y-6">
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-sm">
+                <div className="relative aspect-[16/10] w-full sm:aspect-[4/3] lg:aspect-[5/3]">
+                  <img
+                    src={landingPage.heroImage}
+                    alt={landingPage.headline}
+                    className="absolute inset-0 h-full w-full object-contain object-center"
+                  />
                 </div>
               </div>
 
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-0 border-t border-slate-100 lg:mt-0 lg:grid-cols-[1fr_0.95fr]">
-            <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
-              <div className="space-y-5">
-                <div className="rounded-[1.2rem] bg-white p-3.5 sm:p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-                    CA Profile
-                  </p>
-                  <div className="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
-                    <div className="mx-auto h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:mx-0 sm:h-20 sm:w-20">
-                      {authorImage ? (
-                        <img
-                          src={authorImage}
-                          alt={landingPage.authorName || "CA profile"}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-sm font-bold text-slate-500">
-                          CA
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="text-center sm:text-left">
-                      <p className="text-base font-bold leading-tight text-slate-900 sm:text-lg">
-                        {landingPage.authorName}
-                      </p>
-                      <div className="mt-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-semibold text-sky-800 sm:text-[10px]">
-                        {landingPage.authorCode}
-                      </div>
-                      <p
-                        className="mt-1.5 text-[10px] leading-4 text-slate-600 sm:text-[11px] sm:leading-5"
-                        style={{
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
-                          WebkitLineClamp: 2,
-                          overflow: "hidden",
-                        }}
-                      >
-                        {landingPage.authorText}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-[1.5rem] bg-white p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    What you will see
-                  </p>
-                  <div className="mt-3 space-y-3 text-sm leading-7 text-slate-600">
-                    {bodyParagraphs.slice(0, 3).map((paragraph, index) => (
-                      <p key={`${index}-${paragraph}`}>{paragraph}</p>
-                    ))}
-                    {!bodyParagraphs.length ? (
-                      <p>
-                        {session?.description ||
-                          "This landing page is designed to capture leads and route them into the right follow-up flow."}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white px-4 py-5 md:p-8 lg:border-l lg:border-t-0">
-              <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)] md:p-7 md:shadow-none">
-                <div className="mx-auto mb-4 w-full max-w-full rounded-[1rem] bg-[#175a84] px-5 py-3.5 text-center text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] sm:max-w-[340px] sm:rounded-none sm:px-6 sm:py-5">
-                  <p className="text-base font-semibold tracking-[-0.02em] sm:text-lg sm:font-medium">
-                    {landingPage.formHeading}
-                  </p>
-                </div>
-
-                <p className="text-[13px] leading-6 text-slate-600 sm:text-sm sm:leading-7">
-                  {landingPage.formDescription}
+              <div className="space-y-3">
+                <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">
+                  {landingPage.formLabel || "IICPA"}
                 </p>
+                <h1 className="max-w-3xl text-3xl font-semibold leading-tight tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+                  {heroHeadlineText}
+                </h1>
+                <p className="max-w-2xl text-base leading-7 text-slate-600 sm:text-lg">
+                  {landingPage.subheadline ||
+                    bodyParagraphs[0] ||
+                    "Register your interest and get updates about this live session."}
+                </p>
+              </div>
 
-                <form className="mt-4 space-y-3 sm:mt-6 sm:space-y-4">
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
-                      Name *
-                    </label>
-                    <input
-                      value={form.name}
-                      onChange={(e) =>
-                        setForm((current) => ({ ...current, name: e.target.value }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
-                      placeholder="Your name"
-                    />
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href="#lead-form"
+                  className="inline-flex items-center rounded-full bg-slate-900 px-5 py-3 text-sm font-medium text-white transition hover:bg-slate-800"
+                >
+                  {landingPage.ctaText || "Get Free Preview"}
+                </a>
+                {landingPage.authorName ? (
+                  <div className="inline-flex items-center rounded-full border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">
+                    {landingPage.authorName}
                   </div>
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) =>
-                        setForm((current) => ({ ...current, email: e.target.value }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
-                      placeholder="Your email"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
-                      Phone *
-                    </label>
-                    <input
-                      type="tel"
-                      value={form.phone}
-                      onChange={(e) =>
-                        setForm((current) => ({ ...current, phone: e.target.value }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
-                      placeholder="Phone number"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
-                      WhatsApp Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={form.whatsappNumber}
-                      onChange={(e) =>
-                        setForm((current) => ({
-                          ...current,
-                          whatsappNumber: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
-                      placeholder="Optional"
-                    />
-                  </div>
+                ) : null}
+              </div>
+            </div>
 
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-slate-700 sm:mb-2 sm:text-sm">
-                      Company / Institute
-                    </label>
-                    <input
-                      value={form.company}
-                      onChange={(e) =>
-                        setForm((current) => ({ ...current, company: e.target.value }))
-                      }
-                      className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-100 sm:rounded-none sm:bg-white sm:py-3"
-                      placeholder="Optional"
-                    />
-                  </div>
-
-                  {/* Receive notifications checkbox */}
-                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 transition hover:bg-slate-100 sm:px-4 sm:py-3">
-                    <input
-                      type="checkbox"
-                      checked={form.receiveNotifications}
-                      onChange={(e) =>
-                        setForm((current) => ({
-                          ...current,
-                          receiveNotifications: e.target.checked,
-                        }))
-                      }
-                      className="mt-0.5 h-4 w-4 accent-emerald-600"
-                    />
-                    <span className="text-[13px] leading-snug text-slate-700 sm:text-sm">
-                      Receive latest notifications &amp; updates about this session via WhatsApp / Email
-                    </span>
-                  </label>
-
-                  <button
-                    type="button"
-                    disabled={previewMode || paying || submitting}
-                    className="mt-4 w-full rounded-xl bg-[#2563eb] px-4 py-3 text-sm font-semibold tracking-[0.01em] text-white shadow-[0_12px_24px_rgba(37,99,235,0.24)] transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-none sm:font-semibold sm:shadow-none"
-                    onClick={handlePayNow}
-                  >
-                    {previewMode
-                      ? "Register Now"
-                      : paying || submitting
-                      ? "Processing..."
-                      : registerNowLabel}
-                  </button>
-
-                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1 sm:justify-start">
-                    {[
-                      { label: "UPI", className: "border-slate-200 text-slate-700" },
-                      { label: "Visa", className: "border-blue-200 text-blue-700" },
-                      {
-                        label: "Mastercard",
-                        className: "border-orange-200 text-orange-600",
-                      },
-                      { label: "RuPay", className: "border-indigo-200 text-indigo-700" },
-                    ].map((item) => (
-                      <span
-                        key={item.label}
-                        className={`inline-flex items-center rounded-full border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${item.className}`}
-                      >
-                        {item.label}
-                      </span>
-                    ))}
-                  </div>
-
-                  {submitted ? (
-                    <div className="mt-4 space-y-3">
-                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-                        {landingPage.thankYouText}
+            <div className="space-y-6">
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex items-start gap-4">
+                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                    {authorImage ? (
+                      <img
+                        src={authorImage}
+                        alt={landingPage.authorName || "CA profile"}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-sm font-semibold text-slate-500">
+                        CA
                       </div>
+                    )}
+                  </div>
 
-                      {bookingId ? (
-                        <a
-                          href={`${API_ORIGIN}/api/test-payment/receipts/booking/${bookingId}/download`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex w-full items-center justify-center gap-2 rounded-xl bg-sky-700 px-4 py-3 text-sm font-semibold text-white transition hover:bg-sky-800 sm:rounded-none sm:font-bold sm:uppercase sm:tracking-wide"
-                        >
-                          ⬇ Download Invoice / Receipt
-                        </a>
-                      ) : null}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium uppercase tracking-[0.16em] text-slate-500">
+                      CA Profile
+                    </p>
+                    <p className="mt-1 text-lg font-semibold text-slate-900">
+                      {landingPage.authorName}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {landingPage.authorText}
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">
-                        Send confirmation to enrollee
-                      </p>
-                      <div className="flex gap-3">
-                        <a
-                          href={`https://wa.me/${form.whatsappNumber || form.phone}?text=${encodeURIComponent(`Hi ${form.name},\nYour enrollment for *${session?.title || landingPage.headline}* is confirmed! 🎉\n\nThank you for enrolling with IICPA Institute. Our team will reach out shortly with session details.\n\nFor any queries, reply to this message.\n\n— IICPA Institute`)}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex-1 rounded-xl border border-emerald-600 bg-white px-3 py-2 text-center text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 sm:rounded-none"
-                        >
-                          📲 WhatsApp
-                        </a>
-                        <a
-                          href={`mailto:${form.email}?subject=${encodeURIComponent(`Enrollment Confirmed – ${session?.title || landingPage.headline}`)}&body=${encodeURIComponent(`Hi ${form.name},\n\nYour enrollment for "${session?.title || landingPage.headline}" is confirmed!\n\nThank you for enrolling with IICPA Institute. Our team will reach out shortly with session details and your joining link.\n\nFor invoice/receipt, please visit your student dashboard or reply to this email.\n\nWarm regards,\nIICPA Institute Team`)}`}
-                          className="flex-1 rounded-xl border border-sky-600 bg-white px-3 py-2 text-center text-xs font-semibold text-sky-700 transition hover:bg-sky-50 sm:rounded-none"
-                        >
-                          ✉️ Email
-                        </a>
-                      </div>
-                    </div>
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                <p className="text-sm font-medium uppercase tracking-[0.16em] text-slate-500">
+                  About this session
+                </p>
+                <div className="mt-3 space-y-3 text-sm leading-7 text-slate-600">
+                  {bodyParagraphs.slice(0, 3).map((paragraph, index) => (
+                    <p key={`${index}-${paragraph}`}>{paragraph}</p>
+                  ))}
+                  {!bodyParagraphs.length ? (
+                    <p>
+                      {session?.description ||
+                        "This landing page is designed to capture leads and route them into the right follow-up flow."}
+                    </p>
                   ) : null}
-                </form>
+                </div>
+
+                <div className="mt-5 flex flex-wrap gap-2">
+                  {SOCIAL_LINK_META.map(({ key, label, icon: Icon }) => {
+                    const href = landingPage.socialLinks?.[key] || DEFAULT_SOCIAL_LINKS[key];
+                    if (!href) return null;
+                    return (
+                      <a
+                        key={label}
+                        href={href}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={`Follow us on ${label}`}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900"
+                      >
+                        <Icon className="h-4 w-4" />
+                      </a>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-slate-100 bg-[#0f8fb3] px-5 py-8 text-white md:px-8">
-            <div className="mx-auto max-w-4xl text-center">
-              <p className="text-sm leading-8 text-white/90 md:text-base">
-                {landingPage.authorText ||
-                  "This page is optimized for clean lead capture, strong trust signals, and a simple next step for visitors."}
+          <div id="lead-form" className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 lg:mt-10">
+            <div className="max-w-2xl">
+              <p className="text-sm font-medium uppercase tracking-[0.16em] text-slate-500">
+                {landingPage.formHeading}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600 sm:text-base">
+                {landingPage.formDescription}
               </p>
             </div>
+
+            <form className="mt-6 grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Name *
+                </label>
+                <input
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((current) => ({ ...current, name: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400"
+                  placeholder="Your name"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) =>
+                    setForm((current) => ({ ...current, email: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400"
+                  placeholder="Your email"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Phone *
+                </label>
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) =>
+                    setForm((current) => ({ ...current, phone: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400"
+                  placeholder="Phone number"
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  WhatsApp Number
+                </label>
+                <input
+                  type="tel"
+                  value={form.whatsappNumber}
+                  onChange={(e) =>
+                    setForm((current) => ({
+                      ...current,
+                      whatsappNumber: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400"
+                  placeholder="Optional"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Company / Institute
+                </label>
+                <input
+                  value={form.company}
+                  onChange={(e) =>
+                    setForm((current) => ({ ...current, company: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-slate-400"
+                  placeholder="Optional"
+                />
+              </div>
+
+              <label className="md:col-span-2 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <input
+                  type="checkbox"
+                  checked={form.receiveNotifications}
+                  onChange={(e) =>
+                    setForm((current) => ({
+                      ...current,
+                      receiveNotifications: e.target.checked,
+                    }))
+                  }
+                  className="mt-0.5 h-4 w-4 accent-slate-900"
+                />
+                <span className="text-sm leading-6 text-slate-700">
+                  Receive updates about this session by WhatsApp or email.
+                </span>
+              </label>
+
+              <div className="md:col-span-2">
+                <button
+                  type="button"
+                  disabled={previewMode || paying || submitting}
+                  className="w-full rounded-xl bg-slate-900 px-4 py-3.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={handlePayNow}
+                >
+                  {previewMode
+                    ? "Register Now"
+                    : paying || submitting
+                    ? "Processing..."
+                    : registerNowLabel}
+                </button>
+              </div>
+
+              {submitted ? (
+                <div className="md:col-span-2 space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-sm text-emerald-800">
+                    {landingPage.thankYouText}
+                  </p>
+
+                  {bookingId ? (
+                    <a
+                      href={`${API_ORIGIN}/api/test-payment/receipts/booking/${bookingId}/download`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex w-full items-center justify-center rounded-xl border border-emerald-300 bg-white px-4 py-3 text-sm font-medium text-emerald-700 transition hover:bg-emerald-50"
+                    >
+                      Download Invoice / Receipt
+                    </a>
+                  ) : null}
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <a
+                      href={`https://wa.me/${form.whatsappNumber || form.phone}?text=${encodeURIComponent(`Hi ${form.name},\nYour enrollment for *${session?.title || landingPage.headline}* is confirmed!\n\nThank you for enrolling with IICPA Institute. Our team will reach out shortly with session details.\n\nFor any queries, reply to this message.\n\nIICPA Institute`)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Send WhatsApp
+                    </a>
+                    <a
+                      href={`mailto:${form.email}?subject=${encodeURIComponent(`Enrollment Confirmed - ${session?.title || landingPage.headline}`)}&body=${encodeURIComponent(`Hi ${form.name},\n\nYour enrollment for "${session?.title || landingPage.headline}" is confirmed!\n\nThank you for enrolling with IICPA Institute. Our team will reach out shortly with session details and your joining link.\n\nWarm regards,\nIICPA Institute Team`)}`}
+                      className="inline-flex flex-1 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                    >
+                      Send Email
+                    </a>
+                  </div>
+                </div>
+              ) : null}
+            </form>
+          </div>
+
+          <div className="mx-auto mt-8 max-w-3xl px-2 text-center text-sm leading-7 text-slate-500">
+            {landingPage.authorText ||
+              "This page is optimized for clean lead capture, strong trust signals, and a simple next step for visitors."}
           </div>
         </section>
       </main>
