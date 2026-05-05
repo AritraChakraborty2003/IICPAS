@@ -236,13 +236,13 @@ export default function BlogDetailClient({ blog, allBlogs }) {
                 </div>
               )}
 
-              <div className="rounded-3xl overflow-hidden mb-8 border border-slate-200 shadow-sm">
+              <div className="rounded-3xl overflow-hidden mb-8 border border-slate-200 shadow-sm bg-slate-50 p-2">
                 <Image
                   src={imageUrl}
                   alt={blogToRender.title}
                   width={1200}
                   height={700}
-                  className="w-full max-h-[540px] object-cover"
+                  className="w-full h-auto object-contain rounded-2xl"
                   sizes="(max-width: 1024px) 100vw, 980px"
                 />
               </div>
