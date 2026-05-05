@@ -430,18 +430,18 @@ export default function Header({
         className="fixed left-0 w-full z-40 bg-white border-b border-gray-100 shadow-none"
         style={{ top: headerTop }}
       >
-        <div className="w-full px-2 md:px-6 py-3 flex items-center justify-between">
+        <div className="w-full px-2 md:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2">
           {/* Logo */}
           <Link
             href="/"
             className="text-sm font-bold text-[#003057] flex-shrink-0"
           >
-            <img src="/images/logo.png" alt="IICPA Logo" className="h-10" />
+            <img src="/images/logo.png" alt="IICPA Logo" className="h-8 sm:h-10" />
           </Link>
 
           {simple ? (
-            <div className="flex items-center gap-3 flex-1 justify-end">
-              <span className="text-sm font-medium text-slate-600 md:text-base">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
+              <span className="max-w-[8rem] truncate text-[11px] font-medium leading-tight text-slate-600 sm:max-w-none sm:text-sm md:text-base">
                 {rightText}
               </span>
             </div>

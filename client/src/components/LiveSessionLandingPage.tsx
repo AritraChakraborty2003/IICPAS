@@ -309,6 +309,7 @@ function LiveSessionLandingPage({
   const payNowLabel = Number.isFinite(sessionPrice) && sessionPrice > 0
     ? `Pay Now ₹${sessionPrice.toLocaleString("en-IN")}`
     : "Enroll Now";
+  const pageTopPadding = showHeader ? "pt-[72px] sm:pt-[88px]" : "";
 
   const normalizeFormValues = (): ValidationResult => {
     const name = form.name.trim();
@@ -563,7 +564,7 @@ function LiveSessionLandingPage({
 
   if (loading) {
     return (
-      <div className={`min-h-screen bg-slate-50 ${className}`}>
+      <div className={`min-h-screen bg-slate-50 ${pageTopPadding} ${className}`}>
         {showHeader ? (
           <Header
             forceVisible
@@ -583,7 +584,7 @@ function LiveSessionLandingPage({
 
   if (error && !session) {
     return (
-      <div className={`min-h-screen bg-slate-50 ${className}`}>
+      <div className={`min-h-screen bg-slate-50 ${pageTopPadding} ${className}`}>
         {showHeader ? (
           <Header
             forceVisible
@@ -602,7 +603,9 @@ function LiveSessionLandingPage({
   }
 
   return (
-    <div className={`min-h-screen bg-[#eef4fb] text-slate-900 ${className}`}>
+    <div
+      className={`min-h-screen overflow-x-hidden bg-[#eef4fb] text-slate-900 ${pageTopPadding} ${className}`}
+    >
       {showHeader ? (
         <Header
           forceVisible
@@ -644,7 +647,7 @@ function LiveSessionLandingPage({
       <main className="w-full">
         <section className="overflow-hidden bg-white">
           <div className="relative w-full">
-            <div className="relative aspect-[2400/1050] w-full overflow-hidden bg-slate-200">
+            <div className="relative aspect-[4/5] w-full overflow-hidden bg-slate-200 sm:aspect-[2400/1050]">
               <img
                 src={landingPage.heroImage}
                 alt={landingPage.headline}
@@ -652,21 +655,21 @@ function LiveSessionLandingPage({
               />
               <div className="absolute inset-0 bg-black/20" />
 
-              <div className="absolute inset-x-0 top-[56%] -translate-y-1/2">
-                <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-4 px-4 text-center">
-                  <div className="inline-flex flex-wrap items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
-                    <span className="bg-sky-800 px-4 py-2 text-xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-4xl">
+              <div className="absolute inset-0 flex items-end sm:items-center">
+                <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-3 px-4 pb-4 text-center sm:gap-4 sm:pb-0">
+                  <div className="flex max-w-[92vw] flex-col overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)] sm:max-w-none sm:flex-row sm:items-stretch">
+                    <span className="bg-sky-800 px-3 py-2 text-lg font-extrabold leading-tight text-white sm:px-6 sm:py-3 sm:text-4xl sm:leading-none">
                       {heroPrimaryText}
                     </span>
-                    <span className="bg-green-600 px-4 py-2 text-xl font-extrabold leading-none text-white md:px-6 md:py-3 md:text-4xl">
+                    <span className="bg-green-600 px-3 py-2 text-lg font-extrabold leading-tight text-white sm:px-6 sm:py-3 sm:text-4xl sm:leading-none">
                       {heroSecondaryText}
                     </span>
                   </div>
-                  <div className="inline-flex flex-wrap items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)]">
-                    <span className="bg-sky-800 px-4 py-2 text-base font-bold leading-none text-white md:px-6 md:py-3 md:text-xl">
+                  <div className="flex max-w-[92vw] flex-col overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)] sm:max-w-none sm:flex-row sm:items-stretch">
+                    <span className="bg-sky-800 px-3 py-2 text-sm font-bold leading-tight text-white sm:px-6 sm:py-3 sm:text-xl sm:leading-none">
                       {landingPage.formLabel || "IICPA"}
                     </span>
-                    <span className="bg-green-600 px-4 py-2 text-sm font-bold leading-none text-white md:px-6 md:py-3 md:text-lg">
+                    <span className="bg-green-600 px-3 py-2 text-xs font-bold leading-tight text-white sm:px-6 sm:py-3 sm:text-lg sm:leading-none">
                       {landingPage.ctaText || "Get Free Preview"}
                     </span>
                   </div>
