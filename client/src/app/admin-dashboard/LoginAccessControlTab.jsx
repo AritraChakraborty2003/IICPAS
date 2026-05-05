@@ -83,7 +83,7 @@ export default function LoginAccessControlTab() {
 
   const deleteSingle = async (item) => {
     const confirmed = window.confirm(
-      `Clear the override for ${item.name}? This will only remove the access override and keep the user's login record unchanged.`
+      `Delete ${item.name} from the database? This will permanently remove the user record and its login access override.`
     );
     if (!confirmed) return;
 
@@ -93,10 +93,10 @@ export default function LoginAccessControlTab() {
         `${API_BASE}/master/login-access/users/${item.role}/${item.user_id}`,
         { headers }
       );
-      toast.success(`Cleared override for ${item.name}`);
+      toast.success(`Deleted ${item.name} from the database`);
       fetchUsers();
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to clear override");
+      toast.error(error?.response?.data?.message || "Failed to delete user");
     } finally {
       setUpdatingId("");
     }
@@ -278,10 +278,10 @@ export default function LoginAccessControlTab() {
                       onClick={() => deleteSingle(item)}
                       disabled={updatingId === item.user_id}
                       className="inline-flex items-center gap-1 rounded-md bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
-                      title="Clear override"
+                      title="Delete user"
                     >
                       <Trash2 size={14} />
-                      Clear Override
+                      Delete User
                     </button>
                   </td>
                 </tr>

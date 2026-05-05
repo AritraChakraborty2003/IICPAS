@@ -445,7 +445,7 @@ const Chatbot = () => {
                                 </p>
                                 <div className="flex items-center space-x-2 mt-2">
                                   <a
-                                    href={`/courses/${course.slug || course._id}`}
+                                    href={`/course/${course.slug || course._id}`}
                                     className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-bold py-1.5 rounded-lg text-center transition-colors"
                                   >
                                     VIEW
