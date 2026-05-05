@@ -598,6 +598,8 @@ function LiveSessionLandingPage({
         </div>
       </div>
     );
+  }
+
   return (
     <div className={`min-h-screen bg-[#eef4fb] text-slate-900 ${pageTopPadding} ${className}`}>
       {showHeader ? (
