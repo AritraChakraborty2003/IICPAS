@@ -706,12 +706,12 @@ function LiveSessionLandingPage({
           <div className="mt-4 grid gap-0 border-t border-slate-100 lg:mt-0 lg:grid-cols-[1fr_0.95fr]">
             <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
-                <div className="rounded-[1.5rem] bg-white p-5">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                <div className="rounded-[1.35rem] bg-white p-4 sm:p-4.5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-slate-500">
                     CA Profile
                   </p>
-                  <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <div className="mx-auto h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:mx-0 sm:h-28 sm:w-28">
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                    <div className="mx-auto h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:mx-0 sm:h-24 sm:w-24">
                       {authorImage ? (
                         <img
                           src={authorImage}
@@ -719,20 +719,20 @@ function LiveSessionLandingPage({
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-lg font-bold text-slate-500">
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-base font-bold text-slate-500">
                           CA
                         </div>
                       )}
                     </div>
 
                     <div className="text-center sm:text-left">
-                      <p className="text-xl font-bold text-slate-900 sm:text-2xl">
+                      <p className="text-lg font-bold leading-tight text-slate-900 sm:text-xl">
                         {landingPage.authorName}
                       </p>
-                      <div className="mt-3 inline-flex rounded-full bg-sky-100 px-3 py-1 text-[11px] font-semibold text-sky-800 sm:text-xs">
+                      <div className="mt-2 inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-semibold text-sky-800 sm:text-[11px]">
                         {landingPage.authorCode}
                       </div>
-                      <p className="mt-4 text-xs leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                      <p className="mt-2 text-[11px] leading-5 text-slate-600 sm:text-sm sm:leading-6">
                         {landingPage.authorText}
                       </p>
                     </div>
