@@ -309,7 +309,7 @@ function LiveSessionLandingPage({
   const payNowLabel = Number.isFinite(sessionPrice) && sessionPrice > 0
     ? `Pay Now ₹${sessionPrice.toLocaleString("en-IN")}`
     : "Enroll Now";
-  const pageTopPadding = showHeader ? "pt-[72px] sm:pt-[88px]" : "";
+  const pageTopPadding = showHeader ? "pt-[56px] sm:pt-[64px]" : "";
 
   const normalizeFormValues = (): ValidationResult => {
     const name = form.name.trim();
