@@ -15,6 +15,7 @@ import { FaXTwitter } from "react-icons/fa6";
 
 type LandingPageConfig = {
   heroImage?: string;
+  authorImage?: string;
   headline?: string;
   subheadline?: string;
   bodyContent?: string;
@@ -113,6 +114,12 @@ const resolveLandingPage = (
       session?.imageUrl ||
       session?.thumbnail ||
       "/images/live-class.jpg",
+    authorImage:
+      draftLandingPage?.authorImage ||
+      base.authorImage ||
+      session?.imageUrl ||
+      session?.thumbnail ||
+      "",
     headline:
       draftLandingPage?.headline ||
       base.headline ||
@@ -296,6 +303,7 @@ function LiveSessionLandingPage({
   const heroHeadlineText =
     (landingPage.headline || session?.title || "Live Session").trim() ||
     "Live Session";
+  const authorImage = landingPage.authorImage || landingPage.heroImage;
   const sessionPrice = Number(session?.price || 0);
   const payNowLabel = Number.isFinite(sessionPrice) && sessionPrice > 0
     ? `Pay Now ₹${sessionPrice.toLocaleString("en-IN")}`
@@ -700,17 +708,35 @@ function LiveSessionLandingPage({
               <div className="space-y-5">
                 <div className="rounded-[1.5rem] bg-white p-5">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                    Author
+                    CA Profile
                   </p>
-                  <p className="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">
-                    {landingPage.authorName}
-                  </p>
-                  <div className="mt-3 inline-flex rounded-full bg-sky-100 px-3 py-1 text-[11px] font-semibold text-sky-800 sm:text-xs">
-                    {landingPage.authorCode}
+                  <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+                    <div className="mx-auto h-24 w-24 shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:mx-0 sm:h-28 sm:w-28">
+                      {authorImage ? (
+                        <img
+                          src={authorImage}
+                          alt={landingPage.authorName || "CA profile"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-lg font-bold text-slate-500">
+                          CA
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="text-center sm:text-left">
+                      <p className="text-xl font-bold text-slate-900 sm:text-2xl">
+                        {landingPage.authorName}
+                      </p>
+                      <div className="mt-3 inline-flex rounded-full bg-sky-100 px-3 py-1 text-[11px] font-semibold text-sky-800 sm:text-xs">
+                        {landingPage.authorCode}
+                      </div>
+                      <p className="mt-4 text-xs leading-6 text-slate-600 sm:text-sm sm:leading-7">
+                        {landingPage.authorText}
+                      </p>
+                    </div>
                   </div>
-                  <p className="mt-4 text-xs leading-6 text-slate-600 sm:text-sm sm:leading-7">
-                    {landingPage.authorText}
-                  </p>
                 </div>
 
                 <div className="rounded-[1.5rem] bg-white p-5">

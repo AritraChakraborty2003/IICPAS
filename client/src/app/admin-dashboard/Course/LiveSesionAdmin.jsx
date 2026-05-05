@@ -83,6 +83,11 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
     session.imageUrl ||
     session.thumbnail ||
     "/images/live-class.jpg",
+  authorImage:
+    landingPage.authorImage ||
+    session.imageUrl ||
+    session.thumbnail ||
+    "",
   headline: landingPage.headline || session.title || "",
   subheadline:
     landingPage.subheadline ||
@@ -114,6 +119,12 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
 const getLandingPageDraft = (form, heroImageFallback = "") => ({
   heroImage:
     form.landingPage.heroImage || heroImageFallback || form.thumbnail || "",
+  authorImage:
+    form.landingPage.authorImage ||
+    form.landingPage.heroImage ||
+    heroImageFallback ||
+    form.thumbnail ||
+    "",
   headline: form.landingPage.headline || form.title || "",
   subheadline:
     form.landingPage.subheadline || form.description || "",
@@ -294,6 +305,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [landingHeroUploading, setLandingHeroUploading] = useState(false);
+  const [landingAuthorUploading, setLandingAuthorUploading] = useState(false);
   const { hasPermission, user } = useAuth();
   const landingDraftKey = editId
     ? buildLiveSessionLandingDraftKey(editId)
@@ -848,6 +860,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     setUploadedImage(null);
     setImagePreview("");
     setLandingHeroUploading(false);
+    setLandingAuthorUploading(false);
   };
 
   const updateLandingPageField = (field, value) => {
@@ -881,6 +894,31 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       );
     } finally {
       setLandingHeroUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleLandingAuthorImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const token = checkTokenValidity();
+    if (!token) return;
+
+    try {
+      setLandingAuthorUploading(true);
+      const uploadedUrl = await uploadImageFile(file, token);
+      updateLandingPageField("authorImage", uploadedUrl);
+      Swal.fire("Success!", "CA card image uploaded successfully!", "success");
+    } catch (error) {
+      console.error("Landing author image upload failed:", error);
+      Swal.fire(
+        "Error",
+        error.message || "Failed to upload CA card image",
+        "error"
+      );
+    } finally {
+      setLandingAuthorUploading(false);
       e.target.value = "";
     }
   };
@@ -2424,11 +2462,103 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                 </div>
               </div>
 
+              <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <label className="block font-semibold mb-1">
+                      CA Card
+                    </label>
+                    <p className="text-sm text-slate-500">
+                      Add the image and CA details that appear on the left side of the form.
+                    </p>
+                  </div>
+                  {landingAuthorUploading ? (
+                    <span className="text-sm font-medium text-slate-500">
+                      Uploading...
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Upload CA Image File
+                    </label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLandingAuthorImageUpload}
+                      className="w-full border px-4 py-3 rounded-lg bg-white"
+                    />
+                    <p className="mt-1 text-xs text-slate-500">
+                      JPG, PNG, GIF supported. The image uploads immediately.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold mb-2">
+                      CA Image URL
+                    </label>
+                    <input
+                      type="text"
+                      className="w-full border px-4 py-3 rounded-lg bg-white"
+                      placeholder="https://example.com/ca-photo.jpg"
+                      value={form.landingPage.authorImage || ""}
+                      onChange={(e) =>
+                        updateLandingPageField("authorImage", e.target.value)
+                      }
+                    />
+                  </div>
+
+                  {(form.landingPage.authorImage ||
+                    form.landingPage.heroImage) && (
+                    <div className="lg:col-span-2">
+                      <label className="block font-semibold mb-2">
+                        CA Card Preview
+                      </label>
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                          <div className="mx-auto h-24 w-24 overflow-hidden rounded-2xl border border-slate-200 bg-white sm:mx-0 sm:h-28 sm:w-28">
+                            <img
+                              src={
+                                form.landingPage.authorImage ||
+                                form.landingPage.heroImage
+                              }
+                              alt="CA card preview"
+                              className="h-full w-full object-cover"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                              }}
+                            />
+                          </div>
+
+                          <div className="text-center sm:text-left">
+                            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                              CA Profile
+                            </p>
+                            <h3 className="mt-1 text-xl font-bold text-slate-900">
+                              {form.landingPage.authorName || "CA Name"}
+                            </h3>
+                            <div className="mt-2 inline-flex rounded-full bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-800">
+                              {form.landingPage.authorCode || "CA"}
+                            </div>
+                            <p className="mt-3 text-sm leading-6 text-slate-600">
+                              {form.landingPage.authorText ||
+                                "Short CA description or trust statement."}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {[
                 { field: "headline", label: "Hero Headline", type: "text" },
                 { field: "subheadline", label: "Hero Subheadline", type: "text" },
-                { field: "authorName", label: "Author Name", type: "text" },
-                { field: "authorCode", label: "Author Code", type: "text" },
+                { field: "authorName", label: "CA Name", type: "text" },
+                { field: "authorCode", label: "CA Code", type: "text" },
                 { field: "ctaText", label: "CTA Text", type: "text" },
                 { field: "formHeading", label: "Form Heading", type: "text" },
                 { field: "formLabel", label: "Form Label", type: "text" },
@@ -2456,11 +2586,11 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
               </div>
 
               <div className="lg:col-span-2">
-                <label className="block font-semibold mb-2">Author Text</label>
+                <label className="block font-semibold mb-2">CA Description</label>
                 <textarea
                   className="w-full border px-4 py-3 rounded-lg bg-gray-50 min-h-24"
                   value={form.landingPage.authorText || ""}
-                  placeholder="A short author bio or trust statement"
+                  placeholder="A short CA bio or trust statement"
                   onChange={(e) => updateLandingPageField("authorText", e.target.value)}
                 />
               </div>

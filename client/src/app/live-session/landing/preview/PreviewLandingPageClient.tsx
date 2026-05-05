@@ -33,6 +33,11 @@ const getLandingPageDefaults = (
     session.imageUrl ||
     session.thumbnail ||
     "/images/live-class.jpg",
+  authorImage:
+    landingPage.authorImage ||
+    session.imageUrl ||
+    session.thumbnail ||
+    "",
   headline: landingPage.headline || session.title || "",
   subheadline:
     landingPage.subheadline ||
