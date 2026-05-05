@@ -692,24 +692,6 @@ function LiveSessionLandingPage({
                 </div>
               </div>
 
-              <div className="absolute inset-x-0 bottom-0 hidden px-4 pb-5 md:block md:px-8 md:pb-8">
-                <div className="mx-auto max-w-5xl rounded-2xl bg-slate-900/80 px-5 py-4 text-white backdrop-blur-sm">
-                  <div className="grid gap-4 md:grid-cols-[auto_1fr] md:items-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-white/15 bg-white p-2">
-                      <img
-                        src="/images/logo.png"
-                        alt="IICPA Logo"
-                        className="h-full w-full object-contain"
-                      />
-                    </div>
-                    <p className="text-sm leading-7 text-white/90 md:text-base">
-                      {landingPage.subheadline ||
-                        bodyParagraphs[0] ||
-                        "A clean landing page that captures interest and guides visitors into the right follow-up flow."}
-                    </p>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
 
