@@ -886,7 +886,7 @@ function LiveSessionLandingPage({
                   <div className="flex flex-wrap items-center justify-center gap-2 pt-1 sm:justify-start">
                     {[
                       { label: "UPI", className: "border-slate-200 text-slate-700" },
-                      { label: "VISA", className: "border-blue-200 text-blue-700" },
+                      { label: "Visa", className: "border-blue-200 text-blue-700" },
                       {
                         label: "Mastercard",
                         className: "border-orange-200 text-orange-600",
