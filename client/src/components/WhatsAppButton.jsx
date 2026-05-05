@@ -5,7 +5,7 @@ import { FaWhatsapp, FaPhone } from "react-icons/fa";
 import { usePathname } from "next/navigation";
 
 const IICPA_WHATSAPP_NUMBER = "919593330999";
-const IICPA_CALL_NUMBER = "8090570646";
+const IICPA_CALL_NUMBER = "8920406657";
 const WHATSAPP_MESSAGE = "Hi! I'm interested in your courses. Can you help me?";
 
 const WhatsAppButton = () => {
@@ -25,7 +25,7 @@ const WhatsAppButton = () => {
     <>
       {/* Call Button — fixed bottom-left */}
       <motion.a
-        href={`tel:${IICPA_CALL_NUMBER}`}
+        href={`tel:+91${IICPA_CALL_NUMBER}`}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
         className="fixed z-[60] bottom-4 left-4 flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600 text-white p-3 sm:p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
