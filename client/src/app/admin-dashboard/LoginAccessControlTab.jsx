@@ -4,6 +4,7 @@ import { getApiBase } from "@/lib/apiBase";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { Trash2 } from "lucide-react";
 
 const API_BASE = getApiBase();
 
@@ -75,6 +76,27 @@ export default function LoginAccessControlTab() {
       fetchUsers();
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to update user");
+    } finally {
+      setUpdatingId("");
+    }
+  };
+
+  const deleteSingle = async (item) => {
+    const confirmed = window.confirm(
+      `Delete the login access override for ${item.name}? This will revert to the base access status.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setUpdatingId(item.user_id);
+      await axios.delete(
+        `${API_BASE}/master/login-access/users/${item.role}/${item.user_id}`,
+        { headers }
+      );
+      toast.success(`Deleted override for ${item.name}`);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to delete user");
     } finally {
       setUpdatingId("");
     }
@@ -197,6 +219,7 @@ export default function LoginAccessControlTab() {
                 <th className="text-left p-2 border-b">Override</th>
                 <th className="text-left p-2 border-b">Effective</th>
                 <th className="text-left p-2 border-b">Toggle</th>
+                <th className="text-left p-2 border-b">Delete</th>
               </tr>
             </thead>
             <tbody>
@@ -249,11 +272,23 @@ export default function LoginAccessControlTab() {
                       {item.overrideStatus === "active" ? "On" : "Off"}
                     </span>
                   </td>
+                  <td className="p-2">
+                    <button
+                      type="button"
+                      onClick={() => deleteSingle(item)}
+                      disabled={updatingId === item.user_id}
+                      className="inline-flex items-center gap-1 rounded-md bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:opacity-60"
+                      title="Delete login access override"
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
               {!users.length && (
                 <tr>
-                  <td colSpan={8} className="p-4 text-center text-gray-500">
+                  <td colSpan={9} className="p-4 text-center text-gray-500">
                     No users found
                   </td>
                 </tr>

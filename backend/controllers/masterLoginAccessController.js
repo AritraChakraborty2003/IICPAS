@@ -1,5 +1,6 @@
 import {
   getLoginAccessUsers,
+  deleteUserLoginAccessOverride,
   setBulkLoginStatus,
   setUserLoginStatus,
 } from "../services/loginAccessService.js";
@@ -41,6 +42,24 @@ export const updateSingleLoginStatus = async (req, res) => {
 
     return res.status(200).json({
       message: "Login status updated",
+      item,
+    });
+  } catch (error) {
+    return res.status(400).json({ message: error.message });
+  }
+};
+
+export const deleteSingleLoginAccess = async (req, res) => {
+  try {
+    const { role, userId } = req.params;
+
+    const item = await deleteUserLoginAccessOverride({
+      role,
+      userId,
+    });
+
+    return res.status(200).json({
+      message: "Login access override deleted",
       item,
     });
   } catch (error) {

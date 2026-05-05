@@ -232,6 +232,40 @@ export const setUserLoginStatus = async ({
   };
 };
 
+export const deleteUserLoginAccessOverride = async ({ role, userId }) => {
+  if (!LOGIN_ACCESS_ROLES.includes(role)) {
+    throw new Error("Invalid role");
+  }
+
+  const objectId = toObjectId(userId);
+  if (!objectId) {
+    throw new Error("Invalid user id");
+  }
+
+  const cfg = ROLE_CONFIG[role];
+  const user = await cfg.model.findById(objectId).select(cfg.select);
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  const deleted = await LoginAccessControl.findOneAndDelete({
+    role,
+    userId: objectId,
+  });
+
+  const baseActive = cfg.baseActive(user);
+  return {
+    user_id: user._id,
+    role,
+    name: cfg.displayName(user),
+    email: cfg.email(user),
+    baseStatus: baseActive ? "active" : "inactive",
+    overrideStatus: "active",
+    effectiveStatus: baseActive ? "active" : "inactive",
+    deleted: Boolean(deleted),
+  };
+};
+
 export const setBulkLoginStatus = async ({
   role = "all",
   status,
