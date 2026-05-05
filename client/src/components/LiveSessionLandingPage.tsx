@@ -690,10 +690,10 @@ function LiveSessionLandingPage({
                     </div>
 
                     <div className="flex w-auto flex-row items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)]">
-                      <span className="bg-sky-800 px-6 py-3 text-xl font-bold leading-none text-white lg:text-2xl xl:text-3xl">
+                      <span className="bg-sky-800 px-5 py-2.5 text-lg font-bold leading-none text-white lg:px-6 lg:py-3 lg:text-xl xl:text-2xl">
                         {landingPage.formLabel || "IICPA"}
                       </span>
-                      <span className="bg-green-600 px-6 py-3 text-lg font-bold leading-none text-white lg:text-xl xl:text-2xl">
+                      <span className="bg-green-600 px-5 py-2.5 text-base font-bold leading-none text-white lg:px-6 lg:py-3 lg:text-lg xl:text-xl">
                         {landingPage.ctaText || "Get Free Preview"}
                       </span>
                     </div>
