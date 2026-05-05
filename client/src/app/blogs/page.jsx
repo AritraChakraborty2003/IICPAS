@@ -422,25 +422,6 @@ export default function BlogsPage() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 via-transparent to-blue-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-                            {/* Floating Date Badge */}
-                            <motion.div
-                              className="absolute top-3 left-3 bg-white/95 backdrop-blur-md text-gray-800 text-xs font-bold px-3 py-1 rounded-xl flex items-center gap-1 shadow-lg border border-white/20"
-                              whileHover={{ scale: 1.05 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <Calendar size={16} className="text-green-500" />
-                              {blog.createdAt
-                                ? new Date(blog.createdAt).toLocaleDateString(
-                                    "en-GB",
-                                    {
-                                      day: "2-digit",
-                                      month: "short",
-                                      year: "numeric",
-                                    }
-                                  )
-                                : "Recent"}
-                            </motion.div>
-
                             {/* Category Badge */}
                             <motion.div
                               className="absolute top-3 right-3 bg-gradient-to-r from-green-500 to-blue-500 text-white text-xs font-bold px-3 py-1 rounded-xl flex items-center gap-1 shadow-lg"
