@@ -4,6 +4,7 @@ import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
 import { getApiOrigin } from "@/lib/apiBase";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import Script from "next/script";
 import Swal from "sweetalert2";
 import {
   FaFacebook,
@@ -602,6 +603,10 @@ function LiveSessionLandingPage({
 
   return (
     <div className={`min-h-screen bg-[#eef4fb] text-slate-900 ${pageTopPadding} ${className}`}>
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="afterInteractive"
+      />
       {showHeader ? (
         <Header
           forceVisible
