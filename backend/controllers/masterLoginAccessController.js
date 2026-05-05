@@ -59,7 +59,7 @@ export const deleteSingleLoginAccess = async (req, res) => {
     });
 
     return res.status(200).json({
-      message: "Login access override deleted",
+      message: "Login access override cleared",
       item,
     });
   } catch (error) {
