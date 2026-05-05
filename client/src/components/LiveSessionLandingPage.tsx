@@ -655,21 +655,21 @@ function LiveSessionLandingPage({
               />
               <div className="absolute inset-0 bg-black/20" />
 
-              <div className="absolute inset-0 flex items-end sm:items-center">
-                <div className="mx-auto flex w-full max-w-5xl flex-col items-center justify-center gap-3 px-4 pb-4 text-center sm:gap-4 sm:pb-0">
-                  <div className="flex max-w-[92vw] flex-col overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)] sm:max-w-none sm:flex-row sm:items-stretch">
-                    <span className="bg-sky-800 px-3 py-2 text-lg font-extrabold leading-tight text-white sm:px-6 sm:py-3 sm:text-4xl sm:leading-none">
+              <div className="absolute inset-0 flex items-center justify-center px-4">
+                <div className="mx-auto flex w-full max-w-[94vw] flex-col items-stretch gap-2 rounded-[1.5rem] border border-white/20 bg-slate-950/20 p-2 text-center shadow-[0_24px_60px_rgba(15,23,42,0.22)] backdrop-blur-md sm:max-w-5xl sm:items-center sm:gap-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0 sm:text-center sm:shadow-none sm:backdrop-blur-0">
+                  <div className="flex w-full flex-col overflow-hidden rounded-[1.1rem] shadow-[0_16px_40px_rgba(15,23,42,0.25)] sm:w-auto sm:flex-row sm:items-stretch sm:rounded-lg">
+                    <span className="w-full bg-sky-800 px-4 py-3 text-center text-[clamp(1.15rem,5vw,1.8rem)] font-extrabold leading-tight tracking-[-0.03em] text-white sm:w-auto sm:px-6 sm:py-3 sm:text-4xl sm:leading-none">
                       {heroPrimaryText}
                     </span>
-                    <span className="bg-green-600 px-3 py-2 text-lg font-extrabold leading-tight text-white sm:px-6 sm:py-3 sm:text-4xl sm:leading-none">
+                    <span className="w-full bg-green-600 px-4 py-3 text-center text-[clamp(1.15rem,5vw,1.8rem)] font-extrabold leading-tight tracking-[-0.03em] text-white sm:w-auto sm:px-6 sm:py-3 sm:text-4xl sm:leading-none">
                       {heroSecondaryText}
                     </span>
                   </div>
-                  <div className="flex max-w-[92vw] flex-col overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)] sm:max-w-none sm:flex-row sm:items-stretch">
-                    <span className="bg-sky-800 px-3 py-2 text-sm font-bold leading-tight text-white sm:px-6 sm:py-3 sm:text-xl sm:leading-none">
+                  <div className="flex w-full flex-col overflow-hidden rounded-[1.1rem] shadow-[0_16px_40px_rgba(15,23,42,0.22)] sm:w-auto sm:flex-row sm:items-stretch sm:rounded-lg">
+                    <span className="w-full bg-sky-800 px-4 py-2.5 text-center text-sm font-bold leading-tight text-white sm:w-auto sm:px-6 sm:py-3 sm:text-xl sm:leading-none">
                       {landingPage.formLabel || "IICPA"}
                     </span>
-                    <span className="bg-green-600 px-3 py-2 text-xs font-bold leading-tight text-white sm:px-6 sm:py-3 sm:text-lg sm:leading-none">
+                    <span className="w-full bg-green-600 px-4 py-2.5 text-center text-xs font-bold leading-tight text-white sm:w-auto sm:px-6 sm:py-3 sm:text-lg sm:leading-none">
                       {landingPage.ctaText || "Get Free Preview"}
                     </span>
                   </div>
