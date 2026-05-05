@@ -32,7 +32,7 @@ const WhatsAppButton = () => {
         title={`Call us: ${IICPA_CALL_NUMBER}`}
         aria-label="Call IICPA"
       >
-        <FaPhone className="text-xl sm:text-2xl" />
+        <FaPhone className="text-xl sm:text-2xl rotate-90" />
       </motion.a>
 
       {/* WhatsApp Button — fixed bottom-right */}
