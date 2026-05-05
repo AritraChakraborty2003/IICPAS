@@ -305,9 +305,10 @@ function LiveSessionLandingPage({
     "Live Session";
   const authorImage = landingPage.authorImage || landingPage.heroImage;
   const sessionPrice = Number(session?.price || 0);
-  const payNowLabel = Number.isFinite(sessionPrice) && sessionPrice > 0
-    ? `Pay Now ₹${sessionPrice.toLocaleString("en-IN")}`
-    : "Enroll Now";
+  const registerNowLabel =
+    Number.isFinite(sessionPrice) && sessionPrice > 0
+      ? `Register Now at ₹${sessionPrice.toLocaleString("en-IN")}`
+      : "Register Now";
   const pageTopPadding = showHeader ? "pt-[56px] sm:pt-[64px]" : "";
 
   const normalizeFormValues = (): ValidationResult => {
@@ -873,15 +874,34 @@ function LiveSessionLandingPage({
                   <button
                     type="button"
                     disabled={previewMode || paying || submitting}
-                    className="mt-4 w-full rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold tracking-[0.04em] text-white shadow-[0_12px_24px_rgba(5,150,105,0.22)] transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-none sm:font-bold sm:uppercase sm:tracking-[0.10em] sm:shadow-none"
+                    className="mt-4 w-full rounded-xl bg-[#2563eb] px-4 py-3 text-sm font-semibold tracking-[0.01em] text-white shadow-[0_12px_24px_rgba(37,99,235,0.24)] transition hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:opacity-60 sm:rounded-none sm:font-semibold sm:shadow-none"
                     onClick={handlePayNow}
                   >
                     {previewMode
-                      ? "Pay Now"
+                      ? "Register Now"
                       : paying || submitting
                       ? "Processing..."
-                      : payNowLabel}
+                      : registerNowLabel}
                   </button>
+
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1 sm:justify-start">
+                    {[
+                      { label: "UPI", className: "border-slate-200 text-slate-700" },
+                      { label: "VISA", className: "border-blue-200 text-blue-700" },
+                      {
+                        label: "Mastercard",
+                        className: "border-orange-200 text-orange-600",
+                      },
+                      { label: "RuPay", className: "border-indigo-200 text-indigo-700" },
+                    ].map((item) => (
+                      <span
+                        key={item.label}
+                        className={`inline-flex items-center rounded-full border bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${item.className}`}
+                      >
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
 
                   {submitted ? (
                     <div className="mt-4 space-y-3">
