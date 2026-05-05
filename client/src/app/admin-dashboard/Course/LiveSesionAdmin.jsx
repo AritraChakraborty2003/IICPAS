@@ -2516,9 +2516,9 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                       <label className="block font-semibold mb-2">
                         CA Card Preview
                       </label>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                          <div className="mx-auto h-20 w-20 overflow-hidden rounded-xl border border-slate-200 bg-white sm:mx-0 sm:h-24 sm:w-24">
+                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+                          <div className="mx-auto h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-white sm:mx-0 sm:h-20 sm:w-20">
                             <img
                               src={
                                 form.landingPage.authorImage ||
@@ -2533,16 +2533,24 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                           </div>
 
                           <div className="text-center sm:text-left">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-slate-500">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
                               CA Profile
                             </p>
-                            <h3 className="mt-1 text-lg font-bold leading-tight text-slate-900">
+                            <h3 className="mt-1 text-base font-bold leading-tight text-slate-900">
                               {form.landingPage.authorName || "CA Name"}
                             </h3>
-                            <div className="mt-2 inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-semibold text-sky-800">
+                            <div className="mt-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-semibold text-sky-800">
                               {form.landingPage.authorCode || "CA"}
                             </div>
-                            <p className="mt-2 text-[11px] leading-5 text-slate-600 sm:text-sm sm:leading-6">
+                            <p
+                              className="mt-1.5 text-[10px] leading-4 text-slate-600 sm:text-[11px] sm:leading-5"
+                              style={{
+                                display: "-webkit-box",
+                                WebkitBoxOrient: "vertical",
+                                WebkitLineClamp: 2,
+                                overflow: "hidden",
+                              }}
+                            >
                               {form.landingPage.authorText ||
                                 "Short CA description or trust statement."}
                             </p>

@@ -706,12 +706,12 @@ function LiveSessionLandingPage({
           <div className="mt-4 grid gap-0 border-t border-slate-100 lg:mt-0 lg:grid-cols-[1fr_0.95fr]">
             <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
-                <div className="rounded-[1.35rem] bg-white p-4 sm:p-4.5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-slate-500">
+                <div className="rounded-[1.2rem] bg-white p-3.5 sm:p-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
                     CA Profile
                   </p>
-                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                    <div className="mx-auto h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:mx-0 sm:h-24 sm:w-24">
+                  <div className="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+                    <div className="mx-auto h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:mx-0 sm:h-20 sm:w-20">
                       {authorImage ? (
                         <img
                           src={authorImage}
@@ -719,20 +719,28 @@ function LiveSessionLandingPage({
                           className="h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-base font-bold text-slate-500">
+                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-sm font-bold text-slate-500">
                           CA
                         </div>
                       )}
                     </div>
 
                     <div className="text-center sm:text-left">
-                      <p className="text-lg font-bold leading-tight text-slate-900 sm:text-xl">
+                      <p className="text-base font-bold leading-tight text-slate-900 sm:text-lg">
                         {landingPage.authorName}
                       </p>
-                      <div className="mt-2 inline-flex rounded-full bg-sky-100 px-2.5 py-0.5 text-[10px] font-semibold text-sky-800 sm:text-[11px]">
+                      <div className="mt-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-semibold text-sky-800 sm:text-[10px]">
                         {landingPage.authorCode}
                       </div>
-                      <p className="mt-2 text-[11px] leading-5 text-slate-600 sm:text-sm sm:leading-6">
+                      <p
+                        className="mt-1.5 text-[10px] leading-4 text-slate-600 sm:text-[11px] sm:leading-5"
+                        style={{
+                          display: "-webkit-box",
+                          WebkitBoxOrient: "vertical",
+                          WebkitLineClamp: 2,
+                          overflow: "hidden",
+                        }}
+                      >
                         {landingPage.authorText}
                       </p>
                     </div>
