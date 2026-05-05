@@ -664,11 +664,11 @@ function LiveSessionLandingPage({
                         {landingPage.formLabel || "IICPA"}
                       </div>
 
-                      <div className="space-y-1">
-                        <h1 className="text-[clamp(1.22rem,5.8vw,1.72rem)] font-black leading-[1.02] tracking-[-0.05em] text-white drop-shadow-[0_2px_8px_rgba(15,23,42,0.32)]">
+                      <div className="space-y-2">
+                        <h1 className="mx-auto max-w-[13ch] text-[clamp(1.08rem,5vw,1.42rem)] font-black leading-[1.08] tracking-[-0.04em] text-white drop-shadow-[0_2px_8px_rgba(15,23,42,0.32)]">
                           {heroHeadlineText}
                         </h1>
-                        <p className="mt-1 text-[clamp(0.82rem,3.4vw,0.98rem)] font-semibold leading-[1.12] tracking-[-0.03em] text-emerald-300 drop-shadow-[0_2px_8px_rgba(15,23,42,0.28)]">
+                        <p className="mx-auto max-w-[24ch] text-[clamp(0.76rem,3.15vw,0.9rem)] font-medium leading-[1.25] tracking-[-0.02em] text-emerald-300 drop-shadow-[0_2px_8px_rgba(15,23,42,0.28)]">
                           {landingPage.subheadline ||
                             bodyParagraphs[0] ||
                             "Register your interest and get updates about this live session."}
