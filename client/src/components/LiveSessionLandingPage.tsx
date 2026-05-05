@@ -654,8 +654,8 @@ function LiveSessionLandingPage({
               />
               <div className="absolute inset-0 bg-black/20" />
 
-              <div className="absolute inset-0 flex items-center justify-center px-4">
-                <div className="mx-auto w-full max-w-[94vw] sm:max-w-5xl">
+              <div className="absolute inset-0 flex items-center justify-center px-4 sm:justify-start sm:px-10 lg:px-16">
+                <div className="mx-auto w-full max-w-[94vw] sm:mx-0 sm:max-w-5xl">
                   <div className="sm:hidden">
                     <div className="mx-auto mt-2 flex flex-col items-center gap-3 rounded-[1.5rem] border border-white/18 bg-slate-950/92 px-4 py-4 text-center shadow-[0_24px_60px_rgba(15,23,42,0.30)]">
                       <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/85">
@@ -667,7 +667,7 @@ function LiveSessionLandingPage({
                         <h1 className="text-[clamp(1.22rem,5.8vw,1.72rem)] font-black leading-[1.02] tracking-[-0.05em] text-white drop-shadow-[0_2px_8px_rgba(15,23,42,0.32)]">
                           {heroHeadlineText}
                         </h1>
-                        <p className="mt-1 text-[clamp(0.9rem,4vw,1.08rem)] font-semibold leading-[1.14] tracking-[-0.03em] text-emerald-300 drop-shadow-[0_2px_8px_rgba(15,23,42,0.28)]">
+                        <p className="mt-1 text-[clamp(0.82rem,3.4vw,0.98rem)] font-semibold leading-[1.12] tracking-[-0.03em] text-emerald-300 drop-shadow-[0_2px_8px_rgba(15,23,42,0.28)]">
                           {landingPage.subheadline ||
                             bodyParagraphs[0] ||
                             "Register your interest and get updates about this live session."}
@@ -681,7 +681,7 @@ function LiveSessionLandingPage({
                     </div>
                   </div>
 
-                  <div className="hidden sm:flex sm:flex-col sm:items-center sm:gap-4">
+                  <div className="hidden sm:flex sm:flex-col sm:items-start sm:gap-4">
                     <div className="flex w-auto flex-row items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
                       <span className="bg-sky-800 px-6 py-3 text-4xl font-extrabold leading-none text-white lg:text-5xl xl:text-6xl">
                         {heroHeadlineText}
