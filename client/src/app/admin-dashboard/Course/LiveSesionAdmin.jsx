@@ -112,90 +112,84 @@ const resolveObjectId = (value) => {
   return "";
 };
 
-const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
-  heroImage:
-    landingPage.heroImage ||
-    session.imageUrl ||
-    session.thumbnail ||
-    "/images/live-class.jpg",
-  authorProfiles: normalizeAuthorProfiles(landingPage, session),
-  authorLayout: getAuthorLayout(landingPage),
-  authorImage:
-    buildAuthorProfile(
-      normalizeAuthorProfiles(landingPage, session)[0] || {},
-      {
-        image:
-          landingPage.authorImage ||
-          session.imageUrl ||
-          session.thumbnail ||
-          "",
-      }
-    ).image,
-  headline: landingPage.headline || session.title || "",
-  subheadline:
-    landingPage.subheadline ||
-    session.subtitle ||
-    session.description ||
-    "",
-  bodyContent: landingPage.bodyContent || session.description || "",
-  authorName: normalizeAuthorProfiles(landingPage, session)[0]?.name || session.instructor || "",
-  authorCode: normalizeAuthorProfiles(landingPage, session)[0]?.code || "IICPA",
-  authorText: normalizeAuthorProfiles(landingPage, session)[0]?.text || "",
-  ctaText: landingPage.ctaText || "Get Free Preview",
-  formHeading: landingPage.formHeading || "Enroll Now",
-  formDescription:
-    landingPage.formDescription ||
-    "Share your details and our team will reach out shortly.",
-  formLabel: landingPage.formLabel || "Lead Form",
-  thankYouText:
-    landingPage.thankYouText ||
-    "Thank you. Our team will contact you shortly.",
-  socialLinks: {
-    facebook: landingPage.socialLinks?.facebook || "",
-    linkedin: landingPage.socialLinks?.linkedin || "",
-    instagram: landingPage.socialLinks?.instagram || "",
-    youtube: landingPage.socialLinks?.youtube || "",
-    twitter: landingPage.socialLinks?.twitter || "",
-  },
-});
+const getLandingPageDefaults = (landingPage = {}, session = {}) => {
+  const authorProfiles = normalizeAuthorProfiles(landingPage, session);
+  const firstProfile = authorProfiles[0] || buildAuthorProfile();
 
-const getLandingPageDraft = (form, heroImageFallback = "") => ({
-  heroImage:
-    form.landingPage.heroImage || heroImageFallback || form.thumbnail || "",
-  authorProfiles: normalizeAuthorProfiles(form.landingPage, form),
-  authorLayout: getAuthorLayout(form.landingPage),
-  authorImage:
-    normalizeAuthorProfiles(form.landingPage, form)[0]?.image ||
-    form.landingPage.authorImage ||
-    form.landingPage.heroImage ||
-    heroImageFallback ||
-    form.thumbnail ||
-    "",
-  headline: form.landingPage.headline || form.title || "",
-  subheadline:
-    form.landingPage.subheadline || form.description || "",
-  bodyContent:
-    form.landingPage.bodyContent || form.description || "",
-  authorName: normalizeAuthorProfiles(form.landingPage, form)[0]?.name || form.instructor || "",
-  authorCode: normalizeAuthorProfiles(form.landingPage, form)[0]?.code || "IICPA",
-  authorText: normalizeAuthorProfiles(form.landingPage, form)[0]?.text || "",
-  ctaText: form.landingPage.ctaText || "Get Free Preview",
-  formHeading: form.landingPage.formHeading || "Enroll Now",
-  formDescription:
-    form.landingPage.formDescription ||
-    "Share your details and our team will reach out shortly.",
-  formLabel: form.landingPage.formLabel || "Lead Form",
-  thankYouText:
-    form.landingPage.thankYouText ||
-    "Thank you. Our team will contact you shortly.",
-  socialLinks: {
-    facebook: form.landingPage.socialLinks?.facebook || "",
-    linkedin: form.landingPage.socialLinks?.linkedin || "",
-    instagram: form.landingPage.socialLinks?.instagram || "",
-    youtube: form.landingPage.socialLinks?.youtube || "",
-    twitter: form.landingPage.socialLinks?.twitter || "",
-  },
-});
+  return {
+    heroImage:
+      landingPage.heroImage ||
+      session.imageUrl ||
+      session.thumbnail ||
+      "/images/live-class.jpg",
+    authorProfiles,
+    authorLayout: getAuthorLayout(landingPage),
+    authorImage: firstProfile.image || "",
+    headline: landingPage.headline || session.title || "",
+    subheadline:
+      landingPage.subheadline ||
+      session.subtitle ||
+      session.description ||
+      "",
+    bodyContent: landingPage.bodyContent || session.description || "",
+    authorName: firstProfile.name || session.instructor || "",
+    authorCode: firstProfile.code || "IICPA",
+    authorText: firstProfile.text || "",
+    ctaText: landingPage.ctaText || "Get Free Preview",
+    formHeading: landingPage.formHeading || "Enroll Now",
+    formDescription:
+      landingPage.formDescription ||
+      "Share your details and our team will reach out shortly.",
+    formLabel: landingPage.formLabel || "Lead Form",
+    thankYouText:
+      landingPage.thankYouText ||
+      "Thank you. Our team will contact you shortly.",
+    socialLinks: {
+      facebook: landingPage.socialLinks?.facebook || "",
+      linkedin: landingPage.socialLinks?.linkedin || "",
+      instagram: landingPage.socialLinks?.instagram || "",
+      youtube: landingPage.socialLinks?.youtube || "",
+      twitter: landingPage.socialLinks?.twitter || "",
+    },
+  };
+};
+
+const getLandingPageDraft = (form, heroImageFallback = "") => {
+  const authorProfiles = normalizeAuthorProfiles(form.landingPage, form);
+  const firstProfile = authorProfiles[0] || buildAuthorProfile();
+
+  return {
+    heroImage:
+      form.landingPage.heroImage || heroImageFallback || form.thumbnail || "",
+    authorProfiles,
+    authorLayout: getAuthorLayout(form.landingPage),
+    authorImage: firstProfile.image || "",
+    headline: form.landingPage.headline || form.title || "",
+    subheadline:
+      form.landingPage.subheadline || form.description || "",
+    bodyContent:
+      form.landingPage.bodyContent || form.description || "",
+    authorName: firstProfile.name || form.instructor || "",
+    authorCode: firstProfile.code || "IICPA",
+    authorText: firstProfile.text || "",
+    ctaText: form.landingPage.ctaText || "Get Free Preview",
+    formHeading: form.landingPage.formHeading || "Enroll Now",
+    formDescription:
+      form.landingPage.formDescription ||
+      "Share your details and our team will reach out shortly.",
+    formLabel: form.landingPage.formLabel || "Lead Form",
+    thankYouText:
+      form.landingPage.thankYouText ||
+      "Thank you. Our team will contact you shortly.",
+    socialLinks: {
+      facebook: form.landingPage.socialLinks?.facebook || "",
+      linkedin: form.landingPage.socialLinks?.linkedin || "",
+      instagram: form.landingPage.socialLinks?.instagram || "",
+      youtube: form.landingPage.socialLinks?.youtube || "",
+      twitter: form.landingPage.socialLinks?.twitter || "",
+    },
+  };
+};
 
 const dataUrlToFile = async (dataUrl, fileName, mimeType) => {
   const response = await fetch(dataUrl);
@@ -914,23 +908,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       landingPage: {
         ...current.landingPage,
         [field]: value,
-      },
-    }));
-  };
-
-  const syncAuthorProfilesToLandingPage = (profiles, layout) => {
-    const nextProfiles = profiles.length > 0 ? profiles : [buildAuthorProfile()];
-    const primary = nextProfiles[0] || buildAuthorProfile();
-    setForm((current) => ({
-      ...current,
-      landingPage: {
-        ...current.landingPage,
-        authorProfiles: nextProfiles,
-        authorLayout: layout || current.landingPage.authorLayout || "stack",
-        authorImage: primary.image || "",
-        authorName: primary.name || "",
-        authorCode: primary.code || "IICPA",
-        authorText: primary.text || "",
       },
     }));
   };

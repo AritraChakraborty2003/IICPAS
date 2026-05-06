@@ -24,6 +24,41 @@ type SessionLike = {
   landingPage?: Record<string, any>;
 };
 
+const buildAuthorProfile = (profile = {}, fallback = {}) => ({
+  image: profile.image || profile.authorImage || fallback.image || "",
+  name: profile.name || profile.authorName || fallback.name || "",
+  code: profile.code || profile.authorCode || fallback.code || "IICPA",
+  text: profile.text || profile.authorText || fallback.text || "",
+});
+
+const normalizeAuthorProfiles = (landingPage = {}, session: SessionLike = {}) => {
+  const fallback = {
+    image:
+      landingPage.authorImage ||
+      session.imageUrl ||
+      session.thumbnail ||
+      "",
+    name: landingPage.authorName || session.instructor || "",
+    code: landingPage.authorCode || "IICPA",
+    text: landingPage.authorText || "",
+  };
+
+  const profiles = Array.isArray(landingPage.authorProfiles)
+    ? landingPage.authorProfiles.map((profile) =>
+        buildAuthorProfile(profile, fallback)
+      )
+    : [];
+
+  if (profiles.length === 0) {
+    profiles.push(buildAuthorProfile({}, fallback));
+  }
+
+  return profiles;
+};
+
+const getAuthorLayout = (landingPage = {}) =>
+  landingPage.authorLayout === "two-per-line" ? "two-per-line" : "stack";
+
 const getLandingPageDefaults = (
   landingPage: Record<string, any> = {},
   session: SessionLike = {}
@@ -33,11 +68,9 @@ const getLandingPageDefaults = (
     session.imageUrl ||
     session.thumbnail ||
     "/images/live-class.jpg",
-  authorImage:
-    landingPage.authorImage ||
-    session.imageUrl ||
-    session.thumbnail ||
-    "",
+  authorProfiles: normalizeAuthorProfiles(landingPage, session),
+  authorLayout: getAuthorLayout(landingPage),
+  authorImage: normalizeAuthorProfiles(landingPage, session)[0]?.image || "",
   headline: landingPage.headline || session.title || "",
   subheadline:
     landingPage.subheadline ||
@@ -45,9 +78,9 @@ const getLandingPageDefaults = (
     session.description ||
     "",
   bodyContent: landingPage.bodyContent || session.description || "",
-  authorName: landingPage.authorName || session.instructor || "",
-  authorCode: landingPage.authorCode || "IICPA",
-  authorText: landingPage.authorText || "",
+  authorName: normalizeAuthorProfiles(landingPage, session)[0]?.name || session.instructor || "",
+  authorCode: normalizeAuthorProfiles(landingPage, session)[0]?.code || "IICPA",
+  authorText: normalizeAuthorProfiles(landingPage, session)[0]?.text || "",
   ctaText: landingPage.ctaText || "Get Free Preview",
   formHeading: landingPage.formHeading || "Enroll Now",
   formDescription:
