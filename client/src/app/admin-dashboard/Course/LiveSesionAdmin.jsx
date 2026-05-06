@@ -725,7 +725,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       currentDraftKey
     )}&sessionId=${encodeURIComponent(editId || "")}&returnTo=${encodeURIComponent(
       returnTo
-    )}`;
+    )}&adminPreview=1`;
     router.push(previewUrl);
   };
 

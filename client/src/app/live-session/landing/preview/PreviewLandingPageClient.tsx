@@ -8,7 +8,7 @@ import {
 } from "@/lib/liveSessionLandingDraft";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { X } from "lucide-react";
+import { Copy } from "lucide-react";
 
 const API_ORIGIN = getApiOrigin();
 
@@ -99,6 +99,7 @@ export default function PreviewLandingPageClient() {
   const sessionId = searchParams.get("sessionId") || "";
   const returnTo =
     searchParams.get("returnTo") || "/admin-dashboard?tab=live-session";
+  const isAdminPreview = searchParams.get("adminPreview") === "1";
   const [draft, setDraft] = useState<LiveSessionLandingDraft | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -202,17 +203,27 @@ export default function PreviewLandingPageClient() {
     );
   }
 
+  const handleCopyPreviewLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+    } catch {
+      window.prompt("Copy preview link", window.location.href);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
-      <button
-        type="button"
-        onClick={() => router.replace(returnTo)}
-        className="fixed right-5 top-24 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 hover:text-slate-950"
-        aria-label="Close preview"
-        title="Close preview"
-      >
-        <X className="h-5 w-5" />
-      </button>
+      {isAdminPreview ? (
+        <button
+          type="button"
+          onClick={handleCopyPreviewLink}
+          className="fixed right-5 top-24 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 hover:text-slate-950"
+          aria-label="Copy preview link"
+          title="Copy preview link"
+        >
+          <Copy className="h-5 w-5" />
+        </button>
+      ) : null}
 
       <LiveSessionLandingPage
         sessionId={sessionId || draft?.editId || undefined}
