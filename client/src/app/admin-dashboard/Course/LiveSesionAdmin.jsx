@@ -2507,6 +2507,9 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                     <p className="text-sm text-slate-500">
                       Upload an image or paste a URL for the landing-page hero.
                     </p>
+                    <p className="mt-1 text-xs font-medium text-slate-500">
+                      Note: Recommended desktop banner size is 2400 x 1050 px.
+                    </p>
                   </div>
                   {landingHeroUploading ? (
                     <span className="text-sm font-medium text-slate-500">
