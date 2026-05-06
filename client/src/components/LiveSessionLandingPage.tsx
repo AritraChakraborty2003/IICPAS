@@ -663,11 +663,6 @@ function LiveSessionLandingPage({
                 <div className="mx-auto w-full max-w-[94vw] sm:mx-0 sm:max-w-5xl">
                   <div className="sm:hidden">
                     <div className="mx-auto mt-2 flex flex-col items-center gap-3 rounded-[1.5rem] border border-white/18 bg-slate-950/92 px-4 py-5 text-center shadow-[0_24px_60px_rgba(15,23,42,0.30)]">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.28em] text-white/85">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                        {landingPage.formLabel || "IICPA"}
-                      </div>
-
                       <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/12 px-3 py-1.5 text-[10px] font-medium text-emerald-100">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
                         {landingPage.ctaText || "Get Free Preview"}
@@ -676,13 +671,9 @@ function LiveSessionLandingPage({
                   </div>
 
                   <div className="hidden sm:flex sm:flex-col sm:items-start sm:gap-4">
-                    <div className="flex w-auto flex-row items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)]">
-                      <span className="bg-sky-800 px-5 py-2.5 text-lg font-bold leading-none text-white lg:px-6 lg:py-3 lg:text-xl xl:text-2xl">
-                        {landingPage.formLabel || "IICPA"}
-                      </span>
-                      <span className="bg-green-600 px-5 py-2.5 text-base font-bold leading-none text-white lg:px-6 lg:py-3 lg:text-lg xl:text-xl">
-                        {landingPage.ctaText || "Get Free Preview"}
-                      </span>
+                    <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/12 px-4 py-2 text-sm font-medium text-emerald-100 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
+                      <span className="h-2 w-2 rounded-full bg-emerald-300" />
+                      {landingPage.ctaText || "Get Free Preview"}
                     </div>
                   </div>
 
