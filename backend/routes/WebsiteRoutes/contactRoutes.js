@@ -206,16 +206,17 @@ router.get("/messages", requireAuth, isAdmin, async (req, res) => {
   }
 });
 
-// Delete a single message (Admin only)
-router.delete("/messages/:id", requireAuth, isAdmin, deleteContactMessage);
-
 // Bulk delete messages (Admin only)
+// Keep this before /messages/:id so "bulk-delete" is not treated as an id.
 router.delete(
   "/messages/bulk-delete",
   requireAuth,
   isAdmin,
   bulkDeleteContactMessages
 );
+
+// Delete a single message (Admin only)
+router.delete("/messages/:id", requireAuth, isAdmin, deleteContactMessage);
 
 // Reply to Message (Admin only)
 router.put("/messages/:id/reply", requireAuth, isAdmin, async (req, res) => {
