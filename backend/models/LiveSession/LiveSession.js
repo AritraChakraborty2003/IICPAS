@@ -27,6 +27,19 @@ const liveSessionSchema = new mongoose.Schema(
       authorName: { type: String, default: "" },
       authorCode: { type: String, default: "" },
       authorText: { type: String, default: "" },
+      authorLayout: {
+        type: String,
+        enum: ["stack", "two-per-line"],
+        default: "stack",
+      },
+      authorProfiles: [
+        {
+          image: { type: String, default: "" },
+          name: { type: String, default: "" },
+          code: { type: String, default: "" },
+          text: { type: String, default: "" },
+        },
+      ],
       ctaText: { type: String, default: "" },
       formHeading: { type: String, default: "" },
       formDescription: { type: String, default: "" },

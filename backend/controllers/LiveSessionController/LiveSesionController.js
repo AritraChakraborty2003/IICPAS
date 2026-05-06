@@ -81,6 +81,50 @@ const populateLiveSession = (query) =>
     .populate("chapterId", "title order")
     .populate("enrolledStudents", "name email");
 
+const buildAuthorProfile = (profile = {}, fallback = {}) => ({
+  image: profile.image || profile.authorImage || fallback.image || "",
+  name: profile.name || profile.authorName || fallback.name || "",
+  code: profile.code || profile.authorCode || fallback.code || "IICPA",
+  text: profile.text || profile.authorText || fallback.text || "",
+});
+
+const normalizeAuthorProfiles = (landingPage = {}, fallback = {}) => {
+  const baseFallback = {
+    image: fallback.imageUrl || fallback.thumbnail || fallback.image || "",
+    name: fallback.instructor || "",
+    code: "IICPA",
+    text: fallback.description || "",
+  };
+
+  const profiles = Array.isArray(landingPage.authorProfiles)
+    ? landingPage.authorProfiles.map((profile) =>
+        buildAuthorProfile(profile, baseFallback)
+      )
+    : [];
+
+  if (profiles.length === 0) {
+    profiles.push(buildAuthorProfile({}, baseFallback));
+  }
+
+  return profiles;
+};
+
+const normalizeLandingPagePayload = (landingPage = {}, fallback = {}) => {
+  const authorProfiles = normalizeAuthorProfiles(landingPage, fallback);
+  const primaryProfile = authorProfiles[0] || buildAuthorProfile();
+
+  return {
+    ...landingPage,
+    authorLayout:
+      landingPage.authorLayout === "two-per-line" ? "two-per-line" : "stack",
+    authorProfiles,
+    authorImage: primaryProfile.image || "",
+    authorName: primaryProfile.name || "",
+    authorCode: primaryProfile.code || "IICPA",
+    authorText: primaryProfile.text || "",
+  };
+};
+
 const validateCourseChapterSelection = async (courseId, chapterId) => {
   const normalizedCourseId = normalizeOptionalId(courseId);
   const normalizedChapterId = normalizeOptionalId(chapterId);
@@ -144,6 +188,7 @@ export const createLiveSession = async (req, res) => {
       courseId: selection.courseId,
       chapterId: selection.chapterId,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
+      landingPage: normalizeLandingPagePayload(req.body.landingPage, req.body),
     };
 
     if (!sessionData.courseId) delete sessionData.courseId;
@@ -464,6 +509,10 @@ export const updateLiveSession = async (req, res) => {
       courseId: selection.courseId,
       chapterId: selection.chapterId,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
+      landingPage: normalizeLandingPagePayload(req.body.landingPage, {
+        ...currentSession.toObject(),
+        ...req.body,
+      }),
     };
 
     if (!updateData.courseId) delete updateData.courseId;
