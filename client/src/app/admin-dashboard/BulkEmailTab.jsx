@@ -388,7 +388,7 @@ export default function BulkEmailTab() {
     }
 
     const confirmed = window.confirm(
-      `Send this formatted email to ${selectedCount + marketingEmailsCount} recipients?`
+      `Send this formatted email to ${selectedCount} selected student${selectedCount === 1 ? "" : "s"} and ${marketingEmailsCount} marketing recipient${marketingEmailsCount === 1 ? "" : "s"}?`
     );
 
     if (!confirmed) return;
@@ -738,6 +738,9 @@ export default function BulkEmailTab() {
                   {marketingEmailsCount} marketing emails detected
                 </span>
                 <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 shadow-sm">
+                  Selected students: {selectedCount}
+                </span>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 shadow-sm">
                   Combined recipients: {totalRecipients}
                 </span>
               </div>
@@ -816,7 +819,7 @@ export default function BulkEmailTab() {
                 )}
                 {sending
                   ? "Sending..."
-                  : `Send to ${totalRecipients} Recipient${totalRecipients === 1 ? "" : "s"}`}
+                  : `Send to ${selectedCount} Student${selectedCount === 1 ? "" : "s"} + ${marketingEmailsCount} Marketing Recipient${marketingEmailsCount === 1 ? "" : "s"}`}
               </button>
             </div>
           </div>

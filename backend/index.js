@@ -115,6 +115,7 @@ app.use(
       process.env.CLIENT_URL || "http://localhost:3000",
       "http://localhost:3001",
       "http://localhost:3002",
+      "https://iicpa.in",
       "https://www.iicpa.in",
       "https://admin-master.iicpa.in",
       "https://www.admin-master.comu",
