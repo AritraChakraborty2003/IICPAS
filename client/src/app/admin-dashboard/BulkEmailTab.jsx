@@ -17,6 +17,8 @@ import {
   CheckCircle,
   ChevronDown,
   AlertTriangle,
+  Download,
+  Upload,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -26,6 +28,32 @@ const emptySenderForm = {
   label: "",
   email: "",
   appPassword: "",
+};
+
+const extractEmailsFromText = (value) =>
+  Array.from(
+    new Set(
+      String(value || "")
+        .match(/[^\s@]+@[^\s@]+\.[^\s@]+/g)
+        ?.map((email) => email.trim().toLowerCase()) || []
+    )
+  );
+
+const downloadSampleMarketingCsv = () => {
+  const csv = [
+    "name,email",
+    "Example Lead,lead@example.com",
+    "Demo Contact,demo.contact@example.com",
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "marketing-emails-sample.csv";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 };
 
 export default function BulkEmailTab() {
@@ -41,8 +69,13 @@ export default function BulkEmailTab() {
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [selectedSenderAccountId, setSelectedSenderAccountId] = useState("");
   const [attachmentFile, setAttachmentFile] = useState(null);
+  const [recipientFile, setRecipientFile] = useState(null);
+  const [recipientFileInputKey, setRecipientFileInputKey] = useState(0);
   const [senderForm, setSenderForm] = useState(emptySenderForm);
   const [savingSenderAccount, setSavingSenderAccount] = useState(false);
+  const [marketingEmailsText, setMarketingEmailsText] = useState("");
+  const [marketingTextCount, setMarketingTextCount] = useState(0);
+  const [marketingFileCount, setMarketingFileCount] = useState(0);
   const [formData, setFormData] = useState({
     subject: "",
     htmlContent: "",
@@ -132,6 +165,26 @@ export default function BulkEmailTab() {
     setAttachmentFile(event.target.files?.[0] || null);
   };
 
+  const handleRecipientFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setRecipientFile(file);
+
+    if (!file) {
+      setMarketingFileCount(0);
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setMarketingFileCount(extractEmailsFromText(reader.result).length);
+    };
+    reader.onerror = () => {
+      toast.error("Could not read the recipient file");
+      setMarketingFileCount(0);
+    };
+    reader.readAsText(file);
+  };
+
   const selectedCount = selectedStudentIds.length;
   const searchValue = studentSearch.trim().toLowerCase();
 
@@ -196,6 +249,20 @@ export default function BulkEmailTab() {
 
   const clearSelection = () => setSelectedStudentIds([]);
 
+  const handleMarketingEmailsChange = (event) => {
+    const value = event.target.value;
+    setMarketingEmailsText(value);
+    setMarketingTextCount(extractEmailsFromText(value).length);
+  };
+
+  const clearMarketingRecipients = () => {
+    setMarketingEmailsText("");
+    setMarketingTextCount(0);
+    setMarketingFileCount(0);
+    setRecipientFile(null);
+    setRecipientFileInputKey((prev) => prev + 1);
+  };
+
   const handleSaveSenderAccount = async (event) => {
     event.preventDefault();
 
@@ -247,6 +314,11 @@ export default function BulkEmailTab() {
       textContent: "",
     });
     setAttachmentFile(null);
+    setRecipientFile(null);
+    setRecipientFileInputKey((prev) => prev + 1);
+    setMarketingEmailsText("");
+    setMarketingTextCount(0);
+    setMarketingFileCount(0);
   };
 
   const sendTestEmail = async () => {
@@ -305,8 +377,8 @@ export default function BulkEmailTab() {
       return;
     }
 
-    if (selectedCount === 0) {
-      toast.error("Please select at least one student");
+    if (totalRecipients === 0) {
+      toast.error("Please select at least one student or add marketing recipients");
       return;
     }
 
@@ -316,7 +388,7 @@ export default function BulkEmailTab() {
     }
 
     const confirmed = window.confirm(
-      `Send this formatted email to ${selectedCount} selected students?`
+      `Send this formatted email to ${selectedCount + marketingEmailsCount} recipients?`
     );
 
     if (!confirmed) return;
@@ -330,8 +402,12 @@ export default function BulkEmailTab() {
       payload.append("textContent", formData.textContent);
       payload.append("selectedStudentIds", JSON.stringify(selectedStudentIds));
       payload.append("senderAccountId", selectedSenderAccountId);
+      payload.append("marketingEmails", marketingEmailsText);
       if (attachmentFile) {
         payload.append("attachment", attachmentFile);
+      }
+      if (recipientFile) {
+        payload.append("recipientFile", recipientFile);
       }
 
       const response = await axios.post(
@@ -366,6 +442,8 @@ export default function BulkEmailTab() {
   );
 
   const canSelectMore = selectedCount < MAX_STUDENTS_PER_SEND;
+  const marketingEmailsCount = marketingTextCount + marketingFileCount;
+  const totalRecipients = selectedCount + marketingEmailsCount;
 
   return (
     <div className="mx-auto max-w-7xl p-6">
@@ -376,11 +454,11 @@ export default function BulkEmailTab() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
-              Bulk Email for Students
+              Bulk Email for Students and Marketing
             </h1>
             <p className="text-gray-600">
-              Select up to 10 students, choose a saved sender account, and send a
-              formatted email.
+              Select up to 10 students, add marketing recipients by paste or upload,
+              choose a saved sender account, and send a formatted email.
             </p>
           </div>
         </div>
@@ -601,6 +679,70 @@ export default function BulkEmailTab() {
               />
             </div>
 
+            <div className="mb-6 rounded-2xl border border-dashed border-amber-200 bg-amber-50/50 p-4">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Marketing Recipient List
+                  </label>
+                  <p className="text-xs text-gray-500">
+                    Paste emails, or upload a CSV/TXT file with `name,email`.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={downloadSampleMarketingCsv}
+                    className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-medium text-amber-700 shadow-sm transition hover:bg-amber-100"
+                  >
+                    <Download className="h-4 w-4" />
+                    Download sample
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearMarketingRecipients}
+                    className="rounded-xl bg-white px-3 py-2 text-sm font-medium text-gray-600 shadow-sm transition hover:bg-gray-100"
+                  >
+                    Clear list
+                  </button>
+                </div>
+              </div>
+
+              <textarea
+                value={marketingEmailsText}
+                onChange={handleMarketingEmailsChange}
+                placeholder="lead1@example.com&#10;lead2@example.com&#10;Optional format: Name,lead3@example.com"
+                rows={5}
+                className="mb-3 w-full rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
+              />
+
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-amber-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-amber-50">
+                  <Upload className="h-4 w-4 text-amber-600" />
+                  Upload CSV / TXT
+                  <input
+                    key={recipientFileInputKey}
+                    type="file"
+                    accept=".csv,.txt"
+                    onChange={handleRecipientFileChange}
+                    className="hidden"
+                  />
+                </label>
+                <div className="text-xs text-gray-500">
+                  {recipientFile ? `Uploaded: ${recipientFile.name}` : "No file uploaded yet"}
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-700">
+                  {marketingEmailsCount} marketing emails detected
+                </span>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-gray-600 shadow-sm">
+                  Combined recipients: {totalRecipients}
+                </span>
+              </div>
+            </div>
+
             <div className="mb-6">
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Attachment
@@ -662,7 +804,7 @@ export default function BulkEmailTab() {
                   !selectedSenderAccountId ||
                   !formData.subject ||
                   (!formData.htmlContent && !formData.textContent) ||
-                  selectedCount === 0 ||
+                  totalRecipients === 0 ||
                   selectedCount > MAX_STUDENTS_PER_SEND
                 }
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
@@ -674,7 +816,7 @@ export default function BulkEmailTab() {
                 )}
                 {sending
                   ? "Sending..."
-                  : `Send to ${selectedCount} Student${selectedCount === 1 ? "" : "s"}`}
+                  : `Send to ${totalRecipients} Recipient${totalRecipients === 1 ? "" : "s"}`}
               </button>
             </div>
           </div>

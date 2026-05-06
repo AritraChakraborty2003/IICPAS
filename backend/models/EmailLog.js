@@ -15,7 +15,7 @@ const EmailLogSchema = new mongoose.Schema({
   },
   recipientTypes: [{
     type: String,
-    enum: ['Student', 'Teacher', 'College', 'Company', 'Individual', 'Newsletter', 'Test']
+    enum: ['Student', 'Teacher', 'College', 'Company', 'Individual', 'Newsletter', 'Marketing', 'Test']
   }],
   totalRecipients: {
     type: Number,

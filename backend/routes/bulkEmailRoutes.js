@@ -27,6 +27,13 @@ const upload = multer({
   },
 });
 
+const bulkEmailUpload = upload.fields([
+  { name: "attachment", maxCount: 1 },
+  { name: "recipientFile", maxCount: 1 },
+]);
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const createTransporter = (auth) =>
   nodemailer.createTransport({
     service: "gmail",
@@ -42,6 +49,8 @@ const createTransporter = (auth) =>
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
 
+const isValidEmail = (value) => emailPattern.test(normalizeEmail(value));
+
 const dedupeRecipients = (recipients) => {
   const seen = new Set();
   return recipients.filter((recipient) => {
@@ -50,6 +59,94 @@ const dedupeRecipients = (recipients) => {
     seen.add(key);
     return true;
   });
+};
+
+const parseMarketingRecipientText = (input) => {
+  const text = String(input || "").trim();
+  if (!text) return [];
+
+  const lines = text
+    .split(/\r?\n/)
+    .flatMap((line) => line.split(/[;,]/))
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const emails = [];
+  for (const item of lines) {
+    const matches = item.match(/[^\s@]+@[^\s@]+\.[^\s@]+/g) || [];
+    for (const match of matches) {
+      const email = normalizeEmail(match);
+      if (isValidEmail(email)) {
+        emails.push({
+          email,
+          name: "",
+          type: "Marketing",
+        });
+      }
+    }
+  }
+
+  return dedupeRecipients(emails);
+};
+
+const parseMarketingRecipientFile = (file) => {
+  if (!file || !file.buffer) return [];
+
+  const content = file.buffer.toString("utf8");
+  if (!content.trim()) return [];
+
+  const lines = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const recipients = [];
+
+  for (const line of lines) {
+    const lower = line.toLowerCase();
+    if (lower.includes("email") && lower.includes("name") && recipients.length === 0) {
+      continue;
+    }
+
+    const columns = line
+      .split(/[,;\t]/)
+      .map((column) => column.trim().replace(/^"(.*)"$/, "$1"))
+      .filter(Boolean);
+
+    if (columns.length === 0) continue;
+
+    let email = "";
+    let name = "";
+
+    for (const column of columns) {
+      if (isValidEmail(column)) {
+        email = normalizeEmail(column);
+        break;
+      }
+    }
+
+    if (!email) {
+      const extracted = line.match(/[^\s@]+@[^\s@]+\.[^\s@]+/);
+      if (extracted) email = normalizeEmail(extracted[0]);
+    }
+
+    if (!email || !isValidEmail(email)) continue;
+
+    const emailIndex = columns.findIndex((column) => normalizeEmail(column) === email);
+    if (emailIndex > 0) {
+      name = columns[emailIndex - 1];
+    } else if (columns[0] !== email) {
+      name = columns[0];
+    }
+
+    recipients.push({
+      email,
+      name: name || "Marketing Lead",
+      type: "Marketing",
+    });
+  }
+
+  return dedupeRecipients(recipients);
 };
 
 const getAllEmailAddresses = async () => {
@@ -194,7 +291,7 @@ const buildStudentRecipients = async (selectedStudentIds = []) => {
 };
 
 const applyRecipientVariables = (template, recipient) => {
-  const name = recipient?.name || "Student";
+  const name = recipient?.name || "Recipient";
   const email = recipient?.email || "";
   return String(template || "")
     .replace(/\{\{studentName\}\}/g, name)
@@ -404,16 +501,23 @@ router.delete("/sender-accounts/:id", requireAuth, isAdmin, async (req, res) => 
 });
 
 // Send bulk email to selected students (admin only)
-router.post("/send", requireAuth, isAdmin, upload.single("attachment"), async (req, res) => {
+router.post("/send", requireAuth, isAdmin, bulkEmailUpload, async (req, res) => {
   try {
     const {
       subject,
       htmlContent,
       textContent,
       senderAccountId,
+      marketingEmails,
     } = req.body;
     const selectedStudentIds = parseSelectedStudentIds(req.body.selectedStudentIds);
-    const attachment = buildAttachment(req.file);
+    const attachmentFiles = req.files?.attachment || [];
+    const recipientFiles = req.files?.recipientFile || [];
+    const attachment = buildAttachment(attachmentFiles[0]);
+    const marketingRecipients = dedupeRecipients([
+      ...parseMarketingRecipientText(marketingEmails),
+      ...parseMarketingRecipientFile(recipientFiles[0]),
+    ]);
 
     if (!subject || (!htmlContent && !textContent)) {
       return res.status(400).json({
@@ -439,22 +543,39 @@ router.post("/send", requireAuth, isAdmin, upload.single("attachment"), async (r
       });
     }
 
-    const recipientBuild = await buildStudentRecipients(selectedStudentIds);
-    if (recipientBuild.error) {
-      return res.status(recipientBuild.status || 400).json({
+    let studentRecipients = [];
+    if (selectedStudentIds.length > 0) {
+      const recipientBuild = await buildStudentRecipients(selectedStudentIds);
+      if (recipientBuild.error) {
+        return res.status(recipientBuild.status || 400).json({
+          success: false,
+          message: recipientBuild.error,
+        });
+      }
+
+      studentRecipients = recipientBuild.recipients;
+    }
+
+    const recipients = dedupeRecipients([
+      ...studentRecipients,
+      ...marketingRecipients,
+    ]);
+
+    if (recipients.length === 0) {
+      return res.status(400).json({
         success: false,
-        message: recipientBuild.error,
+        message: "Please select at least one student or add a marketing recipient list",
       });
     }
 
-    const recipients = recipientBuild.recipients;
     const finalTextContent = String(textContent || "").trim() || stripHtml(htmlContent);
+    const recipientTypes = [...new Set(recipients.map((recipient) => recipient.type || "Marketing"))];
 
     const emailLog = new EmailLog({
       subject,
       htmlContent,
       textContent: finalTextContent,
-      recipientTypes: ["Student"],
+      recipientTypes,
       totalRecipients: recipients.length,
       sentBy: req.user.id,
       sentByName: req.user.name || req.user.fullName || "Admin",
@@ -490,7 +611,7 @@ router.post("/send", requireAuth, isAdmin, upload.single("attachment"), async (r
             return {
               email: recipient.email,
               name: recipient.name,
-              type: "Student",
+              type: recipient.type || "Marketing",
               success: true,
               messageId: sendResult.messageId,
             };
@@ -498,7 +619,7 @@ router.post("/send", requireAuth, isAdmin, upload.single("attachment"), async (r
             return {
               email: recipient.email,
               name: recipient.name,
-              type: "Student",
+              type: recipient.type || "Marketing",
               success: false,
               error: error.message,
             };

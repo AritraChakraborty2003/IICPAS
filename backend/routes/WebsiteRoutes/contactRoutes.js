@@ -4,6 +4,10 @@ import ContactModel from "../../models/ContactModel.js";
 import Message from "../../models/Message.js";
 import { requireAuth } from "../../middleware/requireAuth.js";
 import { isAdmin } from "../../middleware/isAdmin.js";
+import {
+  deleteMessage as deleteContactMessage,
+  bulkDeleteMessages as bulkDeleteContactMessages,
+} from "../../controllers/contactController.js";
 
 const router = express.Router();
 
@@ -201,6 +205,17 @@ router.get("/messages", requireAuth, isAdmin, async (req, res) => {
     res.status(500).json({ error: "Server error." });
   }
 });
+
+// Delete a single message (Admin only)
+router.delete("/messages/:id", requireAuth, isAdmin, deleteContactMessage);
+
+// Bulk delete messages (Admin only)
+router.delete(
+  "/messages/bulk-delete",
+  requireAuth,
+  isAdmin,
+  bulkDeleteContactMessages
+);
 
 // Reply to Message (Admin only)
 router.put("/messages/:id/reply", requireAuth, isAdmin, async (req, res) => {
