@@ -1,6 +1,11 @@
 import express from "express";
 import nodemailer from "nodemailer";
-import { emailConfig, isEmailConfigured, setupEmailInstructions } from "../config/emailConfig.js";
+import mongoose from "mongoose";
+import {
+  emailConfig,
+  isEmailConfigured,
+  setupEmailInstructions,
+} from "../config/emailConfig.js";
 import { isAdmin } from "../middleware/isAdmin.js";
 import { requireAuth } from "../middleware/requireAuth.js";
 import EmailLog from "../models/EmailLog.js";
@@ -10,12 +15,14 @@ import College from "../models/College.js";
 import Company from "../models/Company.js";
 import Individual from "../models/Individual.js";
 import NewsletterSubscription from "../models/NewsletterSubscription.js";
+import BulkEmailSenderAccount from "../models/BulkEmailSenderAccount.js";
+import { decryptSecret, encryptSecret } from "../utils/secureVault.js";
 
 const router = express.Router();
 
-const createTransporter = () =>
+const createTransporter = (auth) =>
   nodemailer.createTransport({
-    ...emailConfig,
+    service: "gmail",
     host: process.env.EMAIL_HOST || "smtp.gmail.com",
     port: Number(process.env.EMAIL_PORT || 587),
     secure: String(process.env.EMAIL_SECURE || "false") === "true",
@@ -23,6 +30,7 @@ const createTransporter = () =>
     connectionTimeout: 10000,
     greetingTimeout: 10000,
     socketTimeout: 15000,
+    auth,
   });
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
@@ -110,24 +118,105 @@ const getAllEmailAddresses = async () => {
   };
 };
 
-const sendEmail = async (to, subject, html, text = "") => {
-  if (!isEmailConfigured()) {
-    setupEmailInstructions();
+const getSenderAccounts = async () =>
+  BulkEmailSenderAccount.find({})
+    .select("label email createdAt lastUsedAt createdBy")
+    .populate("createdBy", "name email")
+    .sort({ createdAt: -1 })
+    .lean();
+
+const sanitizeSenderAccount = (account) => ({
+  _id: account._id,
+  label: account.label || "",
+  email: account.email,
+  createdAt: account.createdAt,
+  lastUsedAt: account.lastUsedAt || null,
+  createdBy: account.createdBy
+    ? {
+        _id: account.createdBy._id,
+        name: account.createdBy.name,
+        email: account.createdBy.email,
+      }
+    : null,
+});
+
+const buildStudentRecipients = async (selectedStudentIds = []) => {
+  const incomingIds = Array.isArray(selectedStudentIds) ? selectedStudentIds : [];
+  const uniqueIds = [...new Set(incomingIds.map((value) => String(value)))].filter(Boolean);
+
+  if (uniqueIds.length === 0) {
+    return { error: "Please select at least one student", status: 400 };
+  }
+
+  if (uniqueIds.length > 10) {
     return {
-      success: true,
-      emailSent: false,
-      email: to,
-      messageId: `simulated-${Date.now()}`,
-      message: "Email not configured - simulated send for development",
+      error: "You can send bulk email to a maximum of 10 students at a time",
+      status: 400,
     };
   }
 
-  const transporter = createTransporter();
+  const invalidIds = uniqueIds.filter((id) => !mongoose.Types.ObjectId.isValid(id));
+  if (invalidIds.length > 0) {
+    return { error: "One or more student IDs are invalid", status: 400 };
+  }
+
+  const students = await Student.find({ _id: { $in: uniqueIds } })
+    .select("name email")
+    .lean();
+
+  if (students.length !== uniqueIds.length) {
+    return {
+      error: "One or more selected students could not be found",
+      status: 400,
+    };
+  }
+
+  const studentMap = new Map(students.map((student) => [String(student._id), student]));
+  const recipients = uniqueIds
+    .map((id) => studentMap.get(id))
+    .filter((student) => student && student.email);
+
+  if (recipients.length !== uniqueIds.length) {
+    return {
+      error: "All selected students must have a valid email address",
+      status: 400,
+    };
+  }
+
+  return { recipients, uniqueIds };
+};
+
+const applyRecipientVariables = (template, recipient) => {
+  const name = recipient?.name || "Student";
+  const email = recipient?.email || "";
+  return String(template || "")
+    .replace(/\{\{studentName\}\}/g, name)
+    .replace(/\{\{studentEmail\}\}/g, email)
+    .replace(/\{\{name\}\}/g, name)
+    .replace(/\{\{email\}\}/g, email);
+};
+
+const stripHtml = (html) =>
+  String(html || "")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const sendEmail = async ({ senderAccount, to, subject, html, text }) => {
+  const transporter = createTransporter({
+    user: senderAccount.email,
+    pass: decryptSecret(senderAccount.encryptedAppPassword),
+  });
+
   const info = await transporter.sendMail({
     from: {
-      name: "IICPA Institute",
-      address: emailConfig.auth.user,
+      name: senderAccount.label || "IICPA Institute",
+      address: senderAccount.email,
     },
+    replyTo: senderAccount.email,
     to,
     subject,
     text,
@@ -161,10 +250,131 @@ router.get("/emails", requireAuth, isAdmin, async (req, res) => {
   }
 });
 
-// Send bulk email (admin only)
+// Sender accounts (admin only)
+router.get("/sender-accounts", requireAuth, isAdmin, async (req, res) => {
+  try {
+    const senderAccounts = await getSenderAccounts();
+    return res.json({
+      success: true,
+      data: senderAccounts.map(sanitizeSenderAccount),
+    });
+  } catch (error) {
+    console.error("Error fetching sender accounts:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch sender accounts",
+      error: error.message,
+    });
+  }
+});
+
+router.post("/sender-accounts", requireAuth, isAdmin, async (req, res) => {
+  try {
+    const { label = "", email, appPassword } = req.body;
+    const normalizedEmail = normalizeEmail(email);
+
+    if (!normalizedEmail || !appPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Sender email and app password are required",
+      });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return res.status(400).json({
+        success: false,
+        message: "Please enter a valid sender email address",
+      });
+    }
+
+    const existing = await BulkEmailSenderAccount.findOne({ email: normalizedEmail });
+    if (existing) {
+      return res.status(409).json({
+        success: false,
+        message: "A sender account with this email already exists",
+      });
+    }
+
+    const transporter = createTransporter({
+      user: normalizedEmail,
+      pass: String(appPassword || "").trim(),
+    });
+
+    await transporter.verify();
+
+    const senderAccount = await BulkEmailSenderAccount.create({
+      label: String(label || "").trim(),
+      email: normalizedEmail,
+      encryptedAppPassword: encryptSecret(String(appPassword || "").trim()),
+      createdBy: req.user.id,
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: "Sender account saved successfully",
+      data: sanitizeSenderAccount({
+        ...senderAccount.toObject(),
+        createdBy: {
+          _id: req.user.id,
+          name: req.user.name,
+          email: req.user.email,
+        },
+      }),
+    });
+  } catch (error) {
+    console.error("Error saving sender account:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to save sender account",
+      error: error.message,
+    });
+  }
+});
+
+router.delete("/sender-accounts/:id", requireAuth, isAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid sender account ID",
+      });
+    }
+
+    const deleted = await BulkEmailSenderAccount.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({
+        success: false,
+        message: "Sender account not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Sender account deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting sender account:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete sender account",
+      error: error.message,
+    });
+  }
+});
+
+// Send bulk email to selected students (admin only)
 router.post("/send", requireAuth, isAdmin, async (req, res) => {
   try {
-    const { subject, htmlContent, textContent, recipientTypes = [] } = req.body;
+    const {
+      subject,
+      htmlContent,
+      textContent,
+      selectedStudentIds = [],
+      senderAccountId,
+    } = req.body;
+
     if (!subject || (!htmlContent && !textContent)) {
       return res.status(400).json({
         success: false,
@@ -172,65 +382,90 @@ router.post("/send", requireAuth, isAdmin, async (req, res) => {
       });
     }
 
-    const emailResult = await getAllEmailAddresses();
-    if (!emailResult.success) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch email addresses",
-      });
-    }
-
-    const recipients =
-      recipientTypes.length > 0
-        ? emailResult.emails.filter((entry) => recipientTypes.includes(entry.type))
-        : emailResult.emails;
-
-    if (recipients.length === 0) {
+    if (!senderAccountId) {
       return res.status(400).json({
         success: false,
-        message: "No recipients found for the selected types",
+        message: "Please select a sender email account",
       });
     }
+
+    const senderAccount = await BulkEmailSenderAccount.findById(senderAccountId).select(
+      "+encryptedAppPassword"
+    );
+    if (!senderAccount) {
+      return res.status(404).json({
+        success: false,
+        message: "Selected sender account was not found",
+      });
+    }
+
+    const recipientBuild = await buildStudentRecipients(selectedStudentIds);
+    if (recipientBuild.error) {
+      return res.status(recipientBuild.status || 400).json({
+        success: false,
+        message: recipientBuild.error,
+      });
+    }
+
+    const recipients = recipientBuild.recipients;
+    const finalTextContent = String(textContent || "").trim() || stripHtml(htmlContent);
 
     const emailLog = new EmailLog({
       subject,
       htmlContent,
-      textContent,
-      recipientTypes,
+      textContent: finalTextContent,
+      recipientTypes: ["Student"],
       totalRecipients: recipients.length,
       sentBy: req.user.id,
-      sentByName: req.user.name,
-      sentByEmail: req.user.email,
-      status: "pending",
+      sentByName: req.user.name || req.user.fullName || "Admin",
+      sentByEmail: req.user.email || "admin@iicpa.in",
+      senderAccountId: senderAccount._id,
+      senderAccountEmail: senderAccount.email,
+      senderAccountLabel: senderAccount.label || senderAccount.email,
+      status: "sending",
       isTestEmail: false,
+      results: [],
     });
     await emailLog.save();
 
     const results = [];
-    for (const recipient of recipients) {
-      try {
-        const sendResult = await sendEmail(
-          recipient.email,
-          subject,
-          htmlContent,
-          textContent || ""
-        );
-        results.push({
-          email: recipient.email,
-          name: recipient.name,
-          type: recipient.type,
-          success: true,
-          messageId: sendResult.messageId,
-        });
-      } catch (error) {
-        results.push({
-          email: recipient.email,
-          name: recipient.name,
-          type: recipient.type,
-          success: false,
-          error: error.message,
-        });
-      }
+    const batchSize = 10;
+
+    for (let index = 0; index < recipients.length; index += batchSize) {
+      const batch = recipients.slice(index, index + batchSize);
+      const batchResults = await Promise.all(
+        batch.map(async (recipient) => {
+          const personalizedHtml = applyRecipientVariables(htmlContent, recipient);
+          const personalizedText = applyRecipientVariables(finalTextContent, recipient);
+
+          try {
+            const sendResult = await sendEmail({
+              senderAccount,
+              to: recipient.email,
+              subject,
+              html: personalizedHtml,
+              text: personalizedText,
+            });
+            return {
+              email: recipient.email,
+              name: recipient.name,
+              type: "Student",
+              success: true,
+              messageId: sendResult.messageId,
+            };
+          } catch (error) {
+            return {
+              email: recipient.email,
+              name: recipient.name,
+              type: "Student",
+              success: false,
+              error: error.message,
+            };
+          }
+        })
+      );
+
+      results.push(...batchResults);
     }
 
     const successCount = results.filter((item) => item.success).length;
@@ -249,6 +484,9 @@ router.post("/send", requireAuth, isAdmin, async (req, res) => {
     }));
     emailLog.completedAt = new Date();
     await emailLog.save();
+
+    senderAccount.lastUsedAt = new Date();
+    await senderAccount.save();
 
     return res.json({
       success: true,
@@ -282,7 +520,7 @@ router.get("/test-connection", requireAuth, isAdmin, async (req, res) => {
       });
     }
 
-    const transporter = createTransporter();
+    const transporter = createTransporter(emailConfig.auth);
     await transporter.verify();
     return res.json({
       success: true,
@@ -299,10 +537,10 @@ router.get("/test-connection", requireAuth, isAdmin, async (req, res) => {
   }
 });
 
-// Send test email to admin
+// Send test email to admin using a saved sender account
 router.post("/test-send", requireAuth, isAdmin, async (req, res) => {
   try {
-    const { subject, htmlContent, textContent } = req.body;
+    const { subject, htmlContent, textContent, senderAccountId } = req.body;
     const adminEmail = req.user.email;
 
     if (!subject || (!htmlContent && !textContent)) {
@@ -312,26 +550,49 @@ router.post("/test-send", requireAuth, isAdmin, async (req, res) => {
       });
     }
 
+    if (!senderAccountId) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select a sender email account",
+      });
+    }
+
+    const senderAccount = await BulkEmailSenderAccount.findById(senderAccountId).select(
+      "+encryptedAppPassword"
+    );
+    if (!senderAccount) {
+      return res.status(404).json({
+        success: false,
+        message: "Selected sender account was not found",
+      });
+    }
+
+    const finalTextContent = String(textContent || "").trim() || stripHtml(htmlContent);
+
     const testEmailLog = new EmailLog({
       subject: `[TEST] ${subject}`,
       htmlContent,
-      textContent,
+      textContent: finalTextContent,
       recipientTypes: ["Test"],
       totalRecipients: 1,
       sentBy: req.user.id,
       sentByName: req.user.name || req.user.fullName || "Admin",
       sentByEmail: req.user.email || "admin@iicpa.in",
+      senderAccountId: senderAccount._id,
+      senderAccountEmail: senderAccount.email,
+      senderAccountLabel: senderAccount.label || senderAccount.email,
       status: "pending",
       isTestEmail: true,
     });
     await testEmailLog.save();
 
-    const result = await sendEmail(
-      adminEmail,
-      `[TEST] ${subject}`,
-      htmlContent,
-      textContent || ""
-    );
+    const result = await sendEmail({
+      senderAccount,
+      to: adminEmail,
+      subject: `[TEST] ${subject}`,
+      html: htmlContent,
+      text: finalTextContent,
+    });
 
     testEmailLog.status = "completed";
     testEmailLog.successCount = 1;
@@ -355,90 +616,6 @@ router.post("/test-send", requireAuth, isAdmin, async (req, res) => {
     });
   } catch (error) {
     console.error("Error in send test email route:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
-});
-
-// Send test email to a specific email ID (admin only)
-router.post("/test-send-to", requireAuth, isAdmin, async (req, res) => {
-  try {
-    const { toEmail, subject, htmlContent, textContent } = req.body;
-    const normalizedTo = normalizeEmail(toEmail);
-
-    if (!normalizedTo) {
-      return res.status(400).json({
-        success: false,
-        message: "Recipient email is required",
-      });
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(normalizedTo)) {
-      return res.status(400).json({
-        success: false,
-        message: "Please provide a valid recipient email",
-      });
-    }
-
-    const finalSubject = subject?.trim() || "IICPA Test Email";
-    const finalHtml =
-      htmlContent?.trim() ||
-      `<div style="font-family: Arial, sans-serif; line-height:1.6;">
-         <h2 style="margin:0 0 8px;">IICPA Test Email</h2>
-         <p>This is a test email sent from the Admin Dashboard sidebar utility.</p>
-         <p><strong>Sent by:</strong> ${req.user?.name || "Admin"} (${req.user?.email || "N/A"})</p>
-       </div>`;
-    const finalText =
-      textContent?.trim() ||
-      `IICPA Test Email\n\nThis is a test email sent from the Admin Dashboard sidebar utility.\nSent by: ${req.user?.name || "Admin"} (${req.user?.email || "N/A"})`;
-
-    const testEmailLog = new EmailLog({
-      subject: `[TEST] ${finalSubject}`,
-      htmlContent: finalHtml,
-      textContent: finalText,
-      recipientTypes: ["Test"],
-      totalRecipients: 1,
-      sentBy: req.user.id,
-      sentByName: req.user.name || req.user.fullName || "Admin",
-      sentByEmail: req.user.email || "admin@iicpa.in",
-      status: "pending",
-      isTestEmail: true,
-    });
-    await testEmailLog.save();
-
-    const result = await sendEmail(
-      normalizedTo,
-      `[TEST] ${finalSubject}`,
-      finalHtml,
-      finalText
-    );
-
-    testEmailLog.status = "completed";
-    testEmailLog.successCount = 1;
-    testEmailLog.failureCount = 0;
-    testEmailLog.results = [
-      {
-        email: normalizedTo,
-        name: "Manual Recipient",
-        type: "Test",
-        status: "success",
-        messageId: result.messageId,
-      },
-    ];
-    testEmailLog.completedAt = new Date();
-    await testEmailLog.save();
-
-    return res.json({
-      success: true,
-      message: `Test email sent successfully to ${normalizedTo}`,
-      data: result,
-    });
-  } catch (error) {
-    console.error("Error in send test email to recipient route:", error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",

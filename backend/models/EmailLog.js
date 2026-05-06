@@ -44,6 +44,19 @@ const EmailLogSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  senderAccountId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "BulkEmailSenderAccount",
+    default: null
+  },
+  senderAccountEmail: {
+    type: String,
+    default: ""
+  },
+  senderAccountLabel: {
+    type: String,
+    default: ""
+  },
   status: {
     type: String,
     enum: ['pending', 'sending', 'completed', 'failed'],
