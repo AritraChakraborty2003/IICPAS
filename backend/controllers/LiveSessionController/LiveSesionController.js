@@ -102,6 +102,14 @@ const normalizeAuthorProfiles = (landingPage = {}, fallback = {}) => {
       )
     : [];
 
+  if (profiles.length === 0 && Array.isArray(fallback.authorProfiles)) {
+    profiles.push(
+      ...fallback.authorProfiles.map((profile) =>
+        buildAuthorProfile(profile, baseFallback)
+      )
+    );
+  }
+
   if (profiles.length === 0) {
     profiles.push(buildAuthorProfile({}, baseFallback));
   }
@@ -116,7 +124,11 @@ const normalizeLandingPagePayload = (landingPage = {}, fallback = {}) => {
   return {
     ...landingPage,
     authorLayout:
-      landingPage.authorLayout === "two-per-line" ? "two-per-line" : "stack",
+      landingPage.authorLayout === "two-per-line"
+        ? "two-per-line"
+        : fallback.authorLayout === "two-per-line"
+          ? "two-per-line"
+          : "stack",
     authorProfiles,
     authorImage: primaryProfile.image || "",
     authorName: primaryProfile.name || "",
