@@ -5,7 +5,7 @@ import { FaWhatsapp, FaPhone } from "react-icons/fa";
 import { usePathname } from "next/navigation";
 
 const IICPA_WHATSAPP_NUMBER = "919593330999";
-const IICPA_CALL_NUMBER = "8920406657";
+const IICPA_CALL_NUMBER = "9593330999";
 const WHATSAPP_MESSAGE = "Hi! I'm interested in your courses. Can you help me?";
 
 const WhatsAppButton = () => {
