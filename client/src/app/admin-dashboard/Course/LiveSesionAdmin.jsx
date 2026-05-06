@@ -122,6 +122,7 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => {
       session.imageUrl ||
       session.thumbnail ||
       "/images/live-class.jpg",
+    mobileHeroImage: landingPage.mobileHeroImage || "",
     authorProfiles,
     authorLayout: getAuthorLayout(landingPage),
     authorImage: firstProfile.image || "",
@@ -161,6 +162,7 @@ const getLandingPageDraft = (form, heroImageFallback = "") => {
   return {
     heroImage:
       form.landingPage.heroImage || heroImageFallback || form.thumbnail || "",
+    mobileHeroImage: form.landingPage.mobileHeroImage || "",
     authorProfiles,
     authorLayout: getAuthorLayout(form.landingPage),
     authorImage: firstProfile.image || "",
@@ -649,6 +651,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     }
 
     let landingHeroImageUrl = form.landingPage.heroImage;
+    let landingMobileHeroImageUrl = form.landingPage.mobileHeroImage;
     if (
       landingHeroImageUrl &&
       landingHeroImageUrl.startsWith("data:image/") &&
@@ -677,6 +680,34 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       }
     }
 
+    if (
+      landingMobileHeroImageUrl &&
+      landingMobileHeroImageUrl.startsWith("data:image/") &&
+      landingMobileHeroImageUrl.includes(";base64,")
+    ) {
+      try {
+        const token = checkTokenValidity();
+        if (!token) {
+          setLoading(false);
+          return;
+        }
+
+        const fileName = `landing-mobile-hero-${Date.now()}.png`;
+        const mimeType = landingMobileHeroImageUrl.match(/^data:(image\/[^;]+);base64,/)?.[1];
+        const restoredFile = await dataUrlToFile(
+          landingMobileHeroImageUrl,
+          fileName,
+          mimeType
+        );
+        landingMobileHeroImageUrl = await uploadImageFile(restoredFile, token);
+      } catch (error) {
+        console.error("Landing mobile hero image upload failed:", error);
+        Swal.fire("Error", error.message || "Failed to upload mobile hero image", "error");
+        setLoading(false);
+        return;
+      }
+    }
+
     const payload = {
       title: form.title,
       instructor: form.instructor,
@@ -696,6 +727,8 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
           landingPage: {
             ...form.landingPage,
             heroImage: landingHeroImageUrl || form.landingPage.heroImage,
+            mobileHeroImage:
+              landingMobileHeroImageUrl || form.landingPage.mobileHeroImage,
           },
         },
         thumbnailUrl
@@ -905,11 +938,11 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   const updateLandingPageField = (field, value) => {
     setForm((current) => ({
       ...current,
-      landingPage: {
-        ...current.landingPage,
-        [field]: value,
-      },
-    }));
+        landingPage: {
+          ...current.landingPage,
+          [field]: value,
+        },
+      }));
   };
 
   const updateAuthorProfileField = (index, field, value) => {
@@ -994,6 +1027,31 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       Swal.fire(
         "Error",
         error.message || "Failed to upload hero image",
+        "error"
+      );
+    } finally {
+      setLandingHeroUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleLandingMobileHeroImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const token = checkTokenValidity();
+    if (!token) return;
+
+    try {
+      setLandingHeroUploading(true);
+      const uploadedUrl = await uploadImageFile(file, token);
+      updateLandingPageField("mobileHeroImage", uploadedUrl);
+      Swal.fire("Success!", "Mobile hero image uploaded successfully!", "success");
+    } catch (error) {
+      console.error("Landing mobile hero image upload failed:", error);
+      Swal.fire(
+        "Error",
+        error.message || "Failed to upload mobile hero image",
         "error"
       );
     } finally {
@@ -2566,6 +2624,70 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                       </div>
                     </div>
                   )}
+
+                  <div className="lg:col-span-2 mt-2 rounded-lg border border-dashed border-slate-300 bg-white p-4">
+                    <div className="mb-3">
+                      <label className="block font-semibold mb-1">
+                        Mobile Hero Banner
+                      </label>
+                      <p className="text-sm text-slate-500">
+                        Upload a separate mobile banner for phones.
+                      </p>
+                      <p className="mt-1 text-xs font-medium text-slate-500">
+                        Note: Recommended mobile banner size is 1080 x 1350 px (4:5).
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Upload Mobile Banner File
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLandingMobileHeroImageUpload}
+                          className="w-full border px-4 py-3 rounded-lg bg-white"
+                        />
+                        <p className="mt-1 text-xs text-slate-500">
+                          JPG, PNG, GIF supported. The image is uploaded immediately.
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block font-semibold mb-2">
+                          Mobile Banner URL
+                        </label>
+                        <input
+                          type="text"
+                          className="w-full border px-4 py-3 rounded-lg bg-white"
+                          placeholder="https://example.com/mobile-image.jpg"
+                          value={form.landingPage.mobileHeroImage || ""}
+                          onChange={(e) =>
+                            updateLandingPageField("mobileHeroImage", e.target.value)
+                          }
+                        />
+                      </div>
+
+                      {form.landingPage.mobileHeroImage && (
+                        <div className="lg:col-span-2">
+                          <label className="block font-semibold mb-2">
+                            Mobile Banner Preview
+                          </label>
+                          <div className="rounded-lg border border-slate-200 bg-white p-4">
+                            <img
+                              src={form.landingPage.mobileHeroImage}
+                              alt="Mobile hero preview"
+                              className="h-40 w-full max-w-xs rounded-lg object-cover"
+                              onError={(e) => {
+                                e.target.style.display = "none";
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 

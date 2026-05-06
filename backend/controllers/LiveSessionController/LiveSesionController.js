@@ -129,6 +129,7 @@ const normalizeLandingPagePayload = (landingPage = {}, fallback = {}) => {
         : fallback.authorLayout === "two-per-line"
           ? "two-per-line"
           : "stack",
+    mobileHeroImage: landingPage.mobileHeroImage || fallback.mobileHeroImage || "",
     authorProfiles,
     authorImage: primaryProfile.image || "",
     authorName: primaryProfile.name || "",

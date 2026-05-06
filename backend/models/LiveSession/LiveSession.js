@@ -20,6 +20,7 @@ const liveSessionSchema = new mongoose.Schema(
     imageUrl: { type: String, default: "" },
     landingPage: {
       heroImage: { type: String, default: "" },
+      mobileHeroImage: { type: String, default: "" },
       headline: { type: String, default: "" },
       subheadline: { type: String, default: "" },
       bodyContent: { type: String, default: "" },
