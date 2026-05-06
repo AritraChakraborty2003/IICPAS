@@ -23,6 +23,7 @@ import { FaXTwitter } from "react-icons/fa6";
 
 type LandingPageConfig = {
   heroImage?: string;
+  mobileHeroImage?: string;
   authorImage?: string;
   authorProfiles?: Array<{
     image?: string;
@@ -187,6 +188,10 @@ const resolveLandingPage = (
       session?.imageUrl ||
       session?.thumbnail ||
       "/images/live-class.jpg",
+    mobileHeroImage:
+      draftLandingPage?.mobileHeroImage ||
+      base.mobileHeroImage ||
+      "",
     authorImage: firstProfile.image,
     authorProfiles,
     authorLayout:
@@ -721,11 +726,19 @@ function LiveSessionLandingPage({
         <section className="overflow-hidden bg-white">
           <div className="relative w-full">
             <div className="relative aspect-[4/5] w-full overflow-hidden bg-slate-200 sm:aspect-[2400/1050]">
-              <img
-                src={landingPage.heroImage}
-                alt={landingPage.headline}
-                className="h-full w-full object-cover object-center"
-              />
+              <picture>
+                {landingPage.mobileHeroImage ? (
+                  <source
+                    media="(max-width: 639px)"
+                    srcSet={landingPage.mobileHeroImage}
+                  />
+                ) : null}
+                <img
+                  src={landingPage.heroImage}
+                  alt={landingPage.headline}
+                  className="h-full w-full object-cover object-center"
+                />
+              </picture>
               <div className="absolute inset-0 flex items-center justify-center px-4 sm:justify-start sm:px-10 lg:px-16">
                 <div className="mx-auto w-full max-w-[94vw] sm:mx-0 sm:max-w-5xl">
                   <div className="hidden sm:flex sm:flex-col sm:items-start sm:gap-4">

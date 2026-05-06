@@ -72,6 +72,7 @@ const getLandingPageDefaults = (
       session.imageUrl ||
       session.thumbnail ||
       "/images/live-class.jpg",
+    mobileHeroImage: landingPage.mobileHeroImage || "",
     authorProfiles,
     authorLayout: getAuthorLayout(landingPage),
     authorImage: firstProfile.image || "",
@@ -110,6 +111,7 @@ const getDraftSession = (draft: LiveSessionLandingDraft | null) => {
       form.thumbnail ||
       form.landingPage?.heroImage ||
       "/images/live-class.jpg",
+    mobileHeroImage: form.landingPage?.mobileHeroImage || "",
     thumbnail:
       draft?.imagePreview ||
       form.thumbnail ||
