@@ -346,6 +346,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [landingHeroUploading, setLandingHeroUploading] = useState(false);
+  const [mobileHeroUploading, setMobileHeroUploading] = useState(false);
   const [authorProfileUploadingIndex, setAuthorProfileUploadingIndex] = useState(null);
   const { hasPermission, user } = useAuth();
   const landingDraftKey = editId
@@ -1040,26 +1041,26 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     if (!file) return;
 
     try {
-      setLandingHeroUploading(true);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        updateLandingPageField("mobileHeroImage", event.target.result);
-      };
-      reader.readAsDataURL(file);
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      setMobileHeroUploading(true);
+      const uploadedUrl = await uploadImageFile(file, token);
+      updateLandingPageField("mobileHeroImage", uploadedUrl);
       Swal.fire(
-        "Selected!",
-        "Mobile hero image will upload when you save the session.",
+        "Success!",
+        "Mobile hero image uploaded successfully!",
         "success"
       );
     } catch (error) {
       console.error("Landing mobile hero image selection failed:", error);
       Swal.fire(
         "Error",
-        error.message || "Failed to select mobile hero image",
+        error.message || "Failed to upload mobile hero image",
         "error"
       );
     } finally {
-      setLandingHeroUploading(false);
+      setMobileHeroUploading(false);
       e.target.value = "";
     }
   };
@@ -2653,8 +2654,8 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                           onChange={handleLandingMobileHeroImageUpload}
                           className="w-full border px-4 py-3 rounded-lg bg-white"
                         />
-                        <p className="mt-1 text-xs text-slate-500">
-                          JPG, PNG, GIF supported. The image uploads when you save the session.
+                      <p className="mt-1 text-xs text-slate-500">
+                          JPG, PNG, GIF supported. The image uploads immediately.
                         </p>
                       </div>
 
@@ -2672,6 +2673,12 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                           }
                         />
                       </div>
+
+                      {mobileHeroUploading ? (
+                        <p className="mt-1 text-xs font-medium text-slate-500">
+                          Uploading...
+                        </p>
+                      ) : null}
 
                       {form.landingPage.mobileHeroImage && (
                         <div className="lg:col-span-2">
