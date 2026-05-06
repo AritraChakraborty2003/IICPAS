@@ -728,15 +728,6 @@ function LiveSessionLandingPage({
               />
               <div className="absolute inset-0 flex items-center justify-center px-4 sm:justify-start sm:px-10 lg:px-16">
                 <div className="mx-auto w-full max-w-[94vw] sm:mx-0 sm:max-w-5xl">
-                  <div className="sm:hidden">
-                    <div className="mx-auto mt-2 flex flex-col items-center gap-3 rounded-[1.5rem] border border-white/18 bg-slate-950/92 px-4 py-5 text-center shadow-[0_24px_60px_rgba(15,23,42,0.30)]">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/12 px-3 py-1.5 text-[10px] font-medium text-emerald-100">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
-                        {landingPage.ctaText || "Get Free Preview"}
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="hidden sm:flex sm:flex-col sm:items-start sm:gap-4">
                     <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/12 px-4 py-2 text-sm font-medium text-emerald-100 shadow-[0_16px_40px_rgba(15,23,42,0.12)]">
                       <span className="h-2 w-2 rounded-full bg-emerald-300" />
