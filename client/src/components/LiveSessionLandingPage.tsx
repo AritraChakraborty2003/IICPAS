@@ -3,7 +3,14 @@
 import Header from "@/app/components/Header";
 import Footer from "@/app/components/Footer";
 import { getApiOrigin } from "@/lib/apiBase";
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import Script from "next/script";
 import Swal from "sweetalert2";
 import {
@@ -81,6 +88,7 @@ type LiveSessionLandingPageProps = {
   className?: string;
   overrideTitle?: string;
   overrideUrl?: string;
+  adminPreviewAction?: ReactNode;
 };
 
 const API_ORIGIN = getApiOrigin();
@@ -236,6 +244,7 @@ function LiveSessionLandingPage({
   className = "",
   overrideTitle,
   overrideUrl,
+  adminPreviewAction,
 }: LiveSessionLandingPageProps) {
   const [session, setSession] = useState<LiveSessionRecord | null>(
     incomingSession
@@ -700,6 +709,12 @@ function LiveSessionLandingPage({
                       </span>
                     </div>
                   </div>
+
+                  {adminPreviewAction ? (
+                    <div className="mt-4 flex justify-center sm:justify-start">
+                      {adminPreviewAction}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>

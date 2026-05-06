@@ -7,7 +7,7 @@ import {
   readLiveSessionLandingDraft,
 } from "@/lib/liveSessionLandingDraft";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Copy } from "lucide-react";
 
 const API_ORIGIN = getApiOrigin();
@@ -93,12 +93,9 @@ const getDraftSession = (draft: LiveSessionLandingDraft | null) => {
 };
 
 export default function PreviewLandingPageClient() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const draftKey = searchParams.get("draftKey") || "";
   const sessionId = searchParams.get("sessionId") || "";
-  const returnTo =
-    searchParams.get("returnTo") || "/admin-dashboard?tab=live-session";
   const isAdminPreview = searchParams.get("adminPreview") === "1";
   const [draft, setDraft] = useState<LiveSessionLandingDraft | null>(null);
   const [loading, setLoading] = useState(true);
@@ -181,6 +178,24 @@ export default function PreviewLandingPageClient() {
       })
     : null;
 
+  const adminPreviewAction = isAdminPreview ? (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+        } catch {
+          window.prompt("Copy preview link", window.location.href);
+        }
+      }}
+      className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 hover:text-slate-950"
+      aria-label="Copy preview link"
+      title="Copy preview link"
+    >
+      <Copy className="h-4 w-4" />
+    </button>
+  ) : null;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-100">
@@ -203,28 +218,8 @@ export default function PreviewLandingPageClient() {
     );
   }
 
-  const handleCopyPreviewLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-    } catch {
-      window.prompt("Copy preview link", window.location.href);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-100">
-      {isAdminPreview ? (
-        <button
-          type="button"
-          onClick={handleCopyPreviewLink}
-          className="fixed right-5 top-24 z-[70] inline-flex h-12 w-12 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-lg transition hover:bg-slate-50 hover:text-slate-950"
-          aria-label="Copy preview link"
-          title="Copy preview link"
-        >
-          <Copy className="h-5 w-5" />
-        </button>
-      ) : null}
-
       <LiveSessionLandingPage
         sessionId={sessionId || draft?.editId || undefined}
         session={session}
@@ -233,6 +228,7 @@ export default function PreviewLandingPageClient() {
         showFooter={false}
         overrideTitle={draft?.form?.title || ""}
         overrideUrl={typeof window !== "undefined" ? window.location.href : ""}
+        adminPreviewAction={adminPreviewAction}
       />
     </div>
   );
