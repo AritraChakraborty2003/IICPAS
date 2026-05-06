@@ -758,8 +758,13 @@ function LiveSessionLandingPage({
             <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
                 <div className="rounded-[1.75rem] border border-emerald-500/15 bg-[#1f6b93] px-5 py-5 shadow-[0_14px_34px_rgba(15,23,42,0.06)] sm:px-6 sm:py-6">
-                  <div className="mb-3 inline-flex rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white sm:text-[11px]">
-                    About
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    <div className="inline-flex rounded-full bg-[#0f4f72] px-3 py-1.5 text-[10px] font-semibold tracking-[0.16em] text-white sm:text-[11px]">
+                      {landingPage.formLabel || "Workshop Registration Form"}
+                    </div>
+                    <div className="inline-flex rounded-full bg-emerald-400 px-3 py-1.5 text-[10px] font-semibold tracking-[0.16em] text-white sm:text-[11px]">
+                      {landingPage.ctaText || "Register Now @ ₹19"}
+                    </div>
                   </div>
                   <h1 className="max-w-4xl text-left text-3xl font-extrabold leading-tight tracking-[-0.03em] text-white sm:text-4xl lg:text-[3rem]">
                     {landingPage.headline}
