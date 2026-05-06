@@ -757,12 +757,15 @@ function LiveSessionLandingPage({
           <div className="mt-4 grid gap-0 border-t border-slate-100 lg:mt-0 lg:grid-cols-[1fr_0.95fr]">
             <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
-                <div className="rounded-[1.5rem] bg-[#165f86] px-5 py-5 shadow-[0_10px_28px_rgba(15,23,42,0.05)] sm:px-6 sm:py-6">
+                <div className="rounded-[1.75rem] border border-emerald-500/15 bg-[#1f6b93] px-5 py-5 shadow-[0_14px_34px_rgba(15,23,42,0.06)] sm:px-6 sm:py-6">
+                  <div className="mb-3 inline-flex rounded-full bg-emerald-400 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.22em] text-white sm:text-[11px]">
+                    About
+                  </div>
                   <h1 className="max-w-4xl text-left text-3xl font-extrabold leading-tight tracking-[-0.03em] text-white sm:text-4xl lg:text-[3rem]">
                     {landingPage.headline}
                   </h1>
                   {landingPage.subheadline ? (
-                    <p className="mt-3 max-w-4xl text-left text-sm leading-6 text-white/90 sm:text-base sm:leading-7">
+                    <p className="mt-3 max-w-4xl text-left text-sm leading-6 text-white/92 sm:text-base sm:leading-7">
                       {landingPage.subheadline}
                     </p>
                   ) : null}
