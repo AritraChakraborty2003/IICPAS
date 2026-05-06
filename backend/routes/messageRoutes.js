@@ -4,6 +4,7 @@ import {
   getAllMessages,
   getMessagesByEmail,
   getMessageById,
+  bulkDeleteMessages,
   deleteMessage,
   adminReplyToMessage,
 } from "../controllers/messageControllers.js";
@@ -21,6 +22,7 @@ router.get("/by-email/:email", getMessagesByEmail);
 
 // Admin reply to message (must come before /:id route)
 router.put("/admin-reply/:id", adminReplyToMessage);
+router.delete("/bulk-delete", bulkDeleteMessages);
 
 // Get message by ID
 router.get("/:id", getMessageById);

@@ -1,4 +1,5 @@
 import express from "express";
+import multer from "multer";
 import nodemailer from "nodemailer";
 import mongoose from "mongoose";
 import {
@@ -19,6 +20,12 @@ import BulkEmailSenderAccount from "../models/BulkEmailSenderAccount.js";
 import { decryptSecret, encryptSecret } from "../utils/secureVault.js";
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 25 * 1024 * 1024,
+  },
+});
 
 const createTransporter = (auth) =>
   nodemailer.createTransport({
@@ -205,13 +212,39 @@ const stripHtml = (html) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const sendEmail = async ({ senderAccount, to, subject, html, text }) => {
+const parseSelectedStudentIds = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  }
+  return [];
+};
+
+const buildAttachment = (file) => {
+  if (!file) return null;
+
+  return {
+    filename: file.originalname || "attachment",
+    content: file.buffer,
+    contentType: file.mimetype || "application/octet-stream",
+  };
+};
+
+const sendEmail = async ({ senderAccount, to, subject, html, text, attachment }) => {
   const transporter = createTransporter({
     user: senderAccount.email,
     pass: decryptSecret(senderAccount.encryptedAppPassword),
   });
 
-  const info = await transporter.sendMail({
+  const mailPayload = {
     from: {
       name: senderAccount.label || "IICPA Institute",
       address: senderAccount.email,
@@ -221,7 +254,13 @@ const sendEmail = async ({ senderAccount, to, subject, html, text }) => {
     subject,
     text,
     html,
-  });
+  };
+
+  if (attachment) {
+    mailPayload.attachments = [attachment];
+  }
+
+  const info = await transporter.sendMail(mailPayload);
 
   return {
     success: true,
@@ -365,15 +404,16 @@ router.delete("/sender-accounts/:id", requireAuth, isAdmin, async (req, res) => 
 });
 
 // Send bulk email to selected students (admin only)
-router.post("/send", requireAuth, isAdmin, async (req, res) => {
+router.post("/send", requireAuth, isAdmin, upload.single("attachment"), async (req, res) => {
   try {
     const {
       subject,
       htmlContent,
       textContent,
-      selectedStudentIds = [],
       senderAccountId,
     } = req.body;
+    const selectedStudentIds = parseSelectedStudentIds(req.body.selectedStudentIds);
+    const attachment = buildAttachment(req.file);
 
     if (!subject || (!htmlContent && !textContent)) {
       return res.status(400).json({
@@ -445,6 +485,7 @@ router.post("/send", requireAuth, isAdmin, async (req, res) => {
               subject,
               html: personalizedHtml,
               text: personalizedText,
+              attachment,
             });
             return {
               email: recipient.email,
@@ -538,10 +579,11 @@ router.get("/test-connection", requireAuth, isAdmin, async (req, res) => {
 });
 
 // Send test email to admin using a saved sender account
-router.post("/test-send", requireAuth, isAdmin, async (req, res) => {
+router.post("/test-send", requireAuth, isAdmin, upload.single("attachment"), async (req, res) => {
   try {
     const { subject, htmlContent, textContent, senderAccountId } = req.body;
     const adminEmail = req.user.email;
+    const attachment = buildAttachment(req.file);
 
     if (!subject || (!htmlContent && !textContent)) {
       return res.status(400).json({
@@ -592,6 +634,7 @@ router.post("/test-send", requireAuth, isAdmin, async (req, res) => {
       subject: `[TEST] ${subject}`,
       html: htmlContent,
       text: finalTextContent,
+      attachment,
     });
 
     testEmailLog.status = "completed";

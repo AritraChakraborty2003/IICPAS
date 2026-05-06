@@ -40,6 +40,7 @@ export default function BulkEmailTab() {
   const [studentSearch, setStudentSearch] = useState("");
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [selectedSenderAccountId, setSelectedSenderAccountId] = useState("");
+  const [attachmentFile, setAttachmentFile] = useState(null);
   const [senderForm, setSenderForm] = useState(emptySenderForm);
   const [savingSenderAccount, setSavingSenderAccount] = useState(false);
   const [formData, setFormData] = useState({
@@ -125,6 +126,10 @@ export default function BulkEmailTab() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleAttachmentChange = (event) => {
+    setAttachmentFile(event.target.files?.[0] || null);
   };
 
   const selectedCount = selectedStudentIds.length;
@@ -241,6 +246,7 @@ export default function BulkEmailTab() {
       htmlContent: "",
       textContent: "",
     });
+    setAttachmentFile(null);
   };
 
   const sendTestEmail = async () => {
@@ -257,14 +263,18 @@ export default function BulkEmailTab() {
     setTesting(true);
     try {
       const token = getAdminToken();
+      const payload = new FormData();
+      payload.append("subject", formData.subject);
+      payload.append("htmlContent", formData.htmlContent);
+      payload.append("textContent", formData.textContent);
+      payload.append("senderAccountId", selectedSenderAccountId);
+      if (attachmentFile) {
+        payload.append("attachment", attachmentFile);
+      }
+
       const response = await axios.post(
         `${getApiBase()}/bulk-email/test-send`,
-        {
-          subject: formData.subject,
-          htmlContent: formData.htmlContent,
-          textContent: formData.textContent,
-          senderAccountId: selectedSenderAccountId,
-        },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -314,15 +324,19 @@ export default function BulkEmailTab() {
     setSending(true);
     try {
       const token = getAdminToken();
+      const payload = new FormData();
+      payload.append("subject", formData.subject);
+      payload.append("htmlContent", formData.htmlContent);
+      payload.append("textContent", formData.textContent);
+      payload.append("selectedStudentIds", JSON.stringify(selectedStudentIds));
+      payload.append("senderAccountId", selectedSenderAccountId);
+      if (attachmentFile) {
+        payload.append("attachment", attachmentFile);
+      }
+
       const response = await axios.post(
         `${getApiBase()}/bulk-email/send`,
-        {
-          subject: formData.subject,
-          htmlContent: formData.htmlContent,
-          textContent: formData.textContent,
-          selectedStudentIds,
-          senderAccountId: selectedSenderAccountId,
-        },
+        payload,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -585,6 +599,33 @@ export default function BulkEmailTab() {
                 rows={6}
                 className="w-full rounded-xl border border-gray-300 px-4 py-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
+            </div>
+
+            <div className="mb-6">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Attachment
+              </label>
+              <input
+                type="file"
+                onChange={handleAttachmentChange}
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.png,.jpg,.jpeg,.gif,.webp,.txt"
+                className="block w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-700 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-blue-700 hover:file:bg-blue-100"
+              />
+              <p className="mt-2 text-xs text-gray-500">
+                Optional. Attach a PDF, image, or document to send with the email.
+              </p>
+              {attachmentFile ? (
+                <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
+                  {attachmentFile.name}
+                  <button
+                    type="button"
+                    onClick={() => setAttachmentFile(null)}
+                    className="text-blue-500 hover:text-blue-700"
+                  >
+                    remove
+                  </button>
+                </div>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-3">

@@ -51,6 +51,51 @@ export const getAllMessages = async (req, res) => {
   }
 };
 
+// @desc    Delete a single message (Admin only)
+// @route   DELETE /api/contact/messages/:id
+export const deleteMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ error: "Message ID is required." });
+    }
+
+    const deletedMessage = await Message.findByIdAndDelete(id);
+
+    if (!deletedMessage) {
+      return res.status(404).json({ error: "Message not found." });
+    }
+
+    res.status(200).json({ message: "Message deleted successfully." });
+  } catch (error) {
+    console.error("Deleting message failed:", error);
+    res.status(500).json({ error: "Server error." });
+  }
+};
+
+// @desc    Bulk delete messages (Admin only)
+// @route   DELETE /api/contact/messages/bulk-delete
+export const bulkDeleteMessages = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: "Message IDs are required." });
+    }
+
+    const result = await Message.deleteMany({ _id: { $in: ids } });
+
+    res.status(200).json({
+      message: "Messages deleted successfully.",
+      deletedCount: result.deletedCount || 0,
+    });
+  } catch (error) {
+    console.error("Bulk deleting messages failed:", error);
+    res.status(500).json({ error: "Server error." });
+  }
+};
+
 // @desc    Reply to Message (Admin only)
 // @route   PUT /api/messages/:id/reply
 export const replyToMessage = async (req, res) => {

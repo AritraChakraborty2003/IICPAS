@@ -80,6 +80,35 @@ export const getMessagesByEmail = async (req, res) => {
   }
 };
 
+// Bulk delete messages by IDs
+export const bulkDeleteMessages = async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Message IDs are required",
+      });
+    }
+
+    const result = await Message.deleteMany({ _id: { $in: ids } });
+
+    res.status(200).json({
+      success: true,
+      message: "Messages deleted successfully",
+      deletedCount: result.deletedCount || 0,
+    });
+  } catch (error) {
+    console.error("Error bulk deleting messages:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete messages",
+      error: error.message,
+    });
+  }
+};
+
 // Get message by ID
 export const getMessageById = async (req, res) => {
   try {

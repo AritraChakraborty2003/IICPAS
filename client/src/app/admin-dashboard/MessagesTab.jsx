@@ -18,8 +18,10 @@ export default function MessagesTab() {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState(null);
+  const [selectedMessageIds, setSelectedMessageIds] = useState([]);
   const [replyText, setReplyText] = useState("");
   const [replying, setReplying] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [filter, setFilter] = useState("all"); // all, pending, replied
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export default function MessagesTab() {
         }
       });
       setMessages(extractMessages(response.data));
+      setSelectedMessageIds([]);
     } catch (error) {
       console.error("Error fetching messages:", error);
       toast.error("Failed to fetch messages");
@@ -84,6 +87,66 @@ export default function MessagesTab() {
     }
   };
 
+  const deleteMessages = async (ids) => {
+    if (!ids.length) return;
+
+    try {
+      setDeleting(true);
+      await axios.delete(`${API_BASE}/contact/messages/bulk-delete`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+        },
+        data: { ids },
+      });
+
+      setMessages((prev) => prev.filter((msg) => !ids.includes(msg._id)));
+      setSelectedMessageIds((prev) => prev.filter((id) => !ids.includes(id)));
+
+      if (selectedMessage && ids.includes(selectedMessage._id)) {
+        setSelectedMessage(null);
+        setReplyText("");
+      }
+
+      toast.success(
+        ids.length === 1 ? "Message deleted successfully" : "Messages deleted successfully"
+      );
+    } catch (error) {
+      console.error("Error deleting messages:", error);
+      toast.error(error?.response?.data?.error || "Failed to delete message(s)");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleDeleteOne = async (messageId) => {
+    const message = messages.find((item) => item._id === messageId);
+    const confirmed = window.confirm(
+      `Delete this message${message?.email ? ` from ${message.email}` : ""}?`
+    );
+
+    if (!confirmed) return;
+
+    await deleteMessages([messageId]);
+  };
+
+  const handleBulkDelete = async () => {
+    const confirmed = window.confirm(
+      `Delete ${selectedMessageIds.length} selected message${
+        selectedMessageIds.length === 1 ? "" : "s"
+      }?`
+    );
+
+    if (!confirmed) return;
+
+    await deleteMessages(selectedMessageIds);
+  };
+
+  const toggleMessageSelection = (messageId) => {
+    setSelectedMessageIds((prev) =>
+      prev.includes(messageId) ? prev.filter((id) => id !== messageId) : [...prev, messageId]
+    );
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('en-IN', {
       year: 'numeric',
@@ -99,6 +162,21 @@ export default function MessagesTab() {
     if (filter === "replied") return message.status === "replied";
     return true;
   });
+
+  const visibleMessageIds = filteredMessages.map((message) => message._id);
+  const allVisibleSelected =
+    visibleMessageIds.length > 0 &&
+    visibleMessageIds.every((messageId) => selectedMessageIds.includes(messageId));
+
+  const toggleSelectAllVisible = () => {
+    setSelectedMessageIds((prev) => {
+      if (allVisibleSelected) {
+        return prev.filter((id) => !visibleMessageIds.includes(id));
+      }
+
+      return Array.from(new Set([...prev, ...visibleMessageIds]));
+    });
+  };
 
   if (loading) {
     return (
@@ -125,8 +203,19 @@ export default function MessagesTab() {
               <option value="replied">Replied</option>
             </select>
           </div>
+          {selectedMessageIds.length > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={deleting}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+            >
+              <FaTrash />
+              {deleting ? "Deleting..." : `Delete Selected (${selectedMessageIds.length})`}
+            </button>
+          )}
           <button
             onClick={fetchMessages}
+            disabled={loading}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
             <FaEnvelope />
@@ -199,56 +288,73 @@ export default function MessagesTab() {
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
+            <div className="flex items-center gap-3 px-6 py-3 border-b border-gray-100 bg-gray-50">
+              <input
+                type="checkbox"
+                checked={allVisibleSelected}
+                onChange={toggleSelectAllVisible}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-600">Select all visible messages</span>
+            </div>
             {filteredMessages.map((message) => (
               <div key={message._id} className="p-6 hover:bg-gray-50">
                 <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-4 mb-3">
-                      <div className="flex items-center gap-2">
-                        <FaEnvelope className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-900">
-                          {message.email}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FaPhone className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">
-                          {message.phone}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <FaClock className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">
-                          {formatDate(message.createdAt)}
-                        </span>
-                      </div>
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        message.status === "pending" 
-                          ? "bg-yellow-100 text-yellow-800" 
-                          : "bg-green-100 text-green-800"
-                      }`}>
-                        {message.status === "pending" ? "Pending" : "Replied"}
-                      </span>
-                    </div>
-
-                    <div className="mb-4">
-                      <p className="text-gray-900">{message.message}</p>
-                    </div>
-
-                    {message.adminReply && (
-                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FaReply className="h-4 w-4 text-green-600" />
-                          <span className="text-sm font-medium text-green-800">
-                            Admin Reply
-                          </span>
-                          <span className="text-xs text-green-600">
-                            by {message.adminRepliedBy} on {formatDate(message.adminRepliedAt)}
+                  <div className="flex items-start gap-4 flex-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedMessageIds.includes(message._id)}
+                      onChange={() => toggleMessageSelection(message._id)}
+                      className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className="flex items-center gap-2">
+                          <FaEnvelope className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm font-medium text-gray-900">
+                            {message.email}
                           </span>
                         </div>
-                        <p className="text-green-900">{message.adminReply}</p>
+                        <div className="flex items-center gap-2">
+                          <FaPhone className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            {message.phone}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <FaClock className="h-4 w-4 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            {formatDate(message.createdAt)}
+                          </span>
+                        </div>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          message.status === "pending" 
+                            ? "bg-yellow-100 text-yellow-800" 
+                            : "bg-green-100 text-green-800"
+                        }`}>
+                          {message.status === "pending" ? "Pending" : "Replied"}
+                        </span>
                       </div>
-                    )}
+
+                      <div className="mb-4">
+                        <p className="text-gray-900">{message.message}</p>
+                      </div>
+
+                      {message.adminReply && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FaReply className="h-4 w-4 text-green-600" />
+                            <span className="text-sm font-medium text-green-800">
+                              Admin Reply
+                            </span>
+                            <span className="text-xs text-green-600">
+                              by {message.adminRepliedBy} on {formatDate(message.adminRepliedAt)}
+                            </span>
+                          </div>
+                          <p className="text-green-900">{message.adminReply}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 ml-4">
@@ -268,6 +374,14 @@ export default function MessagesTab() {
                         <FaReply />
                       </button>
                     )}
+                    <button
+                      onClick={() => handleDeleteOne(message._id)}
+                      disabled={deleting}
+                      className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded disabled:opacity-50"
+                      title="Delete"
+                    >
+                      <FaTrash />
+                    </button>
                   </div>
                 </div>
               </div>
