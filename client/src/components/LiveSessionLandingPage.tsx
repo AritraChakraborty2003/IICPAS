@@ -659,8 +659,6 @@ function LiveSessionLandingPage({
                 alt={landingPage.headline}
                 className="h-full w-full object-cover object-center"
               />
-              <div className="absolute inset-0 bg-black/20" />
-
               <div className="absolute inset-0 flex items-center justify-center px-4 sm:justify-start sm:px-10 lg:px-16">
                 <div className="mx-auto w-full max-w-[94vw] sm:mx-0 sm:max-w-5xl">
                   <div className="sm:hidden">
