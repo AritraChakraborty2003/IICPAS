@@ -1039,19 +1039,23 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const token = checkTokenValidity();
-    if (!token) return;
-
     try {
       setLandingHeroUploading(true);
-      const uploadedUrl = await uploadImageFile(file, token);
-      updateLandingPageField("mobileHeroImage", uploadedUrl);
-      Swal.fire("Success!", "Mobile hero image uploaded successfully!", "success");
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        updateLandingPageField("mobileHeroImage", event.target.result);
+      };
+      reader.readAsDataURL(file);
+      Swal.fire(
+        "Selected!",
+        "Mobile hero image will upload when you save the session.",
+        "success"
+      );
     } catch (error) {
-      console.error("Landing mobile hero image upload failed:", error);
+      console.error("Landing mobile hero image selection failed:", error);
       Swal.fire(
         "Error",
-        error.message || "Failed to upload mobile hero image",
+        error.message || "Failed to select mobile hero image",
         "error"
       );
     } finally {
@@ -2650,7 +2654,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                           className="w-full border px-4 py-3 rounded-lg bg-white"
                         />
                         <p className="mt-1 text-xs text-slate-500">
-                          JPG, PNG, GIF supported. The image is uploaded immediately.
+                          JPG, PNG, GIF supported. The image uploads when you save the session.
                         </p>
                       </div>
 
