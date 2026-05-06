@@ -757,6 +757,12 @@ function LiveSessionLandingPage({
           <div className="mt-4 grid gap-0 border-t border-slate-100 lg:mt-0 lg:grid-cols-[1fr_0.95fr]">
             <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
+                <div className="rounded-[1.5rem] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(15,23,42,0.05)]">
+                  <h1 className="max-w-4xl text-left text-3xl font-extrabold leading-tight tracking-[-0.03em] text-slate-950 sm:text-4xl lg:text-[3rem]">
+                    {landingPage.headline}
+                  </h1>
+                </div>
+
                 <div className={authorGridClass}>
                   {authorProfiles.map((profile, index) => {
                     const profileImage = profile.image || authorImage;
@@ -808,7 +814,7 @@ function LiveSessionLandingPage({
                     About this session
                   </p>
                   <div className="mt-3 space-y-3 text-sm leading-7 text-slate-600">
-                    {bodyParagraphs.slice(0, 3).map((paragraph, index) => (
+                    {bodyParagraphs.map((paragraph, index) => (
                       <p key={`${index}-${paragraph}`}>{paragraph}</p>
                     ))}
                     {!bodyParagraphs.length ? (
