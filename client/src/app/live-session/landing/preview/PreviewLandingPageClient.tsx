@@ -62,35 +62,40 @@ const getAuthorLayout = (landingPage = {}) =>
 const getLandingPageDefaults = (
   landingPage: Record<string, any> = {},
   session: SessionLike = {}
-) => ({
-  heroImage:
-    landingPage.heroImage ||
-    session.imageUrl ||
-    session.thumbnail ||
-    "/images/live-class.jpg",
-  authorProfiles: normalizeAuthorProfiles(landingPage, session),
-  authorLayout: getAuthorLayout(landingPage),
-  authorImage: normalizeAuthorProfiles(landingPage, session)[0]?.image || "",
-  headline: landingPage.headline || session.title || "",
-  subheadline:
-    landingPage.subheadline ||
-    session.subtitle ||
-    session.description ||
-    "",
-  bodyContent: landingPage.bodyContent || session.description || "",
-  authorName: normalizeAuthorProfiles(landingPage, session)[0]?.name || session.instructor || "",
-  authorCode: normalizeAuthorProfiles(landingPage, session)[0]?.code || "IICPA",
-  authorText: normalizeAuthorProfiles(landingPage, session)[0]?.text || "",
-  ctaText: landingPage.ctaText || "Get Free Preview",
-  formHeading: landingPage.formHeading || "Enroll Now",
-  formDescription:
-    landingPage.formDescription ||
-    "Share your details and our team will reach out shortly.",
-  formLabel: landingPage.formLabel || "Lead Form",
-  thankYouText:
-    landingPage.thankYouText ||
-    "Thank you. Our team will contact you shortly.",
-});
+) => {
+  const authorProfiles = normalizeAuthorProfiles(landingPage, session);
+  const firstProfile = authorProfiles[0] || buildAuthorProfile();
+
+  return {
+    heroImage:
+      landingPage.heroImage ||
+      session.imageUrl ||
+      session.thumbnail ||
+      "/images/live-class.jpg",
+    authorProfiles,
+    authorLayout: getAuthorLayout(landingPage),
+    authorImage: firstProfile.image || "",
+    headline: landingPage.headline || session.title || "",
+    subheadline:
+      landingPage.subheadline ||
+      session.subtitle ||
+      session.description ||
+      "",
+    bodyContent: landingPage.bodyContent || session.description || "",
+    authorName: firstProfile.name || session.instructor || "",
+    authorCode: firstProfile.code || "IICPA",
+    authorText: firstProfile.text || "",
+    ctaText: landingPage.ctaText || "Get Free Preview",
+    formHeading: landingPage.formHeading || "Enroll Now",
+    formDescription:
+      landingPage.formDescription ||
+      "Share your details and our team will reach out shortly.",
+    formLabel: landingPage.formLabel || "Lead Form",
+    thankYouText:
+      landingPage.thankYouText ||
+      "Thank you. Our team will contact you shortly.",
+  };
+};
 
 const getDraftSession = (draft: LiveSessionLandingDraft | null) => {
   const form = draft?.form || {};
