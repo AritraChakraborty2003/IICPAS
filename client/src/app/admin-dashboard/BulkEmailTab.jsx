@@ -386,6 +386,148 @@ export default function BulkEmailTab() {
         </button>
       </div>
 
+      <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Select Students
+            </h2>
+            <p className="text-sm text-gray-600">
+              Search and pick up to {MAX_STUDENTS_PER_SEND} students.
+            </p>
+          </div>
+          <div className="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700">
+            {selectedCount} selected
+          </div>
+        </div>
+
+        <div className="mb-4 flex gap-3">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={studentSearch}
+              onChange={(event) => setStudentSearch(event.target.value)}
+              placeholder="Search name, email, phone, location..."
+              className="w-full rounded-xl border border-gray-300 py-3 pl-10 pr-4 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={selectVisibleStudents}
+            className="rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            Select visible
+          </button>
+        </div>
+
+        <div className="mb-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={clearSelection}
+            disabled={selectedCount === 0}
+            className="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Clear selection
+          </button>
+          <div className="rounded-full bg-blue-100 px-3 py-1.5 text-sm font-medium text-blue-700">
+            Hard limit: {MAX_STUDENTS_PER_SEND}
+          </div>
+        </div>
+
+        {selectedCount > MAX_STUDENTS_PER_SEND ? (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AlertTriangle className="h-4 w-4" />
+            Please keep the selection at or below {MAX_STUDENTS_PER_SEND} students.
+          </div>
+        ) : null}
+
+        <div className="max-h-[560px] space-y-3 overflow-y-auto pr-1">
+          {loadingStudents ? (
+            <div className="rounded-xl border border-gray-200 bg-gray-50 p-6 text-center text-sm text-gray-600">
+              Loading students...
+            </div>
+          ) : filteredStudents.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-600">
+              {studentSearch ? "No students match your search." : "No students found."}
+            </div>
+          ) : (
+            filteredStudents.map((student) => {
+              const studentId = String(student._id);
+              const checked = selectedStudentIds.includes(studentId);
+              const disabled = !checked && !canSelectMore;
+
+              return (
+                <label
+                  key={studentId}
+                  className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition ${
+                    checked
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 bg-white hover:bg-gray-50"
+                  } ${disabled ? "cursor-not-allowed opacity-60" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    disabled={disabled}
+                    onChange={() => toggleStudentSelection(studentId)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-gray-900">
+                        {student.name || "Unnamed Student"}
+                      </span>
+                      {student.status ? (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                          {student.status}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="mt-1 text-sm text-gray-600">{student.email}</div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      {student.phone || "No phone"}{" "}
+                      {student.center ? `• ${student.center}` : ""}
+                      {student.location ? ` • ${student.location}` : ""}
+                    </div>
+                  </div>
+                </label>
+              );
+            })
+          )}
+        </div>
+
+        <div className="mt-4 rounded-2xl bg-blue-50 p-4">
+          <div className="mb-2 flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-blue-600" />
+            <span className="text-sm font-medium text-blue-900">Selected Students</span>
+          </div>
+          <p className="text-2xl font-bold text-blue-900">{selectedCount}</p>
+          <p className="text-sm text-blue-700">
+            {selectedCount > 0
+              ? `${selectedStudents.length} student${selectedStudents.length === 1 ? "" : "s"} ready to receive the message`
+              : "No students selected yet"}
+          </p>
+          {selectedStudents.length > 0 ? (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {selectedStudents.slice(0, 5).map((student) => (
+                <span
+                  key={student._id}
+                  className="rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-700 shadow-sm"
+                >
+                  {student.name || student.email}
+                </span>
+              ))}
+              {selectedStudents.length > 5 ? (
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-medium text-blue-700 shadow-sm">
+                  +{selectedStudents.length - 5} more
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         <div className="space-y-6 xl:col-span-2">
           <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -726,7 +868,7 @@ export default function BulkEmailTab() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">
