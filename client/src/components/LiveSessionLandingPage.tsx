@@ -310,9 +310,6 @@ function LiveSessionLandingPage({
     .split(/\n+/)
     .map((part) => part.trim())
     .filter(Boolean);
-  const heroHeadlineText =
-    (landingPage.headline || session?.title || "Live Session").trim() ||
-    "Live Session";
   const authorImage = landingPage.authorImage || landingPage.heroImage;
   const sessionPrice = Number(session?.price || 0);
   const registerNowLabel =
@@ -673,19 +670,6 @@ function LiveSessionLandingPage({
                         {landingPage.formLabel || "IICPA"}
                       </div>
 
-                      <div className="space-y-3">
-                        <h1 className="mx-auto max-w-[12ch] text-[clamp(1.18rem,5.6vw,1.62rem)] font-black leading-[1.02] tracking-[-0.05em] text-white drop-shadow-[0_2px_8px_rgba(15,23,42,0.32)]">
-                          {heroHeadlineText}
-                        </h1>
-                        <div className="mx-auto max-w-[25ch] rounded-2xl border border-white/10 bg-white/5 px-3 py-2 shadow-[0_10px_24px_rgba(15,23,42,0.16)]">
-                          <p className="text-[clamp(0.74rem,3.1vw,0.88rem)] font-medium leading-[1.35] tracking-[-0.02em] text-cyan-100">
-                            {landingPage.subheadline ||
-                              bodyParagraphs[0] ||
-                              "Register your interest and get updates about this live session."}
-                          </p>
-                        </div>
-                      </div>
-
                       <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/12 px-3 py-1.5 text-[10px] font-medium text-emerald-100">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
                         {landingPage.ctaText || "Get Free Preview"}
@@ -694,12 +678,6 @@ function LiveSessionLandingPage({
                   </div>
 
                   <div className="hidden sm:flex sm:flex-col sm:items-start sm:gap-4">
-                    <div className="flex w-auto flex-row items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.25)]">
-                      <span className="bg-sky-800 px-6 py-3 text-4xl font-extrabold leading-none text-white lg:text-5xl xl:text-6xl">
-                        {heroHeadlineText}
-                      </span>
-                    </div>
-
                     <div className="flex w-auto flex-row items-stretch overflow-hidden rounded-lg shadow-[0_16px_40px_rgba(15,23,42,0.22)]">
                       <span className="bg-sky-800 px-5 py-2.5 text-lg font-bold leading-none text-white lg:px-6 lg:py-3 lg:text-xl xl:text-2xl">
                         {landingPage.formLabel || "IICPA"}
