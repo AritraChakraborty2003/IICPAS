@@ -24,6 +24,13 @@ import { FaXTwitter } from "react-icons/fa6";
 type LandingPageConfig = {
   heroImage?: string;
   authorImage?: string;
+  authorProfiles?: Array<{
+    image?: string;
+    name?: string;
+    code?: string;
+    text?: string;
+  }>;
+  authorLayout?: "stack" | "two-per-line";
   headline?: string;
   subheadline?: string;
   bodyContent?: string;
@@ -110,12 +117,69 @@ const ALLOWED_EMAIL_REGEX =
 const normalizeMobileNumber = (value: string) =>
   value.replace(/\D/g, "").slice(0, 10);
 
+const buildAuthorProfile = (
+  profile: Partial<{
+    image?: string;
+    name?: string;
+    code?: string;
+    text?: string;
+    authorImage?: string;
+    authorName?: string;
+    authorCode?: string;
+    authorText?: string;
+  }> = {},
+  fallback: {
+    image?: string;
+    name?: string;
+    code?: string;
+    text?: string;
+  } = {}
+) => ({
+  image: profile.image || profile.authorImage || fallback.image || "",
+  name: profile.name || profile.authorName || fallback.name || "",
+  code: profile.code || profile.authorCode || fallback.code || "IICPA",
+  text: profile.text || profile.authorText || fallback.text || "",
+});
+
+const normalizeAuthorProfiles = (
+  landingPage: LandingPageConfig | Record<string, any> = {},
+  session: LiveSessionRecord | null = null
+) => {
+  const fallback = {
+    image:
+      landingPage.authorImage ||
+      session?.imageUrl ||
+      session?.thumbnail ||
+      "",
+    name: landingPage.authorName || session?.instructor || "",
+    code: landingPage.authorCode || "IICPA",
+    text: landingPage.authorText || "",
+  };
+
+  const profiles = Array.isArray(landingPage.authorProfiles)
+    ? landingPage.authorProfiles.map((profile) =>
+        buildAuthorProfile(profile, fallback)
+      )
+    : [];
+
+  if (profiles.length === 0) {
+    profiles.push(buildAuthorProfile({}, fallback));
+  }
+
+  return profiles;
+};
+
 const resolveLandingPage = (
   session: LiveSessionRecord | null,
   draftLandingPage?: LandingPageConfig | null,
   overrideTitle?: string
 ) => {
   const base = session?.landingPage || {};
+  const authorProfiles = normalizeAuthorProfiles(
+    draftLandingPage || base,
+    session
+  );
+  const firstProfile = authorProfiles[0] || buildAuthorProfile();
   return {
     heroImage:
       draftLandingPage?.heroImage ||
@@ -123,12 +187,13 @@ const resolveLandingPage = (
       session?.imageUrl ||
       session?.thumbnail ||
       "/images/live-class.jpg",
-    authorImage:
-      draftLandingPage?.authorImage ||
-      base.authorImage ||
-      session?.imageUrl ||
-      session?.thumbnail ||
-      "",
+    authorImage: firstProfile.image,
+    authorProfiles,
+    authorLayout:
+      draftLandingPage?.authorLayout === "two-per-line" ||
+      base.authorLayout === "two-per-line"
+        ? "two-per-line"
+        : "stack",
     headline:
       draftLandingPage?.headline ||
       base.headline ||
@@ -146,15 +211,10 @@ const resolveLandingPage = (
       base.bodyContent ||
       session?.description ||
       "This landing page is designed to capture leads for your live session and guide prospects into the right funnel.",
-    authorName:
-      draftLandingPage?.authorName ||
-      base.authorName ||
-      session?.instructor ||
-      "IICPA Faculty",
-    authorCode: draftLandingPage?.authorCode || base.authorCode || "IICPA",
+    authorName: firstProfile.name || "IICPA Faculty",
+    authorCode: firstProfile.code || "IICPA",
     authorText:
-      draftLandingPage?.authorText ||
-      base.authorText ||
+      firstProfile.text ||
       "Trusted by learners looking for practical finance and accounting guidance.",
     ctaText: draftLandingPage?.ctaText || base.ctaText || "Get Free Preview",
     formHeading:
@@ -310,6 +370,13 @@ function LiveSessionLandingPage({
     .split(/\n+/)
     .map((part) => part.trim())
     .filter(Boolean);
+  const authorProfiles = landingPage.authorProfiles?.length
+    ? landingPage.authorProfiles
+    : normalizeAuthorProfiles(landingPage, session);
+  const authorGridClass =
+    landingPage.authorLayout === "two-per-line"
+      ? "grid grid-cols-1 gap-4 sm:grid-cols-2"
+      : "grid grid-cols-1 gap-4";
   const authorImage = landingPage.authorImage || landingPage.heroImage;
   const sessionPrice = Number(session?.price || 0);
   const registerNowLabel =
@@ -690,45 +757,50 @@ function LiveSessionLandingPage({
           <div className="mt-4 grid gap-0 border-t border-slate-100 lg:mt-0 lg:grid-cols-[1fr_0.95fr]">
             <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
               <div className="space-y-5">
-                <div className="rounded-[1.2rem] bg-white p-3.5 sm:p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-                    CA Profile
-                  </p>
-                  <div className="mt-2.5 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
-                    <div className="mx-auto h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:mx-0 sm:h-20 sm:w-20">
-                      {authorImage ? (
-                        <img
-                          src={authorImage}
-                          alt={landingPage.authorName || "CA profile"}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-sm font-bold text-slate-500">
-                          CA
-                        </div>
-                      )}
-                    </div>
+                <div className={authorGridClass}>
+                  {authorProfiles.map((profile, index) => {
+                    const profileImage = profile.image || authorImage;
+                    return (
+                      <div key={`${profile.name || "profile"}-${index}`} className="rounded-[1.2rem] bg-white p-3.5 sm:p-4">
+                        <div className="mt-0 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+                          <div className="mx-auto h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:mx-0 sm:h-20 sm:w-20">
+                            {profileImage ? (
+                              <img
+                                src={profileImage}
+                                alt={profile.name || "CA profile"}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sky-100 to-emerald-100 text-sm font-bold text-slate-500">
+                                CA
+                              </div>
+                            )}
+                          </div>
 
-                    <div className="text-center sm:text-left">
-                      <p className="text-base font-bold leading-tight text-slate-900 sm:text-lg">
-                        {landingPage.authorName}
-                      </p>
-                      <div className="mt-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-semibold text-sky-800 sm:text-[10px]">
-                        {landingPage.authorCode}
+                          <div className="text-center sm:text-left">
+                            <p className="text-base font-bold leading-tight text-slate-900 sm:text-lg">
+                              {profile.name || "CA Name"}
+                            </p>
+                            <div className="mt-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-semibold text-sky-800 sm:text-[10px]">
+                              {profile.code || "CA"}
+                            </div>
+                            <p
+                              className="mt-1.5 text-[10px] leading-4 text-slate-600 sm:text-[11px] sm:leading-5"
+                              style={{
+                                display: "-webkit-box",
+                                WebkitBoxOrient: "vertical",
+                                WebkitLineClamp: 2,
+                                overflow: "hidden",
+                              }}
+                            >
+                              {profile.text ||
+                                "Short CA description or trust statement."}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <p
-                        className="mt-1.5 text-[10px] leading-4 text-slate-600 sm:text-[11px] sm:leading-5"
-                        style={{
-                          display: "-webkit-box",
-                          WebkitBoxOrient: "vertical",
-                          WebkitLineClamp: 2,
-                          overflow: "hidden",
-                        }}
-                      >
-                        {landingPage.authorText}
-                      </p>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
 
                 <div className="rounded-[1.5rem] bg-white p-5">

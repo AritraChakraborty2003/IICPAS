@@ -54,6 +54,41 @@ const CONFIRMED_BOOKING_STATUSES = new Set(["booked", "approved"]);
 const getBookingLiveSessionId = (booking) =>
   String(booking?.liveSessionId?._id || booking?.liveSessionId || "");
 
+const buildAuthorProfile = (profile = {}, fallback = {}) => ({
+  image: profile.image || profile.authorImage || fallback.image || "",
+  name: profile.name || profile.authorName || fallback.name || "",
+  code: profile.code || profile.authorCode || fallback.code || "IICPA",
+  text: profile.text || profile.authorText || fallback.text || "",
+});
+
+const normalizeAuthorProfiles = (landingPage = {}, session = {}) => {
+  const fallback = {
+    image:
+      landingPage.authorImage ||
+      session.imageUrl ||
+      session.thumbnail ||
+      "",
+    name: landingPage.authorName || session.instructor || "",
+    code: landingPage.authorCode || "IICPA",
+    text: landingPage.authorText || "",
+  };
+
+  const profiles = Array.isArray(landingPage.authorProfiles)
+    ? landingPage.authorProfiles.map((profile) =>
+        buildAuthorProfile(profile, fallback)
+      )
+    : [];
+
+  if (profiles.length === 0) {
+    profiles.push(buildAuthorProfile({}, fallback));
+  }
+
+  return profiles;
+};
+
+const getAuthorLayout = (landingPage = {}) =>
+  landingPage.authorLayout === "two-per-line" ? "two-per-line" : "stack";
+
 const extractCourses = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.courses)) return payload.courses;
@@ -83,11 +118,19 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
     session.imageUrl ||
     session.thumbnail ||
     "/images/live-class.jpg",
+  authorProfiles: normalizeAuthorProfiles(landingPage, session),
+  authorLayout: getAuthorLayout(landingPage),
   authorImage:
-    landingPage.authorImage ||
-    session.imageUrl ||
-    session.thumbnail ||
-    "",
+    buildAuthorProfile(
+      normalizeAuthorProfiles(landingPage, session)[0] || {},
+      {
+        image:
+          landingPage.authorImage ||
+          session.imageUrl ||
+          session.thumbnail ||
+          "",
+      }
+    ).image,
   headline: landingPage.headline || session.title || "",
   subheadline:
     landingPage.subheadline ||
@@ -95,9 +138,9 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
     session.description ||
     "",
   bodyContent: landingPage.bodyContent || session.description || "",
-  authorName: landingPage.authorName || session.instructor || "",
-  authorCode: landingPage.authorCode || "IICPA",
-  authorText: landingPage.authorText || "",
+  authorName: normalizeAuthorProfiles(landingPage, session)[0]?.name || session.instructor || "",
+  authorCode: normalizeAuthorProfiles(landingPage, session)[0]?.code || "IICPA",
+  authorText: normalizeAuthorProfiles(landingPage, session)[0]?.text || "",
   ctaText: landingPage.ctaText || "Get Free Preview",
   formHeading: landingPage.formHeading || "Enroll Now",
   formDescription:
@@ -119,7 +162,10 @@ const getLandingPageDefaults = (landingPage = {}, session = {}) => ({
 const getLandingPageDraft = (form, heroImageFallback = "") => ({
   heroImage:
     form.landingPage.heroImage || heroImageFallback || form.thumbnail || "",
+  authorProfiles: normalizeAuthorProfiles(form.landingPage, form),
+  authorLayout: getAuthorLayout(form.landingPage),
   authorImage:
+    normalizeAuthorProfiles(form.landingPage, form)[0]?.image ||
     form.landingPage.authorImage ||
     form.landingPage.heroImage ||
     heroImageFallback ||
@@ -130,10 +176,9 @@ const getLandingPageDraft = (form, heroImageFallback = "") => ({
     form.landingPage.subheadline || form.description || "",
   bodyContent:
     form.landingPage.bodyContent || form.description || "",
-  authorName:
-    form.landingPage.authorName || form.instructor || "",
-  authorCode: form.landingPage.authorCode || "IICPA",
-  authorText: form.landingPage.authorText || "",
+  authorName: normalizeAuthorProfiles(form.landingPage, form)[0]?.name || form.instructor || "",
+  authorCode: normalizeAuthorProfiles(form.landingPage, form)[0]?.code || "IICPA",
+  authorText: normalizeAuthorProfiles(form.landingPage, form)[0]?.text || "",
   ctaText: form.landingPage.ctaText || "Get Free Preview",
   formHeading: form.landingPage.formHeading || "Enroll Now",
   formDescription:
@@ -305,7 +350,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
   const [landingHeroUploading, setLandingHeroUploading] = useState(false);
-  const [landingAuthorUploading, setLandingAuthorUploading] = useState(false);
+  const [authorProfileUploadingIndex, setAuthorProfileUploadingIndex] = useState(null);
   const { hasPermission, user } = useAuth();
   const landingDraftKey = editId
     ? buildLiveSessionLandingDraftKey(editId)
@@ -860,7 +905,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     setUploadedImage(null);
     setImagePreview("");
     setLandingHeroUploading(false);
-    setLandingAuthorUploading(false);
+    setAuthorProfileUploadingIndex(null);
   };
 
   const updateLandingPageField = (field, value) => {
@@ -869,6 +914,88 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       landingPage: {
         ...current.landingPage,
         [field]: value,
+      },
+    }));
+  };
+
+  const syncAuthorProfilesToLandingPage = (profiles, layout) => {
+    const nextProfiles = profiles.length > 0 ? profiles : [buildAuthorProfile()];
+    const primary = nextProfiles[0] || buildAuthorProfile();
+    setForm((current) => ({
+      ...current,
+      landingPage: {
+        ...current.landingPage,
+        authorProfiles: nextProfiles,
+        authorLayout: layout || current.landingPage.authorLayout || "stack",
+        authorImage: primary.image || "",
+        authorName: primary.name || "",
+        authorCode: primary.code || "IICPA",
+        authorText: primary.text || "",
+      },
+    }));
+  };
+
+  const updateAuthorProfileField = (index, field, value) => {
+    setForm((current) => {
+      const profiles = normalizeAuthorProfiles(current.landingPage, current);
+      const nextProfiles = profiles.map((profile, profileIndex) =>
+        profileIndex === index ? { ...profile, [field]: value } : profile
+      );
+      const primary = nextProfiles[0] || buildAuthorProfile();
+      return {
+        ...current,
+        landingPage: {
+          ...current.landingPage,
+          authorProfiles: nextProfiles,
+          authorImage: primary.image || "",
+          authorName: primary.name || "",
+          authorCode: primary.code || "IICPA",
+          authorText: primary.text || "",
+        },
+      };
+    });
+  };
+
+  const addAuthorProfile = () => {
+    setForm((current) => {
+      const profiles = normalizeAuthorProfiles(current.landingPage, current);
+      const nextProfiles = [...profiles, buildAuthorProfile()];
+      return {
+        ...current,
+        landingPage: {
+          ...current.landingPage,
+          authorProfiles: nextProfiles,
+        },
+      };
+    });
+  };
+
+  const removeAuthorProfile = (index) => {
+    setForm((current) => {
+      const profiles = normalizeAuthorProfiles(current.landingPage, current);
+      const nextProfiles = profiles.filter((_, profileIndex) => profileIndex !== index);
+      const normalized = nextProfiles.length > 0 ? nextProfiles : [buildAuthorProfile()];
+      const primary = normalized[0] || buildAuthorProfile();
+      return {
+        ...current,
+        landingPage: {
+          ...current.landingPage,
+          authorProfiles: normalized,
+          authorImage: primary.image || "",
+          authorName: primary.name || "",
+          authorCode: primary.code || "IICPA",
+          authorText: primary.text || "",
+        },
+      };
+    });
+  };
+
+  const setAuthorLayout = (layout) => {
+    setForm((current) => ({
+      ...current,
+      landingPage: {
+        ...current.landingPage,
+        authorLayout: layout,
       },
     }));
   };
@@ -898,7 +1025,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     }
   };
 
-  const handleLandingAuthorImageUpload = async (e) => {
+  const handleAuthorProfileImageUpload = async (index, e) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -906,9 +1033,9 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     if (!token) return;
 
     try {
-      setLandingAuthorUploading(true);
+      setAuthorProfileUploadingIndex(index);
       const uploadedUrl = await uploadImageFile(file, token);
-      updateLandingPageField("authorImage", uploadedUrl);
+      updateAuthorProfileField(index, "image", uploadedUrl);
       Swal.fire("Success!", "CA card image uploaded successfully!", "success");
     } catch (error) {
       console.error("Landing author image upload failed:", error);
@@ -918,7 +1045,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
         "error"
       );
     } finally {
-      setLandingAuthorUploading(false);
+      setAuthorProfileUploadingIndex(null);
       e.target.value = "";
     }
   };
@@ -2466,107 +2593,185 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <label className="block font-semibold mb-1">
-                      CA Card
+                      CA Profiles
                     </label>
                     <p className="text-sm text-slate-500">
-                      Add the image and CA details that appear on the left side of the form.
+                      Add one or more CA profiles and choose how they appear in the preview.
                     </p>
                   </div>
-                  {landingAuthorUploading ? (
-                    <span className="text-sm font-medium text-slate-500">
-                      Uploading...
-                    </span>
-                  ) : null}
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                      value={form.landingPage.authorLayout || "stack"}
+                      onChange={(e) => setAuthorLayout(e.target.value)}
+                    >
+                      <option value="stack">One per line</option>
+                      <option value="two-per-line">Two per line</option>
+                    </select>
+                    <button
+                      type="button"
+                      className="rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white"
+                      onClick={addAuthorProfile}
+                    >
+                      Add Profile
+                    </button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Upload CA Image File
-                    </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleLandingAuthorImageUpload}
-                      className="w-full border px-4 py-3 rounded-lg bg-white"
-                    />
-                    <p className="mt-1 text-xs text-slate-500">
-                      JPG, PNG, GIF supported. The image uploads immediately.
-                    </p>
-                  </div>
+                <div className="mt-4 space-y-4">
+                  {normalizeAuthorProfiles(form.landingPage, form).map((profile, index) => (
+                    <div
+                      key={`author-profile-${index}`}
+                      className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <p className="font-semibold text-slate-900">
+                          Profile {index + 1}
+                        </p>
+                        {normalizeAuthorProfiles(form.landingPage, form).length > 1 ? (
+                          <button
+                            type="button"
+                            className="text-sm font-medium text-red-600"
+                            onClick={() => removeAuthorProfile(index)}
+                          >
+                            Remove
+                          </button>
+                        ) : null}
+                      </div>
 
-                  <div>
-                    <label className="block font-semibold mb-2">
-                      CA Image URL
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full border px-4 py-3 rounded-lg bg-white"
-                      placeholder="https://example.com/ca-photo.jpg"
-                      value={form.landingPage.authorImage || ""}
-                      onChange={(e) =>
-                        updateLandingPageField("authorImage", e.target.value)
-                      }
-                    />
-                  </div>
-
-                  {(form.landingPage.authorImage ||
-                    form.landingPage.heroImage) && (
-                    <div className="lg:col-span-2">
-                      <label className="block font-semibold mb-2">
-                        CA Card Preview
-                      </label>
-                      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
-                          <div className="mx-auto h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-white sm:mx-0 sm:h-20 sm:w-20">
-                            <img
-                              src={
-                                form.landingPage.authorImage ||
-                                form.landingPage.heroImage
-                              }
-                              alt="CA card preview"
-                              className="h-full w-full object-cover"
-                              onError={(e) => {
-                                e.target.style.display = "none";
-                              }}
-                            />
-                          </div>
-
-                          <div className="text-center sm:text-left">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-slate-500">
-                              CA Profile
+                      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                        <div>
+                          <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Upload Image File
+                          </label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleAuthorProfileImageUpload(index, e)}
+                            className="w-full rounded-lg border px-4 py-3 bg-white"
+                          />
+                          <p className="mt-1 text-xs text-slate-500">
+                            JPG, PNG, GIF supported. The image uploads immediately.
+                          </p>
+                          {authorProfileUploadingIndex === index ? (
+                            <p className="mt-1 text-xs font-medium text-slate-500">
+                              Uploading...
                             </p>
-                            <h3 className="mt-1 text-base font-bold leading-tight text-slate-900">
-                              {form.landingPage.authorName || "CA Name"}
-                            </h3>
-                            <div className="mt-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-semibold text-sky-800">
-                              {form.landingPage.authorCode || "CA"}
+                          ) : null}
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold mb-2">
+                            Image URL
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-lg border px-4 py-3 bg-white"
+                            placeholder="https://example.com/ca-photo.jpg"
+                            value={profile.image || ""}
+                            onChange={(e) =>
+                              updateAuthorProfileField(index, "image", e.target.value)
+                            }
+                          />
+                        </div>
+
+                        {(profile.image || profile.name || profile.text) && (
+                          <div className="lg:col-span-2">
+                            <label className="block font-semibold mb-2">
+                              Profile Preview
+                            </label>
+                            <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-3">
+                                <div className="mx-auto h-16 w-16 overflow-hidden rounded-lg border border-slate-200 bg-slate-100 sm:mx-0 sm:h-20 sm:w-20">
+                                  {(profile.image || profile.authorImage) ? (
+                                    <img
+                                      src={profile.image || profile.authorImage}
+                                      alt="CA card preview"
+                                      className="h-full w-full object-cover"
+                                      onError={(e) => {
+                                        e.target.style.display = "none";
+                                      }}
+                                    />
+                                  ) : null}
+                                </div>
+
+                                <div className="text-center sm:text-left">
+                                  <h3 className="text-base font-bold leading-tight text-slate-900">
+                                    {profile.name || "CA Name"}
+                                  </h3>
+                                  <div className="mt-1.5 inline-flex rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-semibold text-sky-800">
+                                    {profile.code || "CA"}
+                                  </div>
+                                  <p
+                                    className="mt-1.5 text-[10px] leading-4 text-slate-600 sm:text-[11px] sm:leading-5"
+                                    style={{
+                                      display: "-webkit-box",
+                                      WebkitBoxOrient: "vertical",
+                                      WebkitLineClamp: 2,
+                                      overflow: "hidden",
+                                    }}
+                                  >
+                                    {profile.text ||
+                                      "Short CA description or trust statement."}
+                                  </p>
+                                </div>
+                              </div>
                             </div>
-                            <p
-                              className="mt-1.5 text-[10px] leading-4 text-slate-600 sm:text-[11px] sm:leading-5"
-                              style={{
-                                display: "-webkit-box",
-                                WebkitBoxOrient: "vertical",
-                                WebkitLineClamp: 2,
-                                overflow: "hidden",
-                              }}
-                            >
-                              {form.landingPage.authorText ||
-                                "Short CA description or trust statement."}
-                            </p>
                           </div>
+                        )}
+
+                        <div>
+                          <label className="block font-semibold mb-2">
+                            CA Name
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-lg border px-4 py-3 bg-white"
+                            placeholder="CA Name"
+                            value={profile.name || ""}
+                            onChange={(e) =>
+                              updateAuthorProfileField(index, "name", e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-semibold mb-2">
+                            CA Code
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full rounded-lg border px-4 py-3 bg-white"
+                            placeholder="IICPA"
+                            value={profile.code || ""}
+                            onChange={(e) =>
+                              updateAuthorProfileField(index, "code", e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div className="lg:col-span-2">
+                          <label className="block font-semibold mb-2">
+                            CA Description
+                          </label>
+                          <textarea
+                            className="w-full min-h-24 rounded-lg border px-4 py-3 bg-white"
+                            placeholder="A short CA bio or trust statement"
+                            value={profile.text || ""}
+                            onChange={(e) =>
+                              updateAuthorProfileField(index, "text", e.target.value)
+                            }
+                          />
                         </div>
                       </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               </div>
 
               {[
                 { field: "headline", label: "Hero Headline", type: "text" },
                 { field: "subheadline", label: "Hero Subheadline", type: "text" },
-                { field: "authorName", label: "CA Name", type: "text" },
-                { field: "authorCode", label: "CA Code", type: "text" },
                 { field: "ctaText", label: "CTA Text", type: "text" },
                 { field: "formHeading", label: "Form Heading", type: "text" },
                 { field: "formLabel", label: "Form Label", type: "text" },
