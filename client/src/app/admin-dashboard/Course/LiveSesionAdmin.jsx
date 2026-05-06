@@ -2799,16 +2799,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
               </div>
 
               <div className="lg:col-span-2">
-                <label className="block font-semibold mb-2">CA Description</label>
-                <textarea
-                  className="w-full border px-4 py-3 rounded-lg bg-gray-50 min-h-24"
-                  value={form.landingPage.authorText || ""}
-                  placeholder="A short CA bio or trust statement"
-                  onChange={(e) => updateLandingPageField("authorText", e.target.value)}
-                />
-              </div>
-
-              <div className="lg:col-span-2">
                 <label className="block font-semibold mb-2">Form Description</label>
                 <textarea
                   className="w-full border px-4 py-3 rounded-lg bg-gray-50 min-h-24"
