@@ -2654,9 +2654,14 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                           onChange={handleLandingMobileHeroImageUpload}
                           className="w-full border px-4 py-3 rounded-lg bg-white"
                         />
-                      <p className="mt-1 text-xs text-slate-500">
+                        <p className="mt-1 text-xs text-slate-500">
                           JPG, PNG, GIF supported. The image uploads immediately.
                         </p>
+                        {mobileHeroUploading ? (
+                          <p className="mt-1 text-xs font-medium text-slate-500">
+                            Uploading...
+                          </p>
+                        ) : null}
                       </div>
 
                       <div>
@@ -2673,12 +2678,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                           }
                         />
                       </div>
-
-                      {mobileHeroUploading ? (
-                        <p className="mt-1 text-xs font-medium text-slate-500">
-                          Uploading...
-                        </p>
-                      ) : null}
 
                       {form.landingPage.mobileHeroImage && (
                         <div className="lg:col-span-2">
