@@ -968,11 +968,18 @@ export default function GSTEInvoiceReplica({
                         </div>
                       </div>
                     )}
-                cancellation reason, and submit to simulate the cancelled state.
+                    <div className="mt-8 flex items-center justify-between bg-[#1d5d83] px-4 py-2 text-white">
+                      <div className="text-[11px] lg:text-[12px]">Version 1.03</div>
+                      <div className="text-[11px] lg:text-[12px]">
+                        © 2022 - Powered By National Informatics Centre.
+                      </div>
+                    </div>
+                  </section>
+                </div>
               </div>
-            </section>
+            </main>
           </div>
-        </main>
+        </div>
       </div>
     </div>
   );
