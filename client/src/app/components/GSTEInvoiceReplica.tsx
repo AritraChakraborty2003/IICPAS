@@ -68,7 +68,7 @@ export default function GSTEInvoiceReplica({
   };
 
   const renderHomeScreen = () => (
-    <div className="min-h-screen bg-[#eef6fb]">
+    <div className="min-h-screen bg-gradient-to-b from-[#eef8fd] via-[#f6fbfe] to-[#edf5fb]">
       <div className="max-w-[1840px] mx-auto px-4 pt-6 pb-4">
         <div className="flex items-center justify-between gap-4 mb-2">
           <div className="flex items-center gap-4">
@@ -95,8 +95,8 @@ export default function GSTEInvoiceReplica({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-cyan-100 bg-[#d9eef7] p-4 shadow-sm">
-          <div className="rounded-xl border-l-4 border-cyan-700 bg-[#d9eef7] px-4 py-3 text-slate-800">
+        <div className="rounded-2xl border border-cyan-100 bg-[#e0f2fa] p-4 shadow-sm">
+          <div className="rounded-xl border-l-4 border-cyan-700 bg-[#e0f2fa] px-4 py-3 text-slate-800">
             <div className="text-base leading-6">
               Go to Login under Menu and Use the following Credentials to login:
             </div>
@@ -104,33 +104,40 @@ export default function GSTEInvoiceReplica({
             <div>Password: Fin@123</div>
           </div>
 
-          <div className="mt-3 overflow-hidden rounded-2xl border border-white/80 bg-white/75 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-            <div className="bg-[#1f6793] px-6 py-6 text-white">
+          <div className="mt-3 overflow-hidden rounded-2xl border border-white/80 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+            <div className="relative bg-[#2a6890] px-6 py-6 text-white">
+              <div className="absolute inset-0 bg-white/18" />
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-[#1f6793] font-bold text-lg">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/85 text-[#1f6793] font-bold text-lg">
                     🇮🇳
                   </div>
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-90">
+                    <div className="text-xs font-bold uppercase tracking-[0.2em] opacity-70">
                       Goods and Services Tax
                     </div>
-                    <div className="text-2xl font-semibold">
+                    <div className="text-2xl font-semibold opacity-90">
                       e - INVOICE SYSTEM
                     </div>
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold">e-Invoice 1 Portal</div>
+                  <div className="text-3xl font-bold opacity-90">
+                    e-Invoice 1 Portal
+                  </div>
                 </div>
                 <div className="flex items-center gap-6 text-right">
                   <div>
-                    <div className="text-sm font-semibold">NATION TAX MARKET</div>
-                    <div className="text-xs opacity-80">GST</div>
+                    <div className="text-sm font-semibold opacity-75">
+                      NATION TAX MARKET
+                    </div>
+                    <div className="text-xs opacity-60">GST</div>
                   </div>
                   <div>
-                    <div className="text-sm font-semibold">एनआईसी NIC</div>
-                    <div className="text-xs opacity-80">
+                    <div className="text-sm font-semibold opacity-75">
+                      एनआईसी NIC
+                    </div>
+                    <div className="text-xs opacity-60">
                       National Informatics Centre
                     </div>
                   </div>
@@ -138,15 +145,15 @@ export default function GSTEInvoiceReplica({
               </div>
             </div>
 
-            <div className="flex flex-wrap items-stretch border-b border-slate-200 bg-white">
+            <div className="flex flex-wrap items-stretch border-b border-slate-200 bg-white/85">
               {["Home", "Laws", "Help", "Search", "Contact Us", "Registration", "Statistics"].map(
                 (tab, index) => (
                   <button
                     key={tab}
                     className={`min-w-[140px] flex-1 border-r border-slate-200 px-6 py-5 text-sm font-medium transition-colors ${
                       index === 0
-                        ? "bg-[#cfe0ff] text-white"
-                        : "bg-white text-slate-500 hover:bg-slate-50"
+                        ? "bg-[#cfe2ff] text-white"
+                        : "bg-white/90 text-slate-400 hover:bg-slate-50"
                     }`}
                   >
                     {tab}
@@ -155,7 +162,7 @@ export default function GSTEInvoiceReplica({
               )}
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="min-w-[140px] border border-red-200 bg-white px-6 py-5 text-sm font-medium text-slate-400 hover:bg-red-50"
+                className="min-w-[140px] border border-red-200 bg-white/90 px-6 py-5 text-sm font-medium text-slate-400 hover:bg-red-50"
               >
                 LOGIN
               </button>
@@ -165,6 +172,7 @@ export default function GSTEInvoiceReplica({
               <div className="flex flex-col gap-4 xl:flex-row">
                 <div className="flex-1">
                   <div className="relative overflow-hidden rounded-xl bg-[#edf6fb] min-h-[640px] border border-slate-100">
+                    <div className="absolute inset-0 bg-white/52 backdrop-blur-[1px]" />
                     <div className="absolute inset-0 opacity-20">
                       <div className="grid grid-cols-12 gap-3 h-full p-6">
                         {Array.from({ length: 120 }).map((_, index) => (
@@ -180,22 +188,22 @@ export default function GSTEInvoiceReplica({
                       <div className="relative w-full max-w-[1100px]">
                         <div className="flex items-center justify-between gap-4">
                           <div className="absolute left-0 top-20 hidden xl:block">
-                            <div className="rounded-full border-8 border-sky-100 bg-white/95 p-5 shadow-lg">
-                              <div className="text-6xl">🧾</div>
+                            <div className="rounded-full border-8 border-sky-100 bg-white/75 p-5 shadow-lg">
+                              <div className="text-6xl opacity-70">🧾</div>
                             </div>
                           </div>
 
                           <div className="absolute right-20 top-0 hidden xl:block">
-                            <div className="rounded-full border-8 border-sky-100 bg-white/95 p-5 shadow-lg">
-                              <div className="text-5xl">🖥️</div>
+                            <div className="rounded-full border-8 border-sky-100 bg-white/75 p-5 shadow-lg">
+                              <div className="text-5xl opacity-70">🖥️</div>
                             </div>
                           </div>
                         </div>
 
                         <div className="mx-auto flex w-full max-w-[720px] items-center justify-center">
-                          <div className="relative flex h-[320px] w-[320px] items-center justify-center rounded-full bg-[#33a8dd] shadow-[0_30px_90px_rgba(37,99,235,0.2)]">
-                            <div className="flex h-[150px] w-[190px] items-center justify-center rounded-[18px] bg-[#23292f] shadow-inner">
-                              <div className="rounded-xl bg-white px-8 py-6 text-[34px] font-light text-slate-700 shadow-sm">
+                          <div className="relative flex h-[320px] w-[320px] items-center justify-center rounded-full bg-[#33a8dd]/95 shadow-[0_30px_90px_rgba(37,99,235,0.2)]">
+                            <div className="flex h-[150px] w-[190px] items-center justify-center rounded-[18px] bg-[#23292f]/95 shadow-inner">
+                              <div className="rounded-xl bg-white px-8 py-6 text-[34px] font-light text-slate-700 shadow-sm opacity-95">
                                 E-Invoice
                               </div>
                             </div>
@@ -215,30 +223,30 @@ export default function GSTEInvoiceReplica({
 
                         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_300px]">
                           <div className="flex flex-wrap gap-6">
-                            <div className="flex h-24 w-24 items-center justify-center rounded-full border-8 border-sky-100 bg-white shadow-md">
-                              <div className="text-4xl">📄</div>
+                            <div className="flex h-24 w-24 items-center justify-center rounded-full border-8 border-sky-100 bg-white/80 shadow-md">
+                              <div className="text-4xl opacity-70">📄</div>
                             </div>
-                            <div className="flex h-28 w-[220px] flex-col justify-center rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                              <div className="text-lg font-semibold text-slate-800">
+                            <div className="flex h-28 w-[220px] flex-col justify-center rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
+                              <div className="text-lg font-semibold text-slate-800 opacity-75">
                                 INVOICE
                               </div>
-                              <div className="text-sm text-slate-500">
+                              <div className="text-sm text-slate-500 opacity-70">
                                 Sample document
                               </div>
                             </div>
-                            <div className="flex h-28 w-[180px] flex-col justify-center rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                              <div className="text-sm font-semibold text-slate-800">
+                            <div className="flex h-28 w-[180px] flex-col justify-center rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
+                              <div className="text-sm font-semibold text-slate-800 opacity-75">
                                 CREDIT NOTE
                               </div>
-                              <div className="text-sm text-slate-500">
+                              <div className="text-sm text-slate-500 opacity-70">
                                 Document
                               </div>
                             </div>
-                            <div className="flex h-28 w-[180px] flex-col justify-center rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                              <div className="text-sm font-semibold text-slate-800">
+                            <div className="flex h-28 w-[180px] flex-col justify-center rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
+                              <div className="text-sm font-semibold text-slate-800 opacity-75">
                                 DEBIT NOTE
                               </div>
-                              <div className="text-sm text-slate-500">
+                              <div className="text-sm text-slate-500 opacity-70">
                                 Document
                               </div>
                             </div>
@@ -247,11 +255,11 @@ export default function GSTEInvoiceReplica({
                             <div className="rounded-full bg-amber-400 p-3 shadow-md">
                               <FaPlay className="text-amber-900" />
                             </div>
-                            <div className="flex-1 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-                              <div className="text-sm font-semibold text-slate-800">
+                            <div className="flex-1 rounded-xl border border-slate-200 bg-white/85 p-4 shadow-sm">
+                              <div className="text-sm font-semibold text-slate-800 opacity-75">
                                 Invoice
                               </div>
-                              <div className="text-xs text-slate-500">
+                              <div className="text-xs text-slate-500 opacity-70">
                                 Portal module
                               </div>
                             </div>
@@ -261,7 +269,7 @@ export default function GSTEInvoiceReplica({
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-b-xl bg-white px-6 py-4 text-[17px] leading-7 text-blue-700">
+                  <div className="mt-4 rounded-b-xl bg-white/90 px-6 py-4 text-[17px] leading-7 text-blue-700">
                     The e-Invoice System is for GST registered person for
                     uploading all the B2B invoices to the Invoice Registration
                     Portal (IRP). The IRP generates and returns a unique
@@ -271,7 +279,7 @@ export default function GSTEInvoiceReplica({
                 </div>
 
                 <div className="w-full xl:w-[360px]">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-sm">
                     <h3 className="text-2xl font-extrabold text-slate-500">
                       LATEST UPDATES
                     </h3>
@@ -289,10 +297,10 @@ export default function GSTEInvoiceReplica({
                               : "border-red-500"
                           }`}
                         >
-                          <div className="mb-1 text-sm font-semibold text-slate-500">
+                          <div className="mb-1 text-sm font-semibold text-slate-400">
                             {item.date}
                           </div>
-                          <p className="text-base font-semibold leading-6 text-blue-700">
+                          <p className="text-base font-semibold leading-6 text-blue-700/90">
                             • {item.text}
                           </p>
                         </div>
@@ -306,7 +314,7 @@ export default function GSTEInvoiceReplica({
               </div>
 
               <div className="mt-4 rounded-xl bg-[#245f87] px-6 py-5 text-white">
-                <div className="text-lg font-semibold uppercase tracking-wide">
+              <div className="text-lg font-semibold uppercase tracking-wide opacity-90">
                   Important Links
                 </div>
               </div>
@@ -316,7 +324,7 @@ export default function GSTEInvoiceReplica({
       </div>
 
       {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm px-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm px-4">
           <div className="relative w-full max-w-[520px] rounded-2xl bg-[#dfe7f3] p-6 shadow-[0_30px_100px_rgba(15,23,42,0.28)]">
             <button
               onClick={() => setShowLoginModal(false)}
