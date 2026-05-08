@@ -40,6 +40,8 @@ export default function DeferredGlobalWidgets() {
   const isCleanGSTSimulationRoute =
     pathname?.startsWith("/simulations/gst/e-invoicing-1") ||
     pathname?.startsWith("/simulations/gst/e-invoicing-3") ||
+    pathname?.startsWith("/simulations/gst/e-invoicing-4") ||
+    pathname?.startsWith("/simulations") ||
     false;
 
   useEffect(() => {

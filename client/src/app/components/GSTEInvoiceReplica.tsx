@@ -21,7 +21,7 @@ import {
   ContactRound,
   FileText,
   Menu,
-  PencilLine,
+  Pencil,
   ShieldAlert,
   ShieldQuestion,
   Plug,
@@ -90,7 +90,7 @@ export default function GSTEInvoiceReplica({
     { label: "Change Password", Icon: KeyRound },
     { label: "Feedback on GePP", Icon: ShieldQuestion },
     { label: "Update Contact Details", Icon: ContactRound },
-    { label: "Update", Icon: PencilLine },
+    { label: "Update", Icon: Pencil },
     { label: "e-Way Bill", Icon: Truck },
     { label: "2 Factor Authentication", Icon: ShieldAlert },
   ];
@@ -751,6 +751,159 @@ export default function GSTEInvoiceReplica({
                 <div className="mt-3 flex items-center justify-between bg-[#1d5d83] px-4 py-2 text-white">
                   <div className="text-[11px] lg:text-[12px]">Version 1.03</div>
                   <div className="text-[11px] lg:text-[12px]">
+                    © 2022 - Powered By National Informatics Centre.
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCancelScreen = () => (
+    <div className="min-h-screen bg-[#f4f7fb]">
+      <div className="sticky top-0 z-50 w-full">
+        <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
+          This is a Simulation. Use For Educational Purposes ONLY.
+        </div>
+
+        <div className="bg-[#f4f7fb] px-0 pb-0 pt-0">
+          <div className="bg-[#24668f] text-white">
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/images/simulations/satyamev-jayate.jpg"
+                    alt="Satyamev Jayate emblem"
+                    className="h-[54px] w-[54px] object-contain lg:h-[60px] lg:w-[60px]"
+                  />
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase leading-tight lg:text-[11px]">
+                      GOODS AND SERVICES TAX
+                    </div>
+                    <div className="text-[14px] font-bold uppercase leading-tight lg:text-[16px]">
+                      e - INVOICE SYSTEM
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-[14px] font-bold lg:text-[16px]">{portalTitle}</div>
+                </div>
+
+                <div className="flex items-center gap-4 lg:gap-6">
+                  <img
+                    src="/images/simulations/red-1-logo.png"
+                    alt="Nation Tax Market logo"
+                    className="h-[34px] w-auto object-contain lg:h-[40px]"
+                  />
+                  <img
+                    src="/images/simulations/nic-logo-remove-1.png"
+                    alt="NIC logo"
+                    className="h-[34px] w-auto object-contain lg:h-[40px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-white/15 bg-[#ccd4e9] px-4 py-2.5 text-[12px] text-slate-700 lg:text-[14px]">
+              <div className="flex items-center justify-between gap-4 whitespace-nowrap">
+                <div className="text-left whitespace-nowrap">
+                  GSTIN: 29BRYFP02061V7YP - Name: Company Airlines Pvt. Ltd.
+                </div>
+                <div className="whitespace-nowrap">Account : Main User</div>
+                <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
+                <button
+                  onClick={() => setScreen("home")}
+                  className="rounded-md bg-white px-3 py-1 text-[12px] font-semibold text-blue-700 shadow-sm hover:bg-blue-50"
+                >
+                  Start Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full px-0 pt-0">
+        <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
+          <div className="flex min-h-[calc(100vh-128px)] w-full">
+            <aside className="sticky top-[175px] flex h-[calc(100vh-128px)] w-[260px] flex-col bg-[#d7def0]">
+              <div className="border-b border-white/60 px-4 py-3">
+                <div className="flex w-full items-center gap-3 rounded-sm bg-[#2f7fd3] px-3 py-2 text-[12px] font-semibold text-white shadow-sm">
+                  <span className="text-lg leading-none">e</span>
+                  <span>e-Way bill Portal</span>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                <div className="overflow-hidden border-2 border-red-500 bg-[#d7def0]">
+                  <button
+                    onClick={() => setIsInvoiceMenuOpen((current) => !current)}
+                    className="flex w-full items-center justify-between bg-[#cbd3f2] border-b border-red-500/80 px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText size={15} className="text-slate-600" />
+                      <span>e-Invoice</span>
+                    </div>
+                    <ChevronDown size={14} className="text-slate-500 rotate-180 transition-transform" />
+                  </button>
+
+                  <div className="bg-[#d7def0]">
+                    <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                      <div className="flex items-center gap-3">
+                        <FileText size={15} className="text-slate-600" />
+                        <span>Bulk Upload</span>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={goToCancelFlow}
+                      className="flex w-full items-center justify-between border-2 border-red-500 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <FileText size={15} className="text-slate-600" />
+                        <span>Cancel</span>
+                      </div>
+                    </button>
+                    <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                      <div className="flex items-center gap-3">
+                        <FileText size={15} className="text-slate-600" />
+                        <span>Print</span>
+                      </div>
+                    </button>
+                    <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                      <div className="flex items-center gap-3">
+                        <FileText size={15} className="text-slate-600" />
+                        <span>Bulk IRN Cancel</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {sidebarMenuItems.map(({ label, Icon }, index) => (
+                  <button
+                    key={label}
+                    className="flex w-full items-center justify-between border-b border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon size={15} className="text-slate-600" />
+                      <span>{label}</span>
+                    </div>
+                    {index < sidebarMenuItems.length - 1 ? (
+                      <ChevronDown size={14} className="text-slate-500" />
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            <main className="flex-1 px-3 py-3 lg:px-4">
+              <div className="w-full">
+                <div className="grid gap-4">
+                  <section className="rounded-b-xl bg-white shadow-sm">
+                    <div className="px-6 pt-3 text-center text-[18px] font-extrabold text-[#1b66a0] lg:text-[22px]">
                       e-Invoice Cancel
                     </div>
 
