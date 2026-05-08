@@ -16,9 +16,11 @@ import {
   FaDesktop,
   FaTimes,
 } from "react-icons/fa";
+import ExperimentLaunchScreen from "./ExperimentLaunchScreen";
 
 const ExactGSTPortal: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [loginData, setLoginData] = useState({
     username: "FINAIR",
     password: "Fin@123",
@@ -31,6 +33,18 @@ const ExactGSTPortal: React.FC = () => {
     // Redirect to actual GST simulation
     window.location.href = "/gst-simulation";
   };
+
+  if (showLaunchScreen) {
+    return (
+      <ExperimentLaunchScreen
+        title="Exact GST Portal Replica"
+        subtitle="A hazy fullscreen launch screen with a centered experiment button, ready for reuse."
+        onStart={() => setShowLaunchScreen(false)}
+        buttonLabel="START EXPERIMENT"
+        accent="cyan"
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900">

@@ -15,9 +15,11 @@ import {
   FaEdit,
   FaDesktop,
 } from "react-icons/fa";
+import ExperimentLaunchScreen from "./ExperimentLaunchScreen";
 
 const GSTPortalSimulation: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginData, setLoginData] = useState({
     username: "",
@@ -31,6 +33,18 @@ const GSTPortalSimulation: React.FC = () => {
     setShowLoginModal(false);
     setCurrentStep(2);
   };
+
+  if (showLaunchScreen) {
+    return (
+      <ExperimentLaunchScreen
+        title="GST Portal Simulation"
+        subtitle="Launch the simulation from a hazy fullscreen screen with a single centered start button."
+        onStart={() => setShowLaunchScreen(false)}
+        buttonLabel="START EXPERIMENT"
+        accent="indigo"
+      />
+    );
+  }
 
   const renderStep1 = () => (
     <div className="min-h-screen bg-gray-900">

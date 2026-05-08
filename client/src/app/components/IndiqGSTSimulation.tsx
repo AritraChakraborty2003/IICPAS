@@ -20,9 +20,11 @@ import {
   FaShoppingCart,
   FaReceipt,
 } from "react-icons/fa";
+import ExperimentLaunchScreen from "./ExperimentLaunchScreen";
 
 const IndiqGSTSimulation: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
+  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginData, setLoginData] = useState({
     username: "INDIQ_USER",
@@ -35,6 +37,18 @@ const IndiqGSTSimulation: React.FC = () => {
     setShowLoginModal(false);
     setCurrentStep(2);
   };
+
+  if (showLaunchScreen) {
+    return (
+      <ExperimentLaunchScreen
+        title="Indiq GST Simulation"
+        subtitle="A hazy fullscreen launch screen for the Indiq portal, with a centered start button and responsive layout."
+        onStart={() => setShowLaunchScreen(false)}
+        buttonLabel="START INDIQ EXPERIMENT"
+        accent="cyan"
+      />
+    );
+  }
 
   const renderStep1 = () => (
     <div className="min-h-screen bg-transparent">

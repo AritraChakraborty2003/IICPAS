@@ -15,6 +15,8 @@ import {
   FaPowerOff,
   FaVideo,
 } from "react-icons/fa";
+import ExperimentLaunchScreen from "./ExperimentLaunchScreen";
+import ClipboardOnlyGuard from "./ClipboardOnlyGuard";
 import GSTSimulation from "./GSTSimulation";
 
 type Screen = "home" | "dashboard" | "invoice";
@@ -56,6 +58,7 @@ export default function GSTEInvoiceReplica({
 }: GSTEInvoiceReplicaProps) {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>(initialScreen);
+  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginData, setLoginData] = useState({
     username: "AIR",
@@ -66,6 +69,18 @@ export default function GSTEInvoiceReplica({
   const goToInvoiceBuilder = () => {
     router.push("/simulations/gst/e-invoicing-1/invoice");
   };
+
+  if (showLaunchScreen) {
+    return (
+      <ExperimentLaunchScreen
+        title="GST E-Invoice Simulation"
+        subtitle="A hazy fullscreen start screen that launches the simulation with one button in the center."
+        onStart={() => setShowLaunchScreen(false)}
+        buttonLabel="START EXPERIMENT"
+        accent="blue"
+      />
+    );
+  }
 
   const renderHomeScreen = () => (
     <div className="min-h-screen bg-gradient-to-b from-[#eef8fd] via-[#f6fbfe] to-[#edf5fb]">
@@ -338,6 +353,12 @@ export default function GSTEInvoiceReplica({
               <div className="text-2xl font-extrabold text-red-600">
                 E-INVOICE SYSTEM LOGIN
               </div>
+            </div>
+
+            <div className="mt-5 rounded-md border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-700 shadow-inner">
+              <div className="font-semibold text-slate-800">Login Details</div>
+              <div className="mt-1">User name: AIR</div>
+              <div>Password: Fin@123</div>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -655,6 +676,7 @@ export default function GSTEInvoiceReplica({
 
   return (
     <div>
+      <ClipboardOnlyGuard />
       {screen === "home"
         ? renderHomeScreen()
         : screen === "dashboard"

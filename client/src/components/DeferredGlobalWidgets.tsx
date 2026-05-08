@@ -37,9 +37,11 @@ export default function DeferredGlobalWidgets() {
 
   const isDashboardRoute =
     pathname?.includes("-dashboard") || pathname?.includes("/dashboard");
+  const isCleanGSTSimulationRoute =
+    pathname?.startsWith("/simulations/gst/e-invoicing-1") ?? false;
 
   useEffect(() => {
-    if (isDashboardRoute) return;
+    if (isDashboardRoute || isCleanGSTSimulationRoute) return;
 
     let idleId: IdleHandle | null = null;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -74,16 +76,17 @@ export default function DeferredGlobalWidgets() {
       }
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [isDashboardRoute]);
+  }, [isDashboardRoute, isCleanGSTSimulationRoute]);
 
   useEffect(() => {
-    if (!loadInteractiveWidgets || isDashboardRoute) return;
+    if (!loadInteractiveWidgets || isDashboardRoute || isCleanGSTSimulationRoute)
+      return;
 
     const timerId = setTimeout(() => setLoadPassiveWidgets(true), 1200);
     return () => clearTimeout(timerId);
-  }, [isDashboardRoute, loadInteractiveWidgets]);
+  }, [isDashboardRoute, isCleanGSTSimulationRoute, loadInteractiveWidgets]);
 
-  if (isDashboardRoute) return null;
+  if (isDashboardRoute || isCleanGSTSimulationRoute) return null;
 
   return (
     <>
