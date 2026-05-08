@@ -151,6 +151,8 @@ export default function GSTEInvoiceReplica({
   const handleCancelRetry = () => {
     setShowCancelDetails(true);
     setShowCancelSuccess(false);
+    setCancelRemarks("");
+    setCancelReason("Others");
   };
 
   const handleCancelExit = () => {
@@ -563,12 +565,7 @@ export default function GSTEInvoiceReplica({
                 </div>
                 <div className="whitespace-nowrap">Account : Main User</div>
                 <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
-                <button
-                  onClick={() => setScreen("home")}
-                  className="rounded-md bg-white px-3 py-1 text-[12px] font-semibold text-blue-700 shadow-sm hover:bg-blue-50"
-                >
-                  Start Again
-                </button>
+
               </div>
             </div>
           </div>
@@ -764,12 +761,12 @@ export default function GSTEInvoiceReplica({
 
   const renderCancelScreen = () => (
     <div className="min-h-screen bg-[#f4f7fb]">
-      <div className="sticky top-0 z-50 w-full">
-        <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
+      <div className="sticky top-0 z-[100000] w-full">
+        <div className="relative z-[100001] bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
           This is a Simulation. Use For Educational Purposes ONLY.
         </div>
 
-        <div className="bg-[#f4f7fb] px-0 pb-0 pt-0">
+        <div className="relative z-[100001] bg-[#f4f7fb] px-0 pb-0 pt-0">
           <div className="bg-[#24668f] text-white">
             <div className="px-4 py-3">
               <div className="flex items-center justify-between gap-3">
@@ -815,12 +812,7 @@ export default function GSTEInvoiceReplica({
                 </div>
                 <div className="whitespace-nowrap">Account : Main User</div>
                 <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
-                <button
-                  onClick={() => setScreen("home")}
-                  className="rounded-md bg-white px-3 py-1 text-[12px] font-semibold text-blue-700 shadow-sm hover:bg-blue-50"
-                >
-                  Start Again
-                </button>
+
               </div>
             </div>
           </div>
@@ -830,81 +822,23 @@ export default function GSTEInvoiceReplica({
       <div className="w-full px-0 pt-0">
         <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
           <div className="flex min-h-[calc(100vh-128px)] w-full">
-            <aside className="sticky top-[175px] flex h-[calc(100vh-128px)] w-[260px] flex-col bg-[#d7def0]">
-              <div className="border-b border-white/60 px-4 py-3">
-                <div className="flex w-full items-center gap-3 rounded-sm bg-[#2f7fd3] px-3 py-2 text-[12px] font-semibold text-white shadow-sm">
-                  <span className="text-lg leading-none">e</span>
-                  <span>e-Way bill Portal</span>
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto">
-                <div className="overflow-hidden border-2 border-red-500 bg-[#d7def0]">
-                  <button
-                    onClick={() => setIsInvoiceMenuOpen((current) => !current)}
-                    className="flex w-full items-center justify-between bg-[#cbd3f2] border-b border-red-500/80 px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText size={15} className="text-slate-600" />
-                      <span>e-Invoice</span>
-                    </div>
-                    <ChevronDown size={14} className="text-slate-500 rotate-180 transition-transform" />
-                  </button>
-
-                  <div className="bg-[#d7def0]">
-                    <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
-                      <div className="flex items-center gap-3">
-                        <FileText size={15} className="text-slate-600" />
-                        <span>Bulk Upload</span>
-                      </div>
-                    </button>
-                    <button 
-                      onClick={goToCancelFlow}
-                      className="flex w-full items-center justify-between border-2 border-red-500 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText size={15} className="text-slate-600" />
-                        <span>Cancel</span>
-                      </div>
-                    </button>
-                    <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
-                      <div className="flex items-center gap-3">
-                        <FileText size={15} className="text-slate-600" />
-                        <span>Print</span>
-                      </div>
-                    </button>
-                    <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
-                      <div className="flex items-center gap-3">
-                        <FileText size={15} className="text-slate-600" />
-                        <span>Bulk IRN Cancel</span>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {sidebarMenuItems.map(({ label, Icon }, index) => (
-                  <button
-                    key={label}
-                    className="flex w-full items-center justify-between border-b border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon size={15} className="text-slate-600" />
-                      <span>{label}</span>
-                    </div>
-                    {index < sidebarMenuItems.length - 1 ? (
-                      <ChevronDown size={14} className="text-slate-500" />
-                    ) : null}
-                  </button>
-                ))}
-              </div>
-            </aside>
 
             <main className="flex-1 px-3 py-3 lg:px-4">
               <div className="w-full">
                 <div className="grid gap-4">
                   <section className="rounded-b-xl bg-white shadow-sm">
-                    <div className="px-6 pt-3 text-center text-[18px] font-extrabold text-[#1b66a0] lg:text-[22px]">
-                      e-Invoice Cancel
+                    <div className="flex items-center justify-between gap-4 px-4 pt-3">
+                      <button
+                        onClick={() => setScreen("dashboard")}
+                        className="flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-[12px] font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+                      >
+                        <FaArrowLeft size={12} />
+                        Back
+                      </button>
+                      <div className="flex-1 text-center text-[18px] font-extrabold text-[#1b66a0] lg:text-[22px]">
+                        e-Invoice Cancel
+                      </div>
+                      <div className="w-[80px]" />
                     </div>
 
                     <div className="mt-4 flex items-center justify-center gap-6 text-[12px] font-bold text-slate-700 lg:text-[13px]">
@@ -962,6 +896,28 @@ export default function GSTEInvoiceReplica({
 
                     {showCancelDetails && (
                       <div className="relative mx-auto mt-8 max-w-[1200px] border border-slate-200 bg-white p-0">
+                        {showCancelSuccess && (
+                          <div className="absolute inset-x-0 bottom-0 top-[44px] z-[9999] flex items-center justify-center bg-white/25 backdrop-blur-[1px]">
+                            <div className="flex flex-col items-center gap-5">
+                              <div className="flex h-28 w-28 items-center justify-center rounded-full bg-white shadow-[0_18px_40px_rgba(15,23,42,0.15)]">
+                                <img
+                                  src="/images/simulations/tick.png"
+                                  alt="Success"
+                                  className="h-20 w-20 object-contain"
+                                />
+                              </div>
+                              <div className="rounded-md border-2 border-red-600 px-6 py-2 text-[34px] font-black uppercase tracking-[0.18em] text-red-600 -rotate-6 shadow-lg bg-white/90">
+                                Cancelled
+                              </div>
+                              <button
+                                onClick={handleCancelRetry}
+                                className="rounded-md bg-[#d9534f] px-8 py-2 text-[14px] font-bold text-white shadow-md transition-colors hover:bg-[#c9302c]"
+                              >
+                                Retry
+                              </button>
+                            </div>
+                          </div>
+                        )}
                         <div className="bg-[#1b66a0] px-4 py-1 text-center text-[16px] font-bold text-white">
                           e-Invoice Cancel
                         </div>
@@ -976,19 +932,18 @@ export default function GSTEInvoiceReplica({
                                 Fincurious Airlines Pvt. Ltd.
                               </div>
                             </div>
-                            <div className="h-24 w-24">
-                              <img src="/images/simulations/qr-code.png" alt="QR Code" className="h-full w-full object-contain" />
+                            <div className="flex-shrink-0 rounded-[4px] border border-slate-200 bg-white p-2 shadow-sm">
+                              <div className="grid h-[210px] w-[210px] place-items-center bg-white">
+                                <img
+                                  src="/images/simulations/qr-gst.webp"
+                                  alt="GST QR code"
+                                  className="h-[180px] w-[180px] object-contain"
+                                />
+                              </div>
                             </div>
                           </div>
 
                           <div className="relative mt-4 overflow-hidden rounded border border-slate-200 text-[11px] lg:text-[12px]">
-                            {showCancelSuccess && (
-                              <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
-                                <div className="border-[12px] border-red-600 px-8 py-4 text-[48px] font-black uppercase -rotate-[25deg] text-red-600 opacity-80 shadow-2xl">
-                                  CANCELLED
-                                </div>
-                              </div>
-                            )}
 
                             <table className="w-full border-collapse">
                               <tbody>
@@ -1025,15 +980,17 @@ export default function GSTEInvoiceReplica({
                                   <td colSpan={4} className="px-2 py-1">3.Party Details</td>
                                 </tr>
                                 <tr className="border-b border-slate-200">
+                                  <td colSpan={2} className="px-2 py-1 font-bold">Supplier</td>
+                                  <td colSpan={2} className="px-2 py-1 font-bold">Recipient</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
                                   <td colSpan={2} className="px-2 py-1">
-                                    <div className="font-bold">Supplier</div>
-                                    <div>GSTIN : 29BRYFP02061V7YP</div>
-                                    <div>Fincurious Airlines Pvt. Ltd.</div>
+                                    GSTIN : 29BRYFP02061V7YP <br />
+                                    Fincurious Airlines Pvt. Ltd.
                                   </td>
                                   <td colSpan={2} className="px-2 py-1">
-                                    <div className="font-bold">Recipient</div>
-                                    <div>GSTIN : 29GMRTLL5631J3C1</div>
-                                    <div>Fincurious Engines LLP</div>
+                                    GSTIN : 29GMRTLL5631J3C1 <br />
+                                    Fincurious Engines LLP
                                   </td>
                                 </tr>
                                 <tr className="bg-slate-50 font-bold border-b border-slate-200">
@@ -1041,81 +998,142 @@ export default function GSTEInvoiceReplica({
                                 </tr>
                               </tbody>
                             </table>
-                            <div className="overflow-x-auto">
-                              <table className="w-full border-collapse">
-                                <thead className="bg-slate-50 text-[10px] uppercase text-slate-600">
-                                  <tr className="border-b border-slate-200">
-                                    <th className="border-r border-slate-200 px-2 py-1 text-left">SlNo</th>
-                                    <th className="border-r border-slate-200 px-2 py-1 text-left">Item Description</th>
-                                    <th className="border-r border-slate-200 px-2 py-1 text-left">Quantity</th>
-                                    <th className="border-r border-slate-200 px-2 py-1 text-left">Unit Price</th>
-                                    <th className="border-r border-slate-200 px-2 py-1 text-left">Total</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  <tr className="border-b border-slate-200">
-                                    <td className="border-r border-slate-200 px-2 py-1">1</td>
-                                    <td className="border-r border-slate-200 px-2 py-1">SILK GLAMOR P0 BASE - 4L</td>
-                                    <td className="border-r border-slate-200 px-2 py-1">6 NOS</td>
-                                    <td className="border-r border-slate-200 px-2 py-1">1907.63</td>
-                                    <td className="px-2 py-1">13506.02</td>
-                                  </tr>
-                                  <tr className="border-b border-slate-200">
-                                    <td className="border-r border-slate-200 px-2 py-1">2</td>
-                                    <td className="border-r border-slate-200 px-2 py-1">SILK GLAMOR N2 BASE - 3.6L</td>
-                                    <td className="border-r border-slate-200 px-2 py-1">1 NOS</td>
-                                    <td className="border-r border-slate-200 px-2 py-1">1950</td>
-                                    <td className="px-2 py-1">2301</td>
-                                  </tr>
-                                </tbody>
-                              </table>
+                            <table className="w-full border-collapse">
+                              <thead>
+                                <tr className="bg-slate-50 text-[11px] font-bold border-b border-slate-200">
+                                  <td className="px-2 py-1 border-r border-slate-200">SLNO</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">ITEM DESCRIPTION</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">QUANTITY</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">UNIT PRICE</td>
+                                  <td className="px-2 py-1">TOTAL</td>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr className="border-b border-slate-200">
+                                  <td className="px-2 py-1 border-r border-slate-200">1</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">SILK GLAMOR P0 BASE - 4L</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">6 NOS</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">1907.63</td>
+                                  <td className="px-2 py-1">13506.02</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="px-2 py-1 border-r border-slate-200">2</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">SILK GLAMOR N2 BASE - 3.6L</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">1 NOS</td>
+                                  <td className="px-2 py-1 border-r border-slate-200">1950</td>
+                                  <td className="px-2 py-1">2301</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+
+                          <div className="mt-4 grid gap-4 border-t border-slate-200 px-4 py-4 text-[12px] text-slate-800 lg:grid-cols-[1fr_auto_1fr] lg:items-center bg-white">
+                            <div>
+                              <div className="font-semibold">Generated By : <span className="font-normal">29BRYFP02061V7YP</span></div>
+                              <div className="font-semibold">Print Date : <span className="font-normal">08-05-2026 16:46:19</span></div>
+                            </div>
+                            <div className="text-center">
+                              <img
+                                src="/images/simulations/barcode-image.jpg"
+                                alt="Barcode"
+                                className="mx-auto h-[52px] w-[140px] object-contain"
+                              />
+                              <div className="mt-1 text-[10px] text-slate-500">182314594723038</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-semibold">Digitally Signed by NIC-IRP</div>
+                              <div>on: 09-10-2023 18:52:00</div>
                             </div>
                           </div>
 
-                          <div className="mt-6 space-y-4">
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <div>
-                                <label className="mb-1.5 block text-[12px] font-bold text-slate-700">
-                                  Cancel Reason :
-                                </label>
-                                <select
-                                  value={cancelReason}
-                                  onChange={(e) => setCancelReason(e.target.value)}
-                                  className="w-full rounded border border-slate-300 bg-white px-3 py-1.5 text-[12px] outline-none focus:border-blue-500"
-                                >
-                                  <option>Others</option>
-                                  <option>Duplicate</option>
-                                  <option>Wrong Invoice</option>
-                                  <option>Order Cancelled</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="mb-1.5 block text-[12px] font-bold text-slate-700">
-                                  Remarks :
-                                </label>
-                                <textarea
-                                  value={cancelRemarks}
-                                  onChange={(e) => setCancelRemarks(e.target.value)}
-                                  rows={2}
-                                  className="w-full rounded border border-slate-300 bg-white px-3 py-1.5 text-[12px] outline-none focus:border-blue-500"
-                                  placeholder="Type remarks..."
-                                />
-                              </div>
-                            </div>
+                          <div className="mt-8 mb-4 flex justify-center">
+                            <div className="w-full max-w-[600px] rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                              {showCancelSuccess ? (
+                                <div className="flex flex-col items-center gap-6 py-6 animate-in fade-in zoom-in duration-500">
+                                  <div className="relative">
+                                    <div className="absolute inset-0 bg-green-100 rounded-full scale-150 opacity-20 animate-ping" />
+                                    <div className="relative w-24 h-24 bg-green-50 rounded-full flex items-center justify-center border-4 border-green-100 shadow-inner">
+                                      <img 
+                                        src="/images/simulations/tick.png" 
+                                        alt="Success" 
+                                        className="w-14 h-14 object-contain" 
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <h3 className="text-2xl font-black text-slate-800">Cancelled Successfully!</h3>
+                                    <p className="text-slate-500 font-medium mt-1">The e-Invoice status has been updated.</p>
+                                  </div>
+                                  <div className="flex items-center gap-4 mt-2">
+                                    <button
+                                      onClick={handleCancelRetry}
+                                      className="group relative overflow-hidden rounded-[4px] bg-[#337ab7] px-10 py-2 text-[14px] font-bold text-white shadow-lg transition-all hover:bg-[#286090] hover:shadow-blue-200/50 active:scale-95"
+                                    >
+                                      <span className="relative z-10">Retry</span>
+                                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </button>
+                                    <button
+                                      onClick={handleCancelExit}
+                                      className="group relative overflow-hidden rounded-[4px] bg-[#d9534f] px-10 py-2 text-[14px] font-bold text-white shadow-lg transition-all hover:bg-[#c9302c] hover:shadow-red-200/50 active:scale-95"
+                                    >
+                                      <span className="relative z-10">Exit</span>
+                                      <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="grid grid-cols-[120px_1fr] items-center gap-4">
+                                    <label className="text-[12px] font-bold text-slate-800">
+                                      Cancel Reason :
+                                    </label>
+                                    <select
+                                      value={cancelReason}
+                                      onChange={(e) => setCancelReason(e.target.value)}
+                                      className="w-full rounded-[4px] border border-slate-300 bg-white px-3 py-1.5 text-[12px] text-slate-700 outline-none focus:border-blue-500 transition-colors"
+                                    >
+                                      <option>Others</option>
+                                      <option>Duplicate</option>
+                                      <option>Wrong Invoice</option>
+                                      <option>Order Cancelled</option>
+                                    </select>
 
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={handleCancelSubmit}
-                                className="rounded bg-blue-700 px-6 py-1.5 text-[12px] font-semibold text-white hover:bg-blue-800"
-                              >
-                                Submit
-                              </button>
-                              <button
-                                onClick={handleCancelExit}
-                                className="rounded bg-red-600 px-6 py-1.5 text-[12px] font-semibold text-white hover:bg-red-700"
-                              >
-                                Exit
-                              </button>
+                                    <label className="self-start pt-1.5 text-[12px] font-bold text-slate-800">
+                                      Remarks :
+                                    </label>
+                                    <textarea
+                                      name="cancelRemarks"
+                                      value={cancelRemarks}
+                                      onInput={(e) =>
+                                        setCancelRemarks(
+                                          (e.currentTarget as HTMLTextAreaElement).value,
+                                        )
+                                      }
+                                      onChange={(e) => setCancelRemarks(e.target.value)}
+                                      rows={3}
+                                      placeholder="Enter cancellation remarks..."
+                                      autoComplete="off"
+                                      spellCheck={false}
+                                      className="w-full cursor-text rounded-[4px] border border-slate-300 bg-white px-3 py-2 text-[12px] text-slate-700 outline-none focus:border-blue-500 resize-none transition-colors min-h-[92px]"
+                                    />
+                                  </div>
+
+                                  <div className="mt-6 flex items-center justify-center gap-2">
+                                    <button
+                                      onClick={handleCancelSubmit}
+                                      className="rounded-[4px] bg-[#337ab7] px-8 py-2 text-[12px] font-bold text-white shadow-sm transition-all hover:bg-[#286090] active:scale-95"
+                                    >
+                                      Submit
+                                    </button>
+                                    <button
+                                      onClick={handleCancelExit}
+                                      className="rounded-[4px] bg-[#d9534f] px-8 py-2 text-[12px] font-bold text-white shadow-sm transition-all hover:bg-[#c9302c] active:scale-95"
+                                    >
+                                      Exit
+                                    </button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
