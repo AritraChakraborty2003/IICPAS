@@ -1,12 +1,5 @@
-"use client";
-
-import React from "react";
-import EWayBillSimulation from "../../components/EWayBillSimulation";
+import { redirect } from "next/navigation";
 
 export default function EWayBillPage() {
-  return (
-    <div>
-      <EWayBillSimulation />
-    </div>
-  );
+  redirect("/simulations/gst/e-way-bill-1");
 }
