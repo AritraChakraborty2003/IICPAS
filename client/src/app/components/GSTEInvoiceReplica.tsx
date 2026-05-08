@@ -751,260 +751,223 @@ export default function GSTEInvoiceReplica({
                 <div className="mt-3 flex items-center justify-between bg-[#1d5d83] px-4 py-2 text-white">
                   <div className="text-[11px] lg:text-[12px]">Version 1.03</div>
                   <div className="text-[11px] lg:text-[12px]">
-                    © 2022 - Powered By National Informatics Centre.
-                  </div>
-                </div>
-              </div>
-            </main>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderCancelScreen = () => (
-    <div className="min-h-screen bg-[#f4f7fb]">
-      <div className="bg-[#ec1e18] px-4 py-4 text-center text-3xl font-medium text-white">
-        This is a Simulation. Use For Educational Purposes ONLY.
-      </div>
-
-      <div className="bg-[#1c6792] px-6 py-6 text-white shadow-sm">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="text-4xl">🇮🇳</div>
-            <div>
-              <div className="text-2xl font-bold uppercase leading-tight">
-                Goods and Services Tax
-              </div>
-              <div className="text-2xl font-bold uppercase leading-tight">
-                e - INVOICE SYSTEM
-              </div>
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-3xl font-bold">{portalTitle}</div>
-          </div>
-          <div className="flex items-center gap-6">
-            <div className="text-right">
-              <div className="text-sm font-semibold">NATION TAX MARKET</div>
-              <div className="text-xs opacity-80">GST</div>
-            </div>
-            <div className="text-right">
-              <div className="text-sm font-semibold">एनआईसी NIC</div>
-              <div className="text-xs opacity-80">
-                National Informatics Centre
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex min-h-[calc(100vh-152px)]">
-        <aside className="w-20 bg-[#d7e0ef] px-2 py-4">
-          <div className="mb-5 flex h-10 items-center justify-center text-blue-600">
-            <FaHome className="text-lg" />
-          </div>
-          <div className="flex flex-col gap-5">
-            <button className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm">
-              <FaBars />
-            </button>
-            <button className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white text-red-500 shadow-sm">
-              <FaVideo />
-            </button>
-            <button className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
-              <FaCube />
-            </button>
-            <button className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white text-orange-500 shadow-sm">
-              <FaCog />
-            </button>
-          </div>
-          <div className="mt-10 flex flex-col gap-5">
-            <button className="mx-auto text-slate-600">
-              <FaInfoCircle />
-            </button>
-            <button className="mx-auto text-slate-600">
-              <FaExclamationTriangle />
-            </button>
-            <button
-              onClick={() => setScreen("dashboard")}
-              className="mx-auto text-slate-600"
-            >
-              <FaArrowLeft />
-            </button>
-          </div>
-        </aside>
-
-        <main className="flex-1 px-6 py-4">
-          <div className="mx-auto max-w-[1740px]">
-            <div className="bg-[#ccd4e9] px-6 py-3 text-center text-xl text-slate-700">
-              <div className="flex items-center justify-between">
-                <div className="text-left">
-                  GSTIN: 29BRYFP02061V7YP - Name: Company Airlines Pvt. Ltd..
-                </div>
-                <div>Account : Main User</div>
-                <div>Client IP:1.1.1.1</div>
-                <button
-                  onClick={() => setScreen("dashboard")}
-                  className="text-blue-700"
-                >
-                  <FaPowerOff />
-                </button>
-              </div>
-            </div>
-
-            <section className="rounded-b-xl bg-white shadow-sm">
-              <div className="px-6 pt-4 text-center text-4xl font-extrabold text-[#1b66a0]">
-                e-Invoice Cancel
-              </div>
-
-              <div className="mt-6 flex items-center justify-center gap-8 text-2xl font-semibold text-slate-700">
-                <span>Based On :</span>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="cancelBasis"
-                    checked={cancelBasis === "ack"}
-                    onChange={() => {
-                      setCancelBasis("ack");
-                      setCancelIdentifier("146872643383543");
-                    }}
-                    className="h-5 w-5"
-                  />
-                  <span>Ack No.</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    name="cancelBasis"
-                    checked={cancelBasis === "irn"}
-                    onChange={() => {
-                      setCancelBasis("irn");
-                      setCancelIdentifier("uncWIpXGNqaGmHkd5U3v4fYXl6OW6s7kJAjOcHe6Inj6wo6rQZHfOEnEIPP1jAY");
-                    }}
-                    className="h-5 w-5"
-                  />
-                  <span>IRN</span>
-                </label>
-              </div>
-
-              <div className="mt-8 flex items-center justify-center gap-4 px-6">
-                <label className="text-2xl font-semibold text-slate-700">
-                  {cancelBasis === "ack" ? "Enter Ack. No. :" : "Enter IRN :"}
-                </label>
-                <input
-                  value={cancelIdentifier}
-                  onChange={(e) => setCancelIdentifier(e.target.value)}
-                  className="w-full max-w-[620px] rounded border border-slate-400 px-4 py-2 text-xl text-slate-800 outline-none focus:border-blue-500"
-                />
-                <button
-                  onClick={handleCancelGo}
-                  className="rounded-md bg-blue-700 px-5 py-3 text-lg font-semibold text-white hover:bg-blue-800"
-                >
-                  Go
-                </button>
-                <button
-                  onClick={() => setScreen("dashboard")}
-                  className="rounded-md bg-red-600 px-5 py-3 text-lg font-semibold text-white hover:bg-red-700"
-                >
-                  Exit
-                </button>
-              </div>
-
-              {showCancelDetails && (
-                <div className="relative mx-auto mt-12 max-w-[1220px] px-6 pb-10">
-                  <div className="rounded-2xl border border-slate-200 bg-[#f8f9fd] p-8 shadow-sm">
-                    <div className="grid gap-8 lg:grid-cols-[1fr_260px]">
-                      <div>
-                        <div className="text-3xl font-extrabold text-slate-700">
-                          e-Invoice Cancel
-                        </div>
-                        <div className="mt-4 grid gap-4 text-xl text-slate-700">
-                          <div className="flex items-start gap-3">
-                            <span className="font-semibold">Generated By :</span>
-                            <span>29BRYFP02061V7YP</span>
-                          </div>
-                          <div className="flex items-start gap-3">
-                            <span className="font-semibold">Print Date :</span>
-                            <span>08-05-2026 18:08:46</span>
-                          </div>
-                        </div>
-
-                        <div className="mt-8 grid gap-5 md:grid-cols-2">
-                          <div>
-                            <label className="mb-2 block text-xl font-semibold text-slate-700">
-                              Cancel Reason :
-                            </label>
-                            <select
-                              value={cancelReason}
-                              onChange={(e) => setCancelReason(e.target.value)}
-                              className="w-full rounded border border-slate-300 bg-white px-4 py-3 text-lg outline-none focus:border-blue-500"
-                            >
-                              <option>Others</option>
-                              <option>Duplicate</option>
-                              <option>Wrong Invoice</option>
-                              <option>Order Cancelled</option>
-                            </select>
-                          </div>
-                          <div>
-                            <label className="mb-2 block text-xl font-semibold text-slate-700">
-                              Remarks :
-                            </label>
-                            <textarea
-                              value={cancelRemarks}
-                              onChange={(e) => setCancelRemarks(e.target.value)}
-                              rows={4}
-                              className="w-full rounded border border-slate-300 bg-white px-4 py-3 text-lg outline-none focus:border-blue-500"
-                              placeholder="Type remarks..."
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-8 flex items-center gap-4">
-                          <button
-                            onClick={handleCancelSubmit}
-                            className="rounded-md bg-blue-700 px-6 py-3 text-lg font-semibold text-white hover:bg-blue-800"
-                          >
-                            Submit
-                          </button>
-                          <button
-                            onClick={handleCancelExit}
-                            className="rounded-md bg-red-600 px-6 py-3 text-lg font-semibold text-white hover:bg-red-700"
-                          >
-                            Exit
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start justify-center">
-                        <div className="h-[220px] w-[220px] rounded-lg border border-slate-200 bg-white" />
-                      </div>
+                      e-Invoice Cancel
                     </div>
 
-                    {showCancelSuccess && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-white/30 px-6 backdrop-blur-[1px]">
-                        <div className="relative flex flex-col items-center">
-                          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-emerald-500 shadow-lg">
-                            <FaCheckCircle className="text-6xl text-white" />
+                    <div className="mt-4 flex items-center justify-center gap-6 text-[12px] font-bold text-slate-700 lg:text-[13px]">
+                      <span>Based On :</span>
+                      <label className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="cancelBasis"
+                          checked={cancelBasis === "ack"}
+                          onChange={() => {
+                            setCancelBasis("ack");
+                            setCancelIdentifier("146872643383543");
+                          }}
+                          className="h-3.5 w-3.5"
+                        />
+                        <span>Ack No.</span>
+                      </label>
+                      <label className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="cancelBasis"
+                          checked={cancelBasis === "irn"}
+                          onChange={() => {
+                            setCancelBasis("irn");
+                            setCancelIdentifier("uncWIpXGNqaGmHkd5U3v4fYXl6OW6s7kJAjOcHe6Inj6wo6rQZHfOEnEIPP1jAY");
+                          }}
+                          className="h-3.5 w-3.5"
+                        />
+                        <span>IRN</span>
+                      </label>
+                    </div>
+
+                    <div className="mt-5 flex items-center justify-center gap-3 px-4">
+                      <label className="text-[12px] font-bold text-slate-700 lg:text-[13px]">
+                        {cancelBasis === "ack" ? "Enter Ack. No. :" : "Enter IRN :"}
+                      </label>
+                      <input
+                        value={cancelIdentifier}
+                        onChange={(e) => setCancelIdentifier(e.target.value)}
+                        className="w-full max-w-[320px] rounded border border-slate-400 px-3 py-1 text-[12px] text-slate-800 outline-none focus:border-blue-500 lg:text-[13px]"
+                      />
+                      <button
+                        onClick={handleCancelGo}
+                        className="rounded bg-[#1e66a0] px-4 py-1 text-[12px] font-semibold text-white hover:bg-[#1a5585]"
+                      >
+                        Go
+                      </button>
+                      <button
+                        onClick={() => setScreen("dashboard")}
+                        className="rounded bg-[#ec1e18] px-4 py-1 text-[12px] font-semibold text-white hover:bg-[#d01a15]"
+                      >
+                        Exit
+                      </button>
+                    </div>
+
+                    {showCancelDetails && (
+                      <div className="relative mx-auto mt-8 max-w-[1200px] border border-slate-200 bg-white p-0">
+                        <div className="bg-[#1b66a0] px-4 py-1 text-center text-[16px] font-bold text-white">
+                          e-Invoice Cancel
+                        </div>
+
+                        <div className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <div className="text-[16px] font-black text-slate-800 lg:text-[18px]">
+                                29BRYFP02061V7YP
+                              </div>
+                              <div className="text-[16px] font-black text-slate-800 lg:text-[18px]">
+                                Fincurious Airlines Pvt. Ltd.
+                              </div>
+                            </div>
+                            <div className="h-24 w-24">
+                              <img src="/images/simulations/qr-code.png" alt="QR Code" className="h-full w-full object-contain" />
+                            </div>
                           </div>
-                          <div className="mt-6 -rotate-12 rounded-2xl border-8 border-red-600 px-10 py-6 text-6xl font-black uppercase tracking-[0.2em] text-red-600">
-                            Cancelled
+
+                          <div className="relative mt-4 overflow-hidden rounded border border-slate-200 text-[11px] lg:text-[12px]">
+                            {showCancelSuccess && (
+                              <div className="absolute inset-0 z-50 flex items-center justify-center pointer-events-none">
+                                <div className="border-[12px] border-red-600 px-8 py-4 text-[48px] font-black uppercase -rotate-[25deg] text-red-600 opacity-80 shadow-2xl">
+                                  CANCELLED
+                                </div>
+                              </div>
+                            )}
+
+                            <table className="w-full border-collapse">
+                              <tbody>
+                                <tr className="bg-slate-50 font-bold border-b border-slate-200">
+                                  <td colSpan={4} className="px-2 py-1">1.e-Invoice Details</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="px-2 py-1 font-bold">IRN :</td>
+                                  <td className="px-2 py-1 truncate max-w-[200px]">uncWIpXGNqaGmHkd5U3v4fYXl6OW6s7kJAjOcHe6Inj6wo6rQZHfOEnEIPP1jAY</td>
+                                  <td className="px-2 py-1 font-bold">Ack. No :</td>
+                                  <td className="px-2 py-1">146872643383543</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td colSpan={2} className="px-2 py-1 font-bold"></td>
+                                  <td className="px-2 py-1 font-bold">Ack. Date :</td>
+                                  <td className="px-2 py-1">09/10/2023</td>
+                                </tr>
+                                <tr className="bg-slate-50 font-bold border-b border-slate-200">
+                                  <td colSpan={4} className="px-2 py-1">2.Transaction Details</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="px-2 py-1 font-bold">Supply Type Code :</td>
+                                  <td className="px-2 py-1">B2B</td>
+                                  <td className="px-2 py-1 font-bold">Document No :</td>
+                                  <td className="px-2 py-1">STC/23-24/masdks</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td className="px-2 py-1 font-bold">Place of Supply :</td>
+                                  <td className="px-2 py-1">Karnataka</td>
+                                  <td className="px-2 py-1 font-bold">Document Date :</td>
+                                  <td className="px-2 py-1">09/10/2023</td>
+                                </tr>
+                                <tr className="bg-slate-50 font-bold border-b border-slate-200">
+                                  <td colSpan={4} className="px-2 py-1">3.Party Details</td>
+                                </tr>
+                                <tr className="border-b border-slate-200">
+                                  <td colSpan={2} className="px-2 py-1">
+                                    <div className="font-bold">Supplier</div>
+                                    <div>GSTIN : 29BRYFP02061V7YP</div>
+                                    <div>Fincurious Airlines Pvt. Ltd.</div>
+                                  </td>
+                                  <td colSpan={2} className="px-2 py-1">
+                                    <div className="font-bold">Recipient</div>
+                                    <div>GSTIN : 29GMRTLL5631J3C1</div>
+                                    <div>Fincurious Engines LLP</div>
+                                  </td>
+                                </tr>
+                                <tr className="bg-slate-50 font-bold border-b border-slate-200">
+                                  <td colSpan={4} className="px-2 py-1">4.Details of Goods / Services</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                            <div className="overflow-x-auto">
+                              <table className="w-full border-collapse">
+                                <thead className="bg-slate-50 text-[10px] uppercase text-slate-600">
+                                  <tr className="border-b border-slate-200">
+                                    <th className="border-r border-slate-200 px-2 py-1 text-left">SlNo</th>
+                                    <th className="border-r border-slate-200 px-2 py-1 text-left">Item Description</th>
+                                    <th className="border-r border-slate-200 px-2 py-1 text-left">Quantity</th>
+                                    <th className="border-r border-slate-200 px-2 py-1 text-left">Unit Price</th>
+                                    <th className="border-r border-slate-200 px-2 py-1 text-left">Total</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr className="border-b border-slate-200">
+                                    <td className="border-r border-slate-200 px-2 py-1">1</td>
+                                    <td className="border-r border-slate-200 px-2 py-1">SILK GLAMOR P0 BASE - 4L</td>
+                                    <td className="border-r border-slate-200 px-2 py-1">6 NOS</td>
+                                    <td className="border-r border-slate-200 px-2 py-1">1907.63</td>
+                                    <td className="px-2 py-1">13506.02</td>
+                                  </tr>
+                                  <tr className="border-b border-slate-200">
+                                    <td className="border-r border-slate-200 px-2 py-1">2</td>
+                                    <td className="border-r border-slate-200 px-2 py-1">SILK GLAMOR N2 BASE - 3.6L</td>
+                                    <td className="border-r border-slate-200 px-2 py-1">1 NOS</td>
+                                    <td className="border-r border-slate-200 px-2 py-1">1950</td>
+                                    <td className="px-2 py-1">2301</td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
-                          <button
-                            onClick={handleCancelRetry}
-                            className="mt-6 rounded-md bg-red-600 px-8 py-3 text-2xl font-semibold text-white hover:bg-red-700"
-                          >
-                            Retry
-                          </button>
+
+                          <div className="mt-6 space-y-4">
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <div>
+                                <label className="mb-1.5 block text-[12px] font-bold text-slate-700">
+                                  Cancel Reason :
+                                </label>
+                                <select
+                                  value={cancelReason}
+                                  onChange={(e) => setCancelReason(e.target.value)}
+                                  className="w-full rounded border border-slate-300 bg-white px-3 py-1.5 text-[12px] outline-none focus:border-blue-500"
+                                >
+                                  <option>Others</option>
+                                  <option>Duplicate</option>
+                                  <option>Wrong Invoice</option>
+                                  <option>Order Cancelled</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="mb-1.5 block text-[12px] font-bold text-slate-700">
+                                  Remarks :
+                                </label>
+                                <textarea
+                                  value={cancelRemarks}
+                                  onChange={(e) => setCancelRemarks(e.target.value)}
+                                  rows={2}
+                                  className="w-full rounded border border-slate-300 bg-white px-3 py-1.5 text-[12px] outline-none focus:border-blue-500"
+                                  placeholder="Type remarks..."
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={handleCancelSubmit}
+                                className="rounded bg-blue-700 px-6 py-1.5 text-[12px] font-semibold text-white hover:bg-blue-800"
+                              >
+                                Submit
+                              </button>
+                              <button
+                                onClick={handleCancelExit}
+                                className="rounded bg-red-600 px-6 py-1.5 text-[12px] font-semibold text-white hover:bg-red-700"
+                              >
+                                Exit
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
-
-              <div className="mt-6 rounded-xl bg-white px-6 py-4 text-lg leading-7 text-blue-700">
-                The e-Invoice cancellation flow is for educational practice on
-                submitted invoice records. Use Ack No. or IRN, review the
                 cancellation reason, and submit to simulate the cancelled state.
               </div>
             </section>
