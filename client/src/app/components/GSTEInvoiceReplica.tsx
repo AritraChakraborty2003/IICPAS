@@ -70,7 +70,16 @@ interface GSTEInvoiceReplicaProps {
   baseRoute?: string;
   launchTitle?: string;
   portalTitle?: string;
+  companyName?: string;
   workflow?: Workflow;
+  initialInvoiceMenuOpen?: boolean;
+  initialShowLaunchScreen?: boolean;
+  startOnDashboard?: boolean;
+  highlightInvoiceMenu?: boolean;
+  highlightBulkUpload?: boolean;
+  highlightCancelMenu?: boolean;
+  highlightPrintMenu?: boolean;
+  bulkUploadRoute?: string;
 }
 
 export default function GSTEInvoiceReplica({
@@ -78,11 +87,20 @@ export default function GSTEInvoiceReplica({
   baseRoute = "/simulations/gst/e-invoicing-1",
   launchTitle = "GST E-Invoice Simulation",
   portalTitle = "e-Invoice 1 Portal",
+  companyName = "Company Airlines Pvt. Ltd.",
   workflow = "invoice",
+  initialInvoiceMenuOpen = false,
+  initialShowLaunchScreen = true,
+  startOnDashboard = false,
+  highlightInvoiceMenu = false,
+  highlightBulkUpload = false,
+  highlightCancelMenu = false,
+  highlightPrintMenu = false,
+  bulkUploadRoute,
 }: GSTEInvoiceReplicaProps) {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>(initialScreen);
-  const [isInvoiceMenuOpen, setIsInvoiceMenuOpen] = useState(false);
+  const [isInvoiceMenuOpen, setIsInvoiceMenuOpen] = useState(initialInvoiceMenuOpen);
   const sidebarMenuItems = [
     { label: "MIS Reports", Icon: Menu },
     { label: "User Management", Icon: Users },
@@ -94,7 +112,7 @@ export default function GSTEInvoiceReplica({
     { label: "e-Way Bill", Icon: Truck },
     { label: "2 Factor Authentication", Icon: ShieldAlert },
   ];
-  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
+  const [showLaunchScreen, setShowLaunchScreen] = useState(initialShowLaunchScreen);
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
   const launchTimerRef = useRef<number | null>(null);
 
@@ -105,6 +123,17 @@ export default function GSTEInvoiceReplica({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!startOnDashboard) {
+      return;
+    }
+
+    setScreen("dashboard");
+    setIsInvoiceMenuOpen(true);
+    setShowLaunchScreen(false);
+    setIsStartingExperiment(false);
+  }, [startOnDashboard]);
 
   const handleStartExperiment = () => {
     if (isStartingExperiment) return;
@@ -131,6 +160,14 @@ export default function GSTEInvoiceReplica({
 
   const goToInvoiceBuilder = () => {
     router.push(invoiceRoute);
+  };
+
+  const goToBulkUpload = () => {
+    if (!bulkUploadRoute) {
+      return;
+    }
+
+    router.push(bulkUploadRoute);
   };
 
   const goToCancelFlow = () => {
@@ -166,7 +203,7 @@ export default function GSTEInvoiceReplica({
 
 
   const renderHomeScreen = () => (
-    <div className="min-h-screen bg-gradient-to-b from-[#eef8fd] via-[#f6fbfe] to-[#edf5fb]">
+    <div className="min-h-screen bg-white">
       <div className="max-w-[1840px] mx-auto px-4 pt-6 pb-4">
         <div className="flex items-center justify-between gap-4 mb-2">
           <div className="flex items-center gap-4">
@@ -193,8 +230,8 @@ export default function GSTEInvoiceReplica({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-cyan-100 bg-[#e0f2fa] p-4 shadow-sm">
-          <div className="rounded-xl border-l-4 border-cyan-700 bg-[#e0f2fa] px-4 py-3 text-slate-800">
+        <div className="rounded-2xl border border-cyan-100 bg-white p-4 shadow-sm">
+          <div className="rounded-xl border-l-4 border-cyan-700 bg-white px-4 py-3 text-slate-800">
             <div className="text-base leading-6">
               Go to Login under Menu and Use the following Credentials to login:
             </div>
@@ -269,7 +306,7 @@ export default function GSTEInvoiceReplica({
             <div className="p-4">
               <div className="flex flex-col gap-4 xl:flex-row">
                 <div className="flex-1">
-                  <div className="relative overflow-hidden rounded-xl bg-[#edf6fb] min-h-[640px] border border-slate-100">
+                  <div className="relative overflow-hidden rounded-xl bg-white min-h-[640px] border border-slate-100">
                     <div className="absolute inset-0 bg-white/52 backdrop-blur-[1px]" />
                     <div className="absolute inset-0 opacity-20">
                       <div className="grid grid-cols-12 gap-3 h-full p-6">
@@ -513,13 +550,13 @@ export default function GSTEInvoiceReplica({
   );
 
   const renderDashboard = () => (
-    <div className="min-h-screen bg-[#f4f7fb]">
+    <div className="min-h-screen bg-white">
       <div className="sticky top-0 z-50 w-full">
         <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
           This is a Simulation. Use For Educational Purposes ONLY.
         </div>
 
-        <div className="bg-[#f4f7fb] px-0 pb-0 pt-0">
+        <div className="bg-white px-0 pb-0 pt-0">
           <div className="bg-[#24668f] text-white">
             <div className="px-4 py-3">
               <div className="flex items-center justify-between gap-3">
@@ -561,7 +598,7 @@ export default function GSTEInvoiceReplica({
             <div className="border-t border-white/15 bg-[#ccd4e9] px-4 py-2.5 text-[12px] text-slate-700 lg:text-[14px]">
               <div className="flex items-center justify-between gap-4 whitespace-nowrap">
                 <div className="text-left whitespace-nowrap">
-                  GSTIN: 29BRYFP02061V7YP - Name: Company Airlines Pvt. Ltd.
+                  GSTIN: 29BRYFP02061V7YP - Name: {companyName}
                 </div>
                 <div className="whitespace-nowrap">Account : Main User</div>
                 <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
@@ -584,14 +621,20 @@ export default function GSTEInvoiceReplica({
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                <div className={isInvoiceMenuOpen ? "overflow-hidden border-2 border-red-500 bg-[#d7def0]" : ""}>
+                <div
+                  className={
+                    isInvoiceMenuOpen || highlightInvoiceMenu
+                      ? "overflow-hidden border border-red-500 bg-[#d7def0]"
+                      : ""
+                  }
+                >
                   <button
                     onClick={() => setIsInvoiceMenuOpen((current) => !current)}
                     className={`flex w-full items-center justify-between px-4 py-3 text-left text-[12px] font-medium text-slate-700 ${
-                      isInvoiceMenuOpen
-                        ? "bg-[#cbd3f2] border-b border-red-500/80"
-                        : "border-2 border-red-500 bg-[#d7def0]"
-                    } hover:bg-[#e8edf8]`}
+                      highlightInvoiceMenu || isInvoiceMenuOpen
+                        ? "border border-red-500 bg-[#cbd3f2]"
+                        : "border-2 border-transparent bg-[#d7def0]"
+                    } hover:border-red-400 hover:bg-[#e8edf8] focus-visible:border-red-500 focus-visible:outline-none`}
                   >
                     <div className="flex items-center gap-3">
                       <FileText size={15} className="text-slate-600" />
@@ -607,7 +650,14 @@ export default function GSTEInvoiceReplica({
 
                   {isInvoiceMenuOpen && (
                     <div className="bg-[#d7def0]">
-                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                      <button
+                        onClick={goToBulkUpload}
+                        className={`flex w-full items-center justify-between bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8] focus-visible:outline-none ${
+                          highlightBulkUpload
+                            ? "border border-red-500"
+                            : "border-t border-white/60"
+                        }`}
+                      >
                         <div className="flex items-center gap-3">
                           <FileText size={15} className="text-slate-600" />
                           <span>Bulk Upload</span>
@@ -615,13 +665,25 @@ export default function GSTEInvoiceReplica({
                       </button>
                       <button 
                         onClick={goToCancelFlow}
-                        className={`flex w-full items-center justify-between bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8] ${workflow === "cancel" ? "border-2 border-red-500" : "border-t border-white/60"}`}>
+                        className={`flex w-full items-center justify-between bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8] focus-visible:outline-none ${
+                          highlightCancelMenu
+                            ? "border border-red-500"
+                            : workflow === "cancel"
+                              ? "border-b border-white/60"
+                              : "border-t border-white/60"
+                        }`}>
                         <div className="flex items-center gap-3">
                           <FileText size={15} className="text-slate-600" />
                           <span>Cancel</span>
                         </div>
                       </button>
-                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                      <button
+                        className={`flex w-full items-center justify-between bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8] focus-visible:outline-none ${
+                          highlightPrintMenu
+                            ? "border border-red-500"
+                            : "border-t border-white/60 hover:border-red-500"
+                        }`}
+                      >
                         <div className="flex items-center gap-3">
                           <FileText size={15} className="text-slate-600" />
                           <span>Print</span>
@@ -760,13 +822,13 @@ export default function GSTEInvoiceReplica({
   );
 
   const renderCancelScreen = () => (
-    <div className="min-h-screen bg-[#f4f7fb]">
+    <div className="min-h-screen bg-white">
       <div className="sticky top-0 z-[100000] w-full">
         <div className="relative z-[100001] bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
           This is a Simulation. Use For Educational Purposes ONLY.
         </div>
 
-        <div className="relative z-[100001] bg-[#f4f7fb] px-0 pb-0 pt-0">
+        <div className="relative z-[100001] bg-white px-0 pb-0 pt-0">
           <div className="bg-[#24668f] text-white">
             <div className="px-4 py-3">
               <div className="flex items-center justify-between gap-3">
@@ -808,7 +870,7 @@ export default function GSTEInvoiceReplica({
             <div className="border-t border-white/15 bg-[#ccd4e9] px-4 py-2.5 text-[12px] text-slate-700 lg:text-[14px]">
               <div className="flex items-center justify-between gap-4 whitespace-nowrap">
                 <div className="text-left whitespace-nowrap">
-                  GSTIN: 29BRYFP02061V7YP - Name: Company Airlines Pvt. Ltd.
+                  GSTIN: 29BRYFP02061V7YP - Name: {companyName}
                 </div>
                 <div className="whitespace-nowrap">Account : Main User</div>
                 <div className="whitespace-nowrap">Client IP:1.1.1.1</div>

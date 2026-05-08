@@ -1,0 +1,111 @@
+[
+    {
+        "Version": "1.1",
+        "TranDtls": {
+            "TaxSch": "GST",
+            "SupTyp": "B2B",
+            "RegRev": "N",
+            "IgstOnIntra": "N"
+        },
+        "DocDtls": {
+            "Typ": "INV",
+            "No": "STC/23-24/masdks",
+            "Dt": "09/10/2023"
+        },
+        "SellerDtls": {
+            "Gstin": "29BRYFP02061V7YP",
+            "LglNm": "IICPA Private Limited",
+            "Addr1": "IICPA Institute Campus, 2nd Floor, Rajarajeshwari Temple Rd, Bengaluru, Karnataka 560098",
+            "Addr2": null,
+            "Loc": "BANGALORE",
+            "Pin": 560098,
+            "Stcd": "29"
+        },
+        "BuyerDtls": {
+            "Gstin": "29GMRTL5631J3C1",
+            "LglNm": "IICPA Corporate Training LLP",
+            "Pos": "29",
+            "Addr1": "IICPA Learning Hub, MG Road, Bengaluru, Karnataka 560001",
+            "Addr2": null,
+            "Loc": "BANGALORE",
+            "Pin": 564001,
+            "Stcd": "29"
+        },
+        "ItemList": [
+            {
+                "SlNo": "1",
+                "PrdDesc": "GST Invoice Preparation Training Module",
+                "IsServc": "N",
+                "HsnCd": "32091090",
+                "Qty": 6,
+                "FreeQty": 0,
+                "Unit": "NOS",
+                "UnitPrice": 1907.63,
+                "TotAmt": 11445.78,
+                "Discount": 0,
+                "AssAmt": 11445.78,
+                "GstRt": 18,
+                "IgstAmt": 0,
+                "CgstAmt": 1030.12,
+                "SgstAmt": 1030.12,
+                "CesRt": 0,
+                "CesAmt": 0,
+                "CesNonAdvlAmt": 0,
+                "TotItemVal": 13506.02
+            },
+            {
+                "SlNo": "2",
+                "PrdDesc": "E-Invoicing Bulk Upload Practice Kit",
+                "IsServc": "N",
+                "HsnCd": "32091090",
+                "Qty": 1,
+                "FreeQty": 0,
+                "Unit": "NOS",
+                "UnitPrice": 1950,
+                "TotAmt": 1950,
+                "Discount": 0,
+                "AssAmt": 1950,
+                "GstRt": 18,
+                "IgstAmt": 0,
+                "CgstAmt": 175.50,
+                "SgstAmt": 175.50,
+                "CesRt": 0,
+                "CesAmt": 0,
+                "CesNonAdvlAmt": 0,
+                "TotItemVal": 2301
+            },
+            {
+                "SlNo": "3",
+                "PrdDesc": "Accounting Simulation Support Pack",
+                "IsServc": "N",
+                "HsnCd": "32091090",
+                "Qty": 900,
+                "FreeQty": 0,
+                "Unit": "MLT",
+                "UnitPrice": 0.56,
+                "TotAmt": 505.93,
+                "Discount": 0,
+                "AssAmt": 505.93,
+                "GstRt": 18,
+                "IgstAmt": 0,
+                "CgstAmt": 45.53,
+                "SgstAmt": 45.53,
+                "CesRt": 0,
+                "CesAmt": 0,
+                "CesNonAdvlAmt": 0,
+                "TotItemVal": 596.99
+            }
+        ],
+        "ValDtls": {
+            "AssVal": 13901.71,
+            "CgstVal": 1251.15,
+            "SgstVal": 1251.15,
+            "IgstVal": 0,
+            "CesVal": 0,
+            "Discount": 0.01,
+            "OthChrg": 0,
+            "RndOffAmt": 0,
+            "TotInvVal": 16404
+        }
+    }
+]

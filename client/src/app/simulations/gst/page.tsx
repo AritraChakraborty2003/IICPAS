@@ -1,7 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { getApiBase } from "@/lib/apiBase";
 import {
   FaArrowRight,
   FaDesktop,
@@ -17,6 +19,14 @@ const experiments = [
     description:
       "Exact screenshot-style replica of the GST e-invoicing portal flow.",
     route: "/simulations/gst/e-invoicing-1",
+    badge: "Portal Replica",
+    icon: FaDesktop,
+  },
+  {
+    title: "E-Invoicing 2",
+    description:
+      "Modernized replica of the e-Invoice 2 Portal with full login and dashboard flow.",
+    route: "/simulations/gst/e-invoicing-2",
     badge: "Portal Replica",
     icon: FaDesktop,
   },
@@ -47,6 +57,60 @@ const experiments = [
 ];
 
 export default function GSTSimulationsRootPage() {
+  const router = useRouter();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const checkAccess = async () => {
+      try {
+        const adminToken =
+          typeof window !== "undefined"
+            ? localStorage.getItem("adminToken")
+            : null;
+
+        if (adminToken) {
+          if (isMounted) {
+            setCheckingAuth(false);
+          }
+          return;
+        }
+
+        const apiBase = getApiBase();
+        const response = await fetch(`${apiBase}/v1/students/isstudent`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          throw new Error("Student not authenticated");
+        }
+
+        if (isMounted) {
+          setCheckingAuth(false);
+        }
+      } catch {
+        if (isMounted) {
+          router.replace("/student-login");
+        }
+      }
+    };
+
+    checkAccess();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
+
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[radial-gradient(circle_at_top,_#e7f4ff,_#f7fbff_40%,_#eef4fa_100%)] text-slate-700">
+        Checking access...
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#e7f4ff,_#f7fbff_40%,_#eef4fa_100%)] text-slate-900">
       <div className="border-b border-sky-100 bg-white/80 backdrop-blur">
