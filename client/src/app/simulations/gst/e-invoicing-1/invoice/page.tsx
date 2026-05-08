@@ -2,7 +2,12 @@
 
 import React from "react";
 import GSTEInvoiceReplica from "../../../../components/GSTEInvoiceReplica";
+import GSTAuthGate from "../../GSTAuthGate";
 
 export default function GSTEInvoicing1InvoicePage() {
-  return <GSTEInvoiceReplica initialScreen="invoice" />;
+  return (
+    <GSTAuthGate>
+      <GSTEInvoiceReplica initialScreen="invoice" />
+    </GSTAuthGate>
+  );
 }
