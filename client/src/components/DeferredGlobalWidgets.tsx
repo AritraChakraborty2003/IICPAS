@@ -38,7 +38,9 @@ export default function DeferredGlobalWidgets() {
   const isDashboardRoute =
     pathname?.includes("-dashboard") || pathname?.includes("/dashboard");
   const isCleanGSTSimulationRoute =
-    pathname?.startsWith("/simulations/gst/e-invoicing-1") ?? false;
+    pathname?.startsWith("/simulations/gst/e-invoicing-1") ||
+    pathname?.startsWith("/simulations/gst/e-invoicing-3") ||
+    false;
 
   useEffect(() => {
     if (isDashboardRoute || isCleanGSTSimulationRoute) return;

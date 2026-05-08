@@ -21,6 +21,14 @@ const experiments = [
     icon: FaDesktop,
   },
   {
+    title: "E-Invoicing 3",
+    description:
+      "A sibling dashboard clone on its own route for the next experiment flow.",
+    route: "/simulations/gst/e-invoicing-3",
+    badge: "Portal Replica",
+    icon: FaDesktop,
+  },
+  {
     title: "Invoice Builder",
     description:
       "Open the interactive invoice creation simulation used after login.",

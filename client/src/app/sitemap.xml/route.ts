@@ -199,6 +199,12 @@ export async function GET() {
         lastmod: new Date().toISOString().split("T")[0],
       },
       {
+        url: "/simulations/gst/e-invoicing-3",
+        priority: "0.7",
+        changefreq: "weekly",
+        lastmod: new Date().toISOString().split("T")[0],
+      },
+      {
         url: "/simulations/gst/e-invoicing-1/invoice",
         priority: "0.7",
         changefreq: "weekly",

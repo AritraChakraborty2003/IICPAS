@@ -71,6 +71,23 @@ export default function GSTSimulationsPage() {
       duration: "30 mins",
     },
     {
+      id: "einvoice-portal-3",
+      title: "E-Invoice Portal 3",
+      description: "A route-isolated clone of the e-invoicing dashboard flow",
+      icon: <FaFileInvoice className="text-4xl text-cyan-600" />,
+      route: "/simulations/gst/e-invoicing-3",
+      features: [
+        "Dashboard Clone",
+        "Route Marker",
+        "Login Simulation",
+        "Latest Updates",
+        "Portal Replica",
+        "Separate Path",
+      ],
+      difficulty: "Beginner",
+      duration: "30 mins",
+    },
+    {
       id: "eway-bill",
       title: "E-Way Bill",
       description: "Generate e-way bills for goods transportation",
@@ -127,7 +144,7 @@ export default function GSTSimulationsPage() {
     {
       title: "Beginner Path",
       description: "Start with basic GST concepts and simple transactions",
-      simulations: ["gst-registration", "gst-search", "einvoice-portal"],
+      simulations: ["gst-registration", "gst-search", "einvoice-portal", "einvoice-portal-3"],
       color: "bg-green-50 border-green-200",
       iconColor: "text-green-600",
     },

@@ -51,10 +51,16 @@ const latestUpdates = [
 
 interface GSTEInvoiceReplicaProps {
   initialScreen?: Screen;
+  baseRoute?: string;
+  launchTitle?: string;
+  portalTitle?: string;
 }
 
 export default function GSTEInvoiceReplica({
   initialScreen = "home",
+  baseRoute = "/simulations/gst/e-invoicing-1",
+  launchTitle = "GST E-Invoice Simulation",
+  portalTitle = "e-Invoice 1 Portal",
 }: GSTEInvoiceReplicaProps) {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>(initialScreen);
@@ -65,15 +71,16 @@ export default function GSTEInvoiceReplica({
     password: "Fin@123",
     captcha: "",
   });
+  const invoiceRoute = `${baseRoute}/invoice`;
 
   const goToInvoiceBuilder = () => {
-    router.push("/simulations/gst/e-invoicing-1/invoice");
+    router.push(invoiceRoute);
   };
 
   if (showLaunchScreen) {
     return (
       <ExperimentLaunchScreen
-        title="GST E-Invoice Simulation"
+        title={launchTitle}
         subtitle="A hazy fullscreen start screen that launches the simulation with one button in the center."
         onStart={() => setShowLaunchScreen(false)}
         buttonLabel="START EXPERIMENT"
@@ -138,7 +145,7 @@ export default function GSTEInvoiceReplica({
                 </div>
                 <div className="text-center">
                   <div className="text-3xl font-bold opacity-90">
-                    e-Invoice 1 Portal
+                    {portalTitle}
                   </div>
                 </div>
                 <div className="flex items-center gap-6 text-right">
@@ -449,7 +456,7 @@ export default function GSTEInvoiceReplica({
             </div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold">e-Invoice 1 Portal</div>
+            <div className="text-3xl font-bold">{portalTitle}</div>
           </div>
           <div className="flex items-center gap-6">
             <div className="text-right">
@@ -647,10 +654,10 @@ export default function GSTEInvoiceReplica({
 
   const renderInvoiceBuilder = () => (
     <div className="min-h-screen bg-slate-50">
-      <div className="border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
+        <div className="border-b border-slate-200 bg-white px-4 py-3 shadow-sm">
         <div className="mx-auto flex max-w-[1800px] items-center justify-between">
           <button
-            onClick={() => router.push("/simulations/gst/e-invoicing-1")}
+            onClick={() => router.push(baseRoute)}
             className="rounded-md border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
           >
             Back to Portal Replica
@@ -659,7 +666,7 @@ export default function GSTEInvoiceReplica({
             GST E-Invoice Builder
           </div>
           <div className="text-sm text-slate-500">
-            Route: /simulations/gst/e-invoicing-1/invoice
+            Route: {invoiceRoute}
           </div>
         </div>
       </div>

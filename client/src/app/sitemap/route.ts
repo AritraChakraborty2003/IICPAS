@@ -38,6 +38,7 @@ export async function GET() {
       "/gst-simulations",
       "/simulations/gst",
       "/simulations/gst/e-invoicing-1",
+      "/simulations/gst/e-invoicing-3",
       "/simulations/gst/e-invoicing-1/invoice",
       "/help",
       "/home",

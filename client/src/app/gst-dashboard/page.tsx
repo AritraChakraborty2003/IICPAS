@@ -29,6 +29,20 @@ export default function GSTDashboard() {
       ],
     },
     {
+      id: "portal-replica-3",
+      title: "Portal Replica 3",
+      description:
+        "Route-isolated clone of the e-Invoice dashboard flow for the next experiment.",
+      icon: <FaDesktop className="text-4xl text-cyan-600" />,
+      route: "/simulations/gst/e-invoicing-3",
+      features: [
+        "Dashboard Clone",
+        "Login Simulation",
+        "Separate Route",
+        "Route Marker",
+      ],
+    },
+    {
       id: "portal-simulation",
       title: "Portal Simulation",
       description: "Interactive portal simulation with step-by-step guidance",
