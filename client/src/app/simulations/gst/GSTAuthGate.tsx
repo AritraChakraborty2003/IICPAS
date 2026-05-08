@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getApiBase } from "@/lib/apiBase";
 
 type GSTAuthGateProps = {
@@ -10,6 +10,7 @@ type GSTAuthGateProps = {
 
 const ADMIN_STORAGE_KEYS = ["adminToken", "adminUser"];
 const GST_COURSE_PATTERN = /\bgst\b/i;
+const UNPROTECTED_PATHS = ["/simulations/gst/e-way-bill"];
 
 const normalizeCourseList = (payload: unknown) => {
   if (Array.isArray(payload)) return payload;
@@ -50,9 +51,17 @@ const isGstCourse = (course: unknown) => {
 
 export default function GSTAuthGate({ children }: GSTAuthGateProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const currentPathname = pathname ?? "";
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
+    // E-way bill simulations are public and should not call the auth backend.
+    if (UNPROTECTED_PATHS.some((path) => currentPathname.startsWith(path))) {
+      setCheckingAuth(false);
+      return;
+    }
+
     let isMounted = true;
     let aborted = false;
 
@@ -164,7 +173,7 @@ export default function GSTAuthGate({ children }: GSTAuthGateProps) {
       isMounted = false;
       aborted = true;
     };
-  }, [router]);
+  }, [currentPathname, router]);
 
   if (checkingAuth) {
     return (

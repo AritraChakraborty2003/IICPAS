@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Menu, Truck, FileText, Search, Printer, CircleGauge, MapPin, ShieldCheck, Users, Plug, KeyRound, ContactRound, PencilLine, ShieldAlert, ShieldQuestion } from "lucide-react";
+import { ChevronDown, LogIn } from "lucide-react";
 import GSTBannerCarousel from "./GSTBannerCarousel";
 
 type Screen = "home" | "generate" | "search" | "print" | "dashboard";
@@ -48,7 +48,7 @@ export default function GSTEWayBillReplica({
   initialShowLaunchScreen = true,
 }: GSTEWayBillReplicaProps) {
   const router = useRouter();
-  const [screen, setScreen] = useState<Screen>(initialScreen);
+  const screen = initialScreen;
   const [showLaunchScreen, setShowLaunchScreen] = useState(initialShowLaunchScreen);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -61,89 +61,25 @@ export default function GSTEWayBillReplica({
     [],
   );
 
-  const navTabs = ["Home", "Laws", "Help", "Search", "Registration", "Statistics", "Contact Us"];
-  const sidebarMenu = [
-    { label: "e-Way Bill", Icon: FileText },
-    { label: "Generate", Icon: Truck },
-    { label: "Search", Icon: Search },
-    { label: "Print", Icon: Printer },
-    { label: "Distance Calc", Icon: CircleGauge },
-    { label: "Track Vehicle", Icon: MapPin },
-    { label: "MIS Reports", Icon: Menu },
-    { label: "User Management", Icon: Users },
-    { label: "API Registration", Icon: Plug },
-    { label: "Change Password", Icon: KeyRound },
-    { label: "Feedback", Icon: ShieldQuestion },
-    { label: "Update Contact", Icon: ContactRound },
-    { label: "Update", Icon: PencilLine },
-    { label: "2 Factor Auth", Icon: ShieldAlert },
+  const navTabs = [
+    { label: "Home", chevron: false },
+    { label: "Laws", chevron: true },
+    { label: "Help", chevron: true },
+    { label: "Search", chevron: true },
+    { label: "Registration", chevron: true },
+    { label: "Statistics", chevron: false },
+    { label: "Contact Us", chevron: false },
   ];
 
-  const openSection = (nextScreen: Screen) => {
-    setScreen(nextScreen);
-    setShowLaunchScreen(false);
-    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
-  };
-
-  const menuScreenMap: Record<number, Screen> = {
-    0: "home",
-    1: "generate",
-    2: "search",
-    3: "print",
-  };
-
-  const introCopy = {
-    home: {
-      title: "GST E-Way Bill Portal",
-      description:
-        "A simulation of the e-Way Bill portal with the familiar government-style header, dashboard shell, and rotating banner announcements.",
-      action: "START EXPERIMENT",
-      primaryLabel: "Generate New Bill",
-      secondaryLabel: "Search / Print",
-    },
-    generate: {
-      title: "Generate E-Way Bill",
-      description:
-        "Create a new e-way bill for transport of goods using the simulated portal flow.",
-      action: "OPEN GENERATION FLOW",
-      primaryLabel: "Proceed to Generation",
-      secondaryLabel: "Review Documents",
-    },
-    search: {
-      title: "Search E-Way Bill",
-      description:
-        "Search an existing e-way bill, inspect its status, and review transportation details.",
-      action: "OPEN SEARCH FLOW",
-      primaryLabel: "Search Bill",
-      secondaryLabel: "View History",
-    },
-    print: {
-      title: "Print E-Way Bill",
-      description:
-        "Open the print-ready view for an already generated e-way bill and review the document.",
-      action: "OPEN PRINT FLOW",
-      primaryLabel: "Print Bill",
-      secondaryLabel: "Download Copy",
-    },
-    dashboard: {
-      title: "E-Way Bill Dashboard",
-      description:
-        "Monitor e-way bill generation, manage transport documents, and explore the latest portal updates.",
-      action: "OPEN DASHBOARD",
-      primaryLabel: "Generate",
-      secondaryLabel: "Search",
-    },
-  }[screen];
-
   return (
-    <div className="min-h-screen bg-[#f5f8fb]">
-      <div className="sticky top-0 z-40">
+    <div className="flex min-h-screen flex-col bg-[#f5f8fb]">
+      <header className="sticky top-0 z-40">
         <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
           This is a Simulation. Use For Educational Purposes ONLY.
         </div>
 
         <div className="bg-[#f5f8fb] px-0 pb-0 pt-0">
-          <div className="bg-[#2f7a9f] text-white shadow-[0_2px_8px_rgba(15,23,42,0.18)]">
+          <div className="bg-[#5a4bb0] text-white shadow-[0_2px_8px_rgba(15,23,42,0.18)]">
             <div className="px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
@@ -181,221 +117,130 @@ export default function GSTEWayBillReplica({
               </div>
             </div>
 
-            <div className="border-t border-white/15 bg-[#c9d6f0] px-4 py-2.5 text-[12px] text-slate-700 lg:text-[14px]">
-              <div className="flex items-center justify-between gap-4 whitespace-nowrap">
-                <div className="text-left whitespace-nowrap">
-                  GSTIN: 29BRYFP02061V7YP - Name: {companyName}
-                </div>
-                <div className="whitespace-nowrap">Account : Main User</div>
-                <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
-              </div>
-            </div>
           </div>
+        </div>
+      </header>
 
-          <div className="mx-auto w-full max-w-[1840px] px-4 pb-8 pt-6">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_2px_10px_rgba(15,23,42,0.12)]">
-              <div className="flex min-h-[48px] w-full flex-wrap items-stretch border-b border-slate-200 bg-white">
-                {navTabs.map((tab, index) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    className={`min-w-[120px] flex-1 border-r border-slate-200 px-6 py-4 text-[15px] font-medium transition-colors ${
-                      index === 0
-                        ? "bg-[#cfe0ff] text-[#173f73]"
-                        : "bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setShowLoginModal(true)}
-                  className="min-w-[120px] border-l border-slate-200 bg-white px-6 py-4 text-[15px] font-medium text-slate-600 hover:bg-slate-50"
-                >
-                  Login
-                </button>
-              </div>
+      <main className="flex-1 pb-6">
+        <div className="w-full border-b border-white/60 bg-[#d9d2f6] px-4 py-2 shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
+          <div className="mx-auto flex w-full max-w-[1840px] items-center gap-1 overflow-x-auto whitespace-nowrap">
+            {navTabs.map((tab, index) => (
+              <button
+                key={tab.label}
+                type="button"
+                className={`shrink-0 rounded-full px-5 py-2.5 text-[15px] font-medium transition-colors ${
+                  index === 0
+                    ? "bg-white/70 text-[#3f3479] shadow-sm"
+                    : "text-[#4a5d86] hover:bg-white/55"
+                }`}
+              >
+                <span className="inline-flex items-center gap-1.5">
+                  <span>{tab.label}</span>
+                  {tab.chevron && <ChevronDown size={14} className="mt-[1px]" />}
+                </span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setShowLoginModal(true)}
+              className="ml-auto inline-flex shrink-0 items-center gap-1.5 px-2 py-1 text-[15px] font-medium text-[#395789] transition-colors duration-200 hover:text-[#173f73]"
+            >
+              Login
+              <LogIn size={16} className="text-current" />
+            </button>
+          </div>
+        </div>
 
-              <div className="grid gap-4 p-4 xl:grid-cols-[minmax(0,1fr)_410px]">
-                <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
-                  <GSTBannerCarousel slides={bannerSlides} className="bg-[#eef6fb]" heightClassName="h-[340px] lg:h-[430px]" />
-                  <div className="border-t border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700">
-                    The e-Way Bill System is for GST registered person / enrolled
-                    transporter for generating the way bill electronically on
-                    commencement of movement of goods exceeding the value of Rs.
-                    50,000 in relation to supply or for reasons other than supply or
-                    due to inward supply from an unregistered person.
-                  </div>
-                </section>
+        <div className="mx-auto grid w-full max-w-[1840px] gap-4 px-4 pt-4 xl:grid-cols-[minmax(0,1fr)_390px]">
+          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
+            <GSTBannerCarousel slides={bannerSlides} className="bg-[#eef6fb]" heightClassName="h-[340px] lg:h-[430px]" />
+            <div className="border-t border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700">
+              E-Way bill system is for GST registered person / enrolled
+              transporter for generating the way bill (a document to be carried
+              by the person in charge of conveyance) electronically on
+              commencement of movement of goods exceeding the value of Rs.
+              50,000 in relation to supply or for reasons other than supply or
+              due to inward supply from an unregistered person.
+            </div>
+          </section>
 
-                <aside className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
-                  <div className="border-b border-slate-200 bg-white px-5 py-4">
-                    <h3 className="text-[20px] font-extrabold tracking-wide text-slate-700">
-                      LATEST UPDATES
-                    </h3>
-                  </div>
-
-                  <div className="space-y-4 px-4 py-4">
-                    {updates.map((item) => (
-                      <div
-                        key={`${item.date}-${item.text}`}
-                        className={`border-l-4 pl-4 ${
-                          item.color === "blue"
-                            ? "border-blue-500"
-                            : item.color === "green"
-                              ? "border-green-500"
-                              : item.color === "orange"
-                                ? "border-orange-500"
-                                : "border-red-500"
-                        }`}
-                      >
-                        <div className="mb-1 text-sm font-semibold text-slate-400">
-                          {item.date}
-                        </div>
-                        <p className="text-[15px] font-semibold leading-6 text-blue-700/95">
-                          • {item.text}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </aside>
-              </div>
-
-              <div className="grid gap-4 px-4 pb-4 xl:grid-cols-[280px_1fr]">
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-[#f7fbff]">
-                  <div className="border-b border-slate-200 bg-[#f2f7ff] px-4 py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-semibold uppercase tracking-[0.32em] text-slate-500">
-                        Portal Actions
-                      </div>
-                      <ChevronDown className="h-4 w-4 text-slate-500" />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 p-2">
-                    {sidebarMenu.map(({ label, Icon }, index) => (
-                    <button
-                        key={label}
-                        type="button"
-                        onClick={() => openSection(menuScreenMap[index] ?? "dashboard")}
-                        className={`flex w-full items-center gap-3 rounded-lg px-4 py-3 text-left text-[14px] font-medium transition-colors ${
-                          index === 0 && screen === "home"
-                            ? "bg-[#387fca] text-white"
-                            : index === 1 && screen === "generate"
-                              ? "bg-[#387fca] text-white"
-                              : index === 2 && screen === "search"
-                                ? "bg-[#387fca] text-white"
-                                : index === 3 && screen === "print"
-                                  ? "bg-[#387fca] text-white"
-                                  : "bg-[#e8eef8] text-slate-700 hover:bg-slate-100"
-                        }`}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        <span>{label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
-                  <div className="mb-5 flex items-center justify-between gap-4">
-                    <div>
-                      <div className="inline-flex rounded-full bg-blue-50 px-4 py-1 text-sm font-semibold text-blue-700">
-                        {screen === "home" ? "Home" : screen === "generate" ? "Generate" : screen === "search" ? "Search" : screen === "print" ? "Print" : "Dashboard"}
-                      </div>
-                      <h1 className="mt-4 text-3xl font-extrabold text-slate-800">
-                        {introCopy.title}
-                      </h1>
-                      <p className="mt-3 max-w-3xl text-[16px] leading-7 text-slate-600">
-                        {introCopy.description}
-                      </p>
-                    </div>
-
-                    <div className="hidden min-w-[240px] rounded-2xl bg-gradient-to-br from-blue-600 to-cyan-500 p-5 text-white shadow-[0_16px_50px_rgba(37,99,235,0.2)] lg:block">
-                      <div className="text-xs font-bold uppercase tracking-[0.35em] text-white/90">
-                        {screen === "home" ? "Featured" : "Quick Access"}
-                      </div>
-                      <div className="mt-3 text-4xl font-extrabold">0%</div>
-                      <div className="mt-3 text-sm leading-6 text-white/90">
-                        Use the menu or the buttons below to move through the e-way bill simulation.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                      <div className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">
-                        Activity
-                      </div>
-                      <div className="mt-2 text-xl font-bold text-slate-800">
-                        Generate, Search, Print
-                      </div>
-                      <div className="mt-1 text-sm text-slate-600">
-                        Simulated portal actions for the e-way bill flow.
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                      <div className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">
-                        Documents
-                      </div>
-                      <div className="mt-2 text-xl font-bold text-slate-800">
-                        E-Way Bill JSON
-                      </div>
-                      <div className="mt-1 text-sm text-slate-600">
-                        Use the uploaded sample data to preview the workflow.
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                      <div className="text-xs font-bold uppercase tracking-[0.28em] text-slate-400">
-                        Access
-                      </div>
-                      <div className="mt-2 text-xl font-bold text-slate-800">
-                        Admin or GST Course
-                      </div>
-                      <div className="mt-1 text-sm text-slate-600">
-                        Protected by the GST route guard already in place.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 flex flex-wrap gap-4">
-                    <button
-                      type="button"
-                      onClick={() => openSection("generate")}
-                      className="rounded-xl bg-[#18365f] px-6 py-3 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-[#102745]"
-                    >
-                      {introCopy.primaryLabel}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => openSection("search")}
-                      className="rounded-xl border border-slate-200 bg-white px-6 py-3 text-[15px] font-semibold text-slate-700 shadow-sm transition-colors hover:bg-slate-50"
-                    >
-                      {introCopy.secondaryLabel}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowLoginModal(true)}
-                      className="rounded-xl border border-red-200 bg-white px-6 py-3 text-[15px] font-semibold text-slate-700 shadow-sm transition-colors hover:bg-red-50"
-                    >
-                      LOGIN
-                    </button>
-                  </div>
-                </div>
-              </div>
+          <aside className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
+            <div className="border-b border-slate-200 bg-white px-5 py-4">
+              <h3 className="text-[20px] font-extrabold tracking-wide text-slate-700">
+                LATEST UPDATES
+              </h3>
             </div>
 
-            <div className="mt-4 rounded-xl bg-[#245f87] px-6 py-5 text-white">
-              <div className="text-lg font-semibold uppercase tracking-wide opacity-90">
-                Important Links
+            <div className="space-y-4 px-4 py-4">
+              {updates.map((item) => (
+                <div
+                  key={`${item.date}-${item.text}`}
+                  className="group flex gap-4 rounded-lg border-b border-slate-100 px-1 py-3 transition-all duration-200 hover:-translate-y-[1px] hover:bg-[#f6f2ff] hover:shadow-[0_4px_12px_rgba(63,52,121,0.08)] last:border-b-0"
+                >
+                  <div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-md bg-[#f8e4e3] px-1.5 py-2 text-center text-slate-900 transition-colors duration-200 group-hover:bg-[#ead6ff] group-hover:text-[#3f3479] shadow-[0_1px_0_rgba(15,23,42,0.04)]">
+                    {item.date.split(" ").map((part) => (
+                      <span
+                        key={part}
+                        className={`${
+                          part.length <= 3 ? "text-sm font-extrabold" : "text-[11px] font-bold"
+                        } leading-tight`}
+                      >
+                        {part}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[15px] font-semibold leading-6 text-blue-700/95 transition-colors duration-200 group-hover:text-[#244bb7]">
+                      {item.text}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      <footer className="relative mt-auto w-full overflow-hidden bg-[#3f357f] text-white shadow-[0_-8px_24px_rgba(15,23,42,0.18)]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_28%),radial-gradient(circle_at_80%_80%,rgba(255,255,255,0.08),transparent_24%)]" />
+        <div className="relative mx-auto w-full max-w-[1840px] px-4 py-10 lg:py-12">
+          <div className="flex flex-col gap-8">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">Important Links</h2>
+              <div className="mt-2 h-0.5 w-40 bg-white/80" />
+            </div>
+
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              <ul className="space-y-4 text-[15px] leading-6 text-white/92">
+                <li>Central Board of Excise</li>
+                <li>GST Common Portal</li>
+              </ul>
+              <ul className="space-y-4 text-[15px] leading-6 text-white/92">
+                <li>National Informatics Centre</li>
+                <li>National Portal</li>
+              </ul>
+              <ul className="space-y-4 text-[15px] leading-6 text-white/92">
+                <li>Goods and Service Tax Network</li>
+                <li>State Tax Websites</li>
+              </ul>
+              <ul className="space-y-4 text-[15px] leading-6 text-white/92">
+                <li>Website Policies</li>
+                <li>Help</li>
+              </ul>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-white/20 pt-4 text-sm text-white/80 lg:flex-row lg:items-center lg:justify-between">
+              <div>Ver. 1.3.0 Rel.1218</div>
+              <div className="max-w-4xl">
+                This site can be best viewed in Firefox 43.5 and above, IE 11 and
+                above, chrome 45 and above.{" "}
+                <span className="text-amber-300">Check your browser version</span>
               </div>
+              <div>© 2022 - Powered By National Informatics Centre</div>
             </div>
           </div>
         </div>
-      </div>
+      </footer>
 
       {showLaunchScreen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm px-4">
