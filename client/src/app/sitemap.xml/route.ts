@@ -187,6 +187,24 @@ export async function GET() {
         lastmod: new Date().toISOString().split("T")[0],
       },
       {
+        url: "/simulations/gst",
+        priority: "0.7",
+        changefreq: "weekly",
+        lastmod: new Date().toISOString().split("T")[0],
+      },
+      {
+        url: "/simulations/gst/e-invoicing-1",
+        priority: "0.7",
+        changefreq: "weekly",
+        lastmod: new Date().toISOString().split("T")[0],
+      },
+      {
+        url: "/simulations/gst/e-invoicing-1/invoice",
+        priority: "0.7",
+        changefreq: "weekly",
+        lastmod: new Date().toISOString().split("T")[0],
+      },
+      {
         url: "/help",
         priority: "0.6",
         changefreq: "monthly",

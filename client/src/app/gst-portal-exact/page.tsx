@@ -1,12 +1,5 @@
-"use client";
-
-import React from "react";
-import ExactGSTPortal from "../components/ExactGSTPortal";
+import { redirect } from "next/navigation";
 
 export default function GSTPortalExactPage() {
-  return (
-    <div>
-      <ExactGSTPortal />
-    </div>
-  );
+  redirect("/simulations/gst/e-invoicing-1");
 }

@@ -20,7 +20,7 @@ export default function GSTDashboard() {
       description:
         "Perfect replica of the official e-Invoice 1 Portal with exact styling and layout",
       icon: <FaDesktop className="text-4xl text-blue-600" />,
-      route: "/gst-portal-exact",
+      route: "/simulations/gst/e-invoicing-1",
       features: [
         "Exact UI Match",
         "Login Simulation",
@@ -33,7 +33,7 @@ export default function GSTDashboard() {
       title: "Portal Simulation",
       description: "Interactive portal simulation with step-by-step guidance",
       icon: <FaPlay className="text-4xl text-green-600" />,
-      route: "/gst-portal",
+      route: "/simulations/gst/e-invoicing-1",
       features: [
         "Interactive Steps",
         "Login Process",
@@ -46,7 +46,7 @@ export default function GSTDashboard() {
       title: "Invoice Creation",
       description: "Complete GST e-Invoice creation and generation simulation",
       icon: <FaFileInvoice className="text-4xl text-purple-600" />,
-      route: "/gst-simulation",
+      route: "/simulations/gst/e-invoicing-1/invoice",
       features: [
         "Invoice Creation",
         "Tax Calculation",

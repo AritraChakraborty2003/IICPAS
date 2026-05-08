@@ -58,7 +58,7 @@ export default function GSTSimulationsPage() {
       title: "E-Invoice Portal",
       description: "Generate and manage GST e-invoices with IRN",
       icon: <FaFileInvoice className="text-4xl text-purple-600" />,
-      route: "/gst-simulations/einvoice",
+      route: "/simulations/gst/e-invoicing-1",
       features: [
         "Invoice Generation",
         "IRN Creation",

@@ -1,12 +1,5 @@
-"use client";
-
-import React from "react";
-import GSTPortalSimulation from "../components/GSTPortalSimulation";
+import { redirect } from "next/navigation";
 
 export default function GSTPortalPage() {
-  return (
-    <div>
-      <GSTPortalSimulation />
-    </div>
-  );
+  redirect("/simulations/gst/e-invoicing-1");
 }
