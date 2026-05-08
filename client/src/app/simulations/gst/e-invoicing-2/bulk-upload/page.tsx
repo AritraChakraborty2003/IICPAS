@@ -3,7 +3,6 @@
 import React, { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FaArrowLeft, FaCheckCircle, FaRedo } from "react-icons/fa";
-import GSTAuthGate from "../../GSTAuthGate";
 
 type UploadRow = {
   invoiceNo: string;
@@ -103,8 +102,7 @@ export default function EInvoicing2BulkUploadPage() {
   };
 
   return (
-    <GSTAuthGate>
-      <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white">
       <div className="sticky top-0 z-50 w-full">
         <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
           This is a Simulation. Use For Educational Purposes ONLY.
@@ -364,7 +362,6 @@ export default function EInvoicing2BulkUploadPage() {
           </div>
         </div>
       ) : null}
-      </div>
-    </GSTAuthGate>
+    </div>
   );
 }
