@@ -10,7 +10,12 @@ type GSTAuthGateProps = {
 
 const ADMIN_STORAGE_KEYS = ["adminToken", "adminUser"];
 const GST_COURSE_PATTERN = /\bgst\b/i;
-const UNPROTECTED_PATHS = ["/simulations/gst/e-way-bill", "/simulations/gst/e-way-bill-login"];
+const UNPROTECTED_PATHS = [
+  "/simulations/gst/e-way-bill",
+  "/simulations/gst/e-way-bill-login",
+  "/simulations/gst/e-way-bill-dashboard",
+  "/simulations/gst/e-way-bill-5",
+];
 
 const normalizeCourseList = (payload: unknown) => {
   if (Array.isArray(payload)) return payload;

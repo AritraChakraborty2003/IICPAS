@@ -3,12 +3,13 @@
 import React from "react";
 import GSTEWayBillReplica from "@/app/components/GSTEWayBillReplica";
 
-export default function EWayBill4Page() {
+export default function EWayBill5Page() {
   return (
     <GSTEWayBillReplica
-      initialScreen="experiment4"
-      baseRoute="/simulations/gst/e-way-bill-4"
-      launchTitle="GST E-Way Bill Simulation 4"
+      initialScreen="generate"
+      generateLayout="content"
+      baseRoute="/simulations/gst/e-way-bill-5"
+      launchTitle="GST E-Way Bill Simulation 5"
       portalTitle="e-Way Bill Portal"
       companyName="IICPA Private Limited"
       initialShowLaunchScreen={true}

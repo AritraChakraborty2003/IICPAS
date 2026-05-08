@@ -3,6 +3,6 @@
 import React from "react";
 import GSTEWayBillDashboard from "@/app/components/GSTEWayBillDashboard";
 
-export default function EWayBill2Page() {
+export default function EWayBillDashboardPage() {
   return <GSTEWayBillDashboard />;
 }

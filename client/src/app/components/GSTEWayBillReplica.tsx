@@ -2,13 +2,26 @@
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, LogIn } from "lucide-react";
+import {
+  ChevronDown,
+  CircleAlert,
+  CheckCircle2,
+  Info,
+  LogIn,
+  LogOut,
+  Menu,
+  Printer,
+  Settings,
+  RotateCcw,
+  Video,
+} from "lucide-react";
 import GSTBannerCarousel from "./GSTBannerCarousel";
 
-type Screen = "home" | "generate" | "search" | "print" | "dashboard";
+type Screen = "home" | "generate" | "search" | "print" | "dashboard" | "experiment4";
 
 type GSTEWayBillReplicaProps = {
   initialScreen?: Screen;
+  generateLayout?: "portal" | "content";
   portalTitle?: string;
   companyName?: string;
   baseRoute?: string;
@@ -21,27 +34,27 @@ const updates = [
   {
     date: "28 JUL 2023",
     text: "Mandatory 2 Factor Authentication for taxpayers with AATO above 100 Cr is further extended till 20/08/2023.",
-    color: "blue",
   },
   {
     date: "26 MAY 2023",
     text: "Latest updates on 2 Factor Authentication, Deregistration of Enrolment and Common Enrolment have been issued.",
-    color: "green",
   },
   {
     date: "07 OCT 2022",
     text: "Single sign-on (SSO) for e-Invoice and e-Waybill enabled.",
-    color: "orange",
   },
   {
     date: "14 SEP 2022",
     text: "e-Waybill for Gold will be available only after the notification is issued by Government.",
-    color: "red",
   },
 ];
 
+const generateModes = ["Road", "Rail", "Air", "Ship or Ship Cum Road/Rail"];
+const vehicleTypes = ["Regular", "Over Dimensional Cargo"];
+
 export default function GSTEWayBillReplica({
   initialScreen = "home",
+  generateLayout = "portal",
   portalTitle = "e-Way Bill Portal",
   companyName = "IICPA Private Limited",
   baseRoute = "/simulations/gst/e-way-bill-1",
@@ -53,6 +66,11 @@ export default function GSTEWayBillReplica({
   const screen = initialScreen;
   const [showLaunchScreen, setShowLaunchScreen] = useState(initialShowLaunchScreen);
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
+  const [selectedMode, setSelectedMode] = useState("Road");
+  const [selectedVehicleType, setSelectedVehicleType] = useState("Regular");
+  const [vehicleNo, setVehicleNo] = useState("MH12AB1234");
+  const [showVehiclePreview, setShowVehiclePreview] = useState(false);
+  const [isExperiment4Submitted, setIsExperiment4Submitted] = useState(false);
   const launchTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -69,8 +87,13 @@ export default function GSTEWayBillReplica({
     }
 
     setIsStartingExperiment(true);
+    if (launchTimerRef.current !== null) {
+      window.clearTimeout(launchTimerRef.current);
+    }
     launchTimerRef.current = window.setTimeout(() => {
       setShowLaunchScreen(false);
+      setIsStartingExperiment(false);
+      launchTimerRef.current = null;
     }, 1500);
   };
 
@@ -93,7 +116,725 @@ export default function GSTEWayBillReplica({
     { label: "Contact Us", chevron: false },
   ];
 
-  return (
+  const handleRetryVehiclePreview = () => {
+    setVehicleNo("");
+    setShowVehiclePreview(false);
+  };
+
+  const handleSubmitVehiclePreview = () => {
+    setShowVehiclePreview(true);
+  };
+
+  const handleReturnToLaunch = () => {
+    if (launchTimerRef.current !== null) {
+      window.clearTimeout(launchTimerRef.current);
+      launchTimerRef.current = null;
+    }
+
+    setIsStartingExperiment(false);
+    setSelectedMode("Road");
+    setSelectedVehicleType("Regular");
+    setVehicleNo("MH12AB1234");
+    setShowVehiclePreview(false);
+    setShowLaunchScreen(true);
+  };
+
+  const handleSubmitExperiment4 = () => {
+    setIsExperiment4Submitted(true);
+  };
+
+  const handleRetryExperiment4 = () => {
+    setIsExperiment4Submitted(false);
+  };
+
+  const renderVehiclePreview = () => (
+    <div className="rounded-[12px] border border-[#d8ecf6] bg-white p-4 shadow-[0_1px_6px_rgba(15,23,42,0.06)]">
+      <div className="mx-auto w-full max-w-[560px] overflow-hidden rounded-[8px] border border-slate-300 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.08)]">
+        <div className="border-b border-slate-200 bg-[#ececf2] px-4 py-3 text-center">
+          <div className="text-[20px] font-bold text-slate-800">e-Way Bill</div>
+        </div>
+
+        <div className="px-4 py-4">
+          <div className="mx-auto flex h-28 w-28 items-center justify-center border border-slate-300 bg-white p-2">
+            <img
+              src="/images/simulations/qr-gst.webp"
+              alt="E-Way Bill QR code"
+              className="h-full w-full object-contain"
+            />
+          </div>
+
+          <div className="mt-4 overflow-hidden rounded-[2px] border border-slate-200">
+            <div className="grid grid-cols-[140px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 font-medium text-slate-700">
+                E-Way Bill No:
+              </div>
+              <div className="px-2 py-1 font-semibold text-slate-900">975741208388</div>
+            </div>
+            <div className="grid grid-cols-[140px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 font-medium text-slate-700">
+                E-Way Bill Date:
+              </div>
+              <div className="px-2 py-1 font-semibold text-slate-900">May 08 2026 23:52</div>
+            </div>
+            <div className="grid grid-cols-[140px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 font-medium text-slate-700">
+                Generated By:
+              </div>
+              <div className="px-2 py-1 font-semibold text-slate-900">
+                07GDLCF7228G1YK - Name: {companyName}
+              </div>
+            </div>
+            <div className="grid grid-cols-[140px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 font-medium text-slate-700">
+                Valid From:
+              </div>
+              <div className="px-2 py-1 font-semibold text-slate-900">May 08 2026 23:52</div>
+            </div>
+            <div className="grid grid-cols-[140px_1fr] text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 font-medium text-slate-700">
+                Valid Until:
+              </div>
+              <div className="px-2 py-1 font-semibold text-slate-900">May 09 2026 23:52</div>
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-hidden border border-slate-200">
+            <div className="bg-[#8b7bc6] px-3 py-1.5 text-[13px] font-bold text-white">Part - A</div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">GSTIN of Supplier</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">
+                07GDLCF7228G1YK - Name: {companyName}
+              </div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">Place of Dispatch</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">KR Puram, Bangalore: 560016</div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">GSTIN of Recipient</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">27MNHFP2782H1YZ Name: Mumbai</div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">Place of Delivery</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">#14, 2nd Floor, Off Veera Desai Rd.</div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">Document No.</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">AB134</div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">Document Date</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">May 08 2026</div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">Transaction Type:</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">1</div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">Value of Goods</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">500000</div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] border-b border-slate-200 text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">HSN Code</div>
+              <div className="px-2 py-1 font-semibold text-slate-900">720690</div>
+            </div>
+            <div className="grid grid-cols-[150px_1fr] text-[13px]">
+              <div className="border-r border-slate-200 px-2 py-1 text-slate-700">
+                Reason for Transportation
+              </div>
+              <div className="px-2 py-1 font-semibold text-slate-900">Supply - 1</div>
+            </div>
+          </div>
+
+          <div className="mt-4 overflow-hidden border border-slate-200">
+            <div className="bg-[#8b7bc6] px-3 py-1.5 text-[13px] font-bold text-white">Part - B</div>
+            <div className="grid grid-cols-[90px_110px_1fr_120px_120px] border-b border-slate-200 bg-[#ddd4f2] text-[11px] font-semibold text-slate-700">
+              <div className="px-2 py-1">Mode</div>
+              <div className="px-2 py-1">Vehicle / Trans Doc No & Dt.</div>
+              <div className="px-2 py-1">From</div>
+              <div className="px-2 py-1">Entered Date</div>
+              <div className="px-2 py-1">Entered By</div>
+            </div>
+            <div className="grid grid-cols-[90px_110px_1fr_120px_120px] border-b border-slate-200 text-[12px]">
+              <div className="px-2 py-2">Road</div>
+              <div className="px-2 py-2">{vehicleNo || "1402"}</div>
+              <div className="px-2 py-2">#14, 2nd Floor, Off Veera Desai Rd.</div>
+              <div className="px-2 py-2">May 08 2026 23:52</div>
+              <div className="px-2 py-2">27MNHFP2782H1YZ</div>
+            </div>
+            <div className="flex justify-center px-4 py-3">
+              <div className="flex flex-col items-center">
+                <img
+                  src="/images/simulations/barcode-image.jpg"
+                  alt="E-Way Bill barcode"
+                  className="h-16 w-40 object-contain"
+                />
+                <div className="mt-1 text-[10px] text-slate-500">182314594723038</div>
+              </div>
+            </div>
+            <div className="flex items-center justify-center gap-2 border-t border-slate-200 bg-[#f2f2f2] px-3 py-2">
+              <button
+                type="button"
+                className="inline-flex items-center gap-2 rounded bg-[#6b5fc2] px-4 py-2 text-[13px] font-semibold text-white"
+              >
+                <Printer size={14} />
+                Print
+              </button>
+              <button
+                type="button"
+                onClick={handleRetryVehiclePreview}
+                className="inline-flex items-center gap-2 rounded bg-[#ea7a68] px-4 py-2 text-[13px] font-semibold text-white"
+              >
+                <RotateCcw size={14} />
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderGenerateContent = () => (
+    <div className="min-h-screen bg-white text-slate-900">
+      <main className="w-full px-4 py-4">
+        <div className="w-full rounded-[12px] border border-[#d8ecf6] bg-white p-4 shadow-[0_1px_6px_rgba(15,23,42,0.06)]">
+          <div className="overflow-hidden rounded-[8px] border border-[#d8d8df] bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+            <div className="bg-[#a58ad6] px-3 py-2 text-[16px] font-semibold text-slate-800">
+              Transportation Details
+            </div>
+
+            <div className="grid gap-4 border-b border-slate-200 px-3 py-4 lg:grid-cols-[1.1fr_1.1fr_1fr_1fr]">
+              <label className="grid gap-1 text-[14px] text-slate-700">
+                <span>Transporter ID</span>
+                <input
+                  type="text"
+                  className="h-10 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                />
+              </label>
+              <label className="grid gap-1 text-[14px] text-slate-700">
+                <span>Transporter Name</span>
+                <input
+                  type="text"
+                  className="h-10 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                  placeholder="Name"
+                />
+              </label>
+              <div className="grid gap-1 text-[14px] text-slate-700">
+                <span>Auto Calculated PIN to PIN (in KM)</span>
+                <div className="h-10 rounded border border-dashed border-slate-300 bg-slate-50 px-3" />
+              </div>
+              <label className="grid gap-1 text-[14px] text-slate-700">
+                <span className="flex items-center gap-1">
+                  Approximate Distance (in KM)
+                  <span className="text-red-500">*</span>
+                </span>
+                <input
+                  type="text"
+                  className="h-10 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                />
+              </label>
+            </div>
+
+            <div className="bg-[#a58ad6] px-3 py-2 text-[16px] font-semibold text-slate-800">
+              PART-B
+            </div>
+
+            <div className="border-b border-slate-200">
+              <div className="grid gap-2 px-3 py-3 lg:grid-cols-[1.1fr_1.3fr] lg:items-center">
+                <div className="flex flex-wrap items-center gap-3 text-[14px] text-slate-700">
+                  <span>Mode</span>
+                  {generateModes.map((mode) => (
+                    <label key={mode} className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="mode"
+                        checked={selectedMode === mode}
+                        onChange={() => setSelectedMode(mode)}
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      <span>{mode}</span>
+                    </label>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 text-[14px] text-slate-700">
+                  <span>Vehicle Type</span>
+                  {vehicleTypes.map((vehicleType) => (
+                    <label key={vehicleType} className="inline-flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="vehicleType"
+                        checked={selectedVehicleType === vehicleType}
+                        onChange={() => setSelectedVehicleType(vehicleType)}
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      <span>{vehicleType}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid gap-0 border-t border-slate-200 lg:grid-cols-[1fr_1.2fr]">
+                <label className="flex items-center gap-3 border-b border-slate-200 px-3 py-4 text-[14px] text-slate-700 lg:border-b-0 lg:border-r">
+                  <span className="whitespace-nowrap">Vehicle No.</span>
+                  <input
+                    type="text"
+                    value={vehicleNo}
+                    onChange={(e) => setVehicleNo(e.target.value)}
+                    className="h-11 w-full max-w-[165px] rounded border-2 border-red-500 px-3 text-[14px] outline-none"
+                  />
+                </label>
+
+                <div className="grid gap-3 px-3 py-4 lg:grid-cols-[1fr_220px] lg:items-center">
+                  <label className="flex items-center gap-3 text-[14px] text-slate-700">
+                    <span className="whitespace-nowrap">Transporter Doc. No. & Date</span>
+                    <input
+                      type="text"
+                      className="h-11 min-w-0 flex-1 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                    />
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="dd/mm/yy"
+                    className="h-11 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-3 py-6">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <button
+                  type="button"
+                  className="min-w-[84px] rounded-sm bg-[#d7a14b] px-4 py-2 text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#c88b33]"
+                >
+                  Preview
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitVehiclePreview}
+                  className="min-w-[112px] rounded-sm bg-[#5e56b6] px-4 py-2 text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#4d46a8]"
+                >
+                  Submit
+                </button>
+                <button
+                  type="button"
+                  className="min-w-[104px] rounded-sm bg-[#de776b] px-4 py-2 text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#d36154]"
+                >
+                  Refresh
+                </button>
+              </div>
+
+              <div className="mt-4 flex justify-center">
+                <div className="max-w-[1120px] rounded-full bg-[#d9d9dd] px-4 py-2 text-center text-[13px] leading-5 text-slate-700 shadow-inner">
+                  <span className="font-semibold">Note:</span> Railway Receipt numbers are
+                  validated as per the given formats. If you have RR number other than these
+                  formats then, please raise a ticket by mentioning the RR no. Presently, the
+                  validation is optional, but in future, invalid formats will not be allowed.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {showVehiclePreview && (
+            <div className="mt-4 min-h-[520px] rounded-[8px] border border-[#e0e0e0] bg-white p-4">
+              {renderVehiclePreview()}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+
+  const renderExperiment4Screen = () => (
+    <div className="min-h-screen bg-[#f4f7fb] pb-8 text-slate-900">
+      <main className="px-4 py-4">
+        <div className="rounded-[12px] border border-[#d8ecf6] bg-[#dff3fb] p-4 shadow-[0_1px_6px_rgba(15,23,42,0.06)]">
+          <div className="rounded-[8px] border border-[#d8d8df] bg-[#dff3fb] p-4 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+            <div className="border-l-4 border-[#53a8c8] bg-[#dff3fb] px-4 py-3 text-[15px] leading-6 text-slate-700">
+              <div className="text-[18px] font-bold text-slate-800">Experiment 4:</div>
+              <div>Update item details: Product: Steel Bar (12MM) HSN: 720690</div>
+              <div>Quantity: 10,000 KG, Price per KG: Rs.50</div>
+              <div>Rate of GST 18%</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-[12px] border border-[#d8ecf6] bg-[#dff3fb] p-4 shadow-[0_1px_6px_rgba(15,23,42,0.06)]">
+          <div className="overflow-hidden rounded-[8px] border border-[#d8d8df] bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+            <div className="bg-[#a58ad6] px-4 py-3 text-[16px] font-semibold text-slate-800">
+              Item Details
+            </div>
+
+            <div className="overflow-x-auto">
+              <div className="min-w-[1460px] p-3">
+                <div className="grid grid-cols-[1.25fr_1.15fr_1fr_1fr_1fr_1.2fr_1fr] border border-slate-200 text-[12px]">
+                  {["Product Name", "Description", "HSN", "Quantity", "Unit", "Value/Taxable Value (Rs.)", "CGST+ SGST Rate(%)"].map(
+                    (label, index) => (
+                      <div key={label} className="border-r border-slate-200 px-3 py-2 last:border-r-0">
+                        <span className="inline-flex items-center gap-1">
+                          <span>{label}</span>
+                          {index !== 1 && <CheckCircle2 size={11} className="text-green-500" />}
+                        </span>
+                      </div>
+                    ),
+                  )}
+                  {["Name", "Description", "HSN", "Quantity", "Unit", "", "-Select-"].map((value, index) => (
+                    <div
+                      key={`${value}-${index}`}
+                      className="border-t border-r border-slate-200 px-2 py-2 last:border-r-0"
+                    >
+                      <div
+                        className={`h-10 rounded border px-3 text-[13px] leading-10 ${
+                          index === 2 || index === 5 || index === 6
+                            ? "border-slate-200 bg-slate-100 text-slate-500"
+                            : "border-slate-300 bg-white text-slate-700"
+                        }`}
+                      >
+                        {value || " "}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] border-x border-b border-slate-200 text-[12px]">
+                  {[
+                    "Total Tax'ble Amount",
+                    "CGST Amount",
+                    "SGST Amount",
+                    "IGST Amount",
+                    "CESS Advol Amount",
+                    "CESS Non Advol Amount",
+                    "Other Amount(+/-)",
+                    "Total Inv. Amount",
+                  ].map((label) => (
+                    <div key={label} className="border-r border-slate-200 px-3 py-2 last:border-r-0">
+                      <span className="inline-flex items-center gap-1">
+                        <span>{label}</span>
+                        <CheckCircle2 size={11} className="text-green-500" />
+                      </span>
+                    </div>
+                  ))}
+                  {["500000", "", "", "", "", "", "", ""].map((value, index) => (
+                    <div
+                      key={`${value}-${index}`}
+                      className="border-t border-r border-slate-200 px-2 py-2 last:border-r-0"
+                    >
+                      <div
+                        className={`h-10 rounded border px-3 text-[13px] leading-10 ${
+                          index === 0
+                            ? "border-slate-200 bg-slate-100 text-slate-500"
+                            : "border-slate-300 bg-white text-slate-700"
+                        }`}
+                      >
+                        {value || " "}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-x border-b border-slate-200 bg-white px-3 py-2">
+                  <div className="h-3 rounded-full bg-slate-200">
+                    <div className="h-full w-[78%] rounded-full bg-slate-400" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-white px-4 py-3">
+              {isExperiment4Submitted ? (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-[13px] font-semibold text-green-700">
+                    <CheckCircle2 size={15} className="text-green-600" />
+                    Submitted
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleRetryExperiment4}
+                    className="inline-flex items-center gap-2 rounded-md bg-[#e1141a] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(225,20,26,0.18)] transition-colors hover:bg-[#c90f15]"
+                  >
+                    <RotateCcw size={14} />
+                    Retry
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSubmitExperiment4}
+                  className="inline-flex items-center gap-2 rounded-md bg-[#5e56b6] px-4 py-2 text-[13px] font-semibold text-white shadow-[0_8px_20px_rgba(94,86,182,0.18)] transition-colors hover:bg-[#4d46a8]"
+                >
+                  <CheckCircle2 size={14} />
+                  Submit
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+
+  const renderGenerateScreen = () =>
+    generateLayout === "portal" ? (
+      <div className="min-h-screen bg-[#eef1f5] text-slate-900">
+        <div className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-[0_1px_0_rgba(15,23,42,0.04)] backdrop-blur">
+          <div className="mx-auto flex max-w-[1760px] items-center gap-4 px-4 py-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex items-center gap-2 rounded-full bg-white px-2 py-1 shadow-[0_1px_3px_rgba(15,23,42,0.08)]">
+                <div className="grid h-8 w-8 place-items-center rounded-full bg-[#f5f7fb] text-lg font-black text-slate-700">
+                  ⟲
+                </div>
+                <div>
+                  <div className="text-[22px] font-extrabold leading-none text-slate-900">
+                    E-Way Bill
+                  </div>
+                  <div className="mt-1 flex items-center gap-2">
+                    <div className="h-3 w-28 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full w-[16%] rounded-full bg-[#4976d1]" />
+                    </div>
+                    <span className="text-[13px] font-semibold text-slate-600">16%</span>
+                  </div>
+                </div>
+              </div>
+
+              <select className="h-10 rounded-md border border-slate-300 bg-white px-3 text-[14px] text-slate-700 shadow-sm outline-none">
+                <option>Language</option>
+              </select>
+            </div>
+
+            <div className="flex-1 text-center text-[20px] font-semibold text-slate-900">
+              Generate
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-amber-100 bg-[#fff8e8] px-4 py-2 text-[18px] font-extrabold text-[#f08a00] shadow-sm">
+              <span className="grid h-8 w-8 place-items-center rounded-full bg-[#ffd55b] text-white shadow-inner">
+                <span className="text-[16px]">₹</span>
+              </span>
+              <span>1850</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative">
+          <aside className="fixed left-0 top-[73px] z-20 flex h-[calc(100vh-73px)] w-[72px] flex-col items-center border-r border-slate-200 bg-[#b8d2fb] px-2 py-4 shadow-[1px_0_0_rgba(15,23,42,0.04)]">
+            <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-white/75 shadow-sm">
+              <img
+                src="/images/simulations/red-1-logo.png"
+                alt="FinCl"
+                className="h-7 w-7 object-contain"
+              />
+            </div>
+
+            <div className="flex flex-1 flex-col items-center gap-5 pt-2">
+              <button
+                type="button"
+                className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-slate-600 shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                aria-label="Menu"
+              >
+                <Menu size={24} />
+              </button>
+              <button
+                type="button"
+                className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-red-500 shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                aria-label="Video"
+              >
+                <Video size={22} />
+              </button>
+              <button
+                type="button"
+                className="grid h-12 w-12 place-items-center rounded-2xl bg-white text-amber-500 shadow-[0_8px_20px_rgba(15,23,42,0.08)]"
+                aria-label="Settings"
+              >
+                <Settings size={22} />
+              </button>
+            </div>
+
+            <div className="mt-auto flex flex-col items-center gap-4 pb-2">
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-full bg-transparent text-slate-700"
+                aria-label="Help"
+              >
+                <Info size={20} />
+              </button>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-full bg-transparent text-slate-700"
+                aria-label="Alerts"
+              >
+                <CircleAlert size={20} />
+              </button>
+              <button
+                type="button"
+                className="grid h-10 w-10 place-items-center rounded-full bg-transparent text-slate-700"
+                aria-label="Logout"
+              >
+                <LogOut size={20} />
+              </button>
+            </div>
+          </aside>
+
+          <main className="pl-[72px]">
+            <div className="px-4 py-4">
+              <div className="rounded-[12px] border border-[#d8ecf6] bg-[#dff3fb] p-4 shadow-[0_1px_6px_rgba(15,23,42,0.06)]">
+                <div className="overflow-hidden rounded-[8px] border border-[#d8d8df] bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+                  <div className="bg-[#a58ad6] px-3 py-2 text-[16px] font-semibold text-slate-800">
+                    Transportation Details
+                  </div>
+
+                  <div className="grid gap-4 border-b border-slate-200 px-3 py-4 lg:grid-cols-[1.1fr_1.1fr_1fr_1fr]">
+                    <label className="grid gap-1 text-[14px] text-slate-700">
+                      <span>Transporter ID</span>
+                      <input
+                        type="text"
+                        className="h-10 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                      />
+                    </label>
+                    <label className="grid gap-1 text-[14px] text-slate-700">
+                      <span>Transporter Name</span>
+                      <input
+                        type="text"
+                        className="h-10 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                        placeholder="Name"
+                      />
+                    </label>
+                    <div className="grid gap-1 text-[14px] text-slate-700">
+                      <span>Auto Calculated PIN to PIN (in KM)</span>
+                      <div className="h-10 rounded border border-dashed border-slate-300 bg-slate-50 px-3" />
+                    </div>
+                    <label className="grid gap-1 text-[14px] text-slate-700">
+                      <span className="flex items-center gap-1">
+                        Approximate Distance (in KM)
+                        <span className="text-red-500">*</span>
+                      </span>
+                      <input
+                        type="text"
+                        className="h-10 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="bg-[#a58ad6] px-3 py-2 text-[16px] font-semibold text-slate-800">
+                    PART-B
+                  </div>
+
+                  <div className="border-b border-slate-200">
+                    <div className="grid gap-2 px-3 py-3 lg:grid-cols-[1.1fr_1.3fr] lg:items-center">
+                      <div className="flex flex-wrap items-center gap-3 text-[14px] text-slate-700">
+                        <span>Mode</span>
+                        {generateModes.map((mode) => (
+                          <label key={mode} className="inline-flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="mode"
+                              checked={selectedMode === mode}
+                              onChange={() => setSelectedMode(mode)}
+                              className="h-4 w-4 accent-blue-600"
+                            />
+                            <span>{mode}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 text-[14px] text-slate-700">
+                        <span>Vehicle Type</span>
+                        {vehicleTypes.map((vehicleType) => (
+                          <label key={vehicleType} className="inline-flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="vehicleType"
+                              checked={selectedVehicleType === vehicleType}
+                              onChange={() => setSelectedVehicleType(vehicleType)}
+                              className="h-4 w-4 accent-blue-600"
+                            />
+                            <span>{vehicleType}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-0 border-t border-slate-200 lg:grid-cols-[1fr_1.2fr]">
+                      <label className="flex items-center gap-3 border-b border-slate-200 px-3 py-4 text-[14px] text-slate-700 lg:border-b-0 lg:border-r">
+                        <span className="whitespace-nowrap">Vehicle No.</span>
+                        <input
+                          type="text"
+                          value={vehicleNo}
+                          onChange={(e) => setVehicleNo(e.target.value)}
+                          className="h-11 w-full max-w-[165px] rounded border-2 border-red-500 px-3 text-[14px] outline-none"
+                        />
+                      </label>
+
+                      <div className="grid gap-3 px-3 py-4 lg:grid-cols-[1fr_220px] lg:items-center">
+                        <label className="flex items-center gap-3 text-[14px] text-slate-700">
+                          <span className="whitespace-nowrap">Transporter Doc. No. & Date</span>
+                          <input
+                            type="text"
+                            className="h-11 min-w-0 flex-1 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                          />
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="dd/mm/yy"
+                          className="h-11 rounded border border-slate-300 px-3 text-[14px] outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="px-3 py-6">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        className="min-w-[84px] rounded-sm bg-[#d7a14b] px-4 py-2 text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#c88b33]"
+                      >
+                        Preview
+                      </button>
+                <button
+                  type="button"
+                  onClick={handleSubmitVehiclePreview}
+                  className="min-w-[112px] rounded-sm bg-[#5e56b6] px-4 py-2 text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#4d46a8]"
+                >
+                  Submit
+                </button>
+                      <button
+                        type="button"
+                        className="min-w-[104px] rounded-sm bg-[#de776b] px-4 py-2 text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#d36154]"
+                      >
+                        Refresh
+                      </button>
+                    </div>
+
+                    <div className="mt-4 flex justify-center">
+                      <div className="max-w-[1120px] rounded-full bg-[#d9d9dd] px-4 py-2 text-center text-[13px] leading-5 text-slate-700 shadow-inner">
+                        <span className="font-semibold">Note:</span> Railway Receipt numbers are
+                        validated as per the given formats. If you have RR number other than these
+                        formats then, please raise a ticket by mentioning the RR no. Presently, the
+                        validation is optional, but in future, invalid formats will not be allowed.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 min-h-[520px] rounded-[8px] border border-[#e0e0e0] bg-[#f3f3f3] p-4">
+                  {showVehiclePreview ? (
+                    renderVehiclePreview()
+                  ) : (
+                    <div className="flex h-full min-h-[480px] items-center justify-center rounded-[8px] border border-dashed border-slate-300 bg-white/40 text-center text-[15px] text-slate-500">
+                      Enter a vehicle number to preview the e-Way Bill document.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    ) : (
+      renderGenerateContent()
+    );
+
+  const renderHomeScreen = () => (
     <div className="flex min-h-screen flex-col bg-[#f5f8fb]">
       <header className="sticky top-0 z-40">
         <div className="bg-[#f5f8fb] px-0 pb-0 pt-0">
@@ -134,7 +875,6 @@ export default function GSTEWayBillReplica({
                 </div>
               </div>
             </div>
-
           </div>
         </div>
       </header>
@@ -147,9 +887,7 @@ export default function GSTEWayBillReplica({
                 key={tab.label}
                 type="button"
                 className={`shrink-0 px-4 py-2 text-[15px] font-medium transition-colors ${
-                  index === 0
-                    ? "text-[#3f3479]"
-                    : "text-[#4a5d86] hover:text-[#3f3479]"
+                  index === 0 ? "text-[#3f3479]" : "text-[#4a5d86] hover:text-[#3f3479]"
                 }`}
               >
                 <span className="inline-flex items-center gap-1.5">
@@ -171,14 +909,17 @@ export default function GSTEWayBillReplica({
 
         <div className="mx-auto grid w-full max-w-[1840px] gap-4 px-4 pt-4 xl:grid-cols-[minmax(0,1fr)_390px]">
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
-            <GSTBannerCarousel slides={bannerSlides} className="bg-[#eef6fb]" heightClassName="h-[340px] lg:h-[430px]" />
+            <GSTBannerCarousel
+              slides={bannerSlides}
+              className="bg-[#eef6fb]"
+              heightClassName="h-[340px] lg:h-[430px]"
+            />
             <div className="border-t border-slate-200 bg-white px-5 py-4 text-[14px] leading-7 text-slate-700 lg:text-[15px]">
-              E-Way bill system is for GST registered person / enrolled
-              transporter for generating the way bill (a document to be carried
-              by the person in charge of conveyance) electronically on
-              commencement of movement of goods exceeding the value of Rs.
-              50,000 in relation to supply or for reasons other than supply or
-              due to inward supply from an unregistered person.
+              E-Way bill system is for GST registered person / enrolled transporter for generating
+              the way bill (a document to be carried by the person in charge of conveyance)
+              electronically on commencement of movement of goods exceeding the value of Rs.
+              50,000 in relation to supply or for reasons other than supply or due to inward
+              supply from an unregistered person.
             </div>
           </section>
 
@@ -250,15 +991,24 @@ export default function GSTEWayBillReplica({
             <div className="flex flex-col gap-3 border-t border-white/20 pt-4 text-sm text-white/80 lg:flex-row lg:items-center lg:justify-between">
               <div>Ver. 1.3.0 Rel.1218</div>
               <div className="max-w-4xl">
-                This site can be best viewed in Firefox 43.5 and above, IE 11 and
-                above, chrome 45 and above.{" "}
-                <span className="text-amber-300">Check your browser version</span>
+                This site can be best viewed in Firefox 43.5 and above, IE 11 and above, chrome
+                45 and above. <span className="text-amber-300">Check your browser version</span>
               </div>
               <div>© 2022 - Powered By National Informatics Centre</div>
             </div>
           </div>
         </div>
       </footer>
+    </div>
+  );
+
+  return (
+    <div className="relative">
+      {screen === "generate"
+        ? renderGenerateScreen()
+        : screen === "experiment4"
+          ? renderExperiment4Screen()
+          : renderHomeScreen()}
 
       {showLaunchScreen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#07111f]/22 px-4 text-white backdrop-blur-[2px]">
@@ -269,7 +1019,7 @@ export default function GSTEWayBillReplica({
               type="button"
               onClick={handleStartExperiment}
               disabled={isStartingExperiment}
-              className="inline-flex min-h-[72px] w-[min(84vw,34rem)] items-center justify-center rounded-[22px] bg-[#1244b8] px-6 text-lg font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_40px_rgba(18,68,184,0.24)] transition-transform duration-200 hover:scale-[1.02] hover:bg-[#0f3a9a] disabled:cursor-wait disabled:opacity-90 sm:min-h-[78px] sm:px-8 sm:text-xl"
+            className="inline-flex min-h-[72px] w-[min(84vw,34rem)] items-center justify-center rounded-[22px] bg-[#1244b8] px-6 text-lg font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_40px_rgba(18,68,184,0.24)] transition-transform duration-200 hover:scale-[1.02] hover:bg-[#0f3a9a] disabled:cursor-wait disabled:opacity-90 sm:min-h-[78px] sm:px-8 sm:text-xl"
               aria-label={launchTitle}
               title={launchTitle}
             >
@@ -278,7 +1028,6 @@ export default function GSTEWayBillReplica({
           </div>
         </div>
       )}
-
     </div>
   );
 }
