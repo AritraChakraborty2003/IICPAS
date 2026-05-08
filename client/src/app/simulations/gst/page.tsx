@@ -2,7 +2,6 @@
 
 import React from "react";
 import Link from "next/link";
-import GSTAuthGate from "./GSTAuthGate";
 import {
   FaArrowRight,
   FaDesktop,
@@ -57,8 +56,7 @@ const experiments = [
 
 export default function GSTSimulationsRootPage() {
   return (
-    <GSTAuthGate>
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#e7f4ff,_#f7fbff_40%,_#eef4fa_100%)] text-slate-900">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#e7f4ff,_#f7fbff_40%,_#eef4fa_100%)] text-slate-900">
         <div className="border-b border-sky-100 bg-white/80 backdrop-blur">
           <div className="mx-auto max-w-7xl px-4 py-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -174,6 +172,5 @@ export default function GSTSimulationsRootPage() {
           </div>
         </div>
       </div>
-    </GSTAuthGate>
   );
 }
