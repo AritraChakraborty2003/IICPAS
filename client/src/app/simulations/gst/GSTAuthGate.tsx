@@ -9,6 +9,44 @@ type GSTAuthGateProps = {
 };
 
 const ADMIN_STORAGE_KEYS = ["adminToken", "adminUser"];
+const GST_COURSE_PATTERN = /\bgst\b/i;
+
+const normalizeCourseList = (payload: unknown) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray((payload as { courses?: unknown[] })?.courses)) {
+    return (payload as { courses: unknown[] }).courses;
+  }
+  if (Array.isArray((payload as { data?: unknown[] })?.data)) {
+    return (payload as { data: unknown[] }).data;
+  }
+  if (
+    (payload as { data?: { courses?: unknown[] } })?.data &&
+    Array.isArray((payload as { data: { courses?: unknown[] } }).data.courses)
+  ) {
+    return (payload as { data: { courses: unknown[] } }).data.courses;
+  }
+  return [];
+};
+
+const isGstCourse = (course: unknown) => {
+  if (!course || typeof course !== "object") return false;
+  const record = course as {
+    title?: string;
+    slug?: string;
+    category?: string;
+    name?: string;
+  };
+  const haystack = [
+    record.title,
+    record.slug,
+    record.category,
+    record.name,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return GST_COURSE_PATTERN.test(haystack);
+};
 
 export default function GSTAuthGate({ children }: GSTAuthGateProps) {
   const router = useRouter();
@@ -31,6 +69,27 @@ export default function GSTAuthGate({ children }: GSTAuthGateProps) {
     const redirectToLogin = () => {
       clearAdminAuth();
       router.replace("/student-login");
+    };
+
+    const redirectToStudentDashboard = () => {
+      router.replace("/student-dashboard?tab=courses");
+    };
+
+    const studentHasGstCourse = async (studentId: string) => {
+      const response = await fetch(
+        `${getApiBase()}/courses/student-courses/${studentId}`,
+        {
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const payload = await response.json();
+      const courseList = normalizeCourseList(payload);
+      return courseList.some(isGstCourse);
     };
 
     const checkAccess = async () => {
@@ -65,8 +124,26 @@ export default function GSTAuthGate({ children }: GSTAuthGateProps) {
         );
 
         if (studentResponse.ok) {
+          const studentJson = await studentResponse.json();
+          const studentId = studentJson?.student?._id;
+
+          if (!studentId) {
+            if (!aborted) {
+              redirectToLogin();
+            }
+            return;
+          }
+
+          if (await studentHasGstCourse(studentId)) {
+            if (isMounted) {
+              setCheckingAuth(false);
+            }
+            return;
+          }
+
           if (isMounted) {
             setCheckingAuth(false);
+            redirectToStudentDashboard();
           }
           return;
         }
