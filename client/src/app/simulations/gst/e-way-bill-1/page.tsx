@@ -11,7 +11,7 @@ export default function EWayBill1Page() {
       launchTitle="GST E-Way Bill Simulation 1"
       portalTitle="e-Way Bill Portal"
       companyName="IICPA Private Limited"
-      initialShowLaunchScreen={false}
+      initialShowLaunchScreen={true}
     />
   );
 }

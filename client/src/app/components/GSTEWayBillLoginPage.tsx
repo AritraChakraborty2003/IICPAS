@@ -3,13 +3,7 @@
 import React, { useState } from "react";
 import { CheckCircle2, Eye, LockKeyhole, RotateCcw, UserRound } from "lucide-react";
 
-type GSTEWayBillLoginPageProps = {
-  returnTo?: string;
-};
-
-export default function GSTEWayBillLoginPage({
-  returnTo = "/simulations/gst/e-way-bill-1",
-}: GSTEWayBillLoginPageProps) {
+export default function GSTEWayBillLoginPage() {
   const expectedCaptcha = "P2R7M";
   const [captchaValue, setCaptchaValue] = useState("");
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
@@ -23,13 +17,13 @@ export default function GSTEWayBillLoginPage({
   const handleRetry = () => {
     setShowSuccessOverlay(false);
     setCaptchaValue("");
-    window.location.assign(returnTo);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,_#eff6ff,_#f5f8fb_44%,_#e8eef8_100%)] text-slate-900">
       {showSuccessOverlay && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 px-4 backdrop-blur-[1px]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 backdrop-blur-[2px]">
           <div className="flex flex-col items-center">
             <div className="flex h-40 w-40 items-center justify-center rounded-full bg-[#47c65a] shadow-[0_22px_60px_rgba(71,198,90,0.35)]">
               <CheckCircle2 className="text-white" size={108} strokeWidth={2.2} />

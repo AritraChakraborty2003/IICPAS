@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogIn } from "lucide-react";
 import GSTBannerCarousel from "./GSTBannerCarousel";
@@ -51,7 +51,28 @@ export default function GSTEWayBillReplica({
 }: GSTEWayBillReplicaProps) {
   const router = useRouter();
   const screen = initialScreen;
-  const [showLaunchScreen, setShowLaunchScreen] = React.useState(initialShowLaunchScreen);
+  const [showLaunchScreen, setShowLaunchScreen] = useState(initialShowLaunchScreen);
+  const [isStartingExperiment, setIsStartingExperiment] = useState(false);
+  const launchTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (launchTimerRef.current !== null) {
+        window.clearTimeout(launchTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleStartExperiment = () => {
+    if (isStartingExperiment) {
+      return;
+    }
+
+    setIsStartingExperiment(true);
+    launchTimerRef.current = window.setTimeout(() => {
+      setShowLaunchScreen(false);
+    }, 1500);
+  };
 
   const bannerSlides = useMemo(
     () => [
@@ -240,17 +261,19 @@ export default function GSTEWayBillReplica({
       </footer>
 
       {showLaunchScreen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm px-4">
-          <div className="rounded-3xl bg-white px-10 py-8 text-center shadow-[0_30px_100px_rgba(15,23,42,0.35)]">
-            <div className="mb-4 text-3xl font-extrabold tracking-[0.25em] text-[#274d80]">
-              {launchTitle}
-            </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#07111f]/22 px-4 text-white backdrop-blur-[2px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_30%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_26%),linear-gradient(135deg,rgba(7,17,31,0.18)_0%,rgba(11,27,51,0.14)_45%,rgba(8,17,31,0.18)_100%)]" />
+          <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400/5 blur-3xl" />
+          <div className="relative z-10 flex h-full w-full items-center justify-center">
             <button
               type="button"
-              onClick={() => setShowLaunchScreen(false)}
-              className="rounded-2xl bg-[#2450bf] px-10 py-4 text-2xl font-bold tracking-[0.25em] text-white shadow-lg"
+              onClick={handleStartExperiment}
+              disabled={isStartingExperiment}
+              className="inline-flex min-h-[72px] w-[min(84vw,34rem)] items-center justify-center rounded-[22px] bg-[#1244b8] px-6 text-lg font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_40px_rgba(18,68,184,0.24)] transition-transform duration-200 hover:scale-[1.02] hover:bg-[#0f3a9a] disabled:cursor-wait disabled:opacity-90 sm:min-h-[78px] sm:px-8 sm:text-xl"
+              aria-label={launchTitle}
+              title={launchTitle}
             >
-              START EXPERIMENT
+              {isStartingExperiment ? "EXPERIMENTING..." : "START EXPERIMENT"}
             </button>
           </div>
         </div>
