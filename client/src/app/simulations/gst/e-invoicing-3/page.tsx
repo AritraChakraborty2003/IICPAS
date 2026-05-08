@@ -15,7 +15,7 @@ import {
   KeyRound,
 } from "lucide-react";
 
-type View = "home" | "dashboard";
+type View = "home" | "dashboard" | "print";
 
 export default function GSTEInvoicing3Page() {
   const [view, setView] = useState<View>("dashboard");
@@ -23,6 +23,8 @@ export default function GSTEInvoicing3Page() {
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
   const [isInvoiceMenuOpen, setIsInvoiceMenuOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [cancelBasis, setCancelBasis] = useState<"ack" | "irn">("ack");
+  const [ackNumber, setAckNumber] = useState("");
   const [loginData, setLoginData] = useState({
     username: "AIR",
     password: "Fin@123",
@@ -89,6 +91,8 @@ export default function GSTEInvoicing3Page() {
     setLoginData((prev) => ({ ...prev, captcha: "" }));
     setView("home");
     setIsInvoiceMenuOpen(false);
+    setCancelBasis("ack");
+    setAckNumber("");
   };
 
   const handleStartExperiment = () => {
@@ -109,6 +113,229 @@ export default function GSTEInvoicing3Page() {
     setShowLoginModal(false);
     setView("dashboard");
   };
+
+  const openPrintScreen = () => {
+    setView("print");
+    setIsInvoiceMenuOpen(true);
+    setCancelBasis("ack");
+    setAckNumber("");
+  };
+
+  const renderPrintScreen = () => (
+    <div className="min-h-screen bg-[#f4f7fb]">
+      <div className="sticky top-0 z-50 w-full">
+        <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
+          This is a Simulation. Use For Educational Purposes ONLY.
+        </div>
+
+        <div className="bg-[#f4f7fb] px-0 pb-0 pt-0">
+          <div className="bg-[#24668f] text-white">
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/images/simulations/satyamev-jayate.jpg"
+                    alt="Satyamev Jayate emblem"
+                    className="h-[54px] w-[54px] object-contain lg:h-[60px] lg:w-[60px]"
+                  />
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase leading-tight lg:text-[11px]">
+                      GOODS AND SERVICES TAX
+                    </div>
+                    <div className="text-[14px] font-bold uppercase leading-tight lg:text-[16px]">
+                      e - INVOICE SYSTEM
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-[14px] font-bold lg:text-[16px]">e-Invoice 3 Portal</div>
+                </div>
+
+                <div className="flex items-center gap-4 lg:gap-6">
+                  <img
+                    src="/images/simulations/red-1-logo.png"
+                    alt="Nation Tax Market logo"
+                    className="h-[34px] w-auto object-contain lg:h-[40px]"
+                  />
+                  <img
+                    src="/images/simulations/nic-logo-remove-1.png"
+                    alt="NIC logo"
+                    className="h-[34px] w-auto object-contain lg:h-[40px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-white/15 bg-[#ccd4e9] px-4 py-2.5 text-[12px] text-slate-700 lg:text-[14px]">
+              <div className="flex items-center justify-between gap-4 whitespace-nowrap">
+                <div className="text-left whitespace-nowrap">
+                  GSTIN: 29BRYFP02061V7YP - Name: Company Airlines Pvt. Ltd.
+                </div>
+                <div className="whitespace-nowrap">Account : Main User</div>
+                <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
+                <button
+                  onClick={startAgain}
+                  className="rounded-md bg-white px-3 py-1 text-[12px] font-semibold text-blue-700 shadow-sm hover:bg-blue-50"
+                >
+                  Start Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full px-0 pt-0">
+        <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
+          <div className="flex min-h-[calc(100vh-128px)] w-full">
+            <aside className="sticky top-[175px] flex h-[calc(100vh-128px)] w-[260px] flex-col bg-[#d7def0]">
+              <div className="border-b border-white/60 px-4 py-3">
+                <div className="flex w-full items-center gap-3 rounded-sm bg-[#2f7fd3] px-3 py-2 text-[12px] font-semibold text-white shadow-sm">
+                  <span className="text-lg leading-none">e</span>
+                  <span>e-Way bill Portal</span>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                <div className="border-2 border-red-500 bg-[#d7def0]">
+                  <button
+                    onClick={() => setIsInvoiceMenuOpen((current) => !current)}
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-[12px] font-medium text-slate-700 ${
+                      isInvoiceMenuOpen
+                        ? "bg-[#cbd3f2] border-b border-red-500/80"
+                        : "bg-[#d7def0]"
+                    } hover:bg-[#e8edf8]`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText size={15} className="text-slate-600" />
+                      <span>e-Invoice</span>
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`text-slate-500 transition-transform ${
+                        isInvoiceMenuOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {isInvoiceMenuOpen && (
+                    <div className="bg-[#d7def0]">
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                        <div className="flex items-center gap-3">
+                          <FileText size={15} className="text-slate-600" />
+                          <span>Bulk Upload</span>
+                        </div>
+                      </button>
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                        <div className="flex items-center gap-3">
+                          <FileText size={15} className="text-slate-600" />
+                          <span>Cancel</span>
+                        </div>
+                      </button>
+                      <div className="overflow-hidden border-2 border-red-500 bg-[#d7def0]">
+                        <button
+                          onClick={openPrintScreen}
+                          className="flex w-full items-center justify-between bg-[#cbd3f2] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText size={15} className="text-slate-600" />
+                            <span>Print</span>
+                          </div>
+                        </button>
+                      </div>
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                        <div className="flex items-center gap-3">
+                          <FileText size={15} className="text-slate-600" />
+                          <span>Bulk IRN Cancel</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {sidebarMenuItems.map(({ label, Icon }, index) => (
+                  <button
+                    key={label}
+                    className="flex w-full items-center justify-between border-b border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon size={15} className="text-slate-600" />
+                      <span>{label}</span>
+                    </div>
+                    {index < sidebarMenuItems.length - 1 ? (
+                      <ChevronDown size={14} className="text-slate-500" />
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            <main className="flex-1 px-3 py-3 lg:px-4">
+              <div className="w-full">
+                <div className="overflow-hidden rounded-b-xl bg-white shadow-sm">
+                  <div className="px-6 pt-3 text-center text-[18px] font-extrabold text-[#1b66a0] lg:text-[22px]">
+                    e-Invoice Cancel
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-center gap-5 text-[14px] font-semibold text-slate-700">
+                    <span>Based On :</span>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="cancel-basis"
+                        checked={cancelBasis === "ack"}
+                        onChange={() => setCancelBasis("ack")}
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      <span>Ack No.</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="cancel-basis"
+                        checked={cancelBasis === "irn"}
+                        onChange={() => setCancelBasis("irn")}
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      <span>IRN</span>
+                    </label>
+                  </div>
+
+                  <div className="mt-14 flex items-center justify-center gap-3 px-4 pb-24">
+                    <label className="text-[14px] font-semibold text-slate-700">
+                      {cancelBasis === "ack" ? "Enter Ack. No. :" : "Enter IRN No. :"}
+                    </label>
+                    <input
+                      value={ackNumber}
+                      onChange={(e) => setAckNumber(e.target.value)}
+                      className="h-[42px] w-full max-w-[520px] rounded-[4px] border border-slate-300 bg-white px-3 text-[14px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    />
+                    <button className="rounded-[4px] bg-[#2f7fd3] px-5 py-2.5 text-[14px] font-medium text-white shadow-sm hover:bg-[#256ab3]">
+                      Go
+                    </button>
+                    <button
+                      onClick={() => setView("dashboard")}
+                      className="rounded-[4px] bg-[#d9534f] px-5 py-2.5 text-[14px] font-medium text-white shadow-sm hover:bg-[#c64541]"
+                    >
+                      Exit
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-[#1d5d83] px-4 py-2 text-white">
+                    <div className="text-[11px] lg:text-[12px]">Version 1.01</div>
+                    <div className="text-[11px] lg:text-[12px]">
+                      © 2022 - Powered By National Informatics Centre.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
   
   const renderHome = () => (
     <div className="flex min-h-screen flex-col bg-white">
@@ -450,57 +677,61 @@ export default function GSTEInvoicing3Page() {
               </div>
 
               <div className="flex-1 overflow-y-auto">
-                <button
-                  onClick={() => setIsInvoiceMenuOpen((current) => !current)}
-                  className={`flex w-full items-center justify-between border-b border-white/60 px-4 py-3 text-left text-[12px] font-medium text-slate-700 ${
-                    isInvoiceMenuOpen ? "bg-[#cbd3f2]" : "bg-[#d7def0]"
-                  } hover:bg-[#e8edf8]`}
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText size={15} className="text-slate-600" />
-                    <span>e-Invoice</span>
-                  </div>
-                  <ChevronDown
-                    size={14}
-                    className={`text-slate-500 transition-transform ${
-                      isInvoiceMenuOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
+                <div className={isInvoiceMenuOpen ? "overflow-hidden border-2 border-red-500 bg-[#d7def0]" : ""}>
+                  <button
+                    onClick={() => setIsInvoiceMenuOpen((current) => !current)}
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-[12px] font-medium text-slate-700 ${
+                      isInvoiceMenuOpen
+                        ? "bg-[#cbd3f2] border-b border-red-500/80"
+                        : "border-2 border-red-500 bg-[#d7def0]"
+                    } hover:bg-[#e8edf8]`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText size={15} className="text-slate-600" />
+                      <span>e-Invoice</span>
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`text-slate-500 transition-transform ${
+                        isInvoiceMenuOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-                {isInvoiceMenuOpen && (
-                  <div className="space-y-0">
-                    <div className="overflow-hidden border-2 border-red-500">
-                      <button className="flex w-full items-center justify-between border-b border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                  {isInvoiceMenuOpen && (
+                    <div className="bg-[#d7def0]">
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
                         <div className="flex items-center gap-3">
                           <FileText size={15} className="text-slate-600" />
                           <span>Bulk Upload</span>
                         </div>
                       </button>
-                      <button className="flex w-full items-center justify-between bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
                         <div className="flex items-center gap-3">
                           <FileText size={15} className="text-slate-600" />
                           <span>Cancel</span>
                         </div>
                       </button>
-                    </div>
-
-                    <div className="overflow-hidden">
-                      <button className="flex w-full items-center justify-between border-2 border-red-500 bg-[#cbd3f2] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
-                        <div className="flex items-center gap-3">
-                          <FileText size={15} className="text-slate-600" />
-                          <span>Print</span>
-                        </div>
-                      </button>
-                      <button className="flex w-full items-center justify-between bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                      <div className="overflow-hidden border-2 border-red-500 bg-[#d7def0]">
+                        <button
+                          onClick={openPrintScreen}
+                          className="flex w-full items-center justify-between bg-[#cbd3f2] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <FileText size={15} className="text-slate-600" />
+                            <span>Print</span>
+                          </div>
+                        </button>
+                      </div>
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
                         <div className="flex items-center gap-3">
                           <FileText size={15} className="text-slate-600" />
                           <span>Bulk IRN Cancel</span>
                         </div>
                       </button>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 {sidebarMenuItems.map(({ label, Icon }, index) => (
                   <button
@@ -620,7 +851,8 @@ export default function GSTEInvoicing3Page() {
     </div>
   );
 
-  const portalView = view === "dashboard" ? renderDashboard() : renderHome();
+  const portalView =
+    view === "dashboard" ? renderDashboard() : view === "print" ? renderPrintScreen() : renderHome();
 
   return (
     <div className={`relative min-h-screen ${showLaunchScreen ? "overflow-hidden" : ""}`}>
