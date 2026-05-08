@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, LogIn } from "lucide-react";
 import GSTBannerCarousel from "./GSTBannerCarousel";
@@ -12,6 +12,7 @@ type GSTEWayBillReplicaProps = {
   portalTitle?: string;
   companyName?: string;
   baseRoute?: string;
+  loginRoute?: string;
   launchTitle?: string;
   initialShowLaunchScreen?: boolean;
 };
@@ -44,13 +45,13 @@ export default function GSTEWayBillReplica({
   portalTitle = "e-Way Bill Portal",
   companyName = "IICPA Private Limited",
   baseRoute = "/simulations/gst/e-way-bill-1",
+  loginRoute = "/simulations/gst/e-way-bill-login",
   launchTitle = "GST E-Way Bill Simulation",
   initialShowLaunchScreen = true,
 }: GSTEWayBillReplicaProps) {
   const router = useRouter();
   const screen = initialScreen;
-  const [showLaunchScreen, setShowLaunchScreen] = useState(initialShowLaunchScreen);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showLaunchScreen, setShowLaunchScreen] = React.useState(initialShowLaunchScreen);
 
   const bannerSlides = useMemo(
     () => [
@@ -74,10 +75,6 @@ export default function GSTEWayBillReplica({
   return (
     <div className="flex min-h-screen flex-col bg-[#f5f8fb]">
       <header className="sticky top-0 z-40">
-        <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
-          This is a Simulation. Use For Educational Purposes ONLY.
-        </div>
-
         <div className="bg-[#f5f8fb] px-0 pb-0 pt-0">
           <div className="bg-[#5a4bb0] text-white shadow-[0_2px_8px_rgba(15,23,42,0.18)]">
             <div className="px-4 py-3">
@@ -128,10 +125,10 @@ export default function GSTEWayBillReplica({
               <button
                 key={tab.label}
                 type="button"
-                className={`shrink-0 rounded-full px-5 py-2.5 text-[15px] font-medium transition-colors ${
+                className={`shrink-0 px-4 py-2 text-[15px] font-medium transition-colors ${
                   index === 0
-                    ? "bg-white/70 text-[#3f3479] shadow-sm"
-                    : "text-[#4a5d86] hover:bg-white/55"
+                    ? "text-[#3f3479]"
+                    : "text-[#4a5d86] hover:text-[#3f3479]"
                 }`}
               >
                 <span className="inline-flex items-center gap-1.5">
@@ -142,8 +139,8 @@ export default function GSTEWayBillReplica({
             ))}
             <button
               type="button"
-              onClick={() => setShowLoginModal(true)}
-              className="ml-auto inline-flex shrink-0 items-center gap-1.5 px-2 py-1 text-[15px] font-medium text-[#395789] transition-colors duration-200 hover:text-[#173f73]"
+              onClick={() => router.push(`${loginRoute}?returnTo=${encodeURIComponent(baseRoute)}`)}
+              className="ml-auto inline-flex shrink-0 items-center gap-1.5 border border-red-500 px-2 py-1 text-[15px] font-medium text-[#395789] transition-colors duration-200 hover:text-[#173f73]"
             >
               Login
               <LogIn size={16} className="text-current" />
@@ -154,7 +151,7 @@ export default function GSTEWayBillReplica({
         <div className="mx-auto grid w-full max-w-[1840px] gap-4 px-4 pt-4 xl:grid-cols-[minmax(0,1fr)_390px]">
           <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.08)]">
             <GSTBannerCarousel slides={bannerSlides} className="bg-[#eef6fb]" heightClassName="h-[340px] lg:h-[430px]" />
-            <div className="border-t border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700">
+            <div className="border-t border-slate-200 bg-white px-5 py-4 text-[14px] leading-7 text-slate-700 lg:text-[15px]">
               E-Way bill system is for GST registered person / enrolled
               transporter for generating the way bill (a document to be carried
               by the person in charge of conveyance) electronically on
@@ -259,74 +256,6 @@ export default function GSTEWayBillReplica({
         </div>
       )}
 
-      {showLoginModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm px-4">
-          <div className="relative w-full max-w-[560px] rounded-2xl bg-[#dfe7f3] p-6 shadow-[0_30px_100px_rgba(15,23,42,0.28)]">
-            <button
-              type="button"
-              onClick={() => setShowLoginModal(false)}
-              className="absolute right-4 top-4 text-3xl font-bold text-[#274d80]"
-            >
-              ×
-            </button>
-
-            <div className="flex flex-col items-center gap-3 pt-2">
-              <div className="text-6xl">🇮🇳</div>
-              <div className="text-2xl font-extrabold text-red-600">
-                E-WAY BILL SYSTEM LOGIN
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-md border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-700 shadow-inner">
-              <div className="font-semibold text-slate-800">Login Details</div>
-              <div className="mt-1">User name: AIR</div>
-              <div>Password: Fin@123</div>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <div>
-                <label className="mb-1 block text-lg text-slate-700">User name</label>
-                <input className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base shadow-inner outline-none focus:border-blue-500" defaultValue="AIR" />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-lg text-slate-700">Password</label>
-                <input type="password" className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base shadow-inner outline-none focus:border-blue-500" defaultValue="Fin@123" />
-              </div>
-
-              <div>
-                <div className="mb-1 text-lg text-slate-700">Enter Above Captcha</div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="flex h-14 items-center justify-center rounded-md border border-slate-300 bg-white px-4 font-mono text-3xl font-black tracking-tight">
-                    R4T8Z
-                  </div>
-                  <input className="w-full rounded-md border border-slate-300 bg-white px-4 py-3 text-base shadow-inner outline-none focus:border-blue-500" />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowLoginModal(false)}
-                  className="rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowLoginModal(false);
-                    router.push(baseRoute);
-                  }}
-                  className="rounded-xl bg-[#2450bf] px-6 py-3 font-semibold text-white shadow-sm"
-                >
-                  Login
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
