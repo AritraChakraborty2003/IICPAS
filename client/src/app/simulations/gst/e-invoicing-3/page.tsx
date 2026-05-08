@@ -14,17 +14,20 @@ import {
   Users,
   KeyRound,
 } from "lucide-react";
+import GSTBannerCarousel from "../../../components/GSTBannerCarousel";
 
 type View = "home" | "dashboard" | "print";
 
 export default function GSTEInvoicing3Page() {
   const [view, setView] = useState<View>("dashboard");
-  const [showLaunchScreen, setShowLaunchScreen] = useState(false);
+  const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
   const [isInvoiceMenuOpen, setIsInvoiceMenuOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [cancelBasis, setCancelBasis] = useState<"ack" | "irn">("ack");
   const [ackNumber, setAckNumber] = useState("");
+  const [showPrintDetails, setShowPrintDetails] = useState(false);
+  const [showPrintSuccess, setShowPrintSuccess] = useState(false);
   const [loginData, setLoginData] = useState({
     username: "AIR",
     password: "Fin@123",
@@ -74,6 +77,16 @@ export default function GSTEInvoicing3Page() {
     },
   ];
 
+  const bannerSlides = [
+    { src: "/images/simulations/main-gst-banner-image.jpg", alt: "GST main banner" },
+    // { src: "/images/simulations/gst-image-2.jpg", alt: "GST banner slide 2" },
+    ,
+    { src: "/images/simulations/gst-image-3.jpg", alt: "GST banner slide 3" },
+    // { src: "/images/simulations/gst-image-4.jpg", alt: "GST banner slide 4" }, 
+    ,
+    { src: "/images/simulations/gst-image-5.png", alt: "GST banner slide 5" },
+  ];
+
   const sidebarMenuItems = [
     { label: "MIS Reports", Icon: Menu },
     { label: "User Management", Icon: Users },
@@ -89,10 +102,12 @@ export default function GSTEInvoicing3Page() {
   const startAgain = () => {
     setShowLoginModal(false);
     setLoginData((prev) => ({ ...prev, captcha: "" }));
-    setView("home");
+    setView("dashboard");
     setIsInvoiceMenuOpen(false);
     setCancelBasis("ack");
     setAckNumber("");
+    setShowPrintDetails(false);
+    setShowPrintSuccess(false);
   };
 
   const handleStartExperiment = () => {
@@ -101,7 +116,6 @@ export default function GSTEInvoicing3Page() {
     }
 
     setIsStartingExperiment(true);
-
     launchTimerRef.current = window.setTimeout(() => {
       setShowLaunchScreen(false);
       setIsStartingExperiment(false);
@@ -118,11 +132,42 @@ export default function GSTEInvoicing3Page() {
     setView("print");
     setIsInvoiceMenuOpen(true);
     setCancelBasis("ack");
-    setAckNumber("");
+    setAckNumber("146872643383543");
+    setShowPrintDetails(false);
+    setShowPrintSuccess(false);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
+  const handlePrintGo = () => {
+    if (!ackNumber.trim()) {
+      setAckNumber("146872643383543");
+    }
+    setCancelBasis("ack");
+    setShowPrintDetails(true);
+    setShowPrintSuccess(false);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
+  const handleFinalPrint = () => {
+    setShowPrintSuccess(true);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+  };
+
+  const handleRetryPrint = () => {
+    setShowPrintSuccess(false);
+    setShowPrintDetails(false);
+    setAckNumber("146872643383543");
+    setCancelBasis("ack");
   };
 
   const renderPrintScreen = () => (
-    <div className="min-h-screen bg-[#f4f7fb]">
+    <div className="min-h-screen bg-[#f4f7fb] pb-12">
       <div className="sticky top-0 z-50 w-full">
         <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
           This is a Simulation. Use For Educational Purposes ONLY.
@@ -149,7 +194,7 @@ export default function GSTEInvoicing3Page() {
                 </div>
 
                 <div className="text-center">
-                  <div className="text-[14px] font-bold lg:text-[16px]">e-Invoice 3 Portal</div>
+                  <div className="text-[14px] font-bold lg:text-[16px]">e-Invoice 1 Portal</div>
                 </div>
 
                 <div className="flex items-center gap-4 lg:gap-6">
@@ -186,151 +231,326 @@ export default function GSTEInvoicing3Page() {
         </div>
       </div>
 
-      <div className="w-full px-0 pt-0">
+      <div className="w-full px-4 pt-4 lg:px-6">
         <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
-          <div className="flex min-h-[calc(100vh-128px)] w-full">
-            <aside className="sticky top-[175px] flex h-[calc(100vh-128px)] w-[260px] flex-col bg-[#d7def0]">
-              <div className="border-b border-white/60 px-4 py-3">
-                <div className="flex w-full items-center gap-3 rounded-sm bg-[#2f7fd3] px-3 py-2 text-[12px] font-semibold text-white shadow-sm">
-                  <span className="text-lg leading-none">e</span>
-                  <span>e-Way bill Portal</span>
-                </div>
+          <div className="px-4 py-4 lg:px-6 lg:py-5">
+            <div className="flex items-center justify-between gap-4">
+              <button
+                onClick={() => {
+                  setShowPrintDetails(false);
+                  setView("dashboard");
+                }}
+                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-[12px] font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+              >
+                Back
+              </button>
+              <div className="flex-1 text-center text-[18px] font-extrabold text-[#1b66a0] lg:text-[22px]">
+                e-Invoice Print
               </div>
+              <div className="w-[84px]" />
+            </div>
 
-              <div className="flex-1 overflow-y-auto">
-                <div className="border-2 border-red-500 bg-[#d7def0]">
-                  <button
-                    onClick={() => setIsInvoiceMenuOpen((current) => !current)}
-                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-[12px] font-medium text-slate-700 ${
-                      isInvoiceMenuOpen
-                        ? "bg-[#cbd3f2] border-b border-red-500/80"
-                        : "bg-[#d7def0]"
-                    } hover:bg-[#e8edf8]`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText size={15} className="text-slate-600" />
-                      <span>e-Invoice</span>
-                    </div>
-                    <ChevronDown
-                      size={14}
-                      className={`text-slate-500 transition-transform ${
-                        isInvoiceMenuOpen ? "rotate-180" : ""
-                      }`}
+            <div className="mt-8 flex items-center justify-center gap-5 text-[14px] font-semibold text-slate-700">
+              <span>Based On :</span>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="cancel-basis"
+                  checked={cancelBasis === "ack"}
+                  onChange={() => setCancelBasis("ack")}
+                  className="h-4 w-4 accent-blue-600"
+                />
+                <span>Ack No.</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="cancel-basis"
+                  checked={cancelBasis === "irn"}
+                  onChange={() => setCancelBasis("irn")}
+                  className="h-4 w-4 accent-blue-600"
+                />
+                <span>IRN</span>
+              </label>
+            </div>
+
+            <div className="mt-14 flex flex-wrap items-center justify-center gap-3 px-4 pb-8">
+              <label className="text-[14px] font-semibold text-slate-700">
+                {cancelBasis === "ack" ? "Enter Ack. No. :" : "Enter IRN No. :"}
+              </label>
+              <input
+                value={ackNumber}
+                onChange={(e) => setAckNumber(e.target.value)}
+                className="h-[42px] w-full max-w-[520px] rounded-[4px] border border-slate-300 bg-white px-3 text-[14px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+              <button
+                onClick={handlePrintGo}
+                className="rounded-[4px] bg-[#2f7fd3] px-5 py-2.5 text-[14px] font-medium text-white shadow-sm hover:bg-[#256ab3]"
+              >
+                Go
+              </button>
+              <button
+                onClick={() => {
+                  setShowPrintDetails(false);
+                  setView("dashboard");
+                }}
+                className="rounded-[4px] bg-[#d9534f] px-5 py-2.5 text-[14px] font-medium text-white shadow-sm hover:bg-[#c64541]"
+              >
+                Exit
+              </button>
+            </div>
+
+            <div className="relative mx-auto mt-4 w-full max-w-[1700px] px-2">
+              {showPrintSuccess && (
+                <div className="fixed inset-0 z-30 flex items-center justify-center bg-black/45 px-4 backdrop-blur-[1px]">
+                  <div className="relative flex flex-col items-center">
+                    <img
+                      src="/images/simulations/tick.png"
+                      alt="Success tick"
+                      className="h-[128px] w-[128px] bg-transparent object-contain drop-shadow-[0_18px_30px_rgba(0,0,0,0.55)] sm:h-[150px] sm:w-[150px]"
                     />
-                  </button>
+                    <button
+                      onClick={handleRetryPrint}
+                      className="mt-3 rounded-[6px] bg-[#f60f0f] px-6 py-2 text-[15px] font-semibold text-white shadow-[0_6px_14px_rgba(0,0,0,0.28)] hover:bg-[#e10e0e]"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
 
-                  {isInvoiceMenuOpen && (
-                    <div className="bg-[#d7def0]">
-                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
-                        <div className="flex items-center gap-3">
-                          <FileText size={15} className="text-slate-600" />
-                          <span>Bulk Upload</span>
-                        </div>
-                      </button>
-                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
-                        <div className="flex items-center gap-3">
-                          <FileText size={15} className="text-slate-600" />
-                          <span>Cancel</span>
-                        </div>
-                      </button>
-                      <div className="overflow-hidden border-2 border-red-500 bg-[#d7def0]">
-                        <button
-                          onClick={openPrintScreen}
-                          className="flex w-full items-center justify-between bg-[#cbd3f2] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
-                        >
-                          <div className="flex items-center gap-3">
-                            <FileText size={15} className="text-slate-600" />
-                            <span>Print</span>
-                          </div>
-                        </button>
+              {showPrintDetails && (
+                <div className="w-full">
+                <div className="text-center text-[18px] font-extrabold text-[#1b66a0] lg:text-[22px]">
+                  e-Invoice Print
+                </div>
+
+                <div className="mt-2 overflow-hidden rounded-[8px] border border-slate-200 bg-[#f7f8fd]">
+                  <div className="flex items-start justify-between gap-4 px-3 py-4 lg:px-4">
+                    <div className="pt-20 text-[24px] font-bold leading-tight text-slate-800 lg:text-[32px]">
+                      <div>29BRYFP02061V7YP</div>
+                      <div>Fincurious Airlines Pvt. Ltd.</div>
+                    </div>
+
+                    <div className="flex-shrink-0 rounded-[4px] border border-slate-200 bg-white p-2 shadow-sm">
+                      <div className="grid h-[210px] w-[210px] place-items-center bg-white">
+                        <img
+                          src="/images/simulations/qr-gst.webp"
+                          alt="GST QR code"
+                          className="h-[180px] w-[180px] object-contain"
+                        />
                       </div>
-                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
-                        <div className="flex items-center gap-3">
-                          <FileText size={15} className="text-slate-600" />
-                          <span>Bulk IRN Cancel</span>
-                        </div>
-                      </button>
                     </div>
-                  )}
-                </div>
-
-                {sidebarMenuItems.map(({ label, Icon }, index) => (
-                  <button
-                    key={label}
-                    className="flex w-full items-center justify-between border-b border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon size={15} className="text-slate-600" />
-                      <span>{label}</span>
-                    </div>
-                    {index < sidebarMenuItems.length - 1 ? (
-                      <ChevronDown size={14} className="text-slate-500" />
-                    ) : null}
-                  </button>
-                ))}
-              </div>
-            </aside>
-
-            <main className="flex-1 px-3 py-3 lg:px-4">
-              <div className="w-full">
-                <div className="overflow-hidden rounded-b-xl bg-white shadow-sm">
-                  <div className="px-6 pt-3 text-center text-[18px] font-extrabold text-[#1b66a0] lg:text-[22px]">
-                    e-Invoice Cancel
                   </div>
 
-                  <div className="mt-6 flex items-center justify-center gap-5 text-[14px] font-semibold text-slate-700">
-                    <span>Based On :</span>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="cancel-basis"
-                        checked={cancelBasis === "ack"}
-                        onChange={() => setCancelBasis("ack")}
-                        className="h-4 w-4 accent-blue-600"
-                      />
-                      <span>Ack No.</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="radio"
-                        name="cancel-basis"
-                        checked={cancelBasis === "irn"}
-                        onChange={() => setCancelBasis("irn")}
-                        className="h-4 w-4 accent-blue-600"
-                      />
-                      <span>IRN</span>
-                    </label>
+                  <div className="border-t border-slate-200 bg-white">
+                    <div className="border-b border-slate-200 px-4 py-2 text-[14px] font-semibold text-slate-700">
+                      1.e-Invoice Details
+                    </div>
+                    <div className="grid gap-4 px-4 py-4 text-[13px] text-slate-800 lg:grid-cols-3">
+                      <div>
+                        <span className="font-bold">IRN</span> :
+                        <span className="ml-2 break-all">
+                          uncWIpXGNqaGmHkd5U3v4IfYXI6OW6s7kJAjOcHe6Inj6wo6rQZHF0EnElP
+                          P1jAY
+                        </span>
+                      </div>
+                      <div>
+                        <span className="font-bold">Ack. No</span> :
+                        <span className="ml-2">146872643383543</span>
+                      </div>
+                      <div>
+                        <span className="font-bold">Ack. Date</span> :
+                        <span className="ml-2">09/10/2023</span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-200 px-4 py-2 text-[14px] font-semibold text-slate-700">
+                      2.Transaction Details
+                    </div>
+                    <div className="grid gap-4 px-4 py-4 text-[13px] text-slate-800 lg:grid-cols-3">
+                      <div>
+                        <span className="font-bold">Supply Type Code</span> :
+                        <span className="ml-2">B2B</span>
+                      </div>
+                      <div>
+                        <span className="font-bold">Document No</span> :
+                        <span className="ml-2">STC/23-24/masdks</span>
+                      </div>
+                      <div>
+                        <span className="font-bold">
+                          IGST applicable despite Supplier and Recipient located in same State
+                        </span>
+                        <span className="ml-2">: No</span>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-200 px-4 py-2 text-[14px] font-semibold text-slate-700">
+                      3.Party Details
+                    </div>
+                    <div className="grid gap-4 px-4 py-4 text-[13px] text-slate-800 lg:grid-cols-2">
+                      <div className="space-y-1">
+                        <div className="text-[18px] font-bold">Supplier</div>
+                        <div>GSTIN : 29BRYFP02061V7YP</div>
+                        <div>Fincurious Airlines Pvt. Ltd.</div>
+                        <div>335, Ideal Home, .BKVHVP Arcade, Rajarajeshwari Temple Rd</div>
+                        <div>Rajarajeshwari, Nagar, Bengaluru, Karnataka 560098</div>
+                        <div>BANGALORE</div>
+                        <div>560098 Karnataka</div>
+                      </div>
+                      <div className="space-y-1 border-l border-slate-200 pl-4">
+                        <div className="text-[18px] font-bold">Recipient</div>
+                        <div>GSTIN : 29GMRTL5631J3C1</div>
+                        <div>Fincurious Engines LLP</div>
+                        <div>GaneshaTemple, MG Road, Bengaluru, Karnataka 560001</div>
+                        <div>BANGALORE Place of Supply: Karnataka</div>
+                        <div>564001 Karnataka</div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-200 px-4 py-2 text-[14px] font-semibold text-slate-700">
+                      4.Details of Goods / Services
+                    </div>
+                    <div className="overflow-x-auto px-2 py-3">
+                      <table className="w-full border-collapse text-[12px] text-slate-800">
+                        <thead>
+                          <tr className="bg-slate-100 text-[12px] font-semibold">
+                            <th className="border border-slate-200 px-2 py-2 text-left">SlNo</th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">Item Description</th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">HSN Code</th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">Quantity</th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">Unit</th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">Unit Price(Rs)</th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">Discount(Rs)</th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">Taxable Amount(Rs)</th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">
+                              Tax Rate (GST+Cess | State Cess+Cess Non.Advol)
+                            </th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">
+                              Other charges(Rs)
+                            </th>
+                            <th className="border border-slate-200 px-2 py-2 text-left">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td className="border border-slate-200 px-2 py-2">1</td>
+                            <td className="border border-slate-200 px-2 py-2">
+                              SILK GLAMOR P0 BASE-..4 L(F00X400991004000)
+                            </td>
+                            <td className="border border-slate-200 px-2 py-2">32091090</td>
+                            <td className="border border-slate-200 px-2 py-2">6</td>
+                            <td className="border border-slate-200 px-2 py-2">NOS</td>
+                            <td className="border border-slate-200 px-2 py-2">1907.63</td>
+                            <td className="border border-slate-200 px-2 py-2">0</td>
+                            <td className="border border-slate-200 px-2 py-2">11445.78</td>
+                            <td className="border border-slate-200 px-2 py-2">18+0|0+0</td>
+                            <td className="border border-slate-200 px-2 py-2" />
+                            <td className="border border-slate-200 px-2 py-2">13506.02</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-slate-200 px-2 py-2">2</td>
+                            <td className="border border-slate-200 px-2 py-2">
+                              SILK GLAMOR N2 BASE-..3.6 L(F00X420991003600)
+                            </td>
+                            <td className="border border-slate-200 px-2 py-2">32091090</td>
+                            <td className="border border-slate-200 px-2 py-2">1</td>
+                            <td className="border border-slate-200 px-2 py-2">NOS</td>
+                            <td className="border border-slate-200 px-2 py-2">1950</td>
+                            <td className="border border-slate-200 px-2 py-2">0</td>
+                            <td className="border border-slate-200 px-2 py-2">1950</td>
+                            <td className="border border-slate-200 px-2 py-2">18+0|0+0</td>
+                            <td className="border border-slate-200 px-2 py-2" />
+                            <td className="border border-slate-200 px-2 py-2">2301</td>
+                          </tr>
+                          <tr>
+                            <td className="border border-slate-200 px-2 py-2">3</td>
+                            <td className="border border-slate-200 px-2 py-2">
+                              SILK GLAMOR RED BASE-..900 ML(F00X430991000900)
+                            </td>
+                            <td className="border border-slate-200 px-2 py-2">32091090</td>
+                            <td className="border border-slate-200 px-2 py-2">900</td>
+                            <td className="border border-slate-200 px-2 py-2">MLT</td>
+                            <td className="border border-slate-200 px-2 py-2">0.56</td>
+                            <td className="border border-slate-200 px-2 py-2">0</td>
+                            <td className="border border-slate-200 px-2 py-2">505.93</td>
+                            <td className="border border-slate-200 px-2 py-2">18+0|0+0</td>
+                            <td className="border border-slate-200 px-2 py-2" />
+                            <td className="border border-slate-200 px-2 py-2">596.99</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="grid gap-3 border-t border-slate-200 px-4 py-3 text-[12px] lg:grid-cols-4">
+                      <div>
+                        <div className="font-semibold">Tax'ble Amt</div>
+                        <div>13901.71</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold">CGST Amt</div>
+                        <div>1251.15</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold">SGST Amt</div>
+                        <div>1251.15</div>
+                      </div>
+                      <div>
+                        <div className="font-semibold">IGST Amt</div>
+                        <div>0</div>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-14 flex items-center justify-center gap-3 px-4 pb-24">
-                    <label className="text-[14px] font-semibold text-slate-700">
-                      {cancelBasis === "ack" ? "Enter Ack. No. :" : "Enter IRN No. :"}
-                    </label>
-                    <input
-                      value={ackNumber}
-                      onChange={(e) => setAckNumber(e.target.value)}
-                      className="h-[42px] w-full max-w-[520px] rounded-[4px] border border-slate-300 bg-white px-3 text-[14px] text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                    />
-                    <button className="rounded-[4px] bg-[#2f7fd3] px-5 py-2.5 text-[14px] font-medium text-white shadow-sm hover:bg-[#256ab3]">
-                      Go
+                  <div className="grid gap-4 border-t border-slate-200 px-4 py-4 text-[12px] text-slate-800 lg:grid-cols-[1fr_auto_1fr] lg:items-center">
+                    <div>
+                      <div className="font-semibold">Generated By : <span className="font-normal">29BRYFP02061V7YP</span></div>
+                      <div className="font-semibold">Print Date : <span className="font-normal">08-05-2026 16:46:19</span></div>
+                    </div>
+                    <div className="text-center">
+                      <img
+                        src="/images/simulations/barcode-image.jpg"
+                        alt="Barcode"
+                        className="mx-auto h-[52px] w-[140px] object-contain"
+                      />
+                      <div className="mt-1 text-[10px] text-slate-500">182314594723038</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-semibold">Digitally Signed by NIC-IRP</div>
+                      <div>on: 09-10-2023 18:52:00</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-3 border-t border-slate-200 px-4 py-4">
+                    <button
+                      onClick={handleFinalPrint}
+                      className="rounded-[4px] bg-sky-500 px-5 py-2.5 text-[14px] font-medium text-white shadow-sm hover:bg-sky-600"
+                    >
+                      Print
+                    </button>
+                    <button className="rounded-[4px] bg-sky-400 px-5 py-2.5 text-[14px] font-medium text-white shadow-sm hover:bg-sky-500">
+                      Download Signed Json
                     </button>
                     <button
                       onClick={() => setView("dashboard")}
                       className="rounded-[4px] bg-[#d9534f] px-5 py-2.5 text-[14px] font-medium text-white shadow-sm hover:bg-[#c64541]"
                     >
-                      Exit
+                      ExitA
                     </button>
                   </div>
-
-                  <div className="flex items-center justify-between bg-[#1d5d83] px-4 py-2 text-white">
-                    <div className="text-[11px] lg:text-[12px]">Version 1.01</div>
-                    <div className="text-[11px] lg:text-[12px]">
-                      © 2022 - Powered By National Informatics Centre.
-                    </div>
-                  </div>
                 </div>
-              </div>
-            </main>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 bg-[#1d5d83] px-4 py-2 text-white">
+        <div className="mx-auto flex w-full max-w-[1780px] items-center justify-between gap-4">
+          <div className="text-[11px] lg:text-[12px]">Version 1.01</div>
+          <div className="text-[11px] lg:text-[12px]">
+            © 2022 - Powered By National Informatics Centre.
           </div>
         </div>
       </div>
@@ -353,7 +573,7 @@ export default function GSTEInvoicing3Page() {
 
           <div className="flex flex-[1.25] justify-center">
             <div className="whitespace-nowrap text-[21px] font-semibold leading-none tracking-tight text-white">
-              e-Invoice 3 Portal
+              e-Invoice 1 Portal
             </div>
           </div>
 
@@ -418,13 +638,7 @@ export default function GSTEInvoicing3Page() {
 
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
             <section className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
-              <div className="relative flex h-[360px] w-full items-center justify-center overflow-hidden bg-[#eef6fb]">
-                <img
-                  src="/images/simulations/main-gst-banner-image.jpg"
-                  alt="GST e-invoice banner"
-                  className="h-full w-full object-contain object-center"
-                />
-              </div>
+              <GSTBannerCarousel slides={bannerSlides} className="mt-3" />
               <div className="border-t border-slate-200 bg-white px-5 py-3 text-[15px] leading-6 text-blue-700">
                 The e-Invoice System is for GST registered person for uploading all
                 the B2B invoices to the Invoice Registration Portal (IRP). The IRP
@@ -628,7 +842,7 @@ export default function GSTEInvoicing3Page() {
                 </div>
 
                 <div className="text-center">
-                  <div className="text-[14px] font-bold lg:text-[16px]">e-Invoice 3 Portal</div>
+                  <div className="text-[14px] font-bold lg:text-[16px]">e-Invoice 1 Portal</div>
                 </div>
 
                 <div className="flex items-center gap-4 lg:gap-6">
@@ -859,13 +1073,13 @@ export default function GSTEInvoicing3Page() {
       {portalView}
 
       {showLaunchScreen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#07111f]/22 px-4 text-white backdrop-blur-[2px]">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_30%),radial-gradient(circle_at_top_right,rgba(56,189,248,0.08),transparent_26%),linear-gradient(135deg,rgba(7,17,31,0.18)_0%,rgba(11,27,51,0.14)_45%,rgba(8,17,31,0.18)_100%)]" />
-          <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400/5 blur-3xl" />
-          <div className="absolute inset-0 opacity-[0.02]">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden px-4 text-white backdrop-blur-[4px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.38),transparent_28%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_24%),radial-gradient(circle_at_center,rgba(255,255,255,0.18),transparent_42%),linear-gradient(135deg,rgba(255,255,255,0.42)_0%,rgba(233,241,252,0.28)_35%,rgba(255,255,255,0.18)_100%)]" />
+          <div className="absolute inset-0 bg-white/8" />
+          <div className="absolute inset-0 opacity-[0.04]">
             <div className="grid h-full grid-cols-12 gap-4 p-6">
               {Array.from({ length: 132 }).map((_, index) => (
-                <div key={index} className="rounded-md border border-white/8" />
+                <div key={index} className="rounded-md border border-slate-500/20" />
               ))}
             </div>
           </div>
@@ -874,7 +1088,7 @@ export default function GSTEInvoicing3Page() {
             <button
               onClick={handleStartExperiment}
               disabled={isStartingExperiment}
-              className="inline-flex min-h-[72px] w-[min(84vw,34rem)] items-center justify-center rounded-[22px] bg-[#1244b8] px-6 text-lg font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_40px_rgba(18,68,184,0.24)] transition-transform duration-200 hover:scale-[1.02] hover:bg-[#0f3a9a] disabled:cursor-wait disabled:opacity-90 sm:min-h-[78px] sm:px-8 sm:text-xl"
+              className="inline-flex min-h-[66px] w-[min(78vw,32rem)] items-center justify-center rounded-[22px] bg-[#1f4eb8] px-6 text-[16px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_14px_34px_rgba(31,78,184,0.28)] transition-transform duration-200 hover:scale-[1.02] hover:bg-[#18439c] disabled:cursor-wait disabled:opacity-90 sm:min-h-[72px] sm:w-[min(72vw,34rem)] sm:px-7 sm:text-[18px]"
               aria-label="Start experiment"
             >
               {isStartingExperiment ? "EXPERIMENTING..." : "START EXPERIMENT"}

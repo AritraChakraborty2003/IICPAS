@@ -159,8 +159,8 @@ const normalizeAuthorProfiles = (
 
   const profiles = Array.isArray(landingPage.authorProfiles)
     ? landingPage.authorProfiles.map((profile) =>
-        buildAuthorProfile(profile, fallback)
-      )
+      buildAuthorProfile(profile, fallback)
+    )
     : [];
 
   if (profiles.length === 0) {
@@ -196,7 +196,7 @@ const resolveLandingPage = (
     authorProfiles,
     authorLayout:
       draftLandingPage?.authorLayout === "two-per-line" ||
-      base.authorLayout === "two-per-line"
+        base.authorLayout === "two-per-line"
         ? "two-per-line"
         : "stack",
     headline:
@@ -958,8 +958,8 @@ function LiveSessionLandingPage({
                     {previewMode
                       ? "Register Now"
                       : paying || submitting
-                      ? "Processing..."
-                      : registerNowLabel}
+                        ? "Processing..."
+                        : registerNowLabel}
                   </button>
 
                   <div className="flex flex-wrap items-center justify-center gap-2 pt-1 sm:justify-start">

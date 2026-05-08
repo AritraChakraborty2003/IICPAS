@@ -29,6 +29,14 @@ const experiments = [
     icon: FaDesktop,
   },
   {
+    title: "E-Invoicing 4",
+    description:
+      "Cancellation workflow replica with Ack No. / IRN switching and submit flow.",
+    route: "/simulations/gst/e-invoicing-4",
+    badge: "Cancel Flow",
+    icon: FaFileInvoice,
+  },
+  {
     title: "Invoice Builder",
     description:
       "Open the interactive invoice creation simulation used after login.",

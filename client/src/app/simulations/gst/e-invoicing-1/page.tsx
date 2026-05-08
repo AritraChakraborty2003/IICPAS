@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   ContactRound,
+  CheckCircle2,
   FileText,
   Menu,
   PencilLine,
@@ -14,6 +15,7 @@ import {
   Users,
   KeyRound,
 } from "lucide-react";
+import GSTBannerCarousel from "../../../components/GSTBannerCarousel";
 
 type View = "home" | "dashboard";
 
@@ -69,6 +71,15 @@ export default function GSTEInvoicing1Page() {
       date: "11 SEP 2023",
       text: "As per directions by GST Authority, a time limit of 30 days for reporting of invoices from date of invoice is imposed on e-invoice portals, and is applicable for taxpayers with AATO greater than or equal to 100 crores from 1st November 2023.",
     },
+  ];
+
+ const bannerSlides = [
+    { src: "/images/simulations/main-gst-banner-image.jpg", alt: "GST main banner" },
+
+    { src: "/images/simulations/gst-image-3.jpg", alt: "GST banner slide 3" },
+   
+    { src: "/images/simulations/gst-image-5.png", alt: "GST banner slide 5" },
+
   ];
 
   const sidebarMenu = [
@@ -190,13 +201,7 @@ export default function GSTEInvoicing1Page() {
 
           <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
             <section className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
-              <div className="relative flex h-[360px] w-full items-center justify-center overflow-hidden bg-[#eef6fb]">
-                <img
-                  src="/images/simulations/main-gst-banner-image.jpg"
-                  alt="GST e-invoice banner"
-                  className="h-full w-full object-contain object-center"
-                />
-              </div>
+              <GSTBannerCarousel slides={bannerSlides} className="mt-3" />
               <div className="border-t border-slate-200 bg-white px-5 py-3 text-[15px] leading-6 text-blue-700">
                 The e-Invoice System is for GST registered person for uploading all
                 the B2B invoices to the Invoice Registration Portal (IRP). The IRP
@@ -240,10 +245,42 @@ export default function GSTEInvoicing1Page() {
         </div>
       </main>
 
-      <footer className="w-full border-t border-slate-200 bg-[#245f87] px-6 py-4 text-white">
-        <div className="mx-auto w-full max-w-[1780px]">
-          <div className="text-[16px] font-semibold uppercase tracking-wide">
+      <footer className="w-full border-t border-slate-200 bg-[#1f6693] text-white">
+        <div className="mx-auto w-full max-w-[1780px] px-6 py-8">
+          <div className="text-[15px] font-semibold uppercase tracking-wide">
             IMPORTANT LINKS
+          </div>
+
+          <div className="mt-6 grid gap-8 text-[14px] leading-7 lg:grid-cols-3">
+            <div className="space-y-2">
+              <div>▸ Website Policies</div>
+              <div>▸ Terms and Conditions</div>
+              <div>▸ Disclaimer</div>
+              <div>▸ Sitemap</div>
+            </div>
+            <div className="space-y-2">
+              <div>▸ GST Common Portal</div>
+              <div>▸ Central Board of Indirect Taxes and Customs</div>
+              <div>▸ State Tax Websites</div>
+              <div>▸ Help</div>
+            </div>
+            <div className="space-y-2">
+              <div>▸ National Portal</div>
+              <div>▸ National Informatics Centre</div>
+              <div>▸ Goods and Services Tax Network</div>
+              <div>▸ Last Updated: 15-12-2022</div>
+              <div>▸ Visitors: 69499322 (Since 05/08/2020)</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t border-white/20 bg-[#165276] px-6 py-4 text-white">
+          <div className="mx-auto flex w-full max-w-[1780px] items-center justify-between gap-4 text-[12px]">
+            <div>Version 1.01</div>
+            <div className="hidden md:block">
+              This site can be best viewed in Firefox 43.5 and above, IE 11 and above, chrome 45 and above.
+            </div>
+            <div>© 2022 - Powered By National Informatics Centre.</div>
           </div>
         </div>
       </footer>
@@ -427,9 +464,10 @@ export default function GSTEInvoicing1Page() {
                 <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
                 <button
                   onClick={startAgain}
-                  className="rounded-md bg-white px-3 py-1 text-[12px] font-semibold text-blue-700 shadow-sm hover:bg-blue-50"
+                  className="inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1 text-[12px] font-semibold text-blue-700 shadow-sm hover:bg-blue-50"
                 >
-                  Start Again
+                  <CheckCircle2 size={14} className="text-emerald-500" />
+                  Retry
                 </button>
               </div>
             </div>
@@ -544,9 +582,10 @@ export default function GSTEInvoicing1Page() {
                       </button>
                       <button
                         onClick={startAgain}
-                        className="rounded-md bg-blue-700 px-3.5 py-2 text-[11px] font-semibold text-white hover:bg-blue-800"
+                        className="inline-flex items-center gap-1.5 rounded-md bg-blue-700 px-3.5 py-2 text-[11px] font-semibold text-white hover:bg-blue-800"
                       >
-                        Start Again
+                        <CheckCircle2 size={13} className="text-emerald-300" />
+                        Retry
                       </button>
                     </div>
                   </section>

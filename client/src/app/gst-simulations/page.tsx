@@ -88,6 +88,24 @@ export default function GSTSimulationsPage() {
       duration: "30 mins",
     },
     {
+      id: "einvoice-portal-4",
+      title: "E-Invoice Cancel Flow",
+      description:
+        "Cancellation workflow replica with Ack No. / IRN switching and submit flow.",
+      icon: <FaFileInvoice className="text-4xl text-red-600" />,
+      route: "/simulations/gst/e-invoicing-4",
+      features: [
+        "Cancel Flow",
+        "Ack / IRN Switch",
+        "Submit Result",
+        "Cancelled Stamp",
+        "Route Isolation",
+        "Experiment Mode",
+      ],
+      difficulty: "Beginner",
+      duration: "30 mins",
+    },
+    {
       id: "eway-bill",
       title: "E-Way Bill",
       description: "Generate e-way bills for goods transportation",

@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   FaArrowLeft,
   FaBars,
   FaCog,
   FaCube,
+  FaCheckCircle,
   FaExclamationTriangle,
   FaFileInvoice,
   FaHome,
@@ -15,11 +16,26 @@ import {
   FaPowerOff,
   FaVideo,
 } from "react-icons/fa";
+import {
+  ChevronDown,
+  ContactRound,
+  FileText,
+  Menu,
+  PencilLine,
+  ShieldAlert,
+  ShieldQuestion,
+  Plug,
+  Truck,
+  Users,
+  KeyRound,
+  CheckCircle2,
+} from "lucide-react";
 import ExperimentLaunchScreen from "./ExperimentLaunchScreen";
 import ClipboardOnlyGuard from "./ClipboardOnlyGuard";
 import GSTSimulation from "./GSTSimulation";
 
-type Screen = "home" | "dashboard" | "invoice";
+type Screen = "home" | "dashboard" | "invoice" | "cancel";
+type Workflow = "invoice" | "cancel";
 
 const latestUpdates = [
   {
@@ -54,6 +70,7 @@ interface GSTEInvoiceReplicaProps {
   baseRoute?: string;
   launchTitle?: string;
   portalTitle?: string;
+  workflow?: Workflow;
 }
 
 export default function GSTEInvoiceReplica({
@@ -61,33 +78,90 @@ export default function GSTEInvoiceReplica({
   baseRoute = "/simulations/gst/e-invoicing-1",
   launchTitle = "GST E-Invoice Simulation",
   portalTitle = "e-Invoice 1 Portal",
+  workflow = "invoice",
 }: GSTEInvoiceReplicaProps) {
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>(initialScreen);
+  const [isInvoiceMenuOpen, setIsInvoiceMenuOpen] = useState(false);
+  const sidebarMenuItems = [
+    { label: "MIS Reports", Icon: Menu },
+    { label: "User Management", Icon: Users },
+    { label: "API Registration", Icon: Plug },
+    { label: "Change Password", Icon: KeyRound },
+    { label: "Feedback on GePP", Icon: ShieldQuestion },
+    { label: "Update Contact Details", Icon: ContactRound },
+    { label: "Update", Icon: PencilLine },
+    { label: "e-Way Bill", Icon: Truck },
+    { label: "2 Factor Authentication", Icon: ShieldAlert },
+  ];
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
+  const [isStartingExperiment, setIsStartingExperiment] = useState(false);
+  const launchTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (launchTimerRef.current !== null) {
+        window.clearTimeout(launchTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleStartExperiment = () => {
+    if (isStartingExperiment) return;
+    setIsStartingExperiment(true);
+    launchTimerRef.current = window.setTimeout(() => {
+      setShowLaunchScreen(false);
+      setIsStartingExperiment(false);
+      launchTimerRef.current = null;
+    }, 1500);
+  };
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginData, setLoginData] = useState({
     username: "AIR",
     password: "Fin@123",
     captcha: "",
   });
+  const [cancelBasis, setCancelBasis] = useState<"ack" | "irn">("ack");
+  const [cancelIdentifier, setCancelIdentifier] = useState("146872643383543");
+  const [cancelReason, setCancelReason] = useState("Others");
+  const [cancelRemarks, setCancelRemarks] = useState("");
+  const [showCancelDetails, setShowCancelDetails] = useState(false);
+  const [showCancelSuccess, setShowCancelSuccess] = useState(false);
   const invoiceRoute = `${baseRoute}/invoice`;
 
   const goToInvoiceBuilder = () => {
     router.push(invoiceRoute);
   };
 
-  if (showLaunchScreen) {
-    return (
-      <ExperimentLaunchScreen
-        title={launchTitle}
-        subtitle="A hazy fullscreen start screen that launches the simulation with one button in the center."
-        onStart={() => setShowLaunchScreen(false)}
-        buttonLabel="START EXPERIMENT"
-        accent="blue"
-      />
-    );
-  }
+  const goToCancelFlow = () => {
+    setScreen("cancel");
+    setShowCancelDetails(false);
+    setShowCancelSuccess(false);
+  };
+
+  const handleCancelGo = () => {
+    setShowCancelDetails(true);
+    setShowCancelSuccess(false);
+  };
+
+  const handleCancelSubmit = () => {
+    setShowCancelSuccess(true);
+  };
+
+  const handleCancelRetry = () => {
+    setShowCancelDetails(true);
+    setShowCancelSuccess(false);
+  };
+
+  const handleCancelExit = () => {
+    setScreen("dashboard");
+    setShowCancelDetails(false);
+    setShowCancelSuccess(false);
+  };
+
+  const renderCancelDashboard = () => null;
+
+
 
   const renderHomeScreen = () => (
     <div className="min-h-screen bg-gradient-to-b from-[#eef8fd] via-[#f6fbfe] to-[#edf5fb]">
@@ -438,6 +512,258 @@ export default function GSTEInvoiceReplica({
 
   const renderDashboard = () => (
     <div className="min-h-screen bg-[#f4f7fb]">
+      <div className="sticky top-0 z-50 w-full">
+        <div className="bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
+          This is a Simulation. Use For Educational Purposes ONLY.
+        </div>
+
+        <div className="bg-[#f4f7fb] px-0 pb-0 pt-0">
+          <div className="bg-[#24668f] text-white">
+            <div className="px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <img
+                    src="/images/simulations/satyamev-jayate.jpg"
+                    alt="Satyamev Jayate emblem"
+                    className="h-[54px] w-[54px] object-contain lg:h-[60px] lg:w-[60px]"
+                  />
+                  <div>
+                    <div className="text-[10px] font-semibold uppercase leading-tight lg:text-[11px]">
+                      GOODS AND SERVICES TAX
+                    </div>
+                    <div className="text-[14px] font-bold uppercase leading-tight lg:text-[16px]">
+                      e - INVOICE SYSTEM
+                    </div>
+                  </div>
+                </div>
+
+                <div className="text-center">
+                  <div className="text-[14px] font-bold lg:text-[16px]">{portalTitle}</div>
+                </div>
+
+                <div className="flex items-center gap-4 lg:gap-6">
+                  <img
+                    src="/images/simulations/red-1-logo.png"
+                    alt="Nation Tax Market logo"
+                    className="h-[34px] w-auto object-contain lg:h-[40px]"
+                  />
+                  <img
+                    src="/images/simulations/nic-logo-remove-1.png"
+                    alt="NIC logo"
+                    className="h-[34px] w-auto object-contain lg:h-[40px]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-white/15 bg-[#ccd4e9] px-4 py-2.5 text-[12px] text-slate-700 lg:text-[14px]">
+              <div className="flex items-center justify-between gap-4 whitespace-nowrap">
+                <div className="text-left whitespace-nowrap">
+                  GSTIN: 29BRYFP02061V7YP - Name: Company Airlines Pvt. Ltd.
+                </div>
+                <div className="whitespace-nowrap">Account : Main User</div>
+                <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
+                <button
+                  onClick={() => setScreen("home")}
+                  className="rounded-md bg-white px-3 py-1 text-[12px] font-semibold text-blue-700 shadow-sm hover:bg-blue-50"
+                >
+                  Start Again
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="w-full px-0 pt-0">
+        <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
+          <div className="flex min-h-[calc(100vh-128px)] w-full">
+            <aside className="sticky top-[175px] flex h-[calc(100vh-128px)] w-[260px] flex-col bg-[#d7def0]">
+              <div className="border-b border-white/60 px-4 py-3">
+                <div className="flex w-full items-center gap-3 rounded-sm bg-[#2f7fd3] px-3 py-2 text-[12px] font-semibold text-white shadow-sm">
+                  <span className="text-lg leading-none">e</span>
+                  <span>e-Way bill Portal</span>
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                <div className={isInvoiceMenuOpen ? "overflow-hidden border-2 border-red-500 bg-[#d7def0]" : ""}>
+                  <button
+                    onClick={() => setIsInvoiceMenuOpen((current) => !current)}
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-[12px] font-medium text-slate-700 ${
+                      isInvoiceMenuOpen
+                        ? "bg-[#cbd3f2] border-b border-red-500/80"
+                        : "border-2 border-red-500 bg-[#d7def0]"
+                    } hover:bg-[#e8edf8]`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText size={15} className="text-slate-600" />
+                      <span>e-Invoice</span>
+                    </div>
+                    <ChevronDown
+                      size={14}
+                      className={`text-slate-500 transition-transform ${
+                        isInvoiceMenuOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {isInvoiceMenuOpen && (
+                    <div className="bg-[#d7def0]">
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                        <div className="flex items-center gap-3">
+                          <FileText size={15} className="text-slate-600" />
+                          <span>Bulk Upload</span>
+                        </div>
+                      </button>
+                      <button 
+                        onClick={goToCancelFlow}
+                        className={`flex w-full items-center justify-between bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8] ${workflow === "cancel" ? "border-2 border-red-500" : "border-t border-white/60"}`}>
+                        <div className="flex items-center gap-3">
+                          <FileText size={15} className="text-slate-600" />
+                          <span>Cancel</span>
+                        </div>
+                      </button>
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                        <div className="flex items-center gap-3">
+                          <FileText size={15} className="text-slate-600" />
+                          <span>Print</span>
+                        </div>
+                      </button>
+                      <button className="flex w-full items-center justify-between border-t border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]">
+                        <div className="flex items-center gap-3">
+                          <FileText size={15} className="text-slate-600" />
+                          <span>Bulk IRN Cancel</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {sidebarMenuItems.map(({ label, Icon }, index) => (
+                  <button
+                    key={label}
+                    className="flex w-full items-center justify-between border-b border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Icon size={15} className="text-slate-600" />
+                      <span>{label}</span>
+                    </div>
+                    {index < sidebarMenuItems.length - 1 ? (
+                      <ChevronDown size={14} className="text-slate-500" />
+                    ) : null}
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            <main className="flex-1 px-3 py-3 lg:px-4">
+              <div className="w-full">
+                <div className="grid gap-4">
+                  <section className="rounded-b-xl bg-white shadow-sm">
+                    <div className="px-6 pt-3 text-center text-[18px] font-extrabold text-[#1b66a0] lg:text-[22px]">
+                      Dash Board
+                    </div>
+
+                    <div className="mt-3 grid gap-4 px-4 md:grid-cols-2 lg:px-6">
+                      <div className="rounded border border-blue-200">
+                        <div className="flex items-center justify-between bg-blue-500 px-4 py-2.5 text-white">
+                          <div className="text-[12px] font-semibold">Generations</div>
+                          <div className="text-[12px]">◔</div>
+                        </div>
+                        <div className="bg-white px-4 py-3 text-[12px] text-slate-700 lg:text-[13px]">
+                          <div className="flex justify-between border-b border-slate-200 py-1.5">
+                            <span className="underline">Yesterday</span>
+                            <span className="underline">0</span>
+                          </div>
+                          <div className="flex justify-between py-1.5">
+                            <span className="underline">During This month</span>
+                            <span className="underline">67</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded border border-red-200">
+                        <div className="flex items-center justify-between bg-red-500 px-4 py-2.5 text-white">
+                          <div className="text-[12px] font-semibold">Cancelled</div>
+                          <div className="text-[12px]">↪</div>
+                        </div>
+                        <div className="bg-white px-4 py-3 text-[12px] text-slate-700 lg:text-[13px]">
+                          <div className="flex justify-between border-b border-slate-200 py-1.5">
+                            <span className="underline">Yesterday</span>
+                            <span className="underline">0</span>
+                          </div>
+                          <div className="flex justify-between py-1.5">
+                            <span className="underline">During This month</span>
+                            <span className="underline">0</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mx-4 mt-4 rounded border border-slate-200 bg-white lg:mx-6">
+                      <div className="border-b border-slate-200 px-4 py-2 text-[13px] font-semibold text-cyan-500 lg:text-[14px]">
+                        Notes:
+                      </div>
+                      <div className="space-y-2.5 px-4 py-3 text-[12px] leading-5 text-slate-700 lg:px-6 lg:text-[13px] lg:leading-6">
+                        <div className="flex gap-3">
+                          <span>•</span>
+                          <span>
+                            The Bulk IRN generation facility has been enabled.
+                            You may download the tools from the portal under Help
+                            -&gt; Tools.
+                          </span>
+                        </div>
+                        <div className="flex gap-3">
+                          <span>•</span>
+                          <span>
+                            The e-Waybills generated in this portal will be
+                            reflected in the e-waybill system. To Update Part-B
+                            details, cancel or extend, you may login to
+                            e-waybill system with same credentials.
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 px-4 py-4 lg:px-6">
+                      <button
+                        onClick={() => setScreen("home")}
+                        className="rounded-md border border-slate-300 bg-white px-3.5 py-2 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        Back to Portal
+                      </button>
+                      <button
+                        onClick={workflow === "cancel" ? goToCancelFlow : goToInvoiceBuilder}
+                        className={`inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[11px] font-semibold text-white ${
+                          workflow === "cancel"
+                            ? "bg-red-600 hover:bg-red-700"
+                            : "bg-blue-700 hover:bg-blue-800"
+                        }`}
+                      >
+                        {workflow === "cancel" ? "Continue to Cancel Flow" : "Continue to Invoice Builder"}
+                      </button>
+                    </div>
+                  </section>
+
+                </div>
+
+                <div className="mt-3 flex items-center justify-between bg-[#1d5d83] px-4 py-2 text-white">
+                  <div className="text-[11px] lg:text-[12px]">Version 1.03</div>
+                  <div className="text-[11px] lg:text-[12px]">
+                    © 2022 - Powered By National Informatics Centre.
+                  </div>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderCancelScreen = () => (
+    <div className="min-h-screen bg-[#f4f7fb]">
       <div className="bg-[#ec1e18] px-4 py-4 text-center text-3xl font-medium text-white">
         This is a Simulation. Use For Educational Purposes ONLY.
       </div>
@@ -500,7 +826,7 @@ export default function GSTEInvoiceReplica({
               <FaExclamationTriangle />
             </button>
             <button
-              onClick={() => setScreen("home")}
+              onClick={() => setScreen("dashboard")}
               className="mx-auto text-slate-600"
             >
               <FaArrowLeft />
@@ -518,7 +844,7 @@ export default function GSTEInvoiceReplica({
                 <div>Account : Main User</div>
                 <div>Client IP:1.1.1.1</div>
                 <button
-                  onClick={() => setScreen("home")}
+                  onClick={() => setScreen("dashboard")}
                   className="text-blue-700"
                 >
                   <FaPowerOff />
@@ -526,126 +852,162 @@ export default function GSTEInvoiceReplica({
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
-              <section className="rounded-b-xl bg-white shadow-sm">
-                <div className="px-6 pt-4 text-center text-4xl font-extrabold text-[#1b66a0]">
-                  Dash Board
-                </div>
+            <section className="rounded-b-xl bg-white shadow-sm">
+              <div className="px-6 pt-4 text-center text-4xl font-extrabold text-[#1b66a0]">
+                e-Invoice Cancel
+              </div>
 
-                <div className="mt-4 grid gap-6 px-6 md:grid-cols-2">
-                  <div className="rounded border border-blue-200">
-                    <div className="flex items-center justify-between bg-blue-500 px-4 py-3 text-white">
-                      <div className="font-semibold">Generations</div>
-                      <div>◔</div>
-                    </div>
-                    <div className="bg-white px-4 py-4 text-lg text-slate-700">
-                      <div className="flex justify-between border-b border-slate-200 py-2">
-                        <span className="underline">Yesterday</span>
-                        <span className="underline">0</span>
+              <div className="mt-6 flex items-center justify-center gap-8 text-2xl font-semibold text-slate-700">
+                <span>Based On :</span>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="cancelBasis"
+                    checked={cancelBasis === "ack"}
+                    onChange={() => {
+                      setCancelBasis("ack");
+                      setCancelIdentifier("146872643383543");
+                    }}
+                    className="h-5 w-5"
+                  />
+                  <span>Ack No.</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="cancelBasis"
+                    checked={cancelBasis === "irn"}
+                    onChange={() => {
+                      setCancelBasis("irn");
+                      setCancelIdentifier("uncWIpXGNqaGmHkd5U3v4fYXl6OW6s7kJAjOcHe6Inj6wo6rQZHfOEnEIPP1jAY");
+                    }}
+                    className="h-5 w-5"
+                  />
+                  <span>IRN</span>
+                </label>
+              </div>
+
+              <div className="mt-8 flex items-center justify-center gap-4 px-6">
+                <label className="text-2xl font-semibold text-slate-700">
+                  {cancelBasis === "ack" ? "Enter Ack. No. :" : "Enter IRN :"}
+                </label>
+                <input
+                  value={cancelIdentifier}
+                  onChange={(e) => setCancelIdentifier(e.target.value)}
+                  className="w-full max-w-[620px] rounded border border-slate-400 px-4 py-2 text-xl text-slate-800 outline-none focus:border-blue-500"
+                />
+                <button
+                  onClick={handleCancelGo}
+                  className="rounded-md bg-blue-700 px-5 py-3 text-lg font-semibold text-white hover:bg-blue-800"
+                >
+                  Go
+                </button>
+                <button
+                  onClick={() => setScreen("dashboard")}
+                  className="rounded-md bg-red-600 px-5 py-3 text-lg font-semibold text-white hover:bg-red-700"
+                >
+                  Exit
+                </button>
+              </div>
+
+              {showCancelDetails && (
+                <div className="relative mx-auto mt-12 max-w-[1220px] px-6 pb-10">
+                  <div className="rounded-2xl border border-slate-200 bg-[#f8f9fd] p-8 shadow-sm">
+                    <div className="grid gap-8 lg:grid-cols-[1fr_260px]">
+                      <div>
+                        <div className="text-3xl font-extrabold text-slate-700">
+                          e-Invoice Cancel
+                        </div>
+                        <div className="mt-4 grid gap-4 text-xl text-slate-700">
+                          <div className="flex items-start gap-3">
+                            <span className="font-semibold">Generated By :</span>
+                            <span>29BRYFP02061V7YP</span>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <span className="font-semibold">Print Date :</span>
+                            <span>08-05-2026 18:08:46</span>
+                          </div>
+                        </div>
+
+                        <div className="mt-8 grid gap-5 md:grid-cols-2">
+                          <div>
+                            <label className="mb-2 block text-xl font-semibold text-slate-700">
+                              Cancel Reason :
+                            </label>
+                            <select
+                              value={cancelReason}
+                              onChange={(e) => setCancelReason(e.target.value)}
+                              className="w-full rounded border border-slate-300 bg-white px-4 py-3 text-lg outline-none focus:border-blue-500"
+                            >
+                              <option>Others</option>
+                              <option>Duplicate</option>
+                              <option>Wrong Invoice</option>
+                              <option>Order Cancelled</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="mb-2 block text-xl font-semibold text-slate-700">
+                              Remarks :
+                            </label>
+                            <textarea
+                              value={cancelRemarks}
+                              onChange={(e) => setCancelRemarks(e.target.value)}
+                              rows={4}
+                              className="w-full rounded border border-slate-300 bg-white px-4 py-3 text-lg outline-none focus:border-blue-500"
+                              placeholder="Type remarks..."
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-8 flex items-center gap-4">
+                          <button
+                            onClick={handleCancelSubmit}
+                            className="rounded-md bg-blue-700 px-6 py-3 text-lg font-semibold text-white hover:bg-blue-800"
+                          >
+                            Submit
+                          </button>
+                          <button
+                            onClick={handleCancelExit}
+                            className="rounded-md bg-red-600 px-6 py-3 text-lg font-semibold text-white hover:bg-red-700"
+                          >
+                            Exit
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex justify-between py-2">
-                        <span className="underline">During This month</span>
-                        <span className="underline">67</span>
+
+                      <div className="flex items-start justify-center">
+                        <div className="h-[220px] w-[220px] rounded-lg border border-slate-200 bg-white" />
                       </div>
                     </div>
+
+                    {showCancelSuccess && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-white/30 px-6 backdrop-blur-[1px]">
+                        <div className="relative flex flex-col items-center">
+                          <div className="flex h-28 w-28 items-center justify-center rounded-full bg-emerald-500 shadow-lg">
+                            <FaCheckCircle className="text-6xl text-white" />
+                          </div>
+                          <div className="mt-6 -rotate-12 rounded-2xl border-8 border-red-600 px-10 py-6 text-6xl font-black uppercase tracking-[0.2em] text-red-600">
+                            Cancelled
+                          </div>
+                          <button
+                            onClick={handleCancelRetry}
+                            className="mt-6 rounded-md bg-red-600 px-8 py-3 text-2xl font-semibold text-white hover:bg-red-700"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
+                </div>
+              )}
 
-                  <div className="rounded border border-red-200">
-                    <div className="flex items-center justify-between bg-red-500 px-4 py-3 text-white">
-                      <div className="font-semibold">Cancelled</div>
-                      <div>↪</div>
-                    </div>
-                    <div className="bg-white px-4 py-4 text-lg text-slate-700">
-                      <div className="flex justify-between border-b border-slate-200 py-2">
-                        <span className="underline">Yesterday</span>
-                        <span className="underline">0</span>
-                      </div>
-                      <div className="flex justify-between py-2">
-                        <span className="underline">During This month</span>
-                        <span className="underline">0</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mx-6 mt-6 rounded border border-slate-200 bg-white">
-                  <div className="border-b border-slate-200 px-4 py-2 text-2xl font-semibold text-cyan-500">
-                    Notes:
-                  </div>
-                  <div className="space-y-4 px-6 py-5 text-lg text-slate-700">
-                    <div className="flex gap-3">
-                      <span>•</span>
-                      <span>
-                        The Bulk IRN generation facility has been enabled. You
-                        may download the tools from the portal under Help -&gt;
-                        Tools.
-                      </span>
-                    </div>
-                    <div className="flex gap-3">
-                      <span>•</span>
-                      <span>
-                        The e-Waybills generated in this portal will be
-                        reflected in the e-waybill system. To Update Part-B
-                        details, cancel or extend, you may login to e-waybill
-                        system with same credentials.
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-4 px-6 py-6">
-                  <button
-                    onClick={() => setScreen("home")}
-                    className="rounded-md border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  >
-                    Back to Portal
-                  </button>
-                  <button
-                    onClick={goToInvoiceBuilder}
-                    className="rounded-md bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
-                  >
-                    Continue to Invoice Builder
-                  </button>
-                </div>
-              </section>
-
-              <aside className="rounded-xl bg-white p-5 shadow-sm">
-                <div className="text-2xl font-extrabold text-slate-500">
-                  LATEST UPDATES
-                </div>
-                <div className="mt-6 space-y-5">
-                  {latestUpdates.map((item) => (
-                    <div
-                      key={`${item.date}-${item.text}-dashboard`}
-                      className={`border-l-4 pl-4 ${
-                        item.color === "blue"
-                          ? "border-blue-500"
-                          : item.color === "green"
-                          ? "border-green-500"
-                          : item.color === "orange"
-                          ? "border-orange-500"
-                          : "border-red-500"
-                      }`}
-                    >
-                      <div className="text-sm font-semibold text-slate-500">
-                        {item.date}
-                      </div>
-                      <p className="text-base font-semibold leading-6 text-blue-700">
-                        • {item.text}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-6 text-right text-lg font-semibold text-blue-600">
-                  Previous Updates
-                </div>
-              </aside>
-            </div>
-
-            <div className="mt-4 flex items-center justify-between bg-[#1d5d83] px-4 py-3 text-white">
-              <div className="text-lg">Version 1.01</div>
-              <div className="text-lg">© 2022 - Powered By National Informatics Centre.</div>
-            </div>
+              <div className="mt-6 rounded-xl bg-white px-6 py-4 text-lg leading-7 text-blue-700">
+                The e-Invoice cancellation flow is for educational practice on
+                submitted invoice records. Use Ack No. or IRN, review the
+                cancellation reason, and submit to simulate the cancelled state.
+              </div>
+            </section>
           </div>
         </main>
       </div>
@@ -682,13 +1044,40 @@ export default function GSTEInvoiceReplica({
   }
 
   return (
-    <div>
+    <div className={`relative min-h-screen ${showLaunchScreen ? "overflow-hidden" : ""}`}>
       <ClipboardOnlyGuard />
       {screen === "home"
         ? renderHomeScreen()
         : screen === "dashboard"
         ? renderDashboard()
+        : screen === "cancel"
+        ? renderCancelScreen()
         : renderInvoiceBuilder()}
+
+      {showLaunchScreen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden px-4 text-white backdrop-blur-[4px]">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.38),transparent_28%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.18),transparent_24%),radial-gradient(circle_at_center,rgba(255,255,255,0.18),transparent_42%),linear-gradient(135deg,rgba(255,255,255,0.42)_0%,rgba(233,241,252,0.28)_35%,rgba(255,255,255,0.18)_100%)]" />
+          <div className="absolute inset-0 bg-white/8" />
+          <div className="absolute inset-0 opacity-[0.04]">
+            <div className="grid h-full grid-cols-12 gap-4 p-6">
+              {Array.from({ length: 132 }).map((_, index) => (
+                <div key={index} className="rounded-md border border-slate-500/20" />
+              ))}
+            </div>
+          </div>
+
+          <div className="relative z-10 flex h-full w-full items-center justify-center">
+            <button
+              onClick={handleStartExperiment}
+              disabled={isStartingExperiment}
+              className="inline-flex min-h-[66px] w-[min(78vw,32rem)] items-center justify-center rounded-[22px] bg-[#1f4eb8] px-6 text-[16px] font-bold uppercase tracking-[0.18em] text-white shadow-[0_14px_34px_rgba(31,78,184,0.28)] transition-transform duration-200 hover:scale-[1.02] hover:bg-[#18439c] disabled:cursor-wait disabled:opacity-90 sm:min-h-[72px] sm:w-[min(72vw,34rem)] sm:px-7 sm:text-[18px]"
+              aria-label="Start experiment"
+            >
+              {isStartingExperiment ? "EXPERIMENTING..." : "START EXPERIMENT"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

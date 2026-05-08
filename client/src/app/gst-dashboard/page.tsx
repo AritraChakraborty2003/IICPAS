@@ -43,6 +43,20 @@ export default function GSTDashboard() {
       ],
     },
     {
+      id: "portal-cancel",
+      title: "Portal Cancel Flow",
+      description:
+        "Dedicated cancellation simulation with Ack No. / IRN selector and submit result.",
+      icon: <FaFileInvoice className="text-4xl text-red-600" />,
+      route: "/simulations/gst/e-invoicing-4",
+      features: [
+        "Cancel Flow",
+        "Ack / IRN Switch",
+        "Submit Result",
+        "Cancelled Stamp",
+      ],
+    },
+    {
       id: "portal-simulation",
       title: "Portal Simulation",
       description: "Interactive portal simulation with step-by-step guidance",
