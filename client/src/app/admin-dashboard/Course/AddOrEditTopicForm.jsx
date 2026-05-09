@@ -571,19 +571,20 @@ export default function AddOrEditTopicForm({
     const safeAlt = escapeHtml(alt);
 
     return `
-      <div class="topic-banner-card" style="margin: 1.75rem 0; padding: 1rem; border: 1px solid #93c5fd; border-radius: 18px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);">
-        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-banner-link" style="display: block; text-decoration: none; color: inherit;">
-          <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.7rem; border-radius: 999px; background: rgba(255,255,255,0.85); color: #1e40af; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.85rem;">
-            Image Link
-          </div>
-          <div style="font-size: 1rem; font-weight: 700; line-height: 1.35; margin-bottom: 0.45rem; color: #1e3a8a;">${safeAlt}</div>
+      <div class="topic-banner-card" style="margin: 1.75rem 0; border-radius: 18px; overflow: hidden; box-shadow: 0 14px 34px rgba(0,0,0,0.18); border: 1px solid rgba(255,255,255,0.08); background: #000;">
+        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-banner-link" style="position: relative; display: block; text-decoration: none; color: inherit; min-height: 260px;">
           <img
             src="${safeUrl}"
             alt="${safeAlt}"
             class="topic-banner-image"
-            style="display: block; width: 100%; max-width: 100%; height: auto; object-fit: cover; border-radius: 14px; box-shadow: 0 8px 18px rgba(0,0,0,0.10); border: 1px solid #e2e8f0;"
+            style="display: block; width: 100%; max-width: 100%; height: auto; object-fit: cover;"
           />
-          <div style="font-size: 0.85rem; line-height: 1.45; color: #1e3a8a; word-break: break-word; margin-top: 0.65rem;">${safeUrl}</div>
+          <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.58) 0%, rgba(0,0,0,0.45) 100%);"></div>
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; padding: 0.9rem 1.5rem; border-radius: 999px; background: rgba(255,255,255,0.95); color: #111827; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: 0 10px 24px rgba(0,0,0,0.28);">
+              Experiment
+            </div>
+          </div>
         </a>
       </div>
     `;
