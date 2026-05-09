@@ -374,7 +374,7 @@ export default function GSTEInvoicing1Page() {
 
               <button
                 onClick={handleLogin}
-                className="mt-1 h-10 w-full rounded-[4px] border border-red-500 bg-[#0f69e7] text-[15px] font-medium tracking-wide text-white shadow-[0_1px_0_rgba(255,255,255,0.18)_inset] transition-colors hover:bg-[#0b5fd3]"
+                className="mt-1 h-10 w-full rounded-[4px] border-2 border-red-500 bg-[#0f69e7] text-[15px] font-medium tracking-wide text-white shadow-[0_1px_0_rgba(255,255,255,0.18)_inset] transition-colors hover:bg-[#0b5fd3]"
               >
                 LOGIN
               </button>
