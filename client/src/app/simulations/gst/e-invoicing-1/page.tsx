@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   ChevronDown,
   ContactRound,
@@ -119,6 +120,116 @@ export default function GSTEInvoicing1Page() {
     setShowLoginModal(false);
     setView("dashboard");
   };
+
+  const loginModal = showLoginModal
+    ? createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 px-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-[438px] rounded-[14px] border-2 border-red-500 bg-[#dbe3ee] px-4 pb-4 pt-3 shadow-[0_24px_60px_rgba(15,23,42,0.34)]">
+            <button
+              onClick={() => setShowLoginModal(false)}
+              className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-md bg-white/55 text-[22px] font-semibold leading-none text-[#2f4f7d] shadow-sm ring-1 ring-white/60"
+              aria-label="Close login modal"
+            >
+              ×
+            </button>
+
+            <div className="flex flex-col items-center pt-5">
+              <div className="flex flex-col items-center">
+                <img
+                  src="/images/simulations/satyamev-jayate.jpg"
+                  alt="Satyamev Jayate emblem"
+                  className="h-[72px] w-[72px] object-contain"
+                />
+                <div className="mt-1 text-[10px] leading-none text-slate-700">
+                  सत्यमेव जयते
+                </div>
+              </div>
+              <div className="mt-2 text-[19px] font-semibold tracking-tight text-red-600">
+                E-INVOICE SYSTEM LOGIN
+              </div>
+              <div className="mt-1 text-[11px] leading-none text-slate-500">
+                Enter username and password to login
+              </div>
+            </div>
+
+            <div className="mt-3 space-y-2.5">
+              <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
+                Use <span className="font-medium text-slate-700">AIR</span> as
+                username and <span className="font-medium text-slate-700">Fin@123</span>{" "}
+                as password to login
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[14px] font-normal text-slate-600">
+                  User name
+                </label>
+                <input
+                  value={loginData.username}
+                  onChange={(e) =>
+                    setLoginData((prev) => ({ ...prev, username: e.target.value }))
+                  }
+                  className="h-[34px] w-full rounded-[4px] border border-slate-300/80 bg-white px-2 text-[13px] text-slate-900 shadow-[inset_0_1px_1px_rgba(15,23,42,0.04)] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-[14px] font-normal text-slate-600">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={loginData.password}
+                  onChange={(e) =>
+                    setLoginData((prev) => ({ ...prev, password: e.target.value }))
+                  }
+                  className="h-[34px] w-full rounded-[4px] border border-slate-300/80 bg-white px-2 text-[13px] text-slate-900 shadow-[inset_0_1px_1px_rgba(15,23,42,0.04)] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                />
+              </div>
+
+              <div>
+                <div className="mb-1 text-[14px] font-normal text-slate-600">
+                  Captcha
+                </div>
+                <div className="flex items-center justify-start">
+                  <div className="flex h-8 w-[205px] items-center justify-center overflow-hidden rounded-[4px] border border-slate-300/90 bg-white px-1.5 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)]">
+                    <div className="grid h-full w-full place-items-center border border-dashed border-slate-400 bg-[radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.22)_1px,transparent_0)] bg-[length:6px_6px]">
+                      <span className="font-mono text-[25px] font-black leading-none tracking-[-0.08em] text-black">
+                        P2B7(Y
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <input
+                  value={loginData.captcha}
+                  onChange={(e) =>
+                    setLoginData((prev) => ({ ...prev, captcha: e.target.value }))
+                  }
+                  className="mt-2 h-[34px] w-full rounded-[4px] border border-slate-300/80 bg-white px-2 text-[13px] text-slate-900 shadow-[inset_0_1px_1px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Enter Above Captcha"
+                />
+              </div>
+
+              <button
+                onClick={handleLogin}
+                className="mt-1 h-10 w-full rounded-[4px] border-2 border-red-500 bg-[#0f69e7] text-[15px] font-medium tracking-wide text-white shadow-[0_1px_0_rgba(255,255,255,0.18)_inset] transition-colors hover:bg-[#0b5fd3]"
+              >
+                LOGIN
+              </button>
+
+              <div className="flex items-center justify-between pt-1 text-[12px] text-blue-700">
+                <a href="#" className="hover:underline">
+                  Forgot Password ?
+                </a>
+                <a href="#" className="hover:underline">
+                  Forgot Username ?
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )
+    : null;
   
   const renderHome = () => (
     <div className="flex min-h-screen flex-col bg-white">
@@ -285,112 +396,7 @@ export default function GSTEInvoicing1Page() {
         </div>
       </footer>
 
-      {showLoginModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 px-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-[438px] rounded-[14px] border-2 border-red-500 bg-[#dbe3ee] px-4 pb-4 pt-3 shadow-[0_24px_60px_rgba(15,23,42,0.34)]">
-            <button
-              onClick={() => setShowLoginModal(false)}
-              className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-md bg-white/55 text-[22px] font-semibold leading-none text-[#2f4f7d] shadow-sm ring-1 ring-white/60"
-              aria-label="Close login modal"
-            >
-              ×
-            </button>
-
-            <div className="flex flex-col items-center pt-5">
-              <div className="flex flex-col items-center">
-                <img
-                  src="/images/simulations/satyamev-jayate.jpg"
-                  alt="Satyamev Jayate emblem"
-                  className="h-[72px] w-[72px] object-contain"
-                />
-                <div className="mt-1 text-[10px] leading-none text-slate-700">
-                  सत्यमेव जयते
-                </div>
-              </div>
-              <div className="mt-2 text-[19px] font-semibold tracking-tight text-red-600">
-                E-INVOICE SYSTEM LOGIN
-              </div>
-              <div className="mt-1 text-[11px] leading-none text-slate-500">
-                Enter username and password to login
-              </div>
-            </div>
-
-            <div className="mt-3 space-y-2.5">
-              <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
-                Use <span className="font-medium text-slate-700">AIR</span> as
-                username and <span className="font-medium text-slate-700">Fin@123</span>{" "}
-                as password to login
-              </div>
-
-              <div>
-                <label className="mb-1 block text-[14px] font-normal text-slate-600">
-                  User name
-                </label>
-                <input
-                  value={loginData.username}
-                  onChange={(e) =>
-                    setLoginData((prev) => ({ ...prev, username: e.target.value }))
-                  }
-                  className="h-[34px] w-full rounded-[4px] border border-slate-300/80 bg-white px-2 text-[13px] text-slate-900 shadow-[inset_0_1px_1px_rgba(15,23,42,0.04)] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-[14px] font-normal text-slate-600">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={loginData.password}
-                  onChange={(e) =>
-                    setLoginData((prev) => ({ ...prev, password: e.target.value }))
-                  }
-                  className="h-[34px] w-full rounded-[4px] border border-slate-300/80 bg-white px-2 text-[13px] text-slate-900 shadow-[inset_0_1px_1px_rgba(15,23,42,0.04)] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div>
-                <div className="mb-1 text-[14px] font-normal text-slate-600">
-                  Captcha
-                </div>
-                <div className="flex items-center justify-start">
-                  <div className="flex h-8 w-[205px] items-center justify-center overflow-hidden rounded-[4px] border border-slate-300/90 bg-white px-1.5 shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)]">
-                    <div className="grid h-full w-full place-items-center border border-dashed border-slate-400 bg-[radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.22)_1px,transparent_0)] bg-[length:6px_6px]">
-                      <span className="font-mono text-[25px] font-black leading-none tracking-[-0.08em] text-black">
-                        P2B7(Y
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <input
-                  value={loginData.captcha}
-                  onChange={(e) =>
-                    setLoginData((prev) => ({ ...prev, captcha: e.target.value }))
-                  }
-                  className="mt-2 h-[34px] w-full rounded-[4px] border border-slate-300/80 bg-white px-2 text-[13px] text-slate-900 shadow-[inset_0_1px_1px_rgba(15,23,42,0.04)] outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  placeholder="Enter Above Captcha"
-                />
-              </div>
-
-              <button
-                onClick={handleLogin}
-                className="mt-1 h-10 w-full rounded-[4px] border-2 border-red-500 bg-[#0f69e7] text-[15px] font-medium tracking-wide text-white shadow-[0_1px_0_rgba(255,255,255,0.18)_inset] transition-colors hover:bg-[#0b5fd3]"
-              >
-                LOGIN
-              </button>
-
-              <div className="flex items-center justify-between pt-1 text-[12px] text-blue-700">
-                <a href="#" className="hover:underline">
-                  Forgot Password ?
-                </a>
-                <a href="#" className="hover:underline">
-                  Forgot Username ?
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {loginModal}
 
       <style jsx>{`
         .marquee-track {
