@@ -210,7 +210,6 @@ export default function AddOrEditTopicForm({
   const [videoLinks, setVideoLinks] = useState([]);
   const [imageLinks, setImageLinks] = useState([]);
   const [simulationLinkUrl, setSimulationLinkUrl] = useState("");
-  const [simulationLinkLabel, setSimulationLinkLabel] = useState("");
   const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -548,21 +547,27 @@ export default function AddOrEditTopicForm({
     return true;
   };
 
-  const buildSimulationLinkHtml = (rawUrl, rawLabel = "", simulationId = "") => {
+  const buildSimulationLinkHtml = (rawUrl, simulationId = "") => {
     const url = normalizeUrl(rawUrl);
-    const label = rawLabel.trim() || "Open simulation";
     const safeUrl = escapeHtml(url);
-    const safeLabel = escapeHtml(label);
     const safeId = escapeHtml(simulationId);
 
     return `
-      <div class="topic-simulation-card" data-simulation-card="true" data-simulation-id="${safeId}" style="margin: 1.5rem 0; padding: 1rem 1.15rem; border: 1px solid #93c5fd; border-radius: 16px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12); position: relative;">
-        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-simulation-link" style="display: block; text-decoration: none; color: #1d4ed8;">
-          <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.7rem; border-radius: 999px; background: rgba(255,255,255,0.8); color: #1e40af; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.8rem;">
-            Simulation Link
+      <div class="topic-simulation-card" data-simulation-card="true" data-simulation-id="${safeId}" style="margin: 1.5rem 0; border-radius: 18px; overflow: hidden; box-shadow: 0 14px 34px rgba(0,0,0,0.16); border: 1px solid #93c5fd; background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 55%, #bfdbfe 100%);">
+        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-simulation-link" style="position: relative; display: block; min-height: 260px; text-decoration: none; color: inherit;">
+          <div style="position: absolute; inset: 0; background:
+            radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%),
+            radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.55) 100%);">
           </div>
-          <div style="font-size: 1.02rem; font-weight: 700; line-height: 1.35; margin-bottom: 0.35rem;">${safeLabel}</div>
-          <div style="font-size: 0.85rem; line-height: 1.45; color: #1e3a8a; word-break: break-word;">${safeUrl}</div>
+          <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; min-width: 240px; padding: 1rem 1.75rem; border-radius: 999px; background: rgba(255,255,255,0.97); color: #1d4ed8; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 12px 28px rgba(0,0,0,0.22); border: 1px solid rgba(37, 99, 235, 0.15);">
+              Experiment
+            </div>
+          </div>
+          <div style="position: absolute; left: 1rem; right: 1rem; bottom: 1rem; color: rgba(255,255,255,0.95); font-size: 0.82rem; line-height: 1.45; word-break: break-word; text-align: center;">
+            ${safeUrl}
+          </div>
         </a>
       </div>
     `;
@@ -603,9 +608,9 @@ export default function AddOrEditTopicForm({
 
     const simulationId = generateSimulationId();
     insertHtmlAtCursor(
-      buildSimulationLinkHtml(normalizedUrl, label || normalizedUrl, simulationId),
+      buildSimulationLinkHtml(normalizedUrl, simulationId),
       "Simulation Inserted!",
-      "Simulation link has been inserted into the editor."
+      "Simulation card has been inserted into the editor."
     );
   };
 
@@ -618,9 +623,7 @@ export default function AddOrEditTopicForm({
       return Array.from(doc.querySelectorAll("[data-simulation-card='true']")).map(
         (card) => ({
           id: card.getAttribute("data-simulation-id") || "",
-          label:
-            card.querySelector(".topic-simulation-link div:nth-of-type(2)")
-              ?.textContent?.trim() || "Open simulation",
+          label: "Simulation",
           url: card.querySelector("a")?.getAttribute("href") || "",
         })
       );
@@ -2395,29 +2398,21 @@ export default function AddOrEditTopicForm({
               Quick Inserts
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Insert a simulation link or a banner image at the current cursor
+              Insert a simulation or a banner image at the current cursor
               position in the editor.
             </Typography>
 
             <Stack spacing={2}>
               <Box>
                 <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
-                  Simulation Link
+                  Create Simulation
                 </Typography>
                 <Stack spacing={1.5}>
                   <TextField
-                    label="Simulation page URL"
+                    label="Simulation URL"
                     value={simulationLinkUrl}
                     onChange={(e) => setSimulationLinkUrl(e.target.value)}
-                    placeholder="/gst-simulations/registration"
-                    size="small"
-                    fullWidth
-                  />
-                  <TextField
-                    label="Link label"
-                    value={simulationLinkLabel}
-                    onChange={(e) => setSimulationLinkLabel(e.target.value)}
-                    placeholder="GST Registration Simulation"
+                    placeholder="/simulations/gst/e-invoicing-1"
                     size="small"
                     fullWidth
                   />
@@ -2425,11 +2420,11 @@ export default function AddOrEditTopicForm({
                     <Button
                       variant="contained"
                       onClick={() =>
-                        insertSimulationLink(simulationLinkUrl, simulationLinkLabel)
+                        insertSimulationLink(simulationLinkUrl)
                       }
                       disabled={!simulationLinkUrl.trim()}
                     >
-                      Insert Simulation Link
+                      Create Simulation
                     </Button>
                   </Box>
                 </Stack>
