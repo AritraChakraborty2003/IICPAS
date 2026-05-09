@@ -287,7 +287,7 @@ export default function GSTEInvoicing1Page() {
 
       {showLoginModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/20 px-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-[438px] rounded-[14px] border border-white/70 bg-[#dbe3ee] px-4 pb-4 pt-3 shadow-[0_24px_60px_rgba(15,23,42,0.34)]">
+          <div className="relative w-full max-w-[438px] rounded-[14px] border-2 border-red-500 bg-[#dbe3ee] px-4 pb-4 pt-3 shadow-[0_24px_60px_rgba(15,23,42,0.34)]">
             <button
               onClick={() => setShowLoginModal(false)}
               className="absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-md bg-white/55 text-[22px] font-semibold leading-none text-[#2f4f7d] shadow-sm ring-1 ring-white/60"
