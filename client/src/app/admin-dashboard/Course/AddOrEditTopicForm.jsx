@@ -74,7 +74,7 @@ const STATIC_CDN_BASE =
 const ALLOWED_IMAGE_ACCEPT =
   ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
 const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
-const escapeHtml = (value = "") =>
+  const escapeHtml = (value = "") =>
   String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -82,7 +82,7 @@ const escapeHtml = (value = "") =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-const normalizeUrl = (value = "") => {
+  const normalizeUrl = (value = "") => {
   const trimmed = String(value || "").trim();
   if (!trimmed) return "";
   if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith("/")) {
@@ -96,6 +96,9 @@ const normalizeUrl = (value = "") => {
   }
   return trimmed;
 };
+
+const generateSimulationId = () =>
+  `sim-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 console.log(STATIC_CDN_BASE);
 const joditConfig = {
@@ -545,24 +548,16 @@ export default function AddOrEditTopicForm({
     return true;
   };
 
-  const buildSimulationLinkHtml = (rawUrl, rawLabel = "") => {
+  const buildSimulationLinkHtml = (rawUrl, rawLabel = "", simulationId = "") => {
     const url = normalizeUrl(rawUrl);
     const label = rawLabel.trim() || "Open simulation";
     const safeUrl = escapeHtml(url);
     const safeLabel = escapeHtml(label);
+    const safeId = escapeHtml(simulationId);
 
     return `
-      <div class="topic-simulation-card" style="margin: 1.5rem 0; padding: 1rem 1.15rem; border: 1px solid #93c5fd; border-radius: 16px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12); position: relative;">
-        <button
-          type="button"
-          class="topic-remove-button"
-          data-remove-topic-card="simulation"
-          aria-label="Remove simulation"
-          style="position: absolute; top: 0.75rem; right: 0.75rem; border: 1px solid #ef4444; background: rgba(255,255,255,0.95); color: #b91c1c; border-radius: 999px; padding: 0.3rem 0.7rem; font-size: 0.72rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.08); z-index: 2;"
-        >
-          Remove
-        </button>
-        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-simulation-link" style="display: block; text-decoration: none; color: #1d4ed8; padding-top: 0.35rem; padding-right: 5.2rem;">
+      <div class="topic-simulation-card" data-simulation-card="true" data-simulation-id="${safeId}" style="margin: 1.5rem 0; padding: 1rem 1.15rem; border: 1px solid #93c5fd; border-radius: 16px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12); position: relative;">
+        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-simulation-link" style="display: block; text-decoration: none; color: #1d4ed8;">
           <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.7rem; border-radius: 999px; background: rgba(255,255,255,0.8); color: #1e40af; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.8rem;">
             Simulation Link
           </div>
@@ -606,11 +601,63 @@ export default function AddOrEditTopicForm({
       return;
     }
 
+    const simulationId = generateSimulationId();
     insertHtmlAtCursor(
-      buildSimulationLinkHtml(normalizedUrl, label || normalizedUrl),
+      buildSimulationLinkHtml(normalizedUrl, label || normalizedUrl, simulationId),
       "Simulation Inserted!",
       "Simulation link has been inserted into the editor."
     );
+  };
+
+  const extractSimulationCards = (htmlContent) => {
+    if (!htmlContent) return [];
+
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, "text/html");
+      return Array.from(doc.querySelectorAll("[data-simulation-card='true']")).map(
+        (card) => ({
+          id: card.getAttribute("data-simulation-id") || "",
+          label:
+            card.querySelector(".topic-simulation-link div:nth-of-type(2)")
+              ?.textContent?.trim() || "Open simulation",
+          url: card.querySelector("a")?.getAttribute("href") || "",
+        })
+      );
+    } catch (error) {
+      console.error("Failed to extract simulation cards:", error);
+      return [];
+    }
+  };
+
+  const removeSimulationCardFromContent = (simulationId) => {
+    if (!simulationId || !content) return;
+
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, "text/html");
+      const target = doc.querySelector(
+        `[data-simulation-card='true'][data-simulation-id='${CSS.escape(
+          simulationId
+        )}']`
+      );
+
+      if (!target) {
+        Swal.fire("Not Found", "That simulation block was not found.", "info");
+        return;
+      }
+
+      target.remove();
+      const updatedHtml = doc.body.innerHTML;
+      setContent(updatedHtml);
+      if (editor.current && typeof editor.current.value !== "undefined") {
+        editor.current.value = updatedHtml;
+      }
+      Swal.fire("Removed", "Simulation block removed from the editor.", "success");
+    } catch (error) {
+      console.error("Failed to remove simulation card:", error);
+      Swal.fire("Error", "Could not remove the simulation block.", "error");
+    }
   };
 
   const insertBannerImage = (url, altText = "") => {
