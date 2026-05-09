@@ -2437,6 +2437,61 @@ export default function AddOrEditTopicForm({
 
               <Box>
                 <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
+                  Inserted Simulations
+                </Typography>
+                {insertedSimulationCards.length > 0 ? (
+                  <Stack spacing={1}>
+                    {insertedSimulationCards.map((item, index) => (
+                      <Box
+                        key={`${item.id || item.url || index}`}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 2,
+                          p: 1.5,
+                          borderRadius: 2,
+                          border: "1px solid #c7ddff",
+                          background: "#f8fbff",
+                        }}
+                      >
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography fontWeight={700} fontSize={14} noWrap>
+                            {item.label}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{
+                              wordBreak: "break-all",
+                              display: "block",
+                            }}
+                          >
+                            {item.url}
+                          </Typography>
+                        </Box>
+                        <Button
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          onClick={() =>
+                            removeSimulationCardFromContent(item.id)
+                          }
+                        >
+                          Delete
+                        </Button>
+                      </Box>
+                    ))}
+                  </Stack>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No simulation blocks have been inserted yet.
+                  </Typography>
+                )}
+              </Box>
+
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
                   Banner Image
                 </Typography>
                 <Stack spacing={1.5}>
