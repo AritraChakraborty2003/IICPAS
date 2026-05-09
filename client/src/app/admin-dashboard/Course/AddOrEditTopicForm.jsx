@@ -547,18 +547,71 @@ export default function AddOrEditTopicForm({
     return true;
   };
 
+  const getSimulationBackgroundAsset = () => {
+    const bannerCandidate = normalizeUrl(bannerImageUrl);
+    if (bannerCandidate) {
+      return {
+        url: bannerCandidate,
+        alt: "Simulation background",
+      };
+    }
+
+    const manualImageLink = [...imageLinks]
+      .reverse()
+      .find((link) => normalizeUrl(link));
+    if (manualImageLink) {
+      return {
+        url: normalizeUrl(manualImageLink),
+        alt: "Simulation background",
+      };
+    }
+
+    const uploadedImage = [...uploadedFiles.images]
+      .reverse()
+      .find((file) => normalizeUrl(file?.cdn_url));
+    if (uploadedImage?.cdn_url) {
+      return {
+        url: normalizeUrl(uploadedImage.cdn_url),
+        alt: uploadedImage.original_name || "Simulation background",
+      };
+    }
+
+    return null;
+  };
+
   const buildSimulationLinkHtml = (rawUrl, simulationId = "") => {
     const url = normalizeUrl(rawUrl);
     const safeUrl = escapeHtml(url);
     const safeId = escapeHtml(simulationId);
+    const backgroundAsset = getSimulationBackgroundAsset();
+    const safeBackgroundUrl = backgroundAsset
+      ? escapeHtml(backgroundAsset.url)
+      : "";
+    const safeBackgroundAlt = backgroundAsset
+      ? escapeHtml(backgroundAsset.alt || "Simulation background")
+      : "Simulation background";
 
     return `
-      <div class="topic-simulation-card" data-simulation-card="true" data-simulation-id="${safeId}" style="margin: 1.5rem 0; border-radius: 18px; overflow: hidden; box-shadow: 0 14px 34px rgba(0,0,0,0.16); border: 1px solid #93c5fd; background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 55%, #bfdbfe 100%);">
-        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-simulation-link" style="position: relative; display: block; min-height: 260px; text-decoration: none; color: inherit;">
+      <div class="topic-simulation-card" data-simulation-card="true" data-simulation-id="${safeId}" style="margin: 1.5rem 0; border-radius: 18px; overflow: hidden; box-shadow: 0 14px 34px rgba(0,0,0,0.16); border: 1px solid #93c5fd; background: #dbeafe;">
+        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-simulation-link" style="position: relative; display: block; min-height: 300px; text-decoration: none; color: inherit;">
+          ${
+            safeBackgroundUrl
+              ? `<img
+                  src="${safeBackgroundUrl}"
+                  alt="${safeBackgroundAlt}"
+                  class="topic-simulation-background"
+                  style="display: block; width: 100%; height: 100%; min-height: 300px; object-fit: cover; object-position: center; filter: saturate(1.05);"
+                />`
+              : `<div style="position: absolute; inset: 0; background:
+                  radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%),
+                  radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%),
+                  linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.55) 100%);">
+                </div>`
+          }
           <div style="position: absolute; inset: 0; background:
-            radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%),
-            radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%),
-            linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.55) 100%);">
+            radial-gradient(circle at 18% 26%, rgba(255,255,255,0.26), transparent 22%),
+            radial-gradient(circle at 80% 72%, rgba(255,255,255,0.18), transparent 26%),
+            linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.58) 100%);">
           </div>
           <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 1rem;">
             <div style="display: inline-flex; align-items: center; justify-content: center; min-width: 240px; padding: 1rem 1.75rem; border-radius: 999px; background: rgba(255,255,255,0.97); color: #1d4ed8; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; box-shadow: 0 12px 28px rgba(0,0,0,0.22); border: 1px solid rgba(37, 99, 235, 0.15);">
@@ -917,6 +970,9 @@ export default function AddOrEditTopicForm({
     // Center and style images
     const images = tempDiv.querySelectorAll("img");
     images.forEach((img) => {
+      const isSimulationBackground = img.classList.contains(
+        "topic-simulation-background"
+      );
       const isBannerCardImage = img.classList.contains("topic-banner-image");
       const isLinkedBanner =
         isBannerCardImage &&
@@ -924,7 +980,19 @@ export default function AddOrEditTopicForm({
           img.closest(".topic-banner-card") || img.closest(".topic-banner-link")
         );
 
-      if (isLinkedBanner) {
+      if (isSimulationBackground) {
+        img.style.display = "block";
+        img.style.margin = "0";
+        img.style.maxWidth = "100%";
+        img.style.width = "100%";
+        img.style.minWidth = "0";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        img.style.objectPosition = "center";
+        img.style.borderRadius = "0";
+        img.style.boxShadow = "none";
+        img.style.border = "none";
+      } else if (isLinkedBanner) {
         img.style.display = "block";
         img.style.margin = "0";
         img.style.maxWidth = "100%";
