@@ -74,6 +74,39 @@ const STATIC_CDN_BASE =
 const ALLOWED_IMAGE_ACCEPT =
   ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
 const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
+const SIMULATION_QUICK_LINKS = [
+  { label: "GST Portal", url: "/gst-simulation" },
+  { label: "GST Simulations", url: "/gst-simulations" },
+  { label: "GST Registration", url: "/gst-simulations/registration" },
+  { label: "GST Search", url: "/gst-simulations/search" },
+  { label: "E-Invoice", url: "/gst-simulations/einvoice" },
+  { label: "E-Way Bill", url: "/gst-simulations/eway-bill" },
+  { label: "TDS Simulations", url: "/tds-simulations" },
+  { label: "TDS Search", url: "/tds-simulations/search" },
+];
+
+const escapeHtml = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const normalizeUrl = (value = "") => {
+  const trimmed = String(value || "").trim();
+  if (!trimmed) return "";
+  if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith("/")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("www.")) {
+    return `https://${trimmed}`;
+  }
+  if (!trimmed.includes(".")) {
+    return `/${trimmed.replace(/^\/+/, "")}`;
+  }
+  return trimmed;
+};
 
 console.log(STATIC_CDN_BASE);
 const joditConfig = {
@@ -184,6 +217,9 @@ export default function AddOrEditTopicForm({
   const [quizData, setQuizData] = useState(null);
   const [videoLinks, setVideoLinks] = useState([]);
   const [imageLinks, setImageLinks] = useState([]);
+  const [simulationLinkUrl, setSimulationLinkUrl] = useState("");
+  const [simulationLinkLabel, setSimulationLinkLabel] = useState("");
+  const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [introVideoPreviewOpen, setIntroVideoPreviewOpen] = useState(false);
@@ -501,6 +537,90 @@ export default function AddOrEditTopicForm({
     }
   };
 
+  const insertHtmlAtCursor = (html, successTitle, successText) => {
+    if (!editor.current || !editor.current.selection) {
+      Swal.fire(
+        "Editor Not Ready",
+        "Please click inside the editor before inserting content.",
+        "warning"
+      );
+      return false;
+    }
+
+    editor.current.selection.insertHTML(html);
+
+    if (successTitle) {
+      Swal.fire(successTitle, successText || "Content inserted into the editor.", "success");
+    }
+
+    return true;
+  };
+
+  const buildSimulationLinkHtml = (rawUrl, rawLabel = "") => {
+    const url = normalizeUrl(rawUrl);
+    const label = rawLabel.trim() || "Open simulation";
+    const safeUrl = escapeHtml(url);
+    const safeLabel = escapeHtml(label);
+
+    return `
+      <div class="topic-simulation-card" style="margin: 1.5rem 0; padding: 1rem 1.15rem; border: 1px solid #93c5fd; border-radius: 16px; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); box-shadow: 0 10px 24px rgba(37, 99, 235, 0.12);">
+        <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="topic-simulation-link" style="display: block; text-decoration: none; color: #1d4ed8;">
+          <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.7rem; border-radius: 999px; background: rgba(255,255,255,0.8); color: #1e40af; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 0.8rem;">
+            Simulation Link
+          </div>
+          <div style="font-size: 1.02rem; font-weight: 700; line-height: 1.35; margin-bottom: 0.35rem;">${safeLabel}</div>
+          <div style="font-size: 0.85rem; line-height: 1.45; color: #1e3a8a; word-break: break-word;">${safeUrl}</div>
+        </a>
+      </div>
+    `;
+  };
+
+  const buildBannerImageHtml = (rawUrl, rawAlt = "Banner image") => {
+    const url = normalizeUrl(rawUrl);
+    const alt = rawAlt.trim() || "Banner image";
+    const safeUrl = escapeHtml(url);
+    const safeAlt = escapeHtml(alt);
+
+    return `
+      <div class="topic-banner-wrap" style="margin: 1.75rem 0;">
+        <img
+          src="${safeUrl}"
+          alt="${safeAlt}"
+          class="topic-banner-image"
+          style="display: block; width: 100%; max-width: 100%; height: auto; object-fit: cover; border-radius: 16px; box-shadow: 0 12px 28px rgba(0,0,0,0.12); border: 1px solid #e2e8f0;"
+        />
+      </div>
+    `;
+  };
+
+  const insertSimulationLink = (url, label = "") => {
+    const normalizedUrl = normalizeUrl(url);
+    if (!normalizedUrl) {
+      Swal.fire("Validation", "Please enter a simulation page URL.", "warning");
+      return;
+    }
+
+    insertHtmlAtCursor(
+      buildSimulationLinkHtml(normalizedUrl, label || normalizedUrl),
+      "Simulation Inserted!",
+      "Simulation link has been inserted into the editor."
+    );
+  };
+
+  const insertBannerImage = (url, altText = "") => {
+    const normalizedUrl = normalizeUrl(url);
+    if (!normalizedUrl) {
+      Swal.fire("Validation", "Please enter a banner image URL.", "warning");
+      return;
+    }
+
+    insertHtmlAtCursor(
+      buildBannerImageHtml(normalizedUrl, altText || "Banner image"),
+      "Banner Image Inserted!",
+      "Banner image has been inserted into the editor."
+    );
+  };
+
   const buildTopicPayload = (overrides = {}) => {
     const introVideoValue =
       overrides.introVideo !== undefined ? overrides.introVideo : introVideo;
@@ -739,14 +859,26 @@ export default function AddOrEditTopicForm({
     // Center and style images
     const images = tempDiv.querySelectorAll("img");
     images.forEach((img) => {
-      img.style.display = "block";
-      img.style.margin = "2rem auto";
-      img.style.maxWidth = "90%";
-      img.style.minWidth = "400px";
-      img.style.height = "auto";
-      img.style.borderRadius = "12px";
-      img.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.15)";
-      img.style.border = "2px solid #f0f0f0";
+      if (img.classList.contains("topic-banner-image")) {
+        img.style.display = "block";
+        img.style.margin = "2rem auto";
+        img.style.maxWidth = "100%";
+        img.style.width = "100%";
+        img.style.minWidth = "0";
+        img.style.height = "auto";
+        img.style.borderRadius = "16px";
+        img.style.boxShadow = "0 12px 28px rgba(0, 0, 0, 0.12)";
+        img.style.border = "1px solid #e2e8f0";
+      } else {
+        img.style.display = "block";
+        img.style.margin = "2rem auto";
+        img.style.maxWidth = "90%";
+        img.style.minWidth = "400px";
+        img.style.height = "auto";
+        img.style.borderRadius = "12px";
+        img.style.boxShadow = "0 8px 16px rgba(0, 0, 0, 0.15)";
+        img.style.border = "2px solid #f0f0f0";
+      }
     });
 
     // Center and style videos
@@ -2096,6 +2228,16 @@ export default function AddOrEditTopicForm({
                     <Button
                       size="small"
                       variant="outlined"
+                      color="info"
+                      onClick={() => {
+                        insertBannerImage(url, "Banner image");
+                      }}
+                    >
+                      Banner
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="outlined"
                       color="secondary"
                       onClick={() => {
                         const testImage = document.createElement("img");
@@ -2131,6 +2273,114 @@ export default function AddOrEditTopicForm({
                   </Stack>
                 </Box>
               ))}
+            </Stack>
+          </Box>
+
+          <Box
+            sx={{
+              mt: 3,
+              p: 2.5,
+              borderRadius: 2,
+              border: "1px solid #dbeafe",
+              background: "linear-gradient(180deg, #eff6ff 0%, #f8fbff 100%)",
+            }}
+          >
+            <Typography fontWeight={700} fontSize={15} sx={{ mb: 1 }}>
+              Quick Inserts
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Insert a simulation link or a banner image at the current cursor
+              position in the editor.
+            </Typography>
+
+            <Stack spacing={2}>
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
+                  Simulation Link
+                </Typography>
+                <Stack spacing={1.5}>
+                  <TextField
+                    label="Simulation page URL"
+                    value={simulationLinkUrl}
+                    onChange={(e) => setSimulationLinkUrl(e.target.value)}
+                    placeholder="/gst-simulations/registration"
+                    size="small"
+                    fullWidth
+                  />
+                  <TextField
+                    label="Link label"
+                    value={simulationLinkLabel}
+                    onChange={(e) => setSimulationLinkLabel(e.target.value)}
+                    placeholder="GST Registration Simulation"
+                    size="small"
+                    fullWidth
+                  />
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    {SIMULATION_QUICK_LINKS.map((item) => (
+                      <Button
+                        key={item.url}
+                        size="small"
+                        variant="outlined"
+                        onClick={() => insertSimulationLink(item.url, item.label)}
+                        sx={{ mb: 1 }}
+                      >
+                        {item.label}
+                      </Button>
+                    ))}
+                  </Stack>
+                  <Box>
+                    <Button
+                      variant="contained"
+                      onClick={() =>
+                        insertSimulationLink(simulationLinkUrl, simulationLinkLabel)
+                      }
+                      disabled={!simulationLinkUrl.trim()}
+                    >
+                      Insert Simulation Link
+                    </Button>
+                  </Box>
+                </Stack>
+              </Box>
+
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 600 }}>
+                  Banner Image
+                </Typography>
+                <Stack spacing={1.5}>
+                  <TextField
+                    label="Banner image URL"
+                    value={bannerImageUrl}
+                    onChange={(e) => setBannerImageUrl(e.target.value)}
+                    placeholder="https://cdn.iicpa.in/..."
+                    size="small"
+                    fullWidth
+                  />
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    {uploadedFiles.images.slice(0, 4).map((file) => (
+                      <Button
+                        key={`banner-shortcut-${file.id || file.filename}`}
+                        size="small"
+                        variant="outlined"
+                        color="info"
+                        onClick={() => insertBannerImage(file.cdn_url, file.original_name)}
+                        sx={{ mb: 1 }}
+                      >
+                        {file.original_name}
+                      </Button>
+                    ))}
+                  </Stack>
+                  <Box>
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      onClick={() => insertBannerImage(bannerImageUrl, "Banner image")}
+                      disabled={!bannerImageUrl.trim()}
+                    >
+                      Insert Banner Image
+                    </Button>
+                  </Box>
+                </Stack>
+              </Box>
             </Stack>
           </Box>
 
