@@ -1305,28 +1305,24 @@ export default function AddOrEditTopicForm({
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const uploadImageFileForTopic = async (file) => {
     if (!currentTopicId) {
       Swal.fire(
         "Save Topic First",
         "Save topic once to start topic-scoped media library.",
         "info"
       );
-      return;
+      return null;
     }
 
-    // Check file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       Swal.fire("Error", "Image size must be less than 5MB", "error");
-      return;
+      return null;
     }
 
-    // Check file type
     if (!file.type.startsWith("image/")) {
       Swal.fire("Error", "Please select a valid image file", "error");
-      return;
+      return null;
     }
 
     const formData = new FormData();
@@ -1337,7 +1333,6 @@ export default function AddOrEditTopicForm({
     }
 
     try {
-      // Upload to static-backend microservice
       const res = await axios.post(
         `${STATIC_CDN_BASE}/upload/image`,
         formData,
@@ -1346,21 +1341,55 @@ export default function AddOrEditTopicForm({
         }
       );
 
-      if (res.data.success && res.data.data.cdnUrl) {
-        // Add the image URL to the list
-        setImageLinks((prev) => [...prev, res.data.data.cdnUrl]);
-        fetchUploadedFiles();
-        Swal.fire({
-          title: "Image Uploaded Successfully!",
-          text: "Image URL is now available below. You can copy and use it in the editor.",
-          icon: "success",
-          confirmButtonText: "OK",
-        });
-      } else {
-        Swal.fire("Error", "Failed to get image URL", "error");
-      }
+      return res.data.success && res.data.data.cdnUrl
+        ? res.data.data.cdnUrl
+        : null;
     } catch (err) {
       console.error("Image upload error:", err);
+      throw err;
+    }
+  };
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = "";
+
+    try {
+      const uploadedUrl = await uploadImageFileForTopic(file);
+      if (!uploadedUrl) return;
+
+      setImageLinks((prev) => [...prev, uploadedUrl]);
+      fetchUploadedFiles();
+      Swal.fire({
+        title: "Image Uploaded Successfully!",
+        text: "Image URL is now available below. You can copy and use it in the editor.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+    } catch (err) {
+      Swal.fire("Error", err.response?.data?.error || "Upload failed", "error");
+    }
+  };
+
+  const handleBannerImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    try {
+      const uploadedUrl = await uploadImageFileForTopic(file);
+      if (!uploadedUrl) return;
+
+      setBannerImageUrl(uploadedUrl);
+      fetchUploadedFiles();
+      Swal.fire({
+        title: "Banner Image Uploaded!",
+        text: "The uploaded image URL has been added to the banner field.",
+        icon: "success",
+        confirmButtonText: "OK",
+      });
+    } catch (err) {
       Swal.fire("Error", err.response?.data?.error || "Upload failed", "error");
     }
   };
@@ -2327,10 +2356,21 @@ export default function AddOrEditTopicForm({
                     label="Banner image URL"
                     value={bannerImageUrl}
                     onChange={(e) => setBannerImageUrl(e.target.value)}
-                    placeholder="https://cdn.iicpa.in/..."
+                    placeholder="https://cdn.iicpa.in/... or upload a file"
                     size="small"
                     fullWidth
                   />
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                    <Button component="label" variant="outlined">
+                      Upload Banner Image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={handleBannerImageUpload}
+                      />
+                    </Button>
+                  </Stack>
                   <Box>
                     <Button
                       variant="contained"
