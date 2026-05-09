@@ -74,17 +74,6 @@ const STATIC_CDN_BASE =
 const ALLOWED_IMAGE_ACCEPT =
   ".png,.jpg,.jpeg,.gif,.webp,image/png,image/jpeg,image/jpg,image/gif,image/webp";
 const JODIT_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "gif", "webp"];
-const SIMULATION_QUICK_LINKS = [
-  { label: "GST Portal", url: "/gst-simulation" },
-  { label: "GST Simulations", url: "/gst-simulations" },
-  { label: "GST Registration", url: "/gst-simulations/registration" },
-  { label: "GST Search", url: "/gst-simulations/search" },
-  { label: "E-Invoice", url: "/gst-simulations/einvoice" },
-  { label: "E-Way Bill", url: "/gst-simulations/eway-bill" },
-  { label: "TDS Simulations", url: "/tds-simulations" },
-  { label: "TDS Search", url: "/tds-simulations/search" },
-];
-
 const escapeHtml = (value = "") =>
   String(value)
     .replace(/&/g, "&amp;")
@@ -2315,19 +2304,6 @@ export default function AddOrEditTopicForm({
                     size="small"
                     fullWidth
                   />
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    {SIMULATION_QUICK_LINKS.map((item) => (
-                      <Button
-                        key={item.url}
-                        size="small"
-                        variant="outlined"
-                        onClick={() => insertSimulationLink(item.url, item.label)}
-                        sx={{ mb: 1 }}
-                      >
-                        {item.label}
-                      </Button>
-                    ))}
-                  </Stack>
                   <Box>
                     <Button
                       variant="contained"
@@ -2355,20 +2331,6 @@ export default function AddOrEditTopicForm({
                     size="small"
                     fullWidth
                   />
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
-                    {uploadedFiles.images.slice(0, 4).map((file) => (
-                      <Button
-                        key={`banner-shortcut-${file.id || file.filename}`}
-                        size="small"
-                        variant="outlined"
-                        color="info"
-                        onClick={() => insertBannerImage(file.cdn_url, file.original_name)}
-                        sx={{ mb: 1 }}
-                      >
-                        {file.original_name}
-                      </Button>
-                    ))}
-                  </Stack>
                   <Box>
                     <Button
                       variant="contained"
