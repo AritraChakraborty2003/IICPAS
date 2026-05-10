@@ -329,7 +329,7 @@ export default function GSTEInvoicing3Page() {
                   <div className="flex items-start justify-between gap-4 px-3 py-4 lg:px-4">
                     <div className="pt-20 text-[24px] font-bold leading-tight text-slate-800 lg:text-[32px]">
                       <div>29BRYFP02061V7YP</div>
-                      <div>Fincurious Airlines Pvt. Ltd.</div>
+                      <div>IICPA Private Limited</div>
                     </div>
 
                     <div className="flex-shrink-0 rounded-[4px] border border-slate-200 bg-white p-2 shadow-sm">
@@ -392,7 +392,7 @@ export default function GSTEInvoicing3Page() {
                       <div className="space-y-1">
                         <div className="text-[18px] font-bold">Supplier</div>
                         <div>GSTIN : 29BRYFP02061V7YP</div>
-                        <div>Fincurious Airlines Pvt. Ltd.</div>
+                        <div>IICPA Private Limited</div>
                         <div>335, Ideal Home, .BKVHVP Arcade, Rajarajeshwari Temple Rd</div>
                         <div>Rajarajeshwari, Nagar, Bengaluru, Karnataka 560098</div>
                         <div>BANGALORE</div>
@@ -401,7 +401,7 @@ export default function GSTEInvoicing3Page() {
                       <div className="space-y-1 border-l border-slate-200 pl-4">
                         <div className="text-[18px] font-bold">Recipient</div>
                         <div>GSTIN : 29GMRTL5631J3C1</div>
-                        <div>Fincurious Engines LLP</div>
+                        <div>IICPA Corporate Training LLP</div>
                         <div>GaneshaTemple, MG Road, Bengaluru, Karnataka 560001</div>
                         <div>BANGALORE Place of Supply: Karnataka</div>
                         <div>564001 Karnataka</div>
