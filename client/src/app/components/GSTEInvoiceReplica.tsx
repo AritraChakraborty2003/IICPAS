@@ -147,7 +147,7 @@ export default function GSTEInvoiceReplica({
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginData, setLoginData] = useState({
     username: "AIR",
-    password: "Fin@123",
+    password: "IICPA@123",
     captcha: "",
   });
   const [cancelBasis, setCancelBasis] = useState<"ack" | "irn">("ack");
@@ -236,7 +236,7 @@ export default function GSTEInvoiceReplica({
               Go to Login under Menu and Use the following Credentials to login:
             </div>
             <div className="mt-2">User name: AIR</div>
-            <div>Password: Fin@123</div>
+            <div>Password: IICPA@123</div>
           </div>
 
           <div className="mt-3 overflow-hidden rounded-2xl border border-white/80 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
@@ -478,7 +478,7 @@ export default function GSTEInvoiceReplica({
             <div className="mt-5 rounded-md border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-700 shadow-inner">
               <div className="font-semibold text-slate-800">Login Details</div>
               <div className="mt-1">User name: AIR</div>
-              <div>Password: Fin@123</div>
+              <div>Password: IICPA@123</div>
             </div>
 
             <div className="mt-6 space-y-4">

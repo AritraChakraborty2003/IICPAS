@@ -27,7 +27,7 @@ export default function GSTEInvoicing1Page() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginData, setLoginData] = useState({
     username: "AIR",
-    password: "Fin@123",
+    password: "IICPA@123",
     captcha: "",
   });
   const launchTimerRef = useRef<number | null>(null);
@@ -155,7 +155,7 @@ export default function GSTEInvoicing1Page() {
             <div className="mt-3 space-y-2.5">
               <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
                 Use <span className="font-medium text-slate-700">AIR</span> as
-                username and <span className="font-medium text-slate-700">Fin@123</span>{" "}
+                username and <span className="font-medium text-slate-700">IICPA@123</span>{" "}
                 as password to login
               </div>
 
