@@ -86,7 +86,7 @@ const EInvoiceSimulation: React.FC = () => {
     invoiceNumber: "",
     invoiceDate: new Date().toISOString().split("T")[0],
     supplier: {
-      name: "Fincurious Cements Private Limited",
+      name: "IICPA Private Limited",
       gstin: "07GDLCF7228G1YK",
       address: "123 Business Park, Sector 5",
       state: "Delhi",
@@ -929,7 +929,7 @@ const EInvoiceSimulation: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-800">
-                  Fincurious Cements Private Limited
+                  IICPA Private Limited
                 </p>
                 <p className="text-xs text-gray-600">GSTIN: 07GDLCF7228G1YK</p>
               </div>

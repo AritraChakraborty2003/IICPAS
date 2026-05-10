@@ -93,7 +93,7 @@ const GSTSearchSimulation: React.FC = () => {
       setSearchResults([
         {
           gstin: "07GDLCF7228G1YK",
-          name: "Fincurious Cements Private Limited",
+          name: "IICPA Private Limited",
           status: "Active",
           registrationDate: "2020-04-01",
           lastReturnFiled: "GSTR-3B",

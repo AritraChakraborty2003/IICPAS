@@ -182,7 +182,7 @@ const GSTR1ASimulation: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-800">
-                  Fincurious Cements Private Limited
+                  IICPA Private Limited
                 </p>
                 <p className="text-xs text-gray-600">GSTIN: 07GDLCF7228G1YK</p>
               </div>

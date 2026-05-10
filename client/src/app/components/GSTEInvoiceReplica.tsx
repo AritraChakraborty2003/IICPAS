@@ -991,7 +991,7 @@ export default function GSTEInvoiceReplica({
                                 29BRYFP02061V7YP
                               </div>
                               <div className="text-[16px] font-black text-slate-800 lg:text-[18px]">
-                                Fincurious Airlines Pvt. Ltd.
+                                IICPA Private Limited
                               </div>
                             </div>
                             <div className="flex-shrink-0 rounded-[4px] border border-slate-200 bg-white p-2 shadow-sm">
@@ -1048,11 +1048,11 @@ export default function GSTEInvoiceReplica({
                                 <tr className="border-b border-slate-200">
                                   <td colSpan={2} className="px-2 py-1">
                                     GSTIN : 29BRYFP02061V7YP <br />
-                                    Fincurious Airlines Pvt. Ltd.
+                                    IICPA Private Limited
                                   </td>
                                   <td colSpan={2} className="px-2 py-1">
                                     GSTIN : 29GMRTLL5631J3C1 <br />
-                                    Fincurious Engines LLP
+                                    IICPA Corporate Training LLP
                                   </td>
                                 </tr>
                                 <tr className="bg-slate-50 font-bold border-b border-slate-200">
