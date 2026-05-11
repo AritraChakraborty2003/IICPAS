@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { memo } from "react";
+import axios from "axios";
 
 interface Course {
   _id: string;
@@ -149,6 +150,7 @@ const CourseSection = memo(function CourseSection() {
   const router = useRouter();
 
   const [courses, setCourses] = useState<Course[]>([]);
+  const [student, setStudent] = useState<any>(null);
 
   useEffect(() => {
     const fetchCourses = async () => {
@@ -208,6 +210,22 @@ const CourseSection = memo(function CourseSection() {
     fetchCourses();
   }, []);
 
+  useEffect(() => {
+    const fetchStudent = async () => {
+      try {
+        const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        const response = await axios.get(`${API}/api/v1/students/isstudent`, {
+          withCredentials: true,
+        });
+        setStudent(response.data.student || null);
+      } catch {
+        setStudent(null);
+      }
+    };
+
+    fetchStudent();
+  }, []);
+
   const handleEnrollNow = (course: Course) => {
     router.push(`/course/${course.slug}`);
   };
@@ -248,7 +266,9 @@ const CourseSection = memo(function CourseSection() {
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex flex-col">
                     <span className="text-2xl font-bold text-[#3cd664]">
-                      ₹{course.price.toLocaleString()}
+                      {student
+                        ? `₹${course.price.toLocaleString()}`
+                        : "Rs X (login to view)"}
                     </span>
                   </div>
                 </div>

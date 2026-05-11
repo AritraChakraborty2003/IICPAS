@@ -622,13 +622,16 @@ export default function CoursePage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-green-600 font-bold text-lg">
-                            ₹
-                            {discountedPrice &&
-                            typeof discountedPrice === "number"
-                              ? discountedPrice.toLocaleString()
-                              : "0"}
+                            {student
+                              ? `₹${
+                                  discountedPrice &&
+                                  typeof discountedPrice === "number"
+                                    ? discountedPrice.toLocaleString()
+                                    : "0"
+                                }`
+                              : "Rs X (login to view)"}
                           </p>
-                          {displayDiscount > 0 && (
+                          {student && displayDiscount > 0 && (
                             <p className="text-gray-400 text-sm line-through">
                               ₹
                               {(() => {
@@ -683,6 +686,7 @@ export default function CoursePage() {
                       key={group._id || `group-${index}`}
                       groupPricing={group}
                       index={index}
+                      hidePrice={!student}
                     />
                   ))}
                 </>

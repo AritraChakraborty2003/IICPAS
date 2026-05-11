@@ -698,7 +698,7 @@ export default function CourseDetailClient({
                           <div className="text-sm font-bold text-[#3cd664]">
                             {student
                               ? `₹${getSessionPrice("recorded").toLocaleString()}`
-                              : "X"}
+                              : "Rs X (login to view)"}
                           </div>
                           {student &&
                             course?.pricing?.recordedSession?.discount &&
@@ -739,7 +739,7 @@ export default function CourseDetailClient({
                           <div className="text-sm font-bold text-blue-500">
                             {student
                               ? `₹${getSessionPrice("live").toLocaleString()}`
-                              : "X"}
+                              : "Rs X (login to view)"}
                           </div>
                           {student &&
                             course?.pricing?.liveSession?.discount &&

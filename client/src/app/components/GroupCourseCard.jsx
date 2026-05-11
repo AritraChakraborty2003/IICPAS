@@ -44,6 +44,7 @@ export default function GroupCourseCard({
   onPrimaryAction = null,
   ctaLabel = "Enroll →",
   isLoading = false,
+  hidePrice = false,
 }) {
   const router = useRouter();
   const imageSrc = normalizeImageSrc(
@@ -171,21 +172,25 @@ export default function GroupCourseCard({
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-green-600 font-bold text-xl">
-                      ₹{smallestPrice?.toLocaleString() || "0"}
+                      {hidePrice
+                        ? "Rs X (login to view)"
+                        : `₹${smallestPrice?.toLocaleString() || "0"}`}
                     </p>
-                    {hasDiscount && (
+                    {!hidePrice && hasDiscount && (
                       <span className="bg-red-100 text-red-600 text-xs font-bold px-2 py-1 rounded">
                         SAVE ₹{(originalPrice - smallestPrice).toLocaleString()}
                       </span>
                     )}
                   </div>
-                  {hasDiscount && (
+                  {!hidePrice && hasDiscount && (
                     <p className="text-gray-400 text-sm line-through">
                       ₹{originalPrice?.toLocaleString() || "0"}
                     </p>
                   )}
                   <p className="text-gray-400 text-xs">
-                    {hasDiscount
+                    {hidePrice
+                      ? "Login to view package pricing."
+                      : hasDiscount
                       ? "Limited time offer!"
                       : "Complete package price"}
                   </p>
