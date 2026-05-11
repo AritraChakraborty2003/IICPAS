@@ -10,7 +10,7 @@ export default function EWayBill4Page() {
       baseRoute="/simulations/gst/e-way-bill-4"
       launchTitle="GST E-Way Bill Simulation 4"
       portalTitle="e-Way Bill Portal"
-      companyName="IICPA Private Limited"
+      companyName="ABC XYZ Private Limited"
       initialShowLaunchScreen={true}
     />
   );

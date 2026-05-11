@@ -356,7 +356,7 @@ const GSTSimulation: React.FC = () => {
                 ? "border-red-500 focus:ring-red-500"
                 : "border-gray-300 focus:ring-blue-500"
             }`}
-            placeholder="22AAAAA0000A1Z5"
+            placeholder="09ABCDE1234F1Z5"
             maxLength={15}
           />
           {simulationData.supplier.gstin &&
@@ -467,7 +467,7 @@ const GSTSimulation: React.FC = () => {
                 ? "border-red-500 focus:ring-red-500"
                 : "border-gray-300 focus:ring-blue-500"
             }`}
-            placeholder="22AAAAA0000A1Z5"
+            placeholder="09ABCDE1234F1Z5"
             maxLength={15}
           />
           {simulationData.recipient.gstin &&

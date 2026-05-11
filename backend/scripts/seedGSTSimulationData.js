@@ -9,7 +9,7 @@ const sampleGSTReturns = [
     financialYear: "2024-25",
     quarter: "Quarter 1 (Apr - Jun)",
     period: "April",
-    gstin: "07GDLCF7228G1YK",
+    gstin: "09ABCDE1234F1Z5",
     recordDetails: {
       b2bInvoices: {
         count: 15,
@@ -129,7 +129,7 @@ const sampleGSTReturns = [
     financialYear: "2024-25",
     quarter: "Quarter 1 (Apr - Jun)",
     period: "April",
-    gstin: "07GDLCF7228G1YK",
+    gstin: "09ABCDE1234F1Z5",
     recordDetails: {
       b2bInvoices: {
         count: 0,
@@ -249,28 +249,28 @@ const sampleGSTSimulations = [
     invoiceNumber: "INV-2024-001",
     invoiceDate: new Date("2024-04-15"),
     supplier: {
-      name: "Fincurious Cements Private Limited",
-      gstin: "07GDLCF7228G1YK",
+      name: "ABC XYZ Private Limited",
+      gstin: "09ABCDE1234F1Z5",
       address: {
         street: "123 Business Park, Sector 5",
-        city: "New Delhi",
-        state: "Delhi",
+        city: "Noida",
+        state: "Uttar Pradesh",
         pincode: "110001",
         country: "India",
       },
       contact: {
         phone: "+91-11-12345678",
-        email: "info@fincurious.com",
+        email: "info@abcxyz.example",
       },
     },
     recipient: {
-      name: "ABC Construction Company",
-      gstin: "22AAAAA0000A1Z5",
+      name: "ZZZZ Enterprises LLP",
+      gstin: "09ZZZZZ6789K1Z2",
       address: {
         street: "456 Industrial Area",
-        city: "Mumbai",
-        state: "Maharashtra",
-        pincode: "400001",
+        city: "Noida",
+        state: "Uttar Pradesh",
+        pincode: "201301",
         country: "India",
       },
       contact: {

@@ -52,7 +52,7 @@ export default function GSTEWayBillLoginPage() {
             <div className="rounded-md border border-slate-300 bg-slate-50 px-4 py-2 text-[12px] leading-5 text-slate-600">
               <div className="font-semibold text-slate-700">Login details</div>
               <div>User name: AIR</div>
-              <div>Password: Fin@123</div>
+              <div>Password: ABC@123</div>
             </div>
 
             <div className="flex items-stretch overflow-hidden rounded-sm border border-slate-300 bg-white">
@@ -73,7 +73,7 @@ export default function GSTEWayBillLoginPage() {
               <input
                 type="password"
                 className="min-w-0 flex-1 bg-white px-3 py-2.5 text-[14px] text-slate-700 outline-none placeholder:text-slate-400"
-                defaultValue="Fin@123"
+                defaultValue="ABC@123"
                 placeholder="Password"
               />
             </div>

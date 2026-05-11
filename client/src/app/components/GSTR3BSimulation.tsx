@@ -175,9 +175,9 @@ const GSTR3BSimulation: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-white">
-                  IICPA Private Limited
+                  ABC XYZ Private Limited
                 </p>
-                <p className="text-xs text-blue-200">GSTIN: 07GDLCF7228G1YK</p>
+                <p className="text-xs text-blue-200">GSTIN: 09ABCDE1234F1Z5</p>
               </div>
             </div>
           </div>

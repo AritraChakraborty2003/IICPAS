@@ -140,9 +140,9 @@ const EWayBillSimulation: React.FC = () => {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <p className="text-sm font-medium text-gray-800">
-                  IICPA Private Limited
+                  ABC XYZ Private Limited
                 </p>
-                <p className="text-xs text-gray-600">GSTIN: 07GDLCF7228G1YK</p>
+                <p className="text-xs text-gray-600">GSTIN: 09ABCDE1234F1Z5</p>
               </div>
               <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center">
                 <span className="text-yellow-800 font-bold text-sm">150</span>

@@ -10,7 +10,7 @@ export default function EInvoicing4Page() {
       baseRoute="/simulations/gst/e-invoicing-4"
       launchTitle="GST E-Invoice Simulation 4"
       portalTitle="e-Invoice 1 Portal"
-      companyName="IICPA Private Limited"
+      companyName="ABC XYZ Private Limited"
       workflow="cancel"
       initialInvoiceMenuOpen={true}
       highlightInvoiceMenu={true}

@@ -22,8 +22,8 @@ const ExactGSTPortal: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [loginData, setLoginData] = useState({
-    username: "FINAIR",
-    password: "Fin@123",
+    username: "ABCXYZ",
+    password: "ABC@123",
     captcha: "",
   });
 
@@ -124,13 +124,13 @@ const ExactGSTPortal: React.FC = () => {
                   <p className="text-white mb-2">
                     User name:{" "}
                     <span className="text-yellow-400 font-mono bg-gray-800 px-2 py-1 rounded">
-                      FINAIR
+                      ABCXYZ
                     </span>
                   </p>
                   <p className="text-white">
                     Password:{" "}
                     <span className="text-yellow-400 font-mono bg-gray-800 px-2 py-1 rounded">
-                      Fin@123
+                      ABC@123
                     </span>
                   </p>
                 </div>

@@ -13,23 +13,23 @@
             "Dt": "09/10/2023"
         },
         "SellerDtls": {
-            "Gstin": "29BRYFP02061V7YP",
-            "LglNm": "IICPA Private Limited",
-            "Addr1": "IICPA Institute Campus, 2nd Floor, Rajarajeshwari Temple Rd, Bengaluru, Karnataka 560098",
+            "Gstin": "09ABCDE1234F1Z5",
+            "LglNm": "ABC XYZ Private Limited",
+            "Addr1": "ABC XYZ Campus, 2nd Floor, Sector 62, Noida, Uttar Pradesh 201309",
             "Addr2": null,
             "Loc": "BANGALORE",
             "Pin": 560098,
-            "Stcd": "29"
+            "Stcd": "09"
         },
         "BuyerDtls": {
-            "Gstin": "29GMRTL5631J3C1",
-            "LglNm": "IICPA Corporate Training LLP",
-            "Pos": "29",
-            "Addr1": "IICPA Learning Hub, MG Road, Bengaluru, Karnataka 560001",
+            "Gstin": "09ZZZZZ6789K1Z2",
+            "LglNm": "ZZZZ Enterprises LLP",
+            "Pos": "09",
+            "Addr1": "ZZZZ Tower, Sector 18, Noida, Uttar Pradesh 201301",
             "Addr2": null,
             "Loc": "BANGALORE",
             "Pin": 564001,
-            "Stcd": "29"
+            "Stcd": "09"
         },
         "ItemList": [
             {

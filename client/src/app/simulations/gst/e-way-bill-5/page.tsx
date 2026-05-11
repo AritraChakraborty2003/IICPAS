@@ -11,7 +11,7 @@ export default function EWayBill5Page() {
       baseRoute="/simulations/gst/e-way-bill-5"
       launchTitle="GST E-Way Bill Simulation 5"
       portalTitle="e-Way Bill Portal"
-      companyName="IICPA Private Limited"
+      companyName="ABC XYZ Private Limited"
       initialShowLaunchScreen={true}
     />
   );

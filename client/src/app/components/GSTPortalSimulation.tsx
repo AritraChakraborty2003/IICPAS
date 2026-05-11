@@ -23,7 +23,7 @@ const GSTPortalSimulation: React.FC = () => {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginData, setLoginData] = useState({
     username: "",
-    password: "",
+    password: "ABC@123",
     captcha: "",
   });
 
@@ -118,7 +118,7 @@ const GSTPortalSimulation: React.FC = () => {
                   </p>
                   <p className="text-white">
                     Password:{" "}
-                    <span className="text-yellow-400 font-mono">Fin@123</span>
+                    <span className="text-yellow-400 font-mono">ABC@123</span>
                   </p>
                 </div>
               </div>

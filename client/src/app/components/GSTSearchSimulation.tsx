@@ -92,8 +92,8 @@ const GSTSearchSimulation: React.FC = () => {
       // Simulate search results
       setSearchResults([
         {
-          gstin: "07GDLCF7228G1YK",
-          name: "IICPA Private Limited",
+          gstin: "09ABCDE1234F1Z5",
+          name: "ABC XYZ Private Limited",
           status: "Active",
           registrationDate: "2020-04-01",
           lastReturnFiled: "GSTR-3B",
@@ -252,7 +252,7 @@ const GSTSearchSimulation: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Enter GSTIN (e.g., 07GDLCF7228G1YK) or PAN"
+                placeholder="Enter GSTIN (e.g., 09ABCDE1234F1Z5) or PAN"
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button

@@ -152,7 +152,7 @@ export default function EInvoicing2BulkUploadPage() {
             <div className="border-t border-white/15 bg-[#ccd4e9] px-4 py-2.5 text-[12px] text-slate-700 lg:text-[14px]">
               <div className="flex items-center justify-between gap-4 whitespace-nowrap">
                 <div className="text-left whitespace-nowrap">
-                  GSTIN: 29BRYFP02061V7YP - Name: IICPA Private Limited
+                  GSTIN: 09ABCDE1234F1Z5 - Name: ABC XYZ Private Limited
                 </div>
                 <div className="whitespace-nowrap">Account : Main User</div>
                 <div className="whitespace-nowrap">Client IP:1.1.1.1</div>
