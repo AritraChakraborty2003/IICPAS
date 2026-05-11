@@ -75,8 +75,10 @@ const transporter = nodemailer.createTransport({
 
 const registrationOtpStore = new Map();
 const REGISTRATION_OTP_TTL_MS = 10 * 60 * 1000;
+const REGISTRATION_WHATSAPP_TEMPLATE_NAME = "otp_template";
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+const normalizePhone = (value) => normalizeWhatsAppRecipient(value);
 const getRegistrationOtpEntry = (email) => {
   const entry = registrationOtpStore.get(email);
   if (!entry) return null;
@@ -141,43 +143,61 @@ const sendWelcomeEmail = async ({ name, email }) => {
 
 //Register Student
 router.post("/register/send-otp", async (req, res) => {
-  const email = normalizeEmail(req.body.email);
+  const phone = normalizePhone(req.body.phone);
   const name = String(req.body.name || "").trim();
 
-  if (!email) {
-    return res.status(400).json({ message: "Email is required" });
+  if (!phone) {
+    return res.status(400).json({ message: "Phone number is required" });
   }
 
   try {
-    const existing = await Student.findOne({ email });
+    if (!isWhatsAppConfigured()) {
+      return res.status(503).json({ message: "WhatsApp OTP is not configured" });
+    }
+
+    const existing = await Student.findOne({ phone });
     if (existing) {
-      return res.status(400).json({ message: "Email already exists" });
+      return res.status(400).json({ message: "Phone number already exists" });
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    registrationOtpStore.set(email, {
+    registrationOtpStore.set(phone, {
       otp,
       expiresAt: Date.now() + REGISTRATION_OTP_TTL_MS,
     });
 
-    await transporter.sendMail({
-      from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
-      to: email,
-      subject: "Your IICPA registration OTP",
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
-          <p>Hello ${name || "Student"},</p>
-          <p>Your OTP for IICPA registration is <b>${otp}</b>.</p>
-          <p>This OTP will expire in 10 minutes.</p>
-        </div>
-      `,
+    await sendWhatsAppTemplateMessage({
+      to: phone,
+      templateName: REGISTRATION_WHATSAPP_TEMPLATE_NAME,
+      components: [
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              text: otp,
+            },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "url",
+          index: "0",
+          parameters: [
+            {
+              type: "text",
+              text: otp,
+            },
+          ],
+        },
+      ],
     });
 
-    res.json({ message: "OTP sent to email" });
+    res.json({ message: "WhatsApp OTP sent" });
   } catch (err) {
-    registrationOtpStore.delete(email);
+    registrationOtpStore.delete(phone);
     console.error("Error sending registration OTP email:", err);
-    res.status(500).json({ message: "Failed to send OTP email" });
+    res.status(500).json({ message: "Failed to send WhatsApp OTP" });
   }
 });
 
@@ -206,18 +226,22 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    const existing = await Student.findOne({ email: normalizedEmail });
+    const existing = await Student.findOne({
+      $or: [{ email: normalizedEmail }, { phone: normalizedWhatsAppPhone }],
+    });
     if (existing)
-      return res.status(400).json({ message: "Email already exists" });
+      return res.status(400).json({ message: "Email or phone already exists" });
 
     const submittedOtp = String(otp || "").trim();
-    if (submittedOtp) {
-      const storedOtp = getRegistrationOtpEntry(normalizedEmail);
-      if (!storedOtp || storedOtp.otp !== submittedOtp) {
-        return res.status(400).json({ message: "OTP invalid or expired" });
-      }
-      registrationOtpStore.delete(normalizedEmail);
+    if (!submittedOtp) {
+      return res.status(400).json({ message: "OTP is required" });
     }
+
+    const storedOtp = getRegistrationOtpEntry(normalizedWhatsAppPhone);
+    if (!storedOtp || storedOtp.otp !== submittedOtp) {
+      return res.status(400).json({ message: "OTP invalid or expired" });
+    }
+    registrationOtpStore.delete(normalizedWhatsAppPhone);
 
     const normalizedReferralCode = normalizeReferralCode(rawReferralCode);
     let referrer = null;
@@ -238,7 +262,7 @@ router.post("/register", async (req, res) => {
     const student = new Student({
       name: normalizedName,
       email: normalizedEmail,
-      phone: normalizedPhone,
+      phone: normalizedWhatsAppPhone || normalizedPhone,
       password: hashed,
       mode,
       location,

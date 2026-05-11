@@ -42,6 +42,9 @@ export default function StudentRegisterForm() {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [registerOtpSent, setRegisterOtpSent] = useState(false);
+  const [registerOtp, setRegisterOtp] = useState("");
+  const [sendingRegisterOtp, setSendingRegisterOtp] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -66,6 +69,10 @@ export default function StudentRegisterForm() {
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
+    if (name === "name" || name === "phone") {
+      setRegisterOtpSent(false);
+      setRegisterOtp("");
+    }
     setForm((prev) => ({
       ...prev,
       [name]: name === "referralCode" ? normalizeReferralCode(value) : value,
@@ -95,6 +102,9 @@ export default function StudentRegisterForm() {
     if (password !== confirmPassword) {
       return toast.error("Passwords do not match!");
     }
+    if (!registerOtpSent || !registerOtp) {
+      return toast.error("Please send and verify the WhatsApp OTP first");
+    }
 
     try {
       await axios.post(
@@ -106,8 +116,14 @@ export default function StudentRegisterForm() {
           password,
           location,
           center,
+          otp: registerOtp,
           ...(referralCode ? { referralCode } : {}),
         },
+        { withCredentials: true }
+      );
+      await axios.post(
+        `${API}/api/v1/students/login`,
+        { email, password },
         { withCredentials: true }
       );
       toast.success("Registration successful!", {
@@ -115,7 +131,7 @@ export default function StudentRegisterForm() {
           zIndex: 9999,
         },
       });
-      setMode("login");
+      window.location.href = "/student-dashboard";
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Registration failed", {
         style: {
@@ -149,6 +165,35 @@ export default function StudentRegisterForm() {
           zIndex: 9999,
         },
       });
+    }
+  };
+
+  const handleSendRegisterOtp = async () => {
+    if (!form.name || !form.phone) {
+      return toast.error("Name and mobile number are required");
+    }
+
+    setSendingRegisterOtp(true);
+    try {
+      await axios.post(
+        `${API}/api/v1/students/register/send-otp`,
+        { name: form.name, phone: form.phone },
+        { withCredentials: true }
+      );
+      setRegisterOtpSent(true);
+      toast.success("WhatsApp OTP sent to your mobile number.", {
+        style: {
+          zIndex: 9999,
+        },
+      });
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to send WhatsApp OTP", {
+        style: {
+          zIndex: 9999,
+        },
+      });
+    } finally {
+      setSendingRegisterOtp(false);
     }
   };
 
@@ -272,6 +317,29 @@ export default function StudentRegisterForm() {
               <form onSubmit={handleRegister} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input label="Full Name" name="name" value={form.name} onChange={handleChange} />
                 <Input label="Phone" name="phone" value={form.phone} onChange={handleChange} />
+
+                <div className="sm:col-span-2">
+                  <button
+                    type="button"
+                    onClick={handleSendRegisterOtp}
+                    disabled={sendingRegisterOtp}
+                    className="w-full rounded-xl border border-emerald-600 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {sendingRegisterOtp
+                      ? "Sending WhatsApp OTP..."
+                      : registerOtpSent
+                      ? "Resend WhatsApp OTP"
+                      : "Send WhatsApp OTP"}
+                  </button>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <Input
+                    label="WhatsApp OTP"
+                    value={registerOtp}
+                    onChange={(e: any) => setRegisterOtp(e.target.value)}
+                  />
+                </div>
 
                 <SelectDropdown
                   label="Location"

@@ -78,9 +78,9 @@ export default function LoginModal({
   };
 
   const handleSendRegisterOtp = async () => {
-    const { name, email } = registerForm;
-    if (!name || !email) {
-      toast.error("Name and email are required to send OTP");
+    const { name, phone } = registerForm;
+    if (!name || !phone) {
+      toast.error("Name and mobile number are required to send OTP");
       return;
     }
 
@@ -88,11 +88,11 @@ export default function LoginModal({
     try {
       await axios.post(
         `${API_BASE}/api/v1/students/register/send-otp`,
-        { name, email },
+        { name, phone },
         { withCredentials: true }
       );
       setRegisterOtpSent(true);
-      toast.success("OTP sent to your email.");
+      toast.success("WhatsApp OTP sent to your mobile number.");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to send OTP");
     } finally {
@@ -159,6 +159,10 @@ export default function LoginModal({
     if (mode === "login") {
       setLoginForm((prev) => ({ ...prev, [name]: value }));
     } else {
+      if (name === "name" || name === "phone") {
+        setRegisterOtpSent(false);
+        setRegisterOtp("");
+      }
       setRegisterForm((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -318,35 +322,6 @@ export default function LoginModal({
                 </div>
               </div>
 
-              <div className="md:col-span-2">
-                <button
-                  type="button"
-                  onClick={handleSendRegisterOtp}
-                  disabled={sendingOtp}
-                  className="w-full rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {sendingOtp
-                    ? "Sending OTP..."
-                    : registerOtpSent
-                    ? "Resend OTP"
-                    : "Send OTP"}
-                </button>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  OTP
-                </label>
-                <input
-                  type="text"
-                  name="otp"
-                  value={registerOtp}
-                  onChange={(e) => setRegisterOtp(e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500"
-                  placeholder="Enter OTP sent to your email"
-                />
-              </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phone Number
@@ -366,6 +341,35 @@ export default function LoginModal({
                     required
                   />
                 </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <button
+                  type="button"
+                  onClick={handleSendRegisterOtp}
+                  disabled={sendingOtp}
+                  className="w-full rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {sendingOtp
+                    ? "Sending WhatsApp OTP..."
+                    : registerOtpSent
+                    ? "Resend WhatsApp OTP"
+                    : "Send WhatsApp OTP"}
+                </button>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  WhatsApp OTP
+                </label>
+                <input
+                  type="text"
+                  name="otp"
+                  value={registerOtp}
+                  onChange={(e) => setRegisterOtp(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500"
+                  placeholder="Enter OTP sent on WhatsApp"
+                />
               </div>
 
               <div>
