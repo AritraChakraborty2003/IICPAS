@@ -73,6 +73,20 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+const registrationOtpStore = new Map();
+const REGISTRATION_OTP_TTL_MS = 10 * 60 * 1000;
+
+const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+const getRegistrationOtpEntry = (email) => {
+  const entry = registrationOtpStore.get(email);
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    registrationOtpStore.delete(email);
+    return null;
+  }
+  return entry;
+};
+
 const ensureAuthorizedStudent = (req, res) => {
   if (!req.user?.id || req.user.id !== req.params.id) {
     res.status(403).json({ message: "Forbidden" });
@@ -126,12 +140,54 @@ const sendWelcomeEmail = async ({ name, email }) => {
 };
 
 //Register Student
+router.post("/register/send-otp", async (req, res) => {
+  const email = normalizeEmail(req.body.email);
+  const name = String(req.body.name || "").trim();
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  try {
+    const existing = await Student.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    registrationOtpStore.set(email, {
+      otp,
+      expiresAt: Date.now() + REGISTRATION_OTP_TTL_MS,
+    });
+
+    await transporter.sendMail({
+      from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Your IICPA registration OTP",
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
+          <p>Hello ${name || "Student"},</p>
+          <p>Your OTP for IICPA registration is <b>${otp}</b>.</p>
+          <p>This OTP will expire in 10 minutes.</p>
+        </div>
+      `,
+    });
+
+    res.json({ message: "OTP sent to email" });
+  } catch (err) {
+    registrationOtpStore.delete(email);
+    console.error("Error sending registration OTP email:", err);
+    res.status(500).json({ message: "Failed to send OTP email" });
+  }
+});
+
 router.post("/register", async (req, res) => {
   const {
     name,
     email,
     phone,
     password,
+    otp,
     mode,
     location,
     center,
@@ -153,6 +209,15 @@ router.post("/register", async (req, res) => {
     const existing = await Student.findOne({ email: normalizedEmail });
     if (existing)
       return res.status(400).json({ message: "Email already exists" });
+
+    const submittedOtp = String(otp || "").trim();
+    if (submittedOtp) {
+      const storedOtp = getRegistrationOtpEntry(normalizedEmail);
+      if (!storedOtp || storedOtp.otp !== submittedOtp) {
+        return res.status(400).json({ message: "OTP invalid or expired" });
+      }
+      registrationOtpStore.delete(normalizedEmail);
+    }
 
     const normalizedReferralCode = normalizeReferralCode(rawReferralCode);
     let referrer = null;

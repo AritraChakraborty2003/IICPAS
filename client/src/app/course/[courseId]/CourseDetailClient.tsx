@@ -48,6 +48,7 @@ interface Course {
       finalPrice?: number;
       price?: number;
       discount?: number;
+      priceMultiplier?: number;
     };
   };
   chapters?: Array<{
@@ -77,6 +78,9 @@ export default function CourseDetailClient({
   const [student, setStudent] = useState<any>(null);
 
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"login" | "register">(
+    "login"
+  );
   const [pendingCartAction, setPendingCartAction] = useState<{
     courseId: string;
     sessionType: "recorded" | "live";
@@ -90,6 +94,28 @@ export default function CourseDetailClient({
   const notifyCartUpdateAndOpenDrawer = () => {
     window.dispatchEvent(
       new CustomEvent("cartUpdated", { detail: { openDrawer: true } })
+    );
+  };
+
+  const openAuthModal = (mode: "login" | "register") => {
+    setAuthModalMode(mode);
+    setShowLoginModal(true);
+  };
+
+  const getSessionPrice = (sessionType: "recorded" | "live") => {
+    if (sessionType === "recorded") {
+      return (
+        course?.pricing?.recordedSession?.finalPrice ||
+        course?.pricing?.recordedSession?.price ||
+        course.price ||
+        2000
+      );
+    }
+
+    return (
+      course?.pricing?.liveSession?.finalPrice ||
+      course?.pricing?.liveSession?.price ||
+      (course.price ? course.price * (course?.pricing?.liveSession?.priceMultiplier || 1.5) : 3000)
     );
   };
 
@@ -122,7 +148,7 @@ export default function CourseDetailClient({
     if (!student) {
       // Store the pending action and show login modal
       setPendingCartAction({ courseId, sessionType });
-      setShowLoginModal(true);
+      openAuthModal("register");
       return;
     }
 
@@ -647,8 +673,13 @@ export default function CourseDetailClient({
                 <div className="p-6 border-b-2">
                   <div className="text-center text-sm text-gray-600 mb-6">
                     <p>Get access to this course in DIGITAL HUB.</p>
-                    <button className="text-blue-600 hover:text-blue-800 font-semibold mt-2 text-sm">
-                      Select Plan
+                    <button
+                      onClick={() =>
+                        student ? undefined : openAuthModal("register")
+                      }
+                      className="text-blue-600 hover:text-blue-800 font-semibold mt-2 text-sm"
+                    >
+                      {student ? "Select Plan" : "Register to unlock"}
                     </button>
                   </div>
 
@@ -665,16 +696,12 @@ export default function CourseDetailClient({
                         </div>
                         <div className="text-center">
                           <div className="text-sm font-bold text-[#3cd664]">
-                            ₹
-                            {course?.pricing?.recordedSession?.finalPrice
-                              ? course.pricing.recordedSession.finalPrice.toLocaleString()
-                              : course?.pricing?.recordedSession?.price
-                              ? course.pricing.recordedSession.price.toLocaleString()
-                              : course.price
-                              ? course.price.toLocaleString()
-                              : "2,000"}
+                            {student
+                              ? `₹${getSessionPrice("recorded").toLocaleString()}`
+                              : "X"}
                           </div>
-                          {course?.pricing?.recordedSession?.discount &&
+                          {student &&
+                            course?.pricing?.recordedSession?.discount &&
                             course.pricing.recordedSession.discount > 0 && (
                               <div className="text-xs text-gray-500 line-through">
                                 ₹
@@ -686,12 +713,16 @@ export default function CourseDetailClient({
 
                       <button
                         onClick={() =>
-                          handleAddToCart(course._id || course.id, "recorded")
+                          student
+                            ? handleAddToCart(course._id || course.id, "recorded")
+                            : openAuthModal("register")
                         }
                         className="w-full bg-[#3cd664] hover:bg-[#33bb58] text-white font-bold py-1 px-2 rounded text-xs"
                       >
-                        {course?.pricing?.recordedSession?.buttonText ||
-                          "Add Digital Hub"}
+                        {student
+                          ? course?.pricing?.recordedSession?.buttonText ||
+                            "Add Digital Hub"
+                          : "Register to unlock"}
                       </button>
                     </div>
 
@@ -706,20 +737,12 @@ export default function CourseDetailClient({
                         </div>
                         <div className="text-center">
                           <div className="text-sm font-bold text-blue-500">
-                            ₹
-                            {course?.pricing?.liveSession?.finalPrice
-                              ? course.pricing.liveSession.finalPrice.toLocaleString()
-                              : course?.pricing?.liveSession?.price
-                              ? course.pricing.liveSession.price.toLocaleString()
-                              : course.price
-                              ? (
-                                  course.price *
-                                  (course?.pricing?.liveSession
-                                    ?.priceMultiplier || 1.5)
-                                ).toLocaleString()
-                              : "3,000"}
+                            {student
+                              ? `₹${getSessionPrice("live").toLocaleString()}`
+                              : "X"}
                           </div>
-                          {course?.pricing?.liveSession?.discount &&
+                          {student &&
+                            course?.pricing?.liveSession?.discount &&
                             course.pricing.liveSession.discount > 0 && (
                               <div className="text-xs text-gray-500 line-through">
                                 ₹
@@ -731,12 +754,16 @@ export default function CourseDetailClient({
 
                       <button
                         onClick={() =>
-                          handleAddToCart(course._id || course.id, "live")
+                          student
+                            ? handleAddToCart(course._id || course.id, "live")
+                            : openAuthModal("register")
                         }
                         className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
                       >
-                        {course?.pricing?.liveSession?.buttonText ||
-                          "Add Digital Hub+"}
+                        {student
+                          ? course?.pricing?.liveSession?.buttonText ||
+                            "Add Digital Hub+"
+                          : "Register to unlock"}
                       </button>
                     </div>
                   </div>
@@ -846,6 +873,7 @@ export default function CourseDetailClient({
       {/* Login Modal */}
       <LoginModal
         isOpen={showLoginModal}
+        initialMode={authModalMode}
         onClose={() => {
           setShowLoginModal(false);
           setPendingCartAction(null);

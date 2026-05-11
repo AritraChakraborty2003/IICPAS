@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, User, Mail, Lock, Phone, MapPin, Home } from "lucide-react";
 import axios from "axios";
 import toast from "react-hot-toast";
@@ -10,15 +10,20 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   onLoginSuccess?: () => void;
+  initialMode?: "login" | "register";
 }
 
 export default function LoginModal({
   isOpen,
   onClose,
   onLoginSuccess,
+  initialMode = "login",
 }: LoginModalProps) {
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register">(initialMode);
   const [loading, setLoading] = useState(false);
+  const [registerOtpSent, setRegisterOtpSent] = useState(false);
+  const [registerOtp, setRegisterOtp] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
 
   // Login form state
   const [loginForm, setLoginForm] = useState({
@@ -42,6 +47,14 @@ export default function LoginModal({
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setRegisterOtpSent(false);
+      setRegisterOtp("");
+    }
+  }, [initialMode, isOpen]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginForm.email || !loginForm.password) {
@@ -64,6 +77,29 @@ export default function LoginModal({
     }
   };
 
+  const handleSendRegisterOtp = async () => {
+    const { name, email } = registerForm;
+    if (!name || !email) {
+      toast.error("Name and email are required to send OTP");
+      return;
+    }
+
+    setSendingOtp(true);
+    try {
+      await axios.post(
+        `${API_BASE}/api/v1/students/register/send-otp`,
+        { name, email },
+        { withCredentials: true }
+      );
+      setRegisterOtpSent(true);
+      toast.success("OTP sent to your email.");
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     const { name, email, phone, password, confirmPassword, location, center } =
@@ -79,16 +115,29 @@ export default function LoginModal({
       return;
     }
 
+    if (!registerOtpSent || !registerOtp) {
+      toast.error("Please send and enter the OTP first");
+      return;
+    }
+
     setLoading(true);
     try {
       await axios.post(
         `${API_BASE}/api/v1/students/register`,
-        { name, email, phone, password, location, center },
+        { name, email, phone, password, location, center, otp: registerOtp },
+        { withCredentials: true }
+      );
+      await axios.post(
+        `${API_BASE}/api/v1/students/login`,
+        { email, password },
         { withCredentials: true }
       );
       toast.success("Registration successful!");
-      setMode("login");
-      // Clear register form
+      onLoginSuccess?.();
+      onClose();
+      setMode(initialMode);
+      setRegisterOtpSent(false);
+      setRegisterOtp("");
       setRegisterForm({
         name: "",
         email: "",
@@ -269,6 +318,35 @@ export default function LoginModal({
                 </div>
               </div>
 
+              <div className="md:col-span-2">
+                <button
+                  type="button"
+                  onClick={handleSendRegisterOtp}
+                  disabled={sendingOtp}
+                  className="w-full rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 transition-colors hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {sendingOtp
+                    ? "Sending OTP..."
+                    : registerOtpSent
+                    ? "Resend OTP"
+                    : "Send OTP"}
+                </button>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  OTP
+                </label>
+                <input
+                  type="text"
+                  name="otp"
+                  value={registerOtp}
+                  onChange={(e) => setRegisterOtp(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-green-500"
+                  placeholder="Enter OTP sent to your email"
+                />
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Phone Number
@@ -391,7 +469,7 @@ export default function LoginModal({
               <div className="md:col-span-2">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !registerOtpSent}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? "Creating Account..." : "Create Account"}
