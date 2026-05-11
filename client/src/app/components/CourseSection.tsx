@@ -265,10 +265,10 @@ const CourseSection = memo(function CourseSection() {
                 </h3>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex flex-col">
-                    <span className="text-2xl font-bold text-[#3cd664]">
+                    <span className="text-sm font-semibold text-[#3cd664]">
                       {student
                         ? `₹${course.price.toLocaleString()}`
-                        : "Rs X (login to view)"}
+                        : "₹ X (login to view)"}
                     </span>
                   </div>
                 </div>

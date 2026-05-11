@@ -621,7 +621,7 @@ export default function CoursePage() {
                       {/* Price Section */}
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="text-green-600 font-bold text-lg">
+                          <p className="text-green-600 font-semibold text-sm">
                             {student
                               ? `₹${
                                   discountedPrice &&
@@ -629,10 +629,10 @@ export default function CoursePage() {
                                     ? discountedPrice.toLocaleString()
                                     : "0"
                                 }`
-                              : "Rs X (login to view)"}
+                              : "₹ X (login to view)"}
                           </p>
                           {student && displayDiscount > 0 && (
-                            <p className="text-gray-400 text-sm line-through">
+                            <p className="text-gray-400 text-xs line-through">
                               ₹
                               {(() => {
                                 const originalPrice =
