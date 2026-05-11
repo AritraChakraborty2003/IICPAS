@@ -758,8 +758,8 @@ function LiveSessionLandingPage({
             </div>
           </div>
 
-          <div className="mt-4 grid gap-0 border-t border-slate-100 lg:mt-0 lg:grid-cols-[1fr_0.95fr]">
-            <div className="bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8">
+          <div className="mt-4 flex flex-wrap-reverse border-t border-slate-100 lg:mt-0 lg:flex-nowrap">
+            <div className="w-full bg-[#f9fbfe] px-5 py-6 md:px-8 md:py-8 lg:w-[52.5%] lg:min-w-0">
               <div className="space-y-5">
                 <div className="rounded-[1.75rem] border border-emerald-500/15 bg-[#1f6b93] px-5 py-5 shadow-[0_14px_34px_rgba(15,23,42,0.06)] sm:px-6 sm:py-6">
                   <div className="mb-4 flex flex-wrap gap-2">
@@ -845,7 +845,7 @@ function LiveSessionLandingPage({
               </div>
             </div>
 
-            <div className="bg-white px-4 py-5 md:p-8 lg:border-l lg:border-t-0">
+            <div className="w-full bg-white px-4 py-5 md:p-8 lg:w-[47.5%] lg:min-w-0 lg:border-l lg:border-t-0">
               <div className="rounded-[1.35rem] border border-slate-100 bg-white p-4 shadow-[0_14px_34px_rgba(15,23,42,0.06)] md:p-7 md:shadow-none">
                 <div className="mx-auto mb-4 w-full max-w-full rounded-[1rem] bg-[#175a84] px-5 py-3.5 text-center text-white shadow-[0_10px_24px_rgba(15,23,42,0.12)] sm:max-w-[340px] sm:rounded-none sm:px-6 sm:py-5">
                   <p className="text-base font-semibold tracking-[-0.02em] sm:text-lg sm:font-medium">
