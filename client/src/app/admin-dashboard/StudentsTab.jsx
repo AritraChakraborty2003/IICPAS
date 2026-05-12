@@ -228,14 +228,6 @@ const mergeStudentCourseAccess = (student, courseId, override = {}) => {
   };
 };
 
-const getPendingCourseAccessOverride = (studentId, courseId, pendingStore) => {
-  const studentKey = String(studentId || "");
-  const courseKey = String(courseId || "");
-  const studentOverrides = pendingStore?.get(studentKey);
-  if (!studentKey || !courseKey || !studentOverrides?.has(courseKey)) return null;
-  return studentOverrides.get(courseKey);
-};
-
 const setPendingCourseAccessOverride = (pendingStore, studentId, courseId, override) => {
   const studentKey = String(studentId || "");
   const courseKey = String(courseId || "");
@@ -251,18 +243,6 @@ const setPendingCourseAccessOverride = (pendingStore, studentId, courseId, overr
     ...override,
     courseId: courseKey,
   });
-};
-
-const clearPendingCourseAccessOverride = (pendingStore, studentId, courseId) => {
-  const studentKey = String(studentId || "");
-  const courseKey = String(courseId || "");
-  const studentOverrides = pendingStore.get(studentKey);
-  if (!studentKey || !courseKey || !studentOverrides) return;
-
-  studentOverrides.delete(courseKey);
-  if (studentOverrides.size === 0) {
-    pendingStore.delete(studentKey);
-  }
 };
 
 const reconcileStudentWithPendingCourseAccess = (student, pendingStore) => {
