@@ -47,6 +47,8 @@ const StudentSchema = new mongoose.Schema(
       {
         courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
         isLocked: { type: Boolean, default: false },
+        purchasedAt: { type: Date, default: null },
+        expiresAt: { type: Date, default: null },
         updatedAt: { type: Date, default: Date.now },
       },
     ],

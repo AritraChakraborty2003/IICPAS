@@ -2,6 +2,7 @@ import GroupPricing from "../models/GroupPricing.js";
 import Course from "../models/Content/Course.js";
 import Student from "../models/Students.js";
 import mongoose from "mongoose";
+import { upsertCourseAccessOverride } from "../utils/courseAccess.js";
 
 // Get all group pricing configurations
 export const getAllGroupPricing = async (req, res) => {
@@ -758,6 +759,21 @@ export const enrollInGroupPackage = async (req, res) => {
     } else {
       // Add all courses to live sessions
       student.enrolledLiveSessions.push(...courseIds);
+    }
+
+    const purchasedAt = new Date();
+    const expiresAt = new Date(purchasedAt);
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
+
+    for (const courseId of courseIds) {
+      // Use the package approval time as the purchase reference for each course.
+      await upsertCourseAccessOverride({
+        student,
+        courseId,
+        isLocked: false,
+        purchasedAt,
+        expiresAt,
+      });
     }
 
     await student.save();

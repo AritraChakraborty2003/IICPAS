@@ -106,6 +106,23 @@ const objectIdEquals = (left, right) => {
   return String(left) === String(right);
 };
 
+const getDefaultCourseExpiry = (purchasedAt = new Date()) => {
+  const date = purchasedAt instanceof Date ? new Date(purchasedAt) : new Date();
+  date.setFullYear(date.getFullYear() + 1);
+  return date;
+};
+
+const syncCourseAccessOnEnrollment = async (student, courseId, purchasedAt) => {
+  if (!student || !courseId) return;
+  await upsertCourseAccessOverride({
+    student,
+    courseId,
+    isLocked: false,
+    purchasedAt,
+    expiresAt: getDefaultCourseExpiry(purchasedAt),
+  });
+};
+
 const sanitizeStudentResponse = (student) => {
   const payload = student?.toObject ? student.toObject() : { ...student };
   delete payload.password;
@@ -1231,6 +1248,7 @@ router.post("/verify-buy/:id", async (req, res) => {
     if (!student.course.includes(courseId)) {
       student.course.push(courseId);
     }
+    await syncCourseAccessOnEnrollment(student, course._id, new Date());
 
     // Enroll student in recorded sessions (course content)
     if (!student.enrolledRecordedSessions.includes(courseId)) {
@@ -1874,6 +1892,7 @@ router.post("/add-course/:id", async (req, res) => {
 
     // Add course to student's enrolled courses
     student.course.push(courseId);
+    await syncCourseAccessOnEnrollment(student, courseId, new Date());
     await student.save();
 
     res.json({
@@ -2144,6 +2163,7 @@ router.post("/enroll-recorded-session/:id", async (req, res) => {
 
     // Add course to student's enrolled recorded sessions
     student.enrolledRecordedSessions.push(courseId);
+    await syncCourseAccessOnEnrollment(student, courseId, new Date());
     await student.save();
 
     console.log("Enrollment successful:", {
@@ -2252,6 +2272,7 @@ router.post("/enroll-recorded-session-center/:id", async (req, res) => {
       student.enrolledRecordedSessions.push(courseId);
     }
 
+    await syncCourseAccessOnEnrollment(student, courseId, new Date());
     await student.save();
 
     console.log("Center enrollment successful:", {
@@ -2339,6 +2360,7 @@ router.post("/enroll-live-session-center/:id", async (req, res) => {
       student.enrolledLiveSessions.push(courseId);
     }
 
+    await syncCourseAccessOnEnrollment(student, courseId, new Date());
     await student.save();
 
     console.log("Live session + center enrollment successful:", {

@@ -90,9 +90,14 @@ const buildOverrideIndex = (student) => {
     const courseId = toIdString(entry?.courseId);
     if (!courseId) return acc;
 
+    const purchasedAt = toValidDate(entry?.purchasedAt);
+    const expiresAt = toValidDate(entry?.expiresAt);
+
     acc.set(courseId, {
       courseId,
       isLocked: Boolean(entry?.isLocked),
+      purchasedAt,
+      expiresAt,
       updatedAt: toValidDate(entry?.updatedAt),
     });
     return acc;
@@ -138,6 +143,8 @@ export const upsertCourseAccessOverride = async ({
   student,
   courseId,
   isLocked,
+  purchasedAt = null,
+  expiresAt = null,
 }) => {
   const normalizedCourseId = toIdString(courseId);
   if (!student || !normalizedCourseId) {
@@ -156,11 +163,19 @@ export const upsertCourseAccessOverride = async ({
     entry = {
       courseId: normalizedCourseId,
       isLocked: Boolean(isLocked),
+      purchasedAt: purchasedAt ? new Date(purchasedAt) : null,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
       updatedAt: new Date(),
     };
     student.courseAccessOverrides.push(entry);
   } else {
     entry.isLocked = Boolean(isLocked);
+    if (purchasedAt) {
+      entry.purchasedAt = new Date(purchasedAt);
+    }
+    if (expiresAt) {
+      entry.expiresAt = new Date(expiresAt);
+    }
     entry.updatedAt = new Date();
   }
 
