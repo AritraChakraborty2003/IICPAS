@@ -20,7 +20,7 @@ import Course from "../models/Content/Course.js";
 import Quiz from "../models/Content/Quiz.js";
 import fs from "fs-extra";
 import nodemailer from "nodemailer";
-import xexpress from "express";
+import express from "express";
 import CoinTransaction from "../models/CoinTransaction.js";
 import {
   awardCoins,
