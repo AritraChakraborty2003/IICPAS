@@ -130,6 +130,7 @@ import JobSidebarMarqueeTab from "./JobSidebarMarqueeTab";
 import LiveBookingsTab from "./LiveBookingsTab";
 import OurPartnersTab from "./OurPartnersTab";
 import ReferralCodeSettingsTab from "./ReferralCodeSettingsTab";
+import RecordedSessionAdmin from "./RecordedSessionAdmin";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -287,6 +288,11 @@ const NAVIGATION_GROUPS = [
     icon: <FaCalendarAlt />,
     items: [
       { id: "live-session", label: "Live Session", icon: <FaCalendarAlt /> },
+      {
+        id: "recorded-session",
+        label: "Recorded Session",
+        icon: <FaEye />,
+      },
       {
         id: "live-bookings",
         label: "Live Bookings",
@@ -787,6 +793,8 @@ function AdminDashboardContent() {
         {/* Permission-based content rendering */}
         {activeTab === "live-session" ? (
           <LiveSessionAdmin draftKey={landingDraftKey} />
+        ) : activeTab === "recorded-session" ? (
+          <RecordedSessionAdmin />
         ) : activeTab === "live-bookings" ? (
           <LiveBookingsTab />
         ) : activeTab === "enquiries" ? (

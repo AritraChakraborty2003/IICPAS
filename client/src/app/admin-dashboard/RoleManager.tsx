@@ -7,6 +7,7 @@ const allTabs = [
   "Course Category",
   "Course",
   "Live Session",
+  "Recorded Session",
   "Center",
   "Teachers",
   "Students",

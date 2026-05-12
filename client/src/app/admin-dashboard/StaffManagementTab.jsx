@@ -19,6 +19,7 @@ const MODULES = [
   { id: "chapter-schedule", name: "Chapter Schedule", icon: "⏰" },
   { id: "topic-schedule", name: "Topic Schedule", icon: "🕒" },
   { id: "live-session", name: "Live Session", icon: "📺" },
+  { id: "recorded-session", name: "Recorded Session", icon: "🎬" },
   { id: "live-bookings", name: "Live Bookings", icon: "🧾" },
   { id: "batch-manager", name: "Batch Manager", icon: "🗂️" },
   { id: "blogs", name: "Blogs", icon: "📝" },
