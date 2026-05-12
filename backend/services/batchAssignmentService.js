@@ -40,13 +40,38 @@ export const buildBatchSummary = (batch) => {
   };
 };
 
+const getMaxExistingBatchSequence = async (session = null) => {
+  const batches = await BatchManager.find({
+    code: { $regex: `^${BATCH_CODE_PREFIX}` },
+  })
+    .select("code")
+    .session(session)
+    .lean();
+
+  return batches.reduce((max, batch) => {
+    const numeric = Number(String(batch?.code || "").replace(BATCH_CODE_PREFIX, ""));
+    if (!Number.isFinite(numeric)) return max;
+    return Math.max(max, numeric);
+  }, 0);
+};
+
 const getNextBatchSequence = async (session = null) => {
-  const result = await BatchSequence.findOneAndUpdate(
+  const maxExistingSequence = await getMaxExistingBatchSequence(session);
+  await BatchSequence.findOneAndUpdate(
     { key: GLOBAL_BATCH_SEQUENCE_KEY },
     {
-      $inc: { value: 1 },
-      $setOnInsert: { key: GLOBAL_BATCH_SEQUENCE_KEY, value: 0 },
+      $setOnInsert: {
+        key: GLOBAL_BATCH_SEQUENCE_KEY,
+        value: maxExistingSequence,
+      },
+      $max: { value: maxExistingSequence },
     },
+    { new: true, upsert: true, session }
+  );
+
+  const result = await BatchSequence.findOneAndUpdate(
+    { key: GLOBAL_BATCH_SEQUENCE_KEY },
+    { $inc: { value: 1 } },
     { new: true, upsert: true, session }
   );
 
