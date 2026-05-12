@@ -242,11 +242,12 @@ export default function CourseTab() {
       }
     } catch (error) {
       console.error("Error fetching courses:", error);
-      setCourses([]);
-      setPurchasedCourses([]);
-      setAvailableCourses([]);
-      setSelectedCourse(null);
-      setLastAccessedCourse(null);
+      toast.error(
+        error?.response?.data?.error ||
+          error?.response?.data?.message ||
+          error.message ||
+          "Failed to fetch courses."
+      );
     } finally {
       setLoading(false);
     }
@@ -296,9 +297,7 @@ export default function CourseTab() {
   const isCourseLocked = (courseId) => {
     const access = purchasedCourseAccessMap.get(String(courseId)) || null;
     if (!access) return false;
-    return Boolean(
-      access.isLocked || String(access.status || "").toLowerCase() === "inactive"
-    );
+    return Boolean(access.isLocked);
   };
 
   // Handle Buy Now functionality

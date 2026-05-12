@@ -172,6 +172,21 @@ function StudentDashboardContent() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    const accessDenied = searchParams.get("accessDenied");
+    if (accessDenied !== "locked") return;
+
+    toast.error("This course is locked by the admin.");
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.delete("accessDenied");
+    if (!nextParams.get("tab")) {
+      nextParams.set("tab", "courses");
+    }
+
+    router.replace(`/student-dashboard?${nextParams.toString()}`);
+  }, [router, searchParams]);
+
   // Student auth check
   useEffect(() => {
     const fetchStudent = async () => {

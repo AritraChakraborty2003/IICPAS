@@ -123,6 +123,14 @@ interface CourseBookingRecord {
   }>;
 }
 
+interface CourseAccessRecord {
+  _id?: string;
+  courseId?: string | { _id?: string } | null;
+  slug?: string;
+  isLocked?: boolean;
+  status?: string;
+}
+
 // Add Google Translate types
 declare global {
   interface Window {
@@ -649,6 +657,7 @@ export default function DigitalHubClient({
   const API_BASE = getApiBase();
   const API_ORIGIN = API_BASE.replace(/\/api\/?$/i, "");
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
+  const blockedCourseRedirectedRef = useRef(false);
 
   const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
   const [hamburgerOpen, setHamburgerOpen] = useState(false);
@@ -882,6 +891,13 @@ export default function DigitalHubClient({
   >([]);
   const [studentCourseBookingsLoaded, setStudentCourseBookingsLoaded] =
     useState(false);
+  const [studentPurchasedCourses, setStudentPurchasedCourses] = useState<
+    CourseAccessRecord[]
+  >([]);
+  const [studentPurchasedCoursesLoaded, setStudentPurchasedCoursesLoaded] =
+    useState(false);
+  const [studentPurchasedCoursesLoadFailed, setStudentPurchasedCoursesLoadFailed] =
+    useState(false);
   const [progressMutationKey, setProgressMutationKey] = useState<string | null>(
     null
   );
@@ -1036,6 +1052,27 @@ export default function DigitalHubClient({
     resolvedCourseId,
     studentRegisteredAt
   );
+  const activePurchasedCourseRecord = useMemo(() => {
+    if (!resolvedCourseId) return null;
+
+    return (
+      studentPurchasedCourses.find((course) => {
+        const candidateIds = [
+          toIdString(course?._id),
+          toIdString(course?.courseId),
+        ].filter(Boolean);
+        return candidateIds.some(
+          (candidate) => String(candidate) === String(resolvedCourseId)
+        );
+      }) || null
+    );
+  }, [resolvedCourseId, studentPurchasedCourses]);
+  const isCourseAccessBlocked = Boolean(
+    activePurchasedCourseRecord?.isLocked ||
+      String(activePurchasedCourseRecord?.status || "").toLowerCase() ===
+        "inactive"
+  );
+  const hasStudentCourseAccess = Boolean(activePurchasedCourseRecord);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -1917,6 +1954,38 @@ export default function DigitalHubClient({
     resolveCourseId();
   }, [API_BASE, effectiveCourseSlugOrId]);
 
+  useEffect(() => {
+    if (isDemo || !authResolved || !studentId || !resolvedCourseId) {
+      blockedCourseRedirectedRef.current = false;
+      return;
+    }
+
+    if (!studentPurchasedCoursesLoaded) return;
+
+    if (
+      !studentPurchasedCoursesLoadFailed &&
+      (!hasStudentCourseAccess || isCourseAccessBlocked)
+    ) {
+      if (blockedCourseRedirectedRef.current) return;
+      blockedCourseRedirectedRef.current = true;
+      setLoading(false);
+      setToastMessage("This course is locked by the admin.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      router.replace("/student-dashboard?tab=courses&accessDenied=locked");
+    }
+  }, [
+    authResolved,
+    hasStudentCourseAccess,
+    isCourseAccessBlocked,
+    isDemo,
+    resolvedCourseId,
+    router,
+    studentId,
+    studentPurchasedCoursesLoaded,
+    studentPurchasedCoursesLoadFailed,
+  ]);
+
   // Fetch course data using resolved id first, falling back to slug
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -1925,7 +1994,9 @@ export default function DigitalHubClient({
       if (
         !chapterCourseIdentifier ||
         (!isDemo && !authResolved) ||
-        (!isDemo && studentId && !studentCourseBookingsLoaded)
+        (!isDemo &&
+          studentId &&
+          (!studentCourseBookingsLoaded || !studentPurchasedCoursesLoaded))
       ) {
         if (!chapterCourseIdentifier || (!isDemo && !authResolved)) {
           setLoading(false);
@@ -2031,6 +2102,7 @@ export default function DigitalHubClient({
     API_BASE,
     studentId,
     studentCourseBookingsLoaded,
+    studentPurchasedCoursesLoaded,
     applyProgressSummary,
     loadLastSelection,
     selectChapterContent,
@@ -2267,6 +2339,51 @@ export default function DigitalHubClient({
 
     setStudentCourseBookingsLoaded(false);
     fetchStudentCourseBookings();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_BASE, authResolved, isDemo, studentId]);
+
+  useEffect(() => {
+    if (!authResolved) return;
+
+    if (isDemo || !studentId) {
+      setStudentPurchasedCourses([]);
+      setStudentPurchasedCoursesLoaded(true);
+      setStudentPurchasedCoursesLoadFailed(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchStudentPurchasedCourses = async () => {
+      try {
+        const response = await axios.get(
+          `${API_BASE}/api/courses/student-courses/${studentId}`,
+          {
+            withCredentials: true,
+          }
+        );
+        if (cancelled) return;
+        setStudentPurchasedCourses(
+          extractCourseList(response.data) as CourseAccessRecord[]
+        );
+        setStudentPurchasedCoursesLoadFailed(false);
+      } catch {
+        if (!cancelled) {
+          setStudentPurchasedCourses([]);
+          setStudentPurchasedCoursesLoadFailed(true);
+        }
+      } finally {
+        if (!cancelled) {
+          setStudentPurchasedCoursesLoaded(true);
+        }
+      }
+    };
+
+    setStudentPurchasedCoursesLoaded(false);
+    fetchStudentPurchasedCourses();
 
     return () => {
       cancelled = true;
