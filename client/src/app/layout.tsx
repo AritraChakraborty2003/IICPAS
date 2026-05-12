@@ -8,6 +8,7 @@ import GoogleAnalytics from "@/components/GoogleAnalytics";
 import DeferredGlobalWidgets from "@/components/DeferredGlobalWidgets";
 import ScrollToTopOnNavigation from "@/components/ScrollToTopOnNavigation";
 import AuthRouteMarker from "@/components/AuthRouteMarker";
+import HomepageWhatsAppGate from "@/components/HomepageWhatsAppGate";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -38,6 +39,7 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <ScrollToTopOnNavigation />
           </Suspense>
+          <HomepageWhatsAppGate />
           {children}
           <DeferredGlobalWidgets />
         </AuthProvider>

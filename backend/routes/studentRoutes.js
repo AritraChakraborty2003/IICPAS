@@ -82,6 +82,10 @@ const transporter = nodemailer.createTransport({
 const registrationOtpStore = new Map();
 const REGISTRATION_OTP_TTL_MS = 10 * 60 * 1000;
 const REGISTRATION_WHATSAPP_TEMPLATE_NAME = "otp_template";
+const HOMEPAGE_GATE_OTP_TTL_MS = 10 * 60 * 1000;
+const HOMEPAGE_GATE_RESEND_COOLDOWN_MS = 30 * 1000;
+const HOMEPAGE_GATE_WHATSAPP_TEMPLATE_NAME = "otp_template";
+const homepageGateOtpStore = new Map();
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
 const normalizePhone = (value) => normalizeWhatsAppRecipient(value);
@@ -103,6 +107,52 @@ const getRegistrationOtpEntry = (email) => {
     return null;
   }
   return entry;
+};
+
+const getHomepageGateOtpEntry = (phone) => {
+  const entry = homepageGateOtpStore.get(phone);
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    homepageGateOtpStore.delete(phone);
+    return null;
+  }
+  return entry;
+};
+
+const sendHomepageGateOtp = async (phone) => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  homepageGateOtpStore.set(phone, {
+    otp,
+    expiresAt: Date.now() + HOMEPAGE_GATE_OTP_TTL_MS,
+    lastSentAt: Date.now(),
+  });
+
+  await sendWhatsAppTemplateMessage({
+    to: phone,
+    templateName: HOMEPAGE_GATE_WHATSAPP_TEMPLATE_NAME,
+    components: [
+      {
+        type: "body",
+        parameters: [
+          {
+            type: "text",
+            text: otp,
+          },
+        ],
+      },
+      {
+        type: "button",
+        sub_type: "url",
+        index: "0",
+        parameters: [
+          {
+            type: "text",
+            text: otp,
+          },
+        ],
+      },
+    ],
+  });
 };
 
 const ensureAuthorizedStudent = (req, res) => {
@@ -250,6 +300,60 @@ router.post("/register/send-otp", async (req, res) => {
     console.error("Error sending registration OTP email:", err);
     res.status(500).json({ message: "Failed to send WhatsApp OTP" });
   }
+});
+
+router.post("/homepage-gate/send-otp", async (req, res) => {
+  const phone = normalizePhone(req.body.phone);
+
+  if (!phone) {
+    return res.status(400).json({ message: "Phone number is required" });
+  }
+
+  try {
+    if (!isWhatsAppConfigured()) {
+      return res.status(503).json({ message: "WhatsApp OTP is not configured" });
+    }
+
+    const existing = getHomepageGateOtpEntry(phone);
+    if (existing && Date.now() - existing.lastSentAt < HOMEPAGE_GATE_RESEND_COOLDOWN_MS) {
+      return res.status(429).json({
+        message: "Please wait before requesting another OTP",
+      });
+    }
+
+    await sendHomepageGateOtp(phone);
+
+    res.json({ message: "WhatsApp OTP sent" });
+  } catch (err) {
+    homepageGateOtpStore.delete(phone);
+    console.error("Error sending homepage gate OTP:", err);
+    res.status(500).json({ message: "Failed to send WhatsApp OTP" });
+  }
+});
+
+router.post("/homepage-gate/verify-otp", async (req, res) => {
+  const phone = normalizePhone(req.body.phone);
+  const submittedOtp = String(req.body.otp || "").trim();
+
+  if (!phone) {
+    return res.status(400).json({ message: "Phone number is required" });
+  }
+
+  if (!submittedOtp) {
+    return res.status(400).json({ message: "OTP is required" });
+  }
+
+  const entry = getHomepageGateOtpEntry(phone);
+  if (!entry || entry.otp !== submittedOtp) {
+    return res.status(400).json({ message: "OTP invalid or expired" });
+  }
+
+  homepageGateOtpStore.delete(phone);
+
+  res.json({
+    message: "Verification successful",
+    verified: true,
+  });
 });
 
 router.post("/register", async (req, res) => {
