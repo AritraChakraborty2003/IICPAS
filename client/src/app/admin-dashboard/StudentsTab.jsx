@@ -852,6 +852,7 @@ function StudentsTable({
         'Phone': student.phone || '',
         'Location': student.location || '',
         'Center': student.center || '',
+        'Batch': student.batchCode || student.batchId?.code || '',
         'Payment Status': getPaymentStatus(student),
         'Status': student.mode || 'Not specified',
         'Courses': student.course && student.course.length > 0 
@@ -876,6 +877,7 @@ function StudentsTable({
         { wch: 15 },  // Phone
         { wch: 20 },  // Location
         { wch: 20 },  // Center
+        { wch: 16 },  // Batch
         { wch: 12 },  // Status
         { wch: 40 },  // Courses
         { wch: 20 },  // Live Sessions
@@ -977,6 +979,9 @@ function StudentsTable({
                   Location
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Batch
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Payment
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1022,6 +1027,15 @@ function StudentsTable({
                         <div className="text-xs text-gray-500">{student.center}</div>
                       )}
                     </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {student.batchCode || student.batchId?.code ? (
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 border border-emerald-200">
+                        {student.batchCode || student.batchId?.code}
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-500">Not assigned</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
@@ -1492,6 +1506,12 @@ function StudentDetailsView({
           <div className="bg-gray-50 rounded-lg p-4">
             <p className="text-xs text-gray-500">Center</p>
             <p className="text-sm font-semibold text-gray-900">{student.center || "N/A"}</p>
+          </div>
+          <div className="bg-emerald-50 rounded-lg p-4">
+            <p className="text-xs text-emerald-600">Batch</p>
+            <p className="text-sm font-semibold text-emerald-800">
+              {student.batchCode || student.batchId?.code || "Not assigned"}
+            </p>
           </div>
           <div className="bg-indigo-50 rounded-lg p-4">
             <p className="text-xs text-indigo-600">Overall Completion</p>
