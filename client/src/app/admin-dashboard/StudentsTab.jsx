@@ -228,6 +228,151 @@ const mergeStudentCourseAccess = (student, courseId, override = {}) => {
   };
 };
 
+const getPendingCourseAccessOverride = (studentId, courseId, pendingStore) => {
+  const studentKey = String(studentId || "");
+  const courseKey = String(courseId || "");
+  const studentOverrides = pendingStore?.get(studentKey);
+  if (!studentKey || !courseKey || !studentOverrides?.has(courseKey)) return null;
+  return studentOverrides.get(courseKey);
+};
+
+const setPendingCourseAccessOverride = (pendingStore, studentId, courseId, override) => {
+  const studentKey = String(studentId || "");
+  const courseKey = String(courseId || "");
+  if (!studentKey || !courseKey || !override) return;
+
+  let studentOverrides = pendingStore.get(studentKey);
+  if (!studentOverrides) {
+    studentOverrides = new Map();
+    pendingStore.set(studentKey, studentOverrides);
+  }
+
+  studentOverrides.set(courseKey, {
+    ...override,
+    courseId: courseKey,
+  });
+};
+
+const clearPendingCourseAccessOverride = (pendingStore, studentId, courseId) => {
+  const studentKey = String(studentId || "");
+  const courseKey = String(courseId || "");
+  const studentOverrides = pendingStore.get(studentKey);
+  if (!studentKey || !courseKey || !studentOverrides) return;
+
+  studentOverrides.delete(courseKey);
+  if (studentOverrides.size === 0) {
+    pendingStore.delete(studentKey);
+  }
+};
+
+const reconcileStudentWithPendingCourseAccess = (student, pendingStore) => {
+  if (!student || !pendingStore?.size) {
+    return { student, remaining: new Map() };
+  }
+
+  const studentKey = String(student._id || "");
+  const studentOverrides = pendingStore.get(studentKey);
+  if (!studentKey || !studentOverrides?.size) {
+    return { student, remaining: new Map() };
+  }
+
+  let nextStudent = student;
+  const remaining = new Map();
+
+  studentOverrides.forEach((override, courseId) => {
+    const currentCourse = Array.isArray(nextStudent.course)
+      ? nextStudent.course.find((course) => String(getCourseId(course)) === String(courseId))
+      : null;
+
+    if (currentCourse && currentCourse.isLocked === override.isLocked) {
+      return;
+    }
+
+    nextStudent = mergeStudentCourseAccess(nextStudent, courseId, override);
+    remaining.set(String(courseId), override);
+  });
+
+  return { student: nextStudent, remaining };
+};
+
+const reconcileStudentsWithPendingCourseAccess = (students, pendingStore) => {
+  const nextPending = new Map();
+
+  const nextStudents = (Array.isArray(students) ? students : []).map((student) => {
+    const { student: reconciledStudent, remaining } = reconcileStudentWithPendingCourseAccess(
+      student,
+      pendingStore
+    );
+
+    if (remaining.size > 0) {
+      nextPending.set(String(student._id), remaining);
+    }
+
+    return reconciledStudent;
+  });
+
+  (pendingStore instanceof Map ? pendingStore : new Map()).forEach((studentOverrides, studentId) => {
+    if (nextPending.has(String(studentId))) return;
+    if (studentOverrides?.size > 0) {
+      nextPending.set(String(studentId), new Map(studentOverrides));
+    }
+  });
+
+  return { students: nextStudents, pending: nextPending };
+};
+
+const reconcileOverviewWithPendingCourseAccess = (data, pendingStore) => {
+  if (!data || !(pendingStore instanceof Map) || pendingStore.size === 0) {
+    return { data, pending: pendingStore instanceof Map ? new Map(pendingStore) : new Map() };
+  }
+
+  const studentKey = String(data?.student?._id || "");
+  const studentOverrides = pendingStore.get(studentKey);
+  if (!studentKey || !studentOverrides?.size) {
+    return { data, pending: new Map(pendingStore) };
+  }
+
+  let nextData = data;
+  const remaining = new Map();
+
+  studentOverrides.forEach((override, courseId) => {
+    const courseInOverview = Array.isArray(nextData.courses)
+      ? nextData.courses.find(
+          (course) => String(course?.courseId || course?._id) === String(courseId)
+        )
+      : null;
+
+    if (courseInOverview && courseInOverview.isLocked === override.isLocked) {
+      return;
+    }
+
+    nextData = {
+      ...nextData,
+      student: nextData.student
+        ? mergeStudentCourseAccess(nextData.student, courseId, override)
+        : nextData.student,
+      courses: Array.isArray(nextData.courses)
+        ? nextData.courses.map((course) => {
+            const currentCourseId = course?.courseId || course?._id;
+            return String(currentCourseId) === String(courseId)
+              ? mergeCourseAccessUpdate(course, override)
+              : course;
+          })
+        : nextData.courses,
+    };
+    remaining.set(String(courseId), override);
+  });
+
+  const nextPending = new Map(pendingStore);
+  if (remaining.size > 0) {
+    nextPending.set(studentKey, remaining);
+  } else {
+    nextPending.delete(studentKey);
+  }
+
+  return { data: nextData, pending: nextPending };
+};
+
 const initialState = {
   name: "",
   email: "",
@@ -566,6 +711,7 @@ function StudentsTable({
   onStudentUpdated,
   onViewStudent,
   onCourseAccessUpdated,
+  onQueueCourseAccessUpdate,
   errorMessage = "",
 }) {
   const [editingStudent, setEditingStudent] = useState(null);
@@ -665,9 +811,10 @@ function StudentsTable({
 
       toast.success(response.data?.message || "Course access updated");
       if (response.data?.override) {
+        onQueueCourseAccessUpdate?.(student._id, courseId, response.data.override);
         onCourseAccessUpdated?.(student._id, courseId, response.data.override);
       }
-      await onStudentUpdated?.();
+      onStudentUpdated?.();
     } catch (error) {
       console.error("Error updating course access:", error);
       toast.error(
@@ -1107,7 +1254,13 @@ function StudentsTable({
   );
 }
 
-function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
+function StudentDetailsView({
+  studentId,
+  onBack,
+  onCourseAccessUpdated,
+  onQueueCourseAccessUpdate,
+  pendingCourseAccessOverridesRef,
+}) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -1126,7 +1279,14 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           }
         );
-        setData(response.data || null);
+        const reconciled = reconcileOverviewWithPendingCourseAccess(
+          response.data || null,
+          pendingCourseAccessOverridesRef?.current || new Map()
+        );
+        if (pendingCourseAccessOverridesRef?.current) {
+          pendingCourseAccessOverridesRef.current = reconciled.pending;
+        }
+        setData(reconciled.data || null);
         setErrorMessage("");
       } catch (error) {
         console.error("Error fetching student details:", error);
@@ -1183,6 +1343,7 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
 
       toast.success(response.data?.message || "Course access updated");
       if (response.data?.override) {
+        onQueueCourseAccessUpdate?.(studentId, courseId, response.data.override);
         onCourseAccessUpdated?.(studentId, courseId, response.data.override);
         setData((current) =>
           current
@@ -1214,7 +1375,14 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           }
         );
-        setData(refreshed.data || null);
+        const reconciled = reconcileOverviewWithPendingCourseAccess(
+          refreshed.data || null,
+          pendingCourseAccessOverridesRef?.current || new Map()
+        );
+        if (pendingCourseAccessOverridesRef?.current) {
+          pendingCourseAccessOverridesRef.current = reconciled.pending;
+        }
+        setData(reconciled.data || null);
       } catch (refreshError) {
         console.error("Error refreshing student details:", refreshError);
         toast.error(
@@ -2407,6 +2575,7 @@ export default function StudentsTab() {
   const [activeTab, setActiveTab] = useState("add"); // "add", "list", "details", "access", or "profile"
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const hasLoadedStudentsRef = useRef(false);
+  const pendingCourseAccessOverridesRef = useRef(new Map());
 
   const refreshStudents = useCallback(async ({ background = false } = {}) => {
     const shouldShowLoader = !background && !hasLoadedStudentsRef.current;
@@ -2416,7 +2585,12 @@ export default function StudentsTab() {
       }
       setStudentsError("");
       const response = await axios.get(`${API_BASE}/v1/students`);
-      setStudents(extractStudents(response.data));
+      const reconciled = reconcileStudentsWithPendingCourseAccess(
+        extractStudents(response.data),
+        pendingCourseAccessOverridesRef.current
+      );
+      pendingCourseAccessOverridesRef.current = reconciled.pending;
+      setStudents(reconciled.students);
       hasLoadedStudentsRef.current = true;
     } catch (err) {
       console.error("Error fetching students:", err);
@@ -2443,6 +2617,15 @@ export default function StudentsTab() {
   const handleStudentsUpdated = async () => {
     await refreshStudents({ background: true });
   };
+
+  const queueCourseAccessUpdate = useCallback((studentId, courseId, override) => {
+    setPendingCourseAccessOverride(
+      pendingCourseAccessOverridesRef.current,
+      studentId,
+      courseId,
+      override
+    );
+  }, []);
 
   const applyCourseAccessUpdate = useCallback((studentId, courseId, override) => {
     if (!studentId || !courseId || !override) return;
@@ -2546,6 +2729,7 @@ export default function StudentsTab() {
                 onStudentUpdated={handleStudentsUpdated}
                 onViewStudent={handleViewStudent}
                 onCourseAccessUpdated={applyCourseAccessUpdate}
+                onQueueCourseAccessUpdate={queueCourseAccessUpdate}
                 errorMessage={studentsError}
               />
             ))}
@@ -2555,6 +2739,8 @@ export default function StudentsTab() {
               studentId={selectedStudentId}
               onBack={handleGoBack}
               onCourseAccessUpdated={applyCourseAccessUpdate}
+              onQueueCourseAccessUpdate={queueCourseAccessUpdate}
+              pendingCourseAccessOverridesRef={pendingCourseAccessOverridesRef}
             />
           )}
           {activeTab === "access" &&
