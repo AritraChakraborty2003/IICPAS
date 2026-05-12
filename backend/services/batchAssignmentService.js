@@ -57,16 +57,33 @@ const getMaxExistingBatchSequence = async (session = null) => {
 
 const getNextBatchSequence = async (session = null) => {
   const maxExistingSequence = await getMaxExistingBatchSequence(session);
-  await BatchSequence.findOneAndUpdate(
-    { key: GLOBAL_BATCH_SEQUENCE_KEY },
-    {
-      $setOnInsert: {
-        key: GLOBAL_BATCH_SEQUENCE_KEY,
-        value: maxExistingSequence,
+
+  try {
+    await BatchSequence.updateOne(
+      { key: GLOBAL_BATCH_SEQUENCE_KEY },
+      {
+        $setOnInsert: {
+          key: GLOBAL_BATCH_SEQUENCE_KEY,
+          value: 0,
+        },
       },
-      $max: { value: maxExistingSequence },
+      { upsert: true, session }
+    );
+  } catch (error) {
+    if (error?.code !== 11000) {
+      throw error;
+    }
+  }
+
+  await BatchSequence.updateOne(
+    {
+      key: GLOBAL_BATCH_SEQUENCE_KEY,
+      value: { $lt: maxExistingSequence },
     },
-    { new: true, upsert: true, session }
+    {
+      $set: { value: maxExistingSequence },
+    },
+    { session }
   );
 
   const result = await BatchSequence.findOneAndUpdate(
