@@ -389,7 +389,7 @@ router.get("/", async (req, res) => {
       .populate("course", "title")
       .populate("enrolledLiveSessions", "title")
       .populate("enrolledRecordedSessions", "title")
-      .select("-password -otp -otpExpiry")
+      .select("-password -otp -otpExpiry courseAccessOverrides")
       .sort({ createdAt: -1 })
       .lean();
 
@@ -576,6 +576,13 @@ router.put(
         override: {
           ...(override?.toObject ? override.toObject() : override),
           isLocked: normalizedLocked,
+        },
+        student: {
+          id: student._id,
+          name: student.name,
+          courseAccessOverrides: Array.isArray(student.courseAccessOverrides)
+            ? student.courseAccessOverrides
+            : [],
         },
       });
     } catch (error) {

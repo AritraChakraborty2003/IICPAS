@@ -90,12 +90,19 @@ const buildOverrideIndex = (student) => {
     const courseId = toIdString(entry?.courseId);
     if (!courseId) return acc;
 
+    const legacyLockedValue =
+      entry?.isLocked ?? entry?.locked ?? entry?.is_locked ?? false;
+    const isLocked =
+      typeof legacyLockedValue === "boolean"
+        ? legacyLockedValue
+        : String(legacyLockedValue).trim().toLowerCase() === "true";
+
     const purchasedAt = toValidDate(entry?.purchasedAt);
     const expiresAt = toValidDate(entry?.expiresAt);
 
     acc.set(courseId, {
       courseId,
-      isLocked: Boolean(entry?.isLocked),
+      isLocked,
       purchasedAt,
       expiresAt,
       updatedAt: toValidDate(entry?.updatedAt),

@@ -106,6 +106,33 @@ const getCourseId = (course) =>
 const getCourseTitle = (course) =>
   course?.title || course?.name || (typeof course === "string" ? course : "Untitled Course");
 
+const getCourseAccessState = (course) => {
+  const isLocked = Boolean(course?.isLocked);
+  const isExpired = Boolean(course?.isExpired);
+
+  return {
+    isLocked,
+    isExpired,
+    status: isLocked || isExpired ? "Inactive" : "Active",
+  };
+};
+
+const mergeCourseAccessUpdate = (course, override = {}) => {
+  const nextIsLocked = Boolean(override?.isLocked);
+  const nextIsExpired =
+    typeof override?.isExpired === "boolean"
+      ? override.isExpired
+      : Boolean(course?.isExpired);
+
+  return {
+    ...course,
+    ...override,
+    isLocked: nextIsLocked,
+    isExpired: nextIsExpired,
+    status: nextIsLocked || nextIsExpired ? "Inactive" : "Active",
+  };
+};
+
 const initialState = {
   name: "",
   email: "",
@@ -443,7 +470,12 @@ function AddStudentForm({ onSuccess }) {
   );
 }
 
-function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
+function StudentsTable({
+  students,
+  onStudentUpdated,
+  onViewStudent,
+  onCourseAccessUpdated,
+}) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
@@ -533,6 +565,9 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
       );
 
       toast.success(response.data?.message || "Course access updated");
+      if (response.data?.override) {
+        onCourseAccessUpdated?.(student._id, courseId, response.data.override);
+      }
       onStudentUpdated?.();
     } catch (error) {
       console.error("Error updating course access:", error);
@@ -782,8 +817,9 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
                         <div className="space-y-2 min-w-[360px]">
                           {student.course.map((course, index) => {
                             const courseId = getCourseId(course) || `${student._id}-${index}`;
-                            const isLocked = Boolean(course?.isLocked);
-                            const statusLabel = course?.status || (isLocked ? "Inactive" : "Active");
+                            const accessState = getCourseAccessState(course);
+                            const isLocked = accessState.isLocked;
+                            const statusLabel = accessState.status;
                             const isUpdating = updatingCourseId === `${student._id}:${courseId}`;
 
                             return (
@@ -967,7 +1003,7 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
   );
 }
 
-function StudentDetailsView({ studentId, onBack }) {
+function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
   const [updatingCourseId, setUpdatingCourseId] = useState(null);
@@ -1039,6 +1075,21 @@ function StudentDetailsView({ studentId, onBack }) {
       );
 
       toast.success(response.data?.message || "Course access updated");
+      if (response.data?.override) {
+        onCourseAccessUpdated?.(studentId, courseId, response.data.override);
+        setData((current) => {
+          if (!current?.courses) return current;
+          return {
+            ...current,
+            courses: current.courses.map((item) => {
+              const itemCourseId = item.courseId || item._id;
+              return String(itemCourseId) === String(courseId)
+                ? mergeCourseAccessUpdate(item, response.data.override)
+                : item;
+            }),
+          };
+        });
+      }
       const refreshed = await axios.get(
         `${API_BASE}/v1/students/admin/${studentId}/overview`,
         {
@@ -1186,8 +1237,9 @@ function StudentDetailsView({ studentId, onBack }) {
           <div className="space-y-3">
             {courses.map((course) => {
               const courseId = course.courseId || course._id;
-              const isLocked = Boolean(course.isLocked);
-              const statusLabel = course.status || (isLocked ? "Inactive" : "Active");
+              const accessState = getCourseAccessState(course);
+              const isLocked = accessState.isLocked;
+              const statusLabel = accessState.status;
               const isExpired = Boolean(course.isExpired);
 
               return (
@@ -2257,6 +2309,33 @@ export default function StudentsTab() {
     await refreshStudents();
   };
 
+  const applyCourseAccessUpdate = useCallback((studentId, courseId, override) => {
+    if (!studentId || !courseId || !override) return;
+
+    setStudents((currentStudents) =>
+      currentStudents.map((student) => {
+        if (String(student._id) !== String(studentId)) {
+          return student;
+        }
+
+        const nextCourses = Array.isArray(student.course)
+          ? student.course.map((course) => {
+              const currentCourseId = getCourseId(course);
+              if (String(currentCourseId) !== String(courseId)) {
+                return course;
+              }
+              return mergeCourseAccessUpdate(course, override);
+            })
+          : student.course;
+
+        return {
+          ...student,
+          course: nextCourses,
+        };
+      })
+    );
+  }, []);
+
   const handleViewStudent = (student) => {
     setSelectedStudentId(student?._id || null);
     setActiveTab("details");
@@ -2345,6 +2424,7 @@ export default function StudentsTab() {
                 students={students}
                 onStudentUpdated={handleStudentsUpdated}
                 onViewStudent={handleViewStudent}
+                onCourseAccessUpdated={applyCourseAccessUpdate}
               />
             ))}
           {activeTab === "details" && selectedStudentId && (
@@ -2352,6 +2432,7 @@ export default function StudentsTab() {
               key="studentdetailsview"
               studentId={selectedStudentId}
               onBack={handleGoBack}
+              onCourseAccessUpdated={applyCourseAccessUpdate}
             />
           )}
           {activeTab === "access" &&
