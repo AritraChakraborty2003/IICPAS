@@ -94,6 +94,18 @@ const Label = ({ htmlFor, floating, active, className = "", children }) => (
 
 const getWhatsAppLink = (phone) => `https://wa.me/${phone.replace(/\D/g, "")}`;
 
+const formatDisplayDate = (value) => {
+  if (!value) return "N/A";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "N/A" : parsed.toLocaleDateString("en-IN");
+};
+
+const getCourseId = (course) =>
+  course?.courseId || course?._id || course?.id || (typeof course === "string" ? course : "");
+
+const getCourseTitle = (course) =>
+  course?.title || course?.name || (typeof course === "string" ? course : "Untitled Course");
+
 const initialState = {
   name: "",
   email: "",
@@ -435,6 +447,7 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
+  const [updatingCourseId, setUpdatingCourseId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all"); // "all", "paid", "unpaid"
 
@@ -501,6 +514,35 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
         });
         toast.error(`Failed to delete student: ${error.response?.data?.message || error.message}`);
       }
+    }
+  };
+
+  const handleToggleCourseAccess = async (student, course) => {
+    const courseId = getCourseId(course);
+    if (!student?._id || !courseId) return;
+
+    try {
+      setUpdatingCourseId(`${student._id}:${courseId}`);
+      const token = localStorage.getItem("adminToken");
+      const response = await axios.put(
+        `${API_BASE}/v1/students/admin/course-access/${student._id}/${courseId}`,
+        { locked: !Boolean(course?.isLocked) },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      toast.success(response.data?.message || "Course access updated");
+      if (onStudentUpdated) onStudentUpdated();
+    } catch (error) {
+      console.error("Error updating course access:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update course access"
+      );
+    } finally {
+      setUpdatingCourseId(null);
     }
   };
 
@@ -734,20 +776,80 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
                       {student.mode || 'Not specified'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 align-top">
                     <div className="text-sm text-gray-900">
                       {student.course && student.course.length > 0 ? (
-                        <div className="space-y-1">
-                          {student.course.slice(0, 2).map((course, index) => (
-                            <div key={index} className="text-xs bg-indigo-100 text-indigo-800 px-2 py-1 rounded">
-                              {course.title || course}
-                            </div>
-                          ))}
-                          {student.course.length > 2 && (
-                            <div className="text-xs text-gray-500">
-                              +{student.course.length - 2} more
-                            </div>
-                          )}
+                        <div className="space-y-2 min-w-[360px]">
+                          {student.course.map((course, index) => {
+                            const courseId = getCourseId(course) || `${student._id}-${index}`;
+                            const isLocked = Boolean(course?.isLocked);
+                            const statusLabel = course?.status || (isLocked ? "Inactive" : "Active");
+                            const isUpdating = updatingCourseId === `${student._id}:${courseId}`;
+
+                            return (
+                              <div
+                                key={courseId}
+                                className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-2"
+                              >
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="truncate text-sm font-semibold text-gray-900">
+                                      {getCourseTitle(course)}
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-gray-600">
+                                      <span>
+                                        <span className="font-medium text-gray-700">Purchased:</span>{" "}
+                                        {formatDisplayDate(course?.purchasedAt)}
+                                      </span>
+                                      <span className="hidden sm:inline text-gray-300">|</span>
+                                      <span>
+                                        <span className="font-medium text-gray-700">Expiry:</span>{" "}
+                                        {formatDisplayDate(course?.expiresAt)}
+                                      </span>
+                                      <span
+                                        className={`inline-flex px-2 py-0.5 rounded-full font-semibold ${
+                                          statusLabel === "Active"
+                                            ? "bg-green-100 text-green-700"
+                                            : "bg-red-100 text-red-700"
+                                        }`}
+                                      >
+                                        {statusLabel}
+                                      </span>
+                                    </div>
+                                  </div>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleCourseAccess(student, course)}
+                                    disabled={isUpdating}
+                                    title={isLocked ? "Unlock course" : "Lock course"}
+                                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
+                                      isLocked
+                                        ? "bg-gray-900 text-white hover:bg-gray-800"
+                                        : "bg-indigo-600 text-white hover:bg-indigo-700"
+                                    } disabled:opacity-60 disabled:cursor-not-allowed`}
+                                  >
+                                    {isUpdating ? (
+                                      <>
+                                        <Loader2 size={14} className="animate-spin" />
+                                        Updating...
+                                      </>
+                                    ) : isLocked ? (
+                                      <>
+                                        <Lock size={14} />
+                                        Unlock
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Unlock size={14} />
+                                        Lock
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : (
                         <span className="text-gray-500">No courses</span>

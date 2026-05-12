@@ -106,6 +106,19 @@ const objectIdEquals = (left, right) => {
   return String(left) === String(right);
 };
 
+const groupByStudentId = (records = []) =>
+  records.reduce((acc, record) => {
+    const studentId = String(record?.studentId || "");
+    if (!studentId) return acc;
+
+    if (!acc.has(studentId)) {
+      acc.set(studentId, []);
+    }
+
+    acc.get(studentId).push(record);
+    return acc;
+  }, new Map());
+
 const getDefaultCourseExpiry = (purchasedAt = new Date()) => {
   const date = purchasedAt instanceof Date ? new Date(purchasedAt) : new Date();
   date.setFullYear(date.getFullYear() + 1);
@@ -362,12 +375,44 @@ router.get("/", async (req, res) => {
       .populate("enrolledLiveSessions", "title")
       .populate("enrolledRecordedSessions", "title")
       .select("-password -otp -otpExpiry")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!students.length) {
+      return res.json({
+        message: "Students retrieved successfully",
+        students: [],
+        count: 0,
+      });
+    }
+
+    const studentIds = students.map((student) => student._id);
+    const [bookings, transactions] = await Promise.all([
+      CourseBooking.find({ studentId: { $in: studentIds } })
+        .select("studentId courseId itemType paymentVerifiedAt payments updatedAt createdAt")
+        .lean(),
+      Transaction.find({ studentId: { $in: studentIds } })
+        .select("studentId courseId status verifiedAt updatedAt createdAt")
+        .lean(),
+    ]);
+
+    const bookingsByStudent = groupByStudentId(bookings);
+    const transactionsByStudent = groupByStudentId(transactions);
+
+    const studentsWithCourseAccess = students.map((student) => ({
+      ...student,
+      course: buildCourseAccessEntries({
+        student,
+        courses: Array.isArray(student.course) ? student.course : [],
+        bookings: bookingsByStudent.get(String(student._id)) || [],
+        transactions: transactionsByStudent.get(String(student._id)) || [],
+      }),
+    }));
 
     res.json({
       message: "Students retrieved successfully",
-      students,
-      count: students.length,
+      students: studentsWithCourseAccess,
+      count: studentsWithCourseAccess.length,
     });
   } catch (err) {
     console.error("Error fetching students:", err);
