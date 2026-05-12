@@ -37,6 +37,7 @@ import {
 import {
   buildBatchSummary,
   normalizeBatchMode,
+  releaseBatchSeat,
   reserveBatchSeat,
 } from "../services/batchAssignmentService.js";
 import {
@@ -376,7 +377,7 @@ router.post("/register", async (req, res) => {
 
   try {
     const normalizedName = String(name || "").trim();
-    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedEmail = normalizeEmail(email);
     const normalizedPhone = String(phone || "").trim();
     const normalizedWhatsAppPhone = normalizeWhatsAppRecipient(normalizedPhone);
     const resolvedBatchMode = normalizeBatchMode(mode, "online");
@@ -384,6 +385,12 @@ router.post("/register", async (req, res) => {
     if (!normalizedName || !normalizedEmail || !normalizedPhone || !password) {
       return res.status(400).json({
         message: "Name, email, phone, and password are required",
+      });
+    }
+
+    if (!normalizedWhatsAppPhone) {
+      return res.status(400).json({
+        message: "Please enter a valid WhatsApp mobile number",
       });
     }
 
@@ -402,7 +409,6 @@ router.post("/register", async (req, res) => {
     if (!storedOtp || storedOtp.otp !== submittedOtp) {
       return res.status(400).json({ message: "OTP invalid or expired" });
     }
-    registrationOtpStore.delete(normalizedWhatsAppPhone);
 
     const normalizedReferralCode = normalizeReferralCode(rawReferralCode);
     let referrer = null;
@@ -446,6 +452,7 @@ router.post("/register", async (req, res) => {
       });
 
       await student.save();
+      registrationOtpStore.delete(normalizedWhatsAppPhone);
     } catch (saveError) {
       if (assignedBatch?._id) {
         try {
@@ -463,6 +470,7 @@ router.post("/register", async (req, res) => {
 
       if (saveError?.code === 11000) {
         return res.status(400).json({
+          message: "Email or phone already exists",
           error: "Register failed",
           details: "Email or phone already exists",
         });
@@ -533,14 +541,26 @@ router.post("/register", async (req, res) => {
       welcomeWhatsAppSent,
     });
   } catch (err) {
+    console.error("Student registration failed:", {
+      message: err?.message,
+      email: normalizeEmail(email),
+      phone: normalizePhone(phone),
+      stack: err?.stack,
+    });
+
     if (err?.code === 11000) {
       return res.status(400).json({
+        message: "Email or phone already exists",
         error: "Register failed",
         details: "Email or phone already exists",
       });
     }
 
-    res.status(500).json({ error: "Register failed", details: err.message });
+    res.status(500).json({
+      message: err?.message || "Register failed",
+      error: "Register failed",
+      details: err?.message || "Register failed",
+    });
   }
 });
 

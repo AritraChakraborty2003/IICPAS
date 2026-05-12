@@ -121,23 +121,44 @@ export default function StudentRegisterForm() {
         },
         { withCredentials: true }
       );
-      await axios.post(
-        `${API}/api/v1/students/login`,
-        { email, password },
-        { withCredentials: true }
-      );
       toast.success("Registration successful!", {
         style: {
           zIndex: 9999,
         },
       });
-      window.location.href = "/student-dashboard";
+
+      try {
+        await axios.post(
+          `${API}/api/v1/students/login`,
+          { email, password },
+          { withCredentials: true }
+        );
+        window.location.href = "/student-dashboard";
+      } catch (loginErr: any) {
+        toast.success(
+          loginErr?.response?.data?.message
+            ? `Registered successfully. ${loginErr.response.data.message}`
+            : "Registered successfully. Please log in to continue.",
+          {
+            style: {
+              zIndex: 9999,
+            },
+          }
+        );
+        window.location.href = "/login";
+      }
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Registration failed", {
+      toast.error(
+        err?.response?.data?.message ||
+          err?.response?.data?.details ||
+          err?.response?.data?.error ||
+          "Registration failed",
+        {
         style: {
           zIndex: 9999,
         },
-      });
+      }
+      );
     }
   };
 
