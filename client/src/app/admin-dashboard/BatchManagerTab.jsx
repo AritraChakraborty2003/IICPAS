@@ -24,7 +24,7 @@ const MODE_OPTIONS = [
 
 const emptyForm = {
   mode: "online",
-  size: 10,
+  size: 100,
 };
 
 export default function BatchManagerTab() {
@@ -63,7 +63,7 @@ export default function BatchManagerTab() {
     setEditingBatch(batch);
     setForm({
       mode: batch.mode || "online",
-      size: Number(batch.size) || 10,
+      size: Number(batch.size) || 100,
     });
     setModalOpen(true);
   };
@@ -109,7 +109,9 @@ export default function BatchManagerTab() {
 
   const handleDelete = async (batch) => {
     const confirmDelete = window.confirm(
-      `Delete ${String(batch.mode || "").toUpperCase()} batch of size ${batch.size}?`
+      `Delete ${batch.code || "this"} batch (${String(batch.mode || "").toUpperCase()}) with ${Number(
+        batch.assignedCount || 0
+      )}/${Number(batch.size || 0)} students?`
     );
     if (!confirmDelete) return;
 
@@ -145,8 +147,9 @@ export default function BatchManagerTab() {
             Manage online and offline batches
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600">
-            Add, edit, and remove batches with a mode and size selector. These
-            records are stored in the backend and available after reload.
+            Add, edit, and remove batches with generated codes, occupancy tracking,
+            and a numeric size field. These records are stored in the backend and
+            available after reload.
           </p>
         </div>
 
@@ -175,7 +178,13 @@ export default function BatchManagerTab() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Code
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                     Mode
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
+                    Occupancy
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">
                     Size
@@ -192,6 +201,11 @@ export default function BatchManagerTab() {
                 {batches.map((batch) => (
                   <tr key={batch._id} className="bg-white">
                     <td className="px-6 py-4">
+                      <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">
+                        {batch.code || "N/A"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
                       <span
                         className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
                           batch.mode === "online"
@@ -201,6 +215,22 @@ export default function BatchManagerTab() {
                       >
                         {String(batch.mode || "").toUpperCase()}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-xs font-medium text-gray-500">
+                          <span>
+                            {Number(batch.assignedCount || 0)} / {Number(batch.size || 0)}
+                          </span>
+                          <span>{Number(batch.occupancyPercent || 0)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-gray-100">
+                          <div
+                            className="h-2 rounded-full bg-emerald-500 transition-all"
+                            style={{ width: `${Number(batch.occupancyPercent || 0)}%` }}
+                          />
+                        </div>
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-sm font-semibold text-gray-900">
                       {batch.size}
@@ -259,11 +289,25 @@ export default function BatchManagerTab() {
                 {editingBatch ? "Edit Batch" : "Add Batch"}
               </h3>
               <p className="mt-1 text-sm text-gray-600">
-                Choose the batch mode and size.
+                Choose the batch mode and size. The batch code is generated automatically.
               </p>
             </div>
 
             <form onSubmit={handleSave} className="space-y-5 px-6 py-6">
+              {editingBatch?.code ? (
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Batch Code
+                  </label>
+                  <input
+                    type="text"
+                    value={editingBatch.code}
+                    readOnly
+                    className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 outline-none"
+                  />
+                </div>
+              ) : null}
+
               <div>
                 <label className="mb-2 block text-sm font-semibold text-gray-700">
                   Mode
@@ -300,7 +344,10 @@ export default function BatchManagerTab() {
                   }
                   placeholder="Enter batch size"
                   className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                />
+                  />
+                <p className="mt-2 text-xs text-gray-500">
+                  Enter any positive number. This controls how many students can be assigned to the batch.
+                </p>
               </div>
 
               <div className="flex flex-col gap-3 pt-2 sm:flex-row">

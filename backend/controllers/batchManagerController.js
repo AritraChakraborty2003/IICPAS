@@ -1,21 +1,38 @@
 import BatchManager from "../models/BatchManager.js";
+import {
+  buildBatchSummary,
+  generateNextBatchCode,
+  normalizeBatchMode,
+  normalizeBatchSize,
+} from "../services/batchAssignmentService.js";
 
-const normalizeMode = (value) => {
-  const normalized = String(value || "").trim().toLowerCase();
-  if (normalized === "online" || normalized === "offline") return normalized;
-  return null;
-};
+const backfillMissingBatchMetadata = async () => {
+  const batchesWithMissingCode = await BatchManager.find({
+    $or: [
+      { code: { $exists: false } },
+      { code: null },
+      { code: "" },
+    ],
+  }).sort({ createdAt: 1 });
 
-const normalizeSize = (value) => {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 1) return null;
-  return Math.trunc(parsed);
+  for (const batch of batchesWithMissingCode) {
+    batch.code = await generateNextBatchCode();
+    if (!Number.isFinite(Number(batch.assignedCount)) || Number(batch.assignedCount) < 0) {
+      batch.assignedCount = 0;
+    }
+    await batch.save();
+  }
 };
 
 export const getBatchManagerEntries = async (req, res) => {
   try {
+    await backfillMissingBatchMetadata();
     const batches = await BatchManager.getBatches();
-    return res.status(200).json({ success: true, batches });
+
+    return res.status(200).json({
+      success: true,
+      batches: batches.map((batch) => buildBatchSummary(batch)),
+    });
   } catch (error) {
     console.error("Error fetching batch entries:", error);
     return res.status(500).json({
@@ -28,8 +45,8 @@ export const getBatchManagerEntries = async (req, res) => {
 
 export const createBatchManagerEntry = async (req, res) => {
   try {
-    const mode = normalizeMode(req.body.mode);
-    const size = normalizeSize(req.body.size);
+    const mode = normalizeBatchMode(req.body.mode);
+    const size = normalizeBatchSize(req.body.size);
 
     if (!mode || !size) {
       return res.status(400).json({
@@ -38,12 +55,17 @@ export const createBatchManagerEntry = async (req, res) => {
       });
     }
 
-    const batch = await BatchManager.create({ mode, size });
+    const batch = await BatchManager.create({
+      code: await generateNextBatchCode(),
+      mode,
+      size,
+      assignedCount: 0,
+    });
 
     return res.status(201).json({
       success: true,
       message: "Batch created successfully",
-      batch,
+      batch: buildBatchSummary(batch),
     });
   } catch (error) {
     console.error("Error creating batch:", error);
@@ -57,8 +79,8 @@ export const createBatchManagerEntry = async (req, res) => {
 
 export const updateBatchManagerEntry = async (req, res) => {
   try {
-    const mode = normalizeMode(req.body.mode);
-    const size = normalizeSize(req.body.size);
+    const mode = normalizeBatchMode(req.body.mode);
+    const size = normalizeBatchSize(req.body.size);
 
     if (!mode || !size) {
       return res.status(400).json({
@@ -75,14 +97,25 @@ export const updateBatchManagerEntry = async (req, res) => {
       });
     }
 
+    const assignedCount = Number(batch.assignedCount || 0);
+    if (size < assignedCount) {
+      return res.status(400).json({
+        success: false,
+        message: "Size cannot be smaller than the current assigned count",
+      });
+    }
+
     batch.mode = mode;
     batch.size = size;
+    if (!batch.code) {
+      batch.code = await generateNextBatchCode();
+    }
     await batch.save();
 
     return res.status(200).json({
       success: true,
       message: "Batch updated successfully",
-      batch,
+      batch: buildBatchSummary(batch),
     });
   } catch (error) {
     console.error("Error updating batch:", error);
@@ -96,13 +129,22 @@ export const updateBatchManagerEntry = async (req, res) => {
 
 export const deleteBatchManagerEntry = async (req, res) => {
   try {
-    const batch = await BatchManager.findByIdAndDelete(req.params.id);
+    const batch = await BatchManager.findById(req.params.id);
     if (!batch) {
       return res.status(404).json({
         success: false,
         message: "Batch not found",
       });
     }
+
+    if (Number(batch.assignedCount || 0) > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot delete a batch that already has assigned students",
+      });
+    }
+
+    await batch.deleteOne();
 
     return res.status(200).json({
       success: true,

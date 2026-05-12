@@ -17,6 +17,18 @@ const StudentSchema = new mongoose.Schema(
     },
     location: { type: String },
     center: { type: String },
+    batchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BatchManager",
+      default: null,
+    },
+    batchCode: { type: String, default: null, trim: true },
+    batchMode: {
+      type: String,
+      enum: ["online", "offline"],
+      default: null,
+    },
+    batchAssignedAt: { type: Date, default: null },
 
     receipts: [
       {

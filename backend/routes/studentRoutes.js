@@ -35,6 +35,11 @@ import {
   normalizeReferralCode,
 } from "../services/referralService.js";
 import {
+  buildBatchSummary,
+  normalizeBatchMode,
+  reserveBatchSeat,
+} from "../services/batchAssignmentService.js";
+import {
   getDigitalHubCourseProgress,
   markDigitalHubCompletion,
 } from "../services/digitalHubProgressService.js";
@@ -374,6 +379,7 @@ router.post("/register", async (req, res) => {
     const normalizedEmail = String(email || "").trim().toLowerCase();
     const normalizedPhone = String(phone || "").trim();
     const normalizedWhatsAppPhone = normalizeWhatsAppRecipient(normalizedPhone);
+    const resolvedBatchMode = normalizeBatchMode(mode, "online");
 
     if (!normalizedName || !normalizedEmail || !normalizedPhone || !password) {
       return res.status(400).json({
@@ -414,18 +420,41 @@ router.post("/register", async (req, res) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const student = new Student({
-      name: normalizedName,
-      email: normalizedEmail,
-      phone: normalizedWhatsAppPhone || normalizedPhone,
-      password: hashed,
-      mode,
-      location,
-      center,
-      referralCode: await generateUniqueReferralCode(normalizedName || normalizedEmail),
-      referredBy: referrer?._id || null,
-    });
-    await student.save();
+    const session = await mongoose.startSession();
+    let student = null;
+    let assignedBatch = null;
+
+    try {
+      await session.withTransaction(async () => {
+        const batchAllocation = await reserveBatchSeat({
+          mode: resolvedBatchMode,
+          session,
+        });
+        assignedBatch = batchAllocation?.batch || null;
+
+        student = new Student({
+          name: normalizedName,
+          email: normalizedEmail,
+          phone: normalizedWhatsAppPhone || normalizedPhone,
+          password: hashed,
+          mode: mode || resolvedBatchMode,
+          location,
+          center,
+          batchId: assignedBatch?._id || null,
+          batchCode: assignedBatch?.code || null,
+          batchMode: assignedBatch?.mode || resolvedBatchMode || null,
+          batchAssignedAt: assignedBatch ? new Date() : null,
+          referralCode: await generateUniqueReferralCode(
+            normalizedName || normalizedEmail
+          ),
+          referredBy: referrer?._id || null,
+        });
+
+        await student.save({ session });
+      });
+    } finally {
+      await session.endSession();
+    }
 
     if (referrer?._id) {
       const settings = await getCoinSettings();
@@ -479,11 +508,19 @@ router.post("/register", async (req, res) => {
     res.status(201).json({
       message: "Registered",
       student: sanitizeStudentResponse(student),
+      batch: buildBatchSummary(assignedBatch),
       referralApplied: Boolean(referrer),
       welcomeEmailSent,
       welcomeWhatsAppSent,
     });
   } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(400).json({
+        error: "Register failed",
+        details: "Email or phone already exists",
+      });
+    }
+
     res.status(500).json({ error: "Register failed", details: err.message });
   }
 });
@@ -495,8 +532,9 @@ router.get("/", async (req, res) => {
       .populate("course", "title")
       .populate("enrolledLiveSessions", "title")
       .populate("enrolledRecordedSessions", "title")
+      .populate("batchId", "code mode size assignedCount")
       .select(
-        "name email phone mode location center status course enrolledLiveSessions enrolledRecordedSessions digitalHubAccessOverride courseAccessOverrides receipts createdAt updatedAt"
+        "name email phone mode location center status batchId batchCode batchMode batchAssignedAt course enrolledLiveSessions enrolledRecordedSessions digitalHubAccessOverride courseAccessOverrides receipts createdAt updatedAt"
       )
       .sort({ createdAt: -1 })
       .lean();
@@ -561,8 +599,9 @@ router.get(
 
       const student = await Student.findById(id)
         .populate("course", "title")
+        .populate("batchId", "code mode size assignedCount")
         .select(
-          "name email phone mode location center status course courseAccessOverrides receipts createdAt updatedAt"
+          "name email phone mode location center status batchId batchCode batchMode batchAssignedAt course courseAccessOverrides receipts createdAt updatedAt"
         )
         .lean();
 
