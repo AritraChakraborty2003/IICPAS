@@ -66,6 +66,57 @@ const resolveObjectId = (value) => {
   return "";
 };
 
+const getSelectValues = (event) =>
+  Array.from(event.target.selectedOptions || [])
+    .map((option) => option.value)
+    .filter(Boolean);
+
+const getRelationLabel = (value) => {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "object") {
+    return (
+      value.title ||
+      value.name ||
+      value.code ||
+      value.slug ||
+      value.label ||
+      value._id ||
+      ""
+    );
+  }
+  return "";
+};
+
+const getRelationLabels = (value, fallback = "Unassigned") => {
+  const list = Array.isArray(value)
+    ? value
+    : value
+      ? [value]
+      : [];
+
+  const labels = list.map(getRelationLabel).filter(Boolean);
+  return labels.length ? labels : [fallback];
+};
+
+const getLabelsFromIds = (ids, options, fallback = "Unassigned") => {
+  const normalizedIds = Array.isArray(ids) ? ids : ids ? [ids] : [];
+  const labels = normalizedIds
+    .map((id) => options.find((option) => String(option?._id) === String(id)))
+    .map((option) => getRelationLabel(option))
+    .filter(Boolean);
+
+  return labels.length ? labels : [fallback];
+};
+
+const normalizeSelectionIds = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(resolveObjectId).filter(Boolean);
+  }
+  const resolved = resolveObjectId(value);
+  return resolved ? [resolved] : [];
+};
+
 export default function RecordedSessionAdmin() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -82,8 +133,8 @@ export default function RecordedSessionAdmin() {
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    courseId: "",
-    chapterId: "",
+    courseIds: [],
+    chapterIds: [],
     batchId: "",
   });
 
@@ -165,27 +216,59 @@ export default function RecordedSessionAdmin() {
     }
   };
 
-  const fetchChaptersForCourse = async (courseId) => {
-    if (!courseId) {
+  const fetchChaptersForCourses = async (courseIds = []) => {
+    const normalizedCourseIds = Array.from(
+      new Set(normalizeSelectionIds(courseIds))
+    );
+
+    if (!normalizedCourseIds.length) {
       setChapters([]);
-      return;
+      return [];
     }
 
     try {
       setLoadingChapters(true);
       const token = localStorage.getItem("adminToken");
-      if (!token) return;
+      if (!token) return [];
 
-      const res = await fetch(`${API}/api/chapters/course/${courseId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const responses = await Promise.all(
+        normalizedCourseIds.map(async (courseId) => {
+          const res = await fetch(`${API}/api/chapters/course/${courseId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (!res.ok) {
+            return [];
+          }
+
+          const data = await res.json();
+          return Array.isArray(data?.chapters) ? data.chapters : [];
+        })
+      );
+
+      const mergedChapters = [];
+      const seenIds = new Set();
+
+      responses.flat().forEach((chapter) => {
+        const chapterId = resolveObjectId(chapter);
+        if (!chapterId || seenIds.has(chapterId)) return;
+        seenIds.add(chapterId);
+        mergedChapters.push(chapter);
       });
 
-      if (!res.ok) return;
-      const data = await res.json();
-      setChapters(Array.isArray(data) ? data : []);
+      mergedChapters.sort((left, right) => {
+        const leftOrder = Number(left?.order ?? 0);
+        const rightOrder = Number(right?.order ?? 0);
+        if (leftOrder !== rightOrder) return leftOrder - rightOrder;
+        return String(left?.title || "").localeCompare(String(right?.title || ""));
+      });
+
+      setChapters(mergedChapters);
+      return mergedChapters;
     } catch (err) {
       console.error("Failed to fetch chapters:", err);
       setChapters([]);
+      return [];
     } finally {
       setLoadingChapters(false);
     }
@@ -208,38 +291,71 @@ export default function RecordedSessionAdmin() {
   }, [sessions]);
 
   const openEditModal = async (session) => {
-    const nextCourseId = resolveObjectId(session?.courseId);
-    const nextChapterId = resolveObjectId(session?.chapterId);
+    setError("");
+    const nextCourseIds = normalizeSelectionIds(
+      Array.isArray(session?.courseIds) && session.courseIds.length
+        ? session.courseIds
+        : session?.courseId
+    );
+    const nextChapterIds = normalizeSelectionIds(
+      Array.isArray(session?.chapterIds) && session.chapterIds.length
+        ? session.chapterIds
+        : session?.chapterId
+    );
     const nextBatchId = resolveObjectId(session?.batchId);
 
     setEditingSession(session);
     setForm({
-      courseId: nextCourseId,
-      chapterId: nextChapterId,
+      courseIds: nextCourseIds,
+      chapterIds: nextChapterIds,
       batchId: nextBatchId,
     });
     setEditOpen(true);
-    await fetchChaptersForCourse(nextCourseId);
+    const loadedChapters = await fetchChaptersForCourses(nextCourseIds);
+    const loadedChapterIds = new Set(
+      loadedChapters.map((chapter) => resolveObjectId(chapter))
+    );
+    setForm((current) => ({
+      ...current,
+      chapterIds: current.chapterIds.filter((chapterId) =>
+        loadedChapterIds.has(String(chapterId))
+      ),
+    }));
   };
 
   const closeEditModal = () => {
+    setError("");
     setEditOpen(false);
     setEditingSession(null);
     setForm({
-      courseId: "",
-      chapterId: "",
+      courseIds: [],
+      chapterIds: [],
       batchId: "",
     });
     setChapters([]);
   };
 
-  const handleCourseChange = async (courseId) => {
+  const handleCourseChange = async (courseIds) => {
+    const nextCourseIds = Array.from(new Set(courseIds.filter(Boolean)));
+    const loadedChapters = await fetchChaptersForCourses(nextCourseIds);
+    const loadedChapterIds = new Set(
+      loadedChapters.map((chapter) => resolveObjectId(chapter))
+    );
+
     setForm((current) => ({
       ...current,
-      courseId,
-      chapterId: "",
+      courseIds: nextCourseIds,
+      chapterIds: current.chapterIds.filter((chapterId) =>
+        loadedChapterIds.has(String(chapterId))
+      ),
     }));
-    await fetchChaptersForCourse(courseId);
+  };
+
+  const handleChapterChange = (chapterIds) => {
+    setForm((current) => ({
+      ...current,
+      chapterIds: Array.from(new Set(chapterIds.filter(Boolean))),
+    }));
   };
 
   const handleSave = async (event) => {
@@ -255,8 +371,10 @@ export default function RecordedSessionAdmin() {
       }
 
       const payload = {
-        courseId: form.courseId || "",
-        chapterId: form.chapterId || "",
+        courseIds: form.courseIds || [],
+        chapterIds: form.chapterIds || [],
+        courseId: form.courseIds?.[0] || "",
+        chapterId: form.chapterIds?.[0] || "",
         batchId: form.batchId || "",
       };
 
@@ -285,6 +403,22 @@ export default function RecordedSessionAdmin() {
 
   const sessionBatchLabel = (session) =>
     session?.batchCode || session?.batchId?.code || "Not assigned";
+
+  const sessionCourseLabels = (session) =>
+    getRelationLabels(
+      Array.isArray(session?.courseIds) && session.courseIds.length
+        ? session.courseIds
+        : session?.courseId,
+      "Unassigned"
+    );
+
+  const sessionChapterLabels = (session) =>
+    getRelationLabels(
+      Array.isArray(session?.chapterIds) && session.chapterIds.length
+        ? session.chapterIds
+        : session?.chapterId,
+      "Unassigned"
+    );
 
   return (
     <div className="space-y-6">
@@ -343,8 +477,8 @@ export default function RecordedSessionAdmin() {
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">Title</th>
                   <th className="px-6 py-4">Instructor</th>
-                  <th className="px-6 py-4">Course</th>
-                  <th className="px-6 py-4">Chapter</th>
+                  <th className="px-6 py-4">Courses</th>
+                  <th className="px-6 py-4">Chapters</th>
                   <th className="px-6 py-4">Batch</th>
                   <th className="px-6 py-4">Completed Date</th>
                   <th className="px-6 py-4">Time</th>
@@ -374,10 +508,28 @@ export default function RecordedSessionAdmin() {
                         {session?.instructor || "Not specified"}
                       </td>
                       <td className="px-6 py-5 align-top">
-                        {session?.courseId?.title || "Unassigned"}
+                        <div className="flex flex-wrap gap-2">
+                          {sessionCourseLabels(session).map((label) => (
+                            <span
+                              key={`${session._id}-course-${label}`}
+                              className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-6 py-5 align-top">
-                        {session?.chapterId?.title || "Unassigned"}
+                        <div className="flex flex-wrap gap-2">
+                          {sessionChapterLabels(session).map((label) => (
+                            <span
+                              key={`${session._id}-chapter-${label}`}
+                              className="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"
+                            >
+                              {label}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                       <td className="px-6 py-5 align-top">
                         <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
@@ -461,52 +613,55 @@ export default function RecordedSessionAdmin() {
               <div className="grid gap-5 md:grid-cols-2">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Course
+                    Courses
                   </label>
                   <select
-                    value={form.courseId}
-                    onChange={(e) => handleCourseChange(e.target.value)}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400"
+                    multiple
+                    value={form.courseIds}
+                    disabled={loadingCourses}
+                    onChange={(e) => handleCourseChange(getSelectValues(e))}
+                    className="min-h-[140px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400"
                   >
-                    <option value="">
-                      {loadingCourses ? "Loading courses..." : "Select course"}
-                    </option>
                     {courses.map((course) => (
                       <option key={course._id} value={course._id}>
                         {course.title || course.name || course.slug || course._id}
                       </option>
                     ))}
                   </select>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Hold Ctrl on Windows or Command on Mac to select multiple courses.
+                  </p>
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
-                    Chapter
+                    Chapters
                   </label>
                   <select
-                    value={form.chapterId}
-                    onChange={(e) =>
-                      setForm((current) => ({
-                        ...current,
-                        chapterId: e.target.value,
-                      }))
-                    }
-                    disabled={!form.courseId || loadingChapters}
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition disabled:bg-slate-50 focus:border-emerald-400"
+                    multiple
+                    value={form.chapterIds}
+                    onChange={(e) => handleChapterChange(getSelectValues(e))}
+                    disabled={!form.courseIds.length || loadingChapters}
+                    className="min-h-[140px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition disabled:bg-slate-50 focus:border-emerald-400"
                   >
-                    <option value="">
-                      {!form.courseId
-                        ? "Choose a course first"
-                        : loadingChapters
-                        ? "Loading chapters..."
-                        : "Select chapter"}
-                    </option>
+                    {!form.courseIds.length ? (
+                      <option value="" disabled>
+                        Choose one or more courses first
+                      </option>
+                    ) : loadingChapters ? (
+                      <option value="" disabled>
+                        Loading chapters...
+                      </option>
+                    ) : null}
                     {chapters.map((chapter) => (
                       <option key={chapter._id} value={chapter._id}>
                         {chapter.title || chapter.name || chapter._id}
                       </option>
                     ))}
                   </select>
+                  <p className="mt-2 text-xs text-slate-500">
+                    Hold Ctrl on Windows or Command on Mac to select multiple chapters.
+                  </p>
                 </div>
 
                 <div className="md:col-span-2">

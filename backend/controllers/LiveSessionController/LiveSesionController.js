@@ -76,8 +76,73 @@ const normalizeOptionalId = (value) => {
   return normalized ? normalized : undefined;
 };
 
+const parseMaybeArray = (value) => {
+  if (value === null || value === undefined || value === "") return [];
+  if (Array.isArray(value)) return value;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // fall through to comma-separated / scalar handling
+    }
+
+    if (trimmed.includes(",")) {
+      return trimmed
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+
+    return [trimmed];
+  }
+
+  return [value];
+};
+
+const normalizeIdArray = (value) =>
+  Array.from(
+    new Set(
+      parseMaybeArray(value)
+        .map((item) => {
+          if (item === null || item === undefined) return "";
+          if (typeof item === "object" && item._id) {
+            return String(item._id).trim();
+          }
+          return String(item).trim();
+        })
+        .filter(Boolean)
+    )
+  );
+
+const normalizeLiveSessionResponse = (session) => {
+  const sessionObj = session?.toObject?.() || session || {};
+  const courseIds = Array.isArray(sessionObj.courseIds) && sessionObj.courseIds.length
+    ? sessionObj.courseIds
+    : sessionObj.courseId
+      ? [sessionObj.courseId]
+      : [];
+  const chapterIds = Array.isArray(sessionObj.chapterIds) && sessionObj.chapterIds.length
+    ? sessionObj.chapterIds
+    : sessionObj.chapterId
+      ? [sessionObj.chapterId]
+      : [];
+
+  return {
+    ...sessionObj,
+    courseIds,
+    chapterIds,
+  };
+};
+
 const populateLiveSession = (query) =>
   query
+    .populate("courseIds", "title slug category")
+    .populate("chapterIds", "title order")
     .populate("courseId", "title slug category")
     .populate("chapterId", "title order")
     .populate("batchId", "code mode size assignedCount")
@@ -140,50 +205,68 @@ const normalizeLandingPagePayload = (landingPage = {}, fallback = {}) => {
   };
 };
 
-const validateCourseChapterSelection = async (courseId, chapterId) => {
-  const normalizedCourseId = normalizeOptionalId(courseId);
-  const normalizedChapterId = normalizeOptionalId(chapterId);
+const validateCourseChapterSelection = async ({ courseIds = [], chapterIds = [] }) => {
+  const normalizedCourseIds = normalizeIdArray(courseIds);
+  const normalizedChapterIds = normalizeIdArray(chapterIds);
 
-  if (normalizedCourseId && !mongoose.Types.ObjectId.isValid(normalizedCourseId)) {
-    return { error: "Invalid courseId" };
+  if (!normalizedCourseIds.length && normalizedChapterIds.length) {
+    return {
+      error: "Select at least one course before choosing chapters",
+    };
   }
 
-  if (normalizedChapterId && !mongoose.Types.ObjectId.isValid(normalizedChapterId)) {
-    return { error: "Invalid chapterId" };
-  }
-
-  let courseDoc = null;
-  let chapterDoc = null;
-
-  if (normalizedCourseId) {
-    courseDoc = await Course.findById(normalizedCourseId).select("chapters title");
-    if (!courseDoc) {
-      return { error: "Selected course not found" };
+  for (const courseId of normalizedCourseIds) {
+    if (!mongoose.Types.ObjectId.isValid(courseId)) {
+      return { error: "Invalid courseId" };
     }
   }
 
-  if (normalizedChapterId) {
-    chapterDoc = await Chapter.findById(normalizedChapterId).select("title");
-    if (!chapterDoc) {
+  for (const chapterId of normalizedChapterIds) {
+    if (!mongoose.Types.ObjectId.isValid(chapterId)) {
+      return { error: "Invalid chapterId" };
+    }
+  }
+
+  const courseDocs = normalizedCourseIds.length
+    ? await Course.find({ _id: { $in: normalizedCourseIds } }).select("chapters title")
+    : [];
+
+  if (courseDocs.length !== normalizedCourseIds.length) {
+    return { error: "Selected course not found" };
+  }
+
+  if (normalizedChapterIds.length) {
+    const allowedChapterIds = new Set(
+      courseDocs.flatMap((courseDoc) =>
+        Array.isArray(courseDoc.chapters)
+          ? courseDoc.chapters.map((chapter) => String(chapter))
+          : []
+      )
+    );
+
+    const chapterDocs = await Chapter.find({
+      _id: { $in: normalizedChapterIds },
+    }).select("title");
+
+    if (chapterDocs.length !== normalizedChapterIds.length) {
       return { error: "Selected chapter not found" };
     }
-  }
 
-  if (normalizedCourseId && normalizedChapterId) {
-    const chapterMatchesCourse = Array.isArray(courseDoc?.chapters)
-      ? courseDoc.chapters.some(
-          (chapter) => String(chapter) === String(normalizedChapterId)
-        )
-      : false;
+    const invalidChapter = normalizedChapterIds.find(
+      (chapterId) => !allowedChapterIds.has(String(chapterId))
+    );
 
-    if (!chapterMatchesCourse) {
+    if (invalidChapter) {
       return {
-        error: "Selected chapter does not belong to the selected course",
+        error: "Selected chapter does not belong to the selected course(s)",
       };
     }
   }
 
-  return { courseId: normalizedCourseId, chapterId: normalizedChapterId };
+  return {
+    courseIds: normalizedCourseIds,
+    chapterIds: normalizedChapterIds,
+  };
 };
 
 const validateBatchSelection = async (batchId) => {
@@ -209,20 +292,29 @@ const validateBatchSelection = async (batchId) => {
 
 export const createLiveSession = async (req, res) => {
   try {
-    const selection = await validateCourseChapterSelection(
-      req.body.courseId,
-      req.body.chapterId
-    );
+    const selection = await validateCourseChapterSelection({
+      courseIds: Object.prototype.hasOwnProperty.call(req.body, "courseIds")
+        ? req.body.courseIds
+        : req.body.courseId,
+      chapterIds: Object.prototype.hasOwnProperty.call(req.body, "chapterIds")
+        ? req.body.chapterIds
+        : req.body.chapterId,
+    });
 
     if (selection.error) {
       return res.status(400).json({ error: selection.error });
     }
 
+    const primaryCourseId = selection.courseIds[0] || null;
+    const primaryChapterId = selection.chapterIds[0] || null;
+
     // Ensure imageUrl is set to thumbnail if not provided
     const sessionData = {
       ...req.body,
-      courseId: selection.courseId,
-      chapterId: selection.chapterId,
+      courseIds: selection.courseIds,
+      chapterIds: selection.chapterIds,
+      courseId: primaryCourseId,
+      chapterId: primaryChapterId,
       batchId: null,
       batchCode: null,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
@@ -244,12 +336,14 @@ export const createLiveSession = async (req, res) => {
 
     const session = await LiveSession.create(sessionData);
     await session.populate([
+      { path: "courseIds", select: "title slug category" },
+      { path: "chapterIds", select: "title order" },
       { path: "courseId", select: "title slug category" },
       { path: "chapterId", select: "title order" },
       { path: "batchId", select: "code mode size assignedCount" },
       { path: "enrolledStudents", select: "name email" },
     ]);
-    res.status(201).json(session);
+    res.status(201).json(normalizeLiveSessionResponse(session));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
@@ -280,7 +374,7 @@ export const getAllLiveSessions = async (req, res) => {
 
     // Transform sessions to include enrollment status for authenticated user
     const transformedSessions = sessions.map((session) => {
-      const sessionObj = session.toObject();
+      const sessionObj = normalizeLiveSessionResponse(session);
 
       // Calculate dynamic status based on date/time
       const now = new Date();
@@ -383,7 +477,7 @@ export const getLiveSessionById = async (req, res) => {
     }
     // If session is inactive in database, keep it as inactive
 
-    const sessionObj = session.toObject();
+    const sessionObj = normalizeLiveSessionResponse(session);
     const paidBookingCount = await Booking.countDocuments({
       liveSessionId: session._id,
       paymentStatus: { $in: ["paid", "free"] },
@@ -539,24 +633,43 @@ export const updateLiveSession = async (req, res) => {
     const currentSession = await LiveSession.findById(req.params.id);
     if (!currentSession) return res.status(404).json({ error: "Session not found" });
 
-    const selection = await validateCourseChapterSelection(
-      Object.prototype.hasOwnProperty.call(req.body, "courseId")
+    const currentSelectionFallback = normalizeLiveSessionResponse(currentSession);
+    const incomingCourseIds = Object.prototype.hasOwnProperty.call(
+      req.body,
+      "courseIds"
+    )
+      ? req.body.courseIds
+      : Object.prototype.hasOwnProperty.call(req.body, "courseId")
         ? req.body.courseId
-        : currentSession.courseId,
-      Object.prototype.hasOwnProperty.call(req.body, "chapterId")
+        : currentSelectionFallback.courseIds;
+    const incomingChapterIds = Object.prototype.hasOwnProperty.call(
+      req.body,
+      "chapterIds"
+    )
+      ? req.body.chapterIds
+      : Object.prototype.hasOwnProperty.call(req.body, "chapterId")
         ? req.body.chapterId
-        : currentSession.chapterId
-    );
+        : currentSelectionFallback.chapterIds;
+
+    const selection = await validateCourseChapterSelection({
+      courseIds: incomingCourseIds,
+      chapterIds: incomingChapterIds,
+    });
 
     if (selection.error) {
       return res.status(400).json({ error: selection.error });
     }
 
+    const primaryCourseId = selection.courseIds[0] || null;
+    const primaryChapterId = selection.chapterIds[0] || null;
+
     // Ensure imageUrl is set to thumbnail if not provided
     const updateData = {
       ...req.body,
-      courseId: selection.courseId,
-      chapterId: selection.chapterId,
+      courseIds: selection.courseIds,
+      chapterIds: selection.chapterIds,
+      courseId: primaryCourseId,
+      chapterId: primaryChapterId,
       batchId: currentSession.batchId || null,
       batchCode: currentSession.batchCode || null,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
@@ -635,7 +748,7 @@ export const updateLiveSession = async (req, res) => {
       LiveSession.findByIdAndUpdate(req.params.id, updateData, { new: true })
     );
     if (!session) return res.status(404).json({ error: "Session not found" });
-    res.status(200).json(session);
+    res.status(200).json(normalizeLiveSessionResponse(session));
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

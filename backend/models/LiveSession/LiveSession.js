@@ -7,6 +7,8 @@ const liveSessionSchema = new mongoose.Schema(
     instructor: { type: String, default: "" },
     instructorBio: { type: String, default: "" },
     description: { type: String, default: "" },
+    courseIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }],
+    chapterIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "Chapter" }],
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
     chapterId: { type: mongoose.Schema.Types.ObjectId, ref: "Chapter" },
     batchId: {
