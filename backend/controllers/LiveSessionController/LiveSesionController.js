@@ -4,6 +4,7 @@ import Student from "../../models/Students.js";
 import Booking from "../../models/Booking.js";
 import Course from "../../models/Content/Course.js";
 import Chapter from "../../models/Content/Chapter.js";
+import BatchManager from "../../models/BatchManager.js";
 import {
   computeReminderSendAt,
   DEFAULT_REMINDER_BATCH_DELAY_SECONDS,
@@ -79,6 +80,7 @@ const populateLiveSession = (query) =>
   query
     .populate("courseId", "title slug category")
     .populate("chapterId", "title order")
+    .populate("batchId", "code mode size assignedCount")
     .populate("enrolledStudents", "name email");
 
 const buildAuthorProfile = (profile = {}, fallback = {}) => ({
@@ -184,6 +186,27 @@ const validateCourseChapterSelection = async (courseId, chapterId) => {
   return { courseId: normalizedCourseId, chapterId: normalizedChapterId };
 };
 
+const validateBatchSelection = async (batchId) => {
+  if (batchId === null || batchId === undefined || batchId === "") {
+    return { batchId: null, batchCode: null };
+  }
+
+  const normalizedBatchId = String(batchId).trim();
+  if (!mongoose.Types.ObjectId.isValid(normalizedBatchId)) {
+    return { error: "Invalid batchId" };
+  }
+
+  const batch = await BatchManager.findById(normalizedBatchId).select("code");
+  if (!batch) {
+    return { error: "Selected batch not found" };
+  }
+
+  return {
+    batchId: batch._id,
+    batchCode: batch.code || null,
+  };
+};
+
 export const createLiveSession = async (req, res) => {
   try {
     const selection = await validateCourseChapterSelection(
@@ -200,9 +223,21 @@ export const createLiveSession = async (req, res) => {
       ...req.body,
       courseId: selection.courseId,
       chapterId: selection.chapterId,
+      batchId: null,
+      batchCode: null,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
       landingPage: normalizeLandingPagePayload(req.body.landingPage, req.body),
     };
+
+    if (Object.prototype.hasOwnProperty.call(req.body, "batchId")) {
+      const batchSelection = await validateBatchSelection(req.body.batchId);
+      if (batchSelection.error) {
+        return res.status(400).json({ error: batchSelection.error });
+      }
+
+      sessionData.batchId = batchSelection.batchId;
+      sessionData.batchCode = batchSelection.batchCode;
+    }
 
     if (!sessionData.courseId) delete sessionData.courseId;
     if (!sessionData.chapterId) delete sessionData.chapterId;
@@ -211,6 +246,7 @@ export const createLiveSession = async (req, res) => {
     await session.populate([
       { path: "courseId", select: "title slug category" },
       { path: "chapterId", select: "title order" },
+      { path: "batchId", select: "code mode size assignedCount" },
       { path: "enrolledStudents", select: "name email" },
     ]);
     res.status(201).json(session);
@@ -521,6 +557,8 @@ export const updateLiveSession = async (req, res) => {
       ...req.body,
       courseId: selection.courseId,
       chapterId: selection.chapterId,
+      batchId: currentSession.batchId || null,
+      batchCode: currentSession.batchCode || null,
       imageUrl: req.body.imageUrl || req.body.thumbnail,
       landingPage: normalizeLandingPagePayload(req.body.landingPage, {
         ...currentSession.toObject(),
@@ -530,6 +568,16 @@ export const updateLiveSession = async (req, res) => {
 
     if (!updateData.courseId) delete updateData.courseId;
     if (!updateData.chapterId) delete updateData.chapterId;
+
+    if (Object.prototype.hasOwnProperty.call(req.body, "batchId")) {
+      const batchSelection = await validateBatchSelection(req.body.batchId);
+      if (batchSelection.error) {
+        return res.status(400).json({ error: batchSelection.error });
+      }
+
+      updateData.batchId = batchSelection.batchId;
+      updateData.batchCode = batchSelection.batchCode;
+    }
 
     const incomingReminderSettings = req.body.reminderSettings || null;
     const existingReminderSettings = currentSession.reminderSettings || {};
@@ -584,11 +632,7 @@ export const updateLiveSession = async (req, res) => {
     }
 
     const session = await populateLiveSession(
-      LiveSession.findByIdAndUpdate(
-      req.params.id,
-      updateData,
-      { new: true }
-      )
+      LiveSession.findByIdAndUpdate(req.params.id, updateData, { new: true })
     );
     if (!session) return res.status(404).json({ error: "Session not found" });
     res.status(200).json(session);

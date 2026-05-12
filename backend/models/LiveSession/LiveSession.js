@@ -9,6 +9,12 @@ const liveSessionSchema = new mongoose.Schema(
     description: { type: String, default: "" },
     courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
     chapterId: { type: mongoose.Schema.Types.ObjectId, ref: "Chapter" },
+    batchId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "BatchManager",
+      default: null,
+    },
+    batchCode: { type: String, default: null, trim: true },
     time: { type: String, required: true },
     date: { type: Date, required: true },
     link: { type: String, required: true },
