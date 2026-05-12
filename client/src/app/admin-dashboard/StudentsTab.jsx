@@ -1,7 +1,7 @@
 "use client";
 import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import {
   Loader2,
@@ -107,7 +107,7 @@ const getCourseTitle = (course) =>
   course?.title || course?.name || (typeof course === "string" ? course : "Untitled Course");
 
 const getCourseAccessState = (course) => {
-  const isLocked = Boolean(course?.isLocked);
+  const isLocked = course?.isLocked === true;
   const isExpired = Boolean(course?.isExpired);
 
   return {
@@ -119,17 +119,40 @@ const getCourseAccessState = (course) => {
 
 const getFetchErrorMessage = (error, fallbackMessage) => {
   const status = error?.response?.status;
-  const message =
+  const responseMessage =
     error?.response?.data?.message ||
     error?.response?.data?.error ||
-    error?.message ||
-    fallbackMessage;
+    "";
+  const networkFailure =
+    error?.message === "Network Error" ||
+    error?.code === "ERR_NETWORK" ||
+    !error?.response;
 
+  if (networkFailure && !status) {
+    return "Network error. Please check your connection and try again.";
+  }
+
+  if (status === 401) {
+    return `${responseMessage || "Unauthorized"} (HTTP 401)`;
+  }
+
+  if (status === 403) {
+    return `${responseMessage || "Forbidden"} (HTTP 403)`;
+  }
+
+  if (status >= 500) {
+    return `${responseMessage || "Server error"} (HTTP ${status})`;
+  }
+
+  const message = responseMessage || error?.message || fallbackMessage;
   return status ? `${message} (HTTP ${status})` : message;
 };
 
 const mergeCourseAccessUpdate = (course, override = {}) => {
-  const nextIsLocked = Boolean(override?.isLocked);
+  const nextIsLocked =
+    typeof override?.isLocked === "boolean"
+      ? override.isLocked
+      : Boolean(course?.isLocked);
   const nextIsExpired =
     typeof override?.isExpired === "boolean"
       ? override.isExpired
@@ -141,6 +164,67 @@ const mergeCourseAccessUpdate = (course, override = {}) => {
     isLocked: nextIsLocked,
     isExpired: nextIsExpired,
     status: nextIsLocked || nextIsExpired ? "Inactive" : "Active",
+  };
+};
+
+const mergeCourseAccessOverrides = (overrides, courseId, override = {}) => {
+  const normalizedCourseId = String(courseId || "");
+  if (!normalizedCourseId) return Array.isArray(overrides) ? overrides : [];
+
+  const nextOverride = {
+    ...override,
+    courseId: override?.courseId || normalizedCourseId,
+    isLocked:
+      typeof override?.isLocked === "boolean"
+        ? override.isLocked
+        : Boolean(override?.locked ?? override?.is_locked),
+  };
+
+  const existingOverrides = Array.isArray(overrides) ? overrides : [];
+  let updated = false;
+
+  const nextOverrides = existingOverrides.map((entry) => {
+    const entryCourseId = getCourseId(entry);
+    if (String(entryCourseId) !== normalizedCourseId) {
+      return entry;
+    }
+
+    updated = true;
+    return {
+      ...entry,
+      ...nextOverride,
+      courseId: entryCourseId || nextOverride.courseId,
+    };
+  });
+
+  if (!updated) {
+    nextOverrides.push(nextOverride);
+  }
+
+  return nextOverrides;
+};
+
+const mergeStudentCourseAccess = (student, courseId, override = {}) => {
+  if (!student) return student;
+
+  const nextCourses = Array.isArray(student.course)
+    ? student.course.map((course) => {
+        const currentCourseId = getCourseId(course);
+        if (String(currentCourseId) !== String(courseId)) {
+          return course;
+        }
+        return mergeCourseAccessUpdate(course, override);
+      })
+    : student.course;
+
+  return {
+    ...student,
+    course: nextCourses,
+    courseAccessOverrides: mergeCourseAccessOverrides(
+      student.courseAccessOverrides,
+      courseId,
+      override
+    ),
   };
 };
 
@@ -486,6 +570,7 @@ function StudentsTable({
   onStudentUpdated,
   onViewStudent,
   onCourseAccessUpdated,
+  errorMessage = "",
 }) {
   const [editingStudent, setEditingStudent] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -514,8 +599,15 @@ function StudentsTable({
 
   if (!students?.length)
     return (
-      <div className="text-gray-500 text-center py-12">
-        No students registered yet.
+      <div className="rounded-2xl border border-gray-200 bg-white px-6 py-12 text-center text-gray-500">
+        {errorMessage ? (
+          <div className="flex flex-col items-center gap-3 text-rose-700">
+            <AlertCircle size={24} />
+            <p className="max-w-xl">{errorMessage}</p>
+          </div>
+        ) : (
+          "No students registered yet."
+        )}
       </div>
     );
 
@@ -555,7 +647,7 @@ function StudentsTable({
           data: error.response?.data,
           studentId: student._id
         });
-        toast.error(`Failed to delete student: ${error.response?.data?.message || error.message}`);
+        toast.error(getFetchErrorMessage(error, "Failed to delete student"));
       }
     }
   };
@@ -579,13 +671,11 @@ function StudentsTable({
       if (response.data?.override) {
         onCourseAccessUpdated?.(student._id, courseId, response.data.override);
       }
-      onStudentUpdated?.();
+      await onStudentUpdated?.();
     } catch (error) {
       console.error("Error updating course access:", error);
       toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to update course access"
+        getFetchErrorMessage(error, "Failed to update course access")
       );
     } finally {
       setUpdatingCourseId(null);
@@ -616,7 +706,7 @@ function StudentsTable({
           data: error.response?.data,
           studentId: student._id
         });
-        toast.error(`Failed to ${action} student: ${error.response?.data?.message || error.message}`);
+        toast.error(getFetchErrorMessage(error, `Failed to ${action} student`));
       } finally {
         setStatusUpdatingId(null);
       }
@@ -697,6 +787,12 @@ function StudentsTable({
       className="w-full"
     >
       <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
+        {errorMessage && (
+          <div className="mb-4 flex items-start gap-3 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+            <AlertCircle size={18} className="mt-0.5 flex-shrink-0" />
+            <div>{errorMessage}</div>
+          </div>
+        )}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
@@ -870,6 +966,7 @@ function StudentsTable({
                                       type="button"
                                       role="switch"
                                       aria-checked={isLocked}
+                                      aria-label={isLocked ? "Unlock course" : "Lock course"}
                                       onClick={() => handleToggleCourseAccess(student, course)}
                                       disabled={isUpdating}
                                       title={isLocked ? "Unlock course" : "Lock course"}
@@ -1036,9 +1133,7 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
       } catch (error) {
         console.error("Error fetching student details:", error);
         toast.error(
-          error.response?.data?.message ||
-            error.message ||
-            "Failed to fetch student details"
+          getFetchErrorMessage(error, "Failed to fetch student details")
         );
         setData(null);
       } finally {
@@ -1088,32 +1183,50 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
       toast.success(response.data?.message || "Course access updated");
       if (response.data?.override) {
         onCourseAccessUpdated?.(studentId, courseId, response.data.override);
-        setData((current) => {
-          if (!current?.courses) return current;
-          return {
-            ...current,
-            courses: current.courses.map((item) => {
-              const itemCourseId = item.courseId || item._id;
-              return String(itemCourseId) === String(courseId)
-                ? mergeCourseAccessUpdate(item, response.data.override)
-                : item;
-            }),
-          };
-        });
+        setData((current) =>
+          current
+            ? {
+                ...current,
+                student: current.student
+                  ? mergeStudentCourseAccess(
+                      current.student,
+                      courseId,
+                      response.data.override
+                    )
+                  : current.student,
+                courses: Array.isArray(current.courses)
+                  ? current.courses.map((item) => {
+                      const itemCourseId = item.courseId || item._id;
+                      return String(itemCourseId) === String(courseId)
+                        ? mergeCourseAccessUpdate(item, response.data.override)
+                        : item;
+                    })
+                  : current.courses,
+              }
+            : current
+        );
       }
-      const refreshed = await axios.get(
-        `${API_BASE}/v1/students/admin/${studentId}/overview`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        }
-      );
-      setData(refreshed.data || null);
+      try {
+        const refreshed = await axios.get(
+          `${API_BASE}/v1/students/admin/${studentId}/overview`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }
+        );
+        setData(refreshed.data || null);
+      } catch (refreshError) {
+        console.error("Error refreshing student details:", refreshError);
+        toast.error(
+          getFetchErrorMessage(
+            refreshError,
+            "Course access saved, but the details refresh failed"
+          )
+        );
+      }
     } catch (error) {
       console.error("Error updating course access:", error);
       toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to update course access"
+        getFetchErrorMessage(error, "Failed to update course access")
       );
     } finally {
       setUpdatingCourseId(null);
@@ -1173,7 +1286,9 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
           <ArrowLeft size={16} />
           Back to View Students
         </button>
-        <p className="text-gray-600 mt-4">Unable to load student details.</p>
+        <p className="text-gray-600 mt-4">
+          Unable to load student details.
+        </p>
       </div>
     );
   }
@@ -1498,7 +1613,7 @@ function DigitalHubAccessTab({ students, loading, onStudentUpdated }) {
     } catch (error) {
       console.error("Error updating Digital Hub access:", error);
       toast.error(
-        error.response?.data?.message || error.message || "Failed to update Digital Hub access"
+        getFetchErrorMessage(error, "Failed to update Digital Hub access")
       );
     } finally {
       setUpdatingStudentId(null);
@@ -2289,19 +2404,30 @@ function StudentProfileManagement() {
 export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [studentsError, setStudentsError] = useState("");
   const [activeTab, setActiveTab] = useState("add"); // "add", "list", "details", "access", or "profile"
   const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const hasLoadedStudentsRef = useRef(false);
 
-  const refreshStudents = useCallback(async () => {
+  const refreshStudents = useCallback(async ({ background = false } = {}) => {
     try {
-      setLoading(true);
+      const shouldShowLoader = !background && !hasLoadedStudentsRef.current;
+      if (shouldShowLoader) {
+        setLoading(true);
+      }
+      setStudentsError("");
       const response = await axios.get(`${API_BASE}/v1/students`);
       setStudents(extractStudents(response.data));
+      hasLoadedStudentsRef.current = true;
     } catch (err) {
       console.error("Error fetching students:", err);
-      toast.error(getFetchErrorMessage(err, "Failed to fetch students"));
+      const message = getFetchErrorMessage(err, "Failed to fetch students");
+      setStudentsError(message);
+      toast.error(message);
     } finally {
-      setLoading(false);
+      if (!background && !hasLoadedStudentsRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -2316,7 +2442,7 @@ export default function StudentsTab() {
   };
 
   const handleStudentsUpdated = async () => {
-    await refreshStudents();
+    await refreshStudents({ background: true });
   };
 
   const applyCourseAccessUpdate = useCallback((studentId, courseId, override) => {
@@ -2327,21 +2453,7 @@ export default function StudentsTab() {
         if (String(student._id) !== String(studentId)) {
           return student;
         }
-
-        const nextCourses = Array.isArray(student.course)
-          ? student.course.map((course) => {
-              const currentCourseId = getCourseId(course);
-              if (String(currentCourseId) !== String(courseId)) {
-                return course;
-              }
-              return mergeCourseAccessUpdate(course, override);
-            })
-          : student.course;
-
-        return {
-          ...student,
-          course: nextCourses,
-        };
+        return mergeStudentCourseAccess(student, courseId, override);
       })
     );
   }, []);
@@ -2435,6 +2547,7 @@ export default function StudentsTab() {
                 onStudentUpdated={handleStudentsUpdated}
                 onViewStudent={handleViewStudent}
                 onCourseAccessUpdated={applyCourseAccessUpdate}
+                errorMessage={studentsError}
               />
             ))}
           {activeTab === "details" && selectedStudentId && (

@@ -28,6 +28,16 @@ const pickEarliestDate = (values = []) =>
     .filter(Boolean)
     .sort((left, right) => left.getTime() - right.getTime())[0] || null;
 
+const normalizeLockedValue = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "true" || normalized === "1" || normalized === "locked";
+  }
+  return false;
+};
+
 const getBookingPurchaseDate = (booking) => {
   if (!booking || booking.itemType !== "single_course" || !booking.courseId) {
     return null;
@@ -90,19 +100,14 @@ const buildOverrideIndex = (student) => {
     const courseId = toIdString(entry?.courseId);
     if (!courseId) return acc;
 
-    const legacyLockedValue =
-      entry?.isLocked ?? entry?.locked ?? entry?.is_locked ?? false;
-    const isLocked =
-      typeof legacyLockedValue === "boolean"
-        ? legacyLockedValue
-        : String(legacyLockedValue).trim().toLowerCase() === "true";
-
     const purchasedAt = toValidDate(entry?.purchasedAt);
     const expiresAt = toValidDate(entry?.expiresAt);
 
     acc.set(courseId, {
       courseId,
-      isLocked,
+      isLocked: normalizeLockedValue(
+        entry?.isLocked ?? entry?.locked ?? entry?.is_locked ?? false
+      ),
       purchasedAt,
       expiresAt,
       updatedAt: toValidDate(entry?.updatedAt),
@@ -110,6 +115,32 @@ const buildOverrideIndex = (student) => {
     return acc;
   }, new Map());
 };
+
+export const normalizeCourseAccessOverride = (override, fallbackCourseId = null) => {
+  if (!override && !fallbackCourseId) return null;
+
+  const source = override || {};
+  const courseId = toIdString(source?.courseId || fallbackCourseId);
+
+  return {
+    ...source,
+    courseId,
+    isLocked: normalizeLockedValue(
+      source?.isLocked ?? source?.locked ?? source?.is_locked ?? false
+    ),
+    purchasedAt: toValidDate(source?.purchasedAt),
+    expiresAt: toValidDate(source?.expiresAt),
+    updatedAt: toValidDate(source?.updatedAt),
+  };
+};
+
+export const normalizeCourseAccessOverrides = (student) =>
+  (Array.isArray(student?.courseAccessOverrides)
+    ? student.courseAccessOverrides
+    : []
+  )
+    .map((override) => normalizeCourseAccessOverride(override))
+    .filter(Boolean);
 
 export const buildCourseAccessEntries = ({
   student,

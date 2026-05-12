@@ -40,6 +40,8 @@ import {
 } from "../services/digitalHubProgressService.js";
 import {
   buildCourseAccessEntries,
+  normalizeCourseAccessOverride,
+  normalizeCourseAccessOverrides,
   upsertCourseAccessOverride,
 } from "../utils/courseAccess.js";
 import {
@@ -389,7 +391,9 @@ router.get("/", async (req, res) => {
       .populate("course", "title")
       .populate("enrolledLiveSessions", "title")
       .populate("enrolledRecordedSessions", "title")
-      .select("-password -otp -otpExpiry")
+      .select(
+        "name email phone mode location center status course digitalHubAccessOverride courseAccessOverrides receipts createdAt updatedAt -password -otp -otpExpiry"
+      )
       .sort({ createdAt: -1 })
       .lean();
 
@@ -416,6 +420,7 @@ router.get("/", async (req, res) => {
 
     const studentsWithCourseAccess = students.map((student) => ({
       ...student,
+      courseAccessOverrides: normalizeCourseAccessOverrides(student),
       course: buildCourseAccessEntries({
         student,
         courses: Array.isArray(student.course) ? student.course : [],
@@ -511,7 +516,10 @@ router.get(
 
       return res.json({
         success: true,
-        student,
+        student: {
+          ...student,
+          courseAccessOverrides: normalizeCourseAccessOverrides(student),
+        },
         courses: coursesWithCompletion,
         overallCompletionPercent,
         transactions,
@@ -567,22 +575,21 @@ router.put(
         courseId,
         isLocked: normalizedLocked,
       });
+      const normalizedOverride = normalizeCourseAccessOverride(
+        override,
+        courseId
+      );
 
       return res.json({
         success: true,
         message: normalizedLocked
           ? "Course locked successfully"
           : "Course unlocked successfully",
-        override: {
-          ...(override?.toObject ? override.toObject() : override),
-          isLocked: normalizedLocked,
-        },
+        override: normalizedOverride,
         student: {
           id: student._id,
           name: student.name,
-          courseAccessOverrides: Array.isArray(student.courseAccessOverrides)
-            ? student.courseAccessOverrides
-            : [],
+          courseAccessOverrides: normalizeCourseAccessOverrides(student),
         },
       });
     } catch (error) {
