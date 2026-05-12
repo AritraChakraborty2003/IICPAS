@@ -83,6 +83,16 @@ const REGISTRATION_WHATSAPP_TEMPLATE_NAME = "otp_template";
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
 const normalizePhone = (value) => normalizeWhatsAppRecipient(value);
+const normalizeBooleanInput = (value) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "on"].includes(normalized)) return true;
+    if (["false", "0", "no", "off", ""].includes(normalized)) return false;
+  }
+  return null;
+};
 const getRegistrationOtpEntry = (email) => {
   const entry = registrationOtpStore.get(email);
   if (!entry) return null;
@@ -526,12 +536,19 @@ router.put(
     try {
       const { studentId, courseId } = req.params;
       const { locked } = req.body || {};
+      const normalizedLocked = normalizeBooleanInput(locked);
 
       if (
         !mongoose.Types.ObjectId.isValid(studentId) ||
         !mongoose.Types.ObjectId.isValid(courseId)
       ) {
         return res.status(400).json({ message: "Invalid student or course ID" });
+      }
+
+      if (normalizedLocked === null) {
+        return res.status(400).json({
+          message: "Invalid locked value. Expected true or false.",
+        });
       }
 
       const student = await Student.findById(studentId).select(
@@ -548,15 +565,18 @@ router.put(
       const override = await upsertCourseAccessOverride({
         student,
         courseId,
-        isLocked: Boolean(locked),
+        isLocked: normalizedLocked,
       });
 
       return res.json({
         success: true,
-        message: override?.isLocked
+        message: normalizedLocked
           ? "Course locked successfully"
           : "Course unlocked successfully",
-        override,
+        override: {
+          ...(override?.toObject ? override.toObject() : override),
+          isLocked: normalizedLocked,
+        },
       });
     } catch (error) {
       console.error("Failed to update course access override:", error);
@@ -1674,9 +1694,16 @@ router.put(
     try {
       const { studentId } = req.params;
       const { unlocked } = req.body || {};
+      const normalizedUnlocked = normalizeBooleanInput(unlocked);
 
       if (!mongoose.Types.ObjectId.isValid(studentId)) {
         return res.status(400).json({ message: "Invalid student ID format" });
+      }
+
+      if (normalizedUnlocked === null) {
+        return res.status(400).json({
+          message: "Invalid unlocked value. Expected true or false.",
+        });
       }
 
       const student = await Student.findById(studentId);
@@ -1684,17 +1711,18 @@ router.put(
         return res.status(404).json({ message: "Student not found" });
       }
 
-      student.digitalHubAccessOverride = Boolean(unlocked);
+      student.digitalHubAccessOverride = normalizedUnlocked;
       await student.save();
 
       return res.json({
+        success: true,
         message: student.digitalHubAccessOverride
           ? "Digital Hub access unfrozen for this student"
           : "Digital Hub access restored to normal lock order",
         student: {
           id: student._id,
           name: student.name,
-          digitalHubAccessOverride: student.digitalHubAccessOverride,
+          digitalHubAccessOverride: Boolean(student.digitalHubAccessOverride),
         },
       });
     } catch (err) {

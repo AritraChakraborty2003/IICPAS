@@ -1,7 +1,7 @@
 "use client";
 import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import {
   Loader2,
@@ -533,7 +533,7 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
       );
 
       toast.success(response.data?.message || "Course access updated");
-      if (onStudentUpdated) onStudentUpdated();
+      onStudentUpdated?.();
     } catch (error) {
       console.error("Error updating course access:", error);
       toast.error(
@@ -561,7 +561,7 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
         toast.success(
           `${student.name} has been ${isCurrentlySuspended ? "unsuspended" : "suspended"} successfully!`
         );
-        if (onStudentUpdated) onStudentUpdated();
+        onStudentUpdated?.();
       } catch (error) {
         console.error(`Error ${action}ing student:`, error);
         console.error("Error details:", {
@@ -1431,7 +1431,7 @@ function DigitalHubAccessTab({ students, loading, onStudentUpdated }) {
           : `${student.name}'s Digital Hub access is back to normal lock order.`
       );
 
-      if (onStudentUpdated) onStudentUpdated();
+      onStudentUpdated?.();
     } catch (error) {
       console.error("Error updating Digital Hub access:", error);
       toast.error(
@@ -2230,31 +2230,31 @@ export default function StudentsTab() {
   const [activeTab, setActiveTab] = useState("add"); // "add", "list", "details", "access", or "profile"
   const [selectedStudentId, setSelectedStudentId] = useState(null);
 
+  const refreshStudents = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_BASE}/v1/students`);
+      setStudents(extractStudents(response.data));
+    } catch (err) {
+      console.error("Error fetching students:", err);
+      setStudents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === "list" || activeTab === "access") {
-      setLoading(true);
-      axios
-        .get(`${API_BASE}/v1/students`)
-        .then((res) => setStudents(extractStudents(res.data)))
-        .catch((err) => {
-          console.error("Error fetching students:", err);
-          setStudents([]);
-        })
-        .finally(() => setLoading(false));
+      refreshStudents();
     }
-  }, [activeTab]);
+  }, [activeTab, refreshStudents]);
 
   const handleStudentAdded = () => {
     setActiveTab("list");
-    setLoading(true);
-    axios
-      .get(`${API_BASE}/v1/students`)
-      .then((res) => setStudents(extractStudents(res.data)))
-      .catch((err) => {
-        console.error("Error fetching students:", err);
-        setStudents([]);
-      })
-      .finally(() => setLoading(false));
+  };
+
+  const handleStudentsUpdated = async () => {
+    await refreshStudents();
   };
 
   const handleViewStudent = (student) => {
@@ -2343,7 +2343,7 @@ export default function StudentsTab() {
               <StudentsTable
                 key="studentstable"
                 students={students}
-                onStudentUpdated={handleStudentAdded}
+                onStudentUpdated={handleStudentsUpdated}
                 onViewStudent={handleViewStudent}
               />
             ))}
@@ -2370,7 +2370,7 @@ export default function StudentsTab() {
                 key="digitalhubaccess"
                 students={students}
                 loading={loading}
-                onStudentUpdated={handleStudentAdded}
+                onStudentUpdated={handleStudentsUpdated}
               />
             ))}
           {activeTab === "profile" && (
