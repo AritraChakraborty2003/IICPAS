@@ -173,7 +173,7 @@ const mergeCourseAccessOverrides = (overrides, courseId, override = {}) => {
 
   const nextOverride = {
     ...override,
-    courseId: override?.courseId || normalizedCourseId,
+    courseId: normalizedCourseId,
     isLocked:
       typeof override?.isLocked === "boolean"
         ? override.isLocked
@@ -193,7 +193,7 @@ const mergeCourseAccessOverrides = (overrides, courseId, override = {}) => {
     return {
       ...entry,
       ...nextOverride,
-      courseId: entryCourseId || nextOverride.courseId,
+      courseId: normalizedCourseId,
     };
   });
 
@@ -305,9 +305,7 @@ function EditStudentModal({ student, isOpen, onClose, onSuccess }) {
       onClose();
     } catch (err) {
       console.error("Error updating student:", err);
-      setError(
-        err.response?.data?.message || err.message || "Something went wrong"
-      );
+      setError(getFetchErrorMessage(err, "Something went wrong"));
     } finally {
       setLoading(false);
     }
@@ -465,9 +463,7 @@ function AddStudentForm({ onSuccess }) {
       setForm(initialState);
       if (onSuccess) onSuccess(res.data.student);
     } catch (err) {
-      setError(
-        err.response?.data?.message || err.message || "Something went wrong"
-      );
+      setError(getFetchErrorMessage(err, "Something went wrong"));
     }
     setLoading(false);
   };
@@ -1114,6 +1110,7 @@ function StudentsTable({
 function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
   const [updatingCourseId, setUpdatingCourseId] = useState(null);
 
   useEffect(() => {
@@ -1130,11 +1127,15 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
           }
         );
         setData(response.data || null);
+        setErrorMessage("");
       } catch (error) {
         console.error("Error fetching student details:", error);
-        toast.error(
-          getFetchErrorMessage(error, "Failed to fetch student details")
+        const message = getFetchErrorMessage(
+          error,
+          "Failed to fetch student details"
         );
+        setErrorMessage(message);
+        toast.error(message);
         setData(null);
       } finally {
         setLoading(false);
@@ -1253,7 +1254,7 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
       toast.error(
-        error?.response?.data?.message || "Failed to download booking invoice"
+        getFetchErrorMessage(error, "Failed to download booking invoice")
       );
     }
   };
@@ -1287,7 +1288,7 @@ function StudentDetailsView({ studentId, onBack, onCourseAccessUpdated }) {
           Back to View Students
         </button>
         <p className="text-gray-600 mt-4">
-          Unable to load student details.
+          {errorMessage || "Unable to load student details."}
         </p>
       </div>
     );
@@ -1950,9 +1951,7 @@ function StudentProfileManagement() {
       fetchStudents(); // Refresh the list
     } catch (err) {
       console.error("Error updating student:", err);
-      setEditError(
-        err.response?.data?.message || err.message || "Something went wrong"
-      );
+      setEditError(getFetchErrorMessage(err, "Something went wrong"));
     } finally {
       setEditLoading(false);
     }
@@ -2410,8 +2409,8 @@ export default function StudentsTab() {
   const hasLoadedStudentsRef = useRef(false);
 
   const refreshStudents = useCallback(async ({ background = false } = {}) => {
+    const shouldShowLoader = !background && !hasLoadedStudentsRef.current;
     try {
-      const shouldShowLoader = !background && !hasLoadedStudentsRef.current;
       if (shouldShowLoader) {
         setLoading(true);
       }
@@ -2425,7 +2424,7 @@ export default function StudentsTab() {
       setStudentsError(message);
       toast.error(message);
     } finally {
-      if (!background && !hasLoadedStudentsRef.current) {
+      if (shouldShowLoader) {
         setLoading(false);
       }
     }

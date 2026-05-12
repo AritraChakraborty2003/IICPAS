@@ -392,7 +392,7 @@ router.get("/", async (req, res) => {
       .populate("enrolledLiveSessions", "title")
       .populate("enrolledRecordedSessions", "title")
       .select(
-        "name email phone mode location center status course digitalHubAccessOverride courseAccessOverrides receipts createdAt updatedAt -password -otp -otpExpiry"
+        "name email phone mode location center status course enrolledLiveSessions enrolledRecordedSessions digitalHubAccessOverride courseAccessOverrides receipts createdAt updatedAt -password -otp -otpExpiry"
       )
       .sort({ createdAt: -1 })
       .lean();
