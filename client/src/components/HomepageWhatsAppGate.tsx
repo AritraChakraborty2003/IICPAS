@@ -175,7 +175,7 @@ export default function HomepageWhatsAppGate() {
         initial={{ opacity: 0, scale: 0.95, y: 18 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
-        className="relative w-[92vw] max-w-[460px] overflow-hidden rounded-[28px] border border-white/15 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)]"
+        className="relative w-[92vw] max-w-[620px] overflow-hidden rounded-[28px] border border-white/15 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)]"
       >
         <button
           type="button"
@@ -186,7 +186,7 @@ export default function HomepageWhatsAppGate() {
           <X className="h-5 w-5" />
         </button>
 
-        <div className="bg-gradient-to-r from-[#0f2a67] via-[#2043a8] to-[#2f57d6] px-6 py-5 text-white">
+        <div className="bg-gradient-to-r from-[#0f5132] via-[#16a34a] to-[#22c55e] px-6 py-5 text-white">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">
               <ShieldCheck className="h-5 w-5" />
@@ -223,9 +223,9 @@ export default function HomepageWhatsAppGate() {
                 <button
                   type="button"
                   onClick={() => handleChooseIntent("hire")}
-                  className="group overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 text-left transition hover:-translate-y-0.5 hover:border-[#2043a8]/30 hover:shadow-lg"
+                  className="group overflow-hidden rounded-[24px] border border-emerald-100 bg-emerald-50 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
                 >
-                  <div className="flex items-center justify-between bg-[#2043a8] px-4 py-4 text-white">
+                  <div className="flex items-center justify-between bg-gradient-to-r from-[#0f5132] to-[#16a34a] px-4 py-4 text-white">
                     <div>
                       <p className="text-xs uppercase tracking-[0.24em] text-white/70">
                         Employers
@@ -240,7 +240,7 @@ export default function HomepageWhatsAppGate() {
                     <p className="text-sm leading-6 text-slate-600">
                       Find talent, post openings, and connect with candidates.
                     </p>
-                    <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#2043a8]">
+                    <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
                       Continue
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                     </span>
@@ -250,9 +250,9 @@ export default function HomepageWhatsAppGate() {
                 <button
                   type="button"
                   onClick={() => handleChooseIntent("hired")}
-                  className="group overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50 text-left transition hover:-translate-y-0.5 hover:border-[#2043a8]/30 hover:shadow-lg"
+                  className="group overflow-hidden rounded-[24px] border border-emerald-100 bg-emerald-50 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
                 >
-                  <div className="flex items-center justify-between bg-[#2f57d6] px-4 py-4 text-white">
+                  <div className="flex items-center justify-between bg-gradient-to-r from-[#16a34a] to-[#22c55e] px-4 py-4 text-white">
                     <div>
                       <p className="text-xs uppercase tracking-[0.24em] text-white/70">
                         Job seekers
@@ -267,7 +267,7 @@ export default function HomepageWhatsAppGate() {
                     <p className="text-sm leading-6 text-slate-600">
                       Explore jobs, build visibility, and get verified quickly.
                     </p>
-                    <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-[#2043a8]">
+                    <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
                       Continue
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                     </span>
@@ -282,11 +282,11 @@ export default function HomepageWhatsAppGate() {
           ) : (
             <>
               <div className="mb-5 flex items-center justify-between text-xs font-medium uppercase tracking-[0.22em] text-slate-400">
-                <span className={step === "phone" ? "text-[#2043a8]" : ""}>
+                <span className={step === "phone" ? "text-emerald-700" : ""}>
                   Phone
                 </span>
                 <span className="h-px flex-1 mx-3 bg-slate-200" />
-                <span className={step === "otp" ? "text-[#2043a8]" : ""}>
+                <span className={step === "otp" ? "text-emerald-700" : ""}>
                   OTP
                 </span>
               </div>
@@ -297,7 +297,7 @@ export default function HomepageWhatsAppGate() {
                     <label className="block text-sm font-semibold text-slate-700">
                       Phone number
                     </label>
-                    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-[#2043a8] focus-within:ring-4 focus-within:ring-[#2043a8]/10">
+                    <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
                       <Phone className="h-4 w-4 shrink-0 text-slate-400" />
                       <input
                         ref={phoneInputRef}
@@ -314,7 +314,7 @@ export default function HomepageWhatsAppGate() {
                     <button
                       type="submit"
                       disabled={!canSendOtp}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#2043a8] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#17368a] disabled:cursor-not-allowed disabled:bg-slate-300"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
                       {sendingOtp ? "Sending OTP..." : "Send WhatsApp OTP"}
                       {!sendingOtp && <ArrowRight className="h-4 w-4" />}
@@ -322,14 +322,14 @@ export default function HomepageWhatsAppGate() {
                     <button
                       type="button"
                       onClick={handleBackToChoice}
-                      className="w-full text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+                      className="w-full text-sm font-semibold text-slate-500 transition hover:text-emerald-700"
                     >
                       Back to options
                     </button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3">
                       <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
                         OTP sent to
                       </p>
@@ -341,7 +341,7 @@ export default function HomepageWhatsAppGate() {
                     <label className="block text-sm font-semibold text-slate-700">
                       Enter OTP
                     </label>
-                    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 focus-within:border-[#2043a8] focus-within:ring-4 focus-within:ring-[#2043a8]/10">
+                    <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
                       <Smartphone className="h-4 w-4 shrink-0 text-slate-400" />
                       <input
                         ref={otpInputRef}
@@ -367,7 +367,7 @@ export default function HomepageWhatsAppGate() {
                           setStep("phone");
                           setOtp("");
                         }}
-                        className="text-sm font-semibold text-[#2043a8] transition hover:text-[#17368a]"
+                        className="text-sm font-semibold text-emerald-700 transition hover:text-emerald-800"
                       >
                         Change number
                       </button>
@@ -398,7 +398,7 @@ export default function HomepageWhatsAppGate() {
                             setSendingOtp(false);
                           }
                         }}
-                        className="inline-flex items-center gap-2 text-sm font-semibold text-[#2043a8] transition hover:text-[#17368a] disabled:cursor-not-allowed disabled:text-slate-400"
+                        className="inline-flex items-center gap-2 text-sm font-semibold text-emerald-700 transition hover:text-emerald-800 disabled:cursor-not-allowed disabled:text-slate-400"
                       >
                         <RefreshCw className="h-4 w-4" />
                         {secondsLeft > 0
@@ -412,7 +412,7 @@ export default function HomepageWhatsAppGate() {
                     <button
                       type="submit"
                       disabled={!canVerifyOtp}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#2043a8] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#17368a] disabled:cursor-not-allowed disabled:bg-slate-300"
+                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
                     >
                       {verifyingOtp ? "Verifying..." : "Verify OTP"}
                       {!verifyingOtp && <ShieldCheck className="h-4 w-4" />}
@@ -420,7 +420,7 @@ export default function HomepageWhatsAppGate() {
                     <button
                       type="button"
                       onClick={handleBackToChoice}
-                      className="w-full text-sm font-semibold text-slate-500 transition hover:text-slate-700"
+                      className="w-full text-sm font-semibold text-slate-500 transition hover:text-emerald-700"
                     >
                       Back to options
                     </button>
