@@ -66,11 +66,6 @@ const resolveObjectId = (value) => {
   return "";
 };
 
-const getSelectValues = (event) =>
-  Array.from(event.target.selectedOptions || [])
-    .map((option) => option.value)
-    .filter(Boolean);
-
 const getRelationLabel = (value) => {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -351,11 +346,27 @@ export default function RecordedSessionAdmin() {
     }));
   };
 
+  const toggleCourse = async (courseId) => {
+    const nextCourseIds = form.courseIds.includes(courseId)
+      ? form.courseIds.filter((id) => id !== courseId)
+      : [...form.courseIds, courseId];
+
+    await handleCourseChange(nextCourseIds);
+  };
+
   const handleChapterChange = (chapterIds) => {
     setForm((current) => ({
       ...current,
       chapterIds: Array.from(new Set(chapterIds.filter(Boolean))),
     }));
+  };
+
+  const toggleChapter = (chapterId) => {
+    const nextChapterIds = form.chapterIds.includes(chapterId)
+      ? form.chapterIds.filter((id) => id !== chapterId)
+      : [...form.chapterIds, chapterId];
+
+    handleChapterChange(nextChapterIds);
   };
 
   const handleSave = async (event) => {
@@ -615,53 +626,90 @@ export default function RecordedSessionAdmin() {
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Courses
                   </label>
-                  <select
-                    multiple
-                    value={form.courseIds}
-                    disabled={loadingCourses}
-                    onChange={(e) => handleCourseChange(getSelectValues(e))}
-                    className="min-h-[140px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-emerald-400"
-                  >
-                    {courses.map((course) => (
-                      <option key={course._id} value={course._id}>
-                        {course.title || course.name || course.slug || course._id}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-2 text-xs text-slate-500">
-                    Hold Ctrl on Windows or Command on Mac to select multiple courses.
-                  </p>
+                  <div className="rounded-2xl border border-slate-200 bg-white">
+                    <div className="max-h-56 overflow-y-auto p-3">
+                      {loadingCourses ? (
+                        <div className="px-2 py-3 text-sm text-slate-500">
+                          Loading courses...
+                        </div>
+                      ) : courses.length ? (
+                        <div className="space-y-2">
+                          {courses.map((course) => {
+                            const courseId = resolveObjectId(course);
+                            const checked = form.courseIds.includes(courseId);
+
+                            return (
+                              <label
+                                key={courseId}
+                                className="flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2 transition hover:bg-slate-50"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleCourse(courseId)}
+                                  className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-sm text-slate-700">
+                                  {course.title || course.name || course.slug || course._id}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="px-2 py-3 text-sm text-slate-500">
+                          No courses available
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-slate-700">
                     Chapters
                   </label>
-                  <select
-                    multiple
-                    value={form.chapterIds}
-                    onChange={(e) => handleChapterChange(getSelectValues(e))}
-                    disabled={!form.courseIds.length || loadingChapters}
-                    className="min-h-[140px] w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition disabled:bg-slate-50 focus:border-emerald-400"
-                  >
-                    {!form.courseIds.length ? (
-                      <option value="" disabled>
-                        Choose one or more courses first
-                      </option>
-                    ) : loadingChapters ? (
-                      <option value="" disabled>
-                        Loading chapters...
-                      </option>
-                    ) : null}
-                    {chapters.map((chapter) => (
-                      <option key={chapter._id} value={chapter._id}>
-                        {chapter.title || chapter.name || chapter._id}
-                      </option>
-                    ))}
-                  </select>
-                  <p className="mt-2 text-xs text-slate-500">
-                    Hold Ctrl on Windows or Command on Mac to select multiple chapters.
-                  </p>
+                  <div className="rounded-2xl border border-slate-200 bg-white">
+                    <div className="max-h-56 overflow-y-auto p-3">
+                      {!form.courseIds.length ? (
+                        <div className="px-2 py-3 text-sm text-slate-500">
+                          Choose one or more courses first
+                        </div>
+                      ) : loadingChapters ? (
+                        <div className="px-2 py-3 text-sm text-slate-500">
+                          Loading chapters...
+                        </div>
+                      ) : chapters.length ? (
+                        <div className="space-y-2">
+                          {chapters.map((chapter) => {
+                            const chapterId = resolveObjectId(chapter);
+                            const checked = form.chapterIds.includes(chapterId);
+
+                            return (
+                              <label
+                                key={chapterId}
+                                className="flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2 transition hover:bg-slate-50"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => toggleChapter(chapterId)}
+                                  className="mt-1 h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                                />
+                                <span className="text-sm text-slate-700">
+                                  {chapter.title || chapter.name || chapter._id}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="px-2 py-3 text-sm text-slate-500">
+                          No chapters found for the selected courses
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="md:col-span-2">
