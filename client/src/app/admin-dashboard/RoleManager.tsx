@@ -10,6 +10,7 @@ const allTabs = [
   "Center",
   "Teachers",
   "Students",
+  "Batch Manager",
   "Manage Roles",
   "Staff Management",
   "Orders",

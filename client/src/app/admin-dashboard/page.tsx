@@ -84,6 +84,7 @@ import ChapterScheduleTab from "./Course/ChapterScheduleTab";
 import TopicScheduleTab from "./Course/TopicScheduleTab";
 import CourseCategory from "./Course/CourseCategory";
 import LiveSessionAdmin from "./Course/LiveSesionAdmin";
+import BatchManagerTab from "./BatchManagerTab";
 import TicketTab from "../components/TicketTab";
 import RevisionTestsTab from "./RevisionTestsTab";
 import CourseDisplayTab from "./CourseDisplayTab";
@@ -253,6 +254,7 @@ const NAVIGATION_GROUPS = [
       },
       { id: "course", label: "Course", icon: <FaBook /> },
       { id: "course-display", label: "Course Display", icon: <FaEye /> },
+      { id: "batch-manager", label: "Batch Manager", icon: <FaLayerGroup /> },
       {
         id: "chapter-schedule",
         label: "Chapter Schedule",
@@ -873,6 +875,8 @@ function AdminDashboardContent() {
           <CourseArea />
         ) : activeTab === "course-display" ? (
           <CourseDisplayTab />
+        ) : activeTab === "batch-manager" ? (
+          <BatchManagerTab />
         ) : activeTab === "chapter-schedule" ? (
           <ChapterScheduleTab onBack={handleBack} />
         ) : activeTab === "topic-schedule" ? (

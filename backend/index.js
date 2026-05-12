@@ -99,6 +99,7 @@ import invoiceCompanySettingsRoutes from "./routes/invoiceCompanySettingsRoutes.
 import quotationRoutes from "./routes/quotationRoutes.js";
 import jobSidebarMarqueeSettingsRoutes from "./routes/jobSidebarMarqueeSettingsRoutes.js";
 import ourPartnersSettingsRoutes from "./routes/ourPartnersSettingsRoutes.js";
+import batchManagerRoutes from "./routes/batchManagerRoutes.js";
 
 //App Configuration
 connectDB();
@@ -269,6 +270,7 @@ app.use("/api/booking-settings", bookingSettingsRoutes);
 app.use("/api/invoice-company-settings", invoiceCompanySettingsRoutes);
 app.use("/api/job-sidebar-marquee-settings", jobSidebarMarqueeSettingsRoutes);
 app.use("/api/our-partners-settings", ourPartnersSettingsRoutes);
+app.use("/api/batch-manager", batchManagerRoutes);
 app.use("/api/v1/course-bookings", courseBookingRoutes);
 app.use("/api/bulk-email", bulkEmailRoutes);
 

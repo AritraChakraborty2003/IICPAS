@@ -20,6 +20,7 @@ const MODULES = [
   { id: "topic-schedule", name: "Topic Schedule", icon: "🕒" },
   { id: "live-session", name: "Live Session", icon: "📺" },
   { id: "live-bookings", name: "Live Bookings", icon: "🧾" },
+  { id: "batch-manager", name: "Batch Manager", icon: "🗂️" },
   { id: "blogs", name: "Blogs", icon: "📝" },
   { id: "testimonials", name: "Testimonials", icon: "💬" },
   { id: "about", name: "About Us", icon: "ℹ️" },
@@ -54,6 +55,7 @@ const MODULES = [
   { id: "study-material", name: "Study Material", icon: "📚" },
   { id: "faq", name: "FAQ", icon: "❓" },
   { id: "booking-settings", name: "Booking Settings", icon: "⚙️" },
+  { id: "batch-manager", name: "Batch Manager", icon: "🗂️" },
   {
     id: "invoice-company-settings",
     name: "Invoice Company Settings",
