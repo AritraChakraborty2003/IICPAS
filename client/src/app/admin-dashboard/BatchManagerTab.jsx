@@ -17,7 +17,6 @@ import { getApiBase } from "@/lib/apiBase";
 
 const API_BASE = getApiBase();
 
-const SIZE_OPTIONS = [5, 10, 15, 20, 25, 30, 40, 50];
 const MODE_OPTIONS = [
   { value: "online", label: "Online" },
   { value: "offline", label: "Offline" },
@@ -288,22 +287,20 @@ export default function BatchManagerTab() {
                 <label className="mb-2 block text-sm font-semibold text-gray-700">
                   Size
                 </label>
-                <select
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
                   value={form.size}
                   onChange={(event) =>
                     setForm((prev) => ({
                       ...prev,
-                      size: Number(event.target.value),
+                      size: event.target.value === "" ? "" : Number(event.target.value),
                     }))
                   }
+                  placeholder="Enter batch size"
                   className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                >
-                  {SIZE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>
-                      {size}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
 
               <div className="flex flex-col gap-3 pt-2 sm:flex-row">
