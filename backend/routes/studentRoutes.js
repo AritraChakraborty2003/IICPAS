@@ -389,7 +389,7 @@ router.get("/", async (req, res) => {
       .populate("course", "title")
       .populate("enrolledLiveSessions", "title")
       .populate("enrolledRecordedSessions", "title")
-      .select("-password -otp -otpExpiry courseAccessOverrides")
+      .select("-password -otp -otpExpiry")
       .sort({ createdAt: -1 })
       .lean();
 

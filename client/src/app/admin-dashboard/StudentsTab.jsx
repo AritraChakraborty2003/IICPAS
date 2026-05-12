@@ -117,6 +117,17 @@ const getCourseAccessState = (course) => {
   };
 };
 
+const getFetchErrorMessage = (error, fallbackMessage) => {
+  const status = error?.response?.status;
+  const message =
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    fallbackMessage;
+
+  return status ? `${message} (HTTP ${status})` : message;
+};
+
 const mergeCourseAccessUpdate = (course, override = {}) => {
   const nextIsLocked = Boolean(override?.isLocked);
   const nextIsExpired =
@@ -1753,8 +1764,7 @@ function StudentProfileManagement() {
       setStudents(extractStudents(response.data));
     } catch (error) {
       console.error("Error fetching students:", error);
-      toast.error("Failed to fetch students");
-      setStudents([]);
+      toast.error(getFetchErrorMessage(error, "Failed to fetch students"));
     } finally {
       setLoading(false);
     }
@@ -2289,7 +2299,7 @@ export default function StudentsTab() {
       setStudents(extractStudents(response.data));
     } catch (err) {
       console.error("Error fetching students:", err);
-      setStudents([]);
+      toast.error(getFetchErrorMessage(err, "Failed to fetch students"));
     } finally {
       setLoading(false);
     }
