@@ -14,7 +14,7 @@ const SpecialOfferFlashCard = ({
 }) => {
   const router = useRouter();
   const [offers, setOffers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [hasFetchedOffers, setHasFetchedOffers] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -28,6 +28,8 @@ const SpecialOfferFlashCard = ({
   }, [offers]);
 
   const fetchActiveOffers = async () => {
+    setHasFetchedOffers(false);
+    setIsVisible(false);
     try {
       console.log("Fetching offers for location:", location);
       console.log("API_BASE:", API_BASE);
@@ -39,7 +41,7 @@ const SpecialOfferFlashCard = ({
     } catch (error) {
       console.error("Error fetching active special offers:", error);
     } finally {
-      setLoading(false);
+      setHasFetchedOffers(true);
     }
   };
 
@@ -82,15 +84,7 @@ const SpecialOfferFlashCard = ({
     return `${minutes}m left`;
   };
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-md">
-        <div className="text-white text-lg">Loading special offers...</div>
-      </div>
-    );
-  }
-
-  if (offers.length === 0) {
+  if (!hasFetchedOffers || offers.length === 0) {
     return null;
   }
 

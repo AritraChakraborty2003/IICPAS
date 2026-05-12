@@ -40,7 +40,10 @@ const ROLE_CONFIG = {
     select: "_id name email status",
     displayName: (u) => u?.name || "Student",
     email: (u) => u?.email || "",
-    baseActive: (u) => String(u?.status || "active").toLowerCase() !== "inactive",
+    baseActive: (u) => {
+      const status = String(u?.status || "active").toLowerCase();
+      return status !== "inactive" && status !== "suspended";
+    },
   },
   individual: {
     model: Individual,

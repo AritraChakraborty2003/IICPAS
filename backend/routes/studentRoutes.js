@@ -106,6 +106,11 @@ const objectIdEquals = (left, right) => {
   return String(left) === String(right);
 };
 
+const isBlockedStudentStatus = (status) => {
+  const normalized = String(status || "").toLowerCase();
+  return normalized === "inactive" || normalized === "suspended";
+};
+
 const groupByStudentId = (records = []) =>
   records.reduce((acc, record) => {
     const studentId = String(record?.studentId || "");
@@ -571,6 +576,9 @@ router.post("/login", async (req, res) => {
     const student = await Student.findOne({ email });
 
     if (!student) return res.status(404).json({ message: "Not found" });
+    if (isBlockedStudentStatus(student.status)) {
+      return res.status(403).json({ message: "Account is suspended" });
+    }
 
     const match = await bcrypt.compare(password, student.password);
     if (!match) return res.status(401).json({ message: "Wrong password" });
@@ -653,6 +661,14 @@ router.get("/isstudent", async (req, res) => {
       "-password -otp -otpExpiry"
     );
     if (!student) return res.status(404).json({ student: null });
+    if (isBlockedStudentStatus(student.status)) {
+      res.clearCookie("token", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      });
+      return res.status(403).json({ student: null, message: "Account is suspended" });
+    }
 
     // Self-heal: if any single-course booking is fully paid, ensure course enrollment exists.
     const fullyPaidBookings = await CourseBooking.find({
