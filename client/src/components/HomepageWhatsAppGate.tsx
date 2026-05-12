@@ -258,7 +258,7 @@ export default function HomepageWhatsAppGate() {
                         Job seekers
                       </p>
                       <h3 className="mt-1 text-xl font-semibold">
-                        Get hired
+                        I want a job
                       </h3>
                     </div>
                     <UserCheck className="h-7 w-7 text-white/90" />
