@@ -20,7 +20,7 @@ import Course from "../models/Content/Course.js";
 import Quiz from "../models/Content/Quiz.js";
 import fs from "fs-extra";
 import nodemailer from "nodemailer";
-import express from "express";
+import xexpress from "express";
 import CoinTransaction from "../models/CoinTransaction.js";
 import {
   awardCoins,
@@ -420,56 +420,75 @@ router.post("/register", async (req, res) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const session = await mongoose.startSession();
+    const batchAllocation = await reserveBatchSeat({
+      mode: resolvedBatchMode,
+    });
+    const assignedBatch = batchAllocation?.batch || null;
     let student = null;
-    let assignedBatch = null;
 
     try {
-      await session.withTransaction(async () => {
-        const batchAllocation = await reserveBatchSeat({
-          mode: resolvedBatchMode,
-          session,
-        });
-        assignedBatch = batchAllocation?.batch || null;
-
-        student = new Student({
-          name: normalizedName,
-          email: normalizedEmail,
-          phone: normalizedWhatsAppPhone || normalizedPhone,
-          password: hashed,
-          mode: mode || resolvedBatchMode,
-          location,
-          center,
-          batchId: assignedBatch?._id || null,
-          batchCode: assignedBatch?.code || null,
-          batchMode: assignedBatch?.mode || resolvedBatchMode || null,
-          batchAssignedAt: assignedBatch ? new Date() : null,
-          referralCode: await generateUniqueReferralCode(
-            normalizedName || normalizedEmail
-          ),
-          referredBy: referrer?._id || null,
-        });
-
-        await student.save({ session });
+      student = new Student({
+        name: normalizedName,
+        email: normalizedEmail,
+        phone: normalizedWhatsAppPhone || normalizedPhone,
+        password: hashed,
+        mode: mode || resolvedBatchMode,
+        location,
+        center,
+        batchId: assignedBatch?._id || null,
+        batchCode: assignedBatch?.code || null,
+        batchMode: assignedBatch?.mode || resolvedBatchMode || null,
+        batchAssignedAt: assignedBatch ? new Date() : null,
+        referralCode: await generateUniqueReferralCode(
+          normalizedName || normalizedEmail
+        ),
+        referredBy: referrer?._id || null,
       });
-    } finally {
-      await session.endSession();
+
+      await student.save();
+    } catch (saveError) {
+      if (assignedBatch?._id) {
+        try {
+          await releaseBatchSeat({
+            batchId: assignedBatch._id,
+            created: Boolean(batchAllocation?.created),
+          });
+        } catch (releaseError) {
+          console.error(
+            "Failed to release batch seat after registration error:",
+            releaseError
+          );
+        }
+      }
+
+      if (saveError?.code === 11000) {
+        return res.status(400).json({
+          error: "Register failed",
+          details: "Email or phone already exists",
+        });
+      }
+
+      throw saveError;
     }
 
     if (referrer?._id) {
-      const settings = await getCoinSettings();
-      await awardCoins({
-        studentId: referrer._id.toString(),
-        eventType: "REFERRAL_SIGNUP",
-        coins: Number(settings?.referralSignupCoins || 0),
-        metadata: {
-          referredStudentId: student._id,
-          referredStudentName: student.name,
-          referredStudentEmail: student.email,
-          referralCode: normalizedReferralCode,
-        },
-        idempotencyKey: `referral:${referrer._id}:${student._id}`,
-      });
+      try {
+        const settings = await getCoinSettings();
+        await awardCoins({
+          studentId: referrer._id.toString(),
+          eventType: "REFERRAL_SIGNUP",
+          coins: Number(settings?.referralSignupCoins || 0),
+          metadata: {
+            referredStudentId: student._id,
+            referredStudentName: student.name,
+            referredStudentEmail: student.email,
+            referralCode: normalizedReferralCode,
+          },
+          idempotencyKey: `referral:${referrer._id}:${student._id}`,
+        });
+      } catch (coinError) {
+        console.error("Referral coin award failed:", coinError);
+      }
     }
 
     let welcomeEmailSent = true;
