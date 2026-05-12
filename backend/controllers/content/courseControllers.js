@@ -1,6 +1,9 @@
 import Course from "../../models/Content/Course.js";
 import Student from "../../models/Students.js";
 import { POPULATE_TOPICS_WITH_LESSONS } from "../../utils/topicPopulation.js";
+import CourseBooking from "../../models/CourseBooking.js";
+import Transaction from "../../models/Transaction.js";
+import { buildCourseAccessEntries } from "../../utils/courseAccess.js";
 
 export const getAllCourses = async (req, res) => {
   const courses = await Course.find().populate({
@@ -27,8 +30,33 @@ export const getStudentCourses = async (req, res) => {
       return res.status(404).json({ error: "Student not found" });
     }
 
+    const [bookings, transactions] = await Promise.all([
+      CourseBooking.find({
+        studentId: student._id,
+        itemType: "single_course",
+        courseId: { $ne: null },
+        status: { $ne: "cancelled" },
+      })
+        .select("courseId itemType status payments paymentVerifiedAt updatedAt createdAt")
+        .lean(),
+      Transaction.find({
+        studentId: student._id,
+        status: "approved",
+      })
+        .select("courseId status verifiedAt updatedAt createdAt")
+        .lean(),
+    ]);
+
+    const enrolledCourses = Array.isArray(student.course) ? student.course : [];
+    const coursesWithAccess = buildCourseAccessEntries({
+      student,
+      courses: enrolledCourses,
+      bookings,
+      transactions,
+    });
+
     res.json({
-      courses: student.course || [],
+      courses: coursesWithAccess,
       student: {
         _id: student._id,
         name: student.name,

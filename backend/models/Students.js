@@ -43,6 +43,14 @@ const StudentSchema = new mongoose.Schema(
     ],
     wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: "Course" }],
 
+    courseAccessOverrides: [
+      {
+        courseId: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
+        isLocked: { type: Boolean, default: false },
+        updatedAt: { type: Date, default: Date.now },
+      },
+    ],
+
     enrolledLiveSessions: [
       { type: mongoose.Schema.Types.ObjectId, ref: "LiveSession" },
     ],

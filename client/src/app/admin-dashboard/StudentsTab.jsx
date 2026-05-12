@@ -866,6 +866,7 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
 function StudentDetailsView({ studentId, onBack }) {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState(null);
+  const [updatingCourseId, setUpdatingCourseId] = useState(null);
 
   useEffect(() => {
     if (!studentId) return;
@@ -917,6 +918,41 @@ function StudentDetailsView({ studentId, onBack }) {
       currency: "INR",
       maximumFractionDigits: 2,
     });
+
+  const handleToggleCourseAccess = async (course) => {
+    const courseId = course?.courseId || course?._id;
+    if (!studentId || !courseId) return;
+
+    try {
+      setUpdatingCourseId(courseId);
+      const token = localStorage.getItem("adminToken");
+      const response = await axios.put(
+        `${API_BASE}/v1/students/admin/course-access/${studentId}/${courseId}`,
+        { locked: !Boolean(course.isLocked) },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      toast.success(response.data?.message || "Course access updated");
+      const refreshed = await axios.get(
+        `${API_BASE}/v1/students/admin/${studentId}/overview`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+      setData(refreshed.data || null);
+    } catch (error) {
+      console.error("Error updating course access:", error);
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to update course access"
+      );
+    } finally {
+      setUpdatingCourseId(null);
+    }
+  };
 
   const handleDownloadBookingInvoice = async (bookingId) => {
     try {
@@ -1043,25 +1079,87 @@ function StudentDetailsView({ studentId, onBack }) {
         {courses.length === 0 ? (
           <p className="text-sm text-gray-500">No courses found.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Course</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Completion</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {courses.map((course) => (
-                  <tr key={course._id}>
-                    <td className="px-4 py-3 text-sm text-gray-900">{course.title || "Untitled Course"}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-indigo-700">
-                      {Number(course.completionPercent || 0)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-3">
+            {courses.map((course) => {
+              const courseId = course.courseId || course._id;
+              const isLocked = Boolean(course.isLocked);
+              const statusLabel = course.status || (isLocked ? "Inactive" : "Active");
+              const isExpired = Boolean(course.isExpired);
+
+              return (
+                <div
+                  key={courseId}
+                  className="rounded-2xl border border-gray-200 bg-gray-50/70 px-4 py-4 shadow-sm"
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-semibold text-gray-900">
+                          {course.title || "Untitled Course"}
+                        </p>
+                        <span className="inline-flex rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
+                          {Number(course.completionPercent || 0)}% complete
+                        </span>
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-600">
+                        <span>
+                          Purchased at{" "}
+                          <span className="font-semibold text-gray-800">
+                            {formatDate(course.purchasedAt)}
+                          </span>
+                        </span>
+                        <span className="hidden sm:inline text-gray-300">|</span>
+                        <span>
+                          Expiry{" "}
+                          <span className="font-semibold text-gray-800">
+                            {formatDate(course.expiresAt)}
+                          </span>
+                        </span>
+                        {isExpired && (
+                          <>
+                            <span className="hidden sm:inline text-gray-300">|</span>
+                            <span className="font-semibold text-rose-600">
+                              Expired
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                          statusLabel === "Active"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-rose-100 text-rose-700"
+                        }`}
+                      >
+                        {statusLabel}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleCourseAccess(course)}
+                        disabled={updatingCourseId === courseId}
+                        className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-white transition-colors ${
+                          isLocked
+                            ? "bg-slate-900 hover:bg-slate-800"
+                            : "bg-emerald-600 hover:bg-emerald-700"
+                        } disabled:cursor-not-allowed disabled:opacity-60`}
+                      >
+                        {updatingCourseId === courseId ? (
+                          <Loader2 size={16} className="animate-spin" />
+                        ) : isLocked ? (
+                          <Lock size={16} />
+                        ) : (
+                          <Unlock size={16} />
+                        )}
+                        {isLocked ? "Unlock" : "Lock"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

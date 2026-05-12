@@ -152,6 +152,15 @@ export default function CourseTab() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+  const purchasedCourseAccessMap = useMemo(() => {
+    const map = new Map();
+    purchasedCourses.forEach((course) => {
+      if (course?._id) {
+        map.set(String(course._id), course);
+      }
+    });
+    return map;
+  }, [purchasedCourses]);
 
   // Fetch student courses from database
   const fetchStudentCourses = async () => {
@@ -264,7 +273,11 @@ export default function CourseTab() {
     setSelectedCourse(matchedCourse);
     setLastAccessedCourse(matchedCourse);
 
-    if (requestedView === "detailed" && isCoursePurchased(matchedCourse._id)) {
+    if (
+      requestedView === "detailed" &&
+      isCoursePurchased(matchedCourse._id) &&
+      !isCourseLocked(matchedCourse._id)
+    ) {
       setViewModes((prev) => ({ ...prev, [matchedCourse._id]: "detailed" }));
       if (!courseChapters[matchedCourse._id]) {
         fetchChaptersForCourse(matchedCourse._id);
@@ -275,7 +288,17 @@ export default function CourseTab() {
   // Helper function to check if a course is purchased
 
   const isCoursePurchased = (courseId) => {
-    return purchasedCourses.some((course) => course._id === courseId);
+    return purchasedCourses.some(
+      (course) => String(course._id) === String(courseId)
+    );
+  };
+
+  const isCourseLocked = (courseId) => {
+    const access = purchasedCourseAccessMap.get(String(courseId)) || null;
+    if (!access) return false;
+    return Boolean(
+      access.isLocked || String(access.status || "").toLowerCase() === "inactive"
+    );
   };
 
   // Handle Buy Now functionality
@@ -456,6 +479,11 @@ export default function CourseTab() {
       if (course) {
         handleBuyNow(course);
       }
+      return;
+    }
+
+    if (isCourseLocked(courseId)) {
+      toast.error("This course is locked by the admin.");
       return;
     }
 
@@ -1102,6 +1130,7 @@ export default function CourseTab() {
                 value: `${assignmentsCount + testsCount + experimentsCount} items`,
               },
             ];
+            const isLocked = isCourseLocked(course._id);
 
             return (
               <div key={course._id} className="group relative">
@@ -1126,12 +1155,18 @@ export default function CourseTab() {
                           </span>
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
-                              isPurchased
+                              isLocked
+                                ? "bg-rose-500/95 text-white"
+                                : isPurchased
                                 ? "bg-emerald-500/95 text-white"
                                 : "bg-slate-950/75 text-white"
                             }`}
                           >
-                            {isPurchased ? "Enrolled" : "Available"}
+                            {isLocked
+                              ? "Locked"
+                              : isPurchased
+                              ? "Enrolled"
+                              : "Available"}
                           </span>
                         </div>
 
@@ -1189,10 +1224,15 @@ export default function CourseTab() {
                             {isPurchased ? (
                               <button
                                 onClick={() => handleDetailedToggle(course._id)}
-                                className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto sm:min-w-[210px]"
+                                disabled={isLocked}
+                                className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold text-white transition sm:w-auto sm:min-w-[210px] ${
+                                  isLocked
+                                    ? "cursor-not-allowed bg-slate-400"
+                                    : "bg-slate-900 hover:bg-slate-800"
+                                }`}
                               >
-                                <Book className="text-xl" />
-                                Open Course
+                                {isLocked ? <Lock className="text-xl" /> : <Book className="text-xl" />}
+                                {isLocked ? "Locked" : "Open Course"}
                               </button>
                             ) : (
                               <button

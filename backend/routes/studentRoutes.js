@@ -39,6 +39,10 @@ import {
   markDigitalHubCompletion,
 } from "../services/digitalHubProgressService.js";
 import {
+  buildCourseAccessEntries,
+  upsertCourseAccessOverride,
+} from "../utils/courseAccess.js";
+import {
   isWhatsAppConfigured,
   normalizeWhatsAppRecipient,
 } from "../config/whatsappConfig.js";
@@ -372,7 +376,7 @@ router.get(
       const student = await Student.findById(id)
         .populate("course", "title")
         .select(
-          "name email phone mode location center status course receipts createdAt updatedAt"
+          "name email phone mode location center status course courseAccessOverrides receipts createdAt updatedAt"
         )
         .lean();
 
@@ -386,22 +390,31 @@ router.get(
           .sort({ createdAt: -1 })
           .lean(),
         CourseBooking.find({ studentId: id })
+          .populate("courseId", "title")
           .sort({ createdAt: -1 })
           .lean(),
       ]);
 
       const courses = Array.isArray(student.course) ? student.course : [];
+      const coursesWithAccess = buildCourseAccessEntries({
+        student,
+        courses,
+        bookings,
+        transactions,
+      });
       const coursesWithCompletion = await Promise.all(
-        courses.map(async (course) => {
+        coursesWithAccess.map(async (course) => {
           try {
             const progress = await getDigitalHubCourseProgress(id, course._id);
             return {
+              ...course,
               _id: course._id,
               title: course.title || "Untitled Course",
               completionPercent: Number(progress?.overallProgress || 0),
             };
           } catch (error) {
             return {
+              ...course,
               _id: course._id,
               title: course.title || "Untitled Course",
               completionPercent: 0,
@@ -432,6 +445,56 @@ router.get(
       console.error("Error fetching student admin overview:", error);
       return res.status(500).json({
         message: "Failed to fetch student overview",
+        error: error.message,
+      });
+    }
+  }
+);
+
+router.put(
+  "/admin/course-access/:studentId/:courseId",
+  requireAuth,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const { studentId, courseId } = req.params;
+      const { locked } = req.body || {};
+
+      if (
+        !mongoose.Types.ObjectId.isValid(studentId) ||
+        !mongoose.Types.ObjectId.isValid(courseId)
+      ) {
+        return res.status(400).json({ message: "Invalid student or course ID" });
+      }
+
+      const student = await Student.findById(studentId).select(
+        "course courseAccessOverrides name"
+      );
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      if (!student.course.some((id) => objectIdEquals(id, courseId))) {
+        return res.status(404).json({ message: "Course not enrolled for this student" });
+      }
+
+      const override = await upsertCourseAccessOverride({
+        student,
+        courseId,
+        isLocked: Boolean(locked),
+      });
+
+      return res.json({
+        success: true,
+        message: override?.isLocked
+          ? "Course locked successfully"
+          : "Course unlocked successfully",
+        override,
+      });
+    } catch (error) {
+      console.error("Failed to update course access override:", error);
+      return res.status(500).json({
+        message: "Failed to update course access",
         error: error.message,
       });
     }
