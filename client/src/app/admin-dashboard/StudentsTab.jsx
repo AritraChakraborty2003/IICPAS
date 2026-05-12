@@ -818,34 +818,36 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
                                     </div>
                                   </div>
 
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleCourseAccess(student, course)}
-                                    disabled={isUpdating}
-                                    title={isLocked ? "Unlock course" : "Lock course"}
-                                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition-colors ${
-                                      isLocked
-                                        ? "bg-gray-900 text-white hover:bg-gray-800"
-                                        : "bg-indigo-600 text-white hover:bg-indigo-700"
-                                    } disabled:opacity-60 disabled:cursor-not-allowed`}
-                                  >
-                                    {isUpdating ? (
-                                      <>
-                                        <Loader2 size={14} className="animate-spin" />
-                                        Updating...
-                                      </>
-                                    ) : isLocked ? (
-                                      <>
-                                        <Lock size={14} />
-                                        Unlock
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Unlock size={14} />
-                                        Lock
-                                      </>
-                                    )}
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={isLocked}
+                                      onClick={() => handleToggleCourseAccess(student, course)}
+                                      disabled={isUpdating}
+                                      title={isLocked ? "Unlock course" : "Lock course"}
+                                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                        isLocked ? "bg-red-500" : "bg-green-500"
+                                      } ${isUpdating ? "opacity-60 cursor-not-allowed" : ""}`}
+                                    >
+                                      <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                          isLocked ? "translate-x-6" : "translate-x-1"
+                                        }`}
+                                      />
+                                    </button>
+                                    <span
+                                      className={`text-xs font-semibold ${
+                                        isLocked ? "text-red-600" : "text-green-600"
+                                      }`}
+                                    >
+                                      {isUpdating
+                                        ? "Updating..."
+                                        : isLocked
+                                        ? "Locked"
+                                        : "Unlocked"}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
                             );
