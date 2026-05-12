@@ -844,8 +844,8 @@ function StudentsTable({ students, onStudentUpdated, onViewStudent }) {
                                       {isUpdating
                                         ? "Updating..."
                                         : isLocked
-                                        ? "Locked"
-                                        : "Unlocked"}
+                                        ? "Unlock"
+                                        : "Lock"}
                                     </span>
                                   </div>
                                 </div>
