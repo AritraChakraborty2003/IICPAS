@@ -2262,6 +2262,10 @@ export default function StudentsTab() {
     setActiveTab("details");
   };
 
+  const handleGoBack = () => {
+    window.history.back();
+  };
+
   return (
     <div className="w-full px-4 py-6">
       {/* Header Section */}
@@ -2347,7 +2351,7 @@ export default function StudentsTab() {
             <StudentDetailsView
               key="studentdetailsview"
               studentId={selectedStudentId}
-              onBack={() => setActiveTab("list")}
+              onBack={handleGoBack}
             />
           )}
           {activeTab === "access" &&
