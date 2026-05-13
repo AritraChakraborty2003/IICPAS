@@ -100,32 +100,36 @@ const formatDisplayDate = (value) => {
   return Number.isNaN(parsed.getTime()) ? "N/A" : parsed.toLocaleDateString("en-IN");
 };
 
-const getCourseId = (course) =>
-  (() => {
-    if (!course) return "";
-    if (typeof course === "string" || typeof course === "number" || typeof course === "bigint") {
-      return String(course);
+const getCourseId = (course, seen = new Set()) => {
+  if (!course) return "";
+  if (typeof course === "string" || typeof course === "number" || typeof course === "bigint") {
+    return String(course);
+  }
+  if (typeof course !== "object") return "";
+  if (seen.has(course)) return "";
+  seen.add(course);
+
+  if (typeof course.toHexString === "function") {
+    const hexString = course.toHexString();
+    if (hexString) return hexString;
+  }
+
+  if (typeof course.toString === "function") {
+    const stringValue = course.toString();
+    if (stringValue && stringValue !== "[object Object]") {
+      return stringValue;
     }
-    if (course.courseId != null) {
-      const nestedCourseId = getCourseId(course.courseId);
-      if (nestedCourseId) return nestedCourseId;
-    }
-    if (course._id != null) {
-      const nestedId = getCourseId(course._id);
-      if (nestedId) return nestedId;
-    }
-    if (course.id != null) {
-      const nestedId = getCourseId(course.id);
-      if (nestedId) return nestedId;
-    }
-    if (typeof course.toString === "function") {
-      const stringValue = course.toString();
-      if (stringValue && stringValue !== "[object Object]") {
-        return stringValue;
-      }
-    }
-    return "";
-  })();
+  }
+
+  const candidates = [course.courseId, course._id, course.id];
+  for (const candidate of candidates) {
+    if (candidate == null || seen.has(candidate)) continue;
+    const normalized = getCourseId(candidate, seen);
+    if (normalized) return normalized;
+  }
+
+  return "";
+};
 
 const getCourseTitle = (course) =>
   course?.title || course?.name || (typeof course === "string" ? course : "Untitled Course");

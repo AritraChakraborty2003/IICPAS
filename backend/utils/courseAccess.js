@@ -1,22 +1,42 @@
-const toIdString = (value) => {
+const toIdString = (value, seen = new Set()) => {
   if (!value) return "";
+
   if (typeof value === "string" || typeof value === "number" || typeof value === "bigint") {
     return String(value);
   }
-  if (typeof value === "object") {
-    if (value._id != null) {
-      const nestedId = toIdString(value._id);
-      if (nestedId) {
-        return nestedId;
-      }
-    }
-    if (typeof value.toString === "function") {
-      const stringValue = value.toString();
-      if (stringValue && stringValue !== "[object Object]") {
-        return stringValue;
-      }
+
+  if (typeof value !== "object") {
+    return "";
+  }
+
+  if (seen.has(value)) {
+    return "";
+  }
+  seen.add(value);
+
+  if (typeof value.toHexString === "function") {
+    const hexString = value.toHexString();
+    if (hexString) {
+      return hexString;
     }
   }
+
+  if (typeof value.toString === "function") {
+    const stringValue = value.toString();
+    if (stringValue && stringValue !== "[object Object]") {
+      return stringValue;
+    }
+  }
+
+  const candidates = [value.courseId, value._id, value.id];
+  for (const candidate of candidates) {
+    if (candidate == null || seen.has(candidate)) continue;
+    const normalized = toIdString(candidate, seen);
+    if (normalized) {
+      return normalized;
+    }
+  }
+
   return "";
 };
 
@@ -166,27 +186,63 @@ export const buildCourseAccessEntries = ({
   const fallbackDate = toValidDate(student?.createdAt) || new Date();
 
   return (Array.isArray(courses) ? courses : []).map((course) => {
-    const baseCourse =
-      course && typeof course.toObject === "function" ? course.toObject() : course || {};
-    const courseId = toIdString(course?._id || course?.courseId);
-    const purchaseAt =
-      purchaseIndex.get(courseId) ||
-      toValidDate(baseCourse?.purchasedAt) ||
-      fallbackDate;
-    const expiresAt = toValidDate(baseCourse?.expiresAt) || addOneYear(purchaseAt);
-    const override = overrideIndex.get(courseId);
-    const isLocked = Boolean(override?.isLocked);
-    const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : false;
+    try {
+      const baseCourse =
+        course && typeof course.toObject === "function" ? course.toObject() : course || {};
+      const courseId =
+        toIdString(course?.courseId || course?._id || course?.id || course) ||
+        toIdString(baseCourse?.courseId || baseCourse?._id || baseCourse?.id || baseCourse);
+      const purchaseAt =
+        purchaseIndex.get(courseId) ||
+        toValidDate(baseCourse?.purchasedAt) ||
+        fallbackDate;
+      const expiresAt = toValidDate(baseCourse?.expiresAt) || addOneYear(purchaseAt);
+      const override = overrideIndex.get(courseId);
+      const isLocked = Boolean(override?.isLocked);
+      const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : false;
 
-    return {
-      ...baseCourse,
-      courseId: courseId || course?._id || null,
-      purchasedAt: purchaseAt ? purchaseAt.toISOString() : null,
-      expiresAt: expiresAt ? expiresAt.toISOString() : null,
-      isLocked,
-      isExpired,
-      status: isLocked || isExpired ? "Inactive" : "Active",
-    };
+      return {
+        ...baseCourse,
+        courseId:
+          courseId ||
+          toIdString(course?.courseId) ||
+          toIdString(course?._id) ||
+          toIdString(baseCourse?.courseId) ||
+          toIdString(baseCourse?._id) ||
+          null,
+        purchasedAt: purchaseAt ? purchaseAt.toISOString() : null,
+        expiresAt: expiresAt ? expiresAt.toISOString() : null,
+        isLocked,
+        isExpired,
+        status: isLocked || isExpired ? "Inactive" : "Active",
+      };
+    } catch (error) {
+      const fallbackCourse =
+        course && typeof course.toObject === "function" ? course.toObject() : course || {};
+      const safeCourseId =
+        toIdString(fallbackCourse?.courseId || fallbackCourse?._id || fallbackCourse?.id || fallbackCourse) ||
+        toIdString(course?.courseId || course?._id || course?.id || course) ||
+        null;
+
+      console.error("Failed to build course access entry", {
+        studentId: student?._id ? String(student._id) : null,
+        courseId: safeCourseId,
+        error: error?.message || error,
+      });
+
+      return {
+        ...fallbackCourse,
+        courseId: safeCourseId,
+        purchasedAt: toValidDate(fallbackCourse?.purchasedAt)?.toISOString() || null,
+        expiresAt: toValidDate(fallbackCourse?.expiresAt)?.toISOString() || null,
+        isLocked: Boolean(fallbackCourse?.isLocked),
+        isExpired: Boolean(fallbackCourse?.isExpired),
+        status:
+          Boolean(fallbackCourse?.isLocked) || Boolean(fallbackCourse?.isExpired)
+            ? "Inactive"
+            : "Active",
+      };
+    }
   });
 };
 
