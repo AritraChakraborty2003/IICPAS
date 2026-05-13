@@ -935,6 +935,49 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     }
   };
 
+  const markSessionCompleted = async (id) => {
+    const confirm = await Swal.fire({
+      title: "Mark session completed?",
+      text: "This will move the session to the recorded sessions view.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Mark Completed",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    try {
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      const res = await fetch(`${API}/api/live-sessions/${id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: "completed" }),
+      });
+
+      if (res.ok) {
+        await fetchSessions();
+        Swal.fire(
+          "Completed!",
+          "The session has been moved to recorded sessions.",
+          "success"
+        );
+      } else if (res.status === 401) {
+        showTokenError("Session expired. Please log in again.");
+      } else {
+        const error = await res.json().catch(() => ({}));
+        Swal.fire("Error!", error.error || "Failed to mark session completed", "error");
+      }
+    } catch (error) {
+      console.error("Mark completed error:", error);
+      Swal.fire("Error!", "Failed to mark session completed", "error");
+    }
+  };
+
   const resetForm = () => {
     clearLiveSessionLandingDraft(landingDraftKey);
     clearLiveSessionLandingDraft(buildLiveSessionLandingDraftKey("new"));
@@ -1781,15 +1824,28 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                         </IconButton>
                       </Tooltip>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        {String(s.status || "").toLowerCase() === "completed"
+                          ? "Completed"
+                          : s.status === "inactive"
+                            ? "Inactive"
+                            : "Active"}
+                      </span>
+                      {String(s.status || "").toLowerCase() !== "completed" ? (
+                        <button
+                          type="button"
+                          onClick={() => markSessionCompleted(s._id)}
+                          className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                        >
+                          Mark Completed
+                        </button>
+                      ) : null}
                       <Switch
                         checked={s.status !== "inactive"}
                         onChange={() => toggleStatus(s._id)}
                         color="success"
                       />
-                      <span className="text-xs font-medium">
-                        {s.status === "inactive" ? "Inactive" : "Active"}
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -1861,17 +1917,31 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                       <TableCell>₹{session.price}</TableCell>
                       <TableCell>{getBookingCountForSession(session._id)}</TableCell>
                       <TableCell>
-                        <Switch
-                          checked={session.status !== "inactive"}
-                          onChange={() => toggleStatus(session._id)}
-                          color="success"
-                          size="small"
-                        />
-                        <span className="ml-2 text-xs">
-                          {session.status === "inactive"
-                            ? "Inactive"
-                            : "Active"}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            {String(session.status || "").toLowerCase() === "completed"
+                              ? "Completed"
+                              : session.status === "inactive"
+                                ? "Inactive"
+                                : "Active"}
+                          </span>
+                          {String(session.status || "").toLowerCase() !==
+                          "completed" ? (
+                            <button
+                              type="button"
+                              onClick={() => markSessionCompleted(session._id)}
+                              className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                            >
+                              Complete
+                            </button>
+                          ) : null}
+                          <Switch
+                            checked={session.status !== "inactive"}
+                            onChange={() => toggleStatus(session._id)}
+                            color="success"
+                            size="small"
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
