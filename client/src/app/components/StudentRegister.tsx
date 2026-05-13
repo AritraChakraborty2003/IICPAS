@@ -337,7 +337,7 @@ export default function StudentRegisterForm() {
             {mode === "register" && (
               <form onSubmit={handleRegister} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input label="Full Name" name="name" value={form.name} onChange={handleChange} />
-                <div>
+                <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Phone
                   </label>
