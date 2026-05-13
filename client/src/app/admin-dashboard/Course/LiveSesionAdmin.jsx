@@ -361,6 +361,14 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     [courses, form.courseId]
   );
 
+  const liveSessions = useMemo(
+    () =>
+      sessions.filter(
+        (session) => String(session?.status || "").toLowerCase() !== "completed"
+      ),
+    [sessions]
+  );
+
   const selectedChapter = useMemo(
     () =>
       chapters.find(
@@ -435,6 +443,23 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     console.log("🔍 Auth Debug - API Base:", API);
     console.log("🔍 Auth Debug - Environment:", process.env.NODE_ENV);
   }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchSessions();
+      fetchSessionBookings();
+    }, 60 * 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    setSelectedSessions((current) =>
+      current.filter((sessionId) =>
+        liveSessions.some((session) => String(session._id) === String(sessionId))
+      )
+    );
+  }, [liveSessions]);
 
   useEffect(() => {
     if (!form.courseId) {
@@ -1112,7 +1137,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   // Bulk export functionality
   const handleSelectAll = (event) => {
     if (event.target.checked) {
-      setSelectedSessions(sessions.map((s) => s._id));
+      setSelectedSessions(liveSessions.map((s) => s._id));
     } else {
       setSelectedSessions([]);
     }
@@ -1132,7 +1157,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       return;
     }
 
-    const selectedData = sessions.filter((s) =>
+    const selectedData = liveSessions.filter((s) =>
       selectedSessions.includes(s._id)
     );
 
@@ -1677,7 +1702,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
         <>
           {viewMode === "cards" ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {sessions.map((s) => (
+              {liveSessions.map((s) => (
                 <div
                   key={s._id}
                   className="bg-white p-5 rounded-xl shadow border-l-4 border-blue-400 relative"
@@ -1778,12 +1803,12 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                     <TableCell padding="checkbox">
                       <Checkbox
                         checked={
-                          selectedSessions.length === sessions.length &&
-                          sessions.length > 0
+                          selectedSessions.length === liveSessions.length &&
+                          liveSessions.length > 0
                         }
                         indeterminate={
                           selectedSessions.length > 0 &&
-                          selectedSessions.length < sessions.length
+                          selectedSessions.length < liveSessions.length
                         }
                         onChange={handleSelectAll}
                       />
@@ -1807,7 +1832,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {sessions.map((session) => (
+                  {liveSessions.map((session) => (
                     <TableRow key={session._id} hover>
                       <TableCell padding="checkbox">
                         <Checkbox

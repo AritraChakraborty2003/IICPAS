@@ -275,6 +275,14 @@ export default function RecordedSessionAdmin() {
     fetchBatches();
   }, []);
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchSessions();
+    }, 60 * 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
   const completedSessions = useMemo(() => {
     return sessions
       .filter((session) => String(session?.status || "").toLowerCase() === "completed")
