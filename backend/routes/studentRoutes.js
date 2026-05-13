@@ -78,6 +78,17 @@ const getTokenExpiry = (token) => {
 };
 
 const router = express.Router();
+
+const isTransactionUnsupportedError = (error) => {
+  const message = String(error?.message || "");
+  return (
+    message.includes(
+      "Transaction numbers are only allowed on a replica set member or mongos"
+    ) ||
+    message.includes("Transaction numbers are only allowed") ||
+    message.includes("replica set member or mongos")
+  );
+};
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -810,13 +821,28 @@ router.put(
       }
 
       let transferResult = null;
-      await session.withTransaction(async () => {
+      try {
+        await session.withTransaction(async () => {
+          transferResult = await transferStudentBatchSeat({
+            studentId,
+            targetBatchId: batchId,
+            session,
+          });
+        });
+      } catch (transactionError) {
+        if (!isTransactionUnsupportedError(transactionError)) {
+          throw transactionError;
+        }
+
+        console.warn(
+          "MongoDB transactions are not supported on this deployment. Falling back to a non-transactional batch transfer."
+        );
+
         transferResult = await transferStudentBatchSeat({
           studentId,
           targetBatchId: batchId,
-          session,
         });
-      });
+      }
 
       if (!transferResult?.student) {
         return res.status(500).json({
