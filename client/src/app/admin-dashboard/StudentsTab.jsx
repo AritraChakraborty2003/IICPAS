@@ -2853,7 +2853,8 @@ export default function StudentsTab() {
   };
 
   const handleGoBack = () => {
-    window.history.back();
+    setSelectedStudentId(null);
+    setActiveTab("list");
   };
 
   return (
