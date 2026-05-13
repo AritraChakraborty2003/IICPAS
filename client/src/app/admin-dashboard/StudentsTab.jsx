@@ -1430,9 +1430,7 @@ function StudentDetailsView({
     }
 
     if (String(selectedBatchId) === studentBatchId) {
-      toast("Student is already assigned to this batch", {
-        icon: "ℹ️",
-      });
+      toast("Student is already assigned to this batch");
       return;
     }
 
@@ -1693,8 +1691,8 @@ function StudentDetailsView({
 
                     return (
                       <option key={batch._id} value={batch._id}>
-                        {labelParts.filter(Boolean).join(" • ")}
-                        {isFull ? " • Full" : ""}
+                        {labelParts.filter(Boolean).join(" | ")}
+                        {isFull ? " | Full" : ""}
                       </option>
                     );
                   })}
