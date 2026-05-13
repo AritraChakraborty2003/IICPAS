@@ -776,19 +776,6 @@ function AdminDashboardContent() {
           sidebarCollapsed ? "lg:ml-20" : "lg:ml-70"
         }`}
       >
-        {/* Back Button - Only show when not on dashboard home */}
-        {activeTab !== "" && (
-          <div className="mb-6">
-            <button
-              onClick={handleBack}
-              className="bg-white text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm flex items-center gap-2 font-medium shadow-md transition-all duration-200 border border-gray-200"
-            >
-              <FaArrowLeft className="text-sm" />
-              Back
-            </button>
-          </div>
-        )}
-
         {/* Permission-based content rendering */}
         {activeTab === "live-session" ? (
           <LiveSessionAdmin draftKey={landingDraftKey} />
