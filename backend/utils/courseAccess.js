@@ -149,6 +149,28 @@ const buildOverrideIndex = (student) => {
   }, new Map());
 };
 
+const dedupeCourseAccessOverrides = (overrides = []) => {
+  const normalized = new Map();
+
+  (Array.isArray(overrides) ? overrides : []).forEach((override) => {
+    const courseId = toIdString(override?.courseId);
+    if (!courseId) return;
+
+    normalized.set(courseId, {
+      ...override,
+      courseId,
+      isLocked: normalizeLockedValue(
+        override?.isLocked ?? override?.locked ?? override?.is_locked ?? false
+      ),
+      purchasedAt: toValidDate(override?.purchasedAt),
+      expiresAt: toValidDate(override?.expiresAt),
+      updatedAt: toValidDate(override?.updatedAt),
+    });
+  });
+
+  return Array.from(normalized.values());
+};
+
 export const normalizeCourseAccessOverride = (override, fallbackCourseId = null) => {
   if (!override && !fallbackCourseId) return null;
 
@@ -168,12 +190,14 @@ export const normalizeCourseAccessOverride = (override, fallbackCourseId = null)
 };
 
 export const normalizeCourseAccessOverrides = (student) =>
-  (Array.isArray(student?.courseAccessOverrides)
-    ? student.courseAccessOverrides
-    : []
-  )
-    .map((override) => normalizeCourseAccessOverride(override))
-    .filter(Boolean);
+  dedupeCourseAccessOverrides(
+    (Array.isArray(student?.courseAccessOverrides)
+      ? student.courseAccessOverrides
+      : []
+    )
+      .map((override) => normalizeCourseAccessOverride(override))
+      .filter(Boolean)
+  );
 
 export const buildCourseAccessEntries = ({
   student,
@@ -271,28 +295,26 @@ export const upsertCourseAccessOverride = async ({
     updatedAt: new Date(),
   };
 
-  const existingIndex = overrides.findIndex(
+  const currentEntry = overrides.find(
     (item) => toIdString(item?.courseId) === normalizedCourseId
   );
+  const nextOverrides = overrides.filter(
+    (item) => toIdString(item?.courseId) !== normalizedCourseId
+  );
 
-  if (existingIndex === -1) {
-    overrides.push(nextEntry);
-  } else {
-    const currentEntry = overrides[existingIndex] || {};
-    overrides[existingIndex] = {
-      ...currentEntry,
-      ...nextEntry,
-      purchasedAt: purchasedAt
-        ? new Date(purchasedAt)
-        : currentEntry.purchasedAt ?? null,
-      expiresAt: expiresAt
-        ? new Date(expiresAt)
-        : currentEntry.expiresAt ?? null,
-    };
-  }
+  nextOverrides.push({
+    ...(currentEntry || {}),
+    ...nextEntry,
+    purchasedAt: purchasedAt
+      ? new Date(purchasedAt)
+      : currentEntry?.purchasedAt ?? null,
+    expiresAt: expiresAt
+      ? new Date(expiresAt)
+      : currentEntry?.expiresAt ?? null,
+  });
 
-  student.set?.("courseAccessOverrides", overrides);
+  student.set?.("courseAccessOverrides", nextOverrides);
   student.markModified?.("courseAccessOverrides");
   await student.save();
-  return overrides[existingIndex === -1 ? overrides.length - 1 : existingIndex];
+  return nextOverrides[nextOverrides.length - 1];
 };
