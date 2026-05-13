@@ -256,7 +256,7 @@ export default function HomepageWhatsAppGate() {
                   {intent === "hire"
                     ? "Hire from us"
                     : intent === "learn"
-                    ? "Learn from us"
+                    ? "Upgrade skills for high-salary jobs"
                     : "Choose your path"}
                 </h2>
             </div>
@@ -265,7 +265,7 @@ export default function HomepageWhatsAppGate() {
             {intent === "hire"
               ? "Start hiring with IICPA and unlock qualified talent through WhatsApp verification."
               : intent === "learn"
-              ? "Join the learner flow and continue with WhatsApp verification."
+              ? "Explore job-ready skills and continue with WhatsApp verification."
               : "Select the card that matches what you want to do."}
           </p>
         </div>
@@ -311,15 +311,16 @@ export default function HomepageWhatsAppGate() {
                       <p className="text-xs uppercase tracking-[0.24em] text-white/70">
                         Job seekers
                       </p>
-                      <h3 className="mt-1 text-xl font-semibold">
-                        Learn From Us
+                      <h3 className="mt-1 max-w-[11rem] text-[1.05rem] font-semibold leading-tight sm:text-xl">
+                        Upgrade Skills
+                        <span className="block">for High Salary Jobs</span>
                       </h3>
                     </div>
                     <UserCheck className="h-7 w-7 text-white/90" />
                   </div>
                   <div className="px-4 py-4">
                     <p className="text-sm leading-6 text-slate-600">
-                      Explore jobs, build visibility, and get verified quickly.
+                      Learn in-demand skills, build visibility, and get verified quickly.
                     </p>
                     <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
                       Continue
