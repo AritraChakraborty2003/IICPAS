@@ -262,20 +262,21 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
   };
 
   const exportToExcel = () => {
-    if (leads.length === 0) {
+    if (visibleLeads.length === 0) {
       toast.error("No leads to export");
       return;
     }
 
     try {
       // Prepare data for Excel export
-      const excelData = leads.map((lead, index) => ({
+      const excelData = visibleLeads.map((lead, index) => ({
         'S.No': index + 1,
         'Name': lead.name || '',
         'Phone': lead.phone || '',
         'Email': lead.email || '',
+        'Type': lead.type || '',
+        'Source': lead.source || '',
         'Message': lead.message || '',
-        'Source': lead.type || '',
         'Assigned To': lead.assignedTo || '',
         'Scheduled Date': lead.scheduledDate ? new Date(lead.scheduledDate).toLocaleDateString() : '',
         'Scheduled Time': lead.scheduledTime || '',
@@ -294,8 +295,9 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
         { wch: 20 },  // Name
         { wch: 15 },  // Phone
         { wch: 25 },  // Email
+        { wch: 18 },  // Type
+        { wch: 18 },  // Source
         { wch: 40 },  // Message
-        { wch: 15 },  // Source
         { wch: 20 },  // Assigned To
         { wch: 15 },  // Scheduled Date
         { wch: 15 },  // Scheduled Time
@@ -310,7 +312,7 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
 
       // Generate filename with current date and source filter
       const currentDate = new Date().toISOString().split('T')[0];
-      const filename = `leads_${sourceFilter}_export_${currentDate}.xlsx`;
+      const filename = `leads_${leadTypeFilter}_export_${currentDate}.xlsx`;
 
       // Save file
       XLSX.writeFile(wb, filename);
@@ -329,13 +331,13 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
         <h2 className="text-3xl font-bold text-gray-800">📋 Leads</h2>
         <div className="flex gap-3 items-center">
           <select
-            value={sourceFilter}
-            onChange={(e) => setSourceFilter(e.target.value)}
+            value={leadTypeFilter}
+            onChange={(e) => setLeadTypeFilter(e.target.value)}
             className="border border-gray-300 px-4 py-2 rounded-md shadow-sm focus:ring-2 focus:ring-blue-500 transition-all"
           >
-            {SOURCE_OPTIONS.map((source) => (
-              <option key={source} value={source}>
-                {source}
+            {leadTypeOptions.map((type) => (
+              <option key={type} value={type}>
+                {type === "all" ? "All Leads" : formatLeadTypeLabel(type)}
               </option>
             ))}
           </select>
@@ -358,11 +360,12 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
               <th className="text-left px-4 py-3 border-b">Name</th>
               <th className="text-left px-4 py-3 border-b">Phone</th>
               <th className="text-left px-4 py-3 border-b">Email</th>
+              <th className="text-left px-4 py-3 border-b">Type</th>
               <th className="text-left px-4 py-3 border-b">Message</th>
-              <th className="text-left px-4 py-3 border-b">Source</th>
               <th className="text-left px-4 py-3 border-b">Assigned To</th>
               <th className="text-left px-4 py-3 border-b">Scheduled</th>
-              <th className="text-left px-4 py-3 border-b">Date</th>
+              <th className="text-left px-4 py-3 border-b">Created Date</th>
+              <th className="text-left px-4 py-3 border-b">Created Time</th>
               <th className="text-left px-4 py-3 border-b">Contact</th>
               <th className="text-left px-4 py-3 border-b">Actions</th>
             </tr>
@@ -370,32 +373,32 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
           <tbody className="text-sm text-gray-700">
             {loading ? (
               <tr>
-                <td colSpan="10" className="text-center py-8">
+                <td colSpan="11" className="text-center py-8">
                   <div className="flex justify-center items-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                     <span className="ml-2">Loading...</span>
                   </div>
                 </td>
               </tr>
-            ) : leads.length === 0 ? (
+            ) : visibleLeads.length === 0 ? (
               <tr>
                 <td
-                  colSpan="10"
+                  colSpan="11"
                   className="text-center py-4 italic text-gray-500"
                 >
                   No leads found.
                 </td>
               </tr>
             ) : (
-              leads.map((lead) => (
+              visibleLeads.map((lead) => (
                 <tr key={lead._id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 border-b">{lead.name}</td>
                   <td className="px-4 py-3 border-b">{lead.phone}</td>
                   <td className="px-4 py-3 border-b">{lead.email}</td>
+                  <td className="px-4 py-3 border-b capitalize">{lead.type || "-"}</td>
                   <td className="px-4 py-3 border-b max-w-xs truncate">
                     {lead.message || "-"}
                   </td>
-                  <td className="px-4 py-3 border-b capitalize">{lead.type}</td>
                   <td className="px-4 py-3 border-b">
                     {lead.assignedTo || "-"}
                   </td>
@@ -409,6 +412,9 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
                   </td>
                   <td className="px-4 py-3 border-b">
                     {new Date(lead.createdAt).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-3 border-b">
+                    {new Date(lead.createdAt).toLocaleTimeString()}
                   </td>
                   <td className="px-4 py-3 border-b">
                     <div className="flex gap-3 text-blue-600">
