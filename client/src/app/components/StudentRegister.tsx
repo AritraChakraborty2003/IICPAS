@@ -337,21 +337,34 @@ export default function StudentRegisterForm() {
             {mode === "register" && (
               <form onSubmit={handleRegister} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input label="Full Name" name="name" value={form.name} onChange={handleChange} />
-                <Input label="Phone" name="phone" value={form.phone} onChange={handleChange} />
-
-                <div className="sm:col-span-2">
-                  <button
-                    type="button"
-                    onClick={handleSendRegisterOtp}
-                    disabled={sendingRegisterOtp}
-                    className="w-full rounded-xl border border-emerald-600 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
-                  >
-                    {sendingRegisterOtp
-                      ? "Sending WhatsApp OTP..."
-                      : registerOtpSent
-                      ? "Resend WhatsApp OTP"
-                      : "Send WhatsApp OTP"}
-                  </button>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Phone
+                  </label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={form.phone}
+                      onChange={handleChange}
+                      autoComplete="off"
+                      placeholder="Phone"
+                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSendRegisterOtp}
+                      disabled={sendingRegisterOtp}
+                      className="h-10 shrink-0 rounded-xl border border-emerald-600 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                    >
+                      {sendingRegisterOtp
+                        ? "Sending..."
+                        : registerOtpSent
+                        ? "Resend OTP"
+                        : "Send WhatsApp OTP"}
+                    </button>
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">We’ll send the OTP on WhatsApp to this number.</p>
                 </div>
 
                 <div className="sm:col-span-2">
