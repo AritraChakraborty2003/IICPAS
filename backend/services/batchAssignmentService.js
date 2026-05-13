@@ -1,6 +1,7 @@
 import BatchManager from "../models/BatchManager.js";
 import BatchAllocationState from "../models/BatchAllocationState.js";
 import BatchSequence from "../models/BatchSequence.js";
+import Student from "../models/Students.js";
 
 export const BATCH_CODE_PREFIX = "IICPA-BT-";
 const GLOBAL_BATCH_SEQUENCE_KEY = "BATCH_CODE";
@@ -209,4 +210,137 @@ export const releaseBatchSeat = async ({ batchId, created = false, session = nul
 
   await batch.save({ session });
   return batch;
+};
+
+const createBatchTransferError = (message, statusCode = 400) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+export const transferStudentBatchSeat = async ({
+  studentId,
+  targetBatchId,
+  session = null,
+} = {}) => {
+  if (!studentId) {
+    throw createBatchTransferError("studentId is required", 400);
+  }
+
+  if (!targetBatchId) {
+    throw createBatchTransferError("batchId is required", 400);
+  }
+
+  const student = await Student.findById(studentId).session(session);
+  if (!student) {
+    throw createBatchTransferError("Student not found", 404);
+  }
+
+  const normalizedTargetBatchId = String(targetBatchId);
+  const currentBatchId = student.batchId ? String(student.batchId) : "";
+
+  if (currentBatchId && currentBatchId === normalizedTargetBatchId) {
+    const currentBatch = await BatchManager.findById(normalizedTargetBatchId).session(session);
+    if (!currentBatch) {
+      throw createBatchTransferError("Target batch not found", 404);
+    }
+
+    return {
+      student,
+      batch: buildBatchSummary(currentBatch),
+      previousBatch: buildBatchSummary(currentBatch),
+      changed: false,
+    };
+  }
+
+  const targetBatch = await BatchManager.findById(normalizedTargetBatchId).session(session);
+  if (!targetBatch) {
+    throw createBatchTransferError("Target batch not found", 404);
+  }
+
+  const studentBatchMode = normalizeBatchMode(student.batchMode || student.mode);
+  if (studentBatchMode && normalizeBatchMode(targetBatch.mode) !== studentBatchMode) {
+    throw createBatchTransferError("Target batch mode does not match the student batch mode", 400);
+  }
+
+  const targetBatchSize = Number(targetBatch.size || 0);
+  const targetAssignedCount = Number(targetBatch.assignedCount || 0);
+  if (targetBatchSize > 0 && targetAssignedCount >= targetBatchSize) {
+    throw createBatchTransferError("Target batch is full", 400);
+  }
+
+  let previousBatch = null;
+  if (currentBatchId) {
+    previousBatch = await BatchManager.findById(currentBatchId).session(session);
+    if (!previousBatch) {
+      throw createBatchTransferError("Current batch not found for this student", 404);
+    }
+
+    const decrementedBatch = await BatchManager.findOneAndUpdate(
+      {
+        _id: previousBatch._id,
+        assignedCount: { $gt: 0 },
+      },
+      {
+        $inc: { assignedCount: -1 },
+      },
+      {
+        new: true,
+        session,
+      }
+    );
+
+    if (!decrementedBatch) {
+      throw createBatchTransferError("Current batch seat count is inconsistent", 409);
+    }
+
+    previousBatch = decrementedBatch;
+  }
+
+  const incrementedBatch = await BatchManager.findOneAndUpdate(
+    {
+      _id: targetBatch._id,
+      $expr: {
+        $lt: [
+          { $ifNull: ["$assignedCount", 0] },
+          { $ifNull: ["$size", 0] },
+        ],
+      },
+    },
+    {
+      $inc: { assignedCount: 1 },
+    },
+    {
+      new: true,
+      session,
+    }
+  );
+
+  if (!incrementedBatch) {
+    throw createBatchTransferError("Target batch is full", 400);
+  }
+
+  const updatedStudent = await Student.findByIdAndUpdate(
+      student._id,
+      {
+        $set: {
+          batchId: incrementedBatch._id,
+          batchCode: incrementedBatch.code || null,
+          batchMode: incrementedBatch.mode || null,
+          batchAssignedAt: new Date(),
+        },
+      },
+      {
+        new: true,
+        session,
+      }
+    )
+    .populate("batchId", "code mode size assignedCount");
+
+  return {
+    student: updatedStudent,
+    batch: buildBatchSummary(incrementedBatch),
+    previousBatch: buildBatchSummary(previousBatch),
+    changed: true,
+  };
 };

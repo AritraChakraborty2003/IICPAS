@@ -258,35 +258,41 @@ export const upsertCourseAccessOverride = async ({
     return null;
   }
 
-  if (!Array.isArray(student.courseAccessOverrides)) {
-    student.courseAccessOverrides = [];
-  }
+  const overrides = Array.isArray(student.courseAccessOverrides)
+    ? student.courseAccessOverrides.map((override) =>
+        override?.toObject ? override.toObject() : { ...override }
+      )
+    : [];
+  const nextEntry = {
+    courseId: normalizedCourseId,
+    isLocked: Boolean(isLocked),
+    purchasedAt: purchasedAt ? new Date(purchasedAt) : null,
+    expiresAt: expiresAt ? new Date(expiresAt) : null,
+    updatedAt: new Date(),
+  };
 
-  let entry = student.courseAccessOverrides.find(
+  const existingIndex = overrides.findIndex(
     (item) => toIdString(item?.courseId) === normalizedCourseId
   );
 
-  if (!entry) {
-    entry = {
-      courseId: normalizedCourseId,
-      isLocked: Boolean(isLocked),
-      purchasedAt: purchasedAt ? new Date(purchasedAt) : null,
-      expiresAt: expiresAt ? new Date(expiresAt) : null,
-      updatedAt: new Date(),
-    };
-    student.courseAccessOverrides.push(entry);
+  if (existingIndex === -1) {
+    overrides.push(nextEntry);
   } else {
-    entry.isLocked = Boolean(isLocked);
-    if (purchasedAt) {
-      entry.purchasedAt = new Date(purchasedAt);
-    }
-    if (expiresAt) {
-      entry.expiresAt = new Date(expiresAt);
-    }
-    entry.updatedAt = new Date();
+    const currentEntry = overrides[existingIndex] || {};
+    overrides[existingIndex] = {
+      ...currentEntry,
+      ...nextEntry,
+      purchasedAt: purchasedAt
+        ? new Date(purchasedAt)
+        : currentEntry.purchasedAt ?? null,
+      expiresAt: expiresAt
+        ? new Date(expiresAt)
+        : currentEntry.expiresAt ?? null,
+    };
   }
 
+  student.set?.("courseAccessOverrides", overrides);
   student.markModified?.("courseAccessOverrides");
   await student.save();
-  return entry;
+  return overrides[existingIndex === -1 ? overrides.length - 1 : existingIndex];
 };

@@ -39,6 +39,7 @@ import {
   normalizeBatchMode,
   releaseBatchSeat,
   reserveBatchSeat,
+  transferStudentBatchSeat,
 } from "../services/batchAssignmentService.js";
 import {
   getDigitalHubCourseProgress,
@@ -761,6 +762,9 @@ router.put(
         override,
         courseId
       );
+      const refreshedStudent = await Student.findById(studentId)
+        .select("name courseAccessOverrides")
+        .lean();
 
       return res.json({
         success: true,
@@ -769,9 +773,11 @@ router.put(
           : "Course unlocked successfully",
         override: normalizedOverride,
         student: {
-          id: student._id,
-          name: student.name,
-          courseAccessOverrides: normalizeCourseAccessOverrides(student),
+          id: refreshedStudent?._id || student._id,
+          name: refreshedStudent?.name || student.name,
+          courseAccessOverrides: normalizeCourseAccessOverrides(
+            refreshedStudent || student
+          ),
         },
       });
     } catch (error) {
@@ -780,6 +786,62 @@ router.put(
         message: "Failed to update course access",
         error: error.message,
       });
+    }
+  }
+);
+
+router.put(
+  "/admin/batch/:studentId",
+  requireAuth,
+  requirePermission("students", "update"),
+  async (req, res) => {
+    const session = await mongoose.startSession();
+
+    try {
+      const { studentId } = req.params;
+      const { batchId } = req.body || {};
+
+      if (!mongoose.Types.ObjectId.isValid(studentId)) {
+        return res.status(400).json({ message: "Invalid student ID format" });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(batchId)) {
+        return res.status(400).json({ message: "Invalid batch ID format" });
+      }
+
+      let transferResult = null;
+      await session.withTransaction(async () => {
+        transferResult = await transferStudentBatchSeat({
+          studentId,
+          targetBatchId: batchId,
+          session,
+        });
+      });
+
+      if (!transferResult?.student) {
+        return res.status(500).json({
+          message: "Failed to transfer student batch",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: transferResult.changed
+          ? "Student batch updated successfully"
+          : "Student is already assigned to this batch",
+        student: sanitizeStudentResponse(transferResult.student),
+        batch: transferResult.batch,
+        previousBatch: transferResult.previousBatch,
+      });
+    } catch (error) {
+      console.error("Error transferring student batch:", error);
+      return res.status(error?.statusCode || 500).json({
+        success: false,
+        message: error?.message || "Failed to transfer student batch",
+        error: error?.message || "Failed to transfer student batch",
+      });
+    } finally {
+      session.endSession();
     }
   }
 );

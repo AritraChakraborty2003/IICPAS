@@ -145,6 +145,9 @@ const getCourseAccessState = (course) => {
   };
 };
 
+const normalizeBatchModeValue = (value) =>
+  String(value || "").trim().toLowerCase();
+
 const getFetchErrorMessage = (error, fallbackMessage) => {
   const status = error?.response?.status;
   const responseMessage =
@@ -1287,13 +1290,21 @@ function StudentDetailsView({
   const [data, setData] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [updatingCourseId, setUpdatingCourseId] = useState(null);
+  const [batchOptions, setBatchOptions] = useState([]);
+  const [selectedBatchId, setSelectedBatchId] = useState("");
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [savingBatch, setSavingBatch] = useState(false);
+  const [batchError, setBatchError] = useState("");
 
-  useEffect(() => {
-    if (!studentId) return;
+  const refreshOverview = useCallback(
+    async ({ background = false } = {}) => {
+      if (!studentId) return;
 
-    const fetchOverview = async () => {
       try {
-        setLoading(true);
+        if (!background) {
+          setLoading(true);
+        }
+
         const token = localStorage.getItem("adminToken");
         const response = await axios.get(
           `${API_BASE}/v1/students/admin/${studentId}/overview`,
@@ -1320,12 +1331,76 @@ function StudentDetailsView({
         toast.error(message);
         setData(null);
       } finally {
-        setLoading(false);
+        if (!background) {
+          setLoading(false);
+        }
       }
-    };
+    },
+    [studentId, pendingCourseAccessOverridesRef]
+  );
 
-    fetchOverview();
-  }, [studentId]);
+  useEffect(() => {
+    refreshOverview();
+  }, [refreshOverview]);
+
+  const student = data?.student || null;
+  const studentBatchId = String(student?.batchId?._id || student?.batchId || "");
+  const studentBatchMode = normalizeBatchModeValue(student?.batchMode || student?.mode);
+
+  useEffect(() => {
+    setSelectedBatchId(studentBatchId);
+  }, [studentBatchId]);
+
+  const refreshBatchOptions = useCallback(async () => {
+    if (!student?._id) return;
+
+    try {
+      setBatchLoading(true);
+      setBatchError("");
+
+      const token = localStorage.getItem("adminToken");
+      const response = await axios.get(`${API_BASE}/batch-manager`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const allBatches = Array.isArray(response.data?.batches)
+        ? response.data.batches
+        : [];
+      const filteredBatches = studentBatchMode
+        ? allBatches.filter(
+            (batch) => normalizeBatchModeValue(batch.mode) === studentBatchMode
+          )
+        : allBatches;
+      const currentBatchFromList = studentBatchId
+        ? allBatches.find((batch) => String(batch._id) === studentBatchId)
+        : null;
+      const currentBatch =
+        currentBatchFromList ||
+        (student?.batchId && typeof student.batchId === "object"
+          ? student.batchId
+          : null);
+      const nextOptions =
+        studentBatchId &&
+        currentBatch &&
+        !filteredBatches.some((batch) => String(batch._id) === studentBatchId)
+          ? [currentBatch, ...filteredBatches]
+          : filteredBatches;
+
+      setBatchOptions(nextOptions);
+      setSelectedBatchId(studentBatchId);
+    } catch (error) {
+      console.error("Error fetching batch options:", error);
+      const message = getFetchErrorMessage(error, "Failed to load batch options");
+      setBatchError(message);
+      toast.error(message);
+      setBatchOptions([]);
+    } finally {
+      setBatchLoading(false);
+    }
+  }, [student?._id, studentBatchId, studentBatchMode]);
+
+  useEffect(() => {
+    refreshBatchOptions();
+  }, [refreshBatchOptions]);
 
   const formatDate = (value) => {
     if (!value) return "N/A";
@@ -1347,6 +1422,57 @@ function StudentDetailsView({
       currency: "INR",
       maximumFractionDigits: 2,
     });
+
+  const handleBatchSave = async () => {
+    if (!studentId || !selectedBatchId) {
+      toast.error("Please choose a batch first");
+      return;
+    }
+
+    if (String(selectedBatchId) === studentBatchId) {
+      toast("Student is already assigned to this batch", {
+        icon: "ℹ️",
+      });
+      return;
+    }
+
+    try {
+      setSavingBatch(true);
+      setBatchError("");
+
+      const token = localStorage.getItem("adminToken");
+      const response = await axios.put(
+        `${API_BASE}/v1/students/admin/batch/${studentId}`,
+        { batchId: selectedBatchId },
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
+      );
+
+      toast.success(response.data?.message || "Student batch updated");
+      if (response.data?.student) {
+        setData((current) =>
+          current
+            ? {
+                ...current,
+                student: response.data.student,
+              }
+            : current
+        );
+      }
+      await refreshOverview({ background: true });
+    } catch (error) {
+      console.error("Error updating student batch:", error);
+      const message = getFetchErrorMessage(
+        error,
+        "Failed to update student batch"
+      );
+      setBatchError(message);
+      toast.error(message);
+    } finally {
+      setSavingBatch(false);
+    }
+  };
 
   const handleToggleCourseAccess = async (course) => {
     const courseId = course?.courseId || course?._id;
@@ -1390,30 +1516,7 @@ function StudentDetailsView({
             : current
         );
       }
-      try {
-        const refreshed = await axios.get(
-          `${API_BASE}/v1/students/admin/${studentId}/overview`,
-          {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          }
-        );
-        const reconciled = reconcileOverviewWithPendingCourseAccess(
-          refreshed.data || null,
-          pendingCourseAccessOverridesRef?.current || new Map()
-        );
-        if (pendingCourseAccessOverridesRef?.current) {
-          pendingCourseAccessOverridesRef.current = reconciled.pending;
-        }
-        setData(reconciled.data || null);
-      } catch (refreshError) {
-        console.error("Error refreshing student details:", refreshError);
-        toast.error(
-          getFetchErrorMessage(
-            refreshError,
-            "Course access saved, but the details refresh failed"
-          )
-        );
-      }
+      await refreshOverview({ background: true });
     } catch (error) {
       console.error("Error updating course access:", error);
       toast.error(
@@ -1484,9 +1587,16 @@ function StudentDetailsView({
     );
   }
 
-  const { student, courses = [], transactions = [], bookings = [], receipts = [] } = data;
+  const { courses = [], transactions = [], bookings = [], receipts = [] } = data;
   const overallCompletionPercent = Number(data.overallCompletionPercent || 0);
   const isInactive = String(student.status || "").toLowerCase() === "inactive";
+  const currentBatchLabel =
+    student.batchCode || student.batchId?.code || "Not assigned";
+  const canSaveBatch =
+    Boolean(selectedBatchId) &&
+    String(selectedBatchId) !== studentBatchId &&
+    !batchLoading &&
+    !savingBatch;
 
   return (
     <motion.div
@@ -1535,11 +1645,82 @@ function StudentDetailsView({
             <p className="text-xs text-gray-500">Center</p>
             <p className="text-sm font-semibold text-gray-900">{student.center || "N/A"}</p>
           </div>
-          <div className="bg-emerald-50 rounded-lg p-4">
-            <p className="text-xs text-emerald-600">Batch</p>
-            <p className="text-sm font-semibold text-emerald-800">
-              {student.batchCode || student.batchId?.code || "Not assigned"}
-            </p>
+          <div className="bg-emerald-50 rounded-lg p-4 lg:col-span-2">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs text-emerald-600">Batch Assignment</p>
+                <p className="text-sm font-semibold text-emerald-800">
+                  {currentBatchLabel}
+                </p>
+                <p className="text-xs text-emerald-600 mt-1">
+                  {studentBatchMode
+                    ? `Filtered to ${studentBatchMode} batches`
+                    : "Showing all available batches"}
+                </p>
+              </div>
+              <div className="inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-700">
+                {batchLoading ? "Loading batches..." : `${batchOptions.length} options`}
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-end">
+              <div className="flex-1">
+                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                  Select batch
+                </label>
+                <select
+                  value={selectedBatchId}
+                  onChange={(e) => setSelectedBatchId(e.target.value)}
+                  disabled={batchLoading || savingBatch || batchOptions.length === 0}
+                  className="w-full rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm font-semibold text-gray-900 shadow-sm outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 disabled:cursor-not-allowed disabled:bg-gray-100"
+                >
+                  <option value="">
+                    {batchLoading
+                      ? "Loading batch options..."
+                      : batchOptions.length === 0
+                      ? "No matching batches available"
+                      : "Choose a batch"}
+                  </option>
+                  {batchOptions.map((batch) => {
+                    const assignedCount = Number(batch.assignedCount || 0);
+                    const size = Number(batch.size || 0);
+                    const isFull = size > 0 && assignedCount >= size;
+                    const labelParts = [
+                      batch.code || batch._id,
+                      String(batch.mode || "").toUpperCase(),
+                      `${assignedCount}/${size}`,
+                    ];
+
+                    return (
+                      <option key={batch._id} value={batch._id}>
+                        {labelParts.filter(Boolean).join(" • ")}
+                        {isFull ? " • Full" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBatchSave}
+                disabled={!canSaveBatch}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+              >
+                {savingBatch ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Save size={16} />
+                )}
+                Save Batch
+              </button>
+            </div>
+
+            {batchError ? (
+              <p className="mt-3 text-xs font-medium text-rose-600">
+                {batchError}
+              </p>
+            ) : null}
           </div>
           <div className="bg-indigo-50 rounded-lg p-4">
             <p className="text-xs text-indigo-600">Overall Completion</p>
