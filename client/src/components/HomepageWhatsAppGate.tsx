@@ -44,7 +44,8 @@ export default function HomepageWhatsAppGate() {
   const leadApiBase = useMemo(() => `${apiBase}/leads`, [apiBase]);
 
   useEffect(() => {
-    if (!isHomepage) return;
+    const shouldLockScroll = isHomepage && !isVerified && !isDismissed;
+    if (!shouldLockScroll) return;
 
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -52,7 +53,7 @@ export default function HomepageWhatsAppGate() {
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [isHomepage]);
+  }, [isHomepage, isVerified, isDismissed]);
 
   useEffect(() => {
     if (step === "otp") {
