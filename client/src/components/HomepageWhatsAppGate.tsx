@@ -309,23 +309,23 @@ export default function HomepageWhatsAppGate() {
                 >
                   <div className="flex items-center justify-between bg-gradient-to-r from-[#16a34a] to-[#22c55e] px-4 py-4 text-white">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.24em] text-white/70">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-white/70">
                         Job seekers
                       </p>
-                      <h3 className="mt-1 max-w-[11rem] text-[1.05rem] font-semibold leading-tight sm:text-xl">
+                      <h3 className="mt-1 max-w-[10rem] text-[0.95rem] font-semibold leading-tight sm:text-[1.1rem]">
                         Upgrade Skills
                         <span className="block">for High Salary Jobs</span>
                       </h3>
                     </div>
-                    <UserCheck className="h-7 w-7 text-white/90" />
+                    <UserCheck className="h-6 w-6 text-white/90" />
                   </div>
                   <div className="px-4 py-4">
-                    <p className="text-sm leading-6 text-slate-600">
+                    <p className="text-[13px] leading-5 text-slate-600">
                       Learn in-demand skills, build visibility, and get verified quickly.
                     </p>
-                    <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                    <span className="mt-3 inline-flex items-center gap-2 text-[13px] font-semibold text-emerald-700">
                       Continue
-                      <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
+                      <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" />
                     </span>
                   </div>
                 </button>
