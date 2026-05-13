@@ -310,7 +310,7 @@ export default function StudentAuthForm() {
                       onChange={handleChange}
                       autoComplete="off"
                       placeholder="Phone"
-                      className="h-10 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
+                      className="h-12 min-w-0 flex-1 rounded-xl border border-slate-300 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
                     />
                     <button
                       type="button"
