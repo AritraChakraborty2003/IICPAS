@@ -1,8 +1,21 @@
 const toIdString = (value) => {
   if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "object" && typeof value._id === "string") {
-    return value._id;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "bigint") {
+    return String(value);
+  }
+  if (typeof value === "object") {
+    if (value._id != null) {
+      const nestedId = toIdString(value._id);
+      if (nestedId) {
+        return nestedId;
+      }
+    }
+    if (typeof value.toString === "function") {
+      const stringValue = value.toString();
+      if (stringValue && stringValue !== "[object Object]") {
+        return stringValue;
+      }
+    }
   }
   return "";
 };

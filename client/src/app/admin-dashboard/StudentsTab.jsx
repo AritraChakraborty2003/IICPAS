@@ -101,7 +101,31 @@ const formatDisplayDate = (value) => {
 };
 
 const getCourseId = (course) =>
-  course?.courseId || course?._id || course?.id || (typeof course === "string" ? course : "");
+  (() => {
+    if (!course) return "";
+    if (typeof course === "string" || typeof course === "number" || typeof course === "bigint") {
+      return String(course);
+    }
+    if (course.courseId != null) {
+      const nestedCourseId = getCourseId(course.courseId);
+      if (nestedCourseId) return nestedCourseId;
+    }
+    if (course._id != null) {
+      const nestedId = getCourseId(course._id);
+      if (nestedId) return nestedId;
+    }
+    if (course.id != null) {
+      const nestedId = getCourseId(course.id);
+      if (nestedId) return nestedId;
+    }
+    if (typeof course.toString === "function") {
+      const stringValue = course.toString();
+      if (stringValue && stringValue !== "[object Object]") {
+        return stringValue;
+      }
+    }
+    return "";
+  })();
 
 const getCourseTitle = (course) =>
   course?.title || course?.name || (typeof course === "string" ? course : "Untitled Course");
