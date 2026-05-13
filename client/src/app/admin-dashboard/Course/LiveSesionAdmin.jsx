@@ -1832,15 +1832,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                             ? "Inactive"
                             : "Active"}
                       </span>
-                      {String(s.status || "").toLowerCase() !== "completed" ? (
-                        <button
-                          type="button"
-                          onClick={() => markSessionCompleted(s._id)}
-                          className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                        >
-                          Mark Completed
-                        </button>
-                      ) : null}
                       <Switch
                         checked={s.status !== "inactive"}
                         onChange={() => toggleStatus(s._id)}
@@ -1925,16 +1916,6 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                                 ? "Inactive"
                                 : "Active"}
                           </span>
-                          {String(session.status || "").toLowerCase() !==
-                          "completed" ? (
-                            <button
-                              type="button"
-                              onClick={() => markSessionCompleted(session._id)}
-                              className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                            >
-                              Complete
-                            </button>
-                          ) : null}
                           <Switch
                             checked={session.status !== "inactive"}
                             onChange={() => toggleStatus(session._id)}
@@ -2004,6 +1985,22 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                 <p className="text-xs text-slate-500">
                   Timezone: {reminderTimezone}
                 </p>
+                {hasPermission("manage_live_sessions") &&
+                reminderTargetSession &&
+                String(reminderTargetSession.status || "").toLowerCase() !==
+                  "completed" ? (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        markSessionCompleted(reminderTargetSession._id)
+                      }
+                      className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                    >
+                      Mark Completed
+                    </button>
+                  </div>
+                ) : null}
               </div>
 
               <div className="w-full md:max-w-sm">
