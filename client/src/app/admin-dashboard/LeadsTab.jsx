@@ -1,21 +1,21 @@
 "use client";
 import { getApiBase } from "@/lib/apiBase";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FiMail } from "react-icons/fi";
-import { 
-  FaWhatsapp, 
-  FaUserPlus, 
-  FaCalendarAlt, 
-  FaClock, 
-  FaEdit, 
+import {
+  FaWhatsapp,
+  FaUserPlus,
+  FaCalendarAlt,
+  FaClock,
+  FaEdit,
   FaTrash,
   FaTimes,
   FaSave,
-  FaFileExcel
+  FaFileExcel,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
-import * as XLSX from 'xlsx';
+import * as XLSX from "xlsx";
 
 const API = `${getApiBase()}/leads`;
 const extractLeads = (payload) => {
@@ -26,25 +26,35 @@ const extractLeads = (payload) => {
   return [];
 };
 
-const SOURCE_OPTIONS = [
-  "enquiries",
-  "JustDial",
-  "IndiaMart",
-  "Facebook",
-  "Instagram",
-  "LinkedIn",
-  "GoogleAds",
-  "Referral",
-  "Walk-in",
-  "Website",
-  "Email",
-  "Cold Call",
-  "chatbot",
-];
+const normalizeLeadType = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
 
-export default function LeadsTab() {
+const formatLeadTypeLabel = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return "";
+
+  return text
+    .replace(/[-_]+/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
+};
+
+const stripEmptyValues = (values = {}) =>
+  Object.entries(values).reduce((acc, [key, value]) => {
+    if (value === "" || value === null || value === undefined) {
+      return acc;
+    }
+    acc[key] = value;
+    return acc;
+  }, {});
+
+export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
   const [leads, setLeads] = useState([]);
-  const [sourceFilter, setSourceFilter] = useState("enquiries");
+  const [leadTypeFilter, setLeadTypeFilter] = useState(defaultTypeFilter);
   const [loading, setLoading] = useState(false);
   const [editingLead, setEditingLead] = useState(null);
   const [showAssignModal, setShowAssignModal] = useState(false);
@@ -63,15 +73,16 @@ export default function LeadsTab() {
     type: ""
   });
 
+  useEffect(() => {
+    setLeadTypeFilter(defaultTypeFilter);
+  }, [defaultTypeFilter]);
+
   const fetchLeads = async () => {
     try {
       setLoading(true);
       const res = await fetch(API);
       const data = await res.json();
-      const filtered = extractLeads(data).filter(
-        (lead) => lead.type === sourceFilter
-      );
-      setLeads(filtered);
+      setLeads(extractLeads(data));
     } catch (error) {
       console.error("Failed to fetch leads:", error);
       toast.error("Failed to fetch leads");
@@ -80,14 +91,50 @@ export default function LeadsTab() {
     }
   };
 
+  const visibleLeads = useMemo(() => {
+    if (leadTypeFilter === "all") return leads;
+    const normalizedFilter = normalizeLeadType(leadTypeFilter);
+    return leads.filter(
+      (lead) => normalizeLeadType(lead.type) === normalizedFilter
+    );
+  }, [leads, leadTypeFilter]);
+
+  const leadTypeOptions = useMemo(() => {
+    const uniqueTypes = Array.from(
+      new Set(
+        leads
+          .map((lead) => String(lead?.type || "").trim())
+          .filter(Boolean)
+      )
+    ).sort((left, right) => left.localeCompare(right));
+
+    if (
+      defaultTypeFilter &&
+      defaultTypeFilter !== "all" &&
+      !uniqueTypes.some(
+        (type) => normalizeLeadType(type) === normalizeLeadType(defaultTypeFilter)
+      )
+    ) {
+      uniqueTypes.unshift(defaultTypeFilter);
+    }
+
+    return ["all", ...uniqueTypes];
+  }, [leads, defaultTypeFilter]);
+
   const updateLead = async (leadId, updateData) => {
     try {
+      const cleanUpdateData = stripEmptyValues(updateData);
+      if (Object.keys(cleanUpdateData).length === 0) {
+        toast("Nothing to update");
+        return false;
+      }
+
       const res = await fetch(`${API}/${leadId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify(cleanUpdateData),
       });
       
       if (res.ok) {
@@ -128,7 +175,7 @@ export default function LeadsTab() {
 
   useEffect(() => {
     fetchLeads();
-  }, [sourceFilter]);
+  }, []);
 
   const handleAssign = (lead) => {
     setSelectedLead(lead);

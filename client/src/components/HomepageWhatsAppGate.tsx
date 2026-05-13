@@ -28,7 +28,7 @@ export default function HomepageWhatsAppGate() {
   const isHomepage = pathname === "/";
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [intent, setIntent] = useState<"hire" | "hired" | null>(null);
+  const [intent, setIntent] = useState<"hire" | "learn" | null>(null);
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [sendingOtp, setSendingOtp] = useState(false);
   const [verifyingOtp, setVerifyingOtp] = useState(false);
@@ -37,8 +37,11 @@ export default function HomepageWhatsAppGate() {
   const [isDismissed, setIsDismissed] = useState(false);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const phoneInputRef = useRef<HTMLInputElement | null>(null);
+  const leadRecordIdRef = useRef<string | null>(null);
+  const leadRecordSignatureRef = useRef("");
 
   const apiBase = useMemo(() => getApiBase(), []);
+  const leadApiBase = useMemo(() => `${apiBase}/leads`, [apiBase]);
 
   useEffect(() => {
     if (!isHomepage) return;
@@ -74,6 +77,49 @@ export default function HomepageWhatsAppGate() {
   const canVerifyOtp =
     phone.length === 10 && otp.length === OTP_LENGTH && !verifyingOtp;
 
+  const getIntentLabel = (currentIntent: "hire" | "learn") =>
+    currentIntent === "hire" ? "Hire" : "Learn";
+
+  const buildLeadPayload = (currentPhone: string, currentIntent: "hire" | "learn") => {
+    const leadType = getIntentLabel(currentIntent);
+
+    return {
+      name: `${leadType} Lead`,
+      email: "",
+      phone: currentPhone,
+      whatsappNumber: currentPhone,
+      company: "",
+      message: `${leadType} lead captured from the homepage WhatsApp gate`,
+      type: leadType,
+      source: "homepage-whatsapp-gate",
+    };
+  };
+
+  const saveLeadRecord = async (currentPhone: string, currentIntent: "hire" | "learn") => {
+    const leadPayload = buildLeadPayload(currentPhone, currentIntent);
+    const signature = JSON.stringify(leadPayload);
+
+    if (
+      leadRecordIdRef.current &&
+      leadRecordSignatureRef.current === signature
+    ) {
+      return;
+    }
+
+    const isUpdating = Boolean(leadRecordIdRef.current);
+    const response = await axios.request({
+      method: isUpdating ? "put" : "post",
+      url: isUpdating ? `${leadApiBase}/${leadRecordIdRef.current}` : leadApiBase,
+      data: leadPayload,
+    });
+
+    const savedLead = response.data?.lead;
+    if (savedLead?._id) {
+      leadRecordIdRef.current = savedLead._id;
+    }
+    leadRecordSignatureRef.current = signature;
+  };
+
   const handleSendOtp = async (event: FormEvent) => {
     event.preventDefault();
 
@@ -84,6 +130,14 @@ export default function HomepageWhatsAppGate() {
 
     setSendingOtp(true);
     try {
+      if (intent) {
+        try {
+          await saveLeadRecord(phone, intent);
+        } catch (leadError) {
+          console.error("Failed to save homepage lead:", leadError);
+        }
+      }
+
       await axios.post(`${apiBase}/v1/students/homepage-gate/send-otp`, {
         phone,
       });
@@ -141,7 +195,7 @@ export default function HomepageWhatsAppGate() {
     setPhone(normalizePhoneNumber(value));
   };
 
-  const handleChooseIntent = (nextIntent: "hire" | "hired") => {
+  const handleChooseIntent = (nextIntent: "hire" | "learn") => {
     setIntent(nextIntent);
     setStep("phone");
     setPhone("");
@@ -195,23 +249,23 @@ export default function HomepageWhatsAppGate() {
               <p className="text-xs uppercase tracking-[0.28em] text-white/75">
                 IICPA Access
               </p>
-              <h2
-                id="homepage-whatsapp-gate-title"
-                className="mt-1 text-2xl font-semibold"
-              >
-                {intent === "hire"
-                  ? "Hire from us"
-                  : intent === "hired"
-                  ? "Get hired"
-                  : "Choose your path"}
-              </h2>
+                <h2
+                  id="homepage-whatsapp-gate-title"
+                  className="mt-1 text-2xl font-semibold"
+                >
+                  {intent === "hire"
+                    ? "Hire from us"
+                    : intent === "learn"
+                    ? "Learn from us"
+                    : "Choose your path"}
+                </h2>
             </div>
           </div>
           <p className="mt-3 max-w-[26rem] text-sm text-white/80">
             {intent === "hire"
               ? "Start hiring with IICPA and unlock qualified talent through WhatsApp verification."
-              : intent === "hired"
-              ? "Join the job-seeker flow and continue with WhatsApp verification."
+              : intent === "learn"
+              ? "Join the learner flow and continue with WhatsApp verification."
               : "Select the card that matches what you want to do."}
           </p>
         </div>
@@ -249,7 +303,7 @@ export default function HomepageWhatsAppGate() {
 
                 <button
                   type="button"
-                  onClick={() => handleChooseIntent("hired")}
+                  onClick={() => handleChooseIntent("learn")}
                   className="group overflow-hidden rounded-[24px] border border-emerald-100 bg-emerald-50 text-left transition hover:-translate-y-0.5 hover:border-emerald-300 hover:shadow-lg"
                 >
                   <div className="flex items-center justify-between bg-gradient-to-r from-[#16a34a] to-[#22c55e] px-4 py-4 text-white">
@@ -258,7 +312,7 @@ export default function HomepageWhatsAppGate() {
                         Job seekers
                       </p>
                       <h3 className="mt-1 text-xl font-semibold">
-                        Learn From US
+                        Learn From Us
                       </h3>
                     </div>
                     <UserCheck className="h-7 w-7 text-white/90" />

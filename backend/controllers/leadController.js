@@ -1,6 +1,19 @@
 // controllers/leadController.js
 import Lead from "../models/Lead.js";
 
+const normalizeText = (value) =>
+  typeof value === "string" ? value.trim() : value;
+
+const isMeaningfulValue = (value) =>
+  value !== undefined && value !== null && value !== "";
+
+const buildLeadUpdateData = (payload = {}) =>
+  Object.entries(payload).reduce((acc, [key, value]) => {
+    if (!isMeaningfulValue(value)) return acc;
+    acc[key] = normalizeText(value);
+    return acc;
+  }, {});
+
 export const createLead = async (req, res) => {
   try {
     const {
@@ -18,18 +31,18 @@ export const createLead = async (req, res) => {
       course,
     } = req.body;
     const newLead = new Lead({
-      name,
-      email,
-      phone,
-      whatsappNumber,
-      company,
-      message,
-      type,
-      source,
-      landingPageSessionId,
-      landingPageUrl,
-      landingPageTitle,
-      course,
+      name: normalizeText(name) || normalizeText(phone) || "Lead",
+      email: normalizeText(email),
+      phone: normalizeText(phone),
+      whatsappNumber: normalizeText(whatsappNumber),
+      company: normalizeText(company),
+      message: normalizeText(message),
+      type: normalizeText(type),
+      source: normalizeText(source),
+      landingPageSessionId: normalizeText(landingPageSessionId),
+      landingPageUrl: normalizeText(landingPageUrl),
+      landingPageTitle: normalizeText(landingPageTitle),
+      course: normalizeText(course),
     });
     await newLead.save();
     res.status(201).json({ success: true, lead: newLead });
@@ -52,7 +65,7 @@ export const getLeads = async (req, res) => {
 export const updateLead = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = buildLeadUpdateData(req.body);
     
     const lead = await Lead.findByIdAndUpdate(
       id,

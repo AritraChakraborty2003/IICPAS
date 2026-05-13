@@ -10,7 +10,7 @@ import JobsAdminPanel from "./JobsAdminPanel";
 import TestimonialAdmin from "./Course/TestimonialAdmin";
 import NewsTab from "./NewsTab";
 import StaffManagementTab from "./StaffManagementTab";
-import EnquiriesTab from "./LeadsTab";
+import LeadsTab from "./LeadsTab";
 import Drawer from "react-modern-drawer";
 import ManageMetaTags from "./Course/ManageMetaTags";
 import BlogComponent from "./BlogComponent";
@@ -388,7 +388,7 @@ const NAVIGATION_GROUPS = [
     label: "Communication",
     icon: <FaEnvelope />,
     items: [
-      { id: "enquiries", label: "Enquiries", icon: <FaEnvelope /> },
+      { id: "enquiries", label: "Leads", icon: <FaEnvelope /> },
       { id: "messages", label: "Messages", icon: <FaComments /> },
       { id: "bulk-email", label: "Bulk Email", icon: <FaEnvelope /> },
       {
@@ -798,7 +798,7 @@ function AdminDashboardContent() {
         ) : activeTab === "live-bookings" ? (
           <LiveBookingsTab />
         ) : activeTab === "enquiries" ? (
-          <EnquiriesTab />
+          <LeadsTab defaultTypeFilter="all" />
         ) : activeTab === "support" ? (
           <TicketTab viewerType="admin" />
         ) : activeTab === "calendar" ? (
