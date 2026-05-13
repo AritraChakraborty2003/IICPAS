@@ -124,6 +124,15 @@ const findOpenBatchForMode = async (mode, session = null) => {
     .session(session);
 };
 
+const deleteBatchIfEmpty = async (batch, session = null) => {
+  if (!batch || Number(batch.assignedCount || 0) > 0) {
+    return batch;
+  }
+
+  await BatchManager.deleteOne({ _id: batch._id }).session(session);
+  return null;
+};
+
 export const reserveBatchSeat = async ({ mode, size, session = null } = {}) => {
   const normalizedMode = normalizeBatchMode(mode);
   if (!normalizedMode) {
@@ -203,12 +212,11 @@ export const releaseBatchSeat = async ({ batchId, created = false, session = nul
   if (!batch) return null;
 
   batch.assignedCount = Math.max(0, Number(batch.assignedCount || 0) - 1);
-  if (batch.assignedCount === 0 && created) {
-    await batch.deleteOne({ session });
-    return null;
+  await batch.save({ session });
+  if (batch.assignedCount === 0) {
+    return deleteBatchIfEmpty(batch, session);
   }
 
-  await batch.save({ session });
   return batch;
 };
 
@@ -276,7 +284,7 @@ export const transferStudentBatchSeat = async ({
       throw createBatchTransferError("Current batch not found for this student", 404);
     }
 
-    const decrementedBatch = await BatchManager.findOneAndUpdate(
+  const decrementedBatch = await BatchManager.findOneAndUpdate(
       {
         _id: previousBatch._id,
         assignedCount: { $gt: 0 },
@@ -292,6 +300,10 @@ export const transferStudentBatchSeat = async ({
 
     if (!decrementedBatch) {
       throw createBatchTransferError("Current batch seat count is inconsistent", 409);
+    }
+
+    if (Number(decrementedBatch.assignedCount || 0) === 0) {
+      await BatchManager.deleteOne({ _id: decrementedBatch._id }).session(session);
     }
 
     previousBatch = decrementedBatch;

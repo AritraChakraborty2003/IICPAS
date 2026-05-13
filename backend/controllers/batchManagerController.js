@@ -1,4 +1,5 @@
 import BatchManager from "../models/BatchManager.js";
+import Student from "../models/Students.js";
 import {
   buildBatchSummary,
   generateNextBatchCode,
@@ -6,27 +7,45 @@ import {
   normalizeBatchSize,
 } from "../services/batchAssignmentService.js";
 
-const backfillMissingBatchMetadata = async () => {
-  const batchesWithMissingCode = await BatchManager.find({
-    $or: [
-      { code: { $exists: false } },
-      { code: null },
-      { code: "" },
-    ],
-  }).sort({ createdAt: 1 });
+const reconcileBatchMetadata = async () => {
+  const studentCounts = await Student.aggregate([
+    {
+      $match: {
+        batchId: { $ne: null },
+      },
+    },
+    {
+      $group: {
+        _id: "$batchId",
+        count: { $sum: 1 },
+      },
+    },
+  ]);
 
-  for (const batch of batchesWithMissingCode) {
-    batch.code = await generateNextBatchCode();
-    if (!Number.isFinite(Number(batch.assignedCount)) || Number(batch.assignedCount) < 0) {
-      batch.assignedCount = 0;
+  const countByBatchId = new Map(
+    studentCounts.map((entry) => [String(entry?._id), Number(entry?.count || 0)])
+  );
+
+  const batches = await BatchManager.find({}).sort({ createdAt: 1 });
+
+  for (const batch of batches) {
+    if (!batch.code) {
+      batch.code = await generateNextBatchCode();
     }
+
+    const actualCount = countByBatchId.get(String(batch._id)) || 0;
+    batch.assignedCount = actualCount;
     await batch.save();
+
+    if (actualCount === 0) {
+      await BatchManager.deleteOne({ _id: batch._id });
+    }
   }
 };
 
 export const getBatchManagerEntries = async (req, res) => {
   try {
-    await backfillMissingBatchMetadata();
+    await reconcileBatchMetadata();
     const batches = await BatchManager.getBatches();
 
     return res.status(200).json({
@@ -137,7 +156,11 @@ export const deleteBatchManagerEntry = async (req, res) => {
       });
     }
 
-    if (Number(batch.assignedCount || 0) > 0) {
+    const actualAssignedCount = await Student.countDocuments({
+      batchId: batch._id,
+    });
+
+    if (actualAssignedCount > 0) {
       return res.status(400).json({
         success: false,
         message: "Cannot delete a batch that already has assigned students",
