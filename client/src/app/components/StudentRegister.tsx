@@ -341,7 +341,7 @@ export default function StudentRegisterForm() {
                   <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
                     Phone
                   </label>
-                  <div className="flex flex-col gap-2 sm:flex-row">
+                  <div className="flex flex-col gap-2">
                     <input
                       type="tel"
                       name="phone"
@@ -355,7 +355,7 @@ export default function StudentRegisterForm() {
                       type="button"
                       onClick={handleSendRegisterOtp}
                       disabled={sendingRegisterOtp}
-                      className="h-10 shrink-0 rounded-xl border border-emerald-600 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
+                      className="h-11 w-full rounded-xl border border-emerald-600 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {sendingRegisterOtp
                         ? "Sending..."
