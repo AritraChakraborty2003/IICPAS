@@ -317,7 +317,7 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
       // Save file
       XLSX.writeFile(wb, filename);
 
-      toast.success(`${leads.length} leads exported to Excel successfully!`);
+      toast.success(`${visibleLeads.length} leads exported to Excel successfully!`);
     } catch (error) {
       console.error("Error exporting to Excel:", error);
       toast.error("Failed to export leads to Excel");
@@ -629,19 +629,15 @@ export default function LeadsTab({ defaultTypeFilter = "all" } = {}) {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Source:
+                  Type:
                 </label>
-                <select
+                <input
+                  type="text"
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {SOURCE_OPTIONS.map((source) => (
-                    <option key={source} value={source}>
-                      {source}
-                    </option>
-                  ))}
-                </select>
+                  placeholder="Hire / Learn / Admission Course"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
