@@ -3710,17 +3710,6 @@ export default function DigitalHubClient({
                         Chapter topics {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
-                      {selectedTopicIntroVideo && !isSelectedTopicLockedForBatch ? (
-                        <button
-                          type="button"
-                          onClick={() => setIsIntroVideoModalOpen(true)}
-                          className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-                        >
-                          <BookOpen className="h-4 w-4" />
-                          Watch Intro Video
-                        </button>
-                      ) : null}
-
                       {/* New: Watch Live Videos Button */}
                       {!isSelectedTopicLockedForBatch && selectedTopic?.lessons?.some(l => l.kind === "live") ? (
                         <button

@@ -66,7 +66,6 @@ import {
   FaMapMarkerAlt,
   FaList,
   FaUserTie,
-  FaArrowLeft,
   FaComments,
   FaUser,
   FaRobot,
