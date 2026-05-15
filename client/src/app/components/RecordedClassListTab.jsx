@@ -251,120 +251,139 @@ export default function RecordedClassListTab({ student }) {
         </div>
       ) : (
         <div className="space-y-10">
-          {groupedSessions.map((course) => (
-            <section key={course.id} className="rounded-3xl border border-gray-200 bg-white shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
-                    <BookOpen className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{course.title}</h2>
-                    <p className="text-sm text-gray-500">
-                      {course.chapters.reduce(
-                        (sum, chapter) => sum + chapter.sessions.length,
-                        0
-                      )}{" "}
-                      recorded class{course.chapters.length === 1 ? "" : "es"}
-                    </p>
-                  </div>
-                </div>
-              </div>
+          {groupedSessions.map((course) => {
+            const courseSessionCount = course.chapters.reduce(
+              (sum, chapter) => sum + chapter.sessions.length,
+              0
+            );
 
-              <div className="px-5 py-4">
-                <div className="space-y-8">
-                  {course.chapters.map((chapter) => (
-                    <div key={chapter.id}>
-                      <div className="mb-3 flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-gray-400" />
-                        <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">
-                          {chapter.title}
-                        </h3>
-                      </div>
-
-                      <ul className="divide-y divide-gray-200 overflow-hidden rounded-2xl border border-gray-200">
-                        {chapter.sessions.map((session) => (
-                          <li
-                            key={session._id}
-                            className="flex flex-col gap-4 bg-white px-4 py-4 transition-colors hover:bg-gray-50 md:flex-row md:items-center md:justify-between"
-                          >
-                            <div className="flex items-start gap-4">
-                              <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
-                                <PlayCircle className="h-6 w-6" />
-                              </div>
-
-                              <div>
-                                <div className="flex flex-wrap items-center gap-2">
-                                  <h4 className="text-base font-semibold text-gray-900">
-                                    {session.title}
-                                  </h4>
-                                  <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-green-700">
-                                    {getSessionStatusLabel(session.status)}
-                                  </span>
-                                </div>
-
-                                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
-                                  <div className="flex items-center gap-1.5">
-                                    <Calendar className="w-4 h-4" />
-                                    <span>{formatDate(session.date)}</span>
-                                  </div>
-                                  {session.time ? (
-                                    <div className="flex items-center gap-1.5">
-                                      <Clock className="w-4 h-4" />
-                                      <span>{session.time}</span>
-                                    </div>
-                                  ) : null}
-                                  <span className="flex items-center gap-1.5">
-                                    <Layers className="w-4 h-4" />
-                                    <span>Batch {session.batchCode || session.batchId?.code || batchLabel}</span>
-                                  </span>
-                                </div>
-
-                                <div className="mt-2 text-sm text-gray-600">
-                                  <span className="font-medium text-gray-700">Instructor:</span>{" "}
-                                  {session.instructor || "Not assigned"}
-                                  <span className="mx-2 text-gray-300">•</span>
-                                  <span className="font-medium text-gray-700">Chapter:</span>{" "}
-                                  {chapter.title}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 md:pl-6 md:text-right">
-                              <div className="hidden md:block">
-                                <div className="text-xs uppercase tracking-[0.18em] text-gray-400">
-                                  Recorded link
-                                </div>
-                                <div className="mt-1 text-sm text-gray-600">
-                                  {session.link ? "Available" : "Not available"}
-                                </div>
-                              </div>
-
-                              <button
-                                onClick={() => {
-                                  if (!session.link) return;
-                                  window.open(session.link, "_blank", "noopener,noreferrer");
-                                }}
-                                disabled={!session.link}
-                                className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300 ${
-                                  session.link
-                                    ? "bg-gray-900 text-white shadow-lg shadow-gray-200 hover:bg-blue-600"
-                                    : "cursor-not-allowed bg-gray-100 text-gray-400"
-                                }`}
-                              >
-                                <ExternalLink className="w-4 h-4" />
-                                Watch Class
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
+            return (
+              <section
+                key={course.id}
+                className="rounded-3xl border border-gray-200 bg-white shadow-sm"
+              >
+                <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-5 py-4">
+                  <div className="flex items-center gap-3">
+                    <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
+                      <BookOpen className="h-5 w-5" />
                     </div>
-                  ))}
+                    <div>
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        {course.title}
+                      </h2>
+                      <p className="text-sm text-gray-500">
+                        {courseSessionCount} recorded class
+                        {courseSessionCount === 1 ? "" : "es"}
+                      </p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </section>
-          ))}
+
+                <div className="px-5 py-4">
+                  <div className="space-y-8">
+                    {course.chapters.map((chapter) => (
+                      <div key={chapter.id}>
+                        <div className="mb-3 flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 text-gray-400" />
+                          <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500">
+                            {chapter.title}
+                          </h3>
+                        </div>
+
+                        <ul className="divide-y divide-gray-200 overflow-hidden rounded-2xl border border-gray-200">
+                          {chapter.sessions.map((session) => (
+                            <li
+                              key={session._id}
+                              className="flex flex-col gap-4 bg-white px-4 py-4 transition-colors hover:bg-gray-50 md:flex-row md:items-center md:justify-between"
+                            >
+                              <div className="flex items-start gap-4">
+                                <div className="rounded-2xl bg-blue-50 p-3 text-blue-600">
+                                  <PlayCircle className="h-6 w-6" />
+                                </div>
+
+                                <div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <h4 className="text-base font-semibold text-gray-900">
+                                      {session.title}
+                                    </h4>
+                                    <span className="rounded-full bg-green-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-green-700">
+                                      {getSessionStatusLabel(session.status)}
+                                    </span>
+                                  </div>
+
+                                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-gray-500">
+                                    <div className="flex items-center gap-1.5">
+                                      <Calendar className="w-4 h-4" />
+                                      <span>{formatDate(session.date)}</span>
+                                    </div>
+                                    {session.time ? (
+                                      <div className="flex items-center gap-1.5">
+                                        <Clock className="w-4 h-4" />
+                                        <span>{session.time}</span>
+                                      </div>
+                                    ) : null}
+                                    <span className="flex items-center gap-1.5">
+                                      <Layers className="w-4 h-4" />
+                                      <span>
+                                        Batch {session.batchCode || session.batchId?.code || batchLabel}
+                                      </span>
+                                    </span>
+                                  </div>
+
+                                  <div className="mt-2 text-sm text-gray-600">
+                                    <span className="font-medium text-gray-700">
+                                      Instructor:
+                                    </span>{" "}
+                                    {session.instructor || "Not assigned"}
+                                    <span className="mx-2 text-gray-300">•</span>
+                                    <span className="font-medium text-gray-700">
+                                      Chapter:
+                                    </span>{" "}
+                                    {chapter.title}
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center gap-3 md:pl-6 md:text-right">
+                                <div className="hidden md:block">
+                                  <div className="text-xs uppercase tracking-[0.18em] text-gray-400">
+                                    Recorded link
+                                  </div>
+                                  <div className="mt-1 text-sm text-gray-600">
+                                    {session.link ? "Available" : "Not available"}
+                                  </div>
+                                </div>
+
+                                <button
+                                  onClick={() => {
+                                    if (!session.link) return;
+                                    window.open(
+                                      session.link,
+                                      "_blank",
+                                      "noopener,noreferrer"
+                                    );
+                                  }}
+                                  disabled={!session.link}
+                                  className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-all duration-300 ${
+                                    session.link
+                                      ? "bg-gray-900 text-white shadow-lg shadow-gray-200 hover:bg-blue-600"
+                                      : "cursor-not-allowed bg-gray-100 text-gray-400"
+                                  }`}
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                  Watch Class
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
+            );
+          })}
         </div>
       )}
     </div>

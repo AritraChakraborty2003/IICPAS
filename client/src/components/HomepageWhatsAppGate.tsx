@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   Smartphone,
   RefreshCw,
-  X,
   BriefcaseBusiness,
   UserCheck,
 } from "lucide-react";
@@ -203,10 +202,6 @@ export default function HomepageWhatsAppGate() {
     setOtp("");
   };
 
-  const handleClose = () => {
-    setIsDismissed(true);
-  };
-
   const handleBackToChoice = () => {
     setIntent(null);
     setStep("phone");
@@ -221,7 +216,7 @@ export default function HomepageWhatsAppGate() {
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-md"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/25 px-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="homepage-whatsapp-gate-title"
@@ -232,15 +227,6 @@ export default function HomepageWhatsAppGate() {
         transition={{ duration: 0.22, ease: "easeOut" }}
         className="relative w-[92vw] max-w-[620px] overflow-hidden rounded-[28px] border border-white/15 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)]"
       >
-        <button
-          type="button"
-          onClick={handleClose}
-          className="absolute right-3 top-3 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/20 text-white transition hover:bg-white/30"
-          aria-label="Close verification modal"
-        >
-          <X className="h-5 w-5" />
-        </button>
-
         <div className="bg-gradient-to-r from-[#0f5132] via-[#16a34a] to-[#22c55e] px-6 py-5 text-white">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">
@@ -285,7 +271,7 @@ export default function HomepageWhatsAppGate() {
                       <p className="text-xs uppercase tracking-[0.24em] text-white/70">
                         Employers
                       </p>
-                      <h3 className="mt-1 text-xl font-semibold">
+                      <h3 className="mt-1 max-w-[10rem] text-[0.95rem] font-semibold leading-tight sm:text-[1.1rem]">
                         Hire from us
                       </h3>
                     </div>
