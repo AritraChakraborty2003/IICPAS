@@ -3691,7 +3691,7 @@ export default function DigitalHubClient({
                   )}
 
                   <div
-                    className={`digital-hub-content bg-white border border-stone-200 rounded-2xl p-4 text-base leading-relaxed shadow-sm text-slate-900 sm:p-6 sm:text-lg lg:p-8 ${
+                    className={`digital-hub-content min-h-[32rem] bg-white border border-stone-200 rounded-2xl p-4 text-base leading-relaxed shadow-sm text-slate-900 sm:p-6 sm:text-lg lg:p-8 ${
                       isDarkMode ? "topic-content-dark" : "topic-content-light"
                     }`}
                     style={{ fontFamily: DIGITAL_HUB_FONT_STACK }}
