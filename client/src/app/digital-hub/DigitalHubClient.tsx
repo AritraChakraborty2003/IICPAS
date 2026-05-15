@@ -3594,6 +3594,11 @@ export default function DigitalHubClient({
                 </div>
               </div>
             ) : null}
+            {loading && hasRenderedContent ? (
+              <div className="pointer-events-none absolute right-4 top-4 z-10 rounded-full border border-stone-200 bg-white/90 px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm backdrop-blur">
+                Loading new content...
+              </div>
+            ) : null}
 
             <div
               className={`prose max-w-none ${
