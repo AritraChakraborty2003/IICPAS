@@ -2,7 +2,11 @@ import BatchManager from "../models/BatchManager.js";
 import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
 import nodemailer from "nodemailer";
-import { isEmailConfigured, setupEmailInstructions } from "../config/emailConfig.js";
+import {
+  emailConfig,
+  isEmailConfigured,
+  setupEmailInstructions,
+} from "../config/emailConfig.js";
 import {
   buildBatchSummary,
   generateNextBatchCode,
@@ -10,13 +14,7 @@ import {
   normalizeBatchSize,
 } from "../services/batchAssignmentService.js";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+const createTransporter = () => nodemailer.createTransport(emailConfig);
 
 const parseMaybeArray = (value) => {
   if (value === null || value === undefined || value === "") return [];
@@ -165,6 +163,8 @@ const sendBatchCourseScheduleEmails = async (batch) => {
 
   const results = await Promise.allSettled(
     students.map(async (student) => {
+      const transporter = createTransporter();
+      await transporter.verify();
       await transporter.sendMail({
         from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
         to: student.email,
@@ -359,7 +359,6 @@ export const updateBatchManagerEntry = async (req, res) => {
       });
     }
 
-    const previousCourseLocks = Array.isArray(batch.courseLocks) ? [...batch.courseLocks] : [];
     const assignedCount = Number(batch.assignedCount || 0);
     if (size < assignedCount) {
       return res.status(400).json({
@@ -378,7 +377,7 @@ export const updateBatchManagerEntry = async (req, res) => {
     }
     await batch.save();
 
-    if (hasCourseLocks && courseLocks?.length > 0 && courseLocksChanged(previousCourseLocks, courseLocks)) {
+    if (hasCourseLocks && courseLocks?.length > 0) {
       try {
         await sendBatchCourseScheduleEmails(batch);
       } catch (emailError) {

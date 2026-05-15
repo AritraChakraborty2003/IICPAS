@@ -1082,6 +1082,15 @@ export default function DigitalHubClient({
   );
   const isCourseBatchPreviewOnly = courseBatchWindowState.isBatchPreviewOnly;
   const hasCourseBatchWindow = courseBatchWindowState.hasBatchWindow;
+  const isBatchContentLocked =
+    !isDemo && hasCourseBatchWindow && !courseBatchWindowState.isBatchWindowActive;
+  const selectedChapterIndex = useMemo(
+    () =>
+      courseChapters.findIndex(
+        (chapter) => String(chapter._id) === String(selectedChapter?._id || "")
+      ),
+    [courseChapters, selectedChapter?._id]
+  );
   const isCourseAccessBlocked = Boolean(
     !hasCourseBatchWindow &&
       String(activePurchasedCourseRecord?.status || "").toLowerCase() ===
@@ -1090,14 +1099,16 @@ export default function DigitalHubClient({
   const hasStudentCourseAccess = Boolean(activePurchasedCourseRecord);
   const visibleChapters = isDemo
     ? courseChapters.slice(0, 1)
-    : isCourseBatchPreviewOnly
-    ? courseChapters.slice(0, 1)
     : courseChapters;
   const visibleTopics = isDemo
     ? topics.slice(0, 1)
-    : isCourseBatchPreviewOnly
-    ? topics.slice(0, 1)
     : topics;
+  const isChapterLocked = (chapterIndex: number) =>
+    isBatchContentLocked && chapterIndex > 0;
+  const isTopicLocked = (
+    topicIndex: number,
+    chapterIndex = selectedChapterIndex
+  ) => isBatchContentLocked && (chapterIndex > 0 || topicIndex > 0);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -1500,11 +1511,12 @@ export default function DigitalHubClient({
       navigationMode: "push" | "replace" | "none" = "none",
       preferredTopicId?: string
     ) => {
-      const availableTopics = isDemo
-        ? chapter.topics || []
-        : isCourseBatchPreviewOnly
-        ? (chapter.topics || []).slice(0, 1)
-        : chapter.topics || [];
+      const availableTopics = chapter.topics || [];
+      const chapterIndex = courseChapters.findIndex(
+        (candidate) => String(candidate._id) === String(chapter._id)
+      );
+      const shouldRestrictToFirstTopic =
+        !isDemo && isBatchContentLocked && chapterIndex >= 0;
       setIsIntroVideoModalOpen(false);
       setSelectedChapter(chapter);
       setTopics(availableTopics);
@@ -1527,7 +1539,9 @@ export default function DigitalHubClient({
         const storedTopic = preferredTopicId
           ? availableTopics.find((topic) => topic._id === preferredTopicId)
           : null;
-        const firstTopic = storedTopic || availableTopics[0] || null;
+        const firstTopic = shouldRestrictToFirstTopic
+          ? availableTopics[0] || null
+          : storedTopic || availableTopics[0] || null;
         setSelectedTopic(firstTopic);
         if (firstTopic?._id) {
           storeLastSelection(chapter._id, firstTopic._id);
@@ -2280,8 +2294,8 @@ export default function DigitalHubClient({
           `${API_BASE}/v1/course-bookings/student`,
           {
             withCredentials: true,
-          }
-        );
+    }
+  );
         if (cancelled) return;
         setStudentCourseBookings(
           Array.isArray(response.data?.bookings) ? response.data.bookings : []
