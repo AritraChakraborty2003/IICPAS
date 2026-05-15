@@ -874,6 +874,10 @@ export default function DigitalHubClient({
     () => normalizeDigitalHubContent(topicContent),
     [topicContent]
   );
+  const hasRenderedContent = Boolean(
+    selectedTopic || selectedAssignment || selectedCaseStudy || topicContent
+  );
+  const isInitialContentLoading = loading && !hasRenderedContent;
 
   // New state for case studies and assignments
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
@@ -3581,16 +3585,22 @@ export default function DigitalHubClient({
             isDarkMode ? "bg-slate-950" : "bg-stone-50"
           }`}
         >
-          <div ref={studyAreaRef} className="w-full">
+          <div ref={studyAreaRef} className="relative w-full">
             {/* Content Display */}
-            <div className="prose max-w-none">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-lg text-gray-600">
-                    Loading content...
-                  </div>
+            {loading && !hasRenderedContent ? (
+              <div className="flex min-h-[40rem] items-center justify-center">
+                <div className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 shadow-sm">
+                  Loading content...
                 </div>
-              ) : selectedTopic ? (
+              </div>
+            ) : null}
+
+            <div
+              className={`prose max-w-none ${
+                isInitialContentLoading ? "invisible" : "visible"
+              }`}
+            >
+              {selectedTopic ? (
                 <>
                   <h1
                     className={`mb-5 text-3xl font-bold sm:mb-8 sm:text-4xl ${
@@ -4530,6 +4540,7 @@ export default function DigitalHubClient({
                 </div>
               )}
             </div>
+          </div>
       </div>
     </div>
   </div>
