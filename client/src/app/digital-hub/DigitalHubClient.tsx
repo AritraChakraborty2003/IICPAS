@@ -4548,7 +4548,6 @@ export default function DigitalHubClient({
           </div>
       </div>
     </div>
-  </div>
 
       {isTourOpen && (
         <div className="fixed inset-0 z-[70]">
