@@ -299,19 +299,29 @@ export default function CourseTab() {
 
   const getCourseAccessWindow = (courseId) => {
     const access = purchasedCourseAccessMap.get(String(courseId)) || null;
+    const accessState = String(access?.batchAccessState || "").toLowerCase();
     const batchLockStartsAt = parseDateOrNull(access?.batchLockStartsAt);
     const batchLockEndsAt = parseDateOrNull(access?.batchLockEndsAt);
     const hasBatchWindow = Boolean(batchLockStartsAt && batchLockEndsAt);
-    const now = Date.now();
-    const isWithinBatchWindow = hasBatchWindow
-      ? now >= batchLockStartsAt.getTime() && now <= batchLockEndsAt.getTime()
-      : true;
+    const isWithinBatchWindow =
+      accessState === "active" ||
+      (typeof access?.batchWindowActive === "boolean"
+        ? access.batchWindowActive
+        : hasBatchWindow
+        ? Date.now() >= batchLockStartsAt.getTime() &&
+          Date.now() <= batchLockEndsAt.getTime()
+        : true);
+    const isPreviewOnly =
+      accessState === "preview" ||
+      (typeof access?.batchPreviewOnly === "boolean"
+        ? access.batchPreviewOnly
+        : hasBatchWindow && !isWithinBatchWindow);
 
     return {
       access,
       hasBatchWindow,
       isWithinBatchWindow,
-      isPreviewOnly: hasBatchWindow && !isWithinBatchWindow,
+      isPreviewOnly,
       isHardLocked:
         !hasBatchWindow &&
         String(access?.status || "").toLowerCase() === "inactive",

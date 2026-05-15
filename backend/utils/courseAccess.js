@@ -84,6 +84,30 @@ const normalizeBatchCourseLocks = (batch) => {
   return normalized;
 };
 
+const getBatchAccessState = (batchLock) => {
+  const start_time = batchLock?.start_time || null;
+  const end_time = batchLock?.end_time || null;
+  const hasWindow = Boolean(start_time && end_time);
+
+  if (!hasWindow) {
+    return {
+      batchWindowActive: false,
+      batchPreviewOnly: false,
+      batchAccessState: "none",
+    };
+  }
+
+  const now = Date.now();
+  const isWindowActive =
+    start_time.getTime() <= now && now <= end_time.getTime();
+
+  return {
+    batchWindowActive: isWindowActive,
+    batchPreviewOnly: !isWindowActive,
+    batchAccessState: isWindowActive ? "active" : "preview",
+  };
+};
+
 const normalizeLockedValue = (value) => {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value !== 0;
@@ -247,10 +271,8 @@ export const buildCourseAccessEntries = ({
       const expiresAt = toValidDate(baseCourse?.expiresAt) || addOneYear(purchaseAt);
       const override = overrideIndex.get(courseId);
       const batchLock = batchLockIndex.get(courseId);
-      const batchLockActive = Boolean(
-        batchLock?.end_time && batchLock.end_time.getTime() <= Date.now()
-      );
-      const isLocked = Boolean(override?.isLocked || batchLockActive);
+      const batchAccessState = getBatchAccessState(batchLock);
+      const isLocked = Boolean(override?.isLocked);
       const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : false;
 
       return {
@@ -265,7 +287,10 @@ export const buildCourseAccessEntries = ({
         purchasedAt: purchaseAt ? purchaseAt.toISOString() : null,
         expiresAt: expiresAt ? expiresAt.toISOString() : null,
         isLocked,
-        batchLockActive,
+        batchLockActive: batchAccessState.batchWindowActive,
+        batchWindowActive: batchAccessState.batchWindowActive,
+        batchPreviewOnly: batchAccessState.batchPreviewOnly,
+        batchAccessState: batchAccessState.batchAccessState,
         batchLockStartsAt: batchLock?.start_time ? batchLock.start_time.toISOString() : null,
         batchLockEndsAt: batchLock?.end_time ? batchLock.end_time.toISOString() : null,
         isExpired,

@@ -131,6 +131,10 @@ interface CourseAccessRecord {
   status?: string;
   batchLockStartsAt?: string | null;
   batchLockEndsAt?: string | null;
+  batchLockActive?: boolean;
+  batchWindowActive?: boolean;
+  batchPreviewOnly?: boolean;
+  batchAccessState?: string | null;
 }
 
 // Add Google Translate types
@@ -480,6 +484,49 @@ const parseDateOrNull = (value?: string | null) => {
 };
 
 const getBatchWindowState = (courseAccess: CourseAccessRecord | null) => {
+  const accessState = String(courseAccess?.batchAccessState || "").toLowerCase();
+  if (accessState === "active") {
+    return {
+      hasBatchWindow: true,
+      isBatchWindowActive: true,
+      isBatchPreviewOnly: false,
+      batchLockStartsAt: parseDateOrNull(courseAccess?.batchLockStartsAt || null),
+      batchLockEndsAt: parseDateOrNull(courseAccess?.batchLockEndsAt || null),
+    };
+  }
+
+  if (accessState === "preview") {
+    return {
+      hasBatchWindow: true,
+      isBatchWindowActive: false,
+      isBatchPreviewOnly: true,
+      batchLockStartsAt: parseDateOrNull(courseAccess?.batchLockStartsAt || null),
+      batchLockEndsAt: parseDateOrNull(courseAccess?.batchLockEndsAt || null),
+    };
+  }
+
+  if (typeof courseAccess?.batchWindowActive === "boolean") {
+    return {
+      hasBatchWindow: true,
+      isBatchWindowActive: courseAccess.batchWindowActive,
+      isBatchPreviewOnly: Boolean(
+        courseAccess.batchPreviewOnly ?? !courseAccess.batchWindowActive
+      ),
+      batchLockStartsAt: parseDateOrNull(courseAccess?.batchLockStartsAt || null),
+      batchLockEndsAt: parseDateOrNull(courseAccess?.batchLockEndsAt || null),
+    };
+  }
+
+  if (typeof courseAccess?.batchPreviewOnly === "boolean") {
+    return {
+      hasBatchWindow: true,
+      isBatchWindowActive: !courseAccess.batchPreviewOnly,
+      isBatchPreviewOnly: courseAccess.batchPreviewOnly,
+      batchLockStartsAt: parseDateOrNull(courseAccess?.batchLockStartsAt || null),
+      batchLockEndsAt: parseDateOrNull(courseAccess?.batchLockEndsAt || null),
+    };
+  }
+
   const batchLockStartsAt = parseDateOrNull(courseAccess?.batchLockStartsAt || null);
   const batchLockEndsAt = parseDateOrNull(courseAccess?.batchLockEndsAt || null);
   const hasBatchWindow = Boolean(batchLockStartsAt && batchLockEndsAt);
