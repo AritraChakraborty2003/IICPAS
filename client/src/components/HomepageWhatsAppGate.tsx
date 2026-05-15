@@ -19,6 +19,7 @@ import { getApiBase } from "@/lib/apiBase";
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 30;
 const CHATBOT_OPEN_EVENT = "iicpa:open-chatbot";
+const CHATBOT_OPEN_SESSION_KEY = "iicpa_chatbot_open_pending";
 
 const normalizePhoneNumber = (value: string) =>
   value.replace(/\D/g, "").slice(0, 10);
@@ -172,6 +173,11 @@ export default function HomepageWhatsAppGate() {
       }
 
       setIsVerified(true);
+      try {
+        window.sessionStorage.setItem(CHATBOT_OPEN_SESSION_KEY, "true");
+      } catch (storageError) {
+        console.error("Error storing chatbot open state:", storageError);
+      }
       window.dispatchEvent(new Event(CHATBOT_OPEN_EVENT));
       toast.success(response.data?.message || "Verification successful");
     } catch (error: any) {
