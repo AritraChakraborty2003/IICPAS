@@ -268,7 +268,7 @@ const CourseSection = memo(function CourseSection() {
                     <span className="text-sm font-semibold text-[#3cd664]">
                       {student
                         ? `₹${course.price.toLocaleString()}`
-                        : "₹ X (login to view)"}
+                        : "₹ (login to view)"}
                     </span>
                   </div>
                 </div>
