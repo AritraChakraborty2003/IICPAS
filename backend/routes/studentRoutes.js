@@ -48,6 +48,10 @@ import {
   upsertCourseAccessOverride,
 } from "../utils/courseAccess.js";
 import {
+  isEmailConfigured,
+  setupEmailInstructions,
+} from "../config/emailConfig.js";
+import {
   isWhatsAppConfigured,
   normalizeWhatsAppRecipient,
 } from "../config/whatsappConfig.js";
@@ -228,6 +232,11 @@ const sanitizeStudentResponse = (student) => {
 const sendWelcomeEmail = async ({ name, email }) => {
   if (!email) return;
 
+  if (!isEmailConfigured()) {
+    setupEmailInstructions();
+    return;
+  }
+
   await transporter.sendMail({
     from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
     to: email,
@@ -245,6 +254,62 @@ const sendWelcomeEmail = async ({ name, email }) => {
           </p>
           <p style="margin: 0 0 12px 0;">
             You can now log in and start exploring your courses, learning resources, and student dashboard.
+          </p>
+          <p style="margin: 0;">
+            Regards,<br />
+            Team IICPA
+          </p>
+        </div>
+      </div>
+    `,
+  });
+};
+
+const formatBatchLabel = (batch) => {
+  if (!batch) return "your assigned batch";
+
+  const code = batch.code || batch.batchCode || "N/A";
+  const mode = String(batch.mode || "").trim().toUpperCase();
+  const size = Number(batch.size || 0);
+  const assignedCount = Number(batch.assignedCount || 0);
+  const capacity = size > 0 ? `${assignedCount}/${size}` : "N/A";
+
+  return [code, mode, capacity].filter(Boolean).join(" | ");
+};
+
+const sendBatchAssignmentEmail = async ({ student, batch }) => {
+  const email = String(student?.email || "").trim();
+  if (!email || !batch) return;
+
+  if (!isEmailConfigured()) {
+    setupEmailInstructions();
+    return;
+  }
+
+  const studentName = student?.name || "Student";
+  const batchLabel = formatBatchLabel(batch);
+
+  await transporter.sendMail({
+    from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: `Batch Assigned: ${batch.code || "IICPA Batch"}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
+        <div style="background: #0f172a; color: #ffffff; padding: 20px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">IICPA Institute</h1>
+          <p style="margin: 6px 0 0 0; font-size: 16px;">Batch Assignment Update</p>
+        </div>
+        <div style="padding: 20px; background: #f8fafc;">
+          <p style="margin: 0 0 12px 0;">Dear ${studentName},</p>
+          <p style="margin: 0 0 12px 0;">
+            You have been assigned to a new batch in your student account.
+          </p>
+          <div style="background: #ffffff; border-left: 4px solid #10b981; padding: 16px; border-radius: 6px; margin: 16px 0;">
+            <p style="margin: 0 0 8px 0; font-size: 14px; color: #6b7280;">Assigned Batch</p>
+            <p style="margin: 0; font-size: 18px; font-weight: 700; color: #111827;">${batchLabel}</p>
+          </div>
+          <p style="margin: 0 0 12px 0;">
+            Please log in to your dashboard to view the batch details and next steps.
           </p>
           <p style="margin: 0;">
             Regards,<br />
@@ -559,7 +624,7 @@ router.get("/", async (req, res) => {
       .populate("course", "title")
       .populate("enrolledLiveSessions", "title")
       .populate("enrolledRecordedSessions", "title")
-      .populate("batchId", "code mode size assignedCount")
+      .populate("batchId", "code mode size assignedCount courseLocks")
       .select(
         "name email phone mode location center status batchId batchCode batchMode batchAssignedAt course enrolledLiveSessions enrolledRecordedSessions digitalHubAccessOverride courseAccessOverrides receipts createdAt updatedAt"
       )
@@ -626,7 +691,7 @@ router.get(
 
       const student = await Student.findById(id)
         .populate("course", "title")
-        .populate("batchId", "code mode size assignedCount")
+        .populate("batchId", "code mode size assignedCount courseLocks")
         .select(
           "name email phone mode location center status batchId batchCode batchMode batchAssignedAt course courseAccessOverrides receipts createdAt updatedAt"
         )
@@ -824,6 +889,20 @@ router.put(
         return res.status(500).json({
           message: "Failed to transfer student batch",
         });
+      }
+
+      if (transferResult.changed) {
+        try {
+          await sendBatchAssignmentEmail({
+            student: transferResult.student,
+            batch: transferResult.batch,
+          });
+        } catch (emailError) {
+          console.error(
+            `Failed to send batch assignment email to ${transferResult.student?.email || "student"}:`,
+            emailError
+          );
+        }
       }
 
       return res.status(200).json({

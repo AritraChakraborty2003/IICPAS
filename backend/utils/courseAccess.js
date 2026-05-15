@@ -61,6 +61,29 @@ const pickEarliestDate = (values = []) =>
     .filter(Boolean)
     .sort((left, right) => left.getTime() - right.getTime())[0] || null;
 
+const normalizeBatchCourseLocks = (batch) => {
+  const rawLocks = Array.isArray(batch?.courseLocks) ? batch.courseLocks : [];
+  const normalized = new Map();
+
+  rawLocks.forEach((entry) => {
+    const courseId = toIdString(entry?.courseId || entry?.course || entry?._id);
+    if (!courseId) return;
+
+    const start_time = toValidDate(entry?.start_time ?? entry?.startTime ?? entry?.start);
+    const end_time = toValidDate(entry?.end_time ?? entry?.endTime ?? entry?.end);
+
+    if (!end_time) return;
+
+    normalized.set(courseId, {
+      courseId,
+      start_time,
+      end_time,
+    });
+  });
+
+  return normalized;
+};
+
 const normalizeLockedValue = (value) => {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value !== 0;
@@ -207,6 +230,7 @@ export const buildCourseAccessEntries = ({
 }) => {
   const purchaseIndex = buildPurchaseIndex({ bookings, transactions });
   const overrideIndex = buildOverrideIndex(student);
+  const batchLockIndex = normalizeBatchCourseLocks(student?.batchId);
   const fallbackDate = toValidDate(student?.createdAt) || new Date();
 
   return (Array.isArray(courses) ? courses : []).map((course) => {
@@ -222,7 +246,11 @@ export const buildCourseAccessEntries = ({
         fallbackDate;
       const expiresAt = toValidDate(baseCourse?.expiresAt) || addOneYear(purchaseAt);
       const override = overrideIndex.get(courseId);
-      const isLocked = Boolean(override?.isLocked);
+      const batchLock = batchLockIndex.get(courseId);
+      const batchLockActive = Boolean(
+        batchLock?.end_time && batchLock.end_time.getTime() <= Date.now()
+      );
+      const isLocked = Boolean(override?.isLocked || batchLockActive);
       const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : false;
 
       return {
@@ -237,6 +265,9 @@ export const buildCourseAccessEntries = ({
         purchasedAt: purchaseAt ? purchaseAt.toISOString() : null,
         expiresAt: expiresAt ? expiresAt.toISOString() : null,
         isLocked,
+        batchLockActive,
+        batchLockStartsAt: batchLock?.start_time ? batchLock.start_time.toISOString() : null,
+        batchLockEndsAt: batchLock?.end_time ? batchLock.end_time.toISOString() : null,
         isExpired,
         status: isLocked || isExpired ? "Inactive" : "Active",
       };

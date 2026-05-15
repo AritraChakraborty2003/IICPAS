@@ -7,6 +7,70 @@ import {
   normalizeBatchSize,
 } from "../services/batchAssignmentService.js";
 
+const parseMaybeArray = (value) => {
+  if (value === null || value === undefined || value === "") return [];
+  if (Array.isArray(value)) return value;
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return [];
+
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // fall through to scalar handling
+    }
+
+    return [trimmed];
+  }
+
+  return [value];
+};
+
+const createValidationError = (message) => {
+  const error = new Error(message);
+  error.statusCode = 400;
+  return error;
+};
+
+const normalizeBatchCourseLocks = (value) => {
+  const seen = new Set();
+  const normalized = [];
+
+  for (const item of parseMaybeArray(value)) {
+    const rawCourseId = item?.courseId ?? item?.course_id ?? item?.course ?? item?._id;
+    const courseId = String(rawCourseId || "").trim();
+    if (!courseId || seen.has(courseId)) continue;
+
+    const startTime = item?.start_time ?? item?.startTime ?? item?.start;
+    const endTime = item?.end_time ?? item?.endTime ?? item?.end;
+    const normalizedStart = startTime ? new Date(startTime) : null;
+    const normalizedEnd = endTime ? new Date(endTime) : null;
+
+    if (!(normalizedStart instanceof Date) || Number.isNaN(normalizedStart.getTime())) {
+      throw createValidationError(`Invalid start_time for course ${courseId}`);
+    }
+
+    if (!(normalizedEnd instanceof Date) || Number.isNaN(normalizedEnd.getTime())) {
+      throw createValidationError(`Invalid end_time for course ${courseId}`);
+    }
+
+    if (normalizedEnd.getTime() < normalizedStart.getTime()) {
+      throw createValidationError(`end_time must be after start_time for course ${courseId}`);
+    }
+
+    seen.add(courseId);
+    normalized.push({
+      courseId,
+      start_time: normalizedStart,
+      end_time: normalizedEnd,
+    });
+  }
+
+  return normalized;
+};
+
 const reconcileBatchMetadata = async () => {
   const studentCounts = await Student.aggregate([
     {
@@ -62,6 +126,9 @@ export const createBatchManagerEntry = async (req, res) => {
   try {
     const mode = normalizeBatchMode(req.body.mode);
     const size = normalizeBatchSize(req.body.size);
+    const courseLocks = normalizeBatchCourseLocks(
+      req.body.courseLocks ?? req.body.courseLockSchedule ?? req.body.courseSchedule
+    );
 
     if (!mode || !size) {
       return res.status(400).json({
@@ -74,6 +141,7 @@ export const createBatchManagerEntry = async (req, res) => {
       code: await generateNextBatchCode(),
       mode,
       size,
+      courseLocks,
       assignedCount: 0,
     });
 
@@ -84,6 +152,12 @@ export const createBatchManagerEntry = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating batch:", error);
+    if (error?.statusCode === 400) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
     return res.status(500).json({
       success: false,
       message: "Failed to create batch",
@@ -96,6 +170,15 @@ export const updateBatchManagerEntry = async (req, res) => {
   try {
     const mode = normalizeBatchMode(req.body.mode);
     const size = normalizeBatchSize(req.body.size);
+    const hasCourseLocks =
+      Object.prototype.hasOwnProperty.call(req.body, "courseLocks") ||
+      Object.prototype.hasOwnProperty.call(req.body, "courseLockSchedule") ||
+      Object.prototype.hasOwnProperty.call(req.body, "courseSchedule");
+    const courseLocks = hasCourseLocks
+      ? normalizeBatchCourseLocks(
+          req.body.courseLocks ?? req.body.courseLockSchedule ?? req.body.courseSchedule
+        )
+      : null;
 
     if (!mode || !size) {
       return res.status(400).json({
@@ -122,6 +205,9 @@ export const updateBatchManagerEntry = async (req, res) => {
 
     batch.mode = mode;
     batch.size = size;
+    if (hasCourseLocks) {
+      batch.courseLocks = courseLocks;
+    }
     if (!batch.code) {
       batch.code = await generateNextBatchCode();
     }
@@ -134,6 +220,12 @@ export const updateBatchManagerEntry = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating batch:", error);
+    if (error?.statusCode === 400) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
     return res.status(500).json({
       success: false,
       message: "Failed to update batch",

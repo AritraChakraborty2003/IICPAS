@@ -24,7 +24,7 @@ export const getStudentCourses = async (req, res) => {
         path: "chapters",
         populate: POPULATE_TOPICS_WITH_LESSONS,
       },
-    });
+    }).populate("batchId", "code mode size assignedCount courseLocks");
 
     if (!student) {
       return res.status(404).json({ error: "Student not found" });

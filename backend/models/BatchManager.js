@@ -20,6 +20,26 @@ const batchManagerSchema = new mongoose.Schema(
       required: true,
       min: 1,
     },
+    courseLocks: {
+      type: [
+        {
+          courseId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Course",
+            required: true,
+          },
+          start_time: {
+            type: Date,
+            default: null,
+          },
+          end_time: {
+            type: Date,
+            default: null,
+          },
+        },
+      ],
+      default: [],
+    },
     assignedCount: {
       type: Number,
       default: 0,
