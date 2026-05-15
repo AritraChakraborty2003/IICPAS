@@ -35,10 +35,6 @@ import {
   normalizeReferralCode,
 } from "../services/referralService.js";
 import {
-  buildBatchSummary,
-  normalizeBatchMode,
-  releaseBatchSeat,
-  reserveBatchSeat,
   transferStudentBatchSeat,
 } from "../services/batchAssignmentService.js";
 import {
@@ -392,8 +388,6 @@ router.post("/register", async (req, res) => {
     const normalizedEmail = normalizeEmail(email);
     const normalizedPhone = String(phone || "").trim();
     const normalizedWhatsAppPhone = normalizeWhatsAppRecipient(normalizedPhone);
-    const resolvedBatchMode = normalizeBatchMode(mode, "online");
-
     if (!normalizedName || !normalizedEmail || !normalizedPhone || !password) {
       return res.status(400).json({
         message: "Name, email, phone, and password are required",
@@ -438,10 +432,6 @@ router.post("/register", async (req, res) => {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const batchAllocation = await reserveBatchSeat({
-      mode: resolvedBatchMode,
-    });
-    const assignedBatch = batchAllocation?.batch || null;
     let student = null;
 
     try {
@@ -450,13 +440,13 @@ router.post("/register", async (req, res) => {
         email: normalizedEmail,
         phone: normalizedWhatsAppPhone || normalizedPhone,
         password: hashed,
-        mode: mode || resolvedBatchMode,
+        mode: mode || null,
         location,
         center,
-        batchId: assignedBatch?._id || null,
-        batchCode: assignedBatch?.code || null,
-        batchMode: assignedBatch?.mode || resolvedBatchMode || null,
-        batchAssignedAt: assignedBatch ? new Date() : null,
+        batchId: null,
+        batchCode: null,
+        batchMode: null,
+        batchAssignedAt: null,
         referralCode: await generateUniqueReferralCode(
           normalizedName || normalizedEmail
         ),
@@ -466,20 +456,6 @@ router.post("/register", async (req, res) => {
       await student.save();
       registrationOtpStore.delete(normalizedWhatsAppPhone);
     } catch (saveError) {
-      if (assignedBatch?._id) {
-        try {
-          await releaseBatchSeat({
-            batchId: assignedBatch._id,
-            created: Boolean(batchAllocation?.created),
-          });
-        } catch (releaseError) {
-          console.error(
-            "Failed to release batch seat after registration error:",
-            releaseError
-          );
-        }
-      }
-
       if (saveError?.code === 11000) {
         return res.status(400).json({
           message: "Email or phone already exists",
@@ -547,7 +523,7 @@ router.post("/register", async (req, res) => {
     res.status(201).json({
       message: "Registered",
       student: sanitizeStudentResponse(student),
-      batch: buildBatchSummary(assignedBatch),
+      batch: null,
       referralApplied: Boolean(referrer),
       welcomeEmailSent,
       welcomeWhatsAppSent,
