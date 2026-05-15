@@ -874,10 +874,6 @@ export default function DigitalHubClient({
     () => normalizeDigitalHubContent(topicContent),
     [topicContent]
   );
-  const hasRenderedContent = Boolean(
-    selectedTopic || selectedAssignment || selectedCaseStudy || topicContent
-  );
-  const isInitialContentLoading = loading && !hasRenderedContent;
 
   // New state for case studies and assignments
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
@@ -922,6 +918,10 @@ export default function DigitalHubClient({
   const [progressMutationKey, setProgressMutationKey] = useState<string | null>(
     null
   );
+  const hasRenderedContent = Boolean(
+    selectedTopic || selectedAssignment || selectedCaseStudy || topicContent
+  );
+  const isInitialContentLoading = loading && !hasRenderedContent;
   const activeTourStep =
     DIGITAL_HUB_TOUR_STEPS[tourStepIndex] || DIGITAL_HUB_TOUR_STEPS[0];
   const tourStorageKey = `${DIGITAL_HUB_TOUR_STORAGE_PREFIX}:${
