@@ -55,6 +55,12 @@ const getChapterIdentifier = (chapter, fallbackIndex) =>
       (Number.isInteger(fallbackIndex) ? fallbackIndex : "")
   );
 
+const parseDateOrNull = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const mergeChaptersWithProgress = (chapters, progressPayload) => {
   const orderedChapters = Array.isArray(chapters) ? [...chapters] : [];
   const progressMap = new Map(
@@ -291,16 +297,28 @@ export default function CourseTab() {
     );
   };
 
-  const isCourseLocked = (courseId) => {
+  const getCourseAccessWindow = (courseId) => {
     const access = purchasedCourseAccessMap.get(String(courseId)) || null;
-    if (!access) return false;
-    return Boolean(access.isLocked);
+    const batchLockStartsAt = parseDateOrNull(access?.batchLockStartsAt);
+    const batchLockEndsAt = parseDateOrNull(access?.batchLockEndsAt);
+    const hasBatchWindow = Boolean(batchLockStartsAt && batchLockEndsAt);
+    const now = Date.now();
+    const isWithinBatchWindow = hasBatchWindow
+      ? now >= batchLockStartsAt.getTime() && now <= batchLockEndsAt.getTime()
+      : true;
+
+    return {
+      access,
+      hasBatchWindow,
+      isWithinBatchWindow,
+      isPreviewOnly: hasBatchWindow && !isWithinBatchWindow,
+      isHardLocked:
+        !hasBatchWindow &&
+        String(access?.status || "").toLowerCase() === "inactive",
+    };
   };
 
-  const isCourseLockedByBatchSchedule = (courseId) => {
-    const access = purchasedCourseAccessMap.get(String(courseId)) || null;
-    return Boolean(access?.batchLockActive);
-  };
+  const isCourseLocked = (courseId) => getCourseAccessWindow(courseId).isHardLocked;
 
   // Handle Buy Now functionality
   const handleBuyNow = (course) => {
@@ -484,11 +502,7 @@ export default function CourseTab() {
     }
 
     if (isCourseLocked(courseId)) {
-      toast.error(
-        isCourseLockedByBatchSchedule(courseId)
-          ? "This course is locked by the batch schedule."
-          : "This course is locked by the admin."
-      );
+      toast.error("This course is locked by the admin.");
       return;
     }
 
@@ -1123,6 +1137,9 @@ export default function CourseTab() {
             );
             const progressValue = getProgressValue(course);
             const description = getCourseDescription(course, isPurchased);
+            const courseAccessWindow = getCourseAccessWindow(course._id);
+            const isHardLocked = courseAccessWindow.isHardLocked;
+            const isPreviewOnly = courseAccessWindow.isPreviewOnly;
             const overviewStats = [
               {
                 label: "Category",
@@ -1141,9 +1158,6 @@ export default function CourseTab() {
                 value: `${assignmentsCount + testsCount + experimentsCount} items`,
               },
             ];
-            const isLocked = isCourseLocked(course._id);
-            const isBatchLocked = isCourseLockedByBatchSchedule(course._id);
-
             return (
               <div key={course._id} className="group relative">
                 {viewModes[course._id] !== "detailed" ? (
@@ -1167,19 +1181,19 @@ export default function CourseTab() {
                           </span>
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
-                              isLocked
-                                ? isBatchLocked
-                                  ? "bg-amber-500/95 text-white"
-                                  : "bg-rose-500/95 text-white"
+                              isHardLocked
+                                ? "bg-rose-500/95 text-white"
+                                : isPreviewOnly
+                                ? "bg-amber-500/95 text-white"
                                 : isPurchased
                                 ? "bg-emerald-500/95 text-white"
                                 : "bg-slate-950/75 text-white"
                             }`}
                           >
-                            {isLocked
-                              ? isBatchLocked
-                                ? "Locked by Batch Schedule"
-                                : "Locked"
+                            {isHardLocked
+                              ? "Locked"
+                              : isPreviewOnly
+                              ? "Preview Only"
                               : isPurchased
                               ? "Enrolled"
                               : "Available"}
@@ -1240,15 +1254,19 @@ export default function CourseTab() {
                             {isPurchased ? (
                               <button
                                 onClick={() => handleDetailedToggle(course._id)}
-                                disabled={isLocked}
+                                disabled={isHardLocked}
                                 className={`inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3.5 text-sm font-semibold text-white transition sm:w-auto sm:min-w-[210px] ${
-                                  isLocked
+                                  isHardLocked
                                     ? "cursor-not-allowed bg-slate-400"
                                     : "bg-slate-900 hover:bg-slate-800"
                                 }`}
                                 >
-                                  {isLocked ? <Lock className="text-xl" /> : <Book className="text-xl" />}
-                                  {isLocked ? "Locked" : "Open Course"}
+                                  {isHardLocked ? <Lock className="text-xl" /> : <Book className="text-xl" />}
+                                  {isHardLocked
+                                    ? "Locked"
+                                    : isPreviewOnly
+                                    ? "Open Preview"
+                                    : "Open Course"}
                                 </button>
                             ) : (
                               <button
@@ -1271,19 +1289,26 @@ export default function CourseTab() {
                               </button>
                           </div>
 
-                          {isPurchased && isLocked ? (
+                          {isPurchased && (isHardLocked || isPreviewOnly) ? (
                             <div
                               className={`mt-1 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
-                                isBatchLocked
+                                isPreviewOnly
                                   ? "bg-amber-50 text-amber-700"
                                   : "bg-rose-50 text-rose-700"
                               }`}
                             >
                               <span className="h-2 w-2 rounded-full bg-current" />
-                              {isBatchLocked
-                                ? "Locked by batch schedule"
+                              {isPreviewOnly
+                                ? "Preview access: only first chapter and topic"
                                 : "Locked by admin"}
                             </div>
+                          ) : null}
+                          {isPurchased && isPreviewOnly ? (
+                            <p className="mt-2 max-w-2xl text-xs text-amber-700">
+                              This course is outside the batch window. Students can
+                              only open the first chapter and first topic until the
+                              scheduled window starts.
+                            </p>
                           ) : null}
 
                           {isPurchased &&
