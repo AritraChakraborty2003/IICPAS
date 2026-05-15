@@ -38,6 +38,20 @@ const extractList = (payload, key) => {
   return [];
 };
 
+const getLowestCoursePrice = (course) => {
+  const prices = [
+    course?.pricing?.recordedSession?.finalPrice,
+    course?.pricing?.recordedSession?.price,
+    course?.pricing?.liveSession?.finalPrice,
+    course?.pricing?.liveSession?.price,
+    course?.price,
+  ]
+    .map((price) => Number(price))
+    .filter((price) => Number.isFinite(price) && price > 0);
+
+  return prices.length > 0 ? Math.min(...prices) : 0;
+};
+
 const normalizeCourseImageSrc = (rawImage, apiUrl) => {
   if (!rawImage || typeof rawImage !== "string") return null;
 
@@ -497,23 +511,13 @@ export default function CoursePage() {
                   API_ORIGIN
                 );
 
-                // Use recorded session pricing if available, otherwise fall back to legacy pricing
-                const recordedPrice =
-                  course.pricing?.recordedSession?.finalPrice ||
-                  course.pricing?.recordedSession?.price;
-                const recordedDiscount =
-                  course.pricing?.recordedSession?.discount;
-                const legacyPrice = course.price;
-                const legacyDiscount = course.discount;
-
-                // Determine which pricing to use
-                const displayPrice = recordedPrice || legacyPrice;
-                const displayDiscount = recordedDiscount || legacyDiscount;
-
-                const discountedPrice =
-                  displayDiscount && displayDiscount > 0
-                    ? displayPrice
-                    : displayPrice;
+                const lowestCoursePrice = getLowestCoursePrice(course);
+                const originalPrice =
+                  Number(course?.pricing?.recordedSession?.price) ||
+                  Number(course?.price) ||
+                  0;
+                const hasDiscount =
+                  originalPrice > 0 && lowestCoursePrice > 0 && lowestCoursePrice < originalPrice;
 
                 return (
                   <motion.div
@@ -622,27 +626,13 @@ export default function CoursePage() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-green-600 font-semibold text-sm">
-                            {student
-                              ? `₹${
-                                  discountedPrice &&
-                                  typeof discountedPrice === "number"
-                                    ? discountedPrice.toLocaleString()
-                                    : "0"
-                                }`
-                              : "₹ X (login to view)"}
+                            {lowestCoursePrice > 0
+                              ? `Rs ${lowestCoursePrice.toLocaleString()}`
+                              : "Rs 0"}
                           </p>
-                          {student && displayDiscount > 0 && (
+                          {hasDiscount && (
                             <p className="text-gray-400 text-xs line-through">
-                              ₹
-                              {(() => {
-                                const originalPrice =
-                                  course.pricing?.recordedSession?.price ||
-                                  course.price;
-                                return originalPrice &&
-                                  typeof originalPrice === "number"
-                                  ? originalPrice.toLocaleString()
-                                  : "0";
-                              })()}
+                              Rs {originalPrice.toLocaleString()}
                             </p>
                           )}
                         </div>
