@@ -71,10 +71,7 @@ const mergeChaptersWithProgress = (chapters, progressPayload) => {
 
     return {
       ...chapter,
-      isLocked:
-        typeof progressEntry.isLocked === "boolean"
-          ? progressEntry.isLocked
-          : index > 0,
+      isLocked: false,
       isCompleted: Boolean(progressEntry.isCompleted),
       completedTopicCount: Number(progressEntry.completedTopicCount || 0),
       totalTopicCount:
@@ -537,6 +534,30 @@ export default function CourseTab() {
       : "Review the course structure, pricing, and highlights before you enroll.";
   };
 
+  const showDemoData = () => {
+    const demoCourse = {
+      ...QA_DUMMY_COURSE,
+      chapters: Array.isArray(QA_DUMMY_COURSE.chapters)
+        ? QA_DUMMY_COURSE.chapters
+        : [],
+      assignments: Array.isArray(QA_DUMMY_COURSE.assignments)
+        ? QA_DUMMY_COURSE.assignments
+        : [],
+      experiments: Array.isArray(QA_DUMMY_COURSE.experiments)
+        ? QA_DUMMY_COURSE.experiments
+        : [],
+      tests: Array.isArray(QA_DUMMY_COURSE.tests) ? QA_DUMMY_COURSE.tests : [],
+    };
+
+    setCourses([demoCourse]);
+    setSelectedCourse(demoCourse);
+    setLastAccessedCourse(demoCourse);
+    setViewModes((prev) => ({
+      ...prev,
+      [demoCourse._id]: "overview",
+    }));
+  };
+
   const getTabIcon = (tabName) => {
     switch (tabName) {
       case "chapters":
@@ -569,11 +590,6 @@ export default function CourseTab() {
 
   const handleOpenChapter = (course, chapter, chapterIndex) => {
     if (!chapter) return;
-
-    if (chapter.isLocked) {
-      toast.error("Complete the previous chapter first to unlock this chapter.");
-      return;
-    }
 
     router.push(buildDigitalHubPath(course, getChapterIdentifier(chapter, chapterIndex)));
   };
@@ -817,21 +833,9 @@ export default function CourseTab() {
                         onClick={() =>
                           handleOpenChapter(selectedCourse, chapter, index)
                         }
-                        disabled={chapter.isLocked}
-                        className={`mb-3 rounded-md px-3 py-1.5 text-sm font-medium ${
-                          chapter.isLocked
-                            ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                            : "bg-blue-600 text-white hover:bg-blue-700"
-                        }`}
+                        className="mb-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
                       >
-                        {chapter.isLocked ? (
-                          <span className="inline-flex items-center gap-1">
-                            <Lock className="h-3.5 w-3.5" />
-                            <span>Locked</span>
-                          </span>
-                        ) : (
-                          "Open in Digital Hub"
-                        )}
+                        Open in Digital Hub
                       </button>
                       {Array.isArray(chapter.topics) && chapter.topics.length > 0 ? (
                         <ul className="space-y-2">
@@ -864,7 +868,6 @@ export default function CourseTab() {
                                 )}
                                 <TopicLessonsDisplay
                                   topic={topic}
-                                  isLocked={Boolean(chapter.isLocked)}
                                 />
                               </li>
                             );
@@ -1441,21 +1444,9 @@ export default function CourseTab() {
                                       onClick={() =>
                                         handleOpenChapter(course, chapter, index)
                                       }
-                                      disabled={chapter.isLocked}
-                                      className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                                        chapter.isLocked
-                                          ? "cursor-not-allowed bg-slate-200 text-slate-500"
-                                          : "bg-blue-600 text-white hover:bg-blue-700"
-                                      }`}
+                                      className="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
                                     >
-                                      {chapter.isLocked ? (
-                                        <span className="inline-flex items-center gap-1">
-                                          <Lock className="h-3.5 w-3.5" />
-                                          <span>Locked</span>
-                                        </span>
-                                      ) : (
-                                        "Open in Digital Hub"
-                                      )}
+                                      Open in Digital Hub
                                     </button>
                                   </div>
                                 </div>
@@ -1506,7 +1497,6 @@ export default function CourseTab() {
                                                 )}
                                                 <TopicLessonsDisplay
                                                   topic={topic}
-                                                  isLocked={Boolean(chapter.isLocked)}
                                                 />
                                               </div>
                                             </div>
@@ -1531,11 +1521,6 @@ export default function CourseTab() {
                                         Question sets {chapter.completedQuestionSetCount || 0}/
                                         {chapter.totalQuestionSetCount || 0}
                                       </span>
-                                      {chapter.isLocked ? (
-                                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-700">
-                                          Complete the previous chapter first
-                                        </span>
-                                      ) : null}
                                     </div>
                                   </div>
                                 ) : null}

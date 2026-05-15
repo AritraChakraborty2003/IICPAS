@@ -115,7 +115,6 @@ const LessonList = ({ title, rows, actionLabel, actionTone = "blue" }) => {
 
 export default function TopicLessonsDisplay({
   topic,
-  isLocked = false,
   showLegacyIntroVideo = true,
 }) {
   const recordedRows = useMemo(
@@ -135,7 +134,7 @@ export default function TopicLessonsDisplay({
   );
   const visibleLive = liveRows.filter((row) => isTopicLessonVisible(row));
 
-  if (isLocked || (visibleRecorded.length === 0 && visibleLive.length === 0)) {
+  if (visibleRecorded.length === 0 && visibleLive.length === 0) {
     return null;
   }
 

@@ -358,8 +358,7 @@ const mergeChapterProgress = (
     const summary = progressMap.get(String(chapter._id));
     return {
       ...chapter,
-      isLocked:
-        typeof summary?.isLocked === "boolean" ? summary.isLocked : index > 0,
+      isLocked: false,
       isCompleted: Boolean(summary?.isCompleted),
       completion:
         typeof summary?.completionPercent === "number"
@@ -502,65 +501,6 @@ const getCourseEnrollmentAt = (
     .sort((left, right) => left.getTime() - right.getTime());
 
   return timestamps[0]?.toISOString() || null;
-};
-
-const getEffectiveEnrollmentAt = (
-  bookings: CourseBookingRecord[],
-  courseId?: string | null,
-  studentRegisteredAt?: string | null
-) => {
-  const bookingEnrollmentAt = parseDateOrNull(
-    getCourseEnrollmentAt(bookings, courseId)
-  );
-  const registeredAt = parseDateOrNull(studentRegisteredAt || null);
-
-  if (bookingEnrollmentAt && registeredAt) {
-    return bookingEnrollmentAt.getTime() > registeredAt.getTime()
-      ? bookingEnrollmentAt.toISOString()
-      : registeredAt.toISOString();
-  }
-
-  if (bookingEnrollmentAt) return bookingEnrollmentAt.toISOString();
-  if (registeredAt) return registeredAt.toISOString();
-  return null;
-};
-
-const isTopicLockedForBatch = (
-  topic?: TopicData | null,
-  enrollmentAt?: string | null
-) => {
-  if (!topic?.publishAt || !enrollmentAt) return false;
-
-  const cutoffAt = new Date(topic.publishAt);
-  const enrolledAt = new Date(enrollmentAt);
-
-  if (Number.isNaN(cutoffAt.getTime()) || Number.isNaN(enrolledAt.getTime())) {
-    return false;
-  }
-
-  return enrolledAt.getTime() > cutoffAt.getTime();
-};
-
-const getFirstAccessibleTopic = (
-  chapter: ChapterData,
-  completedTopicIds: string[],
-  enrollmentAt?: string | null
-) => {
-  const topics = chapter?.topics || [];
-
-  for (let index = 0; index < topics.length; index += 1) {
-    const previousTopicId = index > 0 ? topics[index - 1]?._id : null;
-    const sequenceUnlocked =
-      index === 0 ||
-      (previousTopicId && completedTopicIds.includes(previousTopicId));
-    const batchLocked = isTopicLockedForBatch(topics[index], enrollmentAt);
-
-    if (sequenceUnlocked && !batchLocked) {
-      return topics[index] || null;
-    }
-  }
-
-  return null;
 };
 
 const hardenVideoElements = (container: HTMLElement | null) => {
@@ -1047,11 +987,6 @@ export default function DigitalHubClient({
   const completedAssignmentIds = selectedChapter?.completedAssignmentIds || [];
   const completedQuestionSetIds =
     selectedChapter?.completedQuestionSetIds || [];
-  const activeCourseEnrollmentAt = getEffectiveEnrollmentAt(
-    studentCourseBookings,
-    resolvedCourseId,
-    studentRegisteredAt
-  );
   const activePurchasedCourseRecord = useMemo(() => {
     if (!resolvedCourseId) return null;
 
@@ -1087,13 +1022,6 @@ export default function DigitalHubClient({
     selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
   );
   const selectedTopicIntroVideo = selectedTopic?.introVideo?.trim() || "";
-  const isSelectedTopicLockedForBatch = isTopicLockedForBatch(
-    selectedTopic,
-    activeCourseEnrollmentAt
-  );
-  const selectedTopicBatchMessage = isSelectedTopicLockedForBatch
-    ? "Open on next batch start"
-    : null;
   const isSelectedAssignmentCompleted = Boolean(
     selectedAssignment?._id &&
       completedAssignmentIds.includes(selectedAssignment._id)
@@ -1220,29 +1148,7 @@ export default function DigitalHubClient({
 
   // Handle topic selection
   const handleTopicSelect = useCallback(
-    (topic: TopicData, options?: { completedTopicIds?: string[] }) => {
-      const topicCompletionIds = options?.completedTopicIds || completedTopicIds;
-      const topicIndex = visibleTopics.findIndex(
-        (entry) => entry._id === topic._id
-      );
-      const previousTopicId =
-        topicIndex > 0 ? visibleTopics[topicIndex - 1]?._id : null;
-      const sequenceLocked =
-        topicIndex > 0 &&
-        !(previousTopicId && topicCompletionIds.includes(previousTopicId));
-      const batchLocked = isTopicLockedForBatch(topic, activeCourseEnrollmentAt);
-
-      if (sequenceLocked || batchLocked) {
-        setToastMessage(
-          batchLocked
-            ? "Open on next batch start."
-            : "Complete the previous topic to unlock this one."
-        );
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-        return;
-      }
-
+    (topic: TopicData) => {
       console.log("Topic selected:", topic);
       setSelectedTopic(topic);
       setIsIntroVideoModalOpen(false);
@@ -1289,15 +1195,12 @@ export default function DigitalHubClient({
       loadQuizForTopic(topic._id);
     },
     [
-      activeCourseEnrollmentAt,
-      completedTopicIds,
       isDemo,
       loadQuizForTopic,
       scrollContentToTop,
       selectedChapter?._id,
       splitContentIntoPages,
       storeLastSelection,
-      visibleTopics,
     ]
   );
 
@@ -1527,31 +1430,10 @@ export default function DigitalHubClient({
       }
 
       if (availableTopics.length > 0) {
-        const completedIds = chapter.completedTopicIds || [];
         const storedTopic = preferredTopicId
           ? availableTopics.find((topic) => topic._id === preferredTopicId)
           : null;
-        const storedTopicIndex = storedTopic
-          ? availableTopics.findIndex((topic) => topic._id === storedTopic._id)
-          : -1;
-        const storedTopicUnlocked =
-          storedTopicIndex === 0
-            ? true
-            : storedTopicIndex > 0 &&
-              completedIds.includes(availableTopics[storedTopicIndex - 1]?._id);
-        const storedTopicBatchLocked = isTopicLockedForBatch(
-          storedTopic,
-          activeCourseEnrollmentAt
-        );
-        const fallbackTopic = getFirstAccessibleTopic(
-          { ...chapter, topics: availableTopics },
-          completedIds,
-          activeCourseEnrollmentAt
-        );
-        const firstTopic =
-          storedTopic && storedTopicUnlocked && !storedTopicBatchLocked
-            ? storedTopic
-            : fallbackTopic;
+        const firstTopic = storedTopic || availableTopics[0] || null;
         setSelectedTopic(firstTopic);
         if (firstTopic?._id) {
           storeLastSelection(chapter._id, firstTopic._id);
@@ -1584,9 +1466,7 @@ export default function DigitalHubClient({
             setShowDemoLimit(false);
           }
         } else {
-          setTopicContent(
-            "This chapter is locked for this batch. Open on next batch start."
-          );
+          setTopicContent("Content not available");
           setTotalPages(1);
           setCurrentPage(1);
           setShowDemoLimit(false);
@@ -1613,7 +1493,6 @@ export default function DigitalHubClient({
       buildChapterPath,
       fetchAssignments,
       fetchCaseStudies,
-      activeCourseEnrollmentAt,
       isDemo,
       loadQuizForTopic,
       router,
@@ -1625,21 +1504,10 @@ export default function DigitalHubClient({
 
   const handleChapterSelect = useCallback(
     (chapter: ChapterData) => {
-      if (chapter.isLocked) {
-        setToastMessage("Complete the previous chapter first to unlock this chapter.");
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
-        return;
-      }
-
-      const firstTopic = getFirstAccessibleTopic(
-        chapter,
-        chapter.completedTopicIds || [],
-        activeCourseEnrollmentAt
-      );
+      const firstTopic = chapter.topics?.[0] || null;
       selectChapterContent(chapter, "push", firstTopic?._id);
     },
-    [activeCourseEnrollmentAt, selectChapterContent]
+    [selectChapterContent]
   );
 
   const markProgressItemComplete = useCallback(
@@ -1687,8 +1555,6 @@ export default function DigitalHubClient({
         if (itemType === "topic" && selectedTopic?._id === itemId) {
           const updatedChapter = refreshedChapter || selectedChapter;
           const updatedTopics = updatedChapter?.topics || [];
-          const updatedCompletedTopicIds =
-            updatedChapter?.completedTopicIds || [];
           const currentIndex = updatedTopics.findIndex(
             (topic) => topic._id === itemId
           );
@@ -1697,19 +1563,9 @@ export default function DigitalHubClient({
               ? updatedTopics[currentIndex + 1]
               : null;
 
-          if (
-            nextTopicCandidate &&
-            updatedCompletedTopicIds.includes(itemId)
-          ) {
-            if (!isTopicLockedForBatch(nextTopicCandidate, activeCourseEnrollmentAt)) {
-              handleTopicSelect(nextTopicCandidate, {
-                completedTopicIds: updatedCompletedTopicIds,
-              });
-            }
-          } else if (
-            refreshedChapter?.isCompleted &&
-            !selectedChapter.isCompleted
-          ) {
+          if (nextTopicCandidate) {
+            handleTopicSelect(nextTopicCandidate);
+          } else if (refreshedChapter?.isCompleted && !selectedChapter.isCompleted) {
             const currentChapterIndex = mergedChapters.findIndex(
               (chapter) => String(chapter._id) === String(selectedChapter._id)
             );
@@ -1718,7 +1574,7 @@ export default function DigitalHubClient({
               currentChapterIndex < mergedChapters.length - 1
                 ? mergedChapters[currentChapterIndex + 1]
                 : null;
-            if (nextChapter && !nextChapter.isLocked) {
+            if (nextChapter) {
               selectChapterContent(nextChapter, "replace");
             }
           }
@@ -1749,7 +1605,6 @@ export default function DigitalHubClient({
       selectedChapter,
       selectedTopic?._id,
       selectChapterContent,
-      activeCourseEnrollmentAt,
       studentId,
     ]
   );
@@ -3225,12 +3080,7 @@ export default function DigitalHubClient({
                           setChapterDropdownOpen(false);
                           handleChapterSelect(chapter);
                         }}
-                        disabled={chapter.isLocked}
-                        className={`w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 ${
-                          chapter.isLocked
-                            ? "cursor-not-allowed bg-stone-50 text-slate-400"
-                            : "text-slate-700 hover:bg-blue-50"
-                        }`}
+                        className="w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 text-slate-700 hover:bg-blue-50"
                       >
                         <div className="flex items-center space-x-3">
                         <div
@@ -3243,16 +3093,9 @@ export default function DigitalHubClient({
                         <span className="font-medium">{chapter.title}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
-                          {chapter.isLocked ? (
-                            <>
-                              <Lock className="h-4 w-4" />
-                              <span>Locked</span>
-                            </>
-                          ) : (
-                            <span className="rounded-full bg-blue-100 px-2 py-1 font-semibold text-blue-700">
-                              {getChapterCompletionPercent(chapter)}%
-                            </span>
-                          )}
+                          <span className="rounded-full bg-blue-100 px-2 py-1 font-semibold text-blue-700">
+                            {getChapterCompletionPercent(chapter)}%
+                          </span>
                         </div>
                       </button>
                     ))
@@ -3432,41 +3275,15 @@ export default function DigitalHubClient({
                         Topics
                       </h3>
                       {visibleTopics.map((topic: TopicData, index) => {
-                        const isSequenceLocked =
-                          index > 0 &&
-                          !completedTopicIds.includes(
-                            visibleTopics[index - 1]._id
-                          );
-                        const isBatchLocked = isTopicLockedForBatch(
-                          topic,
-                          activeCourseEnrollmentAt
-                        );
-                        const isLocked = isSequenceLocked || isBatchLocked;
-                        const batchMessage = isBatchLocked
-                          ? "Open on next batch start"
-                          : null;
-
                         return (
                           <button
                             key={topic._id}
                             onClick={() => {
-                              if (isLocked) {
-                                setToastMessage(
-                                  isBatchLocked
-                                    ? "Open on next batch start."
-                                    : "Complete the previous topic to unlock this one."
-                                );
-                                setShowToast(true);
-                                setTimeout(() => setShowToast(false), 3000);
-                                return;
-                              }
                               closeSidebarIfMobile();
                               handleTopicSelect(topic);
                             }}
                             className={`w-full text-left p-3 rounded-xl transition-colors border ${
-                              isLocked
-                                ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
-                                : isDarkMode
+                              isDarkMode
                                 ? selectedTopic?._id === topic._id
                                   ? "bg-slate-800 border-slate-600 text-slate-100"
                                   : "bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800"
@@ -3477,23 +3294,12 @@ export default function DigitalHubClient({
                           >
                             <div className="flex items-center space-x-3">
                               <div
-                                className={`w-6 h-6 ${
-                                  isLocked ? "bg-slate-400" : "bg-emerald-600"
-                                } text-white rounded-full flex items-center justify-center text-sm font-medium`}
+                                className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium"
                               >
-                                {isLocked ? (
-                                  <Lock className="h-3 w-3" />
-                                ) : (
-                                  index + 1
-                                )}
+                                {index + 1}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="font-medium">{topic.title}</div>
-                                {batchMessage ? (
-                                  <div className="mt-1 text-xs text-slate-500">
-                                    {batchMessage}
-                                  </div>
-                                ) : null}
                               </div>
                               {selectedChapter?.completedTopicIds?.includes(
                                 topic._id
@@ -3674,18 +3480,6 @@ export default function DigitalHubClient({
                     style={!isDarkMode ? { color: "#1255cc" } : {}}
                   >
                     {selectedTopic.title}
-                    {selectedTopicBatchMessage ? (
-                      <span
-                        className={`ml-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-                          isSelectedTopicLockedForBatch
-                            ? "bg-amber-100 text-amber-700"
-                            : "bg-emerald-100 text-emerald-700"
-                        }`}
-                      >
-                        <Lock className="h-3.5 w-3.5" />
-                        {selectedTopicBatchMessage}
-                      </span>
-                    ) : null}
                     {isDemo && (
                       <span className="ml-4 text-sm bg-amber-100 text-amber-800 px-3 py-1 rounded-full border border-amber-200">
                         DEMO MODE
@@ -3711,7 +3505,7 @@ export default function DigitalHubClient({
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
                       {/* New: Watch Live Videos Button */}
-                      {!isSelectedTopicLockedForBatch && selectedTopic?.lessons?.some(l => l.kind === "live") ? (
+                      {selectedTopic?.lessons?.some(l => l.kind === "live") ? (
                         <button
                           type="button"
                           onClick={() => setIsLiveSessionsModalOpen(true)}
@@ -3721,30 +3515,6 @@ export default function DigitalHubClient({
                           Watch Live Videos
                         </button>
                       ) : null}
-                    </div>
-                  ) : null}
-
-                  {isSelectedTopicLockedForBatch ? (
-                    <div
-                      className={`mb-6 rounded-2xl border px-5 py-4 ${
-                        isDarkMode
-                          ? "border-amber-500/30 bg-amber-500/10 text-amber-100"
-                          : "border-amber-200 bg-amber-50 text-amber-900"
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5 rounded-full bg-amber-400/20 p-2">
-                          <Lock className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <div className="font-semibold">
-                            Open on next batch start.
-                          </div>
-                          <div className="mt-1 text-sm opacity-90">
-                            This topic will unlock when the next batch starts.
-                          </div>
-                        </div>
-                      </div>
                     </div>
                   ) : null}
 
@@ -3790,23 +3560,20 @@ export default function DigitalHubClient({
                     }`}
                     style={{ fontFamily: DIGITAL_HUB_FONT_STACK }}
                   >
-                  {isSelectedTopicLockedForBatch ? null : (
                     <div
                       ref={topicContentRef}
                       dangerouslySetInnerHTML={{
                         __html: normalizedTopicContent,
                       }}
                     />
-                  )}
 
                   <TopicLessonsDisplay
                     topic={selectedTopic}
-                    isLocked={isSelectedTopicLockedForBatch}
                     showLegacyIntroVideo={false}
                   />
 
                     {/* Demo Mode Controls */}
-                    {isDemo && !isSelectedTopicLockedForBatch && (
+                    {isDemo && (
                       <div className="mt-8">
                         {/* Pagination Controls for Multi-page Content */}
                         {totalPages > 1 && (
@@ -3891,14 +3658,13 @@ export default function DigitalHubClient({
                     )}
 
                     {/* Quiz Questions - Directly in main content */}
-                    {!isSelectedTopicLockedForBatch && quizLoading ? (
+                    {quizLoading ? (
                       <div className="mt-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="text-center text-gray-600">
                           Loading questions...
                         </div>
                       </div>
-                    ) : !isSelectedTopicLockedForBatch &&
-                      quizData &&
+                    ) : quizData &&
                       quizData.questions &&
                       quizData.questions.length > 0 ? (
                       <div className="mt-8">
@@ -4027,29 +3793,13 @@ export default function DigitalHubClient({
                       </div>
                     )}
 
-                    {!isSelectedTopicLockedForBatch &&
-                      (previousTopic || nextTopic) && (
+                    {(previousTopic || nextTopic) && (
                       <div className="mt-8 flex items-center justify-between gap-4">
                         <div>
                           {previousTopic ? (
                             <button
                               type="button"
-                              onClick={() => {
-                                if (
-                                  isTopicLockedForBatch(
-                                    previousTopic,
-                                    activeCourseEnrollmentAt
-                                  )
-                                ) {
-                                  setToastMessage(
-                                    "Open on next batch start."
-                                  );
-                                  setShowToast(true);
-                                  setTimeout(() => setShowToast(false), 3000);
-                                  return;
-                                }
-                                handleTopicSelect(previousTopic);
-                              }}
+                              onClick={() => handleTopicSelect(previousTopic)}
                               className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
                                 isDarkMode
                                   ? "bg-slate-700 hover:bg-slate-600"
@@ -4067,19 +3817,6 @@ export default function DigitalHubClient({
                             <button
                               type="button"
                               onClick={() => {
-                                if (
-                                  isTopicLockedForBatch(
-                                    nextTopic,
-                                    activeCourseEnrollmentAt
-                                  )
-                                ) {
-                                  setToastMessage(
-                                    "Open on next batch start."
-                                  );
-                                  setShowToast(true);
-                                  setTimeout(() => setShowToast(false), 3000);
-                                  return;
-                                }
                                 if (quizData && !quizSubmitted) {
                                   setToastMessage(
                                     "Please complete the quiz before moving to the next topic."
@@ -4651,21 +4388,13 @@ export default function DigitalHubClient({
                   </div>
                 </>
               ) : selectedChapter ? (
-                <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-900">
-                  <div className="flex items-start gap-3">
-                    <div className="rounded-full bg-amber-400/20 p-2">
-                      <Lock className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-semibold">
-                        Open on next batch start
-                      </h4>
-                      <p className="mt-1 text-sm text-amber-800">
-                        No accessible topic is available yet for this chapter.
-                        Please wait for the next batch to start.
-                      </p>
-                    </div>
-                  </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-700">
+                  <h4 className="text-lg font-semibold text-slate-900">
+                    No topic selected
+                  </h4>
+                  <p className="mt-1 text-sm text-slate-600">
+                    This chapter does not have a selected topic yet.
+                  </p>
                 </div>
               ) : (
                 <div className="text-center py-12">

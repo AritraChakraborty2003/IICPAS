@@ -47,12 +47,7 @@ export const isTopicLessonVisible = (lesson, now = new Date()) => {
   const status = String(lesson.status || "active").toLowerCase();
   if (status !== "active") return false;
 
-  if (!lesson.publishAt) return true;
-
-  const publishDate = new Date(lesson.publishAt);
-  if (Number.isNaN(publishDate.getTime())) return true;
-
-  return publishDate.getTime() <= now.getTime();
+  return true;
 };
 
 export const buildTopicLessonRows = (
