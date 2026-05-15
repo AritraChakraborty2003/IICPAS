@@ -161,12 +161,13 @@ const sendBatchCourseScheduleEmails = async (batch) => {
     };
   });
 
+  const transporter = createTransporter();
+  await transporter.verify();
+
   const results = await Promise.allSettled(
     students.map(async (student) => {
-      const transporter = createTransporter();
-      await transporter.verify();
       await transporter.sendMail({
-        from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
+        from: `"IICPA Institute" <${emailConfig.auth.user}>`,
         to: student.email,
         subject: `Batch Schedule Updated: ${batch.code || "IICPA Batch"}`,
         html: buildBatchCourseScheduleEmail({
