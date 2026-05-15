@@ -173,7 +173,7 @@ export default function GroupCourseCard({
                   <div className="flex items-center gap-2">
                     <p className="text-green-600 font-semibold text-sm">
                       {hidePrice
-                        ? "₹ X (login to view)"
+                        ? "₹ (login to view)"
                         : `₹${smallestPrice?.toLocaleString() || "0"}`}
                     </p>
                     {!hidePrice && hasDiscount && (
