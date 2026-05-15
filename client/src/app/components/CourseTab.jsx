@@ -1149,7 +1149,6 @@ export default function CourseTab() {
             const description = getCourseDescription(course, isPurchased);
             const courseAccessWindow = getCourseAccessWindow(course._id);
             const isHardLocked = courseAccessWindow.isHardLocked;
-            const isPreviewOnly = courseAccessWindow.isPreviewOnly;
             const overviewStats = [
               {
                 label: "Category",
@@ -1193,8 +1192,6 @@ export default function CourseTab() {
                             className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
                               isHardLocked
                                 ? "bg-rose-500/95 text-white"
-                                : isPreviewOnly
-                                ? "bg-amber-500/95 text-white"
                                 : isPurchased
                                 ? "bg-emerald-500/95 text-white"
                                 : "bg-slate-950/75 text-white"
@@ -1202,8 +1199,6 @@ export default function CourseTab() {
                           >
                             {isHardLocked
                               ? "Locked"
-                              : isPreviewOnly
-                              ? "Preview Only"
                               : isPurchased
                               ? "Enrolled"
                               : "Available"}
@@ -1272,11 +1267,7 @@ export default function CourseTab() {
                                 }`}
                                 >
                                   {isHardLocked ? <Lock className="text-xl" /> : <Book className="text-xl" />}
-                                  {isHardLocked
-                                    ? "Locked"
-                                    : isPreviewOnly
-                                    ? "Open Preview"
-                                    : "Open Course"}
+                                  {isHardLocked ? "Locked" : "Open Course"}
                                 </button>
                             ) : (
                               <button
@@ -1299,26 +1290,13 @@ export default function CourseTab() {
                               </button>
                           </div>
 
-                          {isPurchased && (isHardLocked || isPreviewOnly) ? (
+                          {isPurchased && isHardLocked ? (
                             <div
-                              className={`mt-1 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
-                                isPreviewOnly
-                                  ? "bg-amber-50 text-amber-700"
-                                  : "bg-rose-50 text-rose-700"
-                              }`}
+                              className="mt-1 inline-flex items-center gap-2 rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-700"
                             >
                               <span className="h-2 w-2 rounded-full bg-current" />
-                              {isPreviewOnly
-                                ? "Preview access: only first chapter and topic"
-                                : "Locked by admin"}
+                              Locked by admin
                             </div>
-                          ) : null}
-                          {isPurchased && isPreviewOnly ? (
-                            <p className="mt-2 max-w-2xl text-xs text-amber-700">
-                              This course is outside the batch window. Students can
-                              only open the first chapter and first topic until the
-                              scheduled window starts.
-                            </p>
                           ) : null}
 
                           {isPurchased &&
