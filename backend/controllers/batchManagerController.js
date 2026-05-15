@@ -36,10 +36,6 @@ const reconcileBatchMetadata = async () => {
     const actualCount = countByBatchId.get(String(batch._id)) || 0;
     batch.assignedCount = actualCount;
     await batch.save();
-
-    if (actualCount === 0) {
-      await BatchManager.deleteOne({ _id: batch._id });
-    }
   }
 };
 

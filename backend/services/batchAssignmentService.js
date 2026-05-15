@@ -129,8 +129,7 @@ const deleteBatchIfEmpty = async (batch, session = null) => {
     return batch;
   }
 
-  await BatchManager.deleteOne({ _id: batch._id }).session(session);
-  return null;
+  return batch;
 };
 
 export const reserveBatchSeat = async ({ mode, size, session = null } = {}) => {
@@ -213,11 +212,7 @@ export const releaseBatchSeat = async ({ batchId, created = false, session = nul
 
   batch.assignedCount = Math.max(0, Number(batch.assignedCount || 0) - 1);
   await batch.save({ session });
-  if (batch.assignedCount === 0) {
-    return deleteBatchIfEmpty(batch, session);
-  }
-
-  return batch;
+  return deleteBatchIfEmpty(batch, session);
 };
 
 const createBatchTransferError = (message, statusCode = 400) => {
