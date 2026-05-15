@@ -43,18 +43,6 @@ export default function HomepageWhatsAppGate() {
   const leadApiBase = useMemo(() => `${apiBase}/leads`, [apiBase]);
 
   useEffect(() => {
-    const shouldLockScroll = isHomepage && !isVerified && !isDismissed;
-    if (!shouldLockScroll) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isHomepage, isVerified, isDismissed]);
-
-  useEffect(() => {
     if (step === "otp") {
       otpInputRef.current?.focus();
       return;
@@ -216,7 +204,7 @@ export default function HomepageWhatsAppGate() {
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/25 px-4"
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/12 px-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="homepage-whatsapp-gate-title"
@@ -279,7 +267,8 @@ export default function HomepageWhatsAppGate() {
                   </div>
                   <div className="px-4 py-4">
                     <p className="text-sm leading-6 text-slate-600">
-                      Find talent, post openings, and connect with candidates.
+                      Find vetted talent, post openings, and hire faster with
+                      trusted support.
                     </p>
                     <span className="mt-3 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
                       Continue
