@@ -229,7 +229,7 @@ export default function HomepageWhatsAppGate() {
                   className="mt-1 text-2xl font-semibold"
                 >
                   {intent === "hire"
-                    ? "Hire from us"
+                    ? "Hire Top Finance Talents"
                     : intent === "learn"
                     ? "Upgrade skills for high-salary jobs"
                     : "Choose your path"}
@@ -259,8 +259,9 @@ export default function HomepageWhatsAppGate() {
                       <p className="text-xs uppercase tracking-[0.24em] text-white/70">
                         Employers
                       </p>
-                      <h3 className="mt-1 max-w-[10rem] text-[0.95rem] font-semibold leading-tight sm:text-[1.1rem]">
-                        Hire from us
+                      <h3 className="mt-1 max-w-[11rem] text-[0.95rem] font-semibold leading-tight sm:text-[1.1rem]">
+                        Hire Top Finance
+                        <span className="block">Talents</span>
                       </h3>
                     </div>
                     <BriefcaseBusiness className="h-7 w-7 text-white/90" />

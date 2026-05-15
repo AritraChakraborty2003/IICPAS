@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-const Chatbot = () => {
+const Chatbot = ({ defaultOpen = false }) => {
   const pathname = usePathname();
   const isDigitalHubRoute = pathname?.includes("/digital-hub");
   const chatWindowPositionClasses = isDigitalHubRoute
@@ -17,7 +17,7 @@ const Chatbot = () => {
   const chatButtonPositionClasses = isDigitalHubRoute
     ? "top-1/2 left-1 translate-y-12 sm:left-2"
     : "bottom-4 right-4";
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   const [leadFormVisible, setLeadFormVisible] = useState(true);
   const [hasLead, setHasLead] = useState(false);
   const [leadData, setLeadData] = useState({
