@@ -32,7 +32,6 @@ declare global {
 
 export default function DeferredGlobalWidgets() {
   const pathname = usePathname();
-  const [loadChatbot, setLoadChatbot] = useState(false);
   const [loadInteractiveWidgets, setLoadInteractiveWidgets] = useState(false);
   const [loadPassiveWidgets, setLoadPassiveWidgets] = useState(false);
 
@@ -47,8 +46,6 @@ export default function DeferredGlobalWidgets() {
 
   useEffect(() => {
     if (isDashboardRoute || isCleanGSTSimulationRoute) return;
-
-    setLoadChatbot(true);
 
     let idleId: IdleHandle | null = null;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -98,7 +95,7 @@ export default function DeferredGlobalWidgets() {
   return (
     <>
       {loadInteractiveWidgets && <SpecialOfferWrapper location="all" maxCards={1} />}
-      {loadChatbot && <Chatbot defaultOpen />}
+      {loadInteractiveWidgets && <Chatbot />}
       {loadInteractiveWidgets && <WhatsAppButton />}
       {loadPassiveWidgets && <CookiePolicyPopup />}
       {loadPassiveWidgets && <CopyProtection />}

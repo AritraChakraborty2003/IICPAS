@@ -7,8 +7,10 @@ import { v4 as uuidv4 } from "uuid";
 import { usePathname } from "next/navigation";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const CHATBOT_OPEN_EVENT = "iicpa:open-chatbot";
+const CHATBOT_OPEN_SESSION_KEY = "iicpa_chatbot_open_pending";
 
-const Chatbot = ({ defaultOpen = false }) => {
+const Chatbot = () => {
   const pathname = usePathname();
   const isDigitalHubRoute = pathname?.includes("/digital-hub");
   const chatWindowPositionClasses = isDigitalHubRoute
@@ -17,7 +19,7 @@ const Chatbot = ({ defaultOpen = false }) => {
   const chatButtonPositionClasses = isDigitalHubRoute
     ? "top-1/2 left-1 translate-y-12 sm:left-2"
     : "bottom-4 right-4";
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [isOpen, setIsOpen] = useState(false);
   const [leadFormVisible, setLeadFormVisible] = useState(true);
   const [hasLead, setHasLead] = useState(false);
   const [leadData, setLeadData] = useState({
@@ -117,6 +119,25 @@ const Chatbot = ({ defaultOpen = false }) => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    const openChatbot = () => setIsOpen(true);
+
+    try {
+      if (window.sessionStorage.getItem(CHATBOT_OPEN_SESSION_KEY) === "true") {
+        window.sessionStorage.removeItem(CHATBOT_OPEN_SESSION_KEY);
+        openChatbot();
+      }
+    } catch (error) {
+      console.error("Error reading chatbot open state:", error);
+    }
+
+    window.addEventListener(CHATBOT_OPEN_EVENT, openChatbot);
+
+    return () => {
+      window.removeEventListener(CHATBOT_OPEN_EVENT, openChatbot);
+    };
+  }, []);
 
   const saveChatMessage = async (message, userDetails = null) => {
     if (!sessionId) return;

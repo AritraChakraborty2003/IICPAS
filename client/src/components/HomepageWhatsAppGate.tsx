@@ -18,6 +18,7 @@ import { getApiBase } from "@/lib/apiBase";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN_SECONDS = 30;
+const CHATBOT_OPEN_EVENT = "iicpa:open-chatbot";
 
 const normalizePhoneNumber = (value: string) =>
   value.replace(/\D/g, "").slice(0, 10);
@@ -171,6 +172,7 @@ export default function HomepageWhatsAppGate() {
       }
 
       setIsVerified(true);
+      window.dispatchEvent(new Event(CHATBOT_OPEN_EVENT));
       toast.success(response.data?.message || "Verification successful");
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "OTP verification failed");
