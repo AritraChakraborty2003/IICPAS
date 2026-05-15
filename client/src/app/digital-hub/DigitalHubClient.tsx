@@ -1007,6 +1007,7 @@ export default function DigitalHubClient({
       String(activePurchasedCourseRecord?.status || "").toLowerCase() ===
         "inactive"
   );
+  const isCourseBatchLocked = Boolean(activePurchasedCourseRecord?.batchLockActive);
   const hasStudentCourseAccess = Boolean(activePurchasedCourseRecord);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
@@ -1824,7 +1825,11 @@ export default function DigitalHubClient({
       if (blockedCourseRedirectedRef.current) return;
       blockedCourseRedirectedRef.current = true;
       setLoading(false);
-      setToastMessage("This course is locked by the admin.");
+      setToastMessage(
+        isCourseBatchLocked
+          ? "This course is locked by the batch schedule."
+          : "This course is locked by the admin."
+      );
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
       router.replace("/student-dashboard?tab=courses&accessDenied=locked");
@@ -1833,6 +1838,7 @@ export default function DigitalHubClient({
     authResolved,
     hasStudentCourseAccess,
     isCourseAccessBlocked,
+    isCourseBatchLocked,
     isDemo,
     resolvedCourseId,
     router,

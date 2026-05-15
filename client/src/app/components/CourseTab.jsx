@@ -297,6 +297,11 @@ export default function CourseTab() {
     return Boolean(access.isLocked);
   };
 
+  const isCourseLockedByBatchSchedule = (courseId) => {
+    const access = purchasedCourseAccessMap.get(String(courseId)) || null;
+    return Boolean(access?.batchLockActive);
+  };
+
   // Handle Buy Now functionality
   const handleBuyNow = (course) => {
     // For now, we'll redirect to the course detail page where student can purchase
@@ -479,7 +484,11 @@ export default function CourseTab() {
     }
 
     if (isCourseLocked(courseId)) {
-      toast.error("This course is locked by the admin.");
+      toast.error(
+        isCourseLockedByBatchSchedule(courseId)
+          ? "This course is locked by the batch schedule."
+          : "This course is locked by the admin."
+      );
       return;
     }
 
@@ -1133,6 +1142,7 @@ export default function CourseTab() {
               },
             ];
             const isLocked = isCourseLocked(course._id);
+            const isBatchLocked = isCourseLockedByBatchSchedule(course._id);
 
             return (
               <div key={course._id} className="group relative">
@@ -1158,14 +1168,18 @@ export default function CourseTab() {
                           <span
                             className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
                               isLocked
-                                ? "bg-rose-500/95 text-white"
+                                ? isBatchLocked
+                                  ? "bg-amber-500/95 text-white"
+                                  : "bg-rose-500/95 text-white"
                                 : isPurchased
                                 ? "bg-emerald-500/95 text-white"
                                 : "bg-slate-950/75 text-white"
                             }`}
                           >
                             {isLocked
-                              ? "Locked"
+                              ? isBatchLocked
+                                ? "Locked by Batch Schedule"
+                                : "Locked"
                               : isPurchased
                               ? "Enrolled"
                               : "Available"}
@@ -1232,10 +1246,10 @@ export default function CourseTab() {
                                     ? "cursor-not-allowed bg-slate-400"
                                     : "bg-slate-900 hover:bg-slate-800"
                                 }`}
-                              >
-                                {isLocked ? <Lock className="text-xl" /> : <Book className="text-xl" />}
-                                {isLocked ? "Locked" : "Open Course"}
-                              </button>
+                                >
+                                  {isLocked ? <Lock className="text-xl" /> : <Book className="text-xl" />}
+                                  {isLocked ? "Locked" : "Open Course"}
+                                </button>
                             ) : (
                               <button
                                 onClick={() => handleBuyNow(course)}
@@ -1251,11 +1265,26 @@ export default function CourseTab() {
                                 router.push(`/course/${course.slug || course._id}`)
                               }
                               className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 sm:w-auto sm:min-w-[190px]"
-                            >
-                              <Visibility className="text-lg" />
-                              View Details
-                            </button>
+                              >
+                                <Visibility className="text-lg" />
+                                View Details
+                              </button>
                           </div>
+
+                          {isPurchased && isLocked ? (
+                            <div
+                              className={`mt-1 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${
+                                isBatchLocked
+                                  ? "bg-amber-50 text-amber-700"
+                                  : "bg-rose-50 text-rose-700"
+                              }`}
+                            >
+                              <span className="h-2 w-2 rounded-full bg-current" />
+                              {isBatchLocked
+                                ? "Locked by batch schedule"
+                                : "Locked by admin"}
+                            </div>
+                          ) : null}
 
                           {isPurchased &&
                             isCourseCompleted(course) &&
