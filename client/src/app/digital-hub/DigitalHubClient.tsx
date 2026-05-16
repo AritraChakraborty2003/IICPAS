@@ -1039,7 +1039,7 @@ export default function DigitalHubClient({
   const isChapterLocked = !isDemo && isCourseBatchExpired;
   const isTopicLocked = (topicIndex: number) =>
     !isDemo &&
-    (isCourseBatchExpired || (courseBatchWindowState.isBatchPreviewOnly && topicIndex > 0));
+    (isCourseBatchExpired || courseBatchWindowState.isBatchPreviewOnly);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -1458,7 +1458,7 @@ export default function DigitalHubClient({
       preferredTopicId?: string
     ) => {
       const availableTopics = chapter.topics || [];
-      const shouldRestrictToFirstTopic =
+      const shouldLockTopicsBeforeStart =
         !isDemo && courseBatchWindowState.isBatchPreviewOnly;
       const isBatchExpiredLocked =
         !isDemo && courseBatchWindowState.isBatchPostEndLocked;
@@ -1505,39 +1505,65 @@ export default function DigitalHubClient({
       }
 
       if (availableTopics.length > 0) {
-        const storedTopic = preferredTopicId
-          ? availableTopics.find((topic) => topic._id === preferredTopicId)
-          : null;
-        const firstTopic = shouldRestrictToFirstTopic
-          ? availableTopics[0] || null
-          : storedTopic || availableTopics[0] || null;
-        setSelectedTopic(firstTopic);
-        if (firstTopic?._id) {
-          storeLastSelection(chapter._id, firstTopic._id);
-        }
-        scrollContentToTop();
+        if (shouldLockTopicsBeforeStart) {
+          setSelectedTopic(null);
+          setTopicContent(
+            "Batch access is not started yet. Topics will unlock when the batch start time begins."
+          );
+          setTotalPages(1);
+          setCurrentPage(1);
+          setShowDemoLimit(false);
+          setQuizData(null);
+          setQuizLoading(false);
+          setSelectedAnswers({});
+          setQuizSubmitted(false);
+          setShowQuizResults(false);
+          setQuizRewardSummary(null);
+          scrollContentToTop();
+        } else {
+          const storedTopic = preferredTopicId
+            ? availableTopics.find((topic) => topic._id === preferredTopicId)
+            : null;
+          const firstTopic = storedTopic || availableTopics[0] || null;
+          setSelectedTopic(firstTopic);
+          if (firstTopic?._id) {
+            storeLastSelection(chapter._id, firstTopic._id);
+          }
+          scrollContentToTop();
 
-        if (firstTopic?.content) {
-          try {
-            const decodedContent = atob(firstTopic.content);
-            if (isDemo) {
-              const { pages, totalPages } = splitContentIntoPages(
-                decodedContent,
-                1
-              );
-              setTotalPages(totalPages);
-              setCurrentPage(1);
-              setTopicContent(
-                normalizeDigitalHubContentHtml(
-                  pages[0] || "Content not available",
-                  DIGITAL_HUB_FONT_STACK
-                )
-              );
-              setShowDemoLimit(totalPages > 0);
-            } else {
-              setTopicContent(
-                normalizeDigitalHubContentHtml(
+          if (firstTopic?.content) {
+            try {
+              const decodedContent = atob(firstTopic.content);
+              if (isDemo) {
+                const { pages, totalPages } = splitContentIntoPages(
                   decodedContent,
+                  1
+                );
+                setTotalPages(totalPages);
+                setCurrentPage(1);
+                setTopicContent(
+                  normalizeDigitalHubContentHtml(
+                    pages[0] || "Content not available",
+                    DIGITAL_HUB_FONT_STACK
+                  )
+                );
+                setShowDemoLimit(totalPages > 0);
+              } else {
+                setTopicContent(
+                  normalizeDigitalHubContentHtml(
+                    decodedContent,
+                    DIGITAL_HUB_FONT_STACK
+                  )
+                );
+                setTotalPages(1);
+                setCurrentPage(1);
+                setShowDemoLimit(false);
+              }
+            } catch (error) {
+              console.error("Error decoding topic content:", error);
+              setTopicContent(
+                normalizeDigitalHubContentHtml(
+                  firstTopic.content || "Content not available",
                   DIGITAL_HUB_FONT_STACK
                 )
               );
@@ -1545,34 +1571,23 @@ export default function DigitalHubClient({
               setCurrentPage(1);
               setShowDemoLimit(false);
             }
-          } catch (error) {
-            console.error("Error decoding topic content:", error);
-            setTopicContent(
-              normalizeDigitalHubContentHtml(
-                firstTopic.content || "Content not available",
-                DIGITAL_HUB_FONT_STACK
-              )
-            );
+          } else {
+            setTopicContent("Content not available");
             setTotalPages(1);
             setCurrentPage(1);
             setShowDemoLimit(false);
           }
-        } else {
-          setTopicContent("Content not available");
-          setTotalPages(1);
-          setCurrentPage(1);
-          setShowDemoLimit(false);
-        }
 
-        if (firstTopic?._id) {
-          loadQuizForTopic(firstTopic._id);
-        } else {
-          setQuizData(null);
-          setQuizLoading(false);
-          setSelectedAnswers({});
-          setQuizSubmitted(false);
-          setShowQuizResults(false);
-          setQuizRewardSummary(null);
+          if (firstTopic?._id) {
+            loadQuizForTopic(firstTopic._id);
+          } else {
+            setQuizData(null);
+            setQuizLoading(false);
+            setSelectedAnswers({});
+            setQuizSubmitted(false);
+            setShowQuizResults(false);
+            setQuizRewardSummary(null);
+          }
         }
       } else {
         setIsIntroVideoModalOpen(false);
@@ -3619,8 +3634,8 @@ export default function DigitalHubClient({
 
                   {isCourseBatchPreviewOnly && !isDemo ? (
                     <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                      Batch access is not started yet. The first topic of each
-                      chapter is available until the batch start time.
+                      Batch access is not started yet. Topics will unlock when
+                      the batch start time begins.
                     </div>
                   ) : null}
                   {isCourseBatchExpired && !isDemo ? (
@@ -4547,10 +4562,14 @@ export default function DigitalHubClient({
               ) : selectedChapter ? (
                 <div className="rounded-2xl border border-slate-200 bg-white p-6 text-slate-700">
                   <h4 className="text-lg font-semibold text-slate-900">
-                    No topic selected
+                    {isCourseBatchPreviewOnly && !isDemo
+                      ? "Topics are locked until the batch starts"
+                      : "No topic selected"}
                   </h4>
                   <p className="mt-1 text-sm text-slate-600">
-                    This chapter does not have a selected topic yet.
+                    {isCourseBatchPreviewOnly && !isDemo
+                      ? "The chapter is open, but topic content will unlock when the batch start time begins."
+                      : "This chapter does not have a selected topic yet."}
                   </p>
                 </div>
               ) : (
