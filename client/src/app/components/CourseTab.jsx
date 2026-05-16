@@ -26,6 +26,7 @@ import { Lock } from "lucide-react";
 import StarRating from "./StarRating";
 import TopicLessonsDisplay from "./TopicLessonsDisplay";
 import { toast } from "react-hot-toast";
+import { getBatchWindowState } from "../utils/batchWindowState";
 
 const extractCourseList = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -54,12 +55,6 @@ const getChapterIdentifier = (chapter, fallbackIndex) =>
       chapter?.id ??
       (Number.isInteger(fallbackIndex) ? fallbackIndex : "")
   );
-
-const parseDateOrNull = (value) => {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
 
 const mergeChaptersWithProgress = (chapters, progressPayload) => {
   const orderedChapters = Array.isArray(chapters) ? [...chapters] : [];
@@ -124,6 +119,7 @@ export default function CourseTab() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [courseRatings, setCourseRatings] = useState({}); // Store existing ratings
   const [expandedChapterKeys, setExpandedChapterKeys] = useState({});
+  const [, setBatchClockTick] = useState(0);
   const router = useRouter();
   const searchParams = useSearchParams();
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -136,6 +132,16 @@ export default function CourseTab() {
     });
     return map;
   }, [purchasedCourses]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setBatchClockTick((value) => value + 1);
+    }, 30000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
 
   // Fetch student courses from database
   const fetchStudentCourses = async () => {
@@ -262,31 +268,16 @@ export default function CourseTab() {
 
   const getCourseAccessWindow = (courseId) => {
     const access = purchasedCourseAccessMap.get(String(courseId)) || null;
-    const accessState = String(access?.batchAccessState || "").toLowerCase();
-    const batchLockStartsAt = parseDateOrNull(access?.batchLockStartsAt);
-    const batchLockEndsAt = parseDateOrNull(access?.batchLockEndsAt);
-    const hasBatchWindow = Boolean(batchLockStartsAt && batchLockEndsAt);
-    const isWithinBatchWindow =
-      accessState === "active" ||
-      (typeof access?.batchWindowActive === "boolean"
-        ? access.batchWindowActive
-        : hasBatchWindow
-        ? Date.now() >= batchLockStartsAt.getTime() &&
-          Date.now() <= batchLockEndsAt.getTime()
-        : true);
-    const isPreviewOnly =
-      accessState === "preview" ||
-      (typeof access?.batchPreviewOnly === "boolean"
-        ? access.batchPreviewOnly
-        : hasBatchWindow && !isWithinBatchWindow);
+    const batchWindowState = getBatchWindowState(access);
 
     return {
       access,
-      hasBatchWindow,
-      isWithinBatchWindow,
-      isPreviewOnly,
+      ...batchWindowState,
+      isWithinBatchWindow: batchWindowState.isBatchWindowActive,
+      isPreviewOnly: batchWindowState.isBatchPreviewOnly,
       isHardLocked:
-        !hasBatchWindow ||
+        batchWindowState.isBatchPostEndLocked ||
+        !batchWindowState.hasBatchWindow ||
         String(access?.status || "").toLowerCase() === "inactive",
     };
   };

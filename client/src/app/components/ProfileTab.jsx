@@ -142,6 +142,7 @@ export default function ProfileTab({ onImageUpdated }) {
   const [imageLoading, setImageLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [, setBatchClockTick] = useState(0);
   const getStudentImageUrl = (imagePath) => {
     if (!imagePath || typeof imagePath !== "string") return "";
     if (/^https?:\/\//i.test(imagePath)) {
@@ -172,6 +173,16 @@ export default function ProfileTab({ onImageUpdated }) {
     new Promise((resolve) => {
       canvas.toBlob((blob) => resolve(blob), type, quality);
     });
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setBatchClockTick((value) => value + 1);
+    }, 30000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
 
   const compressProfileImage = async (file) => {
     if (file.size <= MAX_PROFILE_IMAGE_BYTES) {
@@ -574,6 +585,8 @@ export default function ProfileTab({ onImageUpdated }) {
                   const isExpanded = Boolean(expandedProfileCourses[courseId]);
                   const courseAccessWindow = getCourseAccessWindow(course);
                   const isCourseLocked = courseAccessWindow.isHardLocked;
+                  const isPreviewBeforeStart = courseAccessWindow.isPreviewOnly;
+                  const isBatchExpired = courseAccessWindow.isBatchPostEndLocked;
                   const digitalHubPath = `/digital-hub/${encodeURIComponent(
                     course?.slug || courseId
                   )}`;
@@ -663,6 +676,11 @@ export default function ProfileTab({ onImageUpdated }) {
                                   chapter,
                                   chapterIndex
                                 );
+                                const chapterIsLocked = isBatchExpired
+                                  ? true
+                                  : isPreviewBeforeStart
+                                  ? false
+                                  : Boolean(chapter?.isLocked);
                                 const chapterKey = `${courseId}-${chapterId}`;
                                 const chapterExpanded = Boolean(
                                   expandedProfileChapters[chapterKey]
@@ -686,12 +704,12 @@ export default function ProfileTab({ onImageUpdated }) {
                                       <div className="flex items-center gap-2 shrink-0">
                                         <span
                                           className={`rounded-full px-2 py-1 text-xs font-semibold ${
-                                            chapter?.isLocked
+                                            chapterIsLocked
                                               ? "bg-amber-100 text-amber-700"
                                               : "bg-blue-100 text-blue-700"
                                           }`}
                                         >
-                                          {chapter?.isLocked ? (
+                                          {chapterIsLocked ? (
                                             <span className="inline-flex items-center gap-1">
                                               <Lock className="h-3.5 w-3.5" />
                                               <span>Locked</span>
@@ -702,20 +720,20 @@ export default function ProfileTab({ onImageUpdated }) {
                                         </span>
                                         <button
                                           type="button"
-                                          disabled={chapter?.isLocked}
+                                          disabled={chapterIsLocked}
                                           onClick={() =>
-                                            !chapter?.isLocked &&
+                                            !chapterIsLocked &&
                                             router.push(
                                               `${digitalHubPath}/${encodeURIComponent(chapterId)}`
                                             )
                                           }
                                           className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-                                            chapter?.isLocked
+                                            chapterIsLocked
                                               ? "cursor-not-allowed bg-slate-200 text-slate-500"
                                               : "bg-blue-600 text-white hover:bg-blue-700"
                                           }`}
                                         >
-                                          {chapter?.isLocked ? (
+                                          {chapterIsLocked ? (
                                             <span className="inline-flex items-center gap-1">
                                               <Lock className="h-3.5 w-3.5" />
                                               <span>Locked</span>

@@ -841,6 +841,7 @@ export default function DigitalHubClient({
   const [progressMutationKey, setProgressMutationKey] = useState<string | null>(
     null
   );
+  const [batchClockTick, setBatchClockTick] = useState(0);
   const hasRenderedContent = Boolean(
     selectedTopic || selectedAssignment || selectedCaseStudy || topicContent
   );
@@ -850,6 +851,16 @@ export default function DigitalHubClient({
   const tourStorageKey = `${DIGITAL_HUB_TOUR_STORAGE_PREFIX}:${
     studentId || "anonymous"
   }:${effectiveCourseSlugOrId}`;
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setBatchClockTick((value) => value + 1);
+    }, 30000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, []);
 
   const readTourSeenState = useCallback((): TourSeenState | null => {
     if (typeof window === "undefined") return null;
@@ -1005,7 +1016,7 @@ export default function DigitalHubClient({
   }, [resolvedCourseId, studentPurchasedCourses]);
   const courseBatchWindowState = useMemo(
     () => getBatchWindowState(activePurchasedCourseRecord),
-    [activePurchasedCourseRecord]
+    [activePurchasedCourseRecord, batchClockTick]
   );
   const isCourseBatchPreviewOnly = courseBatchWindowState.isBatchPreviewOnly;
   const isCourseBatchExpired = courseBatchWindowState.isBatchPostEndLocked;
