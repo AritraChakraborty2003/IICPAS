@@ -1030,6 +1030,11 @@ export default function DigitalHubClient({
     () => getBatchWindowState(activePurchasedCourseRecord),
     [activePurchasedCourseRecord, batchClockTick]
   );
+  const shouldFailSafeRestrictAccess = Boolean(
+    !isDemo &&
+      studentPurchasedCoursesLoaded &&
+      (studentPurchasedCoursesLoadFailed || !activePurchasedCourseRecord)
+  );
   const isCourseBatchPreviewOnly = courseBatchWindowState.isBatchPreviewOnly;
   const isCourseBatchExpired = courseBatchWindowState.isBatchPostEndLocked;
   const hasCourseBatchWindow = courseBatchWindowState.hasBatchWindow;
@@ -1045,10 +1050,15 @@ export default function DigitalHubClient({
   const visibleTopics = isDemo
     ? topics.slice(0, 1)
     : topics;
-  const isSelectedChapterLocked = !isDemo && Boolean(selectedChapter?.isLocked);
-  const firstUnlockedChapterIndex = useMemo(
-    () => visibleChapters.findIndex((chapter) => !chapter?.isLocked),
-    [visibleChapters]
+  const getChapterLockState = useCallback(
+    (chapter: ChapterData | null | undefined, chapterIndex: number) => {
+      if (isDemo) return false;
+      if (shouldFailSafeRestrictAccess) {
+        return chapterIndex > 0;
+      }
+      return Boolean(chapter?.isLocked);
+    },
+    [isDemo, shouldFailSafeRestrictAccess]
   );
   const selectedChapterIndex = useMemo(() => {
     if (!selectedChapter?._id) return -1;
@@ -1056,9 +1066,20 @@ export default function DigitalHubClient({
       (chapter) => String(chapter?._id) === String(selectedChapter._id)
     );
   }, [selectedChapter?._id, visibleChapters]);
+  const isSelectedChapterLocked =
+    selectedChapterIndex >= 0
+      ? getChapterLockState(selectedChapter, selectedChapterIndex)
+      : false;
+  const firstUnlockedChapterIndex = useMemo(
+    () =>
+      visibleChapters.findIndex(
+        (chapter, index) => !getChapterLockState(chapter, index)
+      ),
+    [getChapterLockState, visibleChapters]
+  );
   const shouldPreviewLockTopics =
     !isDemo &&
-    isCourseBatchPreviewOnly &&
+    (isCourseBatchPreviewOnly || shouldFailSafeRestrictAccess) &&
     !isSelectedChapterLocked &&
     selectedChapterIndex >= 0 &&
     selectedChapterIndex === firstUnlockedChapterIndex;
@@ -1074,6 +1095,14 @@ export default function DigitalHubClient({
     currentTopicIndex >= 0 && currentTopicIndex < visibleTopics.length - 1
       ? visibleTopics[currentTopicIndex + 1]
       : null;
+  const nextTopicLocked =
+    nextTopic != null
+      ? isTopicLocked(
+          visibleTopics.findIndex(
+            (topic) => String(topic?._id) === String(nextTopic._id)
+          )
+        )
+      : false;
 
   const isSelectedTopicCompleted = Boolean(
     selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
@@ -1087,6 +1116,29 @@ export default function DigitalHubClient({
   const allTopicsCompleted =
     topics.length > 0 &&
     topics.every((t) => completedTopicIds.includes(t._id));
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || isDemo) return;
+
+    console.info("[DigitalHub] access debug", {
+      studentPurchasedCoursesLoaded,
+      studentPurchasedCoursesLoadFailed,
+      matchedCourseId: toIdString(activePurchasedCourseRecord?.courseId),
+      matchedCourseSlug: activePurchasedCourseRecord?.slug || null,
+      batchAccessState: activePurchasedCourseRecord?.batchAccessState || null,
+      hasBatchWindow,
+      isCourseBatchPreviewOnly,
+      shouldFailSafeRestrictAccess,
+    });
+  }, [
+    activePurchasedCourseRecord,
+    hasBatchWindow,
+    isCourseBatchPreviewOnly,
+    isDemo,
+    shouldFailSafeRestrictAccess,
+    studentPurchasedCoursesLoadFailed,
+    studentPurchasedCoursesLoaded,
+  ]);
 
   const tourCardStyle = useMemo<React.CSSProperties>(() => {
     if (typeof window === "undefined" || !isDesktopViewport || !tourTargetRect) {
@@ -1490,7 +1542,13 @@ export default function DigitalHubClient({
       preferredTopicId?: string
     ) => {
       const availableTopics = chapter.topics || [];
-      const isChapterAccessLocked = !isDemo && Boolean(chapter?.isLocked);
+      const chapterIndex = visibleChapters.findIndex(
+        (entry) => String(entry?._id) === String(chapter?._id)
+      );
+      const isChapterAccessLocked = getChapterLockState(
+        chapter,
+        chapterIndex >= 0 ? chapterIndex : 0
+      );
       setIsIntroVideoModalOpen(false);
       setSelectedChapter(chapter);
       setTopics(availableTopics);
@@ -1509,7 +1567,9 @@ export default function DigitalHubClient({
 
         setSelectedTopic(null);
         setTopicContent(
-          courseBatchWindowState.isBatchPostEndLocked
+          shouldFailSafeRestrictAccess
+            ? "Course access is being verified. Only the first chapter and first topic are available right now."
+            : courseBatchWindowState.isBatchPostEndLocked
             ? "This batch has ended. Course access is locked now."
             : "Batch access is not started yet. This chapter will unlock when the batch start time begins."
         );
@@ -1540,8 +1600,9 @@ export default function DigitalHubClient({
       if (availableTopics.length > 0) {
         const shouldLimitToFirstTopic =
           !isDemo &&
-          courseBatchWindowState.isBatchPreviewOnly &&
-          !chapter?.isLocked;
+          (courseBatchWindowState.isBatchPreviewOnly ||
+            shouldFailSafeRestrictAccess) &&
+          !isChapterAccessLocked;
         const storedTopic = preferredTopicId
           ? shouldLimitToFirstTopic
             ? null
@@ -1624,14 +1685,17 @@ export default function DigitalHubClient({
       buildChapterPath,
       fetchAssignments,
       fetchCaseStudies,
+      getChapterLockState,
       isDemo,
       courseBatchWindowState.isBatchPreviewOnly,
       courseBatchWindowState.isBatchPostEndLocked,
       loadQuizForTopic,
       router,
       scrollContentToTop,
+      shouldFailSafeRestrictAccess,
       storeLastSelection,
       splitContentIntoPages,
+      visibleChapters,
     ]
   );
 
@@ -2365,12 +2429,23 @@ export default function DigitalHubClient({
           }
         );
         if (cancelled) return;
+        if (process.env.NODE_ENV !== "production") {
+          console.info("[DigitalHub] student-courses fetch succeeded", {
+            studentId,
+            courseCount: Array.isArray(response.data?.courses)
+              ? response.data.courses.length
+              : 0,
+          });
+        }
         setStudentPurchasedCourses(
           extractCourseList(response.data) as CourseAccessRecord[]
         );
         setStudentPurchasedCoursesLoadFailed(false);
-      } catch {
+      } catch (error) {
         if (!cancelled) {
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[DigitalHub] student-courses fetch failed", error);
+          }
           setStudentPurchasedCourses([]);
           setStudentPurchasedCoursesLoadFailed(true);
         }
@@ -4047,9 +4122,21 @@ export default function DigitalHubClient({
                                   );
                                   return;
                                 }
+                                if (nextTopicLocked) {
+                                  setToastMessage(
+                                    shouldFailSafeRestrictAccess
+                                      ? "Course access is being verified. Later topics are locked for now."
+                                      : "This topic will unlock when the batch start time begins."
+                                  );
+                                  setShowToast(true);
+                                  setTimeout(() => setShowToast(false), 3000);
+                                  return;
+                                }
                                 handleTopicSelect(nextTopic);
                               }}
-                              disabled={Boolean(quizData && !quizSubmitted)}
+                              disabled={Boolean(
+                                quizData && !quizSubmitted
+                              )}
                               className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
                                 quizData && !quizSubmitted
                                   ? "bg-slate-400 cursor-not-allowed"
