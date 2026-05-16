@@ -2,8 +2,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { getApiBase } from "@/lib/apiBase";
-
 import OptimizedJoditEditor from "./OptimizedJoditEditor";
 import { getApiBase } from "../../lib/apiBase";
 
