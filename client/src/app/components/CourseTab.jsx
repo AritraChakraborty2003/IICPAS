@@ -56,7 +56,7 @@ const getChapterIdentifier = (chapter, fallbackIndex) =>
       (Number.isInteger(fallbackIndex) ? fallbackIndex : "")
   );
 
-const mergeChaptersWithProgress = (chapters, progressPayload) => {
+const mergeChaptersWithProgress = (chapters, progressPayload, options = {}) => {
   const orderedChapters = Array.isArray(chapters) ? [...chapters] : [];
   const progressMap = new Map(
     Array.isArray(progressPayload?.chapters)
@@ -67,12 +67,20 @@ const mergeChaptersWithProgress = (chapters, progressPayload) => {
       : []
   );
 
+  const batchPhase = options.batchPhase || "active";
+  const isPreviewBeforeStart = batchPhase === "preview";
+  const isPostEndLocked = batchPhase === "expired";
+
   return orderedChapters.map((chapter, index) => {
     const progressEntry = progressMap.get(String(chapter?._id)) || {};
 
     return {
       ...chapter,
-      isLocked: false,
+      isLocked: isPostEndLocked
+        ? true
+        : isPreviewBeforeStart
+        ? index > 0
+        : Boolean(chapter?.isLocked || progressEntry.isLocked),
       isCompleted: Boolean(progressEntry.isCompleted),
       completedTopicCount: Number(progressEntry.completedTopicCount || 0),
       totalTopicCount:
@@ -439,9 +447,13 @@ export default function CourseTab() {
           : Promise.resolve(null),
       ]);
       if (response.data.success) {
+        const batchWindowState = getBatchWindowState(
+          purchasedCourseAccessMap.get(String(courseId)) || null
+        );
         const mergedChapters = mergeChaptersWithProgress(
           response.data.chapters,
-          progressResponse?.data
+          progressResponse?.data,
+          { batchPhase: batchWindowState.phase }
         );
         setCourseChapters((prev) => ({
           ...prev,
