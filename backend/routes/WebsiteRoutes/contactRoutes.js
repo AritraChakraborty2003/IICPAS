@@ -1,12 +1,12 @@
 import express from "express";
 import WebsiteContact from "../../models/Website/Contact.js";
-import ContactModel from "../../models/ContactModel.js";
 import Message from "../../models/Message.js";
 import { requireAuth } from "../../middleware/requireAuth.js";
 import { isAdmin } from "../../middleware/isAdmin.js";
 import {
   deleteMessage as deleteContactMessage,
   bulkDeleteMessages as bulkDeleteContactMessages,
+  submitContactForm,
 } from "../../controllers/contactController.js";
 
 const router = express.Router();
@@ -68,58 +68,10 @@ router.get("/all", requireAuth, isAdmin, async (req, res) => {
 });
 
 // Submit contact form (public endpoint)
-router.post("/submit", async (req, res) => {
-  try {
-    const { name, email, phone, message } = req.body;
-
-    // Basic validation
-    if (!name || !email || !message) {
-      return res
-        .status(400)
-        .json({ error: "Name, email, and message are required" });
-    }
-
-    // Save to both Contact and Message models
-    const newContact = new ContactModel({ name, email, phone, message });
-    await newContact.save();
-
-    const newMessage = new Message({ email, phone, message });
-    await newMessage.save();
-
-    console.log("Contact form submission:", { name, email, phone, message });
-
-    res.status(200).json({ message: "Message sent successfully!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/submit", submitContactForm);
 
 // Submit contact form (public endpoint) - direct POST to /contact
-router.post("/", async (req, res) => {
-  try {
-    const { name, email, phone, message } = req.body;
-
-    // Basic validation
-    if (!name || !email || !message) {
-      return res
-        .status(400)
-        .json({ error: "Name, email, and message are required" });
-    }
-
-    // Save to both Contact and Message models
-    const newContact = new ContactModel({ name, email, phone, message });
-    await newContact.save();
-
-    const newMessage = new Message({ email, phone, message });
-    await newMessage.save();
-
-    console.log("Contact form submission:", { name, email, phone, message });
-
-    res.status(200).json({ message: "Message sent successfully!" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+router.post("/", submitContactForm);
 
 // Create new Contact content (admin only)
 router.post("/admin", requireAuth, isAdmin, async (req, res) => {

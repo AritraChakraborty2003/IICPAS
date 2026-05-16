@@ -147,12 +147,37 @@ export default function ContactSection() {
 
     try {
       setIsSubmitting(true);
-      await axios.post(`${apiBase}/contact`, payload);
+      try {
+        await axios.post(`${apiBase}/contact/submit`, payload, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (submitError: any) {
+        const status = submitError?.response?.status;
+
+        if (status === 404 || status === 405) {
+          await axios.post(`${apiBase}/contact`, payload, {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        } else {
+          throw submitError;
+        }
+      }
 
       toast.success(formConfig?.messages?.successMessage || "Message sent successfully!");
       setForm({ name: "", email: "", phone: "", message: "" });
     } catch (error: any) {
-      toast.error(error.response?.data?.error || formConfig?.messages?.errorMessage || "Submission failed");
+      const responseData = error?.response?.data;
+      const errorMessage =
+        responseData?.error ||
+        responseData?.message ||
+        (typeof responseData === "string" ? responseData : "") ||
+        formConfig?.messages?.errorMessage ||
+        "Submission failed";
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

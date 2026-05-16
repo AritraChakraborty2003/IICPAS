@@ -1007,16 +1007,25 @@ export default function DigitalHubClient({
 
     return (
       studentPurchasedCourses.find((course) => {
-        const candidateIds = [
-          toIdString(course?._id),
-          toIdString(course?.courseId),
-        ].filter(Boolean);
-        return candidateIds.some(
-          (candidate) => String(candidate) === String(resolvedCourseId)
+        const primaryCourseId = toIdString(course?.courseId);
+        if (primaryCourseId && String(primaryCourseId) === String(resolvedCourseId)) {
+          return true;
+        }
+
+        const fallbackCourseId = toIdString(course?._id);
+        if (fallbackCourseId && String(fallbackCourseId) === String(resolvedCourseId)) {
+          return true;
+        }
+
+        const courseSlug = String(course?.slug || "").trim();
+        return Boolean(
+          !primaryCourseId &&
+            courseSlug &&
+            String(courseSlug) === String(effectiveCourseSlugOrId)
         );
       }) || null
     );
-  }, [resolvedCourseId, studentPurchasedCourses]);
+  }, [effectiveCourseSlugOrId, resolvedCourseId, studentPurchasedCourses]);
   const courseBatchWindowState = useMemo(
     () => getBatchWindowState(activePurchasedCourseRecord),
     [activePurchasedCourseRecord, batchClockTick]
@@ -2350,7 +2359,7 @@ export default function DigitalHubClient({
     const fetchStudentPurchasedCourses = async () => {
       try {
         const response = await axios.get(
-          `${API_BASE}/api/courses/student-courses/${studentId}`,
+          `${API_BASE}/courses/student-courses/${studentId}`,
           {
             withCredentials: true,
           }

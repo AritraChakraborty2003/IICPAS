@@ -6,8 +6,10 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { Send } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { getApiBase } from "@/lib/apiBase";
 
 export default function ContactSection() {
+  const apiBase = getApiBase();
   const [contactData] = useState({
     title: "Contact Us",
     subtitle: "Let's Get in Touch",
@@ -46,6 +48,7 @@ export default function ContactSection() {
     message: "",
   });
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     // Use hardcoded data directly - no API call needed
@@ -60,15 +63,53 @@ export default function ContactSection() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const API_BASE_URL =
-      process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+    const payload = {
+      name: formData.name.trim(),
+      email: formData.email.trim(),
+      phone: formData.phone.trim(),
+      message: formData.message.trim(),
+    };
+
+    if (!payload.name || !payload.email || !payload.phone || !payload.message) {
+      toast.error("All fields are required.");
+      return;
+    }
 
     try {
-      await axios.post(`${API_BASE_URL}/contact`, formData);
+      setIsSubmitting(true);
+      try {
+        await axios.post(`${apiBase}/contact/submit`, payload, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+      } catch (submitError: any) {
+        const status = submitError?.response?.status;
+
+        if (status === 404 || status === 405) {
+          await axios.post(`${apiBase}/contact`, payload, {
+            headers: {
+              "Content-Type": "application/json",
+            },
+          });
+        } else {
+          throw submitError;
+        }
+      }
+
       toast.success(contactData.form.successMessage);
       setFormData({ name: "", email: "", phone: "", message: "" });
     } catch (error: any) {
-      toast.error(error.response?.data?.error || contactData.form.errorMessage);
+      const responseData = error?.response?.data;
+      const errorMessage =
+        responseData?.error ||
+        responseData?.message ||
+        (typeof responseData === "string" ? responseData : "") ||
+        contactData.form.errorMessage;
+
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -226,6 +267,7 @@ export default function ContactSection() {
 
               <motion.button
                 type="submit"
+                disabled={isSubmitting}
                 className="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold px-8 py-4 rounded-2xl shadow-xl transition-all duration-300 hover:shadow-2xl transform-gpu flex items-center justify-center gap-3"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -240,7 +282,7 @@ export default function ContactSection() {
                   boxShadow: "0 10px 25px -5px rgba(34, 197, 94, 0.4)",
                 }}
               >
-                {contactData.form.buttonText}
+                {isSubmitting ? "Sending..." : contactData.form.buttonText}
                 <motion.div
                   whileHover={{ x: 3 }}
                   transition={{ duration: 0.2 }}
