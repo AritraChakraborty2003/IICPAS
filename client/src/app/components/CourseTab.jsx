@@ -738,139 +738,172 @@ export default function CourseTab() {
 
     switch (activeTab) {
       case "chapters":
+        const selectedCourseAccessWindow = getCourseAccessWindow(
+          selectedCourse._id
+        );
         return (
           <div className="space-y-3">
             {selectedCourse.chapters && selectedCourse.chapters.length > 0 ? (
-              selectedCourse.chapters.map((chapter, index) => (
-                <div
-                  key={chapter._id || index}
-                  className="bg-gradient-to-r from-gray-100 to-gray-150 border border-gray-300 rounded-lg p-4 hover:shadow-md transition-all duration-200"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span className="font-bold text-blue-600 text-sm">
-                          {index + 1}
+              selectedCourse.chapters.map((chapter, index) => {
+                const chapterIsLocked = selectedCourseAccessWindow.isBatchPostEndLocked
+                  ? true
+                  : selectedCourseAccessWindow.isPreviewOnly
+                  ? index > 0
+                  : Boolean(chapter?.isLocked);
+                const chapterKey = `${selectedCourse._id}-${chapter._id || index}`;
+
+                return (
+                  <div
+                    key={chapter._id || index}
+                    className="bg-gradient-to-r from-gray-100 to-gray-150 border border-gray-300 rounded-lg p-4 hover:shadow-md transition-all duration-200"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <span className="font-bold text-blue-600 text-sm">
+                            {index + 1}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={chapterIsLocked}
+                          onClick={() =>
+                            !chapterIsLocked &&
+                            toggleDetailedChapter(
+                              selectedCourse._id,
+                              chapter._id || index
+                            )
+                          }
+                          className={`text-left ${chapterIsLocked ? "cursor-not-allowed" : ""}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-gray-800">
+                              {chapter.title || chapter.name}
+                            </p>
+                            {chapterIsLocked ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                                <Lock className="h-3 w-3" />
+                                <span>Locked</span>
+                              </span>
+                            ) : null}
+                          </div>
+                          {chapter.description && (
+                            <p className="text-sm text-gray-600">
+                              {chapter.description}
+                            </p>
+                          )}
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                          <div
+                            className={`h-2 rounded-full transition-all duration-300 ${
+                              (chapter.completion || 0) === 100
+                                ? "bg-green-500"
+                                : (chapter.completion || 0) >= 70
+                                ? "bg-blue-500"
+                                : (chapter.completion || 0) >= 40
+                                ? "bg-yellow-500"
+                                : "bg-gray-400"
+                            }`}
+                            style={{ width: `${chapter.completion || 0}%` }}
+                          />
+                        </div>
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            chapterIsLocked
+                              ? "bg-amber-100 text-amber-800"
+                              : (chapter.completion || 0) === 100
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {chapterIsLocked ? "Locked" : `${chapter.completion || 0}%`}
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          toggleDetailedChapter(
-                            selectedCourse._id,
-                            chapter._id || index
-                          )
-                        }
-                        className="text-left"
-                      >
-                        <p className="font-semibold text-gray-800">
-                          {chapter.title || chapter.name}
-                        </p>
-                        {chapter.description && (
-                          <p className="text-sm text-gray-600">
-                            {chapter.description}
+                    </div>
+                    {expandedChapterKeys[chapterKey] ? (
+                      <div className="mt-3 rounded-md border border-gray-200 bg-white p-3">
+                        <button
+                          type="button"
+                          disabled={chapterIsLocked}
+                          onClick={() =>
+                            !chapterIsLocked &&
+                            handleOpenChapter(selectedCourse, chapter, index)
+                          }
+                          className={`mb-3 rounded-md px-3 py-1.5 text-sm font-medium ${
+                            chapterIsLocked
+                              ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                              : "bg-blue-600 text-white hover:bg-blue-700"
+                          }`}
+                        >
+                          {chapterIsLocked ? (
+                            <span className="inline-flex items-center gap-1">
+                              <Lock className="h-3.5 w-3.5" />
+                              <span>Locked</span>
+                            </span>
+                          ) : (
+                            "Open in Digital Hub"
+                          )}
+                        </button>
+                        {Array.isArray(chapter.topics) && chapter.topics.length > 0 ? (
+                          <ul className="space-y-2">
+                            {chapter.topics.map((topic, topicIndex) => {
+                              const subtopics = getTopicSubtopics(topic);
+                              return (
+                                <li
+                                  key={topic?._id || `${chapter._id}-topic-${topicIndex}`}
+                                  className="rounded border border-gray-100 bg-gray-50 p-2"
+                                >
+                                  <p className="text-sm font-semibold text-gray-800">
+                                    {topic?.title || `Topic ${topicIndex + 1}`}
+                                  </p>
+                                  {subtopics.length ? (
+                                    <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
+                                      {subtopics.map((subtopic, subtopicIndex) => (
+                                        <li key={`sub-${subtopicIndex}`}>
+                                          {typeof subtopic === "string"
+                                            ? subtopic
+                                            : subtopic?.title ||
+                                              subtopic?.name ||
+                                              `Subtopic ${subtopicIndex + 1}`}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      No subtopics
+                                    </p>
+                                  )}
+                                  <TopicLessonsDisplay topic={topic} />
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            No topics available for this chapter.
                           </p>
                         )}
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all duration-300 ${
-                            (chapter.completion || 0) === 100
-                              ? "bg-green-500"
-                              : (chapter.completion || 0) >= 70
-                              ? "bg-blue-500"
-                              : (chapter.completion || 0) >= 40
-                              ? "bg-yellow-500"
-                              : "bg-gray-400"
-                          }`}
-                          style={{ width: `${chapter.completion || 0}%` }}
-                        />
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                            Topics {chapter.completedTopicCount || 0}/
+                            {chapter.totalTopicCount || 0}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                            Assignments {chapter.completedAssignmentCount || 0}/
+                            {chapter.totalAssignmentCount || 0}
+                          </span>
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1">
+                            Question sets {chapter.completedQuestionSetCount || 0}/
+                            {chapter.totalQuestionSetCount || 0}
+                          </span>
+                        </div>
                       </div>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          (chapter.completion || 0) === 100
-                            ? "bg-green-100 text-green-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {chapter.completion || 0}%
-                      </span>
-                    </div>
+                    ) : null}
                   </div>
-                  {expandedChapterKeys[
-                    `${selectedCourse._id}-${chapter._id || index}`
-                  ] ? (
-                    <div className="mt-3 rounded-md border border-gray-200 bg-white p-3">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleOpenChapter(selectedCourse, chapter, index)
-                        }
-                        className="mb-3 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-                      >
-                        Open in Digital Hub
-                      </button>
-                      {Array.isArray(chapter.topics) && chapter.topics.length > 0 ? (
-                        <ul className="space-y-2">
-                          {chapter.topics.map((topic, topicIndex) => {
-                            const subtopics = getTopicSubtopics(topic);
-                            return (
-                              <li
-                                key={topic?._id || `${chapter._id}-topic-${topicIndex}`}
-                                className="rounded border border-gray-100 bg-gray-50 p-2"
-                              >
-                                <p className="text-sm font-semibold text-gray-800">
-                                  {topic?.title || `Topic ${topicIndex + 1}`}
-                                </p>
-                                {subtopics.length ? (
-                                  <ul className="mt-1 list-disc pl-5 text-xs text-gray-600">
-                                    {subtopics.map((subtopic, subtopicIndex) => (
-                                      <li key={`sub-${subtopicIndex}`}>
-                                        {typeof subtopic === "string"
-                                          ? subtopic
-                                          : subtopic?.title ||
-                                            subtopic?.name ||
-                                            `Subtopic ${subtopicIndex + 1}`}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                ) : (
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    No subtopics
-                                  </p>
-                                )}
-                                <TopicLessonsDisplay
-                                  topic={topic}
-                                />
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : (
-                        <p className="text-sm text-gray-500">
-                          No topics available for this chapter.
-                        </p>
-                      )}
-                      <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                          Topics {chapter.completedTopicCount || 0}/
-                          {chapter.totalTopicCount || 0}
-                        </span>
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                          Assignments {chapter.completedAssignmentCount || 0}/
-                          {chapter.totalAssignmentCount || 0}
-                        </span>
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1">
-                          Question sets {chapter.completedQuestionSetCount || 0}/
-                          {chapter.totalQuestionSetCount || 0}
-                        </span>
-                      </div>
-                    </div>
-                  ) : null}
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-center py-8 text-gray-500">
                 <Book className="mx-auto mb-4 text-4xl text-gray-300" />
