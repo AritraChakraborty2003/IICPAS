@@ -17,12 +17,12 @@ const invoiceCompanySettingsSchema = new mongoose.Schema(
       type: String,
       trim: true,
       lowercase: true,
-      default: "",
+      default: "iicpaconnect@gmail.com",
     },
     phone: {
       type: String,
       trim: true,
-      default: "",
+      default: "9593330999",
     },
     website: {
       type: String,
@@ -87,12 +87,12 @@ const invoiceCompanySettingsSchema = new mongoose.Schema(
       type: String,
       trim: true,
       lowercase: true,
-      default: "",
+      default: "iicpaconnect@gmail.com",
     },
     supportPhone: {
       type: String,
       trim: true,
-      default: "",
+      default: "9593330999",
     },
     bankName: {
       type: String,

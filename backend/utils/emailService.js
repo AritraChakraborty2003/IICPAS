@@ -5,6 +5,7 @@ import {
   isEmailConfigured,
   setupEmailInstructions,
 } from "../config/emailConfig.js";
+import InvoiceCompanySettings from "../models/InvoiceCompanySettings.js";
 
 // Create transporter
 const createTransporter = () => {
@@ -81,6 +82,14 @@ export const sendReceiptEmail = async (transaction, pdfBuffer = null) => {
     // Test email configuration
     await transporter.verify();
 
+    // Get company settings for contact info
+    let companySettings = null;
+    try {
+      companySettings = await InvoiceCompanySettings.getSettings();
+    } catch (err) {
+      console.warn("Could not load company settings for email:", err);
+    }
+
     const studentName = transaction.studentId?.name || "Student";
     const studentEmail = transaction.studentId?.email;
     const courseName = transaction.courseId?.title || "Course";
@@ -146,8 +155,9 @@ export const sendReceiptEmail = async (transaction, pdfBuffer = null) => {
             <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #dee2e6;">
               <p style="margin: 0; font-size: 14px; color: #666;">
                 <strong>Support Contact:</strong><br>
-                Email: support@iicpa.org<br>
-                Website: www.iicpa.org
+                Email: ${companySettings?.supportEmail || companySettings?.email || "iicpaconnect@gmail.com"}<br>
+                Phone: ${companySettings?.supportPhone || companySettings?.phone || "9593330999"}<br>
+                Website: ${companySettings?.website || "www.iicpa.org"}
               </p>
             </div>
           </div>
