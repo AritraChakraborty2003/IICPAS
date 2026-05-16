@@ -323,7 +323,7 @@ export default function CourseTab() {
       isWithinBatchWindow,
       isPreviewOnly,
       isHardLocked:
-        !hasBatchWindow &&
+        !hasBatchWindow ||
         String(access?.status || "").toLowerCase() === "inactive",
     };
   };

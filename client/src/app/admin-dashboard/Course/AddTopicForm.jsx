@@ -25,7 +25,7 @@ import {
   buildWordImportSummary,
   buildImportedSourceDocument,
 } from "./wordImportUtils";
-import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
+import { normalizeDigitalHubContentHtml } from "../../utils/contentFontFamily";
 
 const API_BASE = getApiBase();
 
@@ -124,7 +124,9 @@ export default function AddTopicForm({
       if (!result?.html || !result.html.trim()) {
         throw new Error("The Word document could not be converted into editable content.");
       }
-      const normalizedImportedContent = normalizeDefaultContentFont(result.html || "");
+      const normalizedImportedContent = normalizeDigitalHubContentHtml(
+        result.html || ""
+      );
       const importMode = wordImportMode || "replace";
       const currentContent = content || "";
 
@@ -196,7 +198,7 @@ export default function AddTopicForm({
         {
           chapterId,
           title: title.trim(),
-          content: normalizeDefaultContentFont(content), // HTML + Base64 images/videos
+          content: normalizeDigitalHubContentHtml(content), // HTML + Base64 images/videos
           sourceDocument: sourceDocument || undefined,
         }
       );
@@ -440,7 +442,9 @@ export default function AddTopicForm({
                   borderCollapse: "collapse",
                 },
               }}
-              dangerouslySetInnerHTML={{ __html: content }}
+              dangerouslySetInnerHTML={{
+                __html: normalizeDigitalHubContentHtml(content),
+              }}
             />
           )}
         </Paper>

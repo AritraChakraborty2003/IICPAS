@@ -9,7 +9,7 @@ import { useStudentAutoLogout } from "../../hooks/useStudentAutoLogout";
 import { getApiBase } from "@/lib/apiBase";
 import {
   DEFAULT_CONTENT_FONT_FAMILY,
-  normalizeDefaultContentFont,
+  normalizeDigitalHubContentHtml,
 } from "../utils/contentFontFamily";
 import {
   buildTopicLessonRows,
@@ -648,7 +648,7 @@ const DIGITAL_HUB_TOUR_STEPS: TourStep[] = [
 const DIGITAL_HUB_FONT_STACK = DEFAULT_CONTENT_FONT_FAMILY;
 
 const normalizeDigitalHubContent = (html: string) =>
-  normalizeDefaultContentFont(html, DIGITAL_HUB_FONT_STACK);
+  normalizeDigitalHubContentHtml(html, DIGITAL_HUB_FONT_STACK);
 
 export default function DigitalHubClient({
   courseSlugOrId,
@@ -1087,7 +1087,8 @@ export default function DigitalHubClient({
   const isCourseBatchPreviewOnly = courseBatchWindowState.isBatchPreviewOnly;
   const hasCourseBatchWindow = courseBatchWindowState.hasBatchWindow;
   const isBatchContentLocked =
-    !isDemo && hasCourseBatchWindow && !courseBatchWindowState.isBatchWindowActive;
+    !isDemo &&
+    (!hasCourseBatchWindow || !courseBatchWindowState.isBatchWindowActive);
   const selectedChapterIndex = useMemo(
     () =>
       courseChapters.findIndex(
@@ -1277,18 +1278,33 @@ export default function DigitalHubClient({
             );
             setTotalPages(totalPages);
             setCurrentPage(1);
-            setTopicContent(pages[0] || "Content not available");
+            setTopicContent(
+              normalizeDigitalHubContentHtml(
+                pages[0] || "Content not available",
+                DIGITAL_HUB_FONT_STACK
+              )
+            );
             setShowDemoLimit(totalPages > 0);
           } else {
             // For full mode, show all content
-            setTopicContent(decodedContent);
+            setTopicContent(
+              normalizeDigitalHubContentHtml(
+                decodedContent,
+                DIGITAL_HUB_FONT_STACK
+              )
+            );
             setTotalPages(1);
             setCurrentPage(1);
             setShowDemoLimit(false);
           }
         } catch (error) {
           console.error("Error decoding topic content:", error);
-          setTopicContent(topic.content || "Content not available");
+          setTopicContent(
+            normalizeDigitalHubContentHtml(
+              topic.content || "Content not available",
+              DIGITAL_HUB_FONT_STACK
+            )
+          );
           setTotalPages(1);
           setCurrentPage(1);
           setShowDemoLimit(false);
@@ -1562,17 +1578,32 @@ export default function DigitalHubClient({
               );
               setTotalPages(totalPages);
               setCurrentPage(1);
-              setTopicContent(pages[0] || "Content not available");
+              setTopicContent(
+                normalizeDigitalHubContentHtml(
+                  pages[0] || "Content not available",
+                  DIGITAL_HUB_FONT_STACK
+                )
+              );
               setShowDemoLimit(totalPages > 0);
             } else {
-              setTopicContent(decodedContent);
+              setTopicContent(
+                normalizeDigitalHubContentHtml(
+                  decodedContent,
+                  DIGITAL_HUB_FONT_STACK
+                )
+              );
               setTotalPages(1);
               setCurrentPage(1);
               setShowDemoLimit(false);
             }
           } catch (error) {
             console.error("Error decoding topic content:", error);
-            setTopicContent(firstTopic.content || "Content not available");
+            setTopicContent(
+              normalizeDigitalHubContentHtml(
+                firstTopic.content || "Content not available",
+                DIGITAL_HUB_FONT_STACK
+              )
+            );
             setTotalPages(1);
             setCurrentPage(1);
             setShowDemoLimit(false);
@@ -3696,7 +3727,7 @@ export default function DigitalHubClient({
                   )}
 
                   <div
-                    className={`digital-hub-content min-h-[32rem] bg-white border border-stone-200 rounded-2xl p-4 text-base leading-relaxed shadow-sm text-slate-900 sm:p-6 sm:text-lg lg:p-8 ${
+                    className={`digital-hub-content min-h-[32rem] bg-white border border-stone-200 rounded-2xl p-4 text-sm leading-relaxed shadow-sm text-slate-900 sm:p-6 sm:text-[0.98rem] lg:p-8 ${
                       isDarkMode ? "topic-content-dark" : "topic-content-light"
                     }`}
                     style={{ fontFamily: DIGITAL_HUB_FONT_STACK }}
@@ -3721,15 +3752,20 @@ export default function DigitalHubClient({
                           <div className="flex items-center justify-between mb-4">
                             <button
                               onClick={() => {
-                                if (currentPage > 1) {
-                                  const { pages } = splitContentIntoPages(
-                                    atob(selectedTopic?.content || ""),
-                                    1
-                                  );
-                                  setCurrentPage(currentPage - 1);
-                                  setTopicContent(pages[currentPage - 2] || "");
-                                }
-                              }}
+                                  if (currentPage > 1) {
+                                    const { pages } = splitContentIntoPages(
+                                      atob(selectedTopic?.content || ""),
+                                      1
+                                    );
+                                    setCurrentPage(currentPage - 1);
+                                    setTopicContent(
+                                      normalizeDigitalHubContentHtml(
+                                        pages[currentPage - 2] || "",
+                                        DIGITAL_HUB_FONT_STACK
+                                      )
+                                    );
+                                  }
+                                }}
                               disabled={currentPage === 1}
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                                 currentPage === 1
@@ -3752,7 +3788,12 @@ export default function DigitalHubClient({
                                       1
                                     );
                                     setCurrentPage(i + 1);
-                                    setTopicContent(pages[i] || "");
+                                    setTopicContent(
+                                      normalizeDigitalHubContentHtml(
+                                        pages[i] || "",
+                                        DIGITAL_HUB_FONT_STACK
+                                      )
+                                    );
                                   }}
                                   className={`w-8 h-8 rounded-full font-medium transition-all duration-300 ${
                                     currentPage === i + 1
@@ -3778,7 +3819,12 @@ export default function DigitalHubClient({
                                     1
                                   );
                                   setCurrentPage(currentPage + 1);
-                                  setTopicContent(pages[currentPage] || "");
+                                  setTopicContent(
+                                    normalizeDigitalHubContentHtml(
+                                      pages[currentPage] || "",
+                                      DIGITAL_HUB_FONT_STACK
+                                    )
+                                  );
                                 }
                               }}
                               disabled={!isDemo && currentPage === totalPages}
@@ -5088,7 +5134,9 @@ export default function DigitalHubClient({
       <style jsx global>{`
         .digital-hub-content {
           font-family: ${DIGITAL_HUB_FONT_STACK} !important;
-          color: #4b5563 !important;
+          color: #111827;
+          font-size: 0.95rem;
+          line-height: 1.65;
         }
         
         .digital-hub-content * {
@@ -5098,55 +5146,55 @@ export default function DigitalHubClient({
         .digital-hub-content h1,
         .topic-content-light h1,
         .topic-content-dark h1 {
-          font-size: 2.5rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 1.5rem !important;
-          color: #1255cc !important;
+          font-size: 1.9rem !important;
+          line-height: 1.25 !important;
+          margin-bottom: 1rem !important;
+          color: #111827;
         }
 
         .digital-hub-content h2,
         .topic-content-light h2,
         .topic-content-dark h2 {
-          font-size: 2rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 1.25rem !important;
-          color: #1255cc !important;
+          font-size: 1.6rem !important;
+          line-height: 1.25 !important;
+          margin-bottom: 0.9rem !important;
+          color: #111827;
         }
 
         .digital-hub-content h3,
         .topic-content-light h3,
         .topic-content-dark h3 {
-          font-size: 1.75rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 1rem !important;
-          color: #1255cc !important;
+          font-size: 1.35rem !important;
+          line-height: 1.3 !important;
+          margin-bottom: 0.75rem !important;
+          color: #111827;
         }
 
         .digital-hub-content h4,
         .topic-content-light h4,
         .topic-content-dark h4 {
-          font-size: 1.5rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 0.75rem !important;
-          color: #1255cc !important;
+          font-size: 1.15rem !important;
+          line-height: 1.3 !important;
+          margin-bottom: 0.65rem !important;
+          color: #111827;
         }
 
         .digital-hub-content h5,
         .topic-content-light h5,
         .topic-content-dark h5 {
-          font-size: 1.25rem !important;
-          line-height: 1.2 !important;
+          font-size: 1.05rem !important;
+          line-height: 1.3 !important;
           margin-bottom: 0.5rem !important;
-          color: #1255cc !important;
+          color: #111827;
         }
 
         .digital-hub-content h6,
         .topic-content-light h6,
         .topic-content-dark h6 {
-          font-size: 1.1rem !important;
-          line-height: 1.2 !important;
-          margin-bottom: 0.5rem !important;
-          color: #1255cc !important;
+          font-size: 0.95rem !important;
+          line-height: 1.3 !important;
+          margin-bottom: 0.45rem !important;
+          color: #111827;
         }
 
         .digital-hub-content p,
@@ -5155,14 +5203,14 @@ export default function DigitalHubClient({
         .digital-hub-content li,
         .topic-content-light li,
         .topic-content-dark li {
-          line-height: 1.35 !important;
-          color: #4b5563 !important;
+          line-height: 1.65 !important;
+          color: inherit;
         }
 
         .digital-hub-content p,
         .topic-content-light p,
         .topic-content-dark p {
-          margin-bottom: 0.35rem !important;
+          margin-bottom: 0.7rem !important;
         }
 
         .digital-hub-content p:last-child,
@@ -5177,37 +5225,37 @@ export default function DigitalHubClient({
         .topic-content-light ol,
         .topic-content-dark ul,
         .topic-content-dark ol {
-          margin-top: 0.35rem !important;
-          margin-bottom: 0.5rem !important;
+          margin-top: 0.5rem !important;
+          margin-bottom: 0.8rem !important;
           padding-left: 1.5rem !important;
         }
 
         .digital-hub-content li,
         .topic-content-light li,
         .topic-content-dark li {
-          margin-bottom: 0.2rem !important;
+          margin-bottom: 0.35rem !important;
         }
 
         .digital-hub-content strong,
         .digital-hub-content b,
         .topic-content-light strong,
         .topic-content-light b {
-          color: #1255cc !important;
           font-weight: 700;
+          color: inherit;
         }
 
         .digital-hub-content li strong,
         .digital-hub-content li b,
         .topic-content-light li strong,
         .topic-content-light li b {
-          color: #1f2937 !important;
+          color: inherit;
         }
 
         .digital-hub-content ul li::marker,
         .digital-hub-content ol li::marker,
         .topic-content-light ul li::marker,
         .topic-content-light ol li::marker {
-          color: #000000 !important;
+          color: #111827 !important;
           font-weight: 700;
         }
 
@@ -5217,7 +5265,7 @@ export default function DigitalHubClient({
 
         .topic-content-light .text-green-800,
         .topic-content-light .text-green-700 {
-          color: #1255cc !important;
+          color: #111827 !important;
         }
 
         .topic-content-light .bg-green-50 {
@@ -5251,7 +5299,8 @@ export default function DigitalHubClient({
           line-height: 1.5 !important;
           white-space: normal !important;
           word-break: break-word !important;
-          font-size: 1.1rem !important;
+          font-size: 0.95rem !important;
+          color: inherit;
         }
 
         .digital-hub-content th,
@@ -5259,7 +5308,7 @@ export default function DigitalHubClient({
         .topic-content-dark th {
           font-weight: 700 !important;
           background: #f8fafc !important;
-          color: #0f172a !important;
+          color: #111827 !important;
         }
 
         .digital-hub-content tr:nth-child(even) td,
@@ -5294,6 +5343,14 @@ export default function DigitalHubClient({
           background: transparent !important;
           border-radius: 0 !important;
           min-width: 0 !important;
+        }
+
+        .digital-hub-content a,
+        .topic-content-light a,
+        .topic-content-dark a {
+          color: inherit;
+          text-decoration: underline;
+          text-underline-offset: 0.14em;
         }
       `}</style>
     </div>

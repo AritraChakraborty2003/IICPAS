@@ -87,6 +87,40 @@ const getChapterIdentifier = (chapter, fallbackIndex) =>
       (Number.isInteger(fallbackIndex) ? fallbackIndex : "")
   );
 
+const parseDateOrNull = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const getCourseAccessWindow = (course) => {
+  const accessState = String(course?.batchAccessState || "").toLowerCase();
+  const batchLockStartsAt = parseDateOrNull(course?.batchLockStartsAt);
+  const batchLockEndsAt = parseDateOrNull(course?.batchLockEndsAt);
+  const hasBatchWindow = Boolean(batchLockStartsAt && batchLockEndsAt);
+  const isWithinBatchWindow =
+    accessState === "active" ||
+    (typeof course?.batchWindowActive === "boolean"
+      ? course.batchWindowActive
+      : hasBatchWindow
+      ? Date.now() >= batchLockStartsAt.getTime() &&
+        Date.now() <= batchLockEndsAt.getTime()
+      : true);
+  const isPreviewOnly =
+    accessState === "preview" ||
+    (typeof course?.batchPreviewOnly === "boolean"
+      ? course.batchPreviewOnly
+      : hasBatchWindow && !isWithinBatchWindow);
+
+  return {
+    hasBatchWindow,
+    isWithinBatchWindow,
+    isPreviewOnly,
+    isHardLocked:
+      !hasBatchWindow || String(course?.status || "").toLowerCase() === "inactive",
+  };
+};
+
 export default function ProfileTab({ onImageUpdated }) {
   const router = useRouter();
   const API =
@@ -545,6 +579,8 @@ export default function ProfileTab({ onImageUpdated }) {
                   const courseId = course?._id || `course-${index}`;
                   const chapters = courseChaptersByCourse[courseId] || [];
                   const isExpanded = Boolean(expandedProfileCourses[courseId]);
+                  const courseAccessWindow = getCourseAccessWindow(course);
+                  const isCourseLocked = courseAccessWindow.isHardLocked;
                   const digitalHubPath = `/digital-hub/${encodeURIComponent(
                     course?.slug || courseId
                   )}`;
@@ -573,8 +609,21 @@ export default function ProfileTab({ onImageUpdated }) {
                               {Number(course?.price || 0).toLocaleString("en-IN")}
                             </p>
                           </div>
-                          <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
-                            {chapters.length} chapters
+                          <span
+                            className={`text-xs px-2 py-1 rounded-full font-medium ${
+                              isCourseLocked
+                                ? "bg-amber-100 text-amber-700"
+                                : "bg-blue-100 text-blue-700"
+                            }`}
+                          >
+                            {isCourseLocked ? (
+                              <span className="inline-flex items-center gap-1">
+                                <Lock className="h-3.5 w-3.5" />
+                                <span>Locked</span>
+                              </span>
+                            ) : (
+                              `${chapters.length} chapters`
+                            )}
                           </span>
                         </div>
                       </button>
@@ -587,10 +636,26 @@ export default function ProfileTab({ onImageUpdated }) {
                             </p>
                             <button
                               type="button"
-                              onClick={() => router.push(digitalHubOpenPath)}
-                              className="text-xs rounded-md bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700"
+                              disabled={isCourseLocked}
+                              onClick={() =>
+                                !isCourseLocked && router.push(digitalHubOpenPath)
+                              }
+                              className={`text-xs rounded-md px-3 py-1.5 ${
+                                isCourseLocked
+                                  ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                                  : "bg-blue-600 text-white hover:bg-blue-700"
+                              }`}
                             >
-                              {primaryChapter ? "Open in Digital Hub" : "View Course"}
+                              {isCourseLocked ? (
+                                <span className="inline-flex items-center gap-1">
+                                  <Lock className="h-3.5 w-3.5" />
+                                  <span>Locked</span>
+                                </span>
+                              ) : primaryChapter ? (
+                                "Open in Digital Hub"
+                              ) : (
+                                "View Course"
+                              )}
                             </button>
                           </div>
 

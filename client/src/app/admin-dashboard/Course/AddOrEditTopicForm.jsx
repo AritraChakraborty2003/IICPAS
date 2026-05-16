@@ -31,7 +31,9 @@ import {
   buildWordImportSummary,
   buildImportedSourceDocument,
 } from "./wordImportUtils";
-import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
+import {
+  normalizeDigitalHubContentHtml,
+} from "../../utils/contentFontFamily";
 import { joditFontControl } from "../../utils/joditFontConfig";
 
 // Dynamically import drag and drop components to avoid SSR issues
@@ -356,7 +358,7 @@ export default function AddOrEditTopicForm({
     if (topic) {
       console.log("Topic data received:", topic);
       setTitle(topic.title || "");
-      setContent(normalizeDefaultContentFont(topic.content || ""));
+      setContent(normalizeDigitalHubContentHtml(topic.content || ""));
       setIntroVideo(topic.introVideo || "");
       setSourceDocument(topic.sourceDocument || null);
       setWordImportSummary(
@@ -738,7 +740,7 @@ export default function AddOrEditTopicForm({
 
     return {
       title: title.trim(),
-      content: normalizeDefaultContentFont(content),
+      content: normalizeDigitalHubContentHtml(content),
       introVideo: introVideoValue.trim() || "",
       publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
       sourceDocument: sourceDocument || undefined,
@@ -761,7 +763,9 @@ export default function AddOrEditTopicForm({
       if (!result?.html || !result.html.trim()) {
         throw new Error("The Word document could not be converted into editable content.");
       }
-      const normalizedImportedContent = normalizeDefaultContentFont(result.html || "");
+      const normalizedImportedContent = normalizeDigitalHubContentHtml(
+        result.html || ""
+      );
       const importMode = wordImportMode || "replace";
       const currentContent = content || "";
 
@@ -946,7 +950,7 @@ export default function AddOrEditTopicForm({
 
     // Create a temporary div to parse the HTML
     const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = htmlContent;
+    tempDiv.innerHTML = normalizeDigitalHubContentHtml(htmlContent);
 
     // Enhance headings with proper styling
     const headings = tempDiv.querySelectorAll("h1, h2, h3, h4, h5, h6");
@@ -957,6 +961,7 @@ export default function AddOrEditTopicForm({
       heading.style.color = "#1a202c";
       heading.style.borderBottom = "2px solid #e2e8f0";
       heading.style.paddingBottom = "0.5rem";
+      heading.style.fontSize = "inherit";
     });
 
     // Style paragraphs
@@ -965,6 +970,7 @@ export default function AddOrEditTopicForm({
       p.style.marginBottom = "1rem";
       p.style.lineHeight = "1.6";
       p.style.color = "#2d3748";
+      p.style.fontSize = "inherit";
     });
 
     // Center and style images
