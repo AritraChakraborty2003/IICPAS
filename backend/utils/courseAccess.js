@@ -100,11 +100,12 @@ const getBatchAccessState = (batchLock) => {
   const now = Date.now();
   const isWindowActive =
     start_time.getTime() <= now && now <= end_time.getTime();
+  const phase = isWindowActive ? "active" : now < start_time.getTime() ? "preview" : "expired";
 
   return {
     batchWindowActive: isWindowActive,
-    batchPreviewOnly: !isWindowActive,
-    batchAccessState: isWindowActive ? "active" : "preview",
+    batchPreviewOnly: phase === "preview",
+    batchAccessState: phase,
   };
 };
 

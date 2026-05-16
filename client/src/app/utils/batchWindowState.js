@@ -42,6 +42,8 @@ export const getBatchWindowState = (courseAccess) => {
       phase = "active";
     } else if (accessState === "preview") {
       phase = "preview";
+    } else if (accessState === "expired") {
+      phase = "expired";
     } else if (typeof courseAccess?.batchWindowActive === "boolean") {
       phase = courseAccess.batchWindowActive ? "active" : "preview";
     } else if (typeof courseAccess?.batchPreviewOnly === "boolean") {

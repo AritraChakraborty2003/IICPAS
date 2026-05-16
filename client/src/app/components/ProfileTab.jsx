@@ -103,9 +103,7 @@ const getCourseAccessWindow = (course) => {
     isWithinBatchWindow: batchWindowState.isBatchWindowActive,
     isPreviewOnly: batchWindowState.isBatchPreviewOnly,
     isHardLocked:
-      batchWindowState.isBatchPostEndLocked ||
-      !batchWindowState.hasBatchWindow ||
-      String(course?.status || "").toLowerCase() === "inactive",
+      batchWindowState.isBatchPostEndLocked || !batchWindowState.hasBatchWindow,
   };
 };
 

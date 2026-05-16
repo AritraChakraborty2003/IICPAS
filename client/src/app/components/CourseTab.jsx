@@ -284,9 +284,7 @@ export default function CourseTab() {
       isWithinBatchWindow: batchWindowState.isBatchWindowActive,
       isPreviewOnly: batchWindowState.isBatchPreviewOnly,
       isHardLocked:
-        batchWindowState.isBatchPostEndLocked ||
-        !batchWindowState.hasBatchWindow ||
-        String(access?.status || "").toLowerCase() === "inactive",
+        batchWindowState.isBatchPostEndLocked || !batchWindowState.hasBatchWindow,
     };
   };
 
