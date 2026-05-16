@@ -601,6 +601,13 @@ export default function DigitalHubClient({
   const API_ORIGIN = API_BASE.replace(/\/api\/?$/i, "");
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
   const blockedCourseRedirectedRef = useRef(false);
+  const selectChapterContentRef = useRef<
+    (
+      chapter: ChapterData,
+      navigationMode?: "push" | "replace" | "none",
+      preferredTopicId?: string
+    ) => void
+  >(() => {});
 
   const [chapterDropdownOpen, setChapterDropdownOpen] = useState(false);
   const [hamburgerOpen, setHamburgerOpen] = useState(false);
@@ -1706,6 +1713,10 @@ export default function DigitalHubClient({
     [selectChapterContent]
   );
 
+  useEffect(() => {
+    selectChapterContentRef.current = selectChapterContent;
+  }, [selectChapterContent]);
+
   const markProgressItemComplete = useCallback(
     async (
       itemType: "topic" | "assignment" | "questionSet",
@@ -2145,7 +2156,7 @@ export default function DigitalHubClient({
             ? storedSelection.topicId
             : undefined;
 
-        selectChapterContent(
+        selectChapterContentRef.current(
           chapterToOpen,
           needsRouteReplace ? "replace" : "none",
           preferredTopicId
@@ -2170,7 +2181,6 @@ export default function DigitalHubClient({
     studentPurchasedCoursesLoaded,
     applyProgressSummary,
     loadLastSelection,
-    selectChapterContent,
     shouldFailSafeRestrictAccess,
   ]);
 
