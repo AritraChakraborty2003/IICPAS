@@ -3,6 +3,7 @@ import Course from "../models/Content/Course.js";
 import Assignment from "../models/Assignment.js";
 import DigitalHubChapterProgress from "../models/DigitalHubChapterProgress.js";
 import Student from "../models/Students.js";
+import { getStudentCourseBatchAccessState } from "../utils/courseAccess.js";
 
 const toIdString = (value) => {
   if (!value) return "";
@@ -195,6 +196,26 @@ const buildChapterSummary = ({
   };
 };
 
+const getChapterUnlockedForBatchPhase = ({
+  batchPhase,
+  chapterIndex,
+  forceUnlockAll,
+}) => {
+  if (forceUnlockAll) {
+    return true;
+  }
+
+  if (batchPhase === "expired") {
+    return false;
+  }
+
+  if (batchPhase === "preview") {
+    return chapterIndex === 0;
+  }
+
+  return true;
+};
+
 export const getDigitalHubCourseProgress = async (studentId, courseId) => {
   const structure = await loadCourseStructure(courseId);
   if (!structure) {
@@ -203,9 +224,12 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
 
   const { chapters, assignmentsByChapter } = structure;
   const student = await Student.findById(studentId)
-    .select("digitalHubAccessOverride")
+    .populate("batchId", "courseLocks")
+    .select("digitalHubAccessOverride batchId")
     .lean();
   const forceUnlockAll = Boolean(student?.digitalHubAccessOverride);
+  const batchAccessState = getStudentCourseBatchAccessState(student, courseId);
+  const batchPhase = batchAccessState.batchAccessState || "none";
   const chapterIds = chapters.map((chapter) => chapter._id);
   const progressRecords = chapterIds.length
     ? await DigitalHubChapterProgress.find({
@@ -220,19 +244,18 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
     return acc;
   }, new Map());
 
-  let unlocked = true;
-  const chapterSummaries = chapters.map((chapter) => {
+  const chapterSummaries = chapters.map((chapter, index) => {
     const chapterId = toIdString(chapter._id);
     const chapterSummary = buildChapterSummary({
       chapter,
       assignments: assignmentsByChapter.get(chapterId) || [],
       progressRecord: progressByChapter.get(chapterId),
-      unlocked: forceUnlockAll ? true : unlocked,
+      unlocked: getChapterUnlockedForBatchPhase({
+        batchPhase,
+        chapterIndex: index,
+        forceUnlockAll,
+      }),
     });
-
-    if (!forceUnlockAll) {
-      unlocked = unlocked && chapterSummary.chapterCompleted;
-    }
 
     return forceUnlockAll
       ? {

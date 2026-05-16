@@ -84,7 +84,7 @@ const normalizeBatchCourseLocks = (batch) => {
   return normalized;
 };
 
-const getBatchAccessState = (batchLock) => {
+export const getBatchAccessState = (batchLock) => {
   const start_time = batchLock?.start_time || null;
   const end_time = batchLock?.end_time || null;
   const hasWindow = Boolean(start_time && end_time);
@@ -107,6 +107,16 @@ const getBatchAccessState = (batchLock) => {
     batchPreviewOnly: phase === "preview",
     batchAccessState: phase,
   };
+};
+
+export const getStudentCourseBatchAccessState = (student, courseId) => {
+  const normalizedCourseId = toIdString(courseId);
+  if (!student || !normalizedCourseId) {
+    return getBatchAccessState(null);
+  }
+
+  const batchLockIndex = normalizeBatchCourseLocks(student?.batchId);
+  return getBatchAccessState(batchLockIndex.get(normalizedCourseId));
 };
 
 const normalizeLockedValue = (value) => {
@@ -275,6 +285,7 @@ export const buildCourseAccessEntries = ({
       const batchAccessState = getBatchAccessState(batchLock);
       const isLocked = Boolean(override?.isLocked);
       const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : false;
+      const isBatchExpired = batchAccessState.batchAccessState === "expired";
 
       return {
         ...baseCourse,
@@ -295,7 +306,7 @@ export const buildCourseAccessEntries = ({
         batchLockStartsAt: batchLock?.start_time ? batchLock.start_time.toISOString() : null,
         batchLockEndsAt: batchLock?.end_time ? batchLock.end_time.toISOString() : null,
         isExpired,
-        status: isLocked || isExpired ? "Inactive" : "Active",
+        status: isLocked || isExpired || isBatchExpired ? "Inactive" : "Active",
       };
     } catch (error) {
       const fallbackCourse =

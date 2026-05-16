@@ -80,7 +80,9 @@ const mergeChaptersWithProgress = (chapters, progressPayload, options = {}) => {
         ? true
         : isPreviewBeforeStart
         ? index > 0
-        : Boolean(chapter?.isLocked || progressEntry.isLocked),
+        : typeof progressEntry.isLocked === "boolean"
+        ? progressEntry.isLocked
+        : Boolean(chapter?.isLocked),
       isCompleted: Boolean(progressEntry.isCompleted),
       completedTopicCount: Number(progressEntry.completedTopicCount || 0),
       totalTopicCount:
