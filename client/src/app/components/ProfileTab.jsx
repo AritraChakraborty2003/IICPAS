@@ -47,7 +47,7 @@ const mergeChaptersWithProgress = (chapters, progressPayload, options = {}) => {
         isPostEndLocked
           ? true
           : isPreviewBeforeStart
-          ? false
+          ? index > 0
           : typeof progressEntry.isLocked === "boolean"
           ? progressEntry.isLocked
           : index > 0,
@@ -679,7 +679,7 @@ export default function ProfileTab({ onImageUpdated }) {
                                 const chapterIsLocked = isBatchExpired
                                   ? true
                                   : isPreviewBeforeStart
-                                  ? false
+                                  ? chapterIndex > 0
                                   : Boolean(chapter?.isLocked);
                                 const chapterKey = `${courseId}-${chapterId}`;
                                 const chapterExpanded = Boolean(
@@ -697,7 +697,10 @@ export default function ProfileTab({ onImageUpdated }) {
                                         onClick={() =>
                                           toggleProfileChapter(courseId, chapterId)
                                         }
-                                        className="flex-1 text-left text-sm font-medium text-gray-800"
+                                        disabled={chapterIsLocked}
+                                        className={`flex-1 text-left text-sm font-medium text-gray-800 ${
+                                          chapterIsLocked ? "cursor-not-allowed" : ""
+                                        }`}
                                       >
                                         {chapter?.title || `Chapter ${chapterIndex + 1}`}
                                       </button>
@@ -709,14 +712,7 @@ export default function ProfileTab({ onImageUpdated }) {
                                               : "bg-blue-100 text-blue-700"
                                           }`}
                                         >
-                                          {chapterIsLocked ? (
-                                            <span className="inline-flex items-center gap-1">
-                                              <Lock className="h-3.5 w-3.5" />
-                                              <span>Locked</span>
-                                            </span>
-                                          ) : (
-                                            `${chapter?.completion || 0}%`
-                                          )}
+                                          {chapterIsLocked ? "Locked" : `${chapter?.completion || 0}%`}
                                         </span>
                                         <button
                                           type="button"
