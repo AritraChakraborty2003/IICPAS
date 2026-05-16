@@ -1037,8 +1037,25 @@ export default function DigitalHubClient({
     ? topics.slice(0, 1)
     : topics;
   const isSelectedChapterLocked = !isDemo && Boolean(selectedChapter?.isLocked);
-  const isTopicLocked = (_topicIndex: number) =>
-    !isDemo && isSelectedChapterLocked;
+  const firstUnlockedChapterIndex = useMemo(
+    () => visibleChapters.findIndex((chapter) => !chapter?.isLocked),
+    [visibleChapters]
+  );
+  const selectedChapterIndex = useMemo(() => {
+    if (!selectedChapter?._id) return -1;
+    return visibleChapters.findIndex(
+      (chapter) => String(chapter?._id) === String(selectedChapter._id)
+    );
+  }, [selectedChapter?._id, visibleChapters]);
+  const shouldPreviewLockTopics =
+    !isDemo &&
+    isCourseBatchPreviewOnly &&
+    !isSelectedChapterLocked &&
+    selectedChapterIndex >= 0 &&
+    selectedChapterIndex === firstUnlockedChapterIndex;
+  const isTopicLocked = (topicIndex: number) =>
+    !isDemo &&
+    (isSelectedChapterLocked || (shouldPreviewLockTopics && topicIndex > 0));
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -1180,6 +1197,13 @@ export default function DigitalHubClient({
   // Handle topic selection
   const handleTopicSelect = useCallback(
     (topic: TopicData) => {
+      const topicIndex = topics.findIndex(
+        (entry) => String(entry?._id) === String(topic?._id)
+      );
+      if (!isDemo && topicIndex >= 0 && isTopicLocked(topicIndex)) {
+        return;
+      }
+
       console.log("Topic selected:", topic);
       setSelectedTopic(topic);
       setIsIntroVideoModalOpen(false);
@@ -1282,7 +1306,7 @@ export default function DigitalHubClient({
         setPoints(0);
       }
     },
-    [API_BASE]
+    [API_BASE, isDemo, isTopicLocked, scrollContentToTop, selectedChapter?._id, splitContentIntoPages, storeLastSelection, topics]
   );
 
   // Ticket submission functions
@@ -1505,10 +1529,18 @@ export default function DigitalHubClient({
       }
 
       if (availableTopics.length > 0) {
+        const shouldLimitToFirstTopic =
+          !isDemo &&
+          courseBatchWindowState.isBatchPreviewOnly &&
+          !chapter?.isLocked;
         const storedTopic = preferredTopicId
-          ? availableTopics.find((topic) => topic._id === preferredTopicId)
+          ? shouldLimitToFirstTopic
+            ? null
+            : availableTopics.find((topic) => topic._id === preferredTopicId)
           : null;
-        const firstTopic = storedTopic || availableTopics[0] || null;
+        const firstTopic = shouldLimitToFirstTopic
+          ? availableTopics[0] || null
+          : storedTopic || availableTopics[0] || null;
         setSelectedTopic(firstTopic);
         if (firstTopic?._id) {
           storeLastSelection(chapter._id, firstTopic._id);
@@ -1584,6 +1616,7 @@ export default function DigitalHubClient({
       fetchAssignments,
       fetchCaseStudies,
       isDemo,
+      courseBatchWindowState.isBatchPreviewOnly,
       courseBatchWindowState.isBatchPostEndLocked,
       loadQuizForTopic,
       router,
@@ -1653,7 +1686,18 @@ export default function DigitalHubClient({
               ? updatedTopics[currentIndex + 1]
               : null;
 
-          if (nextTopicCandidate) {
+          const nextTopicIndex =
+            nextTopicCandidate
+              ? updatedTopics.findIndex(
+                  (topic) =>
+                    String(topic?._id) === String(nextTopicCandidate._id)
+                )
+              : -1;
+
+          if (
+            nextTopicCandidate &&
+            (nextTopicIndex < 0 || !isTopicLocked(nextTopicIndex))
+          ) {
             handleTopicSelect(nextTopicCandidate);
           } else if (refreshedChapter?.isCompleted && !selectedChapter.isCompleted) {
             const currentChapterIndex = mergedChapters.findIndex(
@@ -1691,6 +1735,7 @@ export default function DigitalHubClient({
       applyProgressSummary,
       courseChapters,
       handleTopicSelect,
+      isTopicLocked,
       resolvedCourseId,
       selectedChapter,
       selectedTopic?._id,

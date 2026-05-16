@@ -6,6 +6,7 @@ import Image from "next/image";
 import { FaPaperPlane } from "react-icons/fa";
 import axios from "axios";
 import { toast } from "react-hot-toast";
+import { getApiBase } from "@/lib/apiBase";
 
 interface FormField {
   placeholder: string;
@@ -46,6 +47,7 @@ interface FormConfig {
 }
 
 export default function ContactSection() {
+  const apiBase = getApiBase();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -54,6 +56,7 @@ export default function ContactSection() {
   });
   const [formConfig, setFormConfig] = useState<FormConfig | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchFormConfig();
@@ -61,8 +64,7 @@ export default function ContactSection() {
 
   const fetchFormConfig = async () => {
     try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
-      const response = await fetch(`${API_BASE}/contact-form/active`);
+      const response = await fetch(`${apiBase}/contact-form/active`);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -131,15 +133,28 @@ export default function ContactSection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE;
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      message: form.message.trim(),
+    };
+
+    if (!payload.name || !payload.email || !payload.phone || !payload.message) {
+      toast.error("All fields are required.");
+      return;
+    }
 
     try {
-      await axios.post(`${API_BASE_URL}/contact`, form);
+      setIsSubmitting(true);
+      await axios.post(`${apiBase}/contact`, payload);
 
       toast.success(formConfig?.messages?.successMessage || "Message sent successfully!");
       setForm({ name: "", email: "", phone: "", message: "" });
     } catch (error: any) {
       toast.error(error.response?.data?.error || formConfig?.messages?.errorMessage || "Submission failed");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -245,9 +260,10 @@ export default function ContactSection() {
 
             <button
               type="submit"
+              disabled={isSubmitting}
               className={`flex items-center gap-2 ${formConfig.submitButton.color} ${formConfig.colors.buttonText} font-semibold px-6 py-3 rounded-full transition-all`}
             >
-              {formConfig.submitButton.text} <FaPaperPlane />
+              {isSubmitting ? "Sending..." : formConfig.submitButton.text} <FaPaperPlane />
             </button>
           </form>
         </div>
