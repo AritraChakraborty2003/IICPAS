@@ -368,7 +368,7 @@ const mergeChapterProgress = (
     const summary = progressMap.get(String(chapter._id));
     return {
       ...chapter,
-      isLocked: false,
+      isLocked: typeof summary?.isLocked === "boolean" ? summary.isLocked : false,
       isCompleted: Boolean(summary?.isCompleted),
       completion:
         typeof summary?.completionPercent === "number"
@@ -1036,10 +1036,9 @@ export default function DigitalHubClient({
   const visibleTopics = isDemo
     ? topics.slice(0, 1)
     : topics;
-  const isChapterLocked = !isDemo && isCourseBatchExpired;
-  const isTopicLocked = (topicIndex: number) =>
-    !isDemo &&
-    (isCourseBatchExpired || courseBatchWindowState.isBatchPreviewOnly);
+  const isSelectedChapterLocked = !isDemo && Boolean(selectedChapter?.isLocked);
+  const isTopicLocked = (_topicIndex: number) =>
+    !isDemo && isSelectedChapterLocked;
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -1458,17 +1457,14 @@ export default function DigitalHubClient({
       preferredTopicId?: string
     ) => {
       const availableTopics = chapter.topics || [];
-      const shouldLockTopicsBeforeStart =
-        !isDemo && courseBatchWindowState.isBatchPreviewOnly;
-      const isBatchExpiredLocked =
-        !isDemo && courseBatchWindowState.isBatchPostEndLocked;
+      const isChapterAccessLocked = !isDemo && Boolean(chapter?.isLocked);
       setIsIntroVideoModalOpen(false);
       setSelectedChapter(chapter);
       setTopics(availableTopics);
       setSelectedCaseStudy(null);
       setSelectedAssignment(null);
 
-      if (isBatchExpiredLocked) {
+      if (isChapterAccessLocked) {
         if (navigationMode !== "none") {
           const targetPath = buildChapterPath(chapter._id);
           if (navigationMode === "replace") {
@@ -1479,7 +1475,11 @@ export default function DigitalHubClient({
         }
 
         setSelectedTopic(null);
-        setTopicContent("This batch is no longer active.");
+        setTopicContent(
+          courseBatchWindowState.isBatchPostEndLocked
+            ? "This batch has ended. Course access is locked now."
+            : "Batch access is not started yet. This chapter will unlock when the batch start time begins."
+        );
         setTotalPages(1);
         setCurrentPage(1);
         setShowDemoLimit(false);
@@ -1505,65 +1505,37 @@ export default function DigitalHubClient({
       }
 
       if (availableTopics.length > 0) {
-        if (shouldLockTopicsBeforeStart) {
-          setSelectedTopic(null);
-          setTopicContent(
-            "Batch access is not started yet. Topics will unlock when the batch start time begins."
-          );
-          setTotalPages(1);
-          setCurrentPage(1);
-          setShowDemoLimit(false);
-          setQuizData(null);
-          setQuizLoading(false);
-          setSelectedAnswers({});
-          setQuizSubmitted(false);
-          setShowQuizResults(false);
-          setQuizRewardSummary(null);
-          scrollContentToTop();
-        } else {
-          const storedTopic = preferredTopicId
-            ? availableTopics.find((topic) => topic._id === preferredTopicId)
-            : null;
-          const firstTopic = storedTopic || availableTopics[0] || null;
-          setSelectedTopic(firstTopic);
-          if (firstTopic?._id) {
-            storeLastSelection(chapter._id, firstTopic._id);
-          }
-          scrollContentToTop();
+        const storedTopic = preferredTopicId
+          ? availableTopics.find((topic) => topic._id === preferredTopicId)
+          : null;
+        const firstTopic = storedTopic || availableTopics[0] || null;
+        setSelectedTopic(firstTopic);
+        if (firstTopic?._id) {
+          storeLastSelection(chapter._id, firstTopic._id);
+        }
+        scrollContentToTop();
 
-          if (firstTopic?.content) {
-            try {
-              const decodedContent = atob(firstTopic.content);
-              if (isDemo) {
-                const { pages, totalPages } = splitContentIntoPages(
-                  decodedContent,
-                  1
-                );
-                setTotalPages(totalPages);
-                setCurrentPage(1);
-                setTopicContent(
-                  normalizeDigitalHubContentHtml(
-                    pages[0] || "Content not available",
-                    DIGITAL_HUB_FONT_STACK
-                  )
-                );
-                setShowDemoLimit(totalPages > 0);
-              } else {
-                setTopicContent(
-                  normalizeDigitalHubContentHtml(
-                    decodedContent,
-                    DIGITAL_HUB_FONT_STACK
-                  )
-                );
-                setTotalPages(1);
-                setCurrentPage(1);
-                setShowDemoLimit(false);
-              }
-            } catch (error) {
-              console.error("Error decoding topic content:", error);
+        if (firstTopic?.content) {
+          try {
+            const decodedContent = atob(firstTopic.content);
+            if (isDemo) {
+              const { pages, totalPages } = splitContentIntoPages(
+                decodedContent,
+                1
+              );
+              setTotalPages(totalPages);
+              setCurrentPage(1);
               setTopicContent(
                 normalizeDigitalHubContentHtml(
-                  firstTopic.content || "Content not available",
+                  pages[0] || "Content not available",
+                  DIGITAL_HUB_FONT_STACK
+                )
+              );
+              setShowDemoLimit(totalPages > 0);
+            } else {
+              setTopicContent(
+                normalizeDigitalHubContentHtml(
+                  decodedContent,
                   DIGITAL_HUB_FONT_STACK
                 )
               );
@@ -1571,23 +1543,34 @@ export default function DigitalHubClient({
               setCurrentPage(1);
               setShowDemoLimit(false);
             }
-          } else {
-            setTopicContent("Content not available");
+          } catch (error) {
+            console.error("Error decoding topic content:", error);
+            setTopicContent(
+              normalizeDigitalHubContentHtml(
+                firstTopic.content || "Content not available",
+                DIGITAL_HUB_FONT_STACK
+              )
+            );
             setTotalPages(1);
             setCurrentPage(1);
             setShowDemoLimit(false);
           }
+        } else {
+          setTopicContent("Content not available");
+          setTotalPages(1);
+          setCurrentPage(1);
+          setShowDemoLimit(false);
+        }
 
-          if (firstTopic?._id) {
-            loadQuizForTopic(firstTopic._id);
-          } else {
-            setQuizData(null);
-            setQuizLoading(false);
-            setSelectedAnswers({});
-            setQuizSubmitted(false);
-            setShowQuizResults(false);
-            setQuizRewardSummary(null);
-          }
+        if (firstTopic?._id) {
+          loadQuizForTopic(firstTopic._id);
+        } else {
+          setQuizData(null);
+          setQuizLoading(false);
+          setSelectedAnswers({});
+          setQuizSubmitted(false);
+          setShowQuizResults(false);
+          setQuizRewardSummary(null);
         }
       } else {
         setIsIntroVideoModalOpen(false);
@@ -1601,7 +1584,6 @@ export default function DigitalHubClient({
       fetchAssignments,
       fetchCaseStudies,
       isDemo,
-      courseBatchWindowState.isBatchPreviewOnly,
       courseBatchWindowState.isBatchPostEndLocked,
       loadQuizForTopic,
       router,
@@ -1657,7 +1639,7 @@ export default function DigitalHubClient({
 
         const chapterCompletionMessage =
           refreshedChapter?.isCompleted && !selectedChapter.isCompleted
-            ? " Chapter completed and the next chapter is now unlocked."
+            ? " Chapter completed."
             : "";
 
         if (itemType === "topic" && selectedTopic?._id === itemId) {
@@ -1682,7 +1664,7 @@ export default function DigitalHubClient({
               currentChapterIndex < mergedChapters.length - 1
                 ? mergedChapters[currentChapterIndex + 1]
                 : null;
-            if (nextChapter) {
+            if (nextChapter && !nextChapter.isLocked) {
               selectChapterContent(nextChapter, "replace");
             }
           }
@@ -3181,18 +3163,21 @@ export default function DigitalHubClient({
               {chapterDropdownOpen && (
                 <div className="absolute top-full left-0 w-full bg-white border border-stone-200 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
                   {visibleChapters.length > 0 ? (
-                    visibleChapters.map((chapter: ChapterData, index) => (
+                    visibleChapters.map((chapter: ChapterData, index) => {
+                      const chapterLocked = !isDemo && Boolean(chapter?.isLocked);
+
+                      return (
                       <button
                         key={chapter._id}
                         type="button"
-                        disabled={isChapterLocked}
+                        disabled={chapterLocked}
                         onClick={() => {
-                          if (isChapterLocked) return;
+                          if (chapterLocked) return;
                           setChapterDropdownOpen(false);
                           handleChapterSelect(chapter);
                         }}
                         className={`w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 ${
-                          isChapterLocked
+                          chapterLocked
                             ? "cursor-not-allowed text-slate-400"
                             : "text-slate-700 hover:bg-blue-50"
                         }`}
@@ -3208,7 +3193,7 @@ export default function DigitalHubClient({
                         <span className="font-medium">{chapter.title}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
-                          {isChapterLocked ? (
+                          {chapterLocked ? (
                             <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-700">
                               Locked
                             </span>
@@ -3219,7 +3204,7 @@ export default function DigitalHubClient({
                           )}
                         </div>
                       </button>
-                    ))
+                    )})
                   ) : (
                     <div className="px-4 py-3 text-gray-500 text-center">
                       No chapters available
