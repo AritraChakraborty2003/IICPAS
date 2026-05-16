@@ -5,6 +5,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { Lock, Upload, User } from "lucide-react";
 import StudentInvoicesTab from "./StudentInvoicesTab";
+import { getBatchWindowState } from "../utils/batchWindowState";
 
 const studentSectionTabs = [
   { id: "profile", label: "Profile" },
@@ -24,7 +25,7 @@ const sortChaptersByOrder = (chapters) =>
     return String(left?.title || "").localeCompare(String(right?.title || ""));
   });
 
-const mergeChaptersWithProgress = (chapters, progressPayload) => {
+const mergeChaptersWithProgress = (chapters, progressPayload, options = {}) => {
   const progressMap = new Map(
     Array.isArray(progressPayload?.chapters)
       ? progressPayload.chapters.map((chapter) => [
@@ -33,6 +34,9 @@ const mergeChaptersWithProgress = (chapters, progressPayload) => {
         ])
       : []
   );
+  const batchPhase = options.batchPhase || "active";
+  const isPreviewBeforeStart = batchPhase === "preview";
+  const isPostEndLocked = batchPhase === "expired";
 
   return sortChaptersByOrder(chapters).map((chapter, index) => {
     const progressEntry = progressMap.get(String(chapter?._id)) || {};
@@ -40,7 +44,11 @@ const mergeChaptersWithProgress = (chapters, progressPayload) => {
     return {
       ...chapter,
       isLocked:
-        typeof progressEntry.isLocked === "boolean"
+        isPostEndLocked
+          ? true
+          : isPreviewBeforeStart
+          ? false
+          : typeof progressEntry.isLocked === "boolean"
           ? progressEntry.isLocked
           : index > 0,
       isCompleted: Boolean(progressEntry.isCompleted),
@@ -94,30 +102,16 @@ const parseDateOrNull = (value) => {
 };
 
 const getCourseAccessWindow = (course) => {
-  const accessState = String(course?.batchAccessState || "").toLowerCase();
-  const batchLockStartsAt = parseDateOrNull(course?.batchLockStartsAt);
-  const batchLockEndsAt = parseDateOrNull(course?.batchLockEndsAt);
-  const hasBatchWindow = Boolean(batchLockStartsAt && batchLockEndsAt);
-  const isWithinBatchWindow =
-    accessState === "active" ||
-    (typeof course?.batchWindowActive === "boolean"
-      ? course.batchWindowActive
-      : hasBatchWindow
-      ? Date.now() >= batchLockStartsAt.getTime() &&
-        Date.now() <= batchLockEndsAt.getTime()
-      : true);
-  const isPreviewOnly =
-    accessState === "preview" ||
-    (typeof course?.batchPreviewOnly === "boolean"
-      ? course.batchPreviewOnly
-      : hasBatchWindow && !isWithinBatchWindow);
+  const batchWindowState = getBatchWindowState(course);
 
   return {
-    hasBatchWindow,
-    isWithinBatchWindow,
-    isPreviewOnly,
+    ...batchWindowState,
+    isWithinBatchWindow: batchWindowState.isBatchWindowActive,
+    isPreviewOnly: batchWindowState.isBatchPreviewOnly,
     isHardLocked:
-      !hasBatchWindow || String(course?.status || "").toLowerCase() === "inactive",
+      batchWindowState.isBatchPostEndLocked ||
+      !batchWindowState.hasBatchWindow ||
+      String(course?.status || "").toLowerCase() === "inactive",
   };
 };
 
@@ -514,6 +508,10 @@ export default function ProfileTab({ onImageUpdated }) {
   const fetchCourseChapters = async (courseId) => {
     if (!courseId || courseChaptersByCourse[courseId]) return;
     try {
+      const courseRecord =
+        profileCourses.find((course) => String(course?._id) === String(courseId)) ||
+        null;
+      const batchWindowState = getBatchWindowState(courseRecord);
       const [response, progressResponse] = await Promise.all([
         axios.get(`${API}/api/chapters/course/${courseId}`),
         student._id
@@ -530,7 +528,8 @@ export default function ProfileTab({ onImageUpdated }) {
           ...prev,
           [courseId]: mergeChaptersWithProgress(
             response.data.chapters || [],
-            progressResponse?.data
+            progressResponse?.data,
+            { batchPhase: batchWindowState.phase }
           ),
         }));
       }

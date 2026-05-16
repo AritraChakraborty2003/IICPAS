@@ -103,34 +103,6 @@ const mergeChaptersWithProgress = (chapters, progressPayload) => {
 };
 
 export default function CourseTab() {
-  const QA_DUMMY_COURSE = {
-    _id: "qa-dummy-course-2026",
-    slug: "qa-dummy-course-2026",
-    title: "QA Dummy Course (UI Testing)",
-    category: "Testing",
-    description: "Dummy course for testing dashboard UI and navigation flow.",
-    image: "/images/a1.jpeg",
-    status: "Active",
-    level: "Executive Level",
-    price: 5200,
-    overallProgress: 35,
-    totalChapters: 3,
-    totalAssignments: 2,
-    totalExperiments: 1,
-    totalTests: 1,
-    chapters: [
-      { id: 1, name: "Dummy Chapter 1", completion: 100 },
-      { id: 2, name: "Dummy Chapter 2", completion: 40 },
-      { id: 3, name: "Dummy Chapter 3", completion: 0 },
-    ],
-    assignments: [
-      { id: 1, name: "Dummy Assignment 1" },
-      { id: 2, name: "Dummy Assignment 2" },
-    ],
-    experiments: [{ id: 1, name: "Dummy Experiment 1" }],
-    tests: [{ id: 1, name: "Dummy Test 1", status: "Coming Soon" }],
-  };
-
   const [studentId, setStudentId] = useState(null);
   const [courses, setCourses] = useState([]);
   const [purchasedCourses, setPurchasedCourses] = useState([]); // Student's purchased courses
@@ -204,17 +176,6 @@ export default function CourseTab() {
         if (allCoursesData.length > 0) {
           setAvailableCourses(allCoursesData);
 
-          // Filter out purchased courses from available courses
-          const purchasedCourseIds = new Set([
-            ...(Array.isArray(student.course) ? student.course : []),
-            ...purchasedCoursesData
-              .map((course) => extractCourseRecord(course)?._id)
-              .filter(Boolean),
-          ]);
-          const filteredAvailableCourses = allCoursesData.filter(
-            (course) => !purchasedCourseIds.has(course._id)
-          );
-
           setPurchasedCourses(purchasedCoursesData);
           setCourses(purchasedCoursesData);
 
@@ -222,7 +183,9 @@ export default function CourseTab() {
             setSelectedCourse(purchasedCoursesData[0]);
             setLastAccessedCourse(purchasedCoursesData[0]);
           } else {
-            showDemoData();
+            setCourses([]);
+            setSelectedCourse(null);
+            setLastAccessedCourse(null);
           }
         } else {
           // If no courses at all, just set purchased courses
@@ -565,30 +528,6 @@ export default function CourseTab() {
     return isPurchased
       ? "Resume your enrolled course and keep track of chapters, tests, and assignments from one place."
       : "Review the course structure, pricing, and highlights before you enroll.";
-  };
-
-  const showDemoData = () => {
-    const demoCourse = {
-      ...QA_DUMMY_COURSE,
-      chapters: Array.isArray(QA_DUMMY_COURSE.chapters)
-        ? QA_DUMMY_COURSE.chapters
-        : [],
-      assignments: Array.isArray(QA_DUMMY_COURSE.assignments)
-        ? QA_DUMMY_COURSE.assignments
-        : [],
-      experiments: Array.isArray(QA_DUMMY_COURSE.experiments)
-        ? QA_DUMMY_COURSE.experiments
-        : [],
-      tests: Array.isArray(QA_DUMMY_COURSE.tests) ? QA_DUMMY_COURSE.tests : [],
-    };
-
-    setCourses([demoCourse]);
-    setSelectedCourse(demoCourse);
-    setLastAccessedCourse(demoCourse);
-    setViewModes((prev) => ({
-      ...prev,
-      [demoCourse._id]: "overview",
-    }));
   };
 
   const getTabIcon = (tabName) => {
@@ -1127,8 +1066,40 @@ export default function CourseTab() {
       {/* Course Display with State Switching */}
       <div className="px-6 pb-6 space-y-6">
         {courses.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 bg-white px-4 py-10 text-center text-gray-600">
-            No results found
+          <div className="rounded-[28px] border border-blue-100 bg-white px-6 py-12 text-center shadow-[0_18px_48px_-28px_rgba(15,23,42,0.25)]">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              <Lock className="text-2xl" />
+            </div>
+            <h2 className="mt-5 text-2xl font-bold text-slate-900">
+              Purchase a course to view your dashboard
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
+              New student accounts do not show sample course content. Once you
+              purchase or enroll in a course, it will appear here with chapters,
+              progress, and learning tools.
+            </p>
+            <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() => router.push("/course")}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              >
+                <FaShoppingCart className="text-base" />
+                View Courses
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/course")}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              >
+                Browse Catalog
+              </button>
+            </div>
+            <p className="mt-5 text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
+              {availableCourses.length > 0
+                ? `${availableCourses.length} courses available`
+                : "No purchased courses yet"}
+            </p>
           </div>
         ) : (
           courses.map((course) => {

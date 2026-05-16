@@ -11,6 +11,7 @@ import {
   DEFAULT_CONTENT_FONT_FAMILY,
   normalizeDigitalHubContentHtml,
 } from "../utils/contentFontFamily";
+import { getBatchWindowState } from "../utils/batchWindowState";
 import {
   buildTopicLessonRows,
   formatTopicLessonDateTime,
@@ -474,84 +475,6 @@ const toIdString = (value?: string | { _id?: string } | null) => {
     return value._id;
   }
   return "";
-};
-
-const parseDateOrNull = (value?: string | null) => {
-  if (!value) return null;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date;
-};
-
-const getBatchWindowState = (courseAccess: CourseAccessRecord | null) => {
-  const accessState = String(courseAccess?.batchAccessState || "").toLowerCase();
-  if (accessState === "active") {
-    return {
-      hasBatchWindow: true,
-      isBatchWindowActive: true,
-      isBatchPreviewOnly: false,
-      batchLockStartsAt: parseDateOrNull(courseAccess?.batchLockStartsAt || null),
-      batchLockEndsAt: parseDateOrNull(courseAccess?.batchLockEndsAt || null),
-    };
-  }
-
-  if (accessState === "preview") {
-    return {
-      hasBatchWindow: true,
-      isBatchWindowActive: false,
-      isBatchPreviewOnly: true,
-      batchLockStartsAt: parseDateOrNull(courseAccess?.batchLockStartsAt || null),
-      batchLockEndsAt: parseDateOrNull(courseAccess?.batchLockEndsAt || null),
-    };
-  }
-
-  if (typeof courseAccess?.batchWindowActive === "boolean") {
-    return {
-      hasBatchWindow: true,
-      isBatchWindowActive: courseAccess.batchWindowActive,
-      isBatchPreviewOnly: Boolean(
-        courseAccess.batchPreviewOnly ?? !courseAccess.batchWindowActive
-      ),
-      batchLockStartsAt: parseDateOrNull(courseAccess?.batchLockStartsAt || null),
-      batchLockEndsAt: parseDateOrNull(courseAccess?.batchLockEndsAt || null),
-    };
-  }
-
-  if (typeof courseAccess?.batchPreviewOnly === "boolean") {
-    return {
-      hasBatchWindow: true,
-      isBatchWindowActive: !courseAccess.batchPreviewOnly,
-      isBatchPreviewOnly: courseAccess.batchPreviewOnly,
-      batchLockStartsAt: parseDateOrNull(courseAccess?.batchLockStartsAt || null),
-      batchLockEndsAt: parseDateOrNull(courseAccess?.batchLockEndsAt || null),
-    };
-  }
-
-  const batchLockStartsAt = parseDateOrNull(courseAccess?.batchLockStartsAt || null);
-  const batchLockEndsAt = parseDateOrNull(courseAccess?.batchLockEndsAt || null);
-  const hasBatchWindow = Boolean(batchLockStartsAt && batchLockEndsAt);
-
-  if (!hasBatchWindow) {
-    return {
-      hasBatchWindow: false,
-      isBatchWindowActive: true,
-      isBatchPreviewOnly: false,
-      batchLockStartsAt,
-      batchLockEndsAt,
-    };
-  }
-
-  const now = Date.now();
-  const isBatchWindowActive =
-    now >= batchLockStartsAt.getTime() && now <= batchLockEndsAt.getTime();
-
-  return {
-    hasBatchWindow: true,
-    isBatchWindowActive,
-    isBatchPreviewOnly: !isBatchWindowActive,
-    batchLockStartsAt,
-    batchLockEndsAt,
-  };
 };
 
 const getCourseEnrollmentAt = (
@@ -1085,17 +1008,8 @@ export default function DigitalHubClient({
     [activePurchasedCourseRecord]
   );
   const isCourseBatchPreviewOnly = courseBatchWindowState.isBatchPreviewOnly;
+  const isCourseBatchExpired = courseBatchWindowState.isBatchPostEndLocked;
   const hasCourseBatchWindow = courseBatchWindowState.hasBatchWindow;
-  const isBatchContentLocked =
-    !isDemo &&
-    (!hasCourseBatchWindow || !courseBatchWindowState.isBatchWindowActive);
-  const selectedChapterIndex = useMemo(
-    () =>
-      courseChapters.findIndex(
-        (chapter) => String(chapter._id) === String(selectedChapter?._id || "")
-      ),
-    [courseChapters, selectedChapter?._id]
-  );
   const isCourseAccessBlocked = Boolean(
     !hasCourseBatchWindow &&
       String(activePurchasedCourseRecord?.status || "").toLowerCase() ===
@@ -1108,12 +1022,10 @@ export default function DigitalHubClient({
   const visibleTopics = isDemo
     ? topics.slice(0, 1)
     : topics;
-  const isChapterLocked = (chapterIndex: number) =>
-    isBatchContentLocked && chapterIndex > 0;
-  const isTopicLocked = (
-    topicIndex: number,
-    chapterIndex = selectedChapterIndex
-  ) => isBatchContentLocked && (chapterIndex > 0 || topicIndex > 0);
+  const isChapterLocked = !isDemo && isCourseBatchExpired;
+  const isTopicLocked = (topicIndex: number) =>
+    !isDemo &&
+    (isCourseBatchExpired || (courseBatchWindowState.isBatchPreviewOnly && topicIndex > 0));
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -1532,16 +1444,39 @@ export default function DigitalHubClient({
       preferredTopicId?: string
     ) => {
       const availableTopics = chapter.topics || [];
-      const chapterIndex = courseChapters.findIndex(
-        (candidate) => String(candidate._id) === String(chapter._id)
-      );
       const shouldRestrictToFirstTopic =
-        !isDemo && isBatchContentLocked && chapterIndex >= 0;
+        !isDemo && courseBatchWindowState.isBatchPreviewOnly;
+      const isBatchExpiredLocked =
+        !isDemo && courseBatchWindowState.isBatchPostEndLocked;
       setIsIntroVideoModalOpen(false);
       setSelectedChapter(chapter);
       setTopics(availableTopics);
       setSelectedCaseStudy(null);
       setSelectedAssignment(null);
+
+      if (isBatchExpiredLocked) {
+        if (navigationMode !== "none") {
+          const targetPath = buildChapterPath(chapter._id);
+          if (navigationMode === "replace") {
+            router.replace(targetPath);
+          } else {
+            router.push(targetPath);
+          }
+        }
+
+        setSelectedTopic(null);
+        setTopicContent("This batch is no longer active.");
+        setTotalPages(1);
+        setCurrentPage(1);
+        setShowDemoLimit(false);
+        setQuizData(null);
+        setQuizLoading(false);
+        setSelectedAnswers({});
+        setQuizSubmitted(false);
+        setShowQuizResults(false);
+        setQuizRewardSummary(null);
+        return;
+      }
 
       fetchCaseStudies(chapter._id);
       fetchAssignments(chapter._id);
@@ -1637,7 +1572,8 @@ export default function DigitalHubClient({
       fetchAssignments,
       fetchCaseStudies,
       isDemo,
-      isCourseBatchPreviewOnly,
+      courseBatchWindowState.isBatchPreviewOnly,
+      courseBatchWindowState.isBatchPostEndLocked,
       loadQuizForTopic,
       router,
       scrollContentToTop,
@@ -1648,13 +1584,9 @@ export default function DigitalHubClient({
 
   const handleChapterSelect = useCallback(
     (chapter: ChapterData) => {
-      const targetChapter = isCourseBatchPreviewOnly
-        ? courseChapters[0] || chapter
-        : chapter;
-      const firstTopic = targetChapter.topics?.[0] || null;
-      selectChapterContent(targetChapter, "push", firstTopic?._id);
+      selectChapterContent(chapter, "push", chapter.topics?.[0]?._id);
     },
-    [courseChapters, isCourseBatchPreviewOnly, selectChapterContent]
+    [selectChapterContent]
   );
 
   const markProgressItemComplete = useCallback(
@@ -2057,17 +1989,15 @@ export default function DigitalHubClient({
         }
 
         const storedSelection = loadLastSelection();
-        const previewChapter = isCourseBatchPreviewOnly
-          ? mergedChapters[0] || null
-          : null;
-        const requestedChapter = previewChapter
-          || findChapterByIdentifier(mergedChapters, effectiveChapterId);
-        const storedChapter = previewChapter
-          || findChapterByIdentifier(
-            mergedChapters,
-            storedSelection?.chapterId || null
-          );
-        const fallbackChapter = previewChapter || getPreferredUnlockedChapter(mergedChapters);
+        const requestedChapter = findChapterByIdentifier(
+          mergedChapters,
+          effectiveChapterId
+        );
+        const storedChapter = findChapterByIdentifier(
+          mergedChapters,
+          storedSelection?.chapterId || null
+        );
+        const fallbackChapter = getPreferredUnlockedChapter(mergedChapters);
         const chapterToOpen = requestedChapter || storedChapter || fallbackChapter;
 
         if (!chapterToOpen) {
@@ -2076,13 +2006,9 @@ export default function DigitalHubClient({
 
         const needsRouteReplace =
           !isDemo &&
-          ((isCourseBatchPreviewOnly &&
-            effectiveChapterId &&
-            String(effectiveChapterId) !== String(chapterToOpen._id)) ||
-            (!isCourseBatchPreviewOnly &&
-              (!effectiveChapterId ||
-                !requestedChapter ||
-                requestedChapter._id !== chapterToOpen._id)));
+          (!effectiveChapterId ||
+            !requestedChapter ||
+            requestedChapter._id !== chapterToOpen._id);
         const preferredTopicId =
           storedSelection?.chapterId === chapterToOpen._id
             ? storedSelection.topicId
@@ -2111,7 +2037,6 @@ export default function DigitalHubClient({
     studentId,
     studentCourseBookingsLoaded,
     studentPurchasedCoursesLoaded,
-    isCourseBatchPreviewOnly,
     applyProgressSummary,
     loadLastSelection,
     selectChapterContent,
@@ -3230,11 +3155,18 @@ export default function DigitalHubClient({
                     visibleChapters.map((chapter: ChapterData, index) => (
                       <button
                         key={chapter._id}
+                        type="button"
+                        disabled={isChapterLocked}
                         onClick={() => {
+                          if (isChapterLocked) return;
                           setChapterDropdownOpen(false);
                           handleChapterSelect(chapter);
                         }}
-                        className="w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 text-slate-700 hover:bg-blue-50"
+                        className={`w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 ${
+                          isChapterLocked
+                            ? "cursor-not-allowed text-slate-400"
+                            : "text-slate-700 hover:bg-blue-50"
+                        }`}
                       >
                         <div className="flex items-center space-x-3">
                         <div
@@ -3247,9 +3179,15 @@ export default function DigitalHubClient({
                         <span className="font-medium">{chapter.title}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="rounded-full bg-blue-100 px-2 py-1 font-semibold text-blue-700">
-                            {getChapterCompletionPercent(chapter)}%
-                          </span>
+                          {isChapterLocked ? (
+                            <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-700">
+                              Locked
+                            </span>
+                          ) : (
+                            <span className="rounded-full bg-blue-100 px-2 py-1 font-semibold text-blue-700">
+                              {getChapterCompletionPercent(chapter)}%
+                            </span>
+                          )}
                         </div>
                       </button>
                     ))
@@ -3429,15 +3367,23 @@ export default function DigitalHubClient({
                         Topics
                       </h3>
                       {visibleTopics.map((topic: TopicData, index) => {
+                        const topicLocked = isTopicLocked(index);
                         return (
                           <button
                             key={topic._id}
+                            type="button"
+                            disabled={topicLocked}
                             onClick={() => {
+                              if (topicLocked) {
+                                return;
+                              }
                               closeSidebarIfMobile();
                               handleTopicSelect(topic);
                             }}
                             className={`w-full text-left p-3 rounded-xl transition-colors border ${
-                              isDarkMode
+                              topicLocked
+                                ? "cursor-not-allowed opacity-60"
+                                : isDarkMode
                                 ? selectedTopic?._id === topic._id
                                   ? "bg-slate-800 border-slate-600 text-slate-100"
                                   : "bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800"
@@ -3448,13 +3394,18 @@ export default function DigitalHubClient({
                           >
                             <div className="flex items-center space-x-3">
                               <div
-                                className="w-6 h-6 bg-emerald-600 text-white rounded-full flex items-center justify-center text-sm font-medium"
+                                className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-sm font-medium ${
+                                  topicLocked ? "bg-slate-400" : "bg-emerald-600"
+                                }`}
                               >
                                 {index + 1}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="font-medium">{topic.title}</div>
                               </div>
+                              {topicLocked ? (
+                                <Lock className="h-4 w-4 text-amber-500" />
+                              ) : null}
                               {selectedChapter?.completedTopicIds?.includes(
                                 topic._id
                               ) ? (
@@ -3654,8 +3605,13 @@ export default function DigitalHubClient({
 
                   {isCourseBatchPreviewOnly && !isDemo ? (
                     <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                      Batch access is currently outside the active window. Only
-                      the first chapter and first topic are available right now.
+                      Batch access is not started yet. The first topic of each
+                      chapter is available until the batch start time.
+                    </div>
+                  ) : null}
+                  {isCourseBatchExpired && !isDemo ? (
+                    <div className="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900">
+                      This batch has ended. Course access is locked now.
                     </div>
                   ) : null}
 
