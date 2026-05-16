@@ -11,7 +11,10 @@ import {
   DEFAULT_CONTENT_FONT_FAMILY,
   normalizeDigitalHubContentHtml,
 } from "../utils/contentFontFamily";
-import { getBatchWindowState } from "../utils/batchWindowState";
+import {
+  getBatchWindowState,
+  parseDateOrNull,
+} from "../utils/batchWindowState";
 import {
   buildTopicLessonRows,
   formatTopicLessonDateTime,
