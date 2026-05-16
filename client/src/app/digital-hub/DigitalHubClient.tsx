@@ -2127,7 +2127,9 @@ export default function DigitalHubClient({
           storedSelection?.chapterId || null
         );
         const fallbackChapter = getPreferredUnlockedChapter(mergedChapters);
-        const chapterToOpen = requestedChapter || storedChapter || fallbackChapter;
+        const chapterToOpen = shouldFailSafeRestrictAccess
+          ? fallbackChapter
+          : requestedChapter || storedChapter || fallbackChapter;
 
         if (!chapterToOpen) {
           return;
@@ -2169,6 +2171,7 @@ export default function DigitalHubClient({
     applyProgressSummary,
     loadLastSelection,
     selectChapterContent,
+    shouldFailSafeRestrictAccess,
   ]);
 
   useEffect(() => {
