@@ -315,6 +315,31 @@ export default function AssignmentBuilder({
         return;
       }
 
+      // Validate tasks
+      for (let i = 0; i < tasks.length; i++) {
+        if (!tasks[i].taskName.trim() || !tasks[i].instructions.trim()) {
+          alert(`Please complete all fields for Task ${i + 1}`);
+          return;
+        }
+      }
+
+      // Validate content
+      for (let i = 0; i < content.length; i++) {
+        const item = content[i];
+        if (item.type === "text" && !item.textContent?.trim()) {
+          alert(`Please enter text content for Content ${i + 1}`);
+          return;
+        }
+        if (item.type === "rich" && !item.richTextContent?.trim()) {
+          alert(`Please enter rich text content for Content ${i + 1}`);
+          return;
+        }
+        if (item.type === "video" && !item.videoBase64) {
+          alert(`Please upload a video for Content ${i + 1}`);
+          return;
+        }
+      }
+
       // Validate simulations
       for (const sim of simulations) {
         if (sim.type === "accounting") {

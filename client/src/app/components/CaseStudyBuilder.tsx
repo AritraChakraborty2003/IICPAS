@@ -217,6 +217,68 @@ export default function CaseStudyBuilder({
         return;
       }
 
+      // Validate tasks
+      for (let i = 0; i < tasks.length; i++) {
+        if (!tasks[i].taskName.trim() || !tasks[i].instructions.trim()) {
+          alert(`Please complete all fields for Task ${i + 1}`);
+          return;
+        }
+      }
+
+      // Validate content
+      for (let i = 0; i < content.length; i++) {
+        const item = content[i];
+        if (item.type === "text" && !item.textContent?.trim()) {
+          alert(`Please enter text content for Content ${i + 1}`);
+          return;
+        }
+        if (item.type === "rich" && !item.richTextContent?.trim()) {
+          alert(`Please enter rich text content for Content ${i + 1}`);
+          return;
+        }
+        if (item.type === "video" && !item.videoBase64) {
+          alert(`Please upload a video for Content ${i + 1}`);
+          return;
+        }
+      }
+
+      // Validate simulations
+      for (let i = 0; i < simulations.length; i++) {
+        const sim = simulations[i];
+        if (!sim.title.trim()) {
+          alert(`Please enter a title for Simulation ${i + 1}`);
+          return;
+        }
+        if (sim.type === "accounting") {
+          if (!sim.statement?.trim()) {
+            alert(`Please enter a problem statement for Simulation ${i + 1}`);
+            return;
+          }
+          if (!sim.correctEntries || sim.correctEntries.length === 0) {
+            alert(`Please add at least one correct entry for Simulation ${i + 1}`);
+            return;
+          }
+        }
+      }
+
+      // Validate question sets
+      for (let i = 0; i < questionSets.length; i++) {
+        const qs = questionSets[i];
+        if (!qs.name.trim()) {
+          alert(`Please enter a name for Question Set ${i + 1}`);
+          return;
+        }
+        if (qs.questions && qs.questions.length > 0) {
+          for (let j = 0; j < qs.questions.length; j++) {
+            const q = qs.questions[j];
+            if (!q.question.trim() || !q.option1.trim() || !q.option2.trim() || !q.option3.trim() || !q.option4.trim() || !q.correct.trim()) {
+              alert(`Please complete all fields for Question ${j + 1} in Question Set ${i + 1}`);
+              return;
+            }
+          }
+        }
+      }
+
       // Prepare case study data
       const caseStudyData = {
         title: title.trim(),
