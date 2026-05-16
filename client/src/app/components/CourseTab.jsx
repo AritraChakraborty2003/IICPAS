@@ -1430,7 +1430,15 @@ export default function CourseTab() {
                         <div className="space-y-3">
                           {courseChapters[course._id] &&
                           courseChapters[course._id].length > 0 ? (
-                            courseChapters[course._id].map((chapter, index) => (
+                            courseChapters[course._id].map((chapter, index) => {
+                              const chapterIsLocked = courseAccessWindow.isBatchPostEndLocked
+                                ? true
+                                : courseAccessWindow.isPreviewOnly
+                                ? index > 0
+                                : Boolean(chapter?.isLocked);
+                              const chapterKey = `${course._id}-${chapter._id || index}`;
+
+                              return (
                               <div
                                 key={chapter._id || index}
                                 className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition-shadow"
@@ -1444,17 +1452,29 @@ export default function CourseTab() {
                                     </div>
                                     <button
                                       type="button"
+                                      disabled={chapterIsLocked}
                                       onClick={() =>
+                                        !chapterIsLocked &&
                                         toggleDetailedChapter(
                                           course._id,
                                           chapter._id || index
                                         )
                                       }
-                                      className="text-left flex-1 min-w-0"
+                                      className={`text-left flex-1 min-w-0 ${
+                                        chapterIsLocked ? "cursor-not-allowed" : ""
+                                      }`}
                                     >
-                                      <p className="font-semibold text-slate-800 text-base mb-1 truncate">
-                                        {chapter.title || chapter.name}
-                                      </p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-semibold text-slate-800 text-base mb-1 truncate">
+                                          {chapter.title || chapter.name}
+                                        </p>
+                                        {chapterIsLocked ? (
+                                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                                            <Lock className="h-3 w-3" />
+                                            <span>Locked</span>
+                                          </span>
+                                        ) : null}
+                                      </div>
                                       {chapter.description && (
                                         <p className="text-slate-600 text-sm leading-relaxed line-clamp-2">
                                           {chapter.description}
@@ -1481,28 +1501,41 @@ export default function CourseTab() {
                                     </div>
                                     <span
                                       className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                                        (chapter.completion || 0) === 100
+                                        chapterIsLocked
+                                          ? "bg-amber-100 text-amber-700"
+                                          : (chapter.completion || 0) === 100
                                           ? "bg-emerald-100 text-emerald-700"
                                           : "bg-blue-100 text-blue-700"
                                       }`}
                                     >
-                                      {chapter.completion || 0}%
+                                      {chapterIsLocked ? "Locked" : `${chapter.completion || 0}%`}
                                     </span>
                                     <button
                                       type="button"
+                                      disabled={chapterIsLocked}
                                       onClick={() =>
+                                        !chapterIsLocked &&
                                         handleOpenChapter(course, chapter, index)
                                       }
-                                      className="px-3 py-1.5 rounded-md text-xs font-medium bg-blue-600 text-white hover:bg-blue-700"
+                                      className={`px-3 py-1.5 rounded-md text-xs font-medium ${
+                                        chapterIsLocked
+                                          ? "cursor-not-allowed bg-slate-200 text-slate-500"
+                                          : "bg-blue-600 text-white hover:bg-blue-700"
+                                      }`}
                                     >
-                                      Open in Digital Hub
+                                      {chapterIsLocked ? (
+                                        <span className="inline-flex items-center gap-1">
+                                          <Lock className="h-3.5 w-3.5" />
+                                          <span>Locked</span>
+                                        </span>
+                                      ) : (
+                                        "Open in Digital Hub"
+                                      )}
                                     </button>
                                   </div>
                                 </div>
 
-                                {expandedChapterKeys[
-                                  `${course._id}-${chapter._id || index}`
-                                ] ? (
+                                {expandedChapterKeys[chapterKey] ? (
                                   <div className="mt-4 border-t border-slate-200 pt-3">
                                     <h4 className="text-sm font-semibold text-slate-800 mb-2">
                                       Topics
@@ -1574,7 +1607,8 @@ export default function CourseTab() {
                                   </div>
                                 ) : null}
                               </div>
-                            ))
+                              );
+                            })
                           ) : (
                             <div className="text-center py-10 text-slate-500">
                               <Book className="mx-auto mb-3 text-5xl text-slate-300" />
