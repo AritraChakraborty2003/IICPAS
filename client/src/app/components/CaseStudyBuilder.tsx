@@ -2,6 +2,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { getApiBase } from "@/lib/apiBase";
 
 import OptimizedJoditEditor from "./OptimizedJoditEditor";
 
@@ -256,13 +257,24 @@ export default function CaseStudyBuilder({
       };
 
       // Save to backend
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_BASE}/case-studies`,
-        caseStudyData
-      );
+      const API_BASE = getApiBase();
+      let response;
+
+      if (editingItem?._id) {
+        // Update existing case study
+        response = await axios.put(
+          `${API_BASE}/case-studies/${editingItem._id}`,
+          caseStudyData
+        );
+      } else {
+        // Create new case study
+        response = await axios.post(`${API_BASE}/case-studies`, caseStudyData);
+      }
 
       if (response.data.success) {
-        alert("Case Study saved successfully!");
+        alert(
+          `Case Study ${editingItem ? "updated" : "saved"} successfully!`
+        );
         // Reset form or redirect
         onBack();
       } else {

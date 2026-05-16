@@ -4,8 +4,9 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 
 import OptimizedJoditEditor from "./OptimizedJoditEditor";
+import { getApiBase } from "../../lib/apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE;
+const API_BASE = getApiBase();
 
 interface AssignmentBuilderProps {
   chapterId: string;
