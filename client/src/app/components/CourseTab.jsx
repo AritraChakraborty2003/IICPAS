@@ -738,13 +738,13 @@ export default function CourseTab() {
 
     switch (activeTab) {
       case "chapters":
-        const selectedCourseAccessWindow = getCourseAccessWindow(
-          selectedCourse._id
-        );
         return (
           <div className="space-y-3">
             {selectedCourse.chapters && selectedCourse.chapters.length > 0 ? (
               selectedCourse.chapters.map((chapter, index) => {
+                const selectedCourseAccessWindow = getCourseAccessWindow(
+                  selectedCourse._id
+                );
                 const chapterIsLocked = selectedCourseAccessWindow.isBatchPostEndLocked
                   ? true
                   : selectedCourseAccessWindow.isPreviewOnly
