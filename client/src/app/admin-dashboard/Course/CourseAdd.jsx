@@ -1,5 +1,5 @@
 import { getApiBase } from "@/lib/apiBase";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Select from "react-select";
 import axios from "axios";
 import { FaArrowLeft, FaPlus } from "react-icons/fa";
@@ -94,84 +94,88 @@ export default function CourseAddTab({ onBack }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const joditConfig = {
-    readonly: false,
-    height: 200,
-    editorClassName: "lucida-sans-content",
-    uploader: {
-      insertImageAsBase64URI: true,
-      accept: ALLOWED_IMAGE_ACCEPT,
-      imagesExtensions: JODIT_IMAGE_EXTENSIONS,
-    },
-    toolbarAdaptive: false,
-    showCharsCounter: false,
-    showWordsCounter: false,
-    spellcheck: true,
-    askBeforePasteHTML: false,
-    askBeforePasteFromWord: false,
-    defaultActionOnPaste: "insert_clear_html",
-    enterMode: "BR",
-    useSearch: false,
-    showXPathInStatusbar: false,
-    buttons: [
-      "source",
-      "|",
-      "bold",
-      "strikethrough",
-      "underline",
-      "italic",
-      "|",
-      "ul",
-      "ol",
-      "arrowlist",
-      "|",
-      "outdent",
-      "indent",
-      "|",
-      "font",
-      "fontsize",
-      "brush",
-      "paragraph",
-      "|",
-      "image",
-      "link",
-      "table",
-      "|",
-      "align",
-      "undo",
-      "redo",
-      "|",
-      "hr",
-      "eraser",
-      "copyformat",
-      "|",
-      "fullsize",
-    ],
-  controls: {
-    font: joditFontControl,
-    arrowlist: {
-      icon: "➤",
-      tooltip: "Arrow List",
-      exec: (editor) => {
-          const list =
-            editor.selection.ancestor("ul") || editor.selection.ancestor("ol");
-          if (list) {
-            if (list.classList.contains("arrow-list")) {
-              list.classList.remove("arrow-list");
+  const joditConfig = useMemo(
+    () => ({
+      readonly: false,
+      height: 200,
+      editorClassName: "lucida-sans-content",
+      uploader: {
+        insertImageAsBase64URI: true,
+        accept: ALLOWED_IMAGE_ACCEPT,
+        imagesExtensions: JODIT_IMAGE_EXTENSIONS,
+      },
+      toolbarAdaptive: false,
+      showCharsCounter: false,
+      showWordsCounter: false,
+      spellcheck: true,
+      askBeforePasteHTML: false,
+      askBeforePasteFromWord: false,
+      defaultActionOnPaste: "insert_clear_html",
+      enterMode: "BR",
+      useSearch: false,
+      showXPathInStatusbar: false,
+      buttons: [
+        "source",
+        "|",
+        "bold",
+        "strikethrough",
+        "underline",
+        "italic",
+        "|",
+        "ul",
+        "ol",
+        "arrowlist",
+        "|",
+        "outdent",
+        "indent",
+        "|",
+        "font",
+        "fontsize",
+        "brush",
+        "paragraph",
+        "|",
+        "image",
+        "link",
+        "table",
+        "|",
+        "align",
+        "undo",
+        "redo",
+        "|",
+        "hr",
+        "eraser",
+        "copyformat",
+        "|",
+        "fullsize",
+      ],
+      controls: {
+        font: joditFontControl,
+        arrowlist: {
+          icon: "➤",
+          tooltip: "Arrow List",
+          exec: (editor) => {
+            const list =
+              editor.selection.ancestor("ul") ||
+              editor.selection.ancestor("ol");
+            if (list) {
+              if (list.classList.contains("arrow-list")) {
+                list.classList.remove("arrow-list");
+              } else {
+                list.classList.add("arrow-list");
+              }
             } else {
-              list.classList.add("arrow-list");
+              editor.execCommand("insertUnorderedList");
+              setTimeout(() => {
+                const newList = editor.selection.ancestor("ul");
+                if (newList) newList.classList.add("arrow-list");
+              }, 10);
             }
-          } else {
-            editor.execCommand("insertUnorderedList");
-            setTimeout(() => {
-              const newList = editor.selection.ancestor("ul");
-              if (newList) newList.classList.add("arrow-list");
-            }, 10);
-          }
+          },
         },
       },
-    },
-  };
+    }),
+    []
+  );
 
   const loadCategories = useCallback(async () => {
     try {
@@ -218,6 +222,32 @@ export default function CourseAddTab({ onBack }) {
   const handleJoditChange = (field) => (value) => {
     setForm((f) => ({ ...f, [field]: value }));
   };
+
+  const richTextHandlers = useMemo(
+    () => ({
+      description: {
+        onChange: debouncedJoditChange("description"),
+        onBlur: handleJoditChange("description"),
+      },
+      examCert: {
+        onChange: debouncedJoditChange("examCert"),
+        onBlur: handleJoditChange("examCert"),
+      },
+      caseStudy: {
+        onChange: debouncedJoditChange("caseStudy"),
+        onBlur: handleJoditChange("caseStudy"),
+      },
+      seoDescription: {
+        onChange: debouncedJoditChange("seoDescription"),
+        onBlur: handleJoditChange("seoDescription"),
+      },
+      metaDescription: {
+        onChange: debouncedJoditChange("metaDescription"),
+        onBlur: handleJoditChange("metaDescription"),
+      },
+    }),
+    [debouncedJoditChange]
+  );
 
   const getFinalPrice = () => {
     const price = parseFloat(form.price) || 0;
@@ -693,8 +723,8 @@ export default function CourseAddTab({ onBack }) {
           <JoditEditor
             value={form.description}
             config={joditConfig}
-            onChange={debouncedJoditChange("description")}
-            onBlur={handleJoditChange("description")}
+            onChange={richTextHandlers.description.onChange}
+            onBlur={richTextHandlers.description.onBlur}
           />
         </div>
 
@@ -706,8 +736,8 @@ export default function CourseAddTab({ onBack }) {
           <JoditEditor
             value={form.examCert}
             config={joditConfig}
-            onChange={debouncedJoditChange("examCert")}
-            onBlur={handleJoditChange("examCert")}
+            onChange={richTextHandlers.examCert.onChange}
+            onBlur={richTextHandlers.examCert.onBlur}
           />
         </div>
 
@@ -719,8 +749,8 @@ export default function CourseAddTab({ onBack }) {
           <JoditEditor
             value={form.caseStudy}
             config={joditConfig}
-            onChange={debouncedJoditChange("caseStudy")}
-            onBlur={handleJoditChange("caseStudy")}
+            onChange={richTextHandlers.caseStudy.onChange}
+            onBlur={richTextHandlers.caseStudy.onBlur}
           />
         </div>
 
@@ -1092,8 +1122,8 @@ export default function CourseAddTab({ onBack }) {
               <JoditEditor
                 value={form.seoDescription}
                 config={{ ...joditConfig, height: 120 }}
-                onChange={debouncedJoditChange("seoDescription")}
-                onBlur={handleJoditChange("seoDescription")}
+                onChange={richTextHandlers.seoDescription.onChange}
+                onBlur={richTextHandlers.seoDescription.onBlur}
               />
             </div>
           </div>
@@ -1130,8 +1160,8 @@ export default function CourseAddTab({ onBack }) {
               <JoditEditor
                 value={form.metaDescription}
                 config={{ ...joditConfig, height: 120 }}
-                onChange={debouncedJoditChange("metaDescription")}
-                onBlur={handleJoditChange("metaDescription")}
+                onChange={richTextHandlers.metaDescription.onChange}
+                onBlur={richTextHandlers.metaDescription.onBlur}
               />
             </div>
           </div>

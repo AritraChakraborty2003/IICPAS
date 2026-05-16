@@ -1,6 +1,6 @@
 "use client";
 import { getApiBase, getApiOrigin } from "@/lib/apiBase";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Select from "react-select";
 import axios from "axios";
 import dynamic from "next/dynamic";
@@ -46,89 +46,104 @@ export default function EditCourse({ courseId, onBack }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState([]);
 
-  const joditConfig = {
-    readonly: false,
-    height: 200,
-    editorClassName: "lucida-sans-content",
-    uploader: {
-      insertImageAsBase64URI: true,
-      accept: ALLOWED_IMAGE_ACCEPT,
-      imagesExtensions: JODIT_IMAGE_EXTENSIONS,
-    },
-    toolbarAdaptive: false,
-    showCharsCounter: false,
-    showWordsCounter: false,
-    spellcheck: true,
-    askBeforePasteHTML: false,
-    askBeforePasteFromWord: false,
-    defaultActionOnPaste: "insert_clear_html",
-    enterMode: "BR",
-    useSearch: false,
-    showXPathInStatusbar: false,
-    buttons: [
-      "source",
-      "|",
-      "bold",
-      "strikethrough",
-      "underline",
-      "italic",
-      "|",
-      "ul",
-      "ol",
-      "arrowlist",
-      "|",
-      "outdent",
-      "indent",
-      "|",
-      "font",
-      "fontsize",
-      "brush",
-      "paragraph",
-      "|",
-      "image",
-      "link",
-      "table",
-      "|",
-      "align",
-      "undo",
-      "redo",
-      "|",
-      "hr",
-      "eraser",
-      "copyformat",
-      "|",
-      "fullsize",
-    ],
-    controls: {
-      font: joditFontControl,
-      arrowlist: {
-        icon: "➤",
-        tooltip: "Arrow List",
-        exec: (editor) => {
-          const list =
-            editor.selection.ancestor("ul") || editor.selection.ancestor("ol");
-          if (list) {
-            if (list.classList.contains("arrow-list")) {
-              list.classList.remove("arrow-list");
+  const joditConfig = useMemo(
+    () => ({
+      readonly: false,
+      height: 200,
+      editorClassName: "lucida-sans-content",
+      uploader: {
+        insertImageAsBase64URI: true,
+        accept: ALLOWED_IMAGE_ACCEPT,
+        imagesExtensions: JODIT_IMAGE_EXTENSIONS,
+      },
+      toolbarAdaptive: false,
+      showCharsCounter: false,
+      showWordsCounter: false,
+      spellcheck: true,
+      askBeforePasteHTML: false,
+      askBeforePasteFromWord: false,
+      defaultActionOnPaste: "insert_clear_html",
+      enterMode: "BR",
+      useSearch: false,
+      showXPathInStatusbar: false,
+      buttons: [
+        "source",
+        "|",
+        "bold",
+        "strikethrough",
+        "underline",
+        "italic",
+        "|",
+        "ul",
+        "ol",
+        "arrowlist",
+        "|",
+        "outdent",
+        "indent",
+        "|",
+        "font",
+        "fontsize",
+        "brush",
+        "paragraph",
+        "|",
+        "image",
+        "link",
+        "table",
+        "|",
+        "align",
+        "undo",
+        "redo",
+        "|",
+        "hr",
+        "eraser",
+        "copyformat",
+        "|",
+        "fullsize",
+      ],
+      controls: {
+        font: joditFontControl,
+        arrowlist: {
+          icon: "➤",
+          tooltip: "Arrow List",
+          exec: (editor) => {
+            const list =
+              editor.selection.ancestor("ul") ||
+              editor.selection.ancestor("ol");
+            if (list) {
+              if (list.classList.contains("arrow-list")) {
+                list.classList.remove("arrow-list");
+              } else {
+                list.classList.add("arrow-list");
+              }
             } else {
-              list.classList.add("arrow-list");
+              editor.execCommand("insertUnorderedList");
+              setTimeout(() => {
+                const newList = editor.selection.ancestor("ul");
+                if (newList) newList.classList.add("arrow-list");
+              }, 10);
             }
-          } else {
-            editor.execCommand("insertUnorderedList");
-            setTimeout(() => {
-              const newList = editor.selection.ancestor("ul");
-              if (newList) newList.classList.add("arrow-list");
-            }, 10);
-          }
+          },
         },
       },
-    },
-  };
+    }),
+    []
+  );
 
   // Simple handler without debouncing - works reliably with JoditEditor
   const handleJoditChange = (field) => (value) => {
     setForm((prevForm) => ({ ...prevForm, [field]: value }));
   };
+
+  const richTextHandlers = useMemo(
+    () => ({
+      description: handleJoditChange("description"),
+      examCert: handleJoditChange("examCert"),
+      caseStudy: handleJoditChange("caseStudy"),
+      assignment: handleJoditChange("assignment"),
+      seoDescription: handleJoditChange("seoDescription"),
+    }),
+    []
+  );
 
   const loadCategories = useCallback(async () => {
     try {
@@ -726,7 +741,8 @@ export default function EditCourse({ courseId, onBack }) {
           <JoditEditor
             value={form.description}
             config={joditConfig}
-            onChange={handleJoditChange("description")}
+            onChange={richTextHandlers.description}
+            onBlur={richTextHandlers.description}
           />
         </div>
         <div>
@@ -736,7 +752,8 @@ export default function EditCourse({ courseId, onBack }) {
           <JoditEditor
             value={form.examCert}
             config={joditConfig}
-            onChange={handleJoditChange("examCert")}
+            onChange={richTextHandlers.examCert}
+            onBlur={richTextHandlers.examCert}
           />
         </div>
         <div>
@@ -744,7 +761,8 @@ export default function EditCourse({ courseId, onBack }) {
           <JoditEditor
             value={form.caseStudy}
             config={joditConfig}
-            onChange={handleJoditChange("caseStudy")}
+            onChange={richTextHandlers.caseStudy}
+            onBlur={richTextHandlers.caseStudy}
           />
         </div>
 
@@ -753,7 +771,8 @@ export default function EditCourse({ courseId, onBack }) {
           <JoditEditor
             value={form.assignment}
             config={joditConfig}
-            onChange={handleJoditChange("assignment")}
+            onChange={richTextHandlers.assignment}
+            onBlur={richTextHandlers.assignment}
           />
         </div>
 
@@ -837,7 +856,8 @@ export default function EditCourse({ courseId, onBack }) {
           <JoditEditor
             value={form.seoDescription}
             config={joditConfig}
-            onChange={handleJoditChange("seoDescription")}
+            onChange={richTextHandlers.seoDescription}
+            onBlur={richTextHandlers.seoDescription}
           />
           <label>SEO Keywords</label>
           <textarea
