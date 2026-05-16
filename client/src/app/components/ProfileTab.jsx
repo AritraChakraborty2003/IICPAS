@@ -95,12 +95,6 @@ const getChapterIdentifier = (chapter, fallbackIndex) =>
       (Number.isInteger(fallbackIndex) ? fallbackIndex : "")
   );
 
-const parseDateOrNull = (value) => {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-
 const getCourseAccessWindow = (course) => {
   const batchWindowState = getBatchWindowState(course);
 
