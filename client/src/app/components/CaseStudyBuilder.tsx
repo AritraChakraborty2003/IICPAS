@@ -5,6 +5,7 @@ import axios from "axios";
 import { getApiBase } from "@/lib/apiBase";
 
 import OptimizedJoditEditor from "./OptimizedJoditEditor";
+import { getApiBase } from "../../lib/apiBase";
 
 interface CaseStudyBuilderProps {
   chapterId: string;
@@ -268,7 +269,7 @@ export default function CaseStudyBuilder({
         );
       } else {
         // Create new case study
-        response = await axios.post(`${API_BASE}/case-studies`, caseStudyData);
+        response = await axios.post(`${getApiBase()}/case-studies`, caseStudyData);
       }
 
       if (response.data.success) {
