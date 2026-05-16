@@ -1126,13 +1126,13 @@ export default function DigitalHubClient({
       matchedCourseId: toIdString(activePurchasedCourseRecord?.courseId),
       matchedCourseSlug: activePurchasedCourseRecord?.slug || null,
       batchAccessState: activePurchasedCourseRecord?.batchAccessState || null,
-      hasBatchWindow,
+      hasBatchWindow: hasCourseBatchWindow,
       isCourseBatchPreviewOnly,
       shouldFailSafeRestrictAccess,
     });
   }, [
     activePurchasedCourseRecord,
-    hasBatchWindow,
+    hasCourseBatchWindow,
     isCourseBatchPreviewOnly,
     isDemo,
     shouldFailSafeRestrictAccess,
