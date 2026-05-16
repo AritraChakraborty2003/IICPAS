@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getApiBase } from "../lib/apiBase";
 
-const API_BASE = getApiBase();
+
 
 const normalizeSlug = (value = "") =>
   decodeURIComponent(value)
@@ -41,8 +41,8 @@ export interface UniversityCourse {
 /**
  * Fetch all university courses from the API
  */
-export async function getAllUniversityCourses(): Promise<UniversityCourse[]> {
   try {
+    const API_BASE = getApiBase();
     const response = await axios.get(`${API_BASE}/university-courses`);
     return response.data;
   } catch (error) {
@@ -54,10 +54,8 @@ export async function getAllUniversityCourses(): Promise<UniversityCourse[]> {
 /**
  * Fetch a single university course by slug
  */
-export async function getUniversityCourseBySlug(
-  slug: string
-): Promise<UniversityCourse | null> {
   try {
+    const API_BASE = getApiBase();
     const normalized = normalizeSlug(slug);
     const response = await axios.get(
       `${API_BASE}/university-courses/${normalized}`

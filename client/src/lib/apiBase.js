@@ -1,4 +1,4 @@
-"use client";
+
 
 const FALLBACK_API_BASE = "http://localhost:8080/api";
 
