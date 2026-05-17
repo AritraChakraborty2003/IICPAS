@@ -57,7 +57,26 @@ export default function LiveClassListTab() {
       try {
         setLoading(true);
         setError("");
-        const response = await axios.get(`${API}/api/live-sessions`);
+
+        // Identify logged-in student
+        const studentResponse = await axios
+          .get(`${API}/api/v1/students/isstudent`, { withCredentials: true })
+          .catch(() => ({ data: null }));
+
+        const student = studentResponse?.data?.student || null;
+
+        if (!student?._id) {
+          // Not logged in — show nothing
+          setSessions([]);
+          return;
+        }
+
+        // Fetch live classes filtered to this student's purchased courses only
+        const response = await axios.get(
+          `${API}/api/live-sessions/for-student/${student._id}`,
+          { withCredentials: true }
+        );
+
         const data = Array.isArray(response.data) ? response.data : [];
         setSessions(
           data
@@ -80,6 +99,7 @@ export default function LiveClassListTab() {
 
     loadSessions();
   }, []);
+
 
   const groupedCourses = useMemo(() => {
     const courseMap = new Map();

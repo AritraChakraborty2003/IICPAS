@@ -3,6 +3,7 @@ import {
   createLiveSession,
   getAllLiveSessions,
   getLiveSessionById,
+  getLiveSessionsForStudent,
   enrollInLiveSession,
   unenrollFromLiveSession,
   updateLiveSession,
@@ -14,6 +15,9 @@ const router = express.Router();
 
 // Get all live sessions
 router.get("/", getAllLiveSessions);
+
+// Get live sessions filtered to a specific student's purchased courses
+router.get("/for-student/:studentId", getLiveSessionsForStudent);
 
 // Get single live session by ID
 router.get("/:id", getLiveSessionById);

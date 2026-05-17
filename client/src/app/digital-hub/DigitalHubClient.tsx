@@ -3329,6 +3329,9 @@ export default function DigitalHubClient({
                   <span className="truncate">
                     {selectedChapter ? selectedChapter.title : "Select Chapter"}
                   </span>
+                  {isSelectedChapterLocked && (
+                    <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  )}
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 transition-transform duration-200 ${
@@ -3341,7 +3344,7 @@ export default function DigitalHubClient({
                 <div className="absolute top-full left-0 w-full bg-white border border-stone-200 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
                   {visibleChapters.length > 0 ? (
                     visibleChapters.map((chapter: ChapterData, index) => {
-                      const chapterLocked = !isDemo && Boolean(chapter?.isLocked);
+                      const chapterLocked = !isDemo && getChapterLockState(chapter, index);
 
                       return (
                       <button
@@ -3355,23 +3358,30 @@ export default function DigitalHubClient({
                         }}
                         className={`w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 ${
                           chapterLocked
-                            ? "cursor-not-allowed text-slate-400"
+                            ? "cursor-not-allowed text-slate-400 bg-stone-50"
                             : "text-slate-700 hover:bg-blue-50"
                         }`}
                       >
                         <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-medium ${
-                            isDarkMode ? "bg-emerald-600" : "bg-amber-500"
-                          }`}
-                        >
-                          {index + 1}
-                        </div>
-                        <span className="font-medium">{chapter.title}</span>
+                          <div
+                            className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-medium ${
+                              chapterLocked
+                                ? "bg-stone-300"
+                                : isDarkMode
+                                ? "bg-emerald-600"
+                                : "bg-amber-500"
+                            }`}
+                          >
+                            {index + 1}
+                          </div>
+                          <span className="font-medium">{chapter.title}</span>
+                          {chapterLocked && (
+                            <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          )}
                         </div>
                         <div className="flex items-center gap-2 text-xs">
                           {chapterLocked ? (
-                            <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-700">
+                            <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-700 flex items-center gap-1">
                               Locked
                             </span>
                           ) : (

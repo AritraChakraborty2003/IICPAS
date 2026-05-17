@@ -164,7 +164,15 @@ export default function LiveClassTab({
 
         setEnrolledSessionIds([...new Set([...bookingSessionIds, ...enrolledIds])]);
 
-        const response = await axios.get(`${API}/api/live-sessions`);
+        // Fetch live classes filtered to this student's purchased courses only
+        const response = currentStudent?._id
+          ? await axios
+              .get(`${API}/api/live-sessions/for-student/${currentStudent._id}`, {
+                withCredentials: true,
+              })
+              .catch(() => ({ data: [] }))
+          : { data: [] };
+
         const sessions = Array.isArray(response.data) ? response.data : [];
         setLiveClasses(
           sessions

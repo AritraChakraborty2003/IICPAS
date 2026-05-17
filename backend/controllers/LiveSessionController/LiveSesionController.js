@@ -372,11 +372,8 @@ export const getAllLiveSessions = async (req, res) => {
       paidBookings.map((entry) => [String(entry._id), Number(entry.total || 0)])
     );
 
-    // Transform sessions to include enrollment status for authenticated user
     const transformedSessions = sessions.map((session) => {
       const sessionObj = normalizeLiveSessionResponse(session);
-
-      // Calculate dynamic status based on date/time
       const now = new Date();
       const sessionDate = new Date(session.date);
       const [startTime, endTime] = session.time
@@ -391,13 +388,11 @@ export const getAllLiveSessions = async (req, res) => {
       const [endHour, endMinute] = endTime.split(":").map(Number);
       sessionEnd.setHours(endHour, endMinute, 0, 0);
 
-      // Calculate duration in minutes
       const durationMs = sessionEnd.getTime() - sessionStart.getTime();
       const durationMinutes = Math.round(durationMs / (1000 * 60));
 
       let dynamicStatus = session.status;
 
-      // Only calculate dynamic status if session is active in database
       if (session.status === "active") {
         if (now < sessionStart) {
           dynamicStatus = "upcoming";
@@ -407,22 +402,16 @@ export const getAllLiveSessions = async (req, res) => {
           dynamicStatus = "completed";
         }
       }
-      // If session is inactive in database, keep it as inactive
 
-      // Handle image URLs - prioritize uploaded images, then fallback to client images
       let finalImageUrl = session.imageUrl || session.thumbnail;
-
-      // If it's an uploaded image (starts with /uploads), use it as is
-      // If it's a client image (starts with /images), use it as is
-      // If it's empty, use a default fallback
       if (!finalImageUrl) {
-        finalImageUrl = "/images/live-class.jpg"; // Default fallback
+        finalImageUrl = "/images/live-class.jpg";
       }
 
       return {
         ...sessionObj,
         status: dynamicStatus,
-        duration: durationMinutes, // Use calculated duration
+        duration: durationMinutes,
         enrolledCount: Math.max(
           session.enrolledStudents.length,
           bookingCountMap.get(String(session._id)) || 0
@@ -436,6 +425,98 @@ export const getAllLiveSessions = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// GET /api/live-sessions/for-student/:studentId
+// Returns only live sessions linked to courses the student has purchased.
+export const getLiveSessionsForStudent = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ error: "Invalid student ID" });
+    }
+
+    const student = await Student.findById(studentId)
+      .select("course courseAccessOverrides")
+      .lean();
+
+    if (!student) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    // Collect purchased course IDs from the student's course array
+    const purchasedCourseIdSet = new Set(
+      (Array.isArray(student.course) ? student.course : []).map((id) => String(id))
+    );
+
+    // Also include courses from courseAccessOverrides that are not locked
+    if (Array.isArray(student.courseAccessOverrides)) {
+      student.courseAccessOverrides.forEach((entry) => {
+        if (!entry.isLocked && entry.courseId) {
+          purchasedCourseIdSet.add(String(entry.courseId));
+        }
+      });
+    }
+
+    if (purchasedCourseIdSet.size === 0) {
+      return res.status(200).json([]);
+    }
+
+    const purchasedCourseIds = Array.from(purchasedCourseIdSet);
+
+    // Find sessions that include at least one of the student's purchased courses
+    const sessions = await populateLiveSession(
+      LiveSession.find({
+        $or: [
+          { courseIds: { $in: purchasedCourseIds } },
+          { courseId: { $in: purchasedCourseIds } },
+        ],
+      })
+    );
+
+    const transformedSessions = sessions.map((session) => {
+      const sessionObj = normalizeLiveSessionResponse(session);
+      const now = new Date();
+      const sessionDate = new Date(session.date);
+      const [startTime, endTime] = session.time
+        ? session.time.split(" - ")
+        : ["10:00", "12:00"];
+
+      const sessionStart = new Date(sessionDate);
+      const [startHour, startMinute] = startTime.split(":").map(Number);
+      sessionStart.setHours(startHour, startMinute, 0, 0);
+
+      const sessionEnd = new Date(sessionDate);
+      const [endHour, endMinute] = endTime.split(":").map(Number);
+      sessionEnd.setHours(endHour, endMinute, 0, 0);
+
+      const durationMs = sessionEnd.getTime() - sessionStart.getTime();
+      const durationMinutes = Math.round(durationMs / (1000 * 60));
+
+      let dynamicStatus = session.status;
+      if (session.status === "active") {
+        if (now < sessionStart) dynamicStatus = "upcoming";
+        else if (now >= sessionStart && now <= sessionEnd) dynamicStatus = "live";
+        else if (now > sessionEnd) dynamicStatus = "completed";
+      }
+
+      let finalImageUrl = session.imageUrl || session.thumbnail;
+      if (!finalImageUrl) finalImageUrl = "/images/live-class.jpg";
+
+      return {
+        ...sessionObj,
+        status: dynamicStatus,
+        duration: durationMinutes,
+        enrolledCount: session.enrolledStudents?.length || 0,
+        imageUrl: finalImageUrl,
+      };
+    });
+
+    res.status(200).json(transformedSessions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 
 export const getLiveSessionById = async (req, res) => {
   try {
