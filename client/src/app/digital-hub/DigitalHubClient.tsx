@@ -602,6 +602,7 @@ export default function DigitalHubClient({
   const API_BASE = getApiBase();
   const API_ORIGIN = API_BASE.replace(/\/api\/?$/i, "");
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
+  const [resolvedCourseIdLoaded, setResolvedCourseIdLoaded] = useState(false);
   const blockedCourseRedirectedRef = useRef(false);
   const selectChapterContentRef = useRef<
     (
@@ -1042,6 +1043,7 @@ export default function DigitalHubClient({
   const shouldFailSafeRestrictAccess = Boolean(
     !isDemo &&
       studentPurchasedCoursesLoaded &&
+      resolvedCourseIdLoaded &&
       (studentPurchasedCoursesLoadFailed || !activePurchasedCourseRecord)
   );
   const isCourseBatchPreviewOnly = courseBatchWindowState.isBatchPreviewOnly;
@@ -1999,6 +2001,7 @@ export default function DigitalHubClient({
     const resolveCourseId = async () => {
       if (!effectiveCourseSlugOrId) {
         setResolvedCourseId(null);
+        setResolvedCourseIdLoaded(true);
         return;
       }
 
@@ -2012,9 +2015,12 @@ export default function DigitalHubClient({
       } catch (error) {
         console.error("Error resolving course identifier:", error);
         setResolvedCourseId(null);
+      } finally {
+        setResolvedCourseIdLoaded(true);
       }
     };
 
+    setResolvedCourseIdLoaded(false);
     resolveCourseId();
   }, [API_BASE, effectiveCourseSlugOrId]);
 
@@ -2060,7 +2066,7 @@ export default function DigitalHubClient({
         (!isDemo && !authResolved) ||
         (!isDemo &&
           studentId &&
-          (!studentCourseBookingsLoaded || !studentPurchasedCoursesLoaded))
+          (!studentCourseBookingsLoaded || !studentPurchasedCoursesLoaded || !resolvedCourseIdLoaded))
       ) {
         if (!chapterCourseIdentifier || (!isDemo && !authResolved)) {
           setLoading(false);
