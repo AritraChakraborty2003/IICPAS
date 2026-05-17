@@ -1,18 +1,8 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { X, PlayCircle, ExternalLink } from "lucide-react";
 
-const EVENTS = [
-  { date: "2025-08-01", time: "7a", title: "GST Invoice preparation" },
-  { date: "2025-08-01", time: "7p", title: "Payroll in TallyPrime" },
-  { date: "2025-08-03", time: "7a", title: "GST Invoice preparation" },
-  { date: "2025-08-04", time: "7a", title: "Debit Note & Credit Note" },
-  { date: "2025-08-05", time: "7a", title: "E-Way Bill", isNew: true },
-  { date: "2025-08-07", time: "7a", title: "Concept of RCM, TDS" },
-  { date: "2025-08-13", time: "7a", title: "GST Return Filing", isNew: true },
-  { date: "2025-08-14", time: "7a", title: "GST Return Filing", isNew: true },
-  { date: "2025-08-21", time: "7p", title: "TDS on Salary", isNew: true },
-  { date: "2025-08-28", time: "7a", title: "Basic Accounting", isNew: true },
-  // Add more events as needed
-];
+const API = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8080/api";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -56,23 +46,95 @@ function getMonthMatrix(year, month) {
 }
 
 export default function CustomCalendar() {
-  const [current, setCurrent] = useState(new Date(2025, 7, 1)); // August 2025
+  const [current, setCurrent] = useState(new Date()); 
   const [today] = useState(new Date());
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Modal State
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [modalEvents, setModalEvents] = useState([]);
 
   const year = current.getFullYear();
   const month = current.getMonth();
   const matrix = getMonthMatrix(year, month);
 
   useEffect(() => {
-    // Notification if today has an event
-    const todayStr = today.toISOString().slice(0, 10);
-    const hasEvent = EVENTS.some((e) => e.date === todayStr);
-    if (hasEvent) {
-      setTimeout(() => {
-        alert("You have an event today!");
-      }, 500);
+    fetchCalendarData();
+  }, []);
+
+  const fetchCalendarData = async () => {
+    setLoading(true);
+    try {
+      // Fetch Syllabus (contains chapters and topics with start_time)
+      const syllabusRes = await axios.get(`${API}/v1/students/syllabus`, { withCredentials: true });
+      
+      // Fetch User Bookings to get scheduled live sessions
+      const profileRes = await axios.get(`${API}/v1/individual/profile-valid`, { withCredentials: true });
+      const email = profileRes.data?.user?.email;
+      
+      let liveBookings = [];
+      if (email) {
+        const bookingsRes = await axios.get(`${API}/bookings?by=${email}`, { withCredentials: true });
+        liveBookings = bookingsRes.data?.filter(b => b.status === "booked" && (b.category === "live" || b.category === "onsite")) || [];
+      }
+
+      const newEvents = [];
+
+      // Process Syllabus for Chapter/Topic dates
+      if (syllabusRes.data?.success && syllabusRes.data.courses) {
+        syllabusRes.data.courses.forEach(course => {
+          if (course.chapters) {
+            course.chapters.forEach(chapter => {
+              if (chapter.start_time) {
+                newEvents.push({
+                  date: new Date(chapter.start_time).toISOString().slice(0, 10),
+                  time: new Date(chapter.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                  title: `${chapter.title}`,
+                  type: 'chapter',
+                  isNew: true,
+                  link: `/digital-hub?courseId=${course.courseId}` // Navigate to digital hub
+                });
+              }
+              
+              if (chapter.topics) {
+                chapter.topics.forEach(topic => {
+                  if (topic.start_time) {
+                    newEvents.push({
+                      date: new Date(topic.start_time).toISOString().slice(0, 10),
+                      time: new Date(topic.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      title: `${topic.title}`,
+                      type: 'topic',
+                      link: `/digital-hub?courseId=${course.courseId}` 
+                    });
+                  }
+                });
+              }
+            });
+          }
+        });
+      }
+
+      // Process Live Sessions from Bookings
+      liveBookings.forEach(b => {
+        if (b.start) {
+          newEvents.push({
+            date: new Date(b.start).toISOString().slice(0, 10),
+            time: new Date(b.start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            title: b.title,
+            type: 'live',
+            link: b.link || null, // Join link
+          });
+        }
+      });
+
+      setEvents(newEvents);
+    } catch (error) {
+      console.error("Error fetching calendar data:", error);
+    } finally {
+      setLoading(false);
     }
-  }, [today]);
+  };
 
   const handlePrev = () => {
     setCurrent(new Date(year, month - 1, 1));
@@ -81,8 +143,18 @@ export default function CustomCalendar() {
     setCurrent(new Date(year, month + 1, 1));
   };
 
+  const openModal = (dateStr, dayEvents) => {
+    setSelectedDate(dateStr);
+    setModalEvents(dayEvents);
+  };
+
+  const closeModal = () => {
+    setSelectedDate(null);
+    setModalEvents([]);
+  };
+
   return (
-    <div className="custom-calendar-container">
+    <div className="custom-calendar-container relative">
       <div className="calendar-header">
         <button onClick={handlePrev} className="nav-btn">
           &#8592;
@@ -94,40 +166,118 @@ export default function CustomCalendar() {
           &#8594;
         </button>
       </div>
-      <div className="calendar-grid">
-        {WEEKDAYS.map((d) => (
-          <div key={d} className="weekday">
-            {d}
-          </div>
-        ))}
-        {matrix.flat().map((cell, idx) => {
-          const dateStr = cell.date.toISOString().slice(0, 10);
-          const events = EVENTS.filter((e) => e.date === dateStr);
-          const isToday =
-            cell.isCurrentMonth &&
-            cell.date.toDateString() === today.toDateString();
-          return (
-            <div
-              key={idx}
-              className={`calendar-cell${
-                cell.isCurrentMonth ? "" : " not-current"
-              }${isToday ? " today" : ""}`}
-            >
-              <div className="cell-date">{cell.day}</div>
-              <div className="cell-events-text">
-                {events.map((ev, i) => (
-                  <div key={i} className="event-text-line">
-                    <span className="event-dot">●</span>
-                    <span className="event-time">{ev.time}</span>
-                    {ev.isNew && <span className="event-new-text">New</span>}
-                    <span className="event-title-text">{ev.title}</span>
-                  </div>
-                ))}
-              </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64 text-blue-600">Loading schedule...</div>
+      ) : (
+        <div className="calendar-grid">
+          {WEEKDAYS.map((d) => (
+            <div key={d} className="weekday">
+              {d}
             </div>
-          );
-        })}
-      </div>
+          ))}
+          {matrix.flat().map((cell, idx) => {
+            // Local offset handling to avoid off-by-one errors with ISOString
+            const cellDateLocal = new Date(cell.date.getTime() - (cell.date.getTimezoneOffset() * 60000));
+            const dateStr = cellDateLocal.toISOString().slice(0, 10);
+            
+            const dayEvents = events.filter((e) => e.date === dateStr);
+            const isToday =
+              cell.isCurrentMonth &&
+              cell.date.toDateString() === today.toDateString();
+            
+            return (
+              <div
+                key={idx}
+                onClick={() => openModal(dateStr, dayEvents)}
+                className={`calendar-cell cursor-pointer transition-colors hover:bg-blue-50 ${
+                  cell.isCurrentMonth ? "" : " not-current"
+                }${isToday ? " today" : ""}`}
+              >
+                <div className="flex justify-between items-start">
+                    <div className="cell-date">{cell.day}</div>
+                    {dayEvents.length > 0 && <div className="text-[10px] font-bold text-white bg-blue-500 rounded-full px-1.5 py-0.5">{dayEvents.length}</div>}
+                </div>
+                
+                <div className="cell-events-text overflow-hidden h-full">
+                  {dayEvents.slice(0, 3).map((ev, i) => (
+                    <div key={i} className="event-text-line truncate">
+                      <span className={`event-dot ${ev.type === 'live' ? 'text-green-500' : 'text-blue-500'}`}>●</span>
+                      <span className="event-time">{ev.time}</span>
+                      <span className="event-title-text truncate">{ev.title}</span>
+                    </div>
+                  ))}
+                  {dayEvents.length > 3 && (
+                    <div className="text-xs text-gray-400 mt-1 pl-1">+{dayEvents.length - 3} more...</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modal Overlay */}
+      {selectedDate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={closeModal}></div>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-fade-in">
+            <div className="bg-blue-600 p-5 flex justify-between items-center text-white">
+              <div>
+                <h3 className="text-xl font-bold">Schedule</h3>
+                <p className="text-blue-100 text-sm mt-1">
+                  {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </p>
+              </div>
+              <button onClick={closeModal} className="text-white/80 hover:text-white transition-colors bg-white/10 p-2 rounded-full">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
+              {modalEvents.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No schedule for this day.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {modalEvents.map((ev, i) => (
+                    <div key={i} className="border border-gray-100 bg-gray-50 rounded-xl p-4 flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-bold text-gray-700">{ev.time}</span>
+                          <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
+                            ev.type === 'live' ? 'bg-green-100 text-green-700' : 
+                            ev.type === 'chapter' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {ev.type}
+                          </span>
+                        </div>
+                        <h4 className="font-semibold text-gray-900">{ev.title}</h4>
+                      </div>
+                      
+                      {ev.link ? (
+                        ev.type === 'live' ? (
+                            <a href={ev.link} target="_blank" rel="noopener noreferrer" className="shrink-0 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                <PlayCircle size={16} /> Join Session
+                            </a>
+                        ) : (
+                            <a href={ev.link} className="shrink-0 flex items-center justify-center gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+                                <ExternalLink size={16} /> View Content
+                            </a>
+                        )
+                      ) : (
+                          <span className="text-xs text-gray-400 italic">No link available</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         .custom-calendar-container {
           max-width: 950px;
@@ -166,7 +316,7 @@ export default function CustomCalendar() {
         .calendar-grid {
           display: grid;
           grid-template-columns: repeat(7, 1fr);
-          gap: 4px;
+          gap: 6px;
         }
         .weekday {
           font-weight: 700;
@@ -178,11 +328,11 @@ export default function CustomCalendar() {
           font-size: 1.1rem;
         }
         .calendar-cell {
-          min-height: 90px;
+          min-height: 100px;
           background: #f8fafc;
           border-radius: 10px;
           box-shadow: 0 1px 4px #2563eb11;
-          padding: 7px 6px 4px 6px;
+          padding: 8px;
           position: relative;
           font-size: 1.05rem;
           border: 1px solid #e5e7eb;
@@ -201,43 +351,49 @@ export default function CustomCalendar() {
         .cell-date {
           font-weight: 700;
           color: #1e293b;
-          margin-bottom: 2px;
+          margin-bottom: 4px;
         }
         .cell-events-text {
           margin-top: 2px;
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
         }
         .event-text-line {
           display: flex;
           align-items: center;
-          font-size: 0.98em;
+          font-size: 0.85em;
           font-weight: 500;
-          margin-bottom: 2px;
-          gap: 4px;
         }
         .event-dot {
-          color: #2563eb;
           font-size: 1.1em;
-          margin-right: 2px;
+          margin-right: 4px;
         }
         .event-time {
           font-weight: 700;
-          color: #2563eb;
-          margin-right: 2px;
-        }
-        .event-new-text {
-          background: #ef4444;
-          color: #fff;
-          font-size: 0.8em;
-          font-weight: 700;
-          border-radius: 4px;
-          padding: 1px 6px;
+          color: #475569;
           margin-right: 4px;
-          margin-left: 2px;
-          letter-spacing: 0.5px;
         }
         .event-title-text {
           color: #1e293b;
-          margin-left: 2px;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
         }
         @media (max-width: 900px) {
           .custom-calendar-container {
@@ -247,8 +403,9 @@ export default function CustomCalendar() {
             font-size: 1.2rem;
           }
           .calendar-cell {
-            min-height: 60px;
+            min-height: 80px;
             font-size: 0.95rem;
+            padding: 4px;
           }
         }
         @media (max-width: 600px) {
@@ -259,8 +416,11 @@ export default function CustomCalendar() {
             font-size: 1rem;
           }
           .calendar-cell {
-            min-height: 38px;
+            min-height: 60px;
             font-size: 0.85rem;
+          }
+          .event-text-line {
+             font-size: 0.75em;
           }
         }
       `}</style>
