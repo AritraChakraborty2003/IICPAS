@@ -153,7 +153,6 @@ export default function CourseTab() {
     };
   }, []);
 
-  // Fetch student courses from database
   const fetchStudentCourses = async () => {
     setLoading(true);
     try {
@@ -161,77 +160,73 @@ export default function CourseTab() {
         withCredentials: true,
       });
 
+      let studentIdVal = null;
+      let purchasedCoursesData = [];
+
       if (response.data && response.data.student) {
         const student = response.data.student;
+        studentIdVal = student._id;
         setStudentId(student._id);
 
         // Fetch purchased courses
-        let purchasedCoursesData = [];
         if (student.course && student.course.length > 0) {
-          const purchasedCoursesResponse = await axios.get(
-            `${API}/api/courses/student-courses/${student._id}`,
-            {
-              withCredentials: true,
+          try {
+            const purchasedCoursesResponse = await axios.get(
+              `${API}/api/courses/student-courses/${student._id}`,
+              {
+                withCredentials: true,
+              }
+            );
+
+            const normalizedPurchasedCourses = extractCourseList(
+              purchasedCoursesResponse.data
+            );
+
+            if (normalizedPurchasedCourses.length > 0) {
+              purchasedCoursesData = normalizedPurchasedCourses;
             }
-          );
-
-          const normalizedPurchasedCourses = extractCourseList(
-            purchasedCoursesResponse.data
-          );
-
-          if (normalizedPurchasedCourses.length > 0) {
-            purchasedCoursesData = normalizedPurchasedCourses;
-            setPurchasedCourses(purchasedCoursesData);
+          } catch (courseErr) {
+            console.error("Error fetching student purchased courses:", courseErr);
           }
         }
+      }
 
-        // Fetch all available courses
-        const allCoursesResponse = await axios.get(`${API}/api/courses/all`);
-        const allCoursesData = extractCourseList(allCoursesResponse.data);
+      // Immediately set student purchased courses and stop loading spinner!
+      setPurchasedCourses(purchasedCoursesData);
+      setCourses(purchasedCoursesData);
 
-        if (allCoursesData.length > 0) {
-          setAvailableCourses(allCoursesData);
-
-          setPurchasedCourses(purchasedCoursesData);
-          setCourses(purchasedCoursesData);
-
-          if (purchasedCoursesData.length > 0) {
-            setSelectedCourse(purchasedCoursesData[0]);
-            setLastAccessedCourse(purchasedCoursesData[0]);
-          } else {
-            setCourses([]);
-            setSelectedCourse(null);
-            setLastAccessedCourse(null);
-          }
-        } else {
-          // If no courses at all, just set purchased courses
-          setAvailableCourses([]);
-          setCourses(purchasedCoursesData);
-          if (purchasedCoursesData.length > 0) {
-            setSelectedCourse(purchasedCoursesData[0]);
-            setLastAccessedCourse(purchasedCoursesData[0]);
-          } else {
-            setSelectedCourse(null);
-            setLastAccessedCourse(null);
-          }
-        }
+      if (purchasedCoursesData.length > 0) {
+        setSelectedCourse(purchasedCoursesData[0]);
+        setLastAccessedCourse(purchasedCoursesData[0]);
       } else {
-        setCourses([]);
-        setPurchasedCourses([]);
-        setAvailableCourses([]);
         setSelectedCourse(null);
         setLastAccessedCourse(null);
       }
+
+      setLoading(false); // UI is now extremely responsive and interactive!
+
+      // Now, fetch all available courses in the background without blocking the UI
+      try {
+        const allCoursesResponse = await axios.get(`${API}/api/courses/all`);
+        const allCoursesData = extractCourseList(allCoursesResponse.data);
+        if (allCoursesData.length > 0) {
+          setAvailableCourses(allCoursesData);
+        } else {
+          setAvailableCourses([]);
+        }
+      } catch (allCoursesErr) {
+        console.error("Error fetching all available courses in background:", allCoursesErr);
+      }
+
     } catch (error) {
       console.error("Error fetching courses:", error);
+      setLoading(false);
       toast.error(
         error?.response?.data?.error ||
           error?.response?.data?.message ||
           error.message ||
           "Failed to fetch courses."
       );
-    } finally {
-      setLoading(false);
     }
   };
 
