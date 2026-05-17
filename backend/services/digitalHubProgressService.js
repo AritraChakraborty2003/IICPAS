@@ -244,17 +244,45 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
     return acc;
   }, new Map());
 
+  const rawLocks = Array.isArray(student?.batchId?.courseLocks) ? student.batchId.courseLocks : [];
+  const courseLock = rawLocks.find(lock => {
+    const lockCourseId = toIdString(lock.courseId || lock.course || lock._id);
+    return lockCourseId === toIdString(courseId);
+  });
+
   const chapterSummaries = chapters.map((chapter, index) => {
     const chapterId = toIdString(chapter._id);
+    let unlocked = getChapterUnlockedForBatchPhase({
+      batchPhase,
+      chapterIndex: index,
+      forceUnlockAll,
+    });
+
+    if (!forceUnlockAll && courseLock) {
+      const chapterLock = Array.isArray(courseLock.chapters)
+        ? courseLock.chapters.find(c => toIdString(c.chapterId || c._id) === chapterId)
+        : null;
+
+      if (chapterLock && (chapterLock.start_time || chapterLock.end_time)) {
+        const cStartsAt = chapterLock.start_time ? new Date(chapterLock.start_time) : null;
+        const cEndsAt = chapterLock.end_time ? new Date(chapterLock.end_time) : null;
+        const now = Date.now();
+
+        if (cStartsAt && cEndsAt && !isNaN(cStartsAt.getTime()) && !isNaN(cEndsAt.getTime())) {
+          unlocked = now >= cStartsAt.getTime() && now <= cEndsAt.getTime();
+        } else if (cStartsAt && !isNaN(cStartsAt.getTime())) {
+          unlocked = now >= cStartsAt.getTime();
+        } else if (cEndsAt && !isNaN(cEndsAt.getTime())) {
+          unlocked = now <= cEndsAt.getTime();
+        }
+      }
+    }
+
     const chapterSummary = buildChapterSummary({
       chapter,
       assignments: assignmentsByChapter.get(chapterId) || [],
       progressRecord: progressByChapter.get(chapterId),
-      unlocked: getChapterUnlockedForBatchPhase({
-        batchPhase,
-        chapterIndex: index,
-        forceUnlockAll,
-      }),
+      unlocked,
     });
 
     return forceUnlockAll

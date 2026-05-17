@@ -749,10 +749,10 @@ export default function CourseTab() {
                 
                 const chapterIsLocked = selectedCourseAccessWindow.isBatchPostEndLocked
                   ? true
-                  : selectedCourseAccessWindow.isPreviewOnly
-                  ? index > 0
                   : batchChapterState.hasBatchWindow
                   ? batchChapterState.isLocked
+                  : selectedCourseAccessWindow.isPreviewOnly
+                  ? index > 0
                   : Boolean(chapter?.isLocked);
                 const chapterKey = `${selectedCourse._id}-${chapter._id || index}`;
 
@@ -1435,8 +1435,11 @@ export default function CourseTab() {
                           {courseChapters[course._id] &&
                           courseChapters[course._id].length > 0 ? (
                             courseChapters[course._id].map((chapter, index) => {
+                              const batchChapterState = getBatchChapterState(courseAccessWindow.access, chapter._id || index);
                               const chapterIsLocked = courseAccessWindow.isBatchPostEndLocked
                                 ? true
+                                : batchChapterState.hasBatchWindow
+                                ? batchChapterState.isLocked
                                 : courseAccessWindow.isPreviewOnly
                                 ? index > 0
                                 : Boolean(chapter?.isLocked);
