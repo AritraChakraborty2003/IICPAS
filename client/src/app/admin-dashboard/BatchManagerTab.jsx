@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getApiBase } from "@/lib/apiBase";
+import { NestedScheduleManager } from "./NestedScheduleManager";
+import { CalendarSidePanel } from "./BatchManagerTabCalendar";
 
 const API_BASE = getApiBase();
 
@@ -89,6 +91,73 @@ export default function BatchManagerTab() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBatch, setEditingBatch] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [selectedScheduleItem, setSelectedScheduleItem] = useState(null);
+  const [expandedItems, setExpandedItems] = useState({});
+  const [courseHierarchy, setCourseHierarchy] = useState({});
+
+  const fetchCourseHierarchy = async (courseId) => {
+    if (courseHierarchy[courseId]) return;
+    try {
+      const response = await axios.get(`${API_BASE}/chapters/course/${courseId}`);
+      if (response.data.success) {
+        setCourseHierarchy((prev) => ({ ...prev, [courseId]: response.data.chapters }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch course hierarchy", error);
+    }
+  };
+
+  const toggleExpanded = (id) => {
+    setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleScheduleSave = (id, type, startTime, endTime, parentIds) => {
+    setForm((prev) => {
+      const newLocks = [...prev.courseLocks];
+      
+      if (type === 'course') {
+        const courseIndex = newLocks.findIndex(l => String(l.courseId) === String(id));
+        if (courseIndex >= 0) {
+          newLocks[courseIndex] = { ...newLocks[courseIndex], start_time: startTime, end_time: endTime };
+        }
+      } else if (type === 'chapter') {
+        const courseIndex = newLocks.findIndex(l => String(l.courseId) === String(parentIds.courseId));
+        if (courseIndex >= 0) {
+          const courseLock = { ...newLocks[courseIndex] };
+          courseLock.chapters = [...(courseLock.chapters || [])];
+          const chapterIndex = courseLock.chapters.findIndex(c => String(c.chapterId) === String(id));
+          if (chapterIndex >= 0) {
+            courseLock.chapters[chapterIndex] = { ...courseLock.chapters[chapterIndex], start_time: startTime, end_time: endTime };
+          } else {
+            courseLock.chapters.push({ chapterId: id, start_time: startTime, end_time: endTime, topics: [] });
+          }
+          newLocks[courseIndex] = courseLock;
+        }
+      } else if (type === 'topic') {
+        const courseIndex = newLocks.findIndex(l => String(l.courseId) === String(parentIds.courseId));
+        if (courseIndex >= 0) {
+          const courseLock = { ...newLocks[courseIndex] };
+          courseLock.chapters = [...(courseLock.chapters || [])];
+          let chapterIndex = courseLock.chapters.findIndex(c => String(c.chapterId) === String(parentIds.chapterId));
+          if (chapterIndex < 0) {
+            courseLock.chapters.push({ chapterId: parentIds.chapterId, topics: [] });
+            chapterIndex = courseLock.chapters.length - 1;
+          }
+          const chapterLock = { ...courseLock.chapters[chapterIndex] };
+          chapterLock.topics = [...(chapterLock.topics || [])];
+          const topicIndex = chapterLock.topics.findIndex(t => String(t.topicId) === String(id));
+          if (topicIndex >= 0) {
+            chapterLock.topics[topicIndex] = { ...chapterLock.topics[topicIndex], start_time: startTime, end_time: endTime };
+          } else {
+            chapterLock.topics.push({ topicId: id, start_time: startTime, end_time: endTime });
+          }
+          courseLock.chapters[chapterIndex] = chapterLock;
+          newLocks[courseIndex] = courseLock;
+        }
+      }
+      return { ...prev, courseLocks: newLocks };
+    });
+  };
 
   const fetchBatches = async () => {
     const token = localStorage.getItem("adminToken");
@@ -140,9 +209,12 @@ export default function BatchManagerTab() {
     setModalOpen(false);
     setEditingBatch(null);
     setForm(emptyForm);
+    setSelectedScheduleItem(null);
+    setExpandedItems({});
   };
 
   const toggleCourseSelection = (courseId) => {
+    fetchCourseHierarchy(courseId);
     setForm((prev) => {
       const exists = prev.courseLocks.some(
         (lock) => String(lock.courseId) === String(courseId)
