@@ -258,23 +258,26 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
       forceUnlockAll,
     });
 
-    if (!forceUnlockAll && courseLock) {
-      const chapterLock = Array.isArray(courseLock.chapters)
-        ? courseLock.chapters.find(c => toIdString(c.chapterId || c._id) === chapterId)
-        : null;
+    // Resolve the chapter-level batch lock entry (hoisted so it's accessible
+    // for both chapter unlock logic and per-topic window computation below).
+    let chapterLock = null;
+    if (courseLock && Array.isArray(courseLock.chapters)) {
+      chapterLock = courseLock.chapters.find(
+        (c) => toIdString(c.chapterId || c._id) === chapterId
+      ) || null;
+    }
 
-      if (chapterLock && (chapterLock.start_time || chapterLock.end_time)) {
-        const cStartsAt = chapterLock.start_time ? new Date(chapterLock.start_time) : null;
-        const cEndsAt = chapterLock.end_time ? new Date(chapterLock.end_time) : null;
-        const now = Date.now();
+    if (!forceUnlockAll && chapterLock && (chapterLock.start_time || chapterLock.end_time)) {
+      const cStartsAt = chapterLock.start_time ? new Date(chapterLock.start_time) : null;
+      const cEndsAt = chapterLock.end_time ? new Date(chapterLock.end_time) : null;
+      const now = Date.now();
 
-        if (cStartsAt && cEndsAt && !isNaN(cStartsAt.getTime()) && !isNaN(cEndsAt.getTime())) {
-          unlocked = now >= cStartsAt.getTime() && now <= cEndsAt.getTime();
-        } else if (cStartsAt && !isNaN(cStartsAt.getTime())) {
-          unlocked = now >= cStartsAt.getTime();
-        } else if (cEndsAt && !isNaN(cEndsAt.getTime())) {
-          unlocked = now <= cEndsAt.getTime();
-        }
+      if (cStartsAt && cEndsAt && !isNaN(cStartsAt.getTime()) && !isNaN(cEndsAt.getTime())) {
+        unlocked = now >= cStartsAt.getTime() && now <= cEndsAt.getTime();
+      } else if (cStartsAt && !isNaN(cStartsAt.getTime())) {
+        unlocked = now >= cStartsAt.getTime();
+      } else if (cEndsAt && !isNaN(cEndsAt.getTime())) {
+        unlocked = now <= cEndsAt.getTime();
       }
     }
 
