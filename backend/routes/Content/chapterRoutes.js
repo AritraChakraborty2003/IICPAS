@@ -18,12 +18,18 @@ router.get("/course/:courseId", async (req, res) => {
     if (isValidObjectId) {
       course = await Course.findById(courseId).populate({
         path: "chapters",
-        populate: POPULATE_TOPICS_WITH_LESSONS,
+        populate: {
+          path: "topics",
+          select: "_id title"
+        },
       });
     } else {
       course = await Course.findOne({ slug: courseId }).populate({
         path: "chapters",
-        populate: POPULATE_TOPICS_WITH_LESSONS,
+        populate: {
+          path: "topics",
+          select: "_id title"
+        },
       });
     }
 
