@@ -604,6 +604,7 @@ export default function DigitalHubClient({
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
   const [resolvedCourseIdLoaded, setResolvedCourseIdLoaded] = useState(false);
   const blockedCourseRedirectedRef = useRef(false);
+  const shouldFailSafeRestrictAccessRef = useRef(false);
   const selectChapterContentRef = useRef<
     (
       chapter: ChapterData,
@@ -1046,6 +1047,9 @@ export default function DigitalHubClient({
       resolvedCourseIdLoaded &&
       (studentPurchasedCoursesLoadFailed || !activePurchasedCourseRecord)
   );
+  // Keep a ref in sync so fetchCourseData can read the latest value without
+  // being in the effect dependency array (prevents re-running on every load tick)
+  shouldFailSafeRestrictAccessRef.current = shouldFailSafeRestrictAccess;
   const isCourseBatchPreviewOnly = courseBatchWindowState.isBatchPreviewOnly;
   const isCourseBatchExpired = courseBatchWindowState.isBatchPostEndLocked;
   const hasCourseBatchWindow = courseBatchWindowState.hasBatchWindow;
@@ -2134,7 +2138,7 @@ export default function DigitalHubClient({
           storedSelection?.chapterId || null
         );
         const fallbackChapter = getPreferredUnlockedChapter(mergedChapters);
-        const chapterToOpen = shouldFailSafeRestrictAccess
+        const chapterToOpen = shouldFailSafeRestrictAccessRef.current
           ? fallbackChapter
           : requestedChapter || storedChapter || fallbackChapter;
 
@@ -2175,9 +2179,12 @@ export default function DigitalHubClient({
     studentId,
     studentCourseBookingsLoaded,
     studentPurchasedCoursesLoaded,
+    resolvedCourseIdLoaded,
     applyProgressSummary,
     loadLastSelection,
-    shouldFailSafeRestrictAccess,
+    // NOTE: shouldFailSafeRestrictAccess is intentionally excluded from deps.
+    // We read it via shouldFailSafeRestrictAccessRef.current to avoid re-running
+    // the effect (and resetting the selected chapter) every time student data loads.
   ]);
 
   useEffect(() => {
