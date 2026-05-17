@@ -1295,11 +1295,25 @@ export default function DigitalHubClient({
       if (!activeTopic.content || activeTopic.content === "") {
         try {
           setLoading(true);
-          const topicResponse = await axios.get(`${API_BASE}/chapters/topics/${topic._id}`);
-          if (topicResponse.data && topicResponse.data.topic) {
+          // Try fetching from the main /api/topics/:id endpoint first
+          const topicResponse = await axios.get(`${API_BASE}/topics/${topic._id}`);
+          if (topicResponse.data && topicResponse.data.content) {
+            activeTopic = topicResponse.data;
+          } else if (topicResponse.data && topicResponse.data.topic && topicResponse.data.topic.content) {
             activeTopic = topicResponse.data.topic;
+          } else {
+            // Fallback to /api/chapters/topics/:id
+            const chapTopicResponse = await axios.get(`${API_BASE}/chapters/topics/${topic._id}`);
+            if (chapTopicResponse.data && chapTopicResponse.data.topic) {
+              activeTopic = chapTopicResponse.data.topic;
+            } else if (chapTopicResponse.data && chapTopicResponse.data.content) {
+              activeTopic = chapTopicResponse.data;
+            }
+          }
+
+          if (activeTopic && activeTopic.content) {
             // Cache the fetched topic details so we don't fetch it again on clicking back
-            setTopics(prev => prev.map(t => t._id === topic._id ? { ...t, ...topicResponse.data.topic } : t));
+            setTopics(prev => prev.map(t => t._id === topic._id ? { ...t, ...activeTopic } : t));
           }
         } catch (err) {
           console.error("Error fetching topic content:", err);
