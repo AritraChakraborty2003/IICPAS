@@ -1274,7 +1274,7 @@ export default function DigitalHubClient({
 
   // Handle topic selection
   const handleTopicSelect = useCallback(
-    (topic: TopicData) => {
+    async (topic: TopicData) => {
       const topicIndex = topics.findIndex(
         (entry) => String(entry?._id) === String(topic?._id)
       );
@@ -1283,7 +1283,6 @@ export default function DigitalHubClient({
       }
 
       console.log("Topic selected:", topic);
-      setSelectedTopic(topic);
       setIsIntroVideoModalOpen(false);
       setSelectedCaseStudy(null);
       setSelectedAssignment(null);
@@ -1292,10 +1291,29 @@ export default function DigitalHubClient({
       }
       scrollContentToTop();
 
-      // Decode and set topic content
-      if (topic.content) {
+      let activeTopic = topic;
+      if (!activeTopic.content || activeTopic.content === "") {
         try {
-          const decodedContent = atob(topic.content);
+          setLoading(true);
+          const topicResponse = await axios.get(`${API_BASE}/chapters/topics/${topic._id}`);
+          if (topicResponse.data && topicResponse.data.topic) {
+            activeTopic = topicResponse.data.topic;
+            // Cache the fetched topic details so we don't fetch it again on clicking back
+            setTopics(prev => prev.map(t => t._id === topic._id ? { ...t, ...topicResponse.data.topic } : t));
+          }
+        } catch (err) {
+          console.error("Error fetching topic content:", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      setSelectedTopic(activeTopic);
+
+      // Decode and set topic content
+      if (activeTopic.content) {
+        try {
+          const decodedContent = atob(activeTopic.content);
 
           if (isDemo) {
             // For demo mode, split content into pages and limit to 1 page
@@ -1328,7 +1346,7 @@ export default function DigitalHubClient({
           console.error("Error decoding topic content:", error);
           setTopicContent(
             normalizeDigitalHubContentHtml(
-              topic.content || "Content not available",
+              activeTopic.content || "Content not available",
               DIGITAL_HUB_FONT_STACK
             )
           );
@@ -1336,19 +1354,27 @@ export default function DigitalHubClient({
           setCurrentPage(1);
           setShowDemoLimit(false);
         }
+      } else {
+        setTopicContent("Content not available");
+        setTotalPages(1);
+        setCurrentPage(1);
+        setShowDemoLimit(false);
       }
 
       // Load quiz for the selected topic
-      console.log("Calling loadQuizForTopic with topic ID:", topic._id);
-      loadQuizForTopic(topic._id);
+      console.log("Calling loadQuizForTopic with topic ID:", activeTopic._id);
+      loadQuizForTopic(activeTopic._id);
     },
     [
+      topics,
+      isTopicLocked,
       isDemo,
       loadQuizForTopic,
       scrollContentToTop,
       selectedChapter?._id,
       splitContentIntoPages,
       storeLastSelection,
+      API_BASE,
     ]
   );
 
@@ -1628,68 +1654,8 @@ export default function DigitalHubClient({
         const firstTopic = shouldLimitToFirstTopic
           ? availableTopics[0] || null
           : storedTopic || availableTopics[0] || null;
-        setSelectedTopic(firstTopic);
-        if (firstTopic?._id) {
-          storeLastSelection(chapter._id, firstTopic._id);
-        }
-        scrollContentToTop();
-
-        if (firstTopic?.content) {
-          try {
-            const decodedContent = atob(firstTopic.content);
-            if (isDemo) {
-              const { pages, totalPages } = splitContentIntoPages(
-                decodedContent,
-                1
-              );
-              setTotalPages(totalPages);
-              setCurrentPage(1);
-              setTopicContent(
-                normalizeDigitalHubContentHtml(
-                  pages[0] || "Content not available",
-                  DIGITAL_HUB_FONT_STACK
-                )
-              );
-              setShowDemoLimit(totalPages > 0);
-            } else {
-              setTopicContent(
-                normalizeDigitalHubContentHtml(
-                  decodedContent,
-                  DIGITAL_HUB_FONT_STACK
-                )
-              );
-              setTotalPages(1);
-              setCurrentPage(1);
-              setShowDemoLimit(false);
-            }
-          } catch (error) {
-            console.error("Error decoding topic content:", error);
-            setTopicContent(
-              normalizeDigitalHubContentHtml(
-                firstTopic.content || "Content not available",
-                DIGITAL_HUB_FONT_STACK
-              )
-            );
-            setTotalPages(1);
-            setCurrentPage(1);
-            setShowDemoLimit(false);
-          }
-        } else {
-          setTopicContent("Content not available");
-          setTotalPages(1);
-          setCurrentPage(1);
-          setShowDemoLimit(false);
-        }
-
-        if (firstTopic?._id) {
-          loadQuizForTopic(firstTopic._id);
-        } else {
-          setQuizData(null);
-          setQuizLoading(false);
-          setSelectedAnswers({});
-          setQuizSubmitted(false);
-          setShowQuizResults(false);
-          setQuizRewardSummary(null);
+        if (firstTopic) {
+          handleTopicSelect(firstTopic);
         }
       } else {
         setIsIntroVideoModalOpen(false);
