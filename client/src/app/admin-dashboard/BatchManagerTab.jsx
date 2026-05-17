@@ -552,7 +552,7 @@ export default function BatchManagerTab() {
             </div>
 
             <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col">
-              <div className="grid min-h-0 flex-1 gap-6 overflow-y-auto px-6 py-6 xl:grid-cols-[0.95fr_1.35fr]">
+              <div className={`grid min-h-0 flex-1 gap-6 overflow-y-auto px-6 py-6 ${selectedScheduleItem ? "xl:grid-cols-[0.8fr_1fr_auto]" : "xl:grid-cols-[0.95fr_1.35fr]"}`}>
                 <div className="space-y-6">
                   <div className="rounded-3xl border border-gray-100 bg-gray-50 p-5">
                     <div className="grid gap-4 md:grid-cols-2">
@@ -687,8 +687,8 @@ export default function BatchManagerTab() {
                         Course Lock Schedule
                       </h4>
                       <p className="mt-1 text-sm text-gray-600">
-                        Set the start and end window for each selected course. The lock
-                        activates after the end time passes.
+                        Set the start and end window for each selected course, chapter, and topic.
+                        The lock activates after the end time passes.
                       </p>
                     </div>
                     <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
@@ -697,94 +697,32 @@ export default function BatchManagerTab() {
                     </span>
                   </div>
 
-                  <div className="mt-4 space-y-4">
-                    {form.courseLocks.length === 0 ? (
-                      <div className="rounded-2xl border border-dashed border-gray-200 px-4 py-10 text-center text-sm text-gray-500">
-                        Select one or more courses on the left to configure lock windows.
-                      </div>
-                    ) : (
-                      form.courseLocks.map((lock) => {
-                        const course = sortedCourses.find(
-                          (item) => getCourseId(item) === String(lock.courseId)
-                        );
-
-                        return (
-                          <div
-                            key={lock.courseId}
-                            className="rounded-3xl border border-gray-200 bg-gray-50 p-4"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div>
-                                <h5 className="text-sm font-semibold text-gray-900">
-                                  {getCourseTitle(course) || lock.courseId}
-                                </h5>
-                                <p className="mt-1 text-xs text-gray-500">
-                                  Course ID: {lock.courseId}
-                                </p>
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={() => removeCourseLock(lock.courseId)}
-                                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white text-gray-500 shadow-sm transition hover:bg-red-50 hover:text-red-600"
-                                title="Remove course"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-
-                            <div className="mt-4 grid gap-4 md:grid-cols-2">
-                              <div>
-                                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                                  Start Time
-                                </label>
-                                <input
-                                  type="datetime-local"
-                                  value={lock.start_time}
-                                  onChange={(event) =>
-                                    updateCourseLock(
-                                      lock.courseId,
-                                      "start_time",
-                                      event.target.value
-                                    )
-                                  }
-                                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-600">
-                                  End Time
-                                </label>
-                                <input
-                                  type="datetime-local"
-                                  value={lock.end_time}
-                                  onChange={(event) =>
-                                    updateCourseLock(
-                                      lock.courseId,
-                                      "end_time",
-                                      event.target.value
-                                    )
-                                  }
-                                  className="w-full rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
+                  <NestedScheduleManager
+                    courseLocks={form.courseLocks}
+                    sortedCourses={sortedCourses}
+                    courseHierarchy={courseHierarchy}
+                    onSelectScheduleItem={setSelectedScheduleItem}
+                    removeCourseLock={removeCourseLock}
+                    toggleExpanded={toggleExpanded}
+                    expandedItems={expandedItems}
+                  />
 
                   <div className="mt-6 rounded-3xl bg-emerald-50 p-4 text-sm text-emerald-900">
                     <p className="font-semibold">Important</p>
                     <p className="mt-1 leading-6">
-                      If a course is selected, both timestamps are required. Students in
-                      that batch will remain active until the end time, then the course
-                      access will be marked locked.
+                      Click the calendar icon to set a time block for a specific item.
+                      If a nested item has no schedule, it falls back to the parent schedule.
                     </p>
                   </div>
                 </div>
+
+                {selectedScheduleItem && (
+                  <CalendarSidePanel
+                    selectedItem={selectedScheduleItem}
+                    onClose={() => setSelectedScheduleItem(null)}
+                    onSave={handleScheduleSave}
+                  />
+                )}
               </div>
 
               <div className="border-t border-gray-100 bg-white px-6 py-5">
