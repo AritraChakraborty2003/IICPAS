@@ -4,6 +4,7 @@ import Student from "../../models/Students.js";
 import Booking from "../../models/Booking.js";
 import Course from "../../models/Content/Course.js";
 import Chapter from "../../models/Content/Chapter.js";
+import Topic from "../../models/Content/Topic.js";
 import BatchManager from "../../models/BatchManager.js";
 import {
   computeReminderSendAt,
@@ -461,55 +462,127 @@ export const getLiveSessionsForStudent = async (req, res) => {
       return res.status(200).json([]);
     }
 
-    const purchasedCourseIds = Array.from(purchasedCourseIdSet);
+    const purchasedCourseIds = Array.from(purchasedCourseIdSet).map(id => new mongoose.Types.ObjectId(id));
 
-    // Find sessions that include at least one of the student's purchased courses
-    const sessions = await populateLiveSession(
-      LiveSession.find({
-        $or: [
-          { courseIds: { $in: purchasedCourseIds } },
-          { courseId: { $in: purchasedCourseIds } },
-        ],
+    // Find all courses, populate chapters, and nested populate topics
+    const courses = await Course.find({ _id: { $in: purchasedCourseIds } })
+      .populate({
+        path: "chapters",
+        populate: {
+          path: "topics",
+          model: "Topic",
+          populate: {
+            path: "lessons.liveSessionId",
+            model: "LiveSession"
+          }
+        }
       })
-    );
+      .lean();
 
-    const transformedSessions = sessions.map((session) => {
-      const sessionObj = normalizeLiveSessionResponse(session);
-      const now = new Date();
-      const sessionDate = new Date(session.date);
-      const [startTime, endTime] = session.time
-        ? session.time.split(" - ")
-        : ["10:00", "12:00"];
+    const transformedSessions = [];
+    const now = new Date();
 
-      const sessionStart = new Date(sessionDate);
-      const [startHour, startMinute] = startTime.split(":").map(Number);
-      sessionStart.setHours(startHour, startMinute, 0, 0);
+    for (const course of courses) {
+      if (!Array.isArray(course.chapters)) continue;
 
-      const sessionEnd = new Date(sessionDate);
-      const [endHour, endMinute] = endTime.split(":").map(Number);
-      sessionEnd.setHours(endHour, endMinute, 0, 0);
+      for (const chapter of course.chapters) {
+        if (!Array.isArray(chapter.topics)) continue;
 
-      const durationMs = sessionEnd.getTime() - sessionStart.getTime();
-      const durationMinutes = Math.round(durationMs / (1000 * 60));
+        for (const topic of chapter.topics) {
+          if (!Array.isArray(topic.lessons)) continue;
 
-      let dynamicStatus = session.status;
-      if (session.status === "active") {
-        if (now < sessionStart) dynamicStatus = "upcoming";
-        else if (now >= sessionStart && now <= sessionEnd) dynamicStatus = "live";
-        else if (now > sessionEnd) dynamicStatus = "completed";
+          for (const lesson of topic.lessons) {
+            if (lesson.kind !== "live") continue;
+
+            let dynamicStatus = lesson.status === "inactive" ? "inactive" : "active";
+            let sessionDateStr = "";
+            let sessionTimeStr = "";
+            let joinLink = "";
+            let sessionPrice = 0;
+
+            if (lesson.liveSessionId && typeof lesson.liveSessionId === "object") {
+              const ls = lesson.liveSessionId;
+              sessionDateStr = ls.date ? new Date(ls.date).toISOString() : "";
+              sessionTimeStr = ls.time || "10:00 - 12:00";
+              joinLink = ls.link || lesson.sourceUrl || "";
+              sessionPrice = ls.price || 0;
+
+              // Calculate status using the live session's date/time
+              if (ls.status === "active" || ls.status === "upcoming" || ls.status === "live" || ls.status === "completed") {
+                const sessionDate = new Date(ls.date);
+                const [startTime, endTime] = ls.time ? ls.time.split(" - ") : ["10:00", "12:00"];
+
+                const sessionStart = new Date(sessionDate);
+                const [startHour, startMinute] = startTime.split(":").map(Number);
+                sessionStart.setHours(startHour, startMinute, 0, 0);
+
+                const sessionEnd = new Date(sessionDate);
+                const [endHour, endMinute] = endTime.split(":").map(Number);
+                sessionEnd.setHours(endHour, endMinute, 0, 0);
+
+                if (now < sessionStart) {
+                  dynamicStatus = "upcoming";
+                } else if (now >= sessionStart && now <= sessionEnd) {
+                  dynamicStatus = "live";
+                } else {
+                  dynamicStatus = "completed";
+                }
+              } else {
+                dynamicStatus = ls.status;
+              }
+            } else {
+              // Fallback using lesson.publishAt
+              const publishDate = lesson.publishAt ? new Date(lesson.publishAt) : new Date();
+              sessionDateStr = publishDate.toISOString();
+              sessionTimeStr = "10:00 - 12:00";
+              joinLink = lesson.sourceUrl || "";
+              sessionPrice = 0;
+
+              const sessionStart = new Date(publishDate);
+              const sessionEnd = new Date(publishDate);
+              sessionEnd.setHours(sessionEnd.getHours() + 1); // 1 hour duration default
+
+              if (now < sessionStart) {
+                dynamicStatus = "upcoming";
+              } else if (now >= sessionStart && now <= sessionEnd) {
+                dynamicStatus = "live";
+              } else {
+                dynamicStatus = "completed";
+              }
+            }
+
+            // Construct a flat object mimicking LiveSession for the frontend
+            transformedSessions.push({
+              _id: String(lesson._id),
+              title: lesson.title,
+              date: sessionDateStr,
+              time: sessionTimeStr,
+              link: joinLink,
+              price: sessionPrice,
+              status: dynamicStatus,
+              category: course.title,
+              courseId: {
+                _id: String(course._id),
+                title: course.title
+              },
+              courseTitle: course.title,
+              chapterId: {
+                _id: String(chapter._id),
+                title: chapter.title
+              },
+              chapterTitle: chapter.title,
+              topicId: {
+                _id: String(topic._id),
+                title: topic.title
+              },
+              topicTitle: topic.title,
+              isEnrolled: true,
+              imageUrl: "/images/live-class.jpg"
+            });
+          }
+        }
       }
-
-      let finalImageUrl = session.imageUrl || session.thumbnail;
-      if (!finalImageUrl) finalImageUrl = "/images/live-class.jpg";
-
-      return {
-        ...sessionObj,
-        status: dynamicStatus,
-        duration: durationMinutes,
-        enrolledCount: session.enrolledStudents?.length || 0,
-        imageUrl: finalImageUrl,
-      };
-    });
+    }
 
     res.status(200).json(transformedSessions);
   } catch (err) {
