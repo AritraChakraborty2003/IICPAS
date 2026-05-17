@@ -1630,7 +1630,7 @@ export default function DigitalHubClient({
 
         setSelectedTopic(null);
         setTopicContent(
-          shouldFailSafeRestrictAccess
+          shouldFailSafeRestrictAccessRef.current
             ? "Course access is being verified. Only the first chapter and first topic are available right now."
             : courseBatchWindowState.isBatchPostEndLocked
             ? "This batch has ended. Course access is locked now."
@@ -1664,7 +1664,7 @@ export default function DigitalHubClient({
         const shouldLimitToFirstTopic =
           !isDemo &&
           (courseBatchWindowState.isBatchPreviewOnly ||
-            shouldFailSafeRestrictAccess) &&
+            shouldFailSafeRestrictAccessRef.current) &&
           !isChapterAccessLocked;
         const storedTopic = preferredTopicId
           ? shouldLimitToFirstTopic
@@ -1695,7 +1695,8 @@ export default function DigitalHubClient({
       loadQuizForTopic,
       router,
       scrollContentToTop,
-      shouldFailSafeRestrictAccess,
+      // shouldFailSafeRestrictAccess intentionally omitted - read via ref to
+      // prevent stale closures from re-triggering chapter selection reset.
       storeLastSelection,
       splitContentIntoPages,
       visibleChapters,
