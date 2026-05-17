@@ -224,16 +224,13 @@ export function CalendarSidePanel({ selectedItem, onClose, onSave }) {
                   onClick={() => handleDateClick(cell.date)}
                   className={`h-9 w-9 text-xs flex flex-col items-center justify-center rounded-xl transition-all relative ${cellStyle}`}
                 >
-                  <span className={`${isStart || isEnd ? "mb-1 text-[10px]" : ""}`}>{cell.day}</span>
-                  {isStart && (
-                    <span className="absolute bottom-0.5 text-[6px] text-white bg-emerald-500 rounded-full p-0.5 border border-white/20 shadow-sm">
-                      <Check className="h-1.5 w-1.5 stroke-[4]" />
-                    </span>
-                  )}
-                  {isEnd && (
-                    <span className="absolute bottom-0.5 text-[6px] text-white bg-blue-500 rounded-full p-0.5 border border-white/20 shadow-sm">
-                      <X className="h-1.5 w-1.5 stroke-[4]" />
-                    </span>
+                  <span className={`${isStart || isEnd ? "font-bold text-[11px]" : ""}`}>{cell.day}</span>
+                  {(isStart || isEnd) && (
+                    <img
+                      src="/pin-removebg-preview.png"
+                      alt="Pinned"
+                      className="absolute -top-2.5 -right-2.5 w-6 h-6 z-20 select-none pointer-events-none drop-shadow-md transform -rotate-12"
+                    />
                   )}
                 </button>
               );
