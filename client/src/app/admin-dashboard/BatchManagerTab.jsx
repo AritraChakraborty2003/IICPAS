@@ -108,6 +108,10 @@ export default function BatchManagerTab() {
   };
 
   const toggleExpanded = (id) => {
+    if (id.startsWith("course-")) {
+      const courseId = id.replace("course-", "");
+      fetchCourseHierarchy(courseId);
+    }
     setExpandedItems((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
@@ -197,11 +201,19 @@ export default function BatchManagerTab() {
 
   const openEditModal = (batch) => {
     setEditingBatch(batch);
+    const normalizedLocks = normalizeCourseLocksForForm(batch.courseLocks);
     setForm({
       mode: batch.mode || "online",
       size: Number(batch.size) || 100,
-      courseLocks: normalizeCourseLocksForForm(batch.courseLocks),
+      courseLocks: normalizedLocks,
     });
+    if (Array.isArray(normalizedLocks)) {
+      normalizedLocks.forEach((lock) => {
+        if (lock.courseId) {
+          fetchCourseHierarchy(lock.courseId);
+        }
+      });
+    }
     setModalOpen(true);
   };
 
