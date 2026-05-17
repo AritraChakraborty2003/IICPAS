@@ -7,8 +7,7 @@ import Course from "../models/Content/Course.js";
 dotenv.config();
 
 const TARGET_EMAIL = "superstudent@yopmail.com";
-const DEFAULT_PASSWORD = "superstudent123";
-const shouldResetPassword = process.argv.includes("--reset-password");
+const DEFAULT_PASSWORD = "superstudent@123";
 
 const seedSuperStudentAllCourses = async () => {
   try {
@@ -30,10 +29,10 @@ const seedSuperStudentAllCourses = async () => {
 
     let student = await Student.findOne({ email: TARGET_EMAIL });
     const isNewStudent = !student;
-    let passwordUpdated = false;
+
+    const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
 
     if (!student) {
-      const hashedPassword = await bcrypt.hash(DEFAULT_PASSWORD, 10);
       student = new Student({
         name: "Super Student",
         email: TARGET_EMAIL,
@@ -42,35 +41,38 @@ const seedSuperStudentAllCourses = async () => {
         location: "N/A",
       });
     } else {
-      if (!student.name) student.name = "Super Student";
-      if (!student.phone) student.phone = "9999999999";
-      if (!student.location) student.location = "N/A";
+      student.name = "Super Student";
+      student.phone = "9999999999";
+      student.location = "N/A";
+      student.password = hashedPassword;
     }
 
-    if (shouldResetPassword) {
-      student.password = await bcrypt.hash(DEFAULT_PASSWORD, 10);
-      passwordUpdated = true;
-    }
+    // Set far-future expiration (10 years) so they never expire
+    const tenYearsFromNow = new Date();
+    tenYearsFromNow.setFullYear(tenYearsFromNow.getFullYear() + 10);
+
+    const overrides = allCourseIds.map((courseId) => ({
+      courseId,
+      isLocked: false,
+      purchasedAt: new Date(),
+      expiresAt: tenYearsFromNow,
+      updatedAt: new Date(),
+    }));
 
     // Grant full recorded purchase/access scope for all courses.
     student.course = allCourseIds;
     student.enrolledRecordedSessions = allCourseIds;
+    student.enrolledRecordedSessionsCenter = allCourseIds;
+    student.courseAccessOverrides = overrides;
+    student.digitalHubAccessOverride = true;
 
     await student.save();
 
-    console.log("Super student seeding completed.");
+    console.log("Super student seeding completed successfully.");
     console.log(`Student ID: ${student._id}`);
     console.log(`Email: ${student.email}`);
     console.log(`Total courses assigned: ${allCourseIds.length}`);
-
-    if (isNewStudent || passwordUpdated) {
-      console.log(`Password: ${DEFAULT_PASSWORD}`);
-      console.log("Password was set/reset in this run.");
-    } else {
-      console.log(
-        "Password unchanged. Use --reset-password if you want to reset it."
-      );
-    }
+    console.log(`Password set to: ${DEFAULT_PASSWORD}`);
   } catch (error) {
     console.error("Failed to seed super student:", error.message);
     process.exitCode = 1;
