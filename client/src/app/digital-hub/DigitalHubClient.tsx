@@ -215,6 +215,13 @@ interface ChapterData {
   completedTopicIds?: string[];
   completedAssignmentIds?: string[];
   completedQuestionSetIds?: string[];
+  topicBatchWindows?: Array<{
+    topicId: string;
+    hasBatchWindow: boolean;
+    isLocked: boolean;
+    startsAt?: string | null;
+    endsAt?: string | null;
+  }>;
 }
 
 interface TopicData {
@@ -390,6 +397,9 @@ const mergeChapterProgress = (
       completedTopicIds: summary?.completedTopicIds || [],
       completedAssignmentIds: summary?.completedAssignmentIds || [],
       completedQuestionSetIds: summary?.completedQuestionSetIds || [],
+      topicBatchWindows: Array.isArray((summary as Record<string, unknown>)?.topicBatchWindows)
+        ? (summary as Record<string, unknown>).topicBatchWindows as ChapterData["topicBatchWindows"]
+        : chapter.topicBatchWindows || [],
     };
   });
 };
@@ -1101,13 +1111,34 @@ export default function DigitalHubClient({
   const isTopicLocked = useCallback((topicIndex: number, topicId?: string) => {
     if (isDemo) return false;
 
+    // Always check topic-level batch windows first — they take priority
+    // over all chapter-level and course-level preview restrictions.
+    // This allows individually scheduled topics (e.g., "Accounting Cycle"
+    // starting May 13) to unlock correctly even when the course batch is
+    // still in "preview" phase.
     const granularTopicState = getBatchTopicState(activePurchasedCourseRecord, selectedChapter?._id, topicId);
     if (granularTopicState.hasBatchWindow) {
       return granularTopicState.isLocked;
     }
 
-    return isSelectedChapterLocked || (shouldPreviewLockTopics && topicIndex > 0);
-  }, [isDemo, activePurchasedCourseRecord, selectedChapter?._id, isSelectedChapterLocked, shouldPreviewLockTopics]);
+    // Fallback: check topicBatchWindows from the progress API response,
+    // which is populated server-side and doesn't depend on activePurchasedCourseRecord.
+    if (topicId && Array.isArray(selectedChapter?.topicBatchWindows)) {
+      const serverWindow = selectedChapter.topicBatchWindows.find(
+        (w) => String(w.topicId) === String(topicId)
+      );
+      if (serverWindow?.hasBatchWindow) {
+        return serverWindow.isLocked;
+      }
+    }
+
+    // If the chapter itself is locked, so are all its topics.
+    if (isSelectedChapterLocked) return true;
+
+    // Preview-lock: only lock topics after index 0 when in preview mode,
+    // unless the topic has its own explicitly active window (handled above).
+    return shouldPreviewLockTopics && topicIndex > 0;
+  }, [isDemo, activePurchasedCourseRecord, selectedChapter, isSelectedChapterLocked, shouldPreviewLockTopics]);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;

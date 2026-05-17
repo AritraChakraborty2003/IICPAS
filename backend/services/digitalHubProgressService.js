@@ -278,6 +278,31 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
       }
     }
 
+    const rawTopics = Array.isArray(chapter.topics) ? chapter.topics : [];
+    const chapterTopicBatchWindows = rawTopics.map((topic) => {
+      const topicId = toIdString(topic._id);
+      const topicLock = Array.isArray(chapterLock?.topics)
+        ? chapterLock.topics.find((t) => toIdString(t.topicId || t._id) === topicId)
+        : null;
+      if (!topicLock || (!topicLock.start_time && !topicLock.end_time)) {
+        return { topicId, hasBatchWindow: false, isLocked: false };
+      }
+      const tStart = topicLock.start_time ? new Date(topicLock.start_time) : null;
+      const tEnd = topicLock.end_time ? new Date(topicLock.end_time) : null;
+      const now = Date.now();
+      let topicActive = true;
+      if (tStart && tEnd) topicActive = now >= tStart.getTime() && now <= tEnd.getTime();
+      else if (tStart) topicActive = now >= tStart.getTime();
+      else if (tEnd) topicActive = now <= tEnd.getTime();
+      return {
+        topicId,
+        hasBatchWindow: true,
+        isLocked: !topicActive,
+        startsAt: tStart ? tStart.toISOString() : null,
+        endsAt: tEnd ? tEnd.toISOString() : null,
+      };
+    });
+
     const chapterSummary = buildChapterSummary({
       chapter,
       assignments: assignmentsByChapter.get(chapterId) || [],
@@ -288,10 +313,11 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
     return forceUnlockAll
       ? {
           ...chapterSummary,
+          topicBatchWindows: chapterTopicBatchWindows,
           isLocked: false,
           unlocked: true,
         }
-      : chapterSummary;
+      : { ...chapterSummary, topicBatchWindows: chapterTopicBatchWindows };
   });
 
   if (chapterSummaries.length > 0) {
