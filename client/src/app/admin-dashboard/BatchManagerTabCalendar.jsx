@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { X, Calendar as CalendarIcon, Save, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { X, Calendar as CalendarIcon, Save, ChevronLeft, ChevronRight, Clock, Check } from "lucide-react";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -222,9 +222,19 @@ export function CalendarSidePanel({ selectedItem, onClose, onSave }) {
                   type="button"
                   key={idx}
                   onClick={() => handleDateClick(cell.date)}
-                  className={`h-9 w-9 text-xs flex items-center justify-center rounded-xl transition-all ${cellStyle}`}
+                  className={`h-9 w-9 text-xs flex flex-col items-center justify-center rounded-xl transition-all relative ${cellStyle}`}
                 >
-                  {cell.day}
+                  <span className={`${isStart || isEnd ? "mb-1 text-[10px]" : ""}`}>{cell.day}</span>
+                  {isStart && (
+                    <span className="absolute bottom-0.5 text-[6px] text-white bg-emerald-500 rounded-full p-0.5 border border-white/20 shadow-sm">
+                      <Check className="h-1.5 w-1.5 stroke-[4]" />
+                    </span>
+                  )}
+                  {isEnd && (
+                    <span className="absolute bottom-0.5 text-[6px] text-white bg-blue-500 rounded-full p-0.5 border border-white/20 shadow-sm">
+                      <X className="h-1.5 w-1.5 stroke-[4]" />
+                    </span>
+                  )}
                 </button>
               );
             })}
