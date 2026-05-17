@@ -54,6 +54,20 @@ const normalizeCourseLocksForForm = (courseLocks = []) => {
       courseId,
       start_time: toDatetimeLocalValue(lock?.start_time || lock?.startTime || lock?.start),
       end_time: toDatetimeLocalValue(lock?.end_time || lock?.endTime || lock?.end),
+      chapters: Array.isArray(lock?.chapters)
+        ? lock.chapters.map((ch) => ({
+            chapterId: String(ch?.chapterId || ""),
+            start_time: toDatetimeLocalValue(ch?.start_time),
+            end_time: toDatetimeLocalValue(ch?.end_time),
+            topics: Array.isArray(ch?.topics)
+              ? ch.topics.map((t) => ({
+                  topicId: String(t?.topicId || ""),
+                  start_time: toDatetimeLocalValue(t?.start_time),
+                  end_time: toDatetimeLocalValue(t?.end_time),
+                }))
+              : [],
+          }))
+        : [],
     });
   });
 
@@ -209,6 +223,24 @@ export default function BatchManagerTab() {
           courseId,
           start_time: startDate.toISOString(),
           end_time: endDate.toISOString(),
+          chapters: Array.isArray(lock.chapters) ? lock.chapters.map((ch) => {
+             const chStart = ch.start_time ? new Date(ch.start_time) : null;
+             const chEnd = ch.end_time ? new Date(ch.end_time) : null;
+             return {
+                chapterId: String(ch.chapterId || "").trim(),
+                start_time: chStart && !Number.isNaN(chStart.getTime()) ? chStart.toISOString() : null,
+                end_time: chEnd && !Number.isNaN(chEnd.getTime()) ? chEnd.toISOString() : null,
+                topics: Array.isArray(ch.topics) ? ch.topics.map(t => {
+                   const tStart = t.start_time ? new Date(t.start_time) : null;
+                   const tEnd = t.end_time ? new Date(t.end_time) : null;
+                   return {
+                      topicId: String(t.topicId || "").trim(),
+                      start_time: tStart && !Number.isNaN(tStart.getTime()) ? tStart.toISOString() : null,
+                      end_time: tEnd && !Number.isNaN(tEnd.getTime()) ? tEnd.toISOString() : null,
+                   };
+                }) : []
+             };
+          }) : []
         };
       });
 

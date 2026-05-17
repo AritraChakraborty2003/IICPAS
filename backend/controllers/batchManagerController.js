@@ -205,16 +205,51 @@ const normalizeBatchCourseLocks = (value) => {
     const normalizedStart = startTime ? new Date(startTime) : null;
     const normalizedEnd = endTime ? new Date(endTime) : null;
 
-    if (!(normalizedStart instanceof Date) || Number.isNaN(normalizedStart.getTime())) {
+    if (startTime && (!(normalizedStart instanceof Date) || Number.isNaN(normalizedStart.getTime()))) {
       throw createValidationError(`Invalid start_time for course ${courseId}`);
     }
 
-    if (!(normalizedEnd instanceof Date) || Number.isNaN(normalizedEnd.getTime())) {
+    if (endTime && (!(normalizedEnd instanceof Date) || Number.isNaN(normalizedEnd.getTime()))) {
       throw createValidationError(`Invalid end_time for course ${courseId}`);
     }
 
-    if (normalizedEnd.getTime() < normalizedStart.getTime()) {
+    if (normalizedStart && normalizedEnd && normalizedEnd.getTime() < normalizedStart.getTime()) {
       throw createValidationError(`end_time must be after start_time for course ${courseId}`);
+    }
+
+    const chapters = [];
+    for (const chapter of parseMaybeArray(item?.chapters)) {
+      const chapterId = String(chapter?.chapterId || "").trim();
+      if (!chapterId) continue;
+
+      const chapStart = chapter?.start_time ?? chapter?.startTime ?? chapter?.start;
+      const chapEnd = chapter?.end_time ?? chapter?.endTime ?? chapter?.end;
+      const normChapStart = chapStart ? new Date(chapStart) : null;
+      const normChapEnd = chapEnd ? new Date(chapEnd) : null;
+
+      const topics = [];
+      for (const topic of parseMaybeArray(chapter?.topics)) {
+        const topicId = String(topic?.topicId || "").trim();
+        if (!topicId) continue;
+
+        const topicStart = topic?.start_time ?? topic?.startTime ?? topic?.start;
+        const topicEnd = topic?.end_time ?? topic?.endTime ?? topic?.end;
+        const normTopicStart = topicStart ? new Date(topicStart) : null;
+        const normTopicEnd = topicEnd ? new Date(topicEnd) : null;
+
+        topics.push({
+          topicId,
+          start_time: normTopicStart,
+          end_time: normTopicEnd,
+        });
+      }
+
+      chapters.push({
+        chapterId,
+        start_time: normChapStart,
+        end_time: normChapEnd,
+        topics,
+      });
     }
 
     seen.add(courseId);
@@ -222,6 +257,7 @@ const normalizeBatchCourseLocks = (value) => {
       courseId,
       start_time: normalizedStart,
       end_time: normalizedEnd,
+      chapters,
     });
   }
 

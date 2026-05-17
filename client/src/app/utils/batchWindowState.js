@@ -65,3 +65,56 @@ export const getBatchWindowState = (courseAccess) => {
     batchLockEndsAt,
   };
 };
+
+export const getBatchChapterState = (courseAccess, chapterId) => {
+  const batchChapters = courseAccess?.batchChapters || [];
+  const chapterLock = batchChapters.find(
+    (c) => String(c.chapterId) === String(chapterId)
+  );
+
+  if (!chapterLock || (!chapterLock.start_time && !chapterLock.end_time)) {
+    return { hasBatchWindow: false, phase: "active", isLocked: false };
+  }
+
+  const startsAt = parseDateOrNull(chapterLock.start_time);
+  const endsAt = parseDateOrNull(chapterLock.end_time);
+  const phase = resolveBatchPhaseFromDates(startsAt, endsAt);
+
+  return {
+    hasBatchWindow: true,
+    phase,
+    isLocked: phase !== "active",
+    startsAt,
+    endsAt,
+  };
+};
+
+export const getBatchTopicState = (courseAccess, chapterId, topicId) => {
+  const batchChapters = courseAccess?.batchChapters || [];
+  const chapterLock = batchChapters.find(
+    (c) => String(c.chapterId) === String(chapterId)
+  );
+
+  if (!chapterLock) {
+    return { hasBatchWindow: false, phase: "active", isLocked: false };
+  }
+
+  const topics = chapterLock.topics || [];
+  const topicLock = topics.find((t) => String(t.topicId) === String(topicId));
+
+  if (!topicLock || (!topicLock.start_time && !topicLock.end_time)) {
+    return { hasBatchWindow: false, phase: "active", isLocked: false };
+  }
+
+  const startsAt = parseDateOrNull(topicLock.start_time);
+  const endsAt = parseDateOrNull(topicLock.end_time);
+  const phase = resolveBatchPhaseFromDates(startsAt, endsAt);
+
+  return {
+    hasBatchWindow: true,
+    phase,
+    isLocked: phase !== "active",
+    startsAt,
+    endsAt,
+  };
+};

@@ -36,6 +36,44 @@ const batchManagerSchema = new mongoose.Schema(
             type: Date,
             default: null,
           },
+          chapters: {
+            type: [
+              {
+                chapterId: {
+                  type: mongoose.Schema.Types.ObjectId,
+                  required: true,
+                },
+                start_time: {
+                  type: Date,
+                  default: null,
+                },
+                end_time: {
+                  type: Date,
+                  default: null,
+                },
+                topics: {
+                  type: [
+                    {
+                      topicId: {
+                        type: mongoose.Schema.Types.ObjectId,
+                        required: true,
+                      },
+                      start_time: {
+                        type: Date,
+                        default: null,
+                      },
+                      end_time: {
+                        type: Date,
+                        default: null,
+                      },
+                    },
+                  ],
+                  default: [],
+                },
+              },
+            ],
+            default: [],
+          },
         },
       ],
       default: [],

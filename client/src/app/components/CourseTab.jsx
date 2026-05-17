@@ -26,7 +26,7 @@ import { Lock } from "lucide-react";
 import StarRating from "./StarRating";
 import TopicLessonsDisplay from "./TopicLessonsDisplay";
 import { toast } from "react-hot-toast";
-import { getBatchWindowState } from "../utils/batchWindowState";
+import { getBatchWindowState, getBatchChapterState } from "../utils/batchWindowState";
 
 const extractCourseList = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -745,10 +745,14 @@ export default function CourseTab() {
                 const selectedCourseAccessWindow = getCourseAccessWindow(
                   selectedCourse._id
                 );
+                const batchChapterState = getBatchChapterState(selectedCourseAccessWindow.access, chapter._id || index);
+                
                 const chapterIsLocked = selectedCourseAccessWindow.isBatchPostEndLocked
                   ? true
                   : selectedCourseAccessWindow.isPreviewOnly
                   ? index > 0
+                  : batchChapterState.hasBatchWindow
+                  ? batchChapterState.isLocked
                   : Boolean(chapter?.isLocked);
                 const chapterKey = `${selectedCourse._id}-${chapter._id || index}`;
 

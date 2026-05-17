@@ -13,6 +13,8 @@ import {
 } from "../utils/contentFontFamily";
 import {
   getBatchWindowState,
+  getBatchChapterState,
+  getBatchTopicState,
   parseDateOrNull,
 } from "../utils/batchWindowState";
 import {
@@ -1090,9 +1092,16 @@ export default function DigitalHubClient({
     !isSelectedChapterLocked &&
     selectedChapterIndex >= 0 &&
     selectedChapterIndex === firstUnlockedChapterIndex;
-  const isTopicLocked = (topicIndex: number) =>
-    !isDemo &&
-    (isSelectedChapterLocked || (shouldPreviewLockTopics && topicIndex > 0));
+  const isTopicLocked = useCallback((topicIndex: number, topicId?: string) => {
+    if (isDemo) return false;
+
+    const granularTopicState = getBatchTopicState(activePurchasedCourseRecord, selectedChapter?._id, topicId);
+    if (granularTopicState.hasBatchWindow) {
+      return granularTopicState.isLocked;
+    }
+
+    return isSelectedChapterLocked || (shouldPreviewLockTopics && topicIndex > 0);
+  }, [isDemo, activePurchasedCourseRecord, selectedChapter?._id, isSelectedChapterLocked, shouldPreviewLockTopics]);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -1107,7 +1116,8 @@ export default function DigitalHubClient({
       ? isTopicLocked(
           visibleTopics.findIndex(
             (topic) => String(topic?._id) === String(nextTopic._id)
-          )
+          ),
+          nextTopic._id
         )
       : false;
 
@@ -1268,7 +1278,7 @@ export default function DigitalHubClient({
       const topicIndex = topics.findIndex(
         (entry) => String(entry?._id) === String(topic?._id)
       );
-      if (!isDemo && topicIndex >= 0 && isTopicLocked(topicIndex)) {
+      if (!isDemo && topicIndex >= 0 && isTopicLocked(topicIndex, topic._id)) {
         return;
       }
 
@@ -1780,7 +1790,7 @@ export default function DigitalHubClient({
 
           if (
             nextTopicCandidate &&
-            (nextTopicIndex < 0 || !isTopicLocked(nextTopicIndex))
+            (nextTopicIndex < 0 || !isTopicLocked(nextTopicIndex, nextTopicCandidate._id))
           ) {
             handleTopicSelect(nextTopicCandidate);
           } else if (refreshedChapter?.isCompleted && !selectedChapter.isCompleted) {
@@ -3523,7 +3533,7 @@ export default function DigitalHubClient({
                         Topics
                       </h3>
                       {visibleTopics.map((topic: TopicData, index) => {
-                        const topicLocked = isTopicLocked(index);
+                        const topicLocked = isTopicLocked(index, topic._id);
                         return (
                           <button
                             key={topic._id}

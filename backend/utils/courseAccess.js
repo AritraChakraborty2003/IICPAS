@@ -78,6 +78,7 @@ const normalizeBatchCourseLocks = (batch) => {
       courseId,
       start_time,
       end_time,
+      chapters: Array.isArray(entry?.chapters) ? entry.chapters : [],
     });
   });
 
@@ -305,6 +306,7 @@ export const buildCourseAccessEntries = ({
         batchAccessState: batchAccessState.batchAccessState,
         batchLockStartsAt: batchLock?.start_time ? batchLock.start_time.toISOString() : null,
         batchLockEndsAt: batchLock?.end_time ? batchLock.end_time.toISOString() : null,
+        batchChapters: batchLock?.chapters || [],
         isExpired,
         status: isLocked || isExpired || isBatchExpired ? "Inactive" : "Active",
       };
