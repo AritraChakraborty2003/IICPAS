@@ -43,30 +43,36 @@ export default function RecordedSessionTab() {
 
         if (studentResponse.data.student) {
           setStudent(studentResponse.data.student);
+          const studentId = studentResponse.data.student._id;
 
-          // Fetch enrolled recorded sessions for this student
-          const enrolledUrl = `${API_BASE}/api/v1/students/enrolled-recorded-sessions/${studentResponse.data.student._id}`;
-          console.log(
-            "Fetching enrolled recorded sessions with URL:",
-            enrolledUrl
-          );
-          console.log("Student ID:", studentResponse.data.student._id);
+          // Fetch all live sessions for this student
+          const forStudentUrl = `${API_BASE}/api/live-sessions/for-student/${studentId}`;
+          console.log("Fetching student live sessions with URL:", forStudentUrl);
 
-          const enrolledSessionsResponse = await axios.get(enrolledUrl, {
+          const response = await axios.get(forStudentUrl, {
             withCredentials: true,
           });
 
-          setRecordedSessions(
-            enrolledSessionsResponse.data.enrolledRecordedSessions || []
-          );
+          const sessions = Array.isArray(response.data) ? response.data : [];
+
+          // Filter for completed live sessions (recorded sessions) that the student is enrolled/eligible for, and have a valid link
+          const completedAndEnrolled = sessions
+            .filter(
+              (session) =>
+                String(session?.status || "").toLowerCase() === "completed" &&
+                session?.isEnrolled === true &&
+                session?.link &&
+                session.link.trim() !== ""
+            )
+            .sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime());
+
+          setRecordedSessions(completedAndEnrolled);
         } else {
           // If not logged in, show empty state
           setRecordedSessions([]);
         }
       } catch (err) {
         console.error("Error fetching recorded sessions:", err);
-        console.error("Error details:", err.response?.data);
-        console.error("Error status:", err.response?.status);
         setError("Failed to load recorded sessions");
       } finally {
         setLoading(false);
@@ -78,6 +84,7 @@ export default function RecordedSessionTab() {
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return "Date TBD";
     return date.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
@@ -85,9 +92,9 @@ export default function RecordedSessionTab() {
     });
   };
 
-  const handleWatchSession = (courseId) => {
-    // Navigate to digital hub with course ID
-    window.open(`/digital-hub/${encodeURIComponent(courseId)}`, "_blank");
+  const handleWatchSession = (link) => {
+    if (!link) return;
+    window.open(link, "_blank", "noopener,noreferrer");
   };
 
   if (loading) {
@@ -126,8 +133,7 @@ export default function RecordedSessionTab() {
                 You haven't enrolled in any recorded sessions yet.
               </p>
               <p className="text-gray-400">
-                Purchase a course with Digital Hub to get access to recorded
-                sessions.
+                Purchased courses or directly enrolled live sessions will appear here once completed.
               </p>
             </div>
           ) : (
@@ -138,9 +144,9 @@ export default function RecordedSessionTab() {
         </div>
       ) : (
         <div className="space-y-6">
-          {recordedSessions.map((course) => (
+          {recordedSessions.map((session) => (
             <div
-              key={course._id}
+              key={session._id}
               className="bg-[#f8f9fa] p-6 rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
             >
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -148,28 +154,28 @@ export default function RecordedSessionTab() {
                   <div className="flex items-center gap-2 mb-2">
                     <PlayCircleIcon className="w-5 h-5 text-blue-600" />
                     <h3 className="text-lg font-bold text-blue-800">
-                      {course.title}
+                      {session.title}
                     </h3>
                   </div>
 
                   <p className="text-sm text-gray-600 mb-3 line-clamp-3">
-                    {stripHtml(course.description) || "Recorded course content"}
+                    {stripHtml(session.description) || session.subtitle || "Recorded live session content"}
                   </p>
 
                   <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <CalendarIcon className="w-4 h-4" />
-                      <span>Added: {formatDate(course.createdAt)}</span>
+                      <span>Date: {formatDate(session.date)}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <ClockIcon className="w-4 h-4" />
                       <span>
-                        {course.chapters ? course.chapters.length : 0} Lessons
+                        Time: {session.time || "N/A"}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <UserIcon className="w-4 h-4" />
-                      <span>{course.category || "CA Foundation"}</span>
+                      <span>Instructor: {session.instructor || "IICPA Faculty"}</span>
                     </div>
                   </div>
                 </div>
@@ -177,14 +183,14 @@ export default function RecordedSessionTab() {
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
                   <div className="text-right">
                     <div className="text-lg font-bold text-green-600">
-                      ₹{course.price?.toLocaleString() || "0"}
+                      {session.price > 0 ? `₹${session.price.toLocaleString()}` : "Free"}
                     </div>
                     <div className="text-xs text-gray-500">Paid</div>
                   </div>
 
                   <button
                     onClick={() =>
-                      handleWatchSession(course.slug || course._id)
+                      handleWatchSession(session.link)
                     }
                     className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
                   >
