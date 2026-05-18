@@ -334,6 +334,13 @@ export default function LiveClassTab({
     window.location.href = session.link;
   };
 
+  const handleEnrollClick = (session) => {
+    const draftKey = `iicpa-live-session-landing-draft:${session._id}`;
+    router.push(
+      `/live-session/landing/preview?draftKey=${encodeURIComponent(draftKey)}&sessionId=${encodeURIComponent(session._id)}`
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-80px)] px-6 py-8 bg-white text-black overflow-y-auto">
