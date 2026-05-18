@@ -285,7 +285,12 @@ export default function RecordedSessionAdmin() {
 
   const completedSessions = useMemo(() => {
     return sessions
-      .filter((session) => String(session?.status || "").toLowerCase() === "completed")
+      .filter(
+        (session) =>
+          String(session?.status || "").toLowerCase() === "completed" &&
+          session?.link &&
+          session.link.trim() !== ""
+      )
       .sort((left, right) => {
         const leftTime = new Date(left?.date || 0).getTime();
         const rightTime = new Date(right?.date || 0).getTime();
