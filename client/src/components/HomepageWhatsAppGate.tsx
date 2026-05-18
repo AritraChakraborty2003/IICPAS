@@ -63,6 +63,35 @@ export default function HomepageWhatsAppGate() {
     return () => window.clearInterval(timerId);
   }, [secondsLeft]);
 
+  // Bypass gate if student or admin is already logged in
+  useEffect(() => {
+    const checkLoginState = async () => {
+      if (typeof window === "undefined") return;
+
+      // 1. Check if admin / superadmin is logged in
+      const adminToken = localStorage.getItem("adminToken");
+      if (adminToken) {
+        setIsVerified(true);
+        return;
+      }
+
+      // 2. Check if student is logged in
+      try {
+        const response = await axios.get(`${apiBase}/v1/students/isstudent`, {
+          withCredentials: true,
+          validateStatus: (status) => status === 200 || status === 401,
+        });
+        if (response.status === 200 && response.data?.student) {
+          setIsVerified(true);
+        }
+      } catch (error) {
+        console.warn("HomepageWhatsAppGate: Auth check skipped/failed", error);
+      }
+    };
+
+    void checkLoginState();
+  }, [apiBase]);
+
   const canSendOtp = phone.length === 10 && !sendingOtp && secondsLeft === 0;
   const canVerifyOtp =
     phone.length === 10 && otp.length === OTP_LENGTH && !verifyingOtp;
