@@ -138,6 +138,48 @@ export default function HomepageWhatsAppGate() {
     };
   }, []);
 
+  // Automatically open the gate when navigating to any internal page (other than home page)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    // Check if the route is exempted (like homepage, login, or dashboards)
+    const EXEMPTED_PATHS = [
+      "/",
+      "/student-login",
+      "/center-login",
+      "/teacher-login",
+      "/admin",
+      "/admin-dashboard",
+      "/center-dashboard",
+      "/college-dashboard",
+      "/company-dashboard",
+      "/gst-dashboard",
+      "/personal-dashboard",
+      "/team-dashboard",
+      "/teacher-dashboard",
+      "/login",
+      "/register",
+    ];
+
+    const isExempted = EXEMPTED_PATHS.some(
+      (path) => pathname === path || pathname.startsWith(path + "/")
+    );
+
+    if (isExempted) {
+      return;
+    }
+
+    // Check local authentication/verification state
+    const isSessionVerified = sessionStorage.getItem("iicpa_whatsapp_verified") === "true";
+    const adminToken = localStorage.getItem("adminToken");
+    const isStudent = localStorage.getItem("iicpa_student_logged_in") === "true";
+
+    if (!isVerified && !isSessionVerified && !adminToken && !isStudent) {
+      setIsOpen(true);
+    }
+  }, [pathname, isVerified]);
+
+
   const handleQuickLogin = async (e: FormEvent) => {
     e.preventDefault();
     if (!quickLoginEmail || !quickLoginPassword) {
