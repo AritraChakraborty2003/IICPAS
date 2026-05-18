@@ -172,7 +172,7 @@ export default function Header({
               course.pricing?.liveSession?.finalPrice ||
               course.pricing?.liveSession?.price ||
               course.price *
-                (course?.pricing?.liveSession?.priceMultiplier || 1.5) ||
+              (course?.pricing?.liveSession?.priceMultiplier || 1.5) ||
               0;
           }
 
@@ -496,34 +496,34 @@ export default function Header({
                       </button>
                       <div className="absolute left-0 top-full w-56 pt-2 z-50 opacity-0 invisible pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto transition-all">
                         <div className="bg-white shadow-xl rounded-lg border border-gray-100 overflow-hidden">
-                        {item.children.map((child) =>
-                          child.isHeader ? (
-                            <div
-                              key={child.name}
-                              className="px-3 py-2 text-xs font-bold text-gray-700 bg-gray-50 cursor-default"
-                            >
-                              {child.name}
-                            </div>
-                          ) : child.href ? (
-                            <Link
-                              key={child.name}
-                              href={child.href}
-                              onClick={(e) => handleNavClick(e, child.href)}
-                              className="block px-3 py-2.5 text-xs hover:bg-green-50"
-                            >
-                              {child.name}
-                            </Link>
-                          ) : (
-                            <Link
-                              key={child.name}
-                              href={child.href}
-                              onClick={(e) => handleNavClick(e, child.href)}
-                              className="block px-3 py-2.5 text-xs hover:bg-green-50"
-                            >
-                              {child.name}
-                            </Link>
-                          )
-                        )}
+                          {item.children.map((child) =>
+                            child.isHeader ? (
+                              <div
+                                key={child.name}
+                                className="px-3 py-2 text-xs font-bold text-gray-700 bg-gray-50 cursor-default"
+                              >
+                                {child.name}
+                              </div>
+                            ) : child.href ? (
+                              <Link
+                                key={child.name}
+                                href={child.href}
+                                onClick={(e) => handleNavClick(e, child.href)}
+                                className="block px-3 py-2.5 text-xs hover:bg-green-50"
+                              >
+                                {child.name}
+                              </Link>
+                            ) : (
+                              <Link
+                                key={child.name}
+                                href={child.href}
+                                onClick={(e) => handleNavClick(e, child.href)}
+                                className="block px-3 py-2.5 text-xs hover:bg-green-50"
+                              >
+                                {child.name}
+                              </Link>
+                            )
+                          )}
                         </div>
                       </div>
                     </div>
@@ -532,9 +532,8 @@ export default function Header({
                       key={item.name}
                       href={item.href}
                       onClick={(e) => handleNavClick(e, item.href)}
-                      className={`py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm ${
-                        pathname === item.href ? "text-green-600 bg-green-50" : ""
-                      }`}
+                      className={`py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm ${pathname === item.href ? "text-green-600 bg-green-50" : ""
+                        }`}
                     >
                       {item.name}
                     </Link>
@@ -543,7 +542,7 @@ export default function Header({
               </nav>
 
               {/* Right side - Desktop Only */}
-	              <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
+              <div className="hidden lg:flex items-center space-x-3 flex-shrink-0">
                 {/* Cart Icon - Show for all users */}
                 <button
                   onClick={() => setCartDrawer(true)}
@@ -714,11 +713,10 @@ export default function Header({
                     setDrawerOpen(false);
                     handleNavClick(e, item.href);
                   }}
-                  className={`mobile-nav-item block text-xs rounded-md mb-1 ${
-                    pathname === item.href
-                      ? "text-green-600 bg-green-50 font-medium"
-                      : "text-gray-600 hover:text-green-600 hover:bg-green-50"
-                  }`}
+                  className={`mobile-nav-item block text-xs rounded-md mb-1 ${pathname === item.href
+                    ? "text-green-600 bg-green-50 font-medium"
+                    : "text-gray-600 hover:text-green-600 hover:bg-green-50"
+                    }`}
                 >
                   {item.name}
                 </Link>
@@ -736,18 +734,18 @@ export default function Header({
               >
                 Admin Dashboard
               </Link>
-	            ) : student ? (
-	              <>
-		                <Link
-		                  href="/booking"
-		                  onClick={() => setDrawerOpen(false)}
-		                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
-		                >
-		                  Register Now
-		                </Link>
-	                <Link
-	                  href="/student-dashboard"
-	                  onClick={() => setDrawerOpen(false)}
+            ) : student ? (
+              <>
+                <Link
+                  href="/booking"
+                  onClick={() => setDrawerOpen(false)}
+                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
+                >
+                  Register Now
+                </Link>
+                <Link
+                  href="/student-dashboard"
+                  onClick={() => setDrawerOpen(false)}
                   className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md text-sm"
                 >
                   <User size={16} />
@@ -766,16 +764,16 @@ export default function Header({
               </>
             ) : (
               <>
-	                <Link
-	                  href="/booking"
-	                  onClick={(e) => {
-	                    setDrawerOpen(false);
-	                    handleNavClick(e, "/booking");
-	                  }}
-	                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
-	                >
-	                  Register Now
-	                </Link>
+                <Link
+                  href="/booking"
+                  onClick={(e) => {
+                    setDrawerOpen(false);
+                    handleNavClick(e, "/booking");
+                  }}
+                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
+                >
+                  Register Now
+                </Link>
                 <Link
                   href="/student-login"
                   onClick={(e) => {
@@ -832,10 +830,10 @@ export default function Header({
                             ? course.image.startsWith("http")
                               ? course.image
                               : course.image.startsWith("/uploads/")
-                              ? `${API}${course.image}`
-                              : course.image.startsWith("/")
-                              ? course.image
-                              : `${API}/${course.image}`
+                                ? `${API}${course.image}`
+                                : course.image.startsWith("/")
+                                  ? course.image
+                                  : `${API}/${course.image}`
                             : "/images/a1.jpeg"
                         }
                         alt={course.title}
