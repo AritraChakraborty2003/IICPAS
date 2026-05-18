@@ -428,7 +428,7 @@ export const getAllLiveSessions = async (req, res) => {
 };
 
 // GET /api/live-sessions/for-student/:studentId
-// Returns only live sessions linked to courses the student has purchased.
+// Returns ALL live sessions (not just purchased ones), and calculates dynamic isEnrolled state.
 export const getLiveSessionsForStudent = async (req, res) => {
   try {
     const { studentId } = req.params;
@@ -437,7 +437,7 @@ export const getLiveSessionsForStudent = async (req, res) => {
     }
 
     const student = await Student.findById(studentId)
-      .select("course courseAccessOverrides")
+      .select("course courseAccessOverrides enrolledLiveSessions")
       .lean();
 
     if (!student) {
@@ -458,20 +458,14 @@ export const getLiveSessionsForStudent = async (req, res) => {
       });
     }
 
-    if (purchasedCourseIdSet.size === 0) {
-      return res.status(200).json([]);
-    }
+    // Collect enrolled live sessions directly stored on student
+    const enrolledLiveSessionIds = new Set(
+      (Array.isArray(student.enrolledLiveSessions) ? student.enrolledLiveSessions : []).map((id) => String(id))
+    );
 
-    const purchasedCourseIds = Array.from(purchasedCourseIdSet);
-
-    // Find sessions that include at least one of the student's purchased courses
+    // Find all sessions (active, upcoming, live, completed)
     const sessions = await populateLiveSession(
-      LiveSession.find({
-        $or: [
-          { courseIds: { $in: purchasedCourseIds } },
-          { courseId: { $in: purchasedCourseIds } },
-        ],
-      })
+      LiveSession.find({ status: { $ne: "inactive" } })
     );
 
     const transformedSessions = sessions.map((session) => {
@@ -503,12 +497,22 @@ export const getLiveSessionsForStudent = async (req, res) => {
       let finalImageUrl = session.imageUrl || session.thumbnail;
       if (!finalImageUrl) finalImageUrl = "/images/live-class.jpg";
 
+      // Evaluate enrollment: either enrolled directly in student profile, or student has enrolledStudents in session, or purchased course matches
+      const isDirectlyEnrolled = enrolledLiveSessionIds.has(String(session._id)) ||
+        (Array.isArray(session.enrolledStudents) && session.enrolledStudents.some((id) => String(id) === String(studentId)));
+
+      const isCourseLinkedPurchased = (session.courseId && purchasedCourseIdSet.has(String(session.courseId))) ||
+        (Array.isArray(session.courseIds) && session.courseIds.some((id) => purchasedCourseIdSet.has(String(id))));
+
+      const isEnrolled = isDirectlyEnrolled || isCourseLinkedPurchased;
+
       return {
         ...sessionObj,
         status: dynamicStatus,
         duration: durationMinutes,
         enrolledCount: session.enrolledStudents?.length || 0,
         imageUrl: finalImageUrl,
+        isEnrolled,
       };
     });
 
