@@ -12,6 +12,7 @@ import {
   RefreshCw,
   BriefcaseBusiness,
   UserCheck,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { getApiBase } from "@/lib/apiBase";
@@ -36,6 +37,7 @@ export default function HomepageWhatsAppGate() {
   const [secondsLeft, setSecondsLeft] = useState(0);
   const [isVerified, setIsVerified] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const otpInputRef = useRef<HTMLInputElement | null>(null);
   const phoneInputRef = useRef<HTMLInputElement | null>(null);
   const leadRecordIdRef = useRef<string | null>(null);
@@ -68,6 +70,13 @@ export default function HomepageWhatsAppGate() {
     const checkLoginState = async () => {
       if (typeof window === "undefined") return;
 
+      // 0. Check session storage first
+      const isSessionVerified = sessionStorage.getItem("iicpa_whatsapp_verified") === "true";
+      if (isSessionVerified) {
+        setIsVerified(true);
+        return;
+      }
+
       // 1. Check if admin / superadmin is logged in
       const adminToken = localStorage.getItem("adminToken");
       if (adminToken) {
@@ -91,6 +100,17 @@ export default function HomepageWhatsAppGate() {
 
     void checkLoginState();
   }, [apiBase]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleOpenGate = () => {
+      setIsOpen(true);
+    };
+    window.addEventListener("iicpa:open-whatsapp-gate", handleOpenGate);
+    return () => {
+      window.removeEventListener("iicpa:open-whatsapp-gate", handleOpenGate);
+    };
+  }, []);
 
   const canSendOtp = phone.length === 10 && !sendingOtp && secondsLeft === 0;
   const canVerifyOtp =
@@ -204,11 +224,20 @@ export default function HomepageWhatsAppGate() {
       setIsVerified(true);
       try {
         window.sessionStorage.setItem(CHATBOT_OPEN_SESSION_KEY, "true");
+        window.sessionStorage.setItem("iicpa_whatsapp_verified", "true");
       } catch (storageError) {
         console.error("Error storing chatbot open state:", storageError);
       }
       window.dispatchEvent(new Event(CHATBOT_OPEN_EVENT));
       toast.success(response.data?.message || "Verification successful");
+
+      const targetUrl = window.sessionStorage.getItem("iicpa_whatsapp_target_url");
+      if (targetUrl) {
+        window.sessionStorage.removeItem("iicpa_whatsapp_target_url");
+        window.location.href = targetUrl;
+      } else {
+        setIsOpen(false);
+      }
     } catch (error: any) {
       toast.error(error?.response?.data?.message || "OTP verification failed");
     } finally {
@@ -235,7 +264,7 @@ export default function HomepageWhatsAppGate() {
     setSecondsLeft(0);
   };
 
-  if (!isHomepage || isVerified || isDismissed) {
+  if (!isOpen || isVerified || isDismissed) {
     return null;
   }
 
@@ -252,6 +281,13 @@ export default function HomepageWhatsAppGate() {
         transition={{ duration: 0.22, ease: "easeOut" }}
         className="relative w-[92vw] max-w-[620px] overflow-hidden rounded-[28px] border border-white/15 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)]"
       >
+        <button
+          onClick={() => setIsOpen(false)}
+          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+          aria-label="Close verification modal"
+        >
+          <X className="h-4 w-4" />
+        </button>
         <div className="bg-gradient-to-r from-[#0f5132] via-[#16a34a] to-[#22c55e] px-6 py-5 text-white">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15">

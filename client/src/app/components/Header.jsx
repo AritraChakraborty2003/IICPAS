@@ -105,6 +105,9 @@ export default function Header({
       });
       if (res.status === 401) {
         setStudent(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("iicpa_student_logged_in");
+        }
         setCartCourses([]);
         setWishlistCourses([]);
         return;
@@ -114,12 +117,18 @@ export default function Header({
       // Check if student data exists before proceeding
       if (!studentData) {
         setStudent(null);
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("iicpa_student_logged_in");
+        }
         setCartCourses([]);
         setWishlistCourses([]);
         return;
       }
 
       setStudent(studentData);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("iicpa_student_logged_in", "true");
+      }
       const cartRes = await axios.get(
         `${API}/api/v1/cart/get/${studentData._id}`,
         {
@@ -179,6 +188,9 @@ export default function Header({
       setCartCourses(processedCartCourses);
       setWishlistCourses(courseList.filter((c) => wishlistIDs.includes(c._id)));
     } catch (error) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("iicpa_student_logged_in");
+      }
       // Handle 401 Unauthorized errors gracefully
       if (error.response?.status === 401) {
         setStudent(null);
@@ -282,6 +294,9 @@ export default function Header({
       console.error("Logout error:", error);
     } finally {
       setStudent(null);
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("iicpa_student_logged_in");
+      }
       setCartCourses([]);
       setWishlistCourses([]);
       setShowProfileDropdown(false);
@@ -420,6 +435,22 @@ export default function Header({
     setShowAdmissionModal(true);
   };
 
+  const handleNavClick = (e, href) => {
+    if (href === "/") return;
+
+    const isWhatsAppVerified = typeof window !== "undefined" && window.sessionStorage.getItem("iicpa_whatsapp_verified") === "true";
+    const loggedIn = isAdmin || student || isWhatsAppVerified;
+
+    if (!loggedIn) {
+      e.preventDefault();
+      setDrawerOpen(false);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("iicpa_whatsapp_target_url", href);
+      }
+      window.dispatchEvent(new Event("iicpa:open-whatsapp-gate"));
+    }
+  };
+
   const headerTop = topOffset ?? (showMarquee ? "40px" : "0px");
 
   return (
@@ -477,6 +508,7 @@ export default function Header({
                             <Link
                               key={child.name}
                               href={child.href}
+                              onClick={(e) => handleNavClick(e, child.href)}
                               className="block px-3 py-2.5 text-xs hover:bg-green-50"
                             >
                               {child.name}
@@ -485,6 +517,7 @@ export default function Header({
                             <Link
                               key={child.name}
                               href={child.href}
+                              onClick={(e) => handleNavClick(e, child.href)}
                               className="block px-3 py-2.5 text-xs hover:bg-green-50"
                             >
                               {child.name}
@@ -498,6 +531,7 @@ export default function Header({
                     <Link
                       key={item.name}
                       href={item.href}
+                      onClick={(e) => handleNavClick(e, item.href)}
                       className={`py-1.5 px-2 hover:text-green-600 hover:bg-green-50 rounded-md text-sm ${
                         pathname === item.href ? "text-green-600 bg-green-50" : ""
                       }`}
@@ -532,6 +566,7 @@ export default function Header({
                 {!isAdmin && (
                   <Link
                     href="/booking"
+                    onClick={(e) => handleNavClick(e, "/booking")}
                     className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
                   >
                     Register Now
@@ -585,6 +620,7 @@ export default function Header({
                   <>
                     <Link
                       href="/student-login"
+                      onClick={(e) => handleNavClick(e, "/student-login")}
                       className="border border-green-600 text-green-600 hover:bg-green-50 px-3 py-1.5 rounded-lg text-sm"
                     >
                       Digital Hub
@@ -646,7 +682,10 @@ export default function Header({
                         <Link
                           key={child.name}
                           href={child.href}
-                          onClick={() => setDrawerOpen(false)}
+                          onClick={(e) => {
+                            setDrawerOpen(false);
+                            handleNavClick(e, child.href);
+                          }}
                           className="mobile-nav-item block text-xs text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md py-2 px-3 w-full text-left"
                         >
                           {child.name}
@@ -655,7 +694,10 @@ export default function Header({
                         <Link
                           key={child.name}
                           href={child.href}
-                          onClick={() => setDrawerOpen(false)}
+                          onClick={(e) => {
+                            setDrawerOpen(false);
+                            handleNavClick(e, child.href);
+                          }}
                           className="mobile-nav-item block text-xs text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-md"
                         >
                           {child.name}
@@ -668,7 +710,10 @@ export default function Header({
                 <Link
                   key={item.name}
                   href={item.href}
-                  onClick={() => setDrawerOpen(false)}
+                  onClick={(e) => {
+                    setDrawerOpen(false);
+                    handleNavClick(e, item.href);
+                  }}
                   className={`mobile-nav-item block text-xs rounded-md mb-1 ${
                     pathname === item.href
                       ? "text-green-600 bg-green-50 font-medium"
@@ -723,14 +768,20 @@ export default function Header({
               <>
 	                <Link
 	                  href="/booking"
-	                  onClick={() => setDrawerOpen(false)}
+	                  onClick={(e) => {
+	                    setDrawerOpen(false);
+	                    handleNavClick(e, "/booking");
+	                  }}
 	                  className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
 	                >
 	                  Register Now
 	                </Link>
                 <Link
                   href="/student-login"
-                  onClick={() => setDrawerOpen(false)}
+                  onClick={(e) => {
+                    setDrawerOpen(false);
+                    handleNavClick(e, "/student-login");
+                  }}
                   className="block w-full border border-green-600 text-green-600 hover:bg-green-50 px-4 py-2 rounded-lg text-center text-sm"
                 >
                   Digital Hub

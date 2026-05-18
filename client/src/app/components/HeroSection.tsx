@@ -63,6 +63,22 @@ export default function HeroSection() {
   const [videoReady, setVideoReady] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
 
+  const handleGetStartedClick = (e: React.MouseEvent) => {
+    if (typeof window !== "undefined") {
+      const isAdmin = !!localStorage.getItem("adminToken");
+      const isStudent = !!localStorage.getItem("iicpa_student_logged_in");
+      const isWhatsAppVerified = sessionStorage.getItem("iicpa_whatsapp_verified") === "true";
+
+      if (!isAdmin && !isStudent && !isWhatsAppVerified) {
+        e.preventDefault();
+        sessionStorage.setItem("iicpa_whatsapp_target_url", "/about");
+        window.dispatchEvent(new Event("iicpa:open-whatsapp-gate"));
+        return;
+      }
+    }
+    router.push("/about");
+  };
+
   useEffect(() => {
     const fetchHeroData = async () => {
       try {
@@ -223,7 +239,7 @@ export default function HeroSection() {
           </p>
 
           <button
-            onClick={() => router.push("/about")}
+            onClick={handleGetStartedClick}
             className={`${heroData.colors.button} text-white px-8 py-4 rounded-full text-lg font-semibold shadow-lg transition-all duration-300 transform hover:scale-105 animate-fade-in-up animation-delay-700 hover:shadow-xl`}
           >
             {heroData.buttonText}
