@@ -71,9 +71,9 @@ export default function LiveClassListTab() {
           return;
         }
 
-        // Fetch live classes filtered to this student's purchased courses only
+        // Fetch live classes nested in student's purchased courses
         const response = await axios.get(
-          `${API}/api/live-sessions/for-student/${student._id}`,
+          `${API}/api/live-sessions/course-lessons/${student._id}`,
           { withCredentials: true }
         );
 

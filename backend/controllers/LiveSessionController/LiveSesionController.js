@@ -462,6 +462,97 @@ export const getLiveSessionsForStudent = async (req, res) => {
       return res.status(200).json([]);
     }
 
+    const purchasedCourseIds = Array.from(purchasedCourseIdSet);
+
+    // Find sessions that include at least one of the student's purchased courses
+    const sessions = await populateLiveSession(
+      LiveSession.find({
+        $or: [
+          { courseIds: { $in: purchasedCourseIds } },
+          { courseId: { $in: purchasedCourseIds } },
+        ],
+      })
+    );
+
+    const transformedSessions = sessions.map((session) => {
+      const sessionObj = normalizeLiveSessionResponse(session);
+      const now = new Date();
+      const sessionDate = new Date(session.date);
+      const [startTime, endTime] = session.time
+        ? session.time.split(" - ")
+        : ["10:00", "12:00"];
+
+      const sessionStart = new Date(sessionDate);
+      const [startHour, startMinute] = startTime.split(":").map(Number);
+      sessionStart.setHours(startHour, startMinute, 0, 0);
+
+      const sessionEnd = new Date(sessionDate);
+      const [endHour, endMinute] = endTime.split(":").map(Number);
+      sessionEnd.setHours(endHour, endMinute, 0, 0);
+
+      const durationMs = sessionEnd.getTime() - sessionStart.getTime();
+      const durationMinutes = Math.round(durationMs / (1000 * 60));
+
+      let dynamicStatus = session.status;
+      if (session.status === "active") {
+        if (now < sessionStart) dynamicStatus = "upcoming";
+        else if (now >= sessionStart && now <= sessionEnd) dynamicStatus = "live";
+        else if (now > sessionEnd) dynamicStatus = "completed";
+      }
+
+      let finalImageUrl = session.imageUrl || session.thumbnail;
+      if (!finalImageUrl) finalImageUrl = "/images/live-class.jpg";
+
+      return {
+        ...sessionObj,
+        status: dynamicStatus,
+        duration: durationMinutes,
+        enrolledCount: session.enrolledStudents?.length || 0,
+        imageUrl: finalImageUrl,
+      };
+    });
+
+    res.status(200).json(transformedSessions);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// GET /api/live-sessions/course-lessons/:studentId
+// Returns only live lessons configured nested inside the chapters/topics of courses purchased by the student.
+export const getCourseLiveLessonsForStudent = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ error: "Invalid student ID" });
+    }
+
+    const student = await Student.findById(studentId)
+      .select("course courseAccessOverrides")
+      .lean();
+
+    if (!student) {
+      return res.status(404).json({ error: "Student not found" });
+    }
+
+    // Collect purchased course IDs from the student's course array
+    const purchasedCourseIdSet = new Set(
+      (Array.isArray(student.course) ? student.course : []).map((id) => String(id))
+    );
+
+    // Also include courses from courseAccessOverrides that are not locked
+    if (Array.isArray(student.courseAccessOverrides)) {
+      student.courseAccessOverrides.forEach((entry) => {
+        if (!entry.isLocked && entry.courseId) {
+          purchasedCourseIdSet.add(String(entry.courseId));
+        }
+      });
+    }
+
+    if (purchasedCourseIdSet.size === 0) {
+      return res.status(200).json([]);
+    }
+
     const purchasedCourseIds = Array.from(purchasedCourseIdSet).map(id => new mongoose.Types.ObjectId(id));
 
     // Find all courses, populate chapters, and nested populate topics
