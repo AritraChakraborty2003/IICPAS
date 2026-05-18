@@ -417,13 +417,7 @@ export default function HomepageWhatsAppGate() {
             <ArrowLeft className="h-4 w-4" />
           </button>
         )}
-        <button
-          onClick={() => setIsOpen(false)}
-          className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
-          aria-label="Close verification modal"
-        >
-          <X className="h-4 w-4" />
-        </button>
+
 
         {showQuickAuth ? (
           <div className="bg-gradient-to-r from-[#0f5132] via-[#16a34a] to-[#22c55e] px-6 py-5 text-white pl-14">
