@@ -297,24 +297,24 @@ export default function HomepageWhatsAppGate() {
               <p className="text-xs uppercase tracking-[0.28em] text-white/75">
                 IICPA Access
               </p>
-                <h2
-                  id="homepage-whatsapp-gate-title"
-                  className="mt-1 text-2xl font-semibold"
-                >
-                  {intent === "hire"
-                    ? "Hire Top Finance Talents"
-                    : intent === "learn"
+              <h2
+                id="homepage-whatsapp-gate-title"
+                className="mt-1 text-2xl font-semibold"
+              >
+                {intent === "hire"
+                  ? "Hire Top Finance Talents"
+                  : intent === "learn"
                     ? "Upgrade skills for high-salary jobs"
                     : "Choose your path"}
-                </h2>
+              </h2>
             </div>
           </div>
           <p className="mt-3 max-w-[26rem] text-sm text-white/80">
             {intent === "hire"
               ? "Start hiring with IICPA and unlock qualified talent through WhatsApp verification."
               : intent === "learn"
-              ? "Explore job-ready skills and continue with WhatsApp verification."
-              : "Select the card that matches what you want to do."}
+                ? "Explore job-ready skills and continue with WhatsApp verification."
+                : "Select the card that matches what you want to do."}
           </p>
         </div>
 
@@ -497,7 +497,7 @@ export default function HomepageWhatsAppGate() {
                           } catch (error: any) {
                             toast.error(
                               error?.response?.data?.message ||
-                                "Failed to resend WhatsApp OTP"
+                              "Failed to resend WhatsApp OTP"
                             );
                           } finally {
                             setSendingOtp(false);
@@ -509,8 +509,8 @@ export default function HomepageWhatsAppGate() {
                         {secondsLeft > 0
                           ? `Resend in ${secondsLeft}s`
                           : sendingOtp
-                          ? "Resending..."
-                          : "Resend OTP"}
+                            ? "Resending..."
+                            : "Resend OTP"}
                       </button>
                     </div>
 

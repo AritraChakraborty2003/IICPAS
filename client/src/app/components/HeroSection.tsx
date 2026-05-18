@@ -163,9 +163,8 @@ export default function HeroSection() {
         <img
           src={posterSrc}
           alt="IICPA learning platform"
-          className={`w-full h-full object-cover transition-opacity duration-500 ${
-            videoReady && !videoFailed ? "opacity-0" : "opacity-100"
-          }`}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${videoReady && !videoFailed ? "opacity-0" : "opacity-100"
+            }`}
           loading="eager"
           fetchPriority="high"
         />
@@ -182,9 +181,8 @@ export default function HeroSection() {
               setVideoFailed(true);
               setVideoReady(false);
             }}
-            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
-              videoReady ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${videoReady ? "opacity-100" : "opacity-0"
+              }`}
           >
             <source src={videoSrc} type="video/mp4" />
             Your browser does not support the video tag.
