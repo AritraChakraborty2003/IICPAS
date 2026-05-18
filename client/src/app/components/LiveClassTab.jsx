@@ -579,34 +579,45 @@ export default function LiveClassTab({
                     </div>
 
                     <div className="flex flex-wrap gap-3 pt-1">
-                      {status === "live" && session.link ? (
-                        <a
-                          href={session.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-medium"
-                        >
-                          Join Now
-                        </a>
-                      ) : null}
+                      {isEnrolled ? (
+                        <>
+                          {status === "live" && session.link ? (
+                            <a
+                              href={session.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-medium"
+                            >
+                              Join Now
+                            </a>
+                          ) : null}
 
-                      {status === "upcoming" ? (
-                        <button
-                          disabled
-                          className="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-sm font-medium cursor-not-allowed"
-                        >
-                          Not Started
-                        </button>
-                      ) : null}
+                          {status === "upcoming" ? (
+                            <button
+                              disabled
+                              className="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-sm font-medium cursor-not-allowed"
+                            >
+                              Not Started
+                            </button>
+                          ) : null}
 
-                      {status === "completed" && session.link ? (
+                          {status === "completed" && session.link ? (
+                            <button
+                              onClick={() => handleOpenSession(session)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium"
+                            >
+                              View Session
+                            </button>
+                          ) : null}
+                        </>
+                      ) : (
                         <button
-                          onClick={() => handleOpenSession(session)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium"
+                          onClick={() => handleEnrollClick(session)}
+                          className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-md transition-all hover:scale-105"
                         >
-                          View Session
+                          {session.price > 0 ? `Buy Now • ₹${session.price}` : "Register Free"}
                         </button>
-                      ) : null}
+                      )}
                     </div>
                   </div>
                 );
