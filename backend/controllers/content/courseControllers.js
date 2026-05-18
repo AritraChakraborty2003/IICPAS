@@ -22,10 +22,7 @@ export const getStudentCourses = async (req, res) => {
       path: "course",
       populate: {
         path: "chapters",
-        populate: {
-          path: "topics",
-          select: "_id title"
-        },
+        populate: POPULATE_TOPICS_WITH_LESSONS,
       },
     }).populate("batchId", "code mode size assignedCount courseLocks");
 

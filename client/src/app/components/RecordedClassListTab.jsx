@@ -10,46 +10,19 @@ import {
   ExternalLink,
   Layers,
 } from "lucide-react";
+import { buildTopicLessonRows } from "@/lib/topicLessons";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 const formatDate = (dateString) => {
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return "Date TBD";
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString("en-IN", {
     month: "long",
     day: "numeric",
     year: "numeric",
   });
 };
-
-const resolveObjectId = (value) => {
-  if (!value) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "object" && value._id) return String(value._id);
-  return "";
-};
-
-const getBatchLabel = (student = {}) =>
-  student.batchCode || student.batchId?.code || "";
-
-const getSessionBatchId = (session = {}) =>
-  resolveObjectId(session.batchId);
-
-const getSessionBatchCode = (session = {}) =>
-  String(session.batchCode || session.batchId?.code || "").trim();
-
-const getCourseTitle = (session = {}) =>
-  session.courseId?.title ||
-  session.courseTitle ||
-  session.courseIds?.[0]?.title ||
-  "General";
-
-const getChapterTitle = (session = {}) =>
-  session.chapterId?.title ||
-  session.chapterTitle ||
-  session.chapterIds?.[0]?.title ||
-  "No chapter";
 
 const getSessionStatusLabel = (status = "") =>
   String(status || "")
@@ -58,12 +31,9 @@ const getSessionStatusLabel = (status = "") =>
 
 export default function RecordedClassListTab({ student }) {
   const [sessions, setSessions] = useState([]);
+  const [hasCourses, setHasCourses] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  const studentBatchId = resolveObjectId(student?.batchId);
-  const studentBatchCode = getBatchLabel(student);
-  const batchLabel = studentBatchCode || studentBatchId;
 
   useEffect(() => {
     const loadData = async () => {
@@ -77,25 +47,57 @@ export default function RecordedClassListTab({ student }) {
         setLoading(true);
         setError("");
 
-        const response = await axios.get(`${API}/api/live-sessions`);
-        const data = Array.isArray(response.data) ? response.data : [];
+        // 1. Fetch student's purchased courses
+        const response = await axios.get(
+          `${API}/api/courses/student-courses/${student._id}`,
+          { withCredentials: true }
+        );
+        const enrolledCourses = response.data.courses || [];
+        setHasCourses(enrolledCourses.length > 0);
 
-        const completedForBatch = data
-          .filter((session) => String(session?.status || "").toLowerCase() === "completed")
-          .filter((session) => {
-            if (!studentBatchId && !studentBatchCode) return false;
+        // 2. Process and extract all recorded lessons grouped by Course -> Chapter
+        const processedCourses = [];
 
-            const sessionBatchId = getSessionBatchId(session);
-            const sessionBatchCode = getSessionBatchCode(session);
+        enrolledCourses.forEach((course) => {
+          const courseChapters = [];
+          const chaptersList = Array.isArray(course.chapters) ? course.chapters : [];
 
-            return (
-              (studentBatchId && sessionBatchId === studentBatchId) ||
-              (studentBatchCode && sessionBatchCode === studentBatchCode)
-            );
-          })
-          .sort((a, b) => new Date(b.date) - new Date(a.date));
+          chaptersList.forEach((chapter) => {
+            const topicsList = Array.isArray(chapter.topics) ? chapter.topics : [];
+            // Retrieve all active recorded lessons using buildTopicLessonRows
+            const recordedLessons = buildTopicLessonRows(topicsList, "recorded", {
+              includeLegacyIntro: true,
+            });
 
-        setSessions(completedForBatch);
+            if (recordedLessons.length > 0) {
+              const sessionsList = recordedLessons.map((lesson) => ({
+                _id: lesson.id,
+                title: lesson.title,
+                status: lesson.status,
+                date: lesson.publishAt || chapter.createdAt || course.createdAt || new Date(),
+                time: "",
+                link: lesson.sourceUrl,
+                sourceType: lesson.sourceType,
+              }));
+
+              courseChapters.push({
+                id: chapter._id,
+                title: chapter.title,
+                sessions: sessionsList,
+              });
+            }
+          });
+
+          if (courseChapters.length > 0) {
+            processedCourses.push({
+              id: course._id,
+              title: course.title,
+              chapters: courseChapters,
+            });
+          }
+        });
+
+        setSessions(processedCourses);
       } catch (err) {
         console.error("Failed to load recorded classes:", err);
         setError("Failed to load recorded classes");
@@ -105,66 +107,9 @@ export default function RecordedClassListTab({ student }) {
     };
 
     loadData();
-  }, [student?._id, studentBatchId, studentBatchCode]);
+  }, [student?._id]);
 
-  const groupedSessions = useMemo(() => {
-    const courseMap = new Map();
-
-    sessions.forEach((session) => {
-      const courseKey = String(
-        session.courseId?._id ||
-          session.courseId ||
-          session.courseIds?.[0]?._id ||
-          session.courseIds?.[0] ||
-          session.category ||
-          "general"
-      );
-      const courseTitle = getCourseTitle(session);
-      const chapterKey = String(
-        session.chapterId?._id ||
-          session.chapterId ||
-          session.chapterIds?.[0]?._id ||
-          session.chapterIds?.[0] ||
-          session.chapterTitle ||
-          "no-chapter"
-      );
-      const chapterTitle = getChapterTitle(session);
-
-      if (!courseMap.has(courseKey)) {
-        courseMap.set(courseKey, {
-          id: courseKey,
-          title: courseTitle,
-          chapters: new Map(),
-        });
-      }
-
-      const courseEntry = courseMap.get(courseKey);
-
-      if (!courseEntry.chapters.has(chapterKey)) {
-        courseEntry.chapters.set(chapterKey, {
-          id: chapterKey,
-          title: chapterTitle,
-          sessions: [],
-        });
-      }
-
-      courseEntry.chapters.get(chapterKey).sessions.push({
-        ...session,
-        courseTitle,
-        chapterTitle,
-      });
-    });
-
-    return Array.from(courseMap.values()).map((course) => ({
-      ...course,
-      chapters: Array.from(course.chapters.values()).map((chapter) => ({
-        ...chapter,
-        sessions: chapter.sessions.sort(
-          (a, b) => new Date(b.date) - new Date(a.date)
-        ),
-      })),
-    }));
-  }, [sessions]);
+  const groupedSessions = sessions;
 
   const totalSessions = useMemo(
     () =>
@@ -180,15 +125,13 @@ export default function RecordedClassListTab({ student }) {
     [groupedSessions]
   );
 
-  const hasBatch = Boolean(batchLabel);
-
   if (loading) {
     return (
       <div className="min-h-[calc(100vh-80px)] px-6 py-8 bg-white text-black overflow-y-auto">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold">Recorded Class</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Loading recorded classes for your batch...
+            Loading recorded classes for your enrolled courses...
           </p>
         </div>
         <div className="flex items-center justify-center py-12">
@@ -215,7 +158,7 @@ export default function RecordedClassListTab({ student }) {
         <div>
           <h1 className="text-2xl font-semibold">Recorded Class</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Completed live sessions for your assigned batch are listed below.
+            Access course-wise recorded lessons and materials for your enrolled courses.
           </p>
         </div>
 
@@ -223,30 +166,25 @@ export default function RecordedClassListTab({ student }) {
           <div className="text-sm font-medium bg-blue-50 text-blue-700 px-4 py-2 rounded-full border border-blue-100">
             {totalSessions} Recorded Lesson{totalSessions !== 1 ? "s" : ""}
           </div>
-          {hasBatch ? (
-            <div className="text-xs font-semibold uppercase tracking-[0.18em] bg-emerald-50 text-emerald-700 px-4 py-2 rounded-full border border-emerald-100">
-              Batch {batchLabel}
-            </div>
-          ) : null}
         </div>
       </div>
 
-      {!hasBatch ? (
+      {!hasCourses ? (
         <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
-          <Layers className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 text-lg font-medium">No batch assigned yet.</p>
+          <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+          <p className="text-gray-500 text-lg font-medium">No enrolled courses yet.</p>
           <p className="text-gray-400 text-sm mt-2">
-            Recorded classes will appear here once your batch is mapped.
+            Recorded classes will appear here once you purchase or enroll in a course.
           </p>
         </div>
       ) : groupedSessions.length === 0 ? (
         <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
           <PlayCircle className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500 text-lg font-medium">
-            No recorded classes found for this batch.
+            No recorded classes found.
           </p>
           <p className="text-gray-400 text-sm mt-2">
-            Once a completed live session is added for batch {batchLabel}, it will show up here.
+            Once recorded lessons are added to your enrolled courses, they will show up here.
           </p>
         </div>
       ) : (
@@ -316,26 +254,9 @@ export default function RecordedClassListTab({ student }) {
                                       <Calendar className="w-4 h-4" />
                                       <span>{formatDate(session.date)}</span>
                                     </div>
-                                    {session.time ? (
-                                      <div className="flex items-center gap-1.5">
-                                        <Clock className="w-4 h-4" />
-                                        <span>{session.time}</span>
-                                      </div>
-                                    ) : null}
-                                    <span className="flex items-center gap-1.5">
-                                      <Layers className="w-4 h-4" />
-                                      <span>
-                                        Batch {session.batchCode || session.batchId?.code || batchLabel}
-                                      </span>
-                                    </span>
                                   </div>
 
                                   <div className="mt-2 text-sm text-gray-600">
-                                    <span className="font-medium text-gray-700">
-                                      Instructor:
-                                    </span>{" "}
-                                    {session.instructor || "Not assigned"}
-                                    <span className="mx-2 text-gray-300">•</span>
                                     <span className="font-medium text-gray-700">
                                       Chapter:
                                     </span>{" "}
