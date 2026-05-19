@@ -500,6 +500,108 @@ export default function GSTComputationSimulation() {
               </div>
             )}
 
+            {/* STATE 2.5: REASON FOR CHALLAN */}
+            {currentStep === "reason_for_challan" && (
+              <div className="space-y-6 flex-1 w-full text-[11px] select-none">
+                {/* Breadcrumbs */}
+                <div className="text-xs font-bold text-[#1e3b6a] flex items-center justify-between w-full">
+                  <div className="flex items-center gap-1.5">
+                    <span className="hover:underline cursor-pointer" onClick={() => setCurrentStep("dashboard_active")}>Dashboard</span>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="hover:underline cursor-pointer">Payment</span>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="text-[#475569]">Reason for challan</span>
+                  </div>
+                  <div className="flex items-center gap-1 text-slate-600 hover:text-slate-900 cursor-pointer font-bold">
+                    <Globe size={12} />
+                    <span>English</span>
+                  </div>
+                </div>
+
+                {/* Reason For Challan Box */}
+                <div className="bg-white border border-[#cbd5e1] rounded shadow-sm p-5 w-full">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-6">
+                    <h2 className="text-[#0a2558] font-extrabold text-[14px]">Reason For Challan</h2>
+                    <button className="bg-[#1e3b6a] hover:bg-[#152a4e] text-white px-3 py-1.5 text-[10px] font-bold flex items-center gap-1 rounded tracking-wide shadow-sm">
+                      HELP
+                    </button>
+                  </div>
+
+                  <div className="py-6 pl-12 pr-12">
+                    <div className="text-right text-[10px] text-red-500 font-semibold mb-6">
+                      <span className="text-red-500 font-bold">*</span> indicates mandatory fields
+                    </div>
+                    
+                    <div className="flex items-start gap-4">
+                      <span className="text-[11px] font-extrabold text-slate-700 w-44 text-right pt-0.5 shrink-0">
+                        Reason For Challan <span className="text-red-500 font-bold">*</span> :
+                      </span>
+                      <div className="flex flex-col gap-3 font-bold text-slate-700 text-[11px]">
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="reason"
+                            value="monthly"
+                            checked={selectedReason === "monthly"}
+                            onChange={(e) => setSelectedReason(e.target.value)}
+                            className="h-4 w-4 accent-[#0a2558]"
+                          />
+                          Monthly payment for quarterly return
+                        </label>
+                        <label className="flex items-center gap-2.5 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="reason"
+                            value="other"
+                            checked={selectedReason === "other"}
+                            onChange={(e) => setSelectedReason(e.target.value)}
+                            className="h-4 w-4 accent-[#0a2558]"
+                          />
+                          Any other payment
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-slate-200 pt-5 mt-6">
+                    <button className="bg-[#1e3b6a] hover:bg-[#0f254c] text-white px-4 py-2.5 font-bold text-[10px] transition-colors flex items-center gap-1 rounded shadow-sm">
+                      VIEW LEDGER BALANCE <span className="text-[8px]">▼</span>
+                    </button>
+                    <button
+                      onClick={handleProceedFromReason}
+                      disabled={!selectedReason}
+                      className={`px-8 py-2.5 font-bold text-[10px] transition-colors rounded uppercase shadow-sm ${
+                        selectedReason
+                          ? "bg-[#0a2558] hover:bg-[#0f3a9a] text-white cursor-pointer"
+                          : "bg-[#cbd5e1] text-slate-400 cursor-not-allowed"
+                      }`}
+                    >
+                      Proceed
+                    </button>
+                  </div>
+                </div>
+
+                {/* Note Card */}
+                <div className="bg-[#f8fafc] border border-[#a3c9e6] rounded p-4 text-[11px] text-slate-700 mt-6 relative shadow-sm leading-relaxed">
+                  <h4 className="font-extrabold text-[#0a2558] mb-2.5 text-xs">Note: For taxpayer filing GSTR-3B on quarterly basis:</h4>
+                  <ol className="list-decimal list-outside pl-4 space-y-2.5">
+                    <li>
+                      To make payment for the first (M1) and second (M2) months of the quarter, please select reason as 'Monthly Payment for Quarterly Return' and the relevant period (financial year, month) and choose whether to pay through 35% challan or self-assessment challan.
+                    </li>
+                    <li>
+                      To make payment for the third month of the Quarter (M3), please use 'Create Challan' option in payment Table-6 of Form GSTR-3B Quarterly. An auto-populated challan amounting to liabilities for the quarter net off credit utilization and existing cash balance can be generated and used to offset liabilities.
+                    </li>
+                  </ol>
+                  <p className="mt-3 text-slate-700">
+                    <span className="text-blue-600 underline font-bold cursor-pointer hover:text-blue-800">Click here</span> for navigation to 'Return Dashboard' and prepare GSTR-3B Quarterly. Filing of GSTR-3B Quarterly available in the third month of the quarter is mandatory.
+                  </p>
+                  <p className="mt-2.5 font-bold text-slate-700">
+                    *For adding cash to Electronic Cash Ledger, already established procedure may be followed.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* STATE 3: CREATE CHALLAN FORM */}
             {currentStep === "create_challan" && (
               <div className="space-y-6 flex-1">
