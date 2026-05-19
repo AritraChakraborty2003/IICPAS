@@ -19,6 +19,7 @@ const UNPROTECTED_PATHS = [
   "/simulations/gst/gst-computation-2",
   "/simulations/gst/gst-computation-3",
   "/simulations/gst/gst-computation-4",
+  "/simulations/gst/gstr-1a-1",
 ];
 
 const normalizeCourseList = (payload: unknown) => {

@@ -46,6 +46,14 @@ const experiments = [
     icon: FaCalculator,
   },
   {
+    title: "GSTR-1A-1",
+    description:
+      "Amendment of outward supplies of goods or services filing simulation.",
+    route: "/simulations/gst/gstr-1a-1",
+    badge: "GSTR-1A",
+    icon: FaFileInvoice,
+  },
+  {
     title: "E-Invoicing 1",
     description:
       "Exact screenshot-style replica of the GST e-invoicing portal flow.",
