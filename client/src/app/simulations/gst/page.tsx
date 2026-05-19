@@ -54,6 +54,14 @@ const experiments = [
     icon: FaFileInvoice,
   },
   {
+    title: "GSTR-2A-2B-1",
+    description:
+      "Auto-Drafted ITC Statement comparison and details view simulation.",
+    route: "/simulations/gst/gstr-2a-2b-1",
+    badge: "GSTR-2A/2B",
+    icon: FaFileInvoice,
+  },
+  {
     title: "E-Invoicing 1",
     description:
       "Exact screenshot-style replica of the GST e-invoicing portal flow.",
