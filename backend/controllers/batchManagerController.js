@@ -153,19 +153,19 @@ export const buildBatchCourseScheduleEmail = ({ studentName, batch, courseSchedu
           <div style="display: inline-block;">
             <!-- Facebook -->
             <a href="https://www.facebook.com/profile.php?id=61581482543779" target="_blank" style="text-decoration: none; margin: 0 8px; display: inline-block; vertical-align: middle;">
-              <img src="https://img.icons8.com/color/48/facebook-new.png" width="36" height="36" alt="Facebook" style="display: block; border: 0;" />
+              <img src="https://cdn-images.mailchimp.com/icons/social-block-v2/color-facebook-48.png" width="36" height="36" alt="Facebook" style="display: block; border: 0;" />
             </a>
             <!-- Instagram -->
             <a href="https://www.instagram.com/iicpainstitute/" target="_blank" style="text-decoration: none; margin: 0 8px; display: inline-block; vertical-align: middle;">
-              <img src="https://img.icons8.com/color/48/instagram-new.png" width="36" height="36" alt="Instagram" style="display: block; border: 0;" />
+              <img src="https://cdn-images.mailchimp.com/icons/social-block-v2/color-instagram-48.png" width="36" height="36" alt="Instagram" style="display: block; border: 0;" />
             </a>
             <!-- YouTube -->
             <a href="https://www.youtube.com/@IICPAInstitutes" target="_blank" style="text-decoration: none; margin: 0 8px; display: inline-block; vertical-align: middle;">
-              <img src="https://img.icons8.com/color/48/youtube-play.png" width="36" height="36" alt="YouTube" style="display: block; border: 0;" />
+              <img src="https://cdn-images.mailchimp.com/icons/social-block-v2/color-youtube-48.png" width="36" height="36" alt="YouTube" style="display: block; border: 0;" />
             </a>
             <!-- LinkedIn -->
             <a href="https://www.linkedin.com/in/iicpa-institute-24aa9b386/" target="_blank" style="text-decoration: none; margin: 0 8px; display: inline-block; vertical-align: middle;">
-              <img src="https://img.icons8.com/color/48/linkedin.png" width="36" height="36" alt="LinkedIn" style="display: block; border: 0;" />
+              <img src="https://cdn-images.mailchimp.com/icons/social-block-v2/color-linkedin-48.png" width="36" height="36" alt="LinkedIn" style="display: block; border: 0;" />
             </a>
           </div>
         </div>
