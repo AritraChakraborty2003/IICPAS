@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-type Step = "reason_for_challan_overlay" | "reason_for_challan" | "create_challan" | "receipt";
+type Step = "reason_for_challan_overlay" | "reason_for_challan" | "create_challan" | "payment_selection" | "receipt";
 
 interface TaxRow {
   head: string;
@@ -43,6 +43,11 @@ export default function GSTComputation2Simulation() {
   const [isPaymentsDropdownOpen, setIsPaymentsDropdownOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [showLedgerTable, setShowLedgerTable] = useState(false);
+
+  // Payment Selection States
+  const [selectedBank, setSelectedBank] = useState<string>("");
+  const [isTermsChecked, setIsTermsChecked] = useState<boolean>(false);
+  const [paymentSelectionErrorMessage, setPaymentSelectionErrorMessage] = useState("");
 
   // Form values
   const [cgst, setCgst] = useState<TaxRow>({ head: "CGST (0005)", tax: 0, interest: 0, penalty: 0, fees: 0, other: 0 });
@@ -70,6 +75,8 @@ export default function GSTComputation2Simulation() {
       setProgress(90);
     } else if (currentStep === "create_challan") {
       setProgress(92);
+    } else if (currentStep === "payment_selection") {
+      setProgress(95);
     } else if (currentStep === "receipt") {
       setProgress(100);
     }
@@ -116,9 +123,22 @@ export default function GSTComputation2Simulation() {
     }
 
     // Generate random 14-digit CPIN
-    const generatedCpin = Math.floor(10000000000000 + Math.random() * 90000000000000).toString();
+    const generatedCpin = "CLN" + Math.floor(1000000000 + Math.random() * 9000000000).toString();
     setCpin(generatedCpin);
     setErrorMessage("");
+    setCurrentStep("payment_selection");
+  };
+
+  const handleMakePayment = () => {
+    if (!selectedBank) {
+      setPaymentSelectionErrorMessage("Please select a bank to proceed with the payment.");
+      return;
+    }
+    if (!isTermsChecked) {
+      setPaymentSelectionErrorMessage("Please agree to the Terms and Conditions to proceed.");
+      return;
+    }
+    setPaymentSelectionErrorMessage("");
     setCurrentStep("receipt");
   };
 
@@ -130,6 +150,9 @@ export default function GSTComputation2Simulation() {
     setCess({ head: "Cess (0009)", tax: 0, interest: 0, penalty: 0, fees: 0, other: 0 });
     setPaymentMode("E-Payment");
     setErrorMessage("");
+    setSelectedBank("");
+    setIsTermsChecked(false);
+    setPaymentSelectionErrorMessage("");
   };
 
   const getTodayDate = () => {
@@ -192,10 +215,10 @@ export default function GSTComputation2Simulation() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 text-[#333333] font-sans antialiased flex flex-col items-center py-6 select-none">
+    <div className="min-h-screen bg-white text-[#333333] font-sans antialiased flex flex-col select-none">
       
-      {/* Simulation Container wrapping everything */}
-      <div className="w-full max-w-5xl bg-white shadow-lg border border-[#cbd5e1] rounded-lg overflow-hidden flex flex-col">
+      {/* Simulation Container wrapping everything - full width, top attached */}
+      <div className="w-full flex-1 flex flex-col">
         
         {/* Top Data Strip */}
         <div className="bg-[#f8fafc] px-6 py-3 border-b border-[#e2e8f0] flex items-center justify-between text-xs font-bold text-slate-700 select-none">
@@ -258,17 +281,6 @@ export default function GSTComputation2Simulation() {
         {/* Main GST Portal Container (Full-width inside the max-w-5xl wrapper) */}
         <div className="w-full flex-1 flex flex-col justify-between bg-white relative overflow-hidden">
             
-            {/* Top Accessibility Bar */}
-            <div className="bg-[#0b1a30] px-5 py-1 flex items-center justify-end text-[10px] text-white/80 font-medium w-full border-b border-white/5">
-              <div className="flex items-center gap-3">
-                <span className="hover:underline cursor-pointer">Skip to Main Content</span>
-                <span className="text-white/20">|</span>
-                <span className="cursor-pointer font-bold hover:text-blue-200">A+</span>
-                <span className="cursor-pointer font-bold hover:text-blue-200">A</span>
-                <span className="cursor-pointer font-bold hover:text-blue-200">A-</span>
-              </div>
-            </div>
-
             {/* Inner GST Portal Header */}
             <div className="bg-[#0a2558] px-5 py-3 flex items-center justify-between border-b border-[#0f172a] w-full">
               <div className="flex items-center gap-3.5">
@@ -287,16 +299,22 @@ export default function GSTComputation2Simulation() {
                 </div>
               </div>
               
-              <div className="flex items-center gap-4 text-white text-[11px] font-medium">
-                <div className="flex items-center gap-1 hover:text-blue-200 cursor-pointer">
-                  <User size={13} />
-                  <span className="font-bold">IICPA Private Limited</span>
-                  <ChevronDown size={11} />
+              <div className="flex flex-col items-end gap-1 text-white">
+                {/* Accessibility row */}
+                <div className="flex items-center gap-2 text-[9px] text-white/70 font-semibold select-none">
+                  <span className="hover:underline cursor-pointer">Skip to Main Content</span>
+                  <span className="cursor-pointer hover:text-blue-200">A+</span>
+                  <span className="cursor-pointer hover:text-blue-200">A</span>
+                  <span className="cursor-pointer hover:text-blue-200">A-</span>
                 </div>
-                <div className="relative cursor-pointer hover:scale-105 transition-transform shrink-0">
-                  <Bell size={15} />
-                  <span className="absolute -top-1.5 -right-1.5 bg-[#10b981] text-white font-black text-[8px] rounded-full h-3.5 w-3.5 flex items-center justify-center">
-                    0
+                {/* User Info row */}
+                <div className="flex flex-col items-end text-right text-[10px] font-bold mt-0.5">
+                  <div className="flex items-center gap-1 select-none">
+                    <User size={11} className="text-white/60" />
+                    <span>Fincurious Cements Private Limited</span>
+                  </div>
+                  <span className="text-[9px] text-[#93c5fd] font-semibold mt-0.5 tracking-wider">
+                    07GDLCF7228G1YK
                   </span>
                 </div>
               </div>
@@ -894,6 +912,257 @@ export default function GSTComputation2Simulation() {
                       className="bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white font-extrabold text-[11px] uppercase px-6 py-2 border-2 border-red-500 shadow-md cursor-pointer transition-colors"
                     >
                       Generate Challan
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STATE 4.5: PAYMENT SELECTION */}
+              {currentStep === "payment_selection" && (
+                <div className="space-y-6 flex-1 w-full text-[11px] select-none">
+                  
+                  {/* Success Alert Banner */}
+                  <div className="bg-[#e6f4ea] border border-[#a3cfb6] p-4 text-[#137333] font-bold text-xs rounded-none shadow-sm flex items-center justify-between select-none animate-fadeIn">
+                    <div className="flex items-center gap-2.5">
+                      <CheckCircle2 size={18} className="shrink-0" />
+                      <span>Challan successfully generated.</span>
+                    </div>
+                  </div>
+
+                  {paymentSelectionErrorMessage && (
+                    <div className="bg-red-50 border border-red-200 p-3 text-red-700 font-bold text-xs flex items-center gap-2">
+                      <AlertCircle size={15} className="shrink-0" />
+                      <span>{paymentSelectionErrorMessage}</span>
+                    </div>
+                  )}
+
+                  {/* GST Challan Section */}
+                  <div className="bg-white border border-[#cbd5e1] rounded-none p-5 shadow-sm space-y-4">
+                    <h3 className="font-extrabold text-[#0a2558] uppercase tracking-wide text-xs border-b border-slate-100 pb-2">
+                      GST Challan
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 font-semibold text-slate-600">
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">CPIN</p>
+                        <p className="text-slate-800 font-black text-xs tracking-wider">{cpin}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">Challan Generation Date</p>
+                        <p className="text-slate-800 font-extrabold text-xs">{getTodayDate()} 15:15:13.345Z</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">Challan Expiry Date</p>
+                        <p className="text-slate-800 font-extrabold text-xs">{getExpiryDate()}</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">Mode of Payment :-</p>
+                        <p className="text-slate-800 font-extrabold text-xs">E-Payment</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Details of Taxpayer Section */}
+                  <div className="bg-white border border-[#cbd5e1] rounded-none p-5 shadow-sm space-y-4">
+                    <h3 className="font-extrabold text-[#0a2558] uppercase tracking-wide text-xs border-b border-slate-100 pb-2">
+                      Details Of Taxpayer
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-semibold text-slate-600">
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">GSTIN/Other Id</p>
+                        <p className="text-slate-800 font-extrabold text-xs">07GDLCF7228G1YK</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">Email Address</p>
+                        <p className="text-slate-800 font-extrabold text-xs">cXXXXXXXXX@XXXXXXXom</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">Mobile Number</p>
+                        <p className="text-slate-800 font-extrabold text-xs">8XXXXX0910</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-semibold text-slate-600 pt-2">
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">Name</p>
+                        <p className="text-slate-800 font-extrabold text-xs">Fincurious Cements Private Limited</p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-slate-400 text-[10px] uppercase font-bold">Address</p>
+                        <p className="text-slate-800 font-extrabold text-xs font-semibold">XXXXXXXXXX Karnataka,560028</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Reason For Challan Section */}
+                  <div className="bg-white border border-[#cbd5e1] rounded-none p-5 shadow-sm space-y-2">
+                    <h3 className="font-extrabold text-[#0a2558] uppercase tracking-wide text-xs border-b border-slate-100 pb-2">
+                      Reason For Challan
+                    </h3>
+                    <div className="space-y-1 pt-1 font-semibold text-slate-600">
+                      <p className="text-slate-400 text-[10px] uppercase font-bold">Reason</p>
+                      <p className="text-slate-800 font-extrabold text-xs">{selectedReason || "Any other payment"}</p>
+                    </div>
+                  </div>
+
+                  {/* Details of Deposit Section */}
+                  <div className="bg-white border border-[#cbd5e1] rounded-none p-5 shadow-sm space-y-4">
+                    <h3 className="font-extrabold text-[#0a2558] uppercase tracking-wide text-xs border-b border-slate-100 pb-2">
+                      Details of Deposit
+                    </h3>
+                    <div className="border border-[#cbd5e1] overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-[10px]">
+                        <thead>
+                          <tr className="bg-slate-50 border-b border-[#cbd5e1] font-bold text-slate-700">
+                            <th className="p-2.5 border-r border-[#cbd5e1]"></th>
+                            <th className="p-2.5 border-r border-[#cbd5e1] text-right">Tax (₹)</th>
+                            <th className="p-2.5 border-r border-[#cbd5e1] text-right">Interest (₹)</th>
+                            <th className="p-2.5 border-r border-[#cbd5e1] text-right">Penalty (₹)</th>
+                            <th className="p-2.5 border-r border-[#cbd5e1] text-right">Fees (₹)</th>
+                            <th className="p-2.5 border-r border-[#cbd5e1] text-right">Other (₹)</th>
+                            <th className="p-2.5 text-right font-extrabold text-[#0a2558]">Total (₹)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-slate-700 font-semibold">
+                          <tr className="border-b border-[#cbd5e1]">
+                            <td className="p-2.5 border-r border-[#cbd5e1] font-bold">CGST (0005)</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">{cgst.tax.toLocaleString("en-IN")}</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 text-right font-extrabold bg-slate-50/30">{cgstTotal.toLocaleString("en-IN")}</td>
+                          </tr>
+                          <tr className="border-b border-[#cbd5e1]">
+                            <td className="p-2.5 border-r border-[#cbd5e1] font-bold">IGST (0008)</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">{igst.tax.toLocaleString("en-IN")}</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 text-right font-extrabold bg-slate-50/30">{igstTotal.toLocaleString("en-IN")}</td>
+                          </tr>
+                          <tr className="border-b border-[#cbd5e1]">
+                            <td className="p-2.5 border-r border-[#cbd5e1] font-bold">CESS (0009)</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 text-right font-extrabold bg-slate-50/30">0</td>
+                          </tr>
+                          <tr className="border-b border-[#cbd5e1]">
+                            <td className="p-2.5 border-r border-[#cbd5e1] font-bold">State SGST (0006)</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">{sgst.tax.toLocaleString("en-IN")}</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 text-right font-extrabold bg-slate-50/30">{sgstTotal.toLocaleString("en-IN")}</td>
+                          </tr>
+                          <tr className="bg-slate-100 font-extrabold text-[#0a2558]">
+                            <td className="p-2.5 border-r border-[#cbd5e1] uppercase">Total Challan Amount:</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right font-black" colSpan={5}>₹ {grandTotal.toLocaleString("en-IN")} /-</td>
+                            <td className="p-2.5 text-right text-xs text-emerald-600 font-black">{grandTotal.toLocaleString("en-IN")}</td>
+                          </tr>
+                          <tr className="bg-slate-50 font-bold text-slate-700 border-t border-[#cbd5e1]">
+                            <td className="p-2.5 border-r border-[#cbd5e1] uppercase text-[9px] text-slate-400">Total Challan Amount (In Words):</td>
+                            <td className="p-2.5 text-left text-[11px] font-extrabold text-slate-800" colSpan={6}>Ninety three thousand five hundred only.</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Select Mode of E-Payment Section */}
+                  <div className="bg-white border border-[#cbd5e1] rounded-none p-5 shadow-sm space-y-4">
+                    <h3 className="font-extrabold text-[#0a2558] tracking-wide text-xs">
+                      Select Mode of E-Payment <span className="text-red-500">*</span>
+                    </h3>
+                    <div className="flex flex-col gap-2 font-semibold text-[11px] text-slate-700 select-none">
+                      <div className="flex items-center opacity-70">
+                        <span className="mr-2 text-slate-400">•</span>
+                        <div className="p-1 flex items-center gap-2">
+                          <input type="radio" disabled className="h-3 w-3 accent-[#0a2558]" />
+                          <span className="text-[#2c4f7c] underline">Preferred Banks</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="mr-2 text-slate-400">•</span>
+                        <div className="p-1 flex items-center gap-2">
+                          <input type="radio" checked readOnly className="h-3 w-3 accent-[#0a2558]" />
+                          <span className="text-[#2c4f7c] underline">Net Banking</span>
+                          <span className="text-[#2c4f7c] font-black">✓</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Please select a bank Section */}
+                  <div className="bg-white border border-[#cbd5e1] rounded-none p-5 shadow-sm space-y-4">
+                    <h3 className="font-extrabold text-[#0a2558] tracking-wide text-xs">
+                      Please select a bank <span className="text-red-500">*</span>
+                    </h3>
+                    <div className="border border-red-500 p-2.5 bg-white inline-flex items-center gap-2 rounded">
+                      <input
+                        type="radio"
+                        name="selectionBank"
+                        value="FINC_DUMMY_BANK"
+                        checked={selectedBank === "FINC_DUMMY_BANK"}
+                        onChange={() => setSelectedBank("FINC_DUMMY_BANK")}
+                        className="h-3.5 w-3.5 accent-[#0a2558] cursor-pointer"
+                        id="finc-dummy-bank-radio"
+                      />
+                      <label htmlFor="finc-dummy-bank-radio" className="text-slate-800 font-extrabold text-[11px] cursor-pointer select-none">
+                        FINC DUMMY BANK
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Terms and Conditions Section */}
+                  <div className="bg-white border border-[#cbd5e1] rounded-none p-5 shadow-sm">
+                    <div className="border border-red-500 p-2.5 bg-white inline-flex items-center gap-2 rounded">
+                      <input
+                        type="checkbox"
+                        checked={isTermsChecked}
+                        onChange={(e) => setIsTermsChecked(e.target.checked)}
+                        className="h-3.5 w-3.5 accent-[#0a2558] cursor-pointer"
+                        id="terms-conditions-checkbox"
+                      />
+                      <label htmlFor="terms-conditions-checkbox" className="text-blue-600 underline font-extrabold text-[11px] cursor-pointer select-none">
+                        Terms and Conditions apply.
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Footer informational guidelines */}
+                  <div className="bg-[#fcf8e3] border border-[#faebcc] p-4 text-[#8a6d3b] text-[10px] leading-relaxed space-y-2 select-none">
+                    <p className="font-bold">
+                      ℹ If amount is deducted from bank account and not reflected in electronic cash ledger, you may raise grievance under Services &gt; Payments &gt; Grievance against payment (GST PMT-07)
+                    </p>
+                    <p className="font-bold">
+                      ℹ *Awaiting Bank Confirmation: For e-payment mode of payment, if the maker has made a transaction and checker approval is not communicated by bank to GST System.
+                    </p>
+                    <p className="font-bold">
+                      ℹ *Awaiting Bank Clearance: For OTC mode of payment, if bank has acknowledged the challan but remittance confirmation is not communicated by bank to GST System.
+                    </p>
+                  </div>
+
+                  {/* Submit Actions */}
+                  <div className="flex justify-end gap-3.5 pt-4">
+                    <button
+                      onClick={() => alert("Challan PDF downloaded successfully.")}
+                      className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-extrabold text-[11px] uppercase px-6 py-2 transition-colors cursor-pointer"
+                    >
+                      Download
+                    </button>
+                    <button
+                      onClick={handleMakePayment}
+                      className={`font-extrabold text-[11px] uppercase px-8 py-2.5 shadow-md transition-colors ${
+                        selectedBank === "FINC_DUMMY_BANK" && isTermsChecked
+                          ? "bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white cursor-pointer"
+                          : "bg-[#cbd5e1] text-slate-400 cursor-not-allowed"
+                      }`}
+                    >
+                      Make Payment
                     </button>
                   </div>
                 </div>
