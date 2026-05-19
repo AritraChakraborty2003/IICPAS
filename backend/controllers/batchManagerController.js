@@ -228,11 +228,11 @@ const sendBatchCourseScheduleEmails = async (batch) => {
   const courseSchedules = (batch.courseLocks || []).map((lock) => {
     const courseIdStr = String(lock.courseId);
     const courseDoc = courseMap.get(courseIdStr);
-    
+
     const chaptersList = (lock.chapters || []).map((ch) => {
       const chapterIdStr = String(ch.chapterId);
       const chapterDoc = chapterMap.get(chapterIdStr);
-      
+
       const topicsList = (ch.topics || []).map((t) => {
         const topicIdStr = String(t.topicId);
         const topicDoc = topicMap.get(topicIdStr);
@@ -478,8 +478,8 @@ export const updateBatchManagerEntry = async (req, res) => {
       Object.prototype.hasOwnProperty.call(req.body, "courseSchedule");
     const courseLocks = hasCourseLocks
       ? normalizeBatchCourseLocks(
-          req.body.courseLocks ?? req.body.courseLockSchedule ?? req.body.courseSchedule
-        )
+        req.body.courseLocks ?? req.body.courseLockSchedule ?? req.body.courseSchedule
+      )
       : null;
 
     if (!mode || !size) {
@@ -566,7 +566,7 @@ export const deleteBatchManagerEntry = async (req, res) => {
     }
 
     await batch.deleteOne();
- 
+
     return res.status(200).json({
       success: true,
       message: "Batch deleted successfully",
@@ -651,11 +651,11 @@ export const sendStudentScheduleEmail = async (req, res) => {
     const courseSchedules = (batch.courseLocks || []).map((lock) => {
       const courseIdStr = String(lock.courseId);
       const courseDoc = courseMap.get(courseIdStr);
-      
+
       const chaptersList = (lock.chapters || []).map((ch) => {
         const chapterIdStr = String(ch.chapterId);
         const chapterDoc = chapterMap.get(chapterIdStr);
-        
+
         const topicsList = (ch.topics || []).map((t) => {
           const topicIdStr = String(t.topicId);
           const topicDoc = topicMap.get(topicIdStr);
