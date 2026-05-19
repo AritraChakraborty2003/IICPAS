@@ -13,7 +13,8 @@ import {
   Download,
   Play,
   AlertCircle,
-  Globe
+  Globe,
+  FlaskConical
 } from "lucide-react";
 
 type Step = "dashboard_overlay" | "dashboard_active" | "reason_for_challan" | "create_challan" | "receipt";
@@ -37,6 +38,7 @@ export default function GSTComputationSimulation() {
   const [isServicesMenuOpen, setIsServicesMenuOpen] = useState(false);
   const [isPaymentsDropdownOpen, setIsPaymentsDropdownOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState<string>("");
+  const [showLedgerTable, setShowLedgerTable] = useState(false);
 
   // Form values
   const [cgst, setCgst] = useState<TaxRow>({ head: "CGST (0005)", tax: 0, interest: 0, penalty: 0, fees: 0, other: 0 });
@@ -78,6 +80,7 @@ export default function GSTComputationSimulation() {
   const handleCreateChallanNav = () => {
     setCurrentStep("reason_for_challan");
     setSelectedReason("");
+    setShowLedgerTable(false);
   };
 
   const handleProceedFromReason = () => {
@@ -90,6 +93,7 @@ export default function GSTComputationSimulation() {
     setCurrentStep("dashboard_active");
     setErrorMessage("");
     setSelectedReason("");
+    setShowLedgerTable(false);
   };
 
   const handleGenerateChallan = () => {
@@ -334,23 +338,40 @@ export default function GSTComputationSimulation() {
 
           {/* Dashboard Breadcrumb */}
           <div className="bg-[#f1f5f9] px-5 py-2 border-b border-[#cbd5e1] w-full">
-            <div className="text-xs font-bold text-[#1e3a8a] flex items-center gap-1">
-              <span className="hover:underline cursor-pointer">Dashboard</span>
-              {currentStep === "create_challan" && (
-                <>
-                  <span className="text-[#94a3b8]">&gt;</span>
-                  <span className="hover:underline cursor-pointer">Payments</span>
-                  <span className="text-[#94a3b8]">&gt;</span>
-                  <span className="text-[#475569]">Create Challan</span>
-                </>
-              )}
-              {currentStep === "receipt" && (
-                <>
-                  <span className="text-[#94a3b8]">&gt;</span>
-                  <span className="hover:underline cursor-pointer">Payments</span>
-                  <span className="text-[#94a3b8]">&gt;</span>
-                  <span className="text-[#475569]">Challan Receipt</span>
-                </>
+            <div className="text-xs font-bold text-[#1e3a8a] flex items-center justify-between w-full">
+              <div className="flex items-center gap-1.5">
+                <span className="hover:underline cursor-pointer" onClick={() => setCurrentStep("dashboard_active")}>Dashboard</span>
+                {currentStep === "reason_for_challan" && (
+                  <>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="hover:underline cursor-pointer">Payment</span>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="text-[#475569]">Reason for challan</span>
+                  </>
+                )}
+                {currentStep === "create_challan" && (
+                  <>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="hover:underline cursor-pointer">Payments</span>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="text-[#475569]">Create Challan</span>
+                  </>
+                )}
+                {currentStep === "receipt" && (
+                  <>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="hover:underline cursor-pointer">Payments</span>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="text-[#475569]">Challan Receipt</span>
+                  </>
+                )}
+              </div>
+              
+              {currentStep === "reason_for_challan" && (
+                <div className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer font-bold">
+                  <Globe size={12} className="text-slate-500" />
+                  <span>English</span>
+                </div>
               )}
             </div>
           </div>
@@ -503,77 +524,107 @@ export default function GSTComputationSimulation() {
             {/* STATE 2.5: REASON FOR CHALLAN */}
             {currentStep === "reason_for_challan" && (
               <div className="space-y-6 flex-1 w-full text-[11px] select-none">
-                {/* Breadcrumbs */}
-                <div className="text-xs font-bold text-[#1e3b6a] flex items-center justify-between w-full">
-                  <div className="flex items-center gap-1.5">
-                    <span className="hover:underline cursor-pointer" onClick={() => setCurrentStep("dashboard_active")}>Dashboard</span>
-                    <span className="text-[#94a3b8] font-normal">&gt;</span>
-                    <span className="hover:underline cursor-pointer">Payment</span>
-                    <span className="text-[#94a3b8] font-normal">&gt;</span>
-                    <span className="text-[#475569]">Reason for challan</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-slate-600 hover:text-slate-900 cursor-pointer font-bold">
-                    <Globe size={12} />
-                    <span>English</span>
-                  </div>
-                </div>
-
                 {/* Reason For Challan Box */}
-                <div className="bg-white border border-[#cbd5e1] rounded shadow-sm p-5 w-full">
-                  <div className="flex items-center justify-between border-b border-slate-200 pb-3 mb-6">
-                    <h2 className="text-[#0a2558] font-extrabold text-[14px]">Reason For Challan</h2>
-                    <button className="bg-[#1e3b6a] hover:bg-[#152a4e] text-white px-3 py-1.5 text-[10px] font-bold flex items-center gap-1 rounded tracking-wide shadow-sm">
-                      HELP
-                    </button>
-                  </div>
+                <div className="bg-white border border-[#cbd5e1] rounded-none p-5 w-full shadow-none min-h-[340px] flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2.5 mb-2">
+                      <h2 className="text-[#0a2558] font-bold text-[14px]">Reason For Challan</h2>
+                      <button className="bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white px-3 py-1 text-[10px] font-bold rounded-none shadow-none uppercase tracking-wide">
+                        HELP
+                      </button>
+                    </div>
 
-                  <div className="py-6 pl-12 pr-12">
-                    <div className="text-right text-[10px] text-red-500 font-semibold mb-6">
+                    <div className="text-right text-[10px] text-red-500 font-semibold mb-4 pr-2">
                       <span className="text-red-500 font-bold">*</span> indicates mandatory fields
                     </div>
-                    
-                    <div className="flex items-start gap-4">
-                      <span className="text-[11px] font-extrabold text-slate-700 w-44 text-right pt-0.5 shrink-0">
-                        Reason For Challan <span className="text-red-500 font-bold">*</span> :
-                      </span>
-                      <div className="flex flex-col gap-3 font-bold text-slate-700 text-[11px]">
-                        <label className="flex items-center gap-2.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="reason"
-                            value="monthly"
-                            checked={selectedReason === "monthly"}
-                            onChange={(e) => setSelectedReason(e.target.value)}
-                            className="h-4 w-4 accent-[#0a2558]"
-                          />
-                          Monthly payment for quarterly return
-                        </label>
-                        <label className="flex items-center gap-2.5 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="reason"
-                            value="other"
-                            checked={selectedReason === "other"}
-                            onChange={(e) => setSelectedReason(e.target.value)}
-                            className="h-4 w-4 accent-[#0a2558]"
-                          />
-                          Any other payment
-                        </label>
+
+                    {/* Centered Radio Options Box */}
+                    <div className="flex justify-center items-center py-10">
+                      <div className="flex items-start gap-4">
+                        <span className="text-[11px] font-bold text-slate-700 pt-0.5 text-right shrink-0">
+                          Reason For Challan <span className="text-red-500 font-bold">*</span> :
+                        </span>
+                        <div className="flex flex-col gap-3 font-semibold text-slate-700 text-[11px]">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="reason"
+                              value="monthly"
+                              checked={selectedReason === "monthly"}
+                              onChange={(e) => setSelectedReason(e.target.value)}
+                              className="h-4 w-4 accent-[#0a2558] cursor-pointer"
+                            />
+                            Monthly payment for quarterly return
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="reason"
+                              value="other"
+                              checked={selectedReason === "other"}
+                              onChange={(e) => setSelectedReason(e.target.value)}
+                              className="h-4 w-4 accent-[#0a2558] cursor-pointer"
+                            />
+                            Any other payment
+                          </label>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-slate-200 pt-5 mt-6">
-                    <button className="bg-[#1e3b6a] hover:bg-[#0f254c] text-white px-4 py-2.5 font-bold text-[10px] transition-colors flex items-center gap-1 rounded shadow-sm">
-                      VIEW LEDGER BALANCE <span className="text-[8px]">▼</span>
+                  {showLedgerTable && (
+                    <div className="px-6 pb-6 w-full overflow-x-auto select-none">
+                      <table className="w-full text-left border-collapse text-[10px] border border-[#cbd5e1]">
+                        <thead>
+                          <tr className="bg-slate-100 border-b border-[#cbd5e1] text-slate-700 font-extrabold">
+                            <th rowSpan={2} className="p-2 border-r border-[#cbd5e1] font-bold text-slate-700 text-left align-middle w-[220px]">Type of Ledger</th>
+                            <th colSpan={5} className="p-1 border-b border-[#cbd5e1] text-center font-bold">Available Balance (₹)</th>
+                          </tr>
+                          <tr className="bg-slate-100 border-b border-[#cbd5e1] text-slate-700 font-extrabold text-right">
+                            <th className="p-2 border-r border-[#cbd5e1]">Integrated Tax (₹)</th>
+                            <th className="p-2 border-r border-[#cbd5e1]">Central Tax (₹)</th>
+                            <th className="p-2 border-r border-[#cbd5e1]">State Tax (₹)</th>
+                            <th className="p-2 border-r border-[#cbd5e1]">CESS (₹)</th>
+                            <th className="p-2">Total (₹)</th>
+                          </tr>
+                        </thead>
+                        <tbody className="text-[10.5px] text-slate-700 font-semibold">
+                          <tr className="border-b border-[#cbd5e1]">
+                            <td className="p-2.5 border-r border-[#cbd5e1] bg-slate-50/50 font-bold">Electronic Cash Ledger</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 text-right text-blue-600 underline cursor-pointer font-bold">0</td>
+                          </tr>
+                          <tr>
+                            <td className="p-2.5 border-r border-[#cbd5e1] bg-slate-50/50 font-bold">Electronic Credit Ledger</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 border-r border-[#cbd5e1] text-right">0</td>
+                            <td className="p-2.5 text-right text-slate-600 font-bold">0</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Bottom Actions Row */}
+                  <div className="flex items-center justify-between pt-4">
+                    <button
+                      onClick={() => setShowLedgerTable(!showLedgerTable)}
+                      className="bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white px-4 py-2 font-bold text-[10px] rounded-none shadow-none transition-colors uppercase border-2 border-red-500 cursor-pointer"
+                    >
+                      VIEW LEDGER BALANCE ▼
                     </button>
                     <button
                       onClick={handleProceedFromReason}
                       disabled={!selectedReason}
-                      className={`px-8 py-2.5 font-bold text-[10px] transition-colors rounded uppercase shadow-sm ${
+                      className={`px-8 py-2 font-bold text-[10px] transition-colors rounded-none shadow-none uppercase ${
                         selectedReason
-                          ? "bg-[#0a2558] hover:bg-[#0f3a9a] text-white cursor-pointer"
-                          : "bg-[#cbd5e1] text-slate-400 cursor-not-allowed"
+                          ? "bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white cursor-pointer"
+                          : "bg-[#cbd5e1] text-slate-400 cursor-not-allowed opacity-60"
                       }`}
                     >
                       Proceed
@@ -582,8 +633,8 @@ export default function GSTComputationSimulation() {
                 </div>
 
                 {/* Note Card */}
-                <div className="bg-[#f8fafc] border border-[#a3c9e6] rounded p-4 text-[11px] text-slate-700 mt-6 relative shadow-sm leading-relaxed">
-                  <h4 className="font-extrabold text-[#0a2558] mb-2.5 text-xs">Note: For taxpayer filing GSTR-3B on quarterly basis:</h4>
+                <div className="bg-white border border-[#38bdf8] rounded-none p-5 text-[11px] text-slate-700 mt-6 relative shadow-none leading-relaxed">
+                  <h4 className="font-bold text-[#0a2558] mb-2.5 text-xs">Note: For taxpayer filing GSTR-3B on quarterly basis:</h4>
                   <ol className="list-decimal list-outside pl-4 space-y-2.5">
                     <li>
                       To make payment for the first (M1) and second (M2) months of the quarter, please select reason as 'Monthly Payment for Quarterly Return' and the relevant period (financial year, month) and choose whether to pay through 35% challan or self-assessment challan.

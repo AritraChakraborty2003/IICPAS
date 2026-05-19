@@ -22,6 +22,22 @@ const experiments = [
     icon: FaCalculator,
   },
   {
+    title: "GST Computation 2",
+    description:
+      "Challan creation payment with CGST (35,300), SGST (35,300), and IGST (22,900) validation.",
+    route: "/simulations/gst/gst-computation-2",
+    badge: "GST Computation",
+    icon: FaCalculator,
+  },
+  {
+    title: "GST Computation 4",
+    description:
+      "Exact replica of the GST Portal Challan History tab with search and sorting features.",
+    route: "/simulations/gst/gst-computation-4",
+    badge: "Challan History",
+    icon: FaCalculator,
+  },
+  {
     title: "E-Invoicing 1",
     description:
       "Exact screenshot-style replica of the GST e-invoicing portal flow.",
