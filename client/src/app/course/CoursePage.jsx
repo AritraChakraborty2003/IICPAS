@@ -699,62 +699,9 @@ export default function CoursePage() {
         </div>
       </div>
 
-      {/* Softwares We Teach Section */}
+      {/* Contact Support Section */}
       <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="text-center mb-10 md:mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            <span className="inline-flex items-center gap-2 rounded-full bg-white border border-gray-200 text-blue-700 px-4 py-1.5 text-xs font-semibold tracking-wide mb-5">
-              <span>Software Ecosystem</span>
-            </span>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
-              Softwares We Teach
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg">
-              Master industry-leading tools used by modern finance,
-              accounting, and business teams.
-            </p>
-          </motion.div>
-        </div>
-
-        <div className="software-marquee w-full py-2">
-          <div className="software-track">
-            {[...softwareStack, ...softwareStack].map((software, index) => (
-              <div
-                key={`${software.name}-${index}`}
-                className="software-card group"
-              >
-                <div className="h-44 rounded-2xl bg-gradient-to-br from-[#eef8ff] via-[#f0fbf5] to-[#eef8ff] border border-blue-100/70 flex items-center justify-center p-6">
-                  <img
-                    src={software.image}
-                    alt={software.name}
-                    className="w-28 h-28 object-contain transition-transform duration-500 group-hover:scale-110"
-                    loading="lazy"
-                  />
-                </div>
-
-                <div className="pt-5 px-1">
-                  <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-3">
-                    <span>Software</span>
-                  </span>
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">
-                    {software.name}
-                  </h3>
-                  <p className="text-sm text-gray-500">
-                    Professional certification course
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-4 sm:px-6 lg:px-8 mt-14 md:mt-16 min-h-[70vh] flex items-center">
+        <div className="px-4 sm:px-6 lg:px-8 flex items-center">
           <div className="relative w-full max-w-5xl mx-auto overflow-hidden rounded-[28px] border border-slate-200/80 bg-white p-6 md:p-10 grid grid-cols-1 lg:grid-cols-5 gap-8 shadow-[0_24px_70px_-36px_rgba(15,23,42,0.35)]">
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.09),transparent_42%),radial-gradient(circle_at_bottom_left,rgba(37,99,235,0.08),transparent_48%)]" />
 
@@ -858,6 +805,62 @@ export default function CoursePage() {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Softwares We Teach Section */}
+      <section className="py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            className="text-center mb-10 md:mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            viewport={{ once: true }}
+          >
+            <span className="inline-flex items-center gap-2 rounded-full bg-white border border-gray-200 text-blue-700 px-4 py-1.5 text-xs font-semibold tracking-wide mb-5">
+              <span>Software Ecosystem</span>
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+              Softwares We Teach
+            </h2>
+            <p className="text-gray-600 max-w-2xl mx-auto text-base sm:text-lg">
+              Master industry-leading tools used by modern finance,
+              accounting, and business teams.
+            </p>
+          </motion.div>
+        </div>
+
+        <div className="software-marquee w-full py-2">
+          <div className="software-track">
+            {[...softwareStack, ...softwareStack].map((software, index) => (
+              <div
+                key={`${software.name}-${index}`}
+                className="software-card group"
+              >
+                <div className="h-44 rounded-2xl bg-gradient-to-br from-[#eef8ff] via-[#f0fbf5] to-[#eef8ff] border border-blue-100/70 flex items-center justify-center p-6">
+                  <img
+                    src={software.image}
+                    alt={software.name}
+                    className="w-28 h-28 object-contain transition-transform duration-500 group-hover:scale-110"
+                    loading="lazy"
+                  />
+                </div>
+
+                <div className="pt-5 px-1">
+                  <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold mb-3">
+                    <span>Software</span>
+                  </span>
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
+                    {software.name}
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Professional certification course
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
