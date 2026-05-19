@@ -955,7 +955,7 @@ export default function GSTComputation2Simulation() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-semibold text-slate-600 pt-2">
                       <div className="space-y-1">
                         <p className="text-slate-400 text-[10px] uppercase font-bold">Name</p>
-                        <p className="text-slate-800 font-extrabold text-xs">Fincurious Cements Private Limited</p>
+                        <p className="text-slate-800 font-extrabold text-xs">IICPA Private Limited</p>
                       </div>
                       <div className="space-y-1">
                         <p className="text-slate-400 text-[10px] uppercase font-bold">Address</p>

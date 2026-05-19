@@ -20,6 +20,7 @@ export default function GSTR1A1Simulation() {
   const [period, setPeriod] = useState("select");
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [isServicesMenuOpen, setIsServicesMenuOpen] = useState(false);
+  const [isExperimentStarted, setIsExperimentStarted] = useState(false);
 
   useEffect(() => {
     if (currentStep === "gstr1a_dashboard") {
@@ -67,6 +68,32 @@ export default function GSTR1A1Simulation() {
   return (
     <div className="min-h-screen bg-white text-[#333333] font-sans antialiased flex flex-col select-none relative">
       
+      {/* START EXPERIMENT OVERLAY */}
+      {!isExperimentStarted && (
+        <div className="absolute inset-0 bg-white/30 backdrop-blur-[1.5px] z-40 flex items-center justify-center">
+          <button
+            onClick={() => setIsExperimentStarted(true)}
+            className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white px-8 py-3.5 rounded font-bold uppercase tracking-wider text-sm shadow-md hover:scale-105 transition-all flex items-center gap-2 cursor-pointer z-50"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="white"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="lucide lucide-play"
+            >
+              <polygon points="6 3 20 12 6 21 6 3" />
+            </svg>
+            Start Experiment
+          </button>
+        </div>
+      )}
+      
       {/* SUCCESS OVERLAY (GREEN TICK & RETRY BUTTON) */}
       {showSuccessOverlay && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[1.5px] animate-fadeIn">
@@ -86,34 +113,6 @@ export default function GSTR1A1Simulation() {
         </div>
       )}
 
-      {/* Top Data Strip */}
-      <div className="bg-[#f8fafc] px-6 py-3 border-b border-[#e2e8f0] flex items-center justify-between text-xs font-bold text-slate-700 select-none shrink-0">
-        <div className="flex items-center gap-4">
-          <span className="text-sm font-extrabold text-[#0a2558]">GST Return Filing (Online)</span>
-          <div className="flex items-center gap-2 bg-slate-200 rounded-full px-3 py-1 font-semibold text-[11px] text-slate-600">
-            <span className="w-20 bg-slate-300 h-2 rounded-full overflow-hidden relative block">
-              <span className="absolute left-0 top-0 bottom-0 bg-blue-600 rounded-full" style={{ width: "33%" }}></span>
-            </span>
-            <span>33%</span>
-          </div>
-          
-          <div className="flex items-center gap-1.5 text-slate-500 font-medium">
-            <span>Language</span>
-            <select className="border border-slate-300 rounded px-1.5 py-0.5 bg-white text-slate-700 outline-none text-[11px]">
-              <option>English</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="text-sm font-extrabold text-[#0a2558]">
-          GSTR - IA Return
-        </div>
-        
-        <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded px-2.5 py-1 text-[11px] font-black">
-          <span className="w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center text-white text-[9px]">★</span>
-          <span>1880</span>
-        </div>
-      </div>
 
       {/* Experiment Instruction Banner */}
       <div className="bg-[#e0f2fe] border-b border-[#bae6fd] px-6 py-2.5 text-[11px] font-bold text-[#0369a1] select-none shrink-0">
@@ -148,7 +147,7 @@ export default function GSTR1A1Simulation() {
               </div>
               <div className="mt-1 flex items-center gap-1 text-[10px] font-extrabold text-white bg-white/10 px-2 py-0.5 rounded">
                 <FaUser size={10} className="mr-1" />
-                <span>Fincurious Cements Private Limited</span>
+                <span>IICPA Private Limited</span>
                 <span className="text-slate-400 font-normal mx-1">/</span>
                 <span className="text-emerald-400">07GDLCF7228G1YK</span>
               </div>
@@ -444,16 +443,18 @@ export default function GSTR1A1Simulation() {
                   {cards.map((card, idx) => (
                     <div
                       key={idx}
-                      className="border border-[#cbd5e1] hover:border-slate-400 bg-slate-50/50 p-4 transition-all flex flex-col justify-between min-h-[120px]"
+                      className="border border-[#cbd5e1] hover:border-slate-400 bg-white transition-all flex flex-col min-h-[120px] rounded overflow-hidden shadow-sm"
                     >
-                      <div className="flex justify-between items-start">
-                        <span className="font-extrabold text-slate-800 text-[10px] leading-tight max-w-[80%]">
+                      <div className="bg-[#1e3b6a] text-white p-3 flex justify-between items-start min-h-[60px]">
+                        <span className="font-extrabold text-[10px] leading-snug max-w-[85%]">
                           {card.code}
                         </span>
-                        <FaCheckCircle className="text-emerald-500 shrink-0" size={12} />
+                        <FaCheckCircle className="text-emerald-400 shrink-0 bg-white rounded-full p-[1px] mt-0.5" size={13} />
                       </div>
-                      <div className="text-right text-lg font-black text-slate-800 mt-2">
-                        {card.count}
+                      <div className="flex-1 p-3 flex items-center justify-center bg-slate-50/50">
+                        <div className="text-xl font-black text-[#0a2558]">
+                          {card.count}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -464,8 +465,8 @@ export default function GSTR1A1Simulation() {
           )}
 
           {/* Inner Portal Footer */}
-          <div className="bg-[#0b1a30] px-5 py-3 border-t border-white/5 text-white/70 text-[10px] font-medium w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6 shrink-0 font-sans">
-            <span>© 2022 Fincurious Simulation Software Designed & Developed by Fincurious</span>
+          <div className="bg-[#0b1a30] px-5 py-3 border-t border-white/5 text-white/70 text-[10px] font-medium w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-auto shrink-0 font-sans">
+            <span>© 2022 IICPA Simulation Software Designed & Developed by IICPA</span>
             <span>Site best viewed at 1024 x 768 resolution in Microsoft Edge, Google Chrome 49+, Firefox 45+ and Safari 6+</span>
           </div>
 

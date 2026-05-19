@@ -127,7 +127,7 @@ export default function GSTComputation3Simulation() {
                 </div>
                 <div className="mt-1 flex items-center gap-1 text-[10px] font-extrabold text-white bg-white/10 px-2 py-0.5 rounded">
                   <User size={10} />
-                  <span>Fincurious Cements Private Limited</span>
+                  <span>IICPA Private Limited</span>
                   <span className="text-slate-400 font-normal">/</span>
                   <span className="text-emerald-400">07GDLCF7228G1YK</span>
                 </div>
@@ -347,7 +347,7 @@ export default function GSTComputation3Simulation() {
 
             {/* Inner Portal Footer */}
             <div className="bg-[#0b1a30] px-5 py-3 border-t border-white/5 text-white/70 text-[10px] font-medium w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6 shrink-0 font-sans">
-              <span>© 2022 Fincurious Simulation Software Designed & Developed by Fincurious</span>
+              <span>© 2022 IICPA Simulation Software Designed & Developed by IICPA</span>
               <span>Site best viewed at 1024 x 768 resolution in Microsoft Edge, Google Chrome 49+, Firefox 45+ and Safari 6+</span>
             </div>
 
