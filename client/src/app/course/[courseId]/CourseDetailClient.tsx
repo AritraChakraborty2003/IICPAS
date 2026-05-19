@@ -349,7 +349,7 @@ export default function CourseDetailClient({
 
       {/* Main Content */}
       <div className="pt-48 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 mr-0 lg:mr-4">
           <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-[280px_1fr_350px] gap-8">
             {/* Courses Marquee (Left) */}
             <CoursesSidebarMarquee />
