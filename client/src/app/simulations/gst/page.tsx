@@ -30,6 +30,14 @@ const experiments = [
     icon: FaCalculator,
   },
   {
+    title: "GST Computation 3",
+    description:
+      "Ledger balance verification simulation with validation success feedback.",
+    route: "/simulations/gst/gst-computation-3",
+    badge: "GST Computation",
+    icon: FaCalculator,
+  },
+  {
     title: "GST Computation 4",
     description:
       "Exact replica of the GST Portal Challan History tab with search and sorting features.",

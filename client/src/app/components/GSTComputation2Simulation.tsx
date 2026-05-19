@@ -1077,14 +1077,14 @@ export default function GSTComputation2Simulation() {
                       <input
                         type="radio"
                         name="selectionBank"
-                        value="FINC_DUMMY_BANK"
-                        checked={selectedBank === "FINC_DUMMY_BANK"}
-                        onChange={() => setSelectedBank("FINC_DUMMY_BANK")}
+                        value="IICPA_DUMMY_BANK"
+                        checked={selectedBank === "IICPA_DUMMY_BANK"}
+                        onChange={() => setSelectedBank("IICPA_DUMMY_BANK")}
                         className="h-3.5 w-3.5 accent-[#0a2558] cursor-pointer"
-                        id="finc-dummy-bank-radio"
+                        id="iicpa-dummy-bank-radio"
                       />
-                      <label htmlFor="finc-dummy-bank-radio" className="text-slate-800 font-extrabold text-[11px] cursor-pointer select-none">
-                        FINC DUMMY BANK
+                      <label htmlFor="iicpa-dummy-bank-radio" className="text-slate-800 font-extrabold text-[11px] cursor-pointer select-none">
+                        IICPA DUMMY BANK
                       </label>
                     </div>
                   </div>
@@ -1129,7 +1129,7 @@ export default function GSTComputation2Simulation() {
                     <button
                       onClick={handleMakePayment}
                       className={`font-extrabold text-[11px] uppercase px-8 py-2.5 shadow-md transition-colors ${
-                        selectedBank === "FINC_DUMMY_BANK" && isTermsChecked
+                        selectedBank === "IICPA_DUMMY_BANK" && isTermsChecked
                           ? "bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white cursor-pointer"
                           : "bg-[#cbd5e1] text-slate-400 cursor-not-allowed"
                       }`}
