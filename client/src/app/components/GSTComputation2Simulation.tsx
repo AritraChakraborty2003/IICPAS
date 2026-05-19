@@ -219,35 +219,7 @@ export default function GSTComputation2Simulation() {
       
       {/* Simulation Container wrapping everything - full width, top attached */}
       <div className="w-full flex-1 flex flex-col">
-        
-        {/* Top Data Strip */}
-        <div className="bg-[#f8fafc] px-6 py-3 border-b border-[#e2e8f0] flex items-center justify-between text-xs font-bold text-slate-700 select-none">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-extrabold text-[#0a2558]">GST Computation</span>
-            <div className="flex items-center gap-2 bg-slate-200 rounded-full px-3 py-1 font-semibold text-[11px] text-slate-600">
-              <span className="w-20 bg-slate-300 h-2 rounded-full overflow-hidden relative block">
-                <span className="absolute left-0 top-0 bottom-0 bg-blue-600 rounded-full" style={{ width: `${progress}%` }}></span>
-              </span>
-              <span>{progress}%</span>
-            </div>
-            
-            <div className="flex items-center gap-1.5 text-slate-500 font-medium">
-              <span>Language</span>
-              <select className="border border-slate-300 rounded px-1.5 py-0.5 bg-white text-slate-700 outline-none text-[11px]">
-                <option>English</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="text-sm font-extrabold text-[#0a2558]">
-            Challan Creation
-          </div>
-          
-          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded px-2.5 py-1 text-[11px] font-black">
-            <span className="w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center text-white text-[9px]">★</span>
-            <span>1880</span>
-          </div>
-        </div>
+
 
         {/* Instruction Section */}
         <div className="bg-white px-6 py-4 border-b border-[#e2e8f0] text-xs text-slate-700 space-y-3">
