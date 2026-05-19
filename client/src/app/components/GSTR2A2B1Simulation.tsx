@@ -689,10 +689,94 @@ export default function GSTR2A2B1Simulation() {
             </div>
           )}
 
-          {/* Inner Portal Footer */}
-          <div className="bg-[#0b1a30] px-5 py-3 border-t border-white/5 text-white/70 text-[10px] font-medium w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-auto shrink-0 font-sans">
-            <span>© 2022 IICPA Simulation Software Designed & Developed by IICPA</span>
-            <span>Site best viewed at 1024 x 768 resolution in Microsoft Edge, Google Chrome 49+, Firefox 45+ and Safari 6+</span>
+          {/* Large Inner Portal Footer */}
+          <div className="bg-[#1e3b6a] text-white/80 w-full mt-auto shrink-0 font-sans relative">
+            {/* Scroll to top button */}
+            <div className="absolute right-6 -top-3 bg-[#0a2558] rounded p-1.5 cursor-pointer shadow-md">
+              <FaChevronUp size={12} className="text-white" />
+            </div>
+
+            <div className="px-8 py-8 grid grid-cols-1 md:grid-cols-6 gap-6 text-[10px] leading-relaxed">
+              {/* Col 1 */}
+              <div>
+                <h3 className="text-[#38bdf8] font-bold text-[11px] mb-3">About GST</h3>
+                <ul className="space-y-2 font-medium">
+                  <li className="hover:text-white cursor-pointer transition-colors">GST Council Structure</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">GST History</li>
+                </ul>
+              </div>
+
+              {/* Col 2 */}
+              <div>
+                <h3 className="text-[#38bdf8] font-bold text-[11px] mb-3">Website Policies</h3>
+                <ul className="space-y-2 font-medium">
+                  <li className="hover:text-white cursor-pointer transition-colors">Website Policy</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">Terms and Conditions</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">Hyperlink Policy</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">Disclaimer</li>
+                </ul>
+              </div>
+
+              {/* Col 3 */}
+              <div>
+                <h3 className="text-[#38bdf8] font-bold text-[11px] mb-3">Related Sites</h3>
+                <ul className="space-y-2 font-medium">
+                  <li className="hover:text-white cursor-pointer transition-colors">Central Board of Indirect Taxes and Customs</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">State Tax Websites</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">National Portal</li>
+                </ul>
+              </div>
+
+              {/* Col 4 (No Header) */}
+              <div className="pt-7">
+                <ul className="space-y-2 font-medium">
+                  <li className="hover:text-white cursor-pointer transition-colors">System Requirements</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">User Manuals, Videos</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">GST Media</li>
+                  <li className="hover:text-white cursor-pointer transition-colors">Site Map</li>
+                </ul>
+              </div>
+
+              {/* Col 5 */}
+              <div>
+                <h3 className="text-[#38bdf8] font-bold text-[11px] mb-3">Important Links</h3>
+                <ul className="space-y-2 font-medium">
+                  <li className="hover:text-white cursor-pointer transition-colors">Laws, Rules & Rates</li>
+                </ul>
+              </div>
+
+              {/* Col 6 */}
+              <div>
+                <h3 className="text-[#38bdf8] font-bold text-[11px] mb-3">Contact Us</h3>
+                <div className="space-y-3 font-medium">
+                  <div>
+                    <p className="text-white/60">Help Desk Number:</p>
+                    <p>0120-4888999</p>
+                  </div>
+                  <div>
+                    <p className="text-white/60">Log/Track Your Issue:</p>
+                    <p className="hover:text-white cursor-pointer transition-colors">Grievance Redressal Portal for GST</p>
+                  </div>
+                  <div className="flex items-center gap-3 pt-2">
+                    <div className="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/10 cursor-pointer">f</div>
+                    <div className="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/10 cursor-pointer">y</div>
+                    <div className="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/10 cursor-pointer">t</div>
+                    <div className="w-5 h-5 rounded-full border border-white/40 flex items-center justify-center hover:bg-white/10 cursor-pointer">in</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Copyright Strip */}
+            <div className="border-t border-white/10 px-8 py-4 flex flex-col md:flex-row md:items-center justify-between text-[10px] text-white/70 font-medium">
+              <span>© 2022-23 IICPA Simulation Software</span>
+              <span>Designed & Developed by IICPA Private Limited</span>
+            </div>
+
+            {/* Browser Support Strip */}
+            <div className="bg-[#152a4e] px-8 py-3.5 text-[9.5px] text-white/60 font-medium w-full">
+              Site best viewed at 1024 x 768 resolution in Internet Explorer 10+, Google Chrome 49+, Firefox 45+ and Safari 6+
+            </div>
           </div>
 
         </div>
