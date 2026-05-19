@@ -12,10 +12,11 @@ import {
   Printer,
   Download,
   Play,
-  AlertCircle
+  AlertCircle,
+  Globe
 } from "lucide-react";
 
-type Step = "dashboard_overlay" | "dashboard_active" | "create_challan" | "receipt";
+type Step = "dashboard_overlay" | "dashboard_active" | "reason_for_challan" | "create_challan" | "receipt";
 
 interface TaxRow {
   head: string;
@@ -35,6 +36,7 @@ export default function GSTComputationSimulation() {
   const [hoveredCalendarCell, setHoveredCalendarCell] = useState<string | null>(null);
   const [isServicesMenuOpen, setIsServicesMenuOpen] = useState(false);
   const [isPaymentsDropdownOpen, setIsPaymentsDropdownOpen] = useState(false);
+  const [selectedReason, setSelectedReason] = useState<string>("");
 
   // Form values
   const [cgst, setCgst] = useState<TaxRow>({ head: "CGST (0005)", tax: 0, interest: 0, penalty: 0, fees: 0, other: 0 });
@@ -60,6 +62,8 @@ export default function GSTComputationSimulation() {
       setProgress(87);
     } else if (currentStep === "dashboard_active") {
       setProgress(87);
+    } else if (currentStep === "reason_for_challan") {
+      setProgress(90);
     } else if (currentStep === "create_challan") {
       setProgress(92);
     } else if (currentStep === "receipt") {
@@ -72,13 +76,20 @@ export default function GSTComputationSimulation() {
   };
 
   const handleCreateChallanNav = () => {
-    if (currentStep === "dashboard_overlay") return;
-    setCurrentStep("create_challan");
+    setCurrentStep("reason_for_challan");
+    setSelectedReason("");
+  };
+
+  const handleProceedFromReason = () => {
+    if (selectedReason) {
+      setCurrentStep("create_challan");
+    }
   };
 
   const handleCancel = () => {
     setCurrentStep("dashboard_active");
     setErrorMessage("");
+    setSelectedReason("");
   };
 
   const handleGenerateChallan = () => {
@@ -158,7 +169,7 @@ export default function GSTComputationSimulation() {
       <td
         onMouseEnter={() => setHoveredCalendarCell(cellKey)}
         onMouseLeave={() => setHoveredCalendarCell(null)}
-        className={`p-2 text-center font-semibold transition-all duration-200 cursor-pointer ${
+        className={`p-2.5 text-center font-semibold transition-all duration-200 cursor-pointer ${
           hasRightBorder ? "border-r border-white" : ""
         } ${isHovered ? config.bg : `${normalBg} text-white`}`}
       >
@@ -244,13 +255,16 @@ export default function GSTComputationSimulation() {
 
           {/* Services Sub-Navigation Menu Bar */}
           {isServicesMenuOpen && (
-            <div className="bg-[#f1f3f7] px-5 py-2 overflow-x-auto border-b border-[#cbd5e1] w-full flex items-center gap-6 text-[11px] text-[#0a2558] font-bold relative select-none">
+            <div className="bg-[#f1f3f7] px-5 py-2 border-b border-[#cbd5e1] w-full flex items-center gap-6 text-[11px] text-[#0a2558] font-bold relative select-none z-[9999]">
               <span className="cursor-pointer hover:text-blue-700">Registration</span>
               <span className="cursor-pointer hover:text-blue-700">Ledgers</span>
               <span className="cursor-pointer hover:text-blue-700">Returns</span>
               
-              {/* Payments Sub-Menu Item with Dropdown */}
-              <div className="relative">
+              {/* Payments Sub-Menu Item with Hover/Click Dropdown */}
+              <div
+                onMouseEnter={() => setIsPaymentsDropdownOpen(true)}
+                onMouseLeave={() => setIsPaymentsDropdownOpen(false)}
+              >
                 <button
                   onClick={() => setIsPaymentsDropdownOpen(!isPaymentsDropdownOpen)}
                   className="cursor-pointer border-2 border-red-500 px-2.5 py-0.5 text-[#0a2558] font-bold flex items-center gap-1 bg-white hover:bg-slate-50 outline-none"
@@ -259,23 +273,54 @@ export default function GSTComputationSimulation() {
                 </button>
                 
                 {isPaymentsDropdownOpen && (
-                  <div className="absolute left-0 mt-1 w-44 bg-white border border-slate-300 rounded shadow-md py-1 z-[9999] text-[11px]">
-                    <button
-                      onClick={() => {
-                        handleCreateChallanNav();
-                        setIsPaymentsDropdownOpen(false);
-                        setIsServicesMenuOpen(false);
-                      }}
-                      className="w-full text-left px-3 py-2 hover:bg-slate-100 font-bold text-[#0a2558] cursor-pointer"
-                    >
-                      Create Challan
-                    </button>
-                    <button
-                      className="w-full text-left px-3 py-2 hover:bg-slate-100 text-slate-400 cursor-not-allowed"
-                      disabled
-                    >
-                      Challan History
-                    </button>
+                  <div className="absolute left-0 right-0 w-full mt-2 bg-white border-y border-slate-300 shadow-lg p-5 pl-[220px] pr-24 z-[99999] text-[11px] grid grid-cols-2 gap-x-12 gap-y-3 font-bold select-none">
+                    {/* Left Column */}
+                    <div className="flex flex-col gap-3 text-left">
+                      <button
+                        onClick={() => {
+                          handleCreateChallanNav();
+                          setIsPaymentsDropdownOpen(false);
+                          setIsServicesMenuOpen(false);
+                        }}
+                        className="w-fit text-left text-blue-900 border-2 border-red-500 px-3 py-1.5 bg-white hover:bg-slate-50 cursor-pointer font-bold"
+                      >
+                        Create Challan
+                      </button>
+                      <button
+                        className="text-left text-blue-900 hover:text-blue-755 cursor-not-allowed opacity-80 w-fit"
+                        disabled
+                      >
+                        Challan History
+                      </button>
+                      <button
+                        className="text-left text-blue-900 hover:text-blue-755 cursor-not-allowed opacity-80 w-fit"
+                        disabled
+                      >
+                        Instalment Calendar
+                      </button>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="flex flex-col gap-3 text-left justify-start pt-1.5">
+                      <button
+                        className="text-left text-blue-900 hover:text-blue-755 cursor-not-allowed opacity-80 w-fit"
+                        disabled
+                      >
+                        Saved Challans
+                      </button>
+                      <button
+                        className="text-left text-blue-900 hover:text-blue-755 cursor-not-allowed opacity-80 w-fit"
+                        disabled
+                      >
+                        Application for Deferred Payment/Payment in Instalments
+                      </button>
+                      <button
+                        className="text-left text-blue-900 hover:text-blue-755 cursor-not-allowed opacity-80 w-fit"
+                        disabled
+                      >
+                        Grievance against Payment(GST PMT-07)
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -349,7 +394,7 @@ export default function GSTComputationSimulation() {
                           <table className="w-full text-left border-collapse text-xs">
                             <thead>
                               <tr className="text-white font-bold text-[11px]">
-                                <th className="p-2.5 border-r border-white bg-[#1e3b6a] text-left">Form / Period</th>
+                                <th className="p-2.5 border-r border-white bg-[#1e3b6a] text-left"></th>
                                 <th className="p-2.5 text-center border-r border-white bg-[#25a77c]">Feb 20XX</th>
                                 <th className="p-2.5 text-center border-r border-white bg-[#25a77c]">Mar 20XX</th>
                                 <th className="p-2.5 text-center border-r border-white bg-[#25a77c]">Apr 20XX</th>
@@ -360,19 +405,19 @@ export default function GSTComputationSimulation() {
                             <tbody>
                               <tr className="text-[11px] border-b border-white">
                                 <td className="p-2.5 font-bold text-white border-r border-white bg-[#1e3b6a]">GSTR-1 / IFF</td>
-                                {renderCalendarCell("gstr1_feb", "Filed", "#25a77c")}
-                                {renderCalendarCell("gstr1_mar", "Filed", "#25a77c")}
-                                {renderCalendarCell("gstr1_apr", "Filed", "#25a77c")}
-                                {renderCalendarCell("gstr1_may", "Filed", "#25a77c")}
-                                {renderCalendarCell("gstr1_jun", "To be Filed", "#ea9b09", false)}
+                                {renderCalendarCell("gstr1_feb", "Filed", "bg-[#25a77c]")}
+                                {renderCalendarCell("gstr1_mar", "Filed", "bg-[#25a77c]")}
+                                {renderCalendarCell("gstr1_apr", "Filed", "bg-[#25a77c]")}
+                                {renderCalendarCell("gstr1_may", "Filed", "bg-[#25a77c]")}
+                                {renderCalendarCell("gstr1_jun", "To be Filed", "bg-[#ea9b09]", false)}
                               </tr>
                               <tr className="text-[11px]">
                                 <td className="p-2.5 font-bold text-white border-r border-white bg-[#1e3b6a]">GSTR-3B</td>
-                                {renderCalendarCell("gstr3b_feb", "Filed", "#25a77c")}
-                                {renderCalendarCell("gstr3b_mar", "Filed", "#25a77c")}
-                                {renderCalendarCell("gstr3b_apr", "Filed", "#25a77c")}
-                                {renderCalendarCell("gstr3b_may", "Filed", "#25a77c")}
-                                {renderCalendarCell("gstr3b_jun", "To be Filed", "#ea9b09", false)}
+                                {renderCalendarCell("gstr3b_feb", "Filed", "bg-[#25a77c]")}
+                                {renderCalendarCell("gstr3b_mar", "Filed", "bg-[#25a77c]")}
+                                {renderCalendarCell("gstr3b_apr", "Filed", "bg-[#25a77c]")}
+                                {renderCalendarCell("gstr3b_may", "Filed", "bg-[#25a77c]")}
+                                {renderCalendarCell("gstr3b_jun", "To be Filed", "bg-[#ea9b09]", false)}
                               </tr>
                             </tbody>
                           </table>
