@@ -15,6 +15,7 @@ import {
   normalizeBatchMode,
   normalizeBatchSize,
 } from "../services/batchAssignmentService.js";
+import { sendWhatsAppTemplateMessage } from "../services/whatsappService.js";
 
 const createTransporter = () => nodemailer.createTransport(emailConfig);
 
@@ -171,6 +172,53 @@ export const buildBatchCourseScheduleEmail = ({ studentName, batch, courseSchedu
   `;
 };
 
+const buildWhatsAppScheduleText = (courseSchedules) => {
+  let text = courseSchedules.map((course) => {
+    const chaptersText = (course.chapters || []).map((ch) => {
+      const topicsText = (ch.topics || []).map((t) => {
+        return `    • ${t.title} (${t.startTime} - ${t.endTime})`;
+      }).join("\n");
+
+      return `  - ${ch.title} (${ch.startTime} - ${ch.endTime})${topicsText ? "\n" + topicsText : ""}`;
+    }).join("\n");
+
+    return `📚 ${course.title}\n📅 ${course.startTime} - ${course.endTime}${chaptersText ? "\n" + chaptersText : ""}`;
+  }).join("\n\n");
+
+  if (text.length > 1000) {
+    text = text.substring(0, 990) + "\n... (and more online)";
+  }
+  return text;
+};
+
+const sendStudentScheduleWhatsApp = async (student, batch, courseSchedules) => {
+  try {
+    const phone = student.phone || student.phoneNumber || student.mobile;
+    if (!phone) {
+      console.log(`Skipping WhatsApp for student ${student.name || student._id} - phone number missing`);
+      return;
+    }
+
+    const scheduleText = buildWhatsAppScheduleText(courseSchedules);
+    const clientUrl = process.env.CLIENT_URL || "https://www.iicpa.in";
+    const portalUrl = `${clientUrl}/student-login`;
+
+    await sendWhatsAppTemplateMessage({
+      to: phone,
+      templateName: "student_schedule_details",
+      bodyParameters: [
+        { type: "text", text: student.name || "Student" },
+        { type: "text", text: batch.code || "Batch" },
+        { type: "text", text: scheduleText },
+        { type: "text", text: portalUrl }
+      ]
+    });
+    console.log(`WhatsApp schedule message sent successfully to ${phone} (${student.name})`);
+  } catch (error) {
+    console.error(`Failed to send WhatsApp schedule message to student ${student._id || student.name}:`, error);
+  }
+};
+
 const sendBatchCourseScheduleEmails = async (batch) => {
   if (!batch?.courseLocks?.length) {
     return { sent: 0, skipped: true };
@@ -185,7 +233,7 @@ const sendBatchCourseScheduleEmails = async (batch) => {
     batchId: batch._id,
     email: { $exists: true, $ne: "" },
   })
-    .select("name email")
+    .select("name email phone phoneNumber mobile")
     .lean();
 
   if (!students.length) {
@@ -269,6 +317,8 @@ const sendBatchCourseScheduleEmails = async (batch) => {
           courseSchedules,
         }),
       });
+      // Also send WhatsApp notification
+      await sendStudentScheduleWhatsApp(student, batch, courseSchedules);
     })
   );
 
@@ -692,6 +742,9 @@ export const sendStudentScheduleEmail = async (req, res) => {
       subject: `Your Detailed Class Schedule: ${batch.code || "IICPA Batch"}`,
       html: emailContent,
     });
+
+    // Also send WhatsApp notification
+    await sendStudentScheduleWhatsApp(student, batch, courseSchedules);
 
     return res.status(200).json({
       success: true,
