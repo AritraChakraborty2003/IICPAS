@@ -159,6 +159,7 @@ export default function HomepageWhatsAppGate() {
       "/teacher-dashboard",
       "/login",
       "/register",
+      "/simulations",
     ];
 
     const isExempted = EXEMPTED_PATHS.some(

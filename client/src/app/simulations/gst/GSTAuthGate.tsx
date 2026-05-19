@@ -15,6 +15,7 @@ const UNPROTECTED_PATHS = [
   "/simulations/gst/e-way-bill-login",
   "/simulations/gst/e-way-bill-dashboard",
   "/simulations/gst/e-way-bill-5",
+  "/simulations/gst/gst-computation-1",
 ];
 
 const normalizeCourseList = (payload: unknown) => {
@@ -62,7 +63,14 @@ export default function GSTAuthGate({ children }: GSTAuthGateProps) {
 
   useEffect(() => {
     // E-way bill simulations are public and should not call the auth backend.
-    if (UNPROTECTED_PATHS.some((path) => currentPathname.startsWith(path))) {
+    // Also bypass auth check during development / local testing.
+    if (
+      process.env.NODE_ENV !== "production" ||
+      (typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" ||
+          window.location.hostname === "127.0.0.1")) ||
+      UNPROTECTED_PATHS.some((path) => currentPathname.startsWith(path))
+    ) {
       setCheckingAuth(false);
       return;
     }

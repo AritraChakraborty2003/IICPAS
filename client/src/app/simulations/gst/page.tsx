@@ -9,9 +9,18 @@ import {
   FaPlay,
   FaShieldAlt,
   FaSitemap,
+  FaCalculator,
 } from "react-icons/fa";
 
 const experiments = [
+  {
+    title: "GST Computation 1",
+    description:
+      "Replicas of the GST Portal dashboard return calendar and interactive tax Challan Creation.",
+    route: "/simulations/gst/gst-computation-1",
+    badge: "GST Computation",
+    icon: FaCalculator,
+  },
   {
     title: "E-Invoicing 1",
     description:
