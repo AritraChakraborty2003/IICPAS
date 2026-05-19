@@ -27,6 +27,7 @@ import {
   Lock,
   Eye,
   ArrowLeft,
+  Calendar,
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -729,8 +730,43 @@ function StudentsTable({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [updatingCourseId, setUpdatingCourseId] = useState(null);
+  const [sendingEmailId, setSendingEmailId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all"); // "all", "paid", "unpaid"
+
+  const handleSendScheduleEmail = async (student) => {
+    const studentBatchId = student.batchId?._id || student.batchId;
+    if (!studentBatchId) {
+      toast.error("Student is not assigned to any batch");
+      return;
+    }
+
+    try {
+      setSendingEmailId(student._id);
+      const token = localStorage.getItem("adminToken");
+      const headers = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await axios.post(
+        `${API_BASE}/batch-manager/${studentBatchId}/send-schedule/${student._id}`,
+        {},
+        { headers }
+      );
+
+      toast.success(response.data?.message || "Schedule email sent successfully!");
+    } catch (error) {
+      console.error("Error sending schedule email:", error);
+      toast.error(
+        getFetchErrorMessage(error, "Failed to send schedule email")
+      );
+    } finally {
+      setSendingEmailId(null);
+    }
+  };
 
   const getPaymentStatus = (student) => {
     return student.course && student.course.length > 0 ? "Paid" : "Unpaid";
@@ -1220,6 +1256,20 @@ function StudentsTable({
                       >
                         <Mail size={14} />
                       </a>
+                      {(student.batchId?._id || student.batchId) && (
+                        <button
+                          onClick={() => handleSendScheduleEmail(student)}
+                          disabled={sendingEmailId === student._id}
+                          title="Send Batch Schedule Email"
+                          className="bg-teal-600 hover:bg-teal-700 text-white p-2 rounded transition-colors flex items-center justify-center disabled:opacity-50"
+                        >
+                          {sendingEmailId === student._id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <Calendar size={14} />
+                          )}
+                        </button>
+                      )}
                       <a
                         href={getWhatsAppLink(student.phone)}
                         target="_blank"
