@@ -80,7 +80,7 @@ const serializeCourseLocks = (courseLocks = []) =>
     }))
   );
 
-const buildBatchCourseScheduleEmail = ({ studentName, batch, courseSchedules }) => {
+export const buildBatchCourseScheduleEmail = ({ studentName, batch, courseSchedules }) => {
   const scheduleHtml = courseSchedules
     .map((course) => {
       const chaptersHtml = (course.chapters || []).map((ch) => {
