@@ -122,7 +122,7 @@ export const buildBatchCourseScheduleEmail = ({ studentName, batch, courseSchedu
     <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 650px; margin: 0 auto; color: #1e293b; background-color: #f8fafc; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
       <!-- Header -->
       <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 32px 24px; text-align: center;">
-        <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px;">IICPA Institute</h1>
+        <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: #3cd664;">IICPA Institute</h1>
         <p style="margin: 8px 0 0 0; font-size: 16px; color: #3cd664; font-weight: 600;">Your Detailed Class Schedule</p>
       </div>
       
