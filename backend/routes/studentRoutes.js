@@ -296,7 +296,7 @@ const sendBatchAssignmentEmail = async ({ student, batch }) => {
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1f2937;">
         <div style="background: #0f172a; color: #ffffff; padding: 20px; text-align: center;">
-          <h1 style="margin: 0; font-size: 24px;">IICPA Institute</h1>
+          <h1 style="margin: 0; font-size: 24px; color: #3cd664;">IICPA Institute</h1>
           <p style="margin: 6px 0 0 0; font-size: 16px;">Batch Assignment Update</p>
         </div>
         <div style="padding: 20px; background: #f8fafc;">
