@@ -19,7 +19,7 @@ const Chatbot = () => {
   const chatButtonPositionClasses = isDigitalHubRoute
     ? "top-1/2 left-1 translate-y-12 sm:left-2"
     : "bottom-4 right-4";
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [leadFormVisible, setLeadFormVisible] = useState(true);
   const [hasLead, setHasLead] = useState(false);
   const [leadData, setLeadData] = useState({
@@ -42,6 +42,7 @@ const Chatbot = () => {
   const [courses, setCourses] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
   const messagesEndRef = useRef(null);
+  const isExplicitlyClosedRef = useRef(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -136,6 +137,68 @@ const Chatbot = () => {
 
     return () => {
       window.removeEventListener(CHATBOT_OPEN_EVENT, openChatbot);
+    };
+  }, []);
+
+  useEffect(() => {
+    const checkForModals = () => {
+      // Find all dialogs, presentations, custom modals, or overlays in the document
+      const elements = document.querySelectorAll(
+        '.backdrop-blur, .backdrop-blur-lg, .swal2-container, [role="dialog"], [role="presentation"], .modal, [class*="modal-"], [class*="Modal-"]'
+      );
+
+      let modalFound = false;
+      for (const el of Array.from(elements)) {
+        // Exclude the chatbot container itself and its children
+        if (el.closest('.chatbot-container') || el.id === 'chatbot-root' || el.closest('#chatbot-root')) {
+          continue;
+        }
+
+        // Exclude elements that are hidden or have 0 size
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          modalFound = true;
+          break;
+        }
+      }
+
+      // Check document.body classes for modal-open or swal-shown states
+      if (
+        document.body.classList.contains('swal2-shown') ||
+        document.body.classList.contains('modal-open') ||
+        document.body.style.overflow === 'hidden'
+      ) {
+        modalFound = true;
+      }
+
+      if (modalFound) {
+        setIsOpen(false);
+      } else if (!isExplicitlyClosedRef.current) {
+        setIsOpen(true);
+      }
+    };
+
+    // Run initial check
+    checkForModals();
+
+    // Use MutationObserver to observe DOM changes
+    const observer = new MutationObserver(() => {
+      checkForModals();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'open']
+    });
+
+    // Also run a fallback interval in case React state updates don't trigger the observer properly
+    const interval = setInterval(checkForModals, 500);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
     };
   }, []);
 
@@ -326,7 +389,7 @@ const Chatbot = () => {
             initial={{ opacity: 0, y: 20, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
-            className={`fixed z-40 flex h-[500px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl ${chatWindowPositionClasses}`}
+            className={`chatbot-container fixed z-40 flex h-[500px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl ${chatWindowPositionClasses}`}
           >
             <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -348,7 +411,10 @@ const Chatbot = () => {
                 </div>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => {
+                  isExplicitlyClosedRef.current = true;
+                  setIsOpen(false);
+                }}
                 className="text-white hover:text-gray-200 transition-colors"
               >
                 <FaTimes />
@@ -551,7 +617,10 @@ const Chatbot = () => {
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => {
+            isExplicitlyClosedRef.current = false;
+            setIsOpen(true);
+          }}
           className="bg-gradient-to-r from-green-500 to-green-600 text-white p-1 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden"
         >
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-white bg-opacity-20 flex items-center justify-center">
