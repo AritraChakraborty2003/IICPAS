@@ -84,12 +84,8 @@ export default function CoursesSidebarMarquee() {
     fetchCourses();
   }, []);
 
-  if (loading || courses.length === 0) {
-    return null;
-  }
-
   // Duplicate items for seamless vertical scroll loop
-  const items = [...courses, ...courses];
+  const items = courses.length > 0 ? [...courses, ...courses] : [];
   const apiOrigin = getApiOrigin();
 
   const handleCourseClick = (course) => {
@@ -126,72 +122,90 @@ export default function CoursesSidebarMarquee() {
         </div>
 
         <div className="relative h-[76vh] min-h-[560px] overflow-hidden rounded-[24px] bg-white">
-          <div className="courses-marquee-track absolute inset-x-0 top-0 animate-[coursesSidebarMarquee_30s_linear_infinite]">
-            {items.map((course, index) => {
-              const courseImageSrc = normalizeCourseImageSrc(
-                course.image,
-                apiOrigin
-              );
-              const price = getLowestCoursePrice(course);
-
-              return (
+          {loading || courses.length === 0 ? (
+            <div className="flex flex-col gap-4 p-3 h-full overflow-y-auto">
+              {[1, 2, 3].map((id) => (
                 <div
-                  key={`${course._id}-${index}`}
-                  className="px-2 py-2.5 cursor-pointer"
-                  onClick={() => handleCourseClick(course)}
+                  key={id}
+                  className="rounded-[22px] border border-slate-100 bg-slate-50/50 p-3"
                 >
-                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-3 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200">
-                    <div className="relative h-24 w-full rounded-[14px] overflow-hidden mb-3 bg-slate-100 flex items-center justify-center">
-                      {courseImageSrc ? (
-                        <img
-                          src={courseImageSrc}
-                          alt={course.title}
-                          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                          onError={(e) => {
-                            e.currentTarget.style.display = "none";
-                            const fallback =
-                              e.currentTarget.nextElementSibling;
-                            if (fallback) {
-                              fallback.style.display = "flex";
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <div
-                        className={`absolute inset-0 items-center justify-center text-slate-400 ${
-                          courseImageSrc ? "hidden" : "flex"
-                        }`}
-                        style={{ display: courseImageSrc ? "none" : "flex" }}
-                      >
-                        <BookOpen className="h-8 w-8 text-slate-400" />
-                      </div>
-                    </div>
+                  <div className="h-20 w-full rounded-[14px] bg-slate-200 animate-pulse mb-3" />
+                  <div className="space-y-2 px-1">
+                    <div className="h-3 w-16 bg-slate-200 rounded-full animate-pulse" />
+                    <div className="h-4 w-5/6 bg-slate-200 rounded animate-pulse" />
+                    <div className="h-3 w-1/2 bg-slate-200 rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="courses-marquee-track absolute inset-x-0 top-0 animate-[coursesSidebarMarquee_30s_linear_infinite]">
+              {items.map((course, index) => {
+                const courseImageSrc = normalizeCourseImageSrc(
+                  course.image,
+                  apiOrigin
+                );
+                const price = getLowestCoursePrice(course);
 
-                    <div className="px-1 text-left">
-                      <span className="inline-block bg-emerald-50 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full mb-1">
-                        {course.level || course.category || "Course"}
-                      </span>
-                      <h4 className="text-xs font-semibold text-slate-900 leading-snug line-clamp-2 min-h-[2.5rem]">
-                        {course.title}
-                      </h4>
-                      <div className="mt-2 flex items-center justify-between text-[11px] font-medium text-slate-600">
-                        {price !== null ? (
-                          <span className="text-[#3cd664] font-bold">
-                            Rs. {price.toLocaleString()}
-                          </span>
-                        ) : (
-                          <span className="text-[#3cd664] font-bold">Free</span>
-                        )}
-                        <span className="text-blue-600 hover:text-blue-800 font-semibold">
-                          View →
+                return (
+                  <div
+                    key={`${course._id}-${index}`}
+                    className="px-2 py-2.5 cursor-pointer"
+                    onClick={() => handleCourseClick(course)}
+                  >
+                    <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-3 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200">
+                      <div className="relative h-24 w-full rounded-[14px] overflow-hidden mb-3 bg-slate-100 flex items-center justify-center">
+                        {courseImageSrc ? (
+                          <img
+                            src={courseImageSrc}
+                            alt={course.title}
+                            className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
+                            onError={(e) => {
+                              e.currentTarget.style.display = "none";
+                              const fallback =
+                                e.currentTarget.nextElementSibling;
+                              if (fallback) {
+                                fallback.style.display = "flex";
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <div
+                          className={`absolute inset-0 items-center justify-center text-slate-400 ${
+                            courseImageSrc ? "hidden" : "flex"
+                          }`}
+                          style={{ display: courseImageSrc ? "none" : "flex" }}
+                        >
+                          <BookOpen className="h-8 w-8 text-slate-400" />
+                        </div>
+                      </div>
+
+                      <div className="px-1 text-left">
+                        <span className="inline-block bg-emerald-50 text-emerald-700 text-[9px] font-bold px-2 py-0.5 rounded-full mb-1">
+                          {course.level || course.category || "Course"}
                         </span>
+                        <h4 className="text-xs font-semibold text-slate-900 leading-snug line-clamp-2 min-h-[2.5rem]">
+                          {course.title}
+                        </h4>
+                        <div className="mt-2 flex items-center justify-between text-[11px] font-medium text-slate-600">
+                          {price !== null ? (
+                            <span className="text-[#3cd664] font-bold">
+                              Rs. {price.toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="text-[#3cd664] font-bold">Free</span>
+                          )}
+                          <span className="text-blue-600 hover:text-blue-800 font-semibold">
+                            View →
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white via-white/85 to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/85 to-transparent" />
@@ -209,6 +223,17 @@ export default function CoursesSidebarMarquee() {
           100% {
             transform: translateY(-50%);
           }
+        }
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: .4;
+          }
+        }
+        .animate-pulse {
+          animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
       `}</style>
     </aside>
