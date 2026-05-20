@@ -107,6 +107,23 @@ const parseTransactionNotes = (value) => {
   }
 };
 
+const sanitizeNotes = (notes) => {
+  const sanitized = {};
+  for (const [key, value] of Object.entries(notes)) {
+    if (value != null && value !== "") {
+      // Remove UTF-16 surrogate pairs (emojis, etc.) to prevent invalid UTF-8 if truncated
+      // Also remove non-printable characters
+      let cleanValue = String(value)
+        .replace(/[\uD800-\uDFFF]/g, "")
+        .replace(/[^\x20-\x7E\xA0-\xFF]/g, "")
+        .trim();
+      // Razorpay restricts note values to 255 characters
+      sanitized[key] = cleanValue.substring(0, 250);
+    }
+  }
+  return sanitized;
+};
+
 const buildCoursePurchaseInvoiceComponents = ({
   studentName,
   courseTitle,
@@ -829,7 +846,7 @@ router.post("/create-order", async (req, res) => {
         amount: amountInPaise,
         currency: normalizedCurrency,
         receipt,
-        notes: {
+        notes: sanitizeNotes({
           paymentPurpose: LEGACY_BOOKING_PAYMENT_PURPOSE,
           email,
           name,
@@ -838,7 +855,7 @@ router.post("/create-order", async (req, res) => {
           hrs: String(hrs),
           bookingType,
           paymentSource,
-        },
+        }),
       });
 
       return res.status(200).json({
@@ -919,7 +936,7 @@ router.post("/create-order", async (req, res) => {
         amount: amountInPaise,
         currency: "INR",
         receipt: String(`ls_${Date.now()}_${liveSessionId}`).slice(0, 40),
-        notes: {
+        notes: sanitizeNotes({
           paymentPurpose: LIVE_SESSION_PAYMENT_PURPOSE,
           liveSessionId,
           email,
@@ -930,7 +947,7 @@ router.post("/create-order", async (req, res) => {
           sessionTitle: String(liveSession.title || "").trim(),
           sessionLink: String(liveSession.link || "").trim(),
           paymentSource,
-        },
+        }),
       });
 
       return res.status(200).json({
@@ -1216,11 +1233,11 @@ router.post("/create-order", async (req, res) => {
         amount: amountInPaise,
         currency: normalizedCurrency,
         receipt,
-        notes: {
+        notes: sanitizeNotes({
           studentId: studentId.toString(),
           checkoutBatchId,
           itemCount: String(resolvedItems.length),
-        },
+        }),
       });
 
       const createdTransactions = await Promise.all(
@@ -1476,11 +1493,11 @@ router.post("/create-order", async (req, res) => {
       amount: amountInPaise,
       currency: normalizedCurrency,
       receipt,
-      notes: {
+      notes: sanitizeNotes({
         studentId: studentId.toString(),
         courseId: courseId.toString(),
         sessionType,
-      },
+      }),
     });
 
     const transaction = new Transaction({
@@ -2279,7 +2296,7 @@ router.post("/refund", async (req, res) => {
     const refund = await razorpay.payments.refund(paymentId, {
       payment_id: paymentId,
       amount: amount ? Math.round(amount * 100) : undefined,
-      notes: notes || { reason: "Customer requested refund" },
+      notes: sanitizeNotes(notes || { reason: "Customer requested refund" }),
     });
 
     return res.status(200).json({
