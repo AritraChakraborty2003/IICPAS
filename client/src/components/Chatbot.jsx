@@ -19,6 +19,10 @@ const Chatbot = () => {
   const chatButtonPositionClasses = isDigitalHubRoute
     ? "top-1/2 left-1 translate-y-12 sm:left-2"
     : "bottom-4 right-4";
+
+  if (pathname?.includes("/live-session")) {
+    return null;
+  }
   const [isOpen, setIsOpen] = useState(true);
   const [leadFormVisible, setLeadFormVisible] = useState(true);
   const [hasLead, setHasLead] = useState(false);
