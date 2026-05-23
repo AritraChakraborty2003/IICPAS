@@ -520,7 +520,7 @@ function LiveSessionLandingPage({
       amount: orderData.amount,
       currency: orderData.currency || "INR",
       name: "IICPA Institute",
-      description: session?.title || landingPage.headline,
+      description: (session?.title || landingPage.headline || "").replace(/[^\x20-\x7E]/g, "").substring(0, 255),
       order_id: orderData.orderId,
       prefill: {
         name: values.name,

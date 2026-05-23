@@ -510,7 +510,7 @@ export default function BookingPageClient({
       amount: order?.amount,
       currency: order?.currency || "INR",
       name: "IICPA Institute",
-      description,
+      description: (description || "").replace(/[^\x20-\x7E]/g, "").substring(0, 255),
       order_id: order?.orderId,
       prefill,
       theme: { color: "#059669" },
