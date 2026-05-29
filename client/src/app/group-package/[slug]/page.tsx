@@ -498,7 +498,7 @@ export default function GroupPackagePage({
                         disabled={isPaying}
                         className={`mt-3 w-full rounded-lg py-2 text-xs font-bold text-white bg-gradient-to-r ${buttonGradient} shadow-md disabled:opacity-60`}
                       >
-                        {isPaying ? "Processing..." : val.buttonText}
+                        {isPaying ? "Processing..." : "Add to Cart"}
                       </button>
                     </div>
                   );
