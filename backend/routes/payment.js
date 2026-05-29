@@ -6,6 +6,7 @@ import Transaction from "../models/Transaction.js";
 import Student from "../models/Students.js";
 import Course from "../models/Content/Course.js";
 import Coupon from "../models/Coupon.js";
+import GroupPricing from "../models/GroupPricing.js";
 import Booking from "../models/Booking.js";
 import CourseBooking from "../models/CourseBooking.js";
 import LiveSession from "../models/LiveSession/LiveSession.js";
@@ -794,6 +795,102 @@ router.post("/create-order", async (req, res) => {
           currency: legacyOrder.currency,
           receipt: legacyOrder.receipt,
           key: process.env.RAZORPAY_KEY_ID,
+        },
+      });
+    }
+
+    // Group package checkout
+    if (req.body?.groupPackageId && req.body?.sessionType && req.body?.studentId) {
+      const groupPackageId = String(req.body.groupPackageId).trim();
+      const sessionType = String(req.body.sessionType).trim();
+      const studentId = String(req.body.studentId).trim();
+      const billingAddress = req.body.billingAddress || null;
+      const shippingAddress = req.body.shippingAddress || null;
+      const sameAsBilling = req.body.sameAsBilling !== false;
+
+      const VALID_SESSION_TYPES = ["recordedSession", "liveSession", "recordedSessionCenter", "liveSessionCenter"];
+      if (!VALID_SESSION_TYPES.includes(sessionType)) {
+        return res.status(400).json({ success: false, message: "Invalid sessionType for group package" });
+      }
+
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.status(404).json({ success: false, message: "Student not found" });
+      }
+
+      const groupPackage = await GroupPricing.findById(groupPackageId).populate("courseIds", "title category");
+      if (!groupPackage) {
+        return res.status(404).json({ success: false, message: "Group package not found" });
+      }
+
+      const pricingEntry = groupPackage.pricing?.[sessionType];
+      if (!pricingEntry?.finalPrice || pricingEntry.finalPrice <= 0) {
+        return res.status(400).json({ success: false, message: "Invalid pricing for selected session type" });
+      }
+
+      const packagePrice = pricingEntry.finalPrice;
+      const packagePricePaise = toPaise(packagePrice);
+
+      const resolvedSessionType = sessionType.startsWith("live") ? "live" : "recorded";
+
+      const receipt = buildRazorpayReceipt(studentId);
+      const checkoutBatchId = `grp_${Date.now()}_${String(studentId).slice(-6)}`;
+
+      const order = await razorpay.orders.create({
+        amount: packagePricePaise,
+        currency: "INR",
+        receipt,
+        notes: sanitizeNotes({
+          studentId: studentId.toString(),
+          checkoutBatchId,
+          groupPackageId: groupPackageId.toString(),
+          sessionType,
+          itemCount: String(groupPackage.courseIds.length),
+        }),
+      });
+
+      const createdTransactions = await Promise.all(
+        groupPackage.courseIds.map((course) =>
+          new Transaction({
+            studentId,
+            courseId: course._id,
+            sessionType: resolvedSessionType,
+            amount: packagePrice,
+            paymentMethod: "razorpay",
+            razorpayOrderId: order.id,
+            billingAddress,
+            shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
+            sameAsBilling: Boolean(sameAsBilling),
+            bundleItems: groupPackage.courseIds.map((c) => ({
+              courseId: c._id,
+              sessionType: resolvedSessionType,
+              quantity: 1,
+              title: c.title,
+              unitPrice: packagePrice,
+            })),
+            additionalNotes: JSON.stringify({
+              checkoutBatchId,
+              groupPackageId: groupPackageId.toString(),
+              groupPackageName: groupPackage.groupName,
+              sessionType,
+            }),
+          }).save()
+        )
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: "Group package order created successfully",
+        data: {
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+          receipt: order.receipt,
+          transactionIds: createdTransactions.map((txn) => txn._id),
+          key: process.env.RAZORPAY_KEY_ID,
+          totals: {
+            finalTotal: packagePrice,
+          },
         },
       });
     }
