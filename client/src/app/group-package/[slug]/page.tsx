@@ -127,7 +127,7 @@ export default function GroupPackagePage({
 
   const checkStudent = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/v1/students/isstudent`, {
+      const res = await axios.get(`${SERVER_BASE}/api/v1/students/isstudent`, {
         withCredentials: true,
       });
       setStudent(res.data.student);
@@ -227,7 +227,7 @@ export default function GroupPackagePage({
     try {
       setIsPaying(true);
       const res = await axios.post(
-        `${API_BASE}/api/v1/payments/create-order`,
+        `${SERVER_BASE}/api/v1/payments/create-order`,
         {
           groupPackageId: packageId,
           sessionType,
@@ -271,7 +271,7 @@ export default function GroupPackagePage({
         handler: async (response: any) => {
           try {
             const verifyRes = await axios.post(
-              `${API_BASE}/api/v1/payments/verify-and-capture`,
+              `${SERVER_BASE}/api/v1/payments/verify-and-capture`,
               {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
