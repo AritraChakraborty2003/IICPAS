@@ -125,18 +125,20 @@ export default function GroupPackagePage({
     fetchGroup();
   }, [slug]);
 
+  const checkStudent = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/api/v1/students/isstudent`, {
+        withCredentials: true,
+      });
+      setStudent(res.data.student);
+    } catch {
+      setStudent(null);
+    }
+  };
+
   useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await axios.get(`${API_BASE}/students/isstudent`, {
-          withCredentials: true,
-        });
-        setStudent(res.data.student);
-      } catch {
-        setStudent(null);
-      }
-    };
-    check();
+    checkStudent();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -598,7 +600,11 @@ export default function GroupPackagePage({
         onClose={() => setShowCheckout(false)}
         student={student}
       />
-      <LoginModal isOpen={showLogin} onClose={() => setShowLogin(false)} />
+      <LoginModal
+        isOpen={showLogin}
+        onClose={() => setShowLogin(false)}
+        onLoginSuccess={() => { setShowLogin(false); checkStudent(); }}
+      />
     </div>
   );
 }
