@@ -17,6 +17,7 @@ import LoginModal from "../../components/LoginModal";
 import SimpleCheckoutModal from "../../../components/SimpleCheckoutModal";
 import jsPDF from "jspdf";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 import { formatTextAsParagraphs } from "../../../lib/blogUtils";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -95,7 +96,7 @@ export default function GroupPackagePage({
   const [showLogin, setShowLogin] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
-  const [razorpayReady, setRazorpayReady] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchGroup = async () => {
@@ -140,16 +141,7 @@ export default function GroupPackagePage({
     checkStudent();
   }, [checkStudent]);
 
-  useEffect(() => {
-    if ((window as any).Razorpay) { setRazorpayReady(true); return; }
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.async = true;
-    script.onload = () => setRazorpayReady(true);
-    script.onerror = () => setRazorpayReady(false);
-    document.body.appendChild(script);
-    return () => { try { document.body.removeChild(script); } catch {} };
-  }, []);
+
 
   const toggle = (i: number) =>
     setExpanded((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]));
@@ -218,85 +210,9 @@ export default function GroupPackagePage({
       setShowLogin(true);
       return;
     }
-    if (!razorpayReady) {
-      alert("Payment gateway is loading. Please try again in a moment.");
-      return;
-    }
-    if (!pkg) return;
-
-    try {
-      setIsPaying(true);
-      const res = await axios.post(
-        `${SERVER_BASE}/api/v1/payments/create-order`,
-        {
-          groupPackageId: packageId,
-          sessionType,
-          studentId: student._id,
-          billingAddress: {
-            fullName: student.name || "",
-            email: student.email || "",
-            phone: student.phone || "",
-            line1: "",
-            city: "",
-            state: "",
-            pincode: "",
-            country: "India",
-          },
-          sameAsBilling: true,
-        },
-        { withCredentials: true }
-      );
-
-      if (!res.data?.success || !res.data?.data?.orderId) {
-        throw new Error(res.data?.message || "Unable to create payment order");
-      }
-
-      const orderData = res.data.data;
-      const rzp = new (window as any).Razorpay({
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || orderData.key,
-        amount: orderData.amount,
-        currency: orderData.currency || "INR",
-        name: "IICPA Institute",
-        description: `${pkg.groupName} – ${sessionType.replace(/([A-Z])/g, " $1").trim()}`,
-        order_id: orderData.orderId,
-        prefill: {
-          name: student.name || "",
-          email: student.email || "",
-          contact: student.phone || "",
-        },
-        theme: { color: "#1d4ed8" },
-        modal: {
-          ondismiss: () => setIsPaying(false),
-        },
-        handler: async (response: any) => {
-          try {
-            const verifyRes = await axios.post(
-              `${SERVER_BASE}/api/v1/payments/verify-and-capture`,
-              {
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                transactionIds: orderData.transactionIds || [],
-              },
-              { withCredentials: true }
-            );
-            if (verifyRes.data?.success) {
-              alert("Payment successful! You are now enrolled in the package.");
-            } else {
-              alert("Payment verification failed. Please contact support.");
-            }
-          } catch (e: any) {
-            alert(e?.response?.data?.message || "Payment verification failed. Please contact support.");
-          } finally {
-            setIsPaying(false);
-          }
-        },
-      });
-      rzp.open();
-    } catch (e: any) {
-      setIsPaying(false);
-      alert(e?.response?.data?.message || e?.message || "Failed to initiate payment. Please try again.");
-    }
+    
+    // Redirect to checkout page
+    router.push(`/checkout?type=group_package&packageId=${packageId}&sessionType=${sessionType}`);
   };
 
   if (loading)
