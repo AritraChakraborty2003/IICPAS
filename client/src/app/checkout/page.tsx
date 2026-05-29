@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
 import Header from "../components/Header";
@@ -72,6 +72,9 @@ const formatCouponExpiry = (date: string) =>
   });
 
 const getItemPrice = (item: any) => {
+  if (item?.isGroupPackage) {
+    return item.course?.price || 0;
+  }
   const course = item?.course;
   if (!course) return 0;
 
@@ -93,7 +96,20 @@ const getItemPrice = (item: any) => {
 };
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading checkout...</div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const checkoutType = searchParams?.get("type") || "cart";
+  const packageId = searchParams?.get("packageId");
+  const sessionType = searchParams?.get("sessionType");
+
   const [student, setStudent] = useState<any>(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [sameAsBilling, setSameAsBilling] = useState(true);
@@ -120,8 +136,43 @@ export default function CheckoutPage() {
     country: "India",
   });
 
-  const { cartItems, loading, updateQuantity, removeFromCart, fetchCart } = useCart(student);
-  const safeCartItems = useMemo(() => (cartItems as any[]) || [], [cartItems]);
+  const { cartItems, loading: cartLoading, updateQuantity, removeFromCart, fetchCart } = useCart(student);
+  const [groupPackageItem, setGroupPackageItem] = useState<any>(null);
+
+  useEffect(() => {
+    if (checkoutType === "group_package" && packageId) {
+      axios.get(`${API_BASE}/api/group-pricing`)
+        .then(res => {
+          const allGroups = res.data?.groupPricing || [];
+          const pkg = allGroups.find((g: any) => g._id === packageId);
+          if (pkg) {
+             const price = pkg.pricing?.[sessionType || "recordedSession"]?.finalPrice || 0;
+             setGroupPackageItem({
+               isGroupPackage: true,
+               courseId: pkg._id,
+               sessionType: sessionType,
+               quantity: 1,
+               course: {
+                 title: pkg.groupName || "Group Package",
+                 category: "Group Package",
+                 image: "/images/a1.jpeg",
+                 price: price
+               }
+             });
+          }
+        })
+        .catch(console.error);
+    }
+  }, [checkoutType, packageId, sessionType]);
+
+  const loading = checkoutType === "group_package" ? !groupPackageItem : cartLoading;
+
+  const safeCartItems = useMemo(() => {
+    if (checkoutType === "group_package") {
+      return groupPackageItem ? [groupPackageItem] : [];
+    }
+    return (cartItems as any[]) || [];
+  }, [checkoutType, groupPackageItem, cartItems]);
 
   const [couponCode, setCouponCode] = useState("");
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
@@ -517,26 +568,43 @@ export default function CheckoutPage() {
 
     try {
       setIsPaying(true);
-      const cartPayload = safeCartItems
-        .filter((item: any) => item?.courseId && item?.sessionType)
-        .map((item: any) => ({
-          courseId: item.courseId,
-          sessionType: item.sessionType,
-          quantity: Math.max(1, item.quantity || 1),
-        }));
+      let response;
 
-      const response = await axios.post(
-        `${API_BASE}/api/v1/payments/create-order`,
-        {
-          cartItems: cartPayload,
-          studentId: student._id,
-          billingAddress,
-          shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
-          sameAsBilling,
-          appliedCouponCode: appliedReferralCode || appliedCoupon?.code || "",
-        },
-        { withCredentials: true }
-      );
+      if (checkoutType === "group_package" && packageId && sessionType) {
+        response = await axios.post(
+          `${API_BASE}/api/v1/payments/create-order`,
+          {
+            groupPackageId: packageId,
+            sessionType: sessionType,
+            studentId: student._id,
+            billingAddress,
+            shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
+            sameAsBilling,
+          },
+          { withCredentials: true }
+        );
+      } else {
+        const cartPayload = safeCartItems
+          .filter((item: any) => item?.courseId && item?.sessionType)
+          .map((item: any) => ({
+            courseId: item.courseId,
+            sessionType: item.sessionType,
+            quantity: Math.max(1, item.quantity || 1),
+          }));
+
+        response = await axios.post(
+          `${API_BASE}/api/v1/payments/create-order`,
+          {
+            cartItems: cartPayload,
+            studentId: student._id,
+            billingAddress,
+            shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
+            sameAsBilling,
+            appliedCouponCode: appliedReferralCode || appliedCoupon?.code || "",
+          },
+          { withCredentials: true }
+        );
+      }
 
       if (!response.data?.success || !response.data?.data?.orderId) {
         throw new Error(response.data?.message || "Unable to create payment order");
@@ -991,7 +1059,8 @@ export default function CheckoutPage() {
                 </div>
 
                 <aside className="lg:col-span-4 space-y-4">
-                <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
+                  {checkoutType !== "group_package" && (
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-900 mb-3">
                       Discount Coupons
                     </h3>
@@ -1096,6 +1165,7 @@ export default function CheckoutPage() {
                       </p>
                     ) : null}
                   </div>
+                  )}
 
                   <div className="bg-gradient-to-b from-white to-slate-50 rounded-2xl p-4 border border-slate-200 shadow-sm sticky top-20">
                     <h3 className="text-xl font-bold text-slate-900 mb-4">
