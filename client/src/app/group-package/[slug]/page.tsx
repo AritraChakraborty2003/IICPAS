@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, useEffect, use, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronDown,
@@ -125,7 +125,7 @@ export default function GroupPackagePage({
     fetchGroup();
   }, [slug]);
 
-  const checkStudent = async () => {
+  const checkStudent = useCallback(async () => {
     try {
       const res = await axios.get(`${API_BASE}/api/v1/students/isstudent`, {
         withCredentials: true,
@@ -134,12 +134,11 @@ export default function GroupPackagePage({
     } catch {
       setStudent(null);
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkStudent();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkStudent]);
 
   useEffect(() => {
     if ((window as any).Razorpay) { setRazorpayReady(true); return; }
@@ -603,7 +602,10 @@ export default function GroupPackagePage({
       <LoginModal
         isOpen={showLogin}
         onClose={() => setShowLogin(false)}
-        onLoginSuccess={() => { setShowLogin(false); checkStudent(); }}
+        onLoginSuccess={() => {
+          setShowLogin(false);
+          setTimeout(checkStudent, 500);
+        }}
       />
     </div>
   );
