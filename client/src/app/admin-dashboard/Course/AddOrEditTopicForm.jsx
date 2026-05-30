@@ -232,6 +232,8 @@ export default function AddOrEditTopicForm({
   });
   const [loadingFiles, setLoadingFiles] = useState(false);
   const [uploadingIntroVideo, setUploadingIntroVideo] = useState(false);
+  const [showAiEditor, setShowAiEditor] = useState(false);
+  const [aiContent, setAiContent] = useState("");
   const currentTopicId = topic?._id || "";
 
   // Debounced content update to prevent typing interruption
@@ -2627,6 +2629,42 @@ export default function AddOrEditTopicForm({
               onLoad={handleEditorReady}
             />
           </Box>
+
+          {/* AI Humanize Button */}
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 2 }}>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={() => setShowAiEditor(true)}
+              sx={{
+                background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
+                boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
+                color: "white",
+                fontWeight: "bold"
+              }}
+            >
+              ✨ Humanize and Edit in AI
+            </Button>
+          </Box>
+
+          {showAiEditor && (
+            <Box sx={{ mt: 3, mb: 3 }}>
+              <Typography
+                fontWeight={600}
+                fontSize={15}
+                color="secondary"
+                sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}
+              >
+                🤖 AI Edited Content
+              </Typography>
+              <JoditEditor
+                value={aiContent}
+                config={{ ...joditConfig, placeholder: "AI magic goes here..." }}
+                tabIndex={2}
+                onChange={(newContent) => setAiContent(newContent)}
+              />
+            </Box>
+          )}
 
           {/* Preview Button */}
           <Box sx={{ display: "flex", justifyContent: "center" }}>
