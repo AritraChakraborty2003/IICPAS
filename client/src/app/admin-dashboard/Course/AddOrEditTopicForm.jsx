@@ -2672,15 +2672,17 @@ export default function AddOrEditTopicForm({
             <Button
               variant="contained"
               color="secondary"
-              onClick={() => setShowAiEditor(true)}
+              onClick={handleHumanizeWithAI}
+              disabled={isHumanizing}
               sx={{
                 background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
                 boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
                 color: "white",
-                fontWeight: "bold"
+                fontWeight: "bold",
+                ...(isHumanizing && { opacity: 0.7 })
               }}
             >
-              ✨ Humanize and Edit in AI
+              {isHumanizing ? "✨ Humanizing..." : "✨ Humanize and Edit in AI"}
             </Button>
           </Box>
 
