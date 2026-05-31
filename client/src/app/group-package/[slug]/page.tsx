@@ -22,6 +22,13 @@ import { formatTextAsParagraphs } from "../../../lib/blogUtils";
 
 const SERVER_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const API_BASE = `${SERVER_BASE}/api`;
+const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+
+declare global {
+  interface Window {
+    Razorpay?: any;
+  }
+}
 
 type Topic = { _id?: string; title?: string } | string;
 type Chapter = { _id?: string; title: string; topics?: Topic[] };
@@ -96,6 +103,7 @@ export default function GroupPackagePage({
   const [showLogin, setShowLogin] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+  const [razorpayReady, setRazorpayReady] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -198,6 +206,26 @@ export default function GroupPackagePage({
     doc.save(`${pkg.groupName.replace(/\s+/g, "_")}_Syllabus.pdf`);
   };
 
+  useEffect(() => {
+    if (window.Razorpay) {
+      setRazorpayReady(true);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => setRazorpayReady(true);
+    script.onerror = () => setRazorpayReady(false);
+    document.body.appendChild(script);
+
+    return () => {
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
   const handleEnroll = async (
     packageId: string,
     sessionType:
@@ -213,6 +241,116 @@ export default function GroupPackagePage({
     
     // Redirect to checkout page
     router.push(`/checkout?type=group_package&packageId=${packageId}&sessionType=${sessionType}`);
+  };
+
+  const handleDirectPay = async (
+    packageId: string,
+    sessionType: string
+  ) => {
+    if (!student) {
+      setShowLogin(true);
+      return;
+    }
+
+    if (!razorpayReady) {
+      alert("Payment system is loading, please wait...");
+      return;
+    }
+
+    try {
+      setIsPaying(true);
+      
+      const billingAddress = {
+        fullName: student.name || "",
+        email: student.email || "",
+        phone: student.phone || "",
+        line1: "N/A",
+        line2: "",
+        city: "N/A",
+        state: "N/A",
+        pincode: "000000",
+        country: "India",
+      };
+
+      const response = await axios.post(
+        `${API_BASE}/v1/payments/create-order`,
+        {
+          groupPackageId: packageId,
+          sessionType: sessionType,
+          studentId: student._id,
+          billingAddress,
+          shippingAddress: billingAddress,
+          sameAsBilling: true,
+        },
+        { withCredentials: true }
+      );
+
+      if (!response.data?.success || !response.data?.data?.orderId) {
+        throw new Error(response.data?.message || "Unable to create payment order");
+      }
+
+      const orderData = response.data.data;
+
+      const rzp = new window.Razorpay({
+        key: RAZORPAY_KEY || orderData?.key,
+        amount: orderData?.amount,
+        currency: orderData?.currency || "INR",
+        name: "IICPA Institute",
+        description: `Payment for Group Package`,
+        order_id: orderData?.orderId,
+        prefill: {
+          name: student?.name || "",
+          email: student?.email || "",
+          contact: student?.phone || "",
+        },
+        theme: {
+          color: "#1d4ed8",
+        },
+        modal: {
+          ondismiss: () => {
+            setIsPaying(false);
+            alert("Payment was cancelled.");
+          },
+        },
+        handler: async (response: any) => {
+          try {
+            const verifyRes = await axios.post(
+              `${API_BASE}/v1/payments/verify-and-capture`,
+              {
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                transactionIds: orderData?.transactionIds || [],
+              },
+              { withCredentials: true }
+            );
+
+            if (verifyRes.data?.success) {
+              alert("Payment successful. You are now enrolled.");
+              window.location.reload(); 
+            } else {
+              alert("Payment verification failed. Please contact support.");
+            }
+          } catch (error: any) {
+            alert(
+              error?.response?.data?.message ||
+                "Payment verification failed. Please contact support."
+            );
+          } finally {
+            setIsPaying(false);
+          }
+        },
+      });
+
+      rzp.open();
+    } catch (error: any) {
+      setIsPaying(false);
+      const apiMessage = error?.response?.data?.message;
+      const apiError = error?.response?.data?.error;
+      const apiDescription = error?.response?.data?.details?.description;
+      const fallbackMessage = error?.message || "Payment failed";
+      alert(apiMessage || apiError || apiDescription || fallbackMessage);
+    }
   };
 
   if (loading)
@@ -428,11 +566,11 @@ export default function GroupPackagePage({
                           ₹{val.price.toLocaleString()}
                         </p>
                         <button
-                          onClick={() => handleEnroll(pkg._id, key as any)}
+                          onClick={() => handleDirectPay(pkg._id, key as any)}
                           disabled={isPaying}
                           className={`mt-3 w-full rounded-lg py-2 text-sm font-bold text-white bg-gradient-to-r ${buttonGradient} shadow-md disabled:opacity-60`}
                         >
-                          {isPaying ? "Processing..." : val.buttonText}
+                          {isPaying ? "Processing..." : "Pay Now"}
                         </button>
                       </div>
                     );
@@ -494,11 +632,11 @@ export default function GroupPackagePage({
                         ₹{val.price.toLocaleString()}
                       </p>
                       <button
-                        onClick={() => handleEnroll(pkg._id, key as any)}
+                        onClick={() => handleDirectPay(pkg._id, key as any)}
                         disabled={isPaying}
                         className={`mt-3 w-full rounded-lg py-2 text-xs font-bold text-white bg-gradient-to-r ${buttonGradient} shadow-md disabled:opacity-60`}
                       >
-                        {isPaying ? "Processing..." : "Add to Cart"}
+                        {isPaying ? "Processing..." : "Pay Now"}
                       </button>
                     </div>
                   );
