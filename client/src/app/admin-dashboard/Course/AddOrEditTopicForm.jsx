@@ -234,6 +234,7 @@ export default function AddOrEditTopicForm({
   const [uploadingIntroVideo, setUploadingIntroVideo] = useState(false);
   const [showAiEditor, setShowAiEditor] = useState(false);
   const [aiContent, setAiContent] = useState("");
+  const [isHumanizing, setIsHumanizing] = useState(false);
   const currentTopicId = topic?._id || "";
 
   // Debounced content update to prevent typing interruption
@@ -249,6 +250,42 @@ export default function AddOrEditTopicForm({
       debouncedSetContent.cancel?.();
     };
   }, [debouncedSetContent]);
+
+  const handleHumanizeWithAI = async () => {
+    if (!content || !content.trim()) {
+      Swal.fire("Warning", "Please add some content to humanize.", "warning");
+      return;
+    }
+    setShowAiEditor(true);
+    setIsHumanizing(true);
+    try {
+      const response = await axios.post(
+        "https://n8n.iicpa.in/webhook-test/de295ee3-3154-4d45-a907-fac35c4b2633",
+        { content: content }
+      );
+      
+      if (response.data) {
+        if (typeof response.data === "string") {
+          setAiContent(response.data);
+        } else if (response.data.content) {
+          setAiContent(response.data.content);
+        } else if (response.data.output) {
+          setAiContent(response.data.output);
+        } else if (response.data.response) {
+          setAiContent(response.data.response);
+        } else {
+          setAiContent(JSON.stringify(response.data));
+        }
+      } else {
+        setAiContent("<p>No response from AI.</p>");
+      }
+    } catch (error) {
+      console.error("Failed to humanize content:", error);
+      Swal.fire("Error", "Failed to connect to AI webhook.", "error");
+    } finally {
+      setIsHumanizing(false);
+    }
+  };
 
   // Quiz editing functions
   const openQuizEditor = () => {
