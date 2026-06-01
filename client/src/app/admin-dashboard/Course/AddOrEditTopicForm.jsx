@@ -215,6 +215,7 @@ export default function AddOrEditTopicForm({
   const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSource, setPreviewSource] = useState("original"); // "original" | "ai"
   const [introVideoPreviewOpen, setIntroVideoPreviewOpen] = useState(false);
   const [introVideoSaving, setIntroVideoSaving] = useState(false);
   const [scrollPosition, setScrollPosition] = useState(0);
@@ -1063,8 +1064,9 @@ export default function AddOrEditTopicForm({
   };
 
   // Preserve scroll position when opening/closing modal
-  const handlePreviewOpen = () => {
+  const handlePreviewOpen = (source = "original") => {
     setScrollPosition(window.scrollY);
+    setPreviewSource(source);
     setPreviewOpen(true);
   };
 
@@ -2734,7 +2736,7 @@ export default function AddOrEditTopicForm({
             importMode={wordImportMode}
             onImportModeChange={setWordImportMode}
             onFileSelected={handleWordFileSelected}
-            onPreview={() => setPreviewOpen(true)}
+            onPreview={() => handlePreviewOpen("original")}
             importing={wordImporting}
             importSummary={wordImportSummary}
           />
@@ -2798,16 +2800,26 @@ export default function AddOrEditTopicForm({
             </Box>
           )}
 
-          {/* Preview Button */}
+          {/* Preview Buttons */}
           <Box sx={{ display: "flex", justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
             <Button
               variant="outlined"
               startIcon={<Visibility />}
-              onClick={handlePreviewOpen}
+              onClick={() => handlePreviewOpen("original")}
               disabled={!content.trim()}
             >
-              Preview Content
+              Preview Original
             </Button>
+            {showAiEditor && aiContent.trim() && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                startIcon={<Visibility />}
+                onClick={() => handlePreviewOpen("ai")}
+              >
+                Preview AI Content
+              </Button>
+            )}
             {showAiEditor && aiContent.trim() && (
               <Button
                 variant="contained"
@@ -3060,7 +3072,8 @@ export default function AddOrEditTopicForm({
                 fontSize: "1.875rem",
               }}
             >
-              {title || "Untitled Topic"}
+              {(title || "Untitled Topic") +
+                (previewSource === "ai" ? " — AI Content" : "")}
             </Typography>
             <IconButton
               onClick={handlePreviewClose}
@@ -3079,7 +3092,7 @@ export default function AddOrEditTopicForm({
             id="preview-modal-description"
             sx={{ fontSize: "1rem", lineHeight: 1.7, color: "#2d3748" }}
           >
-            {sourceDocument ? (
+            {previewSource !== "ai" && sourceDocument ? (
               <WordDocumentPreview
                 html={content}
                 fileName={sourceDocument?.originalName || ""}
@@ -3186,7 +3199,9 @@ export default function AddOrEditTopicForm({
                   },
                 }}
                 dangerouslySetInnerHTML={{
-                  __html: processContentForPreview(content),
+                  __html: processContentForPreview(
+                    previewSource === "ai" ? aiContent : content
+                  ),
                 }}
               />
             )}
