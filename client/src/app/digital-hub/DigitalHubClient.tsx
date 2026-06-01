@@ -5525,6 +5525,35 @@ export default function DigitalHubClient({
           text-decoration: underline;
           text-underline-offset: 0.14em;
         }
+
+        /* Center videos, embeds and video thumbnails */
+        .digital-hub-content video,
+        .digital-hub-content iframe,
+        .topic-content-light video,
+        .topic-content-light iframe,
+        .topic-content-dark video,
+        .topic-content-dark iframe {
+          display: block !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          max-width: 100% !important;
+        }
+
+        /* Center wrappers that hold a video/iframe (e.g. responsive embeds) */
+        .digital-hub-content p:has(> iframe),
+        .digital-hub-content p:has(> video),
+        .digital-hub-content div:has(> iframe),
+        .digital-hub-content div:has(> video),
+        .topic-content-light p:has(> iframe),
+        .topic-content-light p:has(> video),
+        .topic-content-light div:has(> iframe),
+        .topic-content-light div:has(> video),
+        .topic-content-dark p:has(> iframe),
+        .topic-content-dark p:has(> video),
+        .topic-content-dark div:has(> iframe),
+        .topic-content-dark div:has(> video) {
+          text-align: center !important;
+        }
       `}</style>
     </div>
   );
