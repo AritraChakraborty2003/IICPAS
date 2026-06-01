@@ -270,32 +270,98 @@ export default function TopicList({
         >
           🎯 Topics
         </Typography>
+        {hasPermission("course", "update") && (
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            {search.trim()
+              ? "Clear the search to drag and reorder topics."
+              : "Drag the handle on the left to reorder topics."}
+          </Typography>
+        )}
       </Box>
 
       <Box sx={{ bgcolor: "white", borderRadius: 3, boxShadow: 2, p: 2 }}>
-        <DataGrid
-          autoHeight
-          rows={filteredTopics
-            .filter(Boolean)
-            .map((t) => ({ ...t, id: t._id }))}
-          columns={columns}
-          pageSize={10}
-          rowsPerPageOptions={[10, 20, 50]}
-          loading={loading}
-          disableRowSelectionOnClick
+        {/* Header row */}
+        <Stack
+          direction="row"
+          alignItems="center"
           sx={{
-            border: "none",
+            px: 2,
+            py: 1.5,
+            background: "#f6f8fa",
+            borderRadius: 2,
+            fontWeight: 700,
             fontSize: 15,
-            "& .MuiDataGrid-cell": {
-              borderBottom: "1px solid #e0e0e0",
-            },
-            "& .MuiDataGrid-columnHeaders": {
-              background: "#f6f8fa",
-              fontWeight: 700,
-              fontSize: 15,
-            },
           }}
-        />
+        >
+          <Box sx={{ width: 40 }} />
+          <Box sx={{ flex: 1 }}>Topic Name</Box>
+          <Box sx={{ width: 180 }}>Action</Box>
+        </Stack>
+
+        {loading ? (
+          <Typography sx={{ p: 3, textAlign: "center" }} color="text.secondary">
+            Loading topics...
+          </Typography>
+        ) : filteredTopics.length === 0 ? (
+          <Typography sx={{ p: 3, textAlign: "center" }} color="text.secondary">
+            No topics found.
+          </Typography>
+        ) : (
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="topics-list">
+              {(provided) => (
+                <Box ref={provided.innerRef} {...provided.droppableProps}>
+                  {filteredTopics.map((topic, index) => (
+                    <Draggable
+                      key={topic._id}
+                      draggableId={String(topic._id)}
+                      index={index}
+                      isDragDisabled={!canReorder}
+                    >
+                      {(dragProvided, snapshot) => (
+                        <Stack
+                          ref={dragProvided.innerRef}
+                          {...dragProvided.draggableProps}
+                          direction="row"
+                          alignItems="center"
+                          sx={{
+                            px: 2,
+                            py: 1.5,
+                            borderBottom: "1px solid #e0e0e0",
+                            fontSize: 15,
+                            bgcolor: snapshot.isDragging ? "#eef4ff" : "white",
+                            boxShadow: snapshot.isDragging
+                              ? "0 6px 18px rgba(15,23,42,0.12)"
+                              : "none",
+                            ...dragProvided.draggableProps.style,
+                          }}
+                        >
+                          <Box
+                            {...dragProvided.dragHandleProps}
+                            sx={{
+                              width: 40,
+                              display: "flex",
+                              alignItems: "center",
+                              color: canReorder ? "#94a3b8" : "#e2e8f0",
+                              cursor: canReorder ? "grab" : "not-allowed",
+                            }}
+                          >
+                            <DragIndicatorIcon fontSize="small" />
+                          </Box>
+                          <Box sx={{ flex: 1 }}>{topic.title}</Box>
+                          <Box sx={{ width: 180 }}>
+                            {renderTopicActions(topic)}
+                          </Box>
+                        </Stack>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </Box>
+              )}
+            </Droppable>
+          </DragDropContext>
+        )}
       </Box>
 
       {/* Enhanced Assignments List */}
