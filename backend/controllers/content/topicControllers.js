@@ -90,18 +90,24 @@ export const deleteTopic = async (req, res) => {
   res.json({ message: "Topic deleted" });
 };
 
-// Find a topic by its title. Titles aren't unique, so prefer the most
-// recently updated match. Matching is case-insensitive and trims whitespace.
-const findTopicByName = (topicName) => {
-  const trimmed = String(topicName || "").trim();
-  if (!trimmed) return null;
-  return Topic.findOne({
-    title: { $regex: `^${escapeRegex(trimmed)}$`, $options: "i" },
-  }).sort({ updatedAt: -1 });
-};
-
 const escapeRegex = (str = "") =>
   String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Find a topic by its title. Titles aren't unique, so prefer the most
+// recently updated match. Matching is case-insensitive, trims whitespace, and
+// treats any run of whitespace (incl. non-breaking spaces) as equivalent so
+// minor formatting differences from n8n don't cause a miss.
+const findTopicByName = (topicName) => {
+  const normalized = String(topicName || "")
+    .replace(/ /g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!normalized) return null;
+  const pattern = `^${escapeRegex(normalized).replace(/ /g, "\\s+")}$`;
+  return Topic.findOne({
+    title: { $regex: pattern, $options: "i" },
+  }).sort({ updatedAt: -1 });
+};
 
 // Single fixed webhook for n8n: receives humanized content tagged with topicName
 export const receiveAiContent = async (req, res) => {
