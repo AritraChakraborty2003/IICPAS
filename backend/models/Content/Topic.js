@@ -51,6 +51,8 @@ const TopicSchema = new Schema({
   },
   lessons: { type: [TopicLessonSchema], default: [] },
   quiz: { type: Schema.Types.ObjectId, ref: "Quiz" }, // Reference to quiz
+  aiContent: { type: String, default: "" }, // Humanized content posted back by n8n
+  aiContentUpdatedAt: { type: Date }, // When n8n last delivered AI content
   publishAt: { type: Date, default: Date.now },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

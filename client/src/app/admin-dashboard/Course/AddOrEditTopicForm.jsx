@@ -235,6 +235,7 @@ export default function AddOrEditTopicForm({
   const [showAiEditor, setShowAiEditor] = useState(false);
   const [aiContent, setAiContent] = useState("");
   const [isHumanizing, setIsHumanizing] = useState(false);
+  const aiPollRef = useRef(null);
   const currentTopicId = topic?._id || "";
 
   // Debounced content update to prevent typing interruption
@@ -251,40 +252,132 @@ export default function AddOrEditTopicForm({
     };
   }, [debouncedSetContent]);
 
+  const stopAiPolling = () => {
+    if (aiPollRef.current) {
+      clearInterval(aiPollRef.current);
+      aiPollRef.current = null;
+    }
+  };
+
+  // Clean up any in-flight polling when the form unmounts
+  useEffect(() => stopAiPolling, []);
+
   const handleHumanizeWithAI = async () => {
     if (!content || !content.trim()) {
       Swal.fire("Warning", "Please add some content to humanize.", "warning");
       return;
     }
+    const topicName = title.trim();
+    if (!topicName) {
+      Swal.fire(
+        "Topic Title Required",
+        "Please enter a topic title before humanizing, so the AI result can be matched back to this topic.",
+        "info"
+      );
+      return;
+    }
+    if (!currentTopicId) {
+      Swal.fire(
+        "Save Topic First",
+        "Please save the topic once before humanizing, so the AI result can be matched back to it by name.",
+        "info"
+      );
+      return;
+    }
+
     setShowAiEditor(true);
     setIsHumanizing(true);
+    setAiContent("");
+    stopAiPolling();
+
+    // Marker so we only accept content delivered after this click
+    const requestedAt = Date.now();
+
     try {
-      const response = await axios.post(
+      // Kick off the n8n workflow, sending the topic name and content.
+      // n8n should POST the humanized result back to
+      // {API_BASE}/topics/ai-webhook with { topicName, content } in the body.
+      await axios.post(
         "https://n8n.iicpa.in/webhook-test/de295ee3-3154-4d45-a907-fac35c4b2633",
-        { content: content }
-      );
-      
-      if (response.data) {
-        if (typeof response.data === "string") {
-          setAiContent(response.data);
-        } else if (response.data.content) {
-          setAiContent(response.data.content);
-        } else if (response.data.output) {
-          setAiContent(response.data.output);
-        } else if (response.data.response) {
-          setAiContent(response.data.response);
-        } else {
-          setAiContent(JSON.stringify(response.data));
+        {
+          content,
+          topicName,
+          callbackUrl: `${API_BASE}/topics/ai-webhook`,
         }
-      } else {
-        setAiContent("<p>No response from AI.</p>");
-      }
+      );
     } catch (error) {
-      console.error("Failed to humanize content:", error);
-      Swal.fire("Error", "Failed to connect to AI webhook.", "error");
-    } finally {
+      console.error("Failed to trigger AI webhook:", error);
       setIsHumanizing(false);
+      Swal.fire("Error", "Failed to connect to AI webhook.", "error");
+      return;
     }
+
+    // Poll the backend until n8n delivers the humanized content for this topic
+    const maxAttempts = 60; // ~3 minutes at 3s intervals
+    let attempts = 0;
+
+    aiPollRef.current = setInterval(async () => {
+      attempts += 1;
+      try {
+        const res = await axios.get(`${API_BASE}/topics/ai-content`, {
+          params: { topicName },
+        });
+        const { aiContent: delivered, aiContentUpdatedAt } = res.data || {};
+        const deliveredAt = aiContentUpdatedAt
+          ? new Date(aiContentUpdatedAt).getTime()
+          : 0;
+
+        // Accept only content delivered after we triggered this run
+        if (delivered && deliveredAt >= requestedAt) {
+          setAiContent(delivered);
+          setIsHumanizing(false);
+          stopAiPolling();
+          return;
+        }
+      } catch (error) {
+        console.error("Error polling for AI content:", error);
+      }
+
+      if (attempts >= maxAttempts) {
+        stopAiPolling();
+        setIsHumanizing(false);
+        Swal.fire(
+          "Timed Out",
+          "The AI result did not arrive in time. Please try again.",
+          "warning"
+        );
+      }
+    }, 3000);
+  };
+
+  // Replace the original content with the AI-edited content
+  const handleApplyAiContent = async () => {
+    if (!aiContent || !aiContent.trim()) {
+      Swal.fire("Nothing to Apply", "There is no AI content yet.", "info");
+      return;
+    }
+
+    const confirm = await Swal.fire({
+      title: "Replace original content?",
+      text: "This will overwrite the content in the main editor with the AI-edited version.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Replace",
+      cancelButtonText: "Cancel",
+    });
+
+    if (!confirm.isConfirmed) return;
+
+    setContent(aiContent);
+    if (editor.current && typeof editor.current.value !== "undefined") {
+      editor.current.value = aiContent;
+    }
+
+    Swal.fire(
+      "Updated",
+      "The main content has been replaced with the AI-edited version. Remember to save the topic.",
+      "success"
+    );
   };
 
   // Quiz editing functions
@@ -2706,16 +2799,24 @@ export default function AddOrEditTopicForm({
           )}
 
           {/* Preview Button */}
-          <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 2, flexWrap: "wrap" }}>
             <Button
               variant="outlined"
               startIcon={<Visibility />}
               onClick={handlePreviewOpen}
               disabled={!content.trim()}
-              sx={{ mr: 2 }}
             >
               Preview Content
             </Button>
+            {showAiEditor && aiContent.trim() && (
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleApplyAiContent}
+              >
+                Update Content
+              </Button>
+            )}
           </Box>
 
           {/* Quiz Upload */}

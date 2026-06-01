@@ -90,6 +90,84 @@ export const deleteTopic = async (req, res) => {
   res.json({ message: "Topic deleted" });
 };
 
+// Find a topic by its title. Titles aren't unique, so prefer the most
+// recently updated match. Matching is case-insensitive and trims whitespace.
+const findTopicByName = (topicName) => {
+  const trimmed = String(topicName || "").trim();
+  if (!trimmed) return null;
+  return Topic.findOne({
+    title: { $regex: `^${escapeRegex(trimmed)}$`, $options: "i" },
+  }).sort({ updatedAt: -1 });
+};
+
+const escapeRegex = (str = "") =>
+  String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+// Single fixed webhook for n8n: receives humanized content tagged with topicName
+export const receiveAiContent = async (req, res) => {
+  try {
+    const body = req.body || {};
+    const topicName = body.topicName ?? body.title ?? "";
+
+    // n8n may send the content under any of these keys, or as a raw string
+    let aiContent =
+      body.content ?? body.output ?? body.response ?? body.text ?? "";
+
+    if (aiContent && typeof aiContent !== "string") {
+      aiContent = JSON.stringify(aiContent);
+    }
+
+    if (!String(topicName).trim()) {
+      return res.status(400).json({ error: "topicName is required" });
+    }
+    if (!aiContent || !String(aiContent).trim()) {
+      return res.status(400).json({ error: "No AI content provided" });
+    }
+
+    const topic = await findTopicByName(topicName);
+    if (!topic) {
+      return res
+        .status(404)
+        .json({ error: `No topic found with name "${topicName}"` });
+    }
+
+    topic.aiContent = String(aiContent);
+    topic.aiContentUpdatedAt = new Date();
+    await topic.save();
+
+    res.json({ success: true, topicId: topic._id, title: topic.title });
+  } catch (error) {
+    console.error("Error receiving AI content:", error);
+    res.status(500).json({ error: "Failed to store AI content" });
+  }
+};
+
+// Frontend polls this (by topic name) to fetch the AI content n8n delivered
+export const getAiContent = async (req, res) => {
+  try {
+    const topicName = req.query.topicName || req.query.title || "";
+    if (!String(topicName).trim()) {
+      return res.status(400).json({ error: "topicName is required" });
+    }
+
+    const topic = await findTopicByName(topicName);
+    if (!topic) {
+      return res
+        .status(404)
+        .json({ error: `No topic found with name "${topicName}"` });
+    }
+
+    res.json({
+      success: true,
+      aiContent: topic.aiContent || "",
+      aiContentUpdatedAt: topic.aiContentUpdatedAt || null,
+    });
+  } catch (error) {
+    console.error("Error fetching AI content:", error);
+    res.status(500).json({ error: "Failed to fetch AI content" });
+  }
+};
+
 export const importWordContent = async (req, res) => {
   try {
     if (!req.file) {

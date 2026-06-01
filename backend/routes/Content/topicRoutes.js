@@ -20,6 +20,11 @@ router.post(
   handleWordUpload,
   topicController.importWordContent
 );
+// Single fixed webhook: n8n posts { topicName, content } here
+router.post("/ai-webhook", topicController.receiveAiContent);
+// Frontend polls this with ?topicName=... to retrieve the AI content
+router.get("/ai-content", topicController.getAiContent);
+
 router.get("/:id", topicController.getTopic);
 router.put("/:id", topicController.updateTopic);
 router.delete("/:id", topicController.deleteTopic);
