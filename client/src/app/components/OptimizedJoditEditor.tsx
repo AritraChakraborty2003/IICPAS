@@ -291,9 +291,15 @@ export default function OptimizedJoditEditor({
         // Ensure smooth typing after value changes
       },
 
-      // Handle input changes efficiently
+      // Handle input changes efficiently.
+      // jodit-react's onChange prop only fires on blur/change, so we also
+      // propagate the live value on every keystroke. Without this, typing and
+      // then immediately clicking Save loses the content (the parent state is
+      // never updated before validation runs).
       input: function () {
-        // This will be handled by the onChange prop
+        if (editorRef.current) {
+          debouncedOnChange(editorRef.current.value);
+        }
       },
 
       // Handle keydown events for better performance

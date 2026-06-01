@@ -113,8 +113,8 @@ export default function CaseStudyBuilder({
   };
 
   const updateContent = (id: string, field: keyof Content, value: any) => {
-    setContent(
-      content.map((item) =>
+    setContent((prev) =>
+      prev.map((item) =>
         item.id === id ? { ...item, [field]: value } : item
       )
     );
