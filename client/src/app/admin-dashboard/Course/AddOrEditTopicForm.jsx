@@ -298,7 +298,7 @@ export default function AddOrEditTopicForm({
       // n8n should POST the humanized result back to
       // {API_BASE}/topics/ai-webhook with { topicName, content } in the body.
       await axios.post(
-        "https://n8n.iicpa.in/webhook-test/de295ee3-3154-4d45-a907-fac35c4b2633",
+        "https://n8n.iicpa.in/webhook/de295ee3-3154-4d45-a907-fac35c4b2633",
         {
           content,
           topicName,
