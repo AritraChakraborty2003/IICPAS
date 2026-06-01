@@ -295,13 +295,14 @@ export default function AddOrEditTopicForm({
     const requestedAt = Date.now();
 
     try {
-      // Kick off the n8n workflow, sending the topic name and content.
+      // Kick off the n8n workflow, sending the topic id, name and content.
       // n8n should POST the humanized result back to
-      // {API_BASE}/topics/ai-webhook with { topicName, content } in the body.
+      // {API_BASE}/topics/ai-webhook with { topicId, content } in the body.
       await axios.post(
         "https://n8n.iicpa.in/webhook-test/de295ee3-3154-4d45-a907-fac35c4b2633",
         {
           content,
+          topicId: currentTopicId,
           topicName,
           callbackUrl: `${API_BASE}/topics/ai-webhook`,
         }
@@ -321,7 +322,7 @@ export default function AddOrEditTopicForm({
       attempts += 1;
       try {
         const res = await axios.get(`${API_BASE}/topics/ai-content`, {
-          params: { topicName },
+          params: { topicId: currentTopicId },
         });
         const { aiContent: delivered, aiContentUpdatedAt } = res.data || {};
         const deliveredAt = aiContentUpdatedAt

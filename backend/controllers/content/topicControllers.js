@@ -109,10 +109,26 @@ const findTopicByName = (topicName) => {
   }).sort({ updatedAt: -1 });
 };
 
-// Single fixed webhook for n8n: receives humanized content tagged with topicName
+const isValidObjectId = (id) => /^[0-9a-fA-F]{24}$/.test(String(id || ""));
+
+// Resolve a topic by its id (preferred) or, as a fallback, by its title.
+const resolveTopic = async ({ topicId, topicName }) => {
+  if (isValidObjectId(topicId)) {
+    const byId = await Topic.findById(topicId);
+    if (byId) return byId;
+  }
+  if (String(topicName || "").trim()) {
+    return findTopicByName(topicName);
+  }
+  return null;
+};
+
+// Single fixed webhook for n8n: receives humanized content tagged with the
+// topicId (preferred) or topicName.
 export const receiveAiContent = async (req, res) => {
   try {
     const body = req.body || {};
+    const topicId = body.topicId ?? body.id ?? "";
     const topicName = body.topicName ?? body.title ?? "";
 
     // n8n may send the content under any of these keys, or as a raw string
@@ -123,18 +139,20 @@ export const receiveAiContent = async (req, res) => {
       aiContent = JSON.stringify(aiContent);
     }
 
-    if (!String(topicName).trim()) {
-      return res.status(400).json({ error: "topicName is required" });
+    if (!isValidObjectId(topicId) && !String(topicName).trim()) {
+      return res.status(400).json({ error: "topicId or topicName is required" });
     }
     if (!aiContent || !String(aiContent).trim()) {
       return res.status(400).json({ error: "No AI content provided" });
     }
 
-    const topic = await findTopicByName(topicName);
+    const topic = await resolveTopic({ topicId, topicName });
     if (!topic) {
-      return res
-        .status(404)
-        .json({ error: `No topic found with name "${topicName}"` });
+      return res.status(404).json({
+        error: `No topic found for ${
+          isValidObjectId(topicId) ? `id "${topicId}"` : `name "${topicName}"`
+        }`,
+      });
     }
 
     topic.aiContent = String(aiContent);
@@ -148,19 +166,23 @@ export const receiveAiContent = async (req, res) => {
   }
 };
 
-// Frontend polls this (by topic name) to fetch the AI content n8n delivered
+// Frontend polls this (by topicId or topicName) to fetch the AI content
 export const getAiContent = async (req, res) => {
   try {
+    const topicId = req.query.topicId || req.query.id || "";
     const topicName = req.query.topicName || req.query.title || "";
-    if (!String(topicName).trim()) {
-      return res.status(400).json({ error: "topicName is required" });
+
+    if (!isValidObjectId(topicId) && !String(topicName).trim()) {
+      return res.status(400).json({ error: "topicId or topicName is required" });
     }
 
-    const topic = await findTopicByName(topicName);
+    const topic = await resolveTopic({ topicId, topicName });
     if (!topic) {
-      return res
-        .status(404)
-        .json({ error: `No topic found with name "${topicName}"` });
+      return res.status(404).json({
+        error: `No topic found for ${
+          isValidObjectId(topicId) ? `id "${topicId}"` : `name "${topicName}"`
+        }`,
+      });
     }
 
     res.json({
