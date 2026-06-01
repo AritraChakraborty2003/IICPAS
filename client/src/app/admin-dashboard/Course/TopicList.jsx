@@ -11,9 +11,14 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+} from "@hello-pangea/dnd";
 import axios from "axios";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -113,42 +118,58 @@ export default function TopicList({
       topic.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  const columns = [
-    { field: "title", headerName: "Topic Name", flex: 1 },
-    {
-      field: "actions",
-      headerName: "Action",
-      width: 180,
-      sortable: false,
-      filterable: false,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={1}>
-          {hasPermission("course", "update") && (
-            <Tooltip title="Edit Topic">
-              <IconButton
-                color="info"
-                size="small"
-                onClick={() => onEditTopic && onEditTopic(params.row)}
-              >
-                <EditIcon />
-              </IconButton>
-            </Tooltip>
-          )}
-          {hasPermission("course", "delete") && (
-            <Tooltip title="Delete Topic">
-              <IconButton
-                color="error"
-                size="small"
-                onClick={() => handleDelete(params.row?._id)}
-              >
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
-      ),
-    },
-  ];
+  // Drag-to-reorder is only meaningful when viewing the full, unfiltered list
+  const canReorder = !search.trim() && hasPermission("course", "update");
+
+  const handleDragEnd = async (result) => {
+    if (!result.destination || result.destination.index === result.source.index) {
+      return;
+    }
+
+    const reordered = Array.from(topics);
+    const [moved] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, moved);
+
+    const previousTopics = topics;
+    setTopics(reordered); // optimistic update
+
+    try {
+      await axios.put(`${API_BASE}/chapters/${chapterId}/topics/reorder`, {
+        topicIds: reordered.map((t) => t._id),
+      });
+    } catch (error) {
+      console.error("Failed to reorder topics:", error);
+      setTopics(previousTopics); // revert on failure
+      MySwal.fire("Error", "Failed to save the new topic order.", "error");
+    }
+  };
+
+  const renderTopicActions = (topic) => (
+    <Stack direction="row" spacing={1}>
+      {hasPermission("course", "update") && (
+        <Tooltip title="Edit Topic">
+          <IconButton
+            color="info"
+            size="small"
+            onClick={() => onEditTopic && onEditTopic(topic)}
+          >
+            <EditIcon />
+          </IconButton>
+        </Tooltip>
+      )}
+      {hasPermission("course", "delete") && (
+        <Tooltip title="Delete Topic">
+          <IconButton
+            color="error"
+            size="small"
+            onClick={() => handleDelete(topic?._id)}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Stack>
+  );
 
   // Render different views based on viewMode
   if (viewMode === "caseStudy") {

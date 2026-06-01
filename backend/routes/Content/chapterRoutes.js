@@ -112,6 +112,45 @@ router.get("/topics/:topicId", async (req, res) => {
   }
 });
 
+// Reorder topics within a chapter
+router.put("/:chapterId/topics/reorder", async (req, res) => {
+  try {
+    const { chapterId } = req.params;
+    const { topicIds } = req.body;
+
+    if (!Array.isArray(topicIds)) {
+      return res.status(400).json({ message: "topicIds must be an array" });
+    }
+
+    const chapter = await Chapter.findById(chapterId);
+    if (!chapter) {
+      return res.status(404).json({ message: "Chapter not found" });
+    }
+
+    // The new order must contain exactly the same topics as the chapter
+    const existing = chapter.topics.map((id) => id.toString());
+    const incoming = topicIds.map((id) => String(id));
+    const sameSet =
+      existing.length === incoming.length &&
+      [...existing].sort().join(",") === [...incoming].sort().join(",");
+
+    if (!sameSet) {
+      return res.status(400).json({
+        message: "topicIds must contain exactly the chapter's existing topics",
+      });
+    }
+
+    chapter.topics = incoming;
+    chapter.updatedAt = new Date();
+    await chapter.save();
+
+    res.json({ success: true, message: "Topics reordered", topicIds: incoming });
+  } catch (error) {
+    console.error("Error reordering topics:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // Create a new chapter for a course
 router.post("/by-course/:courseId", async (req, res) => {
   try {
