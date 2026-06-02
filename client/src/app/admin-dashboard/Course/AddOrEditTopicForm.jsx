@@ -359,7 +359,7 @@ export default function AddOrEditTopicForm({
     setIsHumanizingDummy(true);
     Swal.fire({
       title: "Humanization initiated",
-      text: "Humanizing with AI… (this is a placeholder for now).",
+      text: "Humanizing with AI…",
       icon: "info",
       timer: 1500,
       showConfirmButton: false,
