@@ -236,6 +236,7 @@ export default function AddOrEditTopicForm({
   const [showAiEditor, setShowAiEditor] = useState(false);
   const [aiContent, setAiContent] = useState("");
   const [isHumanizing, setIsHumanizing] = useState(false);
+  const [isHumanizingDummy, setIsHumanizingDummy] = useState(false);
   const aiPollRef = useRef(null);
   const currentTopicId = topic?._id || "";
 
@@ -350,6 +351,20 @@ export default function AddOrEditTopicForm({
         );
       }
     }, 3000);
+  };
+
+  // Dummy "Humanize with AI" action — just shows the initiation state for now.
+  // TODO: wire up to the real humanize workflow/webhook.
+  const handleHumanizeDummy = () => {
+    setIsHumanizingDummy(true);
+    Swal.fire({
+      title: "Humanization initiated",
+      text: "Humanizing with AI… (this is a placeholder for now).",
+      icon: "info",
+      timer: 1500,
+      showConfirmButton: false,
+    });
+    setTimeout(() => setIsHumanizingDummy(false), 1500);
   };
 
   // Replace the original content with the AI-edited content
@@ -2763,8 +2778,9 @@ export default function AddOrEditTopicForm({
             />
           </Box>
 
-          {/* AI Humanize Button */}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 2 }}>
+          {/* AI Action Buttons */}
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 2, flexWrap: "wrap", mt: 2, mb: 2 }}>
+            {/* Content Create AI — uses the existing n8n webhook workflow */}
             <Button
               variant="contained"
               color="secondary"
@@ -2778,7 +2794,23 @@ export default function AddOrEditTopicForm({
                 ...(isHumanizing && { opacity: 0.7 })
               }}
             >
-              {isHumanizing ? "✨ Humanizing..." : "✨ Humanize and Edit in AI"}
+              {isHumanizing ? "✨ Creating..." : "✨ Content Create AI"}
+            </Button>
+
+            {/* Humanize with AI — dummy/placeholder for now */}
+            <Button
+              variant="contained"
+              onClick={handleHumanizeDummy}
+              disabled={isHumanizingDummy}
+              sx={{
+                background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+                boxShadow: "0 3px 5px 2px rgba(102, 126, 234, .3)",
+                color: "white",
+                fontWeight: "bold",
+                ...(isHumanizingDummy && { opacity: 0.7 })
+              }}
+            >
+              {isHumanizingDummy ? "✨ Humanizing..." : "✨ Humanize with AI"}
             </Button>
           </Box>
 
