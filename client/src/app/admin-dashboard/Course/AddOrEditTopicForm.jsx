@@ -3907,14 +3907,14 @@ export default function AddOrEditTopicForm({
           }}
         >
           <Typography id="ai-dummy-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
-            Enter Dummy AI Content
+            Enter AI Content
           </Typography>
           <TextField
             fullWidth
             multiline
             rows={6}
             variant="outlined"
-            placeholder="Type your dummy content here. Press Enter to submit."
+            placeholder="Type your content here. Press Enter to submit."
             value={aiDummyText}
             onChange={(e) => setAiDummyText(e.target.value)}
             onKeyDown={(e) => {
