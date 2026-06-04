@@ -359,15 +359,17 @@ export default function AddOrEditTopicForm({
   // Dummy "Humanize with AI" action — just shows the initiation state for now.
   // TODO: wire up to the real humanize workflow/webhook.
   const handleHumanizeDummy = () => {
+    if (!content || !content.trim()) {
+      Swal.fire("Warning", "Please add some content first.", "warning");
+      return;
+    }
+    setAiContent(content);
+    setShowAiEditor(true);
     setIsHumanizingDummy(true);
-    Swal.fire({
-      title: "Humanization initiated",
-      text: "Humanizing with AI…",
-      icon: "info",
-      timer: 1500,
-      showConfirmButton: false,
-    });
-    setTimeout(() => setIsHumanizingDummy(false), 1500);
+    setTimeout(() => {
+      setIsHumanizingDummy(false);
+      Swal.fire("Success", "Content copied to Humanized editor", "success");
+    }, 800);
   };
 
   const handleOpenAiDummyModal = (action) => {
@@ -381,20 +383,18 @@ export default function AddOrEditTopicForm({
   };
 
   const handleSubmitAiDummyText = () => {
-    if (aiDummyText.trim()) {
-      if (activeAiAction === "create") {
-        setContent(aiDummyText);
-        if (editor.current && typeof editor.current.value !== "undefined") {
-          editor.current.value = aiDummyText;
-        }
-        Swal.fire("Updated", "Content updated with AI dummy value", "success");
-      } else if (activeAiAction === "humanize") {
-        setAiContent(aiDummyText);
-        setShowAiEditor(true);
-        Swal.fire("Updated", "AI Edited Content updated below", "success");
-      }
+    if (!aiDummyText.trim()) {
+      Swal.fire("Warning", "Please enter some text.", "warning");
+      return;
     }
+
     setAiDummyModalOpen(false);
+
+    if (activeAiAction === "create") {
+      handleHumanizeWithAI();
+    } else if (activeAiAction === "humanize") {
+      handleHumanizeDummy();
+    }
   };
 
   // Replace the original content with the AI-edited content
@@ -2814,7 +2814,7 @@ export default function AddOrEditTopicForm({
             <Button
               variant="contained"
               color="secondary"
-              onClick={handleHumanizeWithAI}
+              onClick={() => handleOpenAiDummyModal("create")}
               disabled={isHumanizing}
               sx={{
                 background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
@@ -2840,7 +2840,7 @@ export default function AddOrEditTopicForm({
                 ...(isHumanizingDummy && { opacity: 0.7 })
               }}
             >
-              {isHumanizingDummy ? "✨ Humanizing..." : "✨ Humanize with AI"}
+              {isHumanizingDummy ? "✨ Humanizing..." : "✨ Humanized"}
             </Button>
           </Box>
 
@@ -2852,7 +2852,7 @@ export default function AddOrEditTopicForm({
                 color="secondary"
                 sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}
               >
-                🤖 AI Edited Content
+                🤖 Humanized Content
               </Typography>
               <JoditEditor
                 value={aiContent}
