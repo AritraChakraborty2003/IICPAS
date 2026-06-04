@@ -237,6 +237,9 @@ export default function AddOrEditTopicForm({
   const [aiContent, setAiContent] = useState("");
   const [isHumanizing, setIsHumanizing] = useState(false);
   const [isHumanizingDummy, setIsHumanizingDummy] = useState(false);
+  const [aiDummyModalOpen, setAiDummyModalOpen] = useState(false);
+  const [aiDummyText, setAiDummyText] = useState("");
+  const [activeAiAction, setActiveAiAction] = useState(null);
   const aiPollRef = useRef(null);
   const currentTopicId = topic?._id || "";
 
@@ -365,6 +368,33 @@ export default function AddOrEditTopicForm({
       showConfirmButton: false,
     });
     setTimeout(() => setIsHumanizingDummy(false), 1500);
+  };
+
+  const handleOpenAiDummyModal = (action) => {
+    setActiveAiAction(action);
+    setAiDummyModalOpen(true);
+    setAiDummyText("");
+  };
+
+  const handleCloseAiDummyModal = () => {
+    setAiDummyModalOpen(false);
+  };
+
+  const handleSubmitAiDummyText = () => {
+    if (aiDummyText.trim()) {
+      if (activeAiAction === "create") {
+        setContent(aiDummyText);
+        if (editor.current && typeof editor.current.value !== "undefined") {
+          editor.current.value = aiDummyText;
+        }
+        Swal.fire("Updated", "Content updated with AI dummy value", "success");
+      } else if (activeAiAction === "humanize") {
+        setAiContent(aiDummyText);
+        setShowAiEditor(true);
+        Swal.fire("Updated", "AI Edited Content updated below", "success");
+      }
+    }
+    setAiDummyModalOpen(false);
   };
 
   // Replace the original content with the AI-edited content
@@ -2784,7 +2814,7 @@ export default function AddOrEditTopicForm({
             <Button
               variant="contained"
               color="secondary"
-              onClick={handleHumanizeWithAI}
+              onClick={() => handleOpenAiDummyModal("create")}
               disabled={isHumanizing}
               sx={{
                 background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
@@ -2800,7 +2830,7 @@ export default function AddOrEditTopicForm({
             {/* Humanize with AI — dummy/placeholder for now */}
             <Button
               variant="contained"
-              onClick={handleHumanizeDummy}
+              onClick={() => handleOpenAiDummyModal("humanize")}
               disabled={isHumanizingDummy}
               sx={{
                 background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
@@ -3854,6 +3884,55 @@ export default function AddOrEditTopicForm({
             )}
           </Stack>
         </Paper>
+      </Modal>
+
+      {/* AI Dummy Value Modal */}
+      <Modal
+        open={aiDummyModalOpen}
+        onClose={handleCloseAiDummyModal}
+        aria-labelledby="ai-dummy-modal-title"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 500,
+            maxWidth: "90vw",
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography id="ai-dummy-modal-title" variant="h6" component="h2" sx={{ mb: 2 }}>
+            Enter Dummy AI Content
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={6}
+            variant="outlined"
+            placeholder="Type your dummy content here. Press Enter to submit."
+            value={aiDummyText}
+            onChange={(e) => setAiDummyText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmitAiDummyText();
+              }
+            }}
+          />
+          <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
+            <Button onClick={handleCloseAiDummyModal} color="inherit">
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitAiDummyText} variant="contained" color="primary">
+              Update Content
+            </Button>
+          </Stack>
+        </Box>
       </Modal>
     </Box>
   );
