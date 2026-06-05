@@ -267,7 +267,7 @@ export default function AddOrEditTopicForm({
   // Clean up any in-flight polling when the form unmounts
   useEffect(() => stopAiPolling, []);
 
-  const handleHumanizeWithAI = async () => {
+  const handleHumanizeWithAI = async (prompt = "") => {
     if (!content || !content.trim()) {
       Swal.fire("Warning", "Please add some content to humanize.", "warning");
       return;
@@ -306,6 +306,7 @@ export default function AddOrEditTopicForm({
         "https://n8n.iicpa.in/webhook/de295ee3-3154-4d45-a907-fac35c4b2633",
         {
           content,
+          prompt: prompt || "",
           topicId: currentTopicId,
           topicName,
           callbackUrl: `${API_BASE}/topics/ai-webhook`,
@@ -358,7 +359,7 @@ export default function AddOrEditTopicForm({
 
   // Dummy "Humanize with AI" action — just shows the initiation state for now.
   // TODO: wire up to the real humanize workflow/webhook.
-  const handleHumanizeDummy = () => {
+  const handleHumanizeDummy = (prompt = "") => {
     if (!content || !content.trim()) {
       Swal.fire("Warning", "Please add some content first.", "warning");
       return;
@@ -390,10 +391,12 @@ export default function AddOrEditTopicForm({
 
     setAiDummyModalOpen(false);
 
+    const prompt = aiDummyText.trim();
+
     if (activeAiAction === "create") {
-      handleHumanizeWithAI();
+      handleHumanizeWithAI(prompt);
     } else if (activeAiAction === "humanize") {
-      handleHumanizeDummy();
+      handleHumanizeDummy(prompt);
     }
   };
 
