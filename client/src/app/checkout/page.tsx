@@ -141,21 +141,22 @@ function CheckoutContent() {
 
   useEffect(() => {
     if (checkoutType === "group_package" && packageId) {
-      axios.get(`${API_BASE}/api/group-pricing`)
+      axios.get(`${API_BASE}/api/group-pricing/${packageId}`)
         .then(res => {
-          const allGroups = res.data?.groupPricing || [];
-          const pkg = allGroups.find((g: any) => g._id === packageId);
-          if (pkg) {
+          const pkg = res.data;
+          if (pkg?._id) {
              const price = pkg.pricing?.[sessionType || "recordedSession"]?.finalPrice || 0;
              setGroupPackageItem({
                isGroupPackage: true,
                courseId: pkg._id,
-               sessionType: sessionType,
+               sessionType: String(sessionType || "").startsWith("live")
+                 ? "live"
+                 : "recorded",
                quantity: 1,
                course: {
                  title: pkg.groupName || "Group Package",
                  category: "Group Package",
-                 image: "/images/a1.jpeg",
+                 image: pkg.image || "/images/a1.jpeg",
                  price: price
                }
              });
