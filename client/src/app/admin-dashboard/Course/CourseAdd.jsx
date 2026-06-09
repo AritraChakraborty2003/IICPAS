@@ -39,6 +39,7 @@ const initialForm = {
   metaKeywords: "",
   metaDescription: "",
   image: null,
+  dashboardImage: null,
   // Pricing fields for both live and recorded sessions
   recordedSessionPrice: "",
   recordedSessionDiscount: "",
@@ -440,6 +441,27 @@ export default function CourseAddTab({ onBack }) {
                   <img
                     src={URL.createObjectURL(form.image)}
                     alt="Course Preview"
+                    className="h-24 rounded shadow border"
+                  />
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block mb-1 font-semibold">Dashboard Course Image (Square/Portrait)</label>
+              <input
+                type="file"
+                name="dashboardImage"
+                accept="image/*"
+                onChange={handleInputChange}
+                className="w-full"
+              />
+              {/* Show preview of selected dashboard image */}
+              {form.dashboardImage && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-600 mb-1">Preview:</p>
+                  <img
+                    src={URL.createObjectURL(form.dashboardImage)}
+                    alt="Dashboard Preview"
                     className="h-24 rounded shadow border"
                   />
                 </div>

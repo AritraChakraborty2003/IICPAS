@@ -7,6 +7,7 @@ const CourseSchema = new Schema({
   slug: { type: String },
   price: { type: Number, required: true },
   image: { type: String }, // Image URL or path
+  dashboardImage: { type: String }, // Specifically sized image for Dashboard cards
   level: {
     type: String,
     enum: ["Executive Level", "Professional Level"],

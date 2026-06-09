@@ -182,10 +182,16 @@ export const createCourse = async (req, res) => {
       }
     }
 
-    // Handle uploaded image (if present)
+    // Handle uploaded images (if present)
     let imageUrl = "";
-    if (req.file) {
-      imageUrl = `/uploads/${req.file.filename}`;
+    let dashboardImageUrl = "";
+    if (req.files) {
+      if (req.files.image && req.files.image[0]) {
+        imageUrl = `/uploads/${req.files.image[0].filename}`;
+      }
+      if (req.files.dashboardImage && req.files.dashboardImage[0]) {
+        dashboardImageUrl = `/uploads/${req.files.dashboardImage[0].filename}`;
+      }
     }
 
     // Create course document
@@ -195,6 +201,7 @@ export const createCourse = async (req, res) => {
       slug,
       price,
       image: imageUrl,
+      dashboardImage: dashboardImageUrl,
       level,
       discount,
       status,
@@ -228,9 +235,14 @@ export const updateCourse = async (req, res) => {
     // Prepare update data
     const updateData = { ...req.body };
 
-    // Handle uploaded image (if present)
-    if (req.file) {
-      updateData.image = `/uploads/${req.file.filename}`;
+    // Handle uploaded images (if present)
+    if (req.files) {
+      if (req.files.image && req.files.image[0]) {
+        updateData.image = `/uploads/${req.files.image[0].filename}`;
+      }
+      if (req.files.dashboardImage && req.files.dashboardImage[0]) {
+        updateData.dashboardImage = `/uploads/${req.files.dashboardImage[0].filename}`;
+      }
     }
 
     // Handle assignment and simulations data

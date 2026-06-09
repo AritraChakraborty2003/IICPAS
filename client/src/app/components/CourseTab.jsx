@@ -491,11 +491,12 @@ export default function CourseTab() {
   };
 
   const getCourseImageSrc = (course) => {
-    if (!course?.image) return "/images/a1.jpeg";
-    if (course.image.startsWith("http")) return course.image;
-    if (course.image.startsWith("/uploads/")) return `${API}${course.image}`;
-    if (course.image.startsWith("/")) return course.image;
-    return `${API}/${course.image}`;
+    const imageToUse = course?.dashboardImage || course?.image;
+    if (!imageToUse) return "/images/a1.jpeg";
+    if (imageToUse.startsWith("http")) return imageToUse;
+    if (imageToUse.startsWith("/uploads/")) return `${API}${imageToUse}`;
+    if (imageToUse.startsWith("/")) return imageToUse;
+    return `${API}/${imageToUse}`;
   };
 
   const getCourseCategory = (course) => course?.category || "General";

@@ -194,6 +194,8 @@ export default function EditCourse({ courseId, onBack }) {
         metaDescription: c.metaDescription || "",
         image: null,
         imageUrl: c.image || "",
+        dashboardImage: null,
+        dashboardImageUrl: c.dashboardImage || "",
         // Pricing fields for both live and recorded sessions
         recordedSessionPrice: c.pricing?.recordedSession?.price || "",
         recordedSessionDiscount: c.pricing?.recordedSession?.discount || "",
@@ -399,6 +401,7 @@ export default function EditCourse({ courseId, onBack }) {
           [
             "category",
             "imageUrl",
+            "dashboardImageUrl",
             "recordedSessionPrice",
             "recordedSessionDiscount",
             "liveSessionPrice",
@@ -523,7 +526,46 @@ export default function EditCourse({ courseId, onBack }) {
                 />
               </div>
             )}
-            <label>Video Link</label>
+            
+            <label className="mt-4">Dashboard Course Image (Square/Portrait)</label>
+            <input
+              type="file"
+              name="dashboardImage"
+              accept="image/*"
+              onChange={handleInputChange}
+              className="w-full"
+            />
+            {/* Show existing dashboard image */}
+            {form.dashboardImageUrl && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 mb-1">Current Dashboard Image:</p>
+                <img
+                  src={
+                    form.dashboardImageUrl.startsWith("http")
+                      ? form.dashboardImageUrl
+                      : `${getApiOrigin()}${form.dashboardImageUrl}`
+                  }
+                  alt="Current Dashboard"
+                  className="h-24 rounded shadow border"
+                  onError={(e) => {
+                    e.target.style.display = "none";
+                  }}
+                />
+              </div>
+            )}
+            {/* Show preview of newly selected dashboard image */}
+            {form.dashboardImage && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 mb-1">New Dashboard Preview:</p>
+                <img
+                  src={URL.createObjectURL(form.dashboardImage)}
+                  alt="New Dashboard Preview"
+                  className="h-24 rounded shadow border"
+                />
+              </div>
+            )}
+            
+            <label className="mt-4">Video Link</label>
             <input
               name="video"
               value={form.video}
