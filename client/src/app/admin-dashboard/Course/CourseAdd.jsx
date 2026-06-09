@@ -448,6 +448,7 @@ export default function CourseAddTab({ onBack }) {
             </div>
             <div>
               <label className="block mb-1 font-semibold">Dashboard Course Image (Square/Portrait)</label>
+              <p className="text-xs text-gray-500 mb-2">Recommended size: 800x800 pixels</p>
               <input
                 type="file"
                 name="dashboardImage"

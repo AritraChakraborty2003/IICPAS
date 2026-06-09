@@ -527,7 +527,8 @@ export default function EditCourse({ courseId, onBack }) {
               </div>
             )}
             
-            <label className="mt-4">Dashboard Course Image (Square/Portrait)</label>
+            <label className="mt-4 block mb-1 font-semibold">Dashboard Course Image (Square/Portrait)</label>
+            <p className="text-xs text-gray-500 mb-2">Recommended size: 800x800 pixels</p>
             <input
               type="file"
               name="dashboardImage"
