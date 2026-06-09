@@ -730,7 +730,7 @@ function LiveSessionLandingPage({
                 {landingPage.mobileHeroImage ? (
                   <source
                     media="(max-width: 639px)"
-                    srcSet={landingPage.mobileHeroImage}
+                    srcSet={landingPage.mobileHeroImage.replace(/\s+/g, "%20")}
                   />
                 ) : null}
                 <img
