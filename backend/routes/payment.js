@@ -829,15 +829,96 @@ router.post("/create-order", async (req, res) => {
       }
 
       const packagePrice = pricingEntry.finalPrice;
-      const packagePricePaise = toPaise(packagePrice);
+      const subtotalPaise = toPaise(packagePrice);
 
+      // Apply coupon / referral discount (same rules as the single-course cart flow).
+      let appliedCoupon = null;
+      let couponDiscountPaise = 0;
+      let referralDiscountPaise = 0;
+      const normalizedCouponCode = String(req.body.appliedCouponCode || "")
+        .trim()
+        .toUpperCase();
+      const coinSettings = await getCoinSettings();
+      const normalizedReferralPromoCode = String(
+        coinSettings?.referralPromoCode || ""
+      )
+        .trim()
+        .toUpperCase();
+      const isReferralPromoCodeApplied =
+        Boolean(normalizedCouponCode) &&
+        Boolean(normalizedReferralPromoCode) &&
+        normalizedCouponCode === normalizedReferralPromoCode;
+      const isFirstUse = !Boolean(student.referralBenefitsUsed);
+
+      if (normalizedCouponCode && !isReferralPromoCodeApplied) {
+        const coupon = await Coupon.findOne({
+          code: normalizedCouponCode,
+          isActive: true,
+          expiresAt: { $gt: new Date() },
+        });
+
+        if (!coupon) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid or expired coupon code",
+          });
+        }
+
+        if (coupon.discountType === "percentage") {
+          couponDiscountPaise = Math.round(
+            (subtotalPaise * Number(coupon.discountValue || 0)) / 100
+          );
+        } else {
+          couponDiscountPaise = toPaise(coupon.discountValue);
+        }
+
+        couponDiscountPaise = Math.min(Math.max(couponDiscountPaise, 0), subtotalPaise);
+        appliedCoupon = coupon;
+      }
+
+      if (isReferralPromoCodeApplied && !isFirstUse) {
+        return res.status(400).json({
+          success: false,
+          message: "Referral promo code can be used only once per user",
+        });
+      }
+
+      const referralDiscountPercent = Math.min(
+        100,
+        Math.max(0, Number(coinSettings?.referralUsageDiscountPercent || 0))
+      );
+      const isReferralDiscountEligible =
+        (Boolean(student.referredBy) && isFirstUse) ||
+        (isReferralPromoCodeApplied && isFirstUse);
+
+      if (isReferralDiscountEligible && referralDiscountPercent > 0) {
+        const referralDiscountBasePaise = Math.max(0, subtotalPaise - couponDiscountPaise);
+        referralDiscountPaise = Math.round(
+          (referralDiscountBasePaise * referralDiscountPercent) / 100
+        );
+        referralDiscountPaise = Math.min(
+          Math.max(referralDiscountPaise, 0),
+          referralDiscountBasePaise
+        );
+      }
+
+      const totalDiscountPaise = couponDiscountPaise + referralDiscountPaise;
+      const finalTotalPaise = subtotalPaise - totalDiscountPaise;
+      if (finalTotalPaise <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Final amount must be greater than 0",
+        });
+      }
+
+      const finalTotal = fromPaise(finalTotalPaise);
       const resolvedSessionType = sessionType.startsWith("live") ? "live" : "recorded";
 
       const receipt = buildRazorpayReceipt(studentId);
       const checkoutBatchId = `grp_${Date.now()}_${String(studentId).slice(-6)}`;
 
       const order = await razorpay.orders.create({
-        amount: packagePricePaise,
+        amount: finalTotalPaise,
         currency: "INR",
         receipt,
         notes: sanitizeNotes({
@@ -846,16 +927,32 @@ router.post("/create-order", async (req, res) => {
           groupPackageId: groupPackageId.toString(),
           sessionType,
           itemCount: String(groupPackage.courseIds.length),
+          couponCode: appliedCoupon?.code || "",
+          couponDiscount: String(fromPaise(couponDiscountPaise)),
+          referralDiscount: String(fromPaise(referralDiscountPaise)),
+          referralPromoCodeApplied: isReferralPromoCodeApplied
+            ? normalizedCouponCode
+            : "",
         }),
       });
 
+      // Distribute the final (post-discount) amount across the bundled courses
+      // so the per-course transaction totals add up to what was actually charged.
+      const courseCount = groupPackage.courseIds.length || 1;
+      const perCoursePaise = groupPackage.courseIds.map((_, index) =>
+        index === courseCount - 1
+          ? finalTotalPaise - Math.floor(finalTotalPaise / courseCount) * (courseCount - 1)
+          : Math.floor(finalTotalPaise / courseCount)
+      );
+
       const createdTransactions = await Promise.all(
-        groupPackage.courseIds.map((course) =>
-          new Transaction({
+        groupPackage.courseIds.map((course, index) => {
+          const courseAmount = fromPaise(perCoursePaise[index]);
+          return new Transaction({
             studentId,
             courseId: course._id,
             sessionType: resolvedSessionType,
-            amount: packagePrice,
+            amount: courseAmount,
             paymentMethod: "razorpay",
             razorpayOrderId: order.id,
             billingAddress,
@@ -873,9 +970,15 @@ router.post("/create-order", async (req, res) => {
               groupPackageId: groupPackageId.toString(),
               groupPackageName: groupPackage.groupName,
               sessionType,
+              couponCode: appliedCoupon?.code || "",
+              couponDiscount: fromPaise(couponDiscountPaise),
+              referralDiscount: fromPaise(referralDiscountPaise),
+              referralPromoCodeApplied: isReferralPromoCodeApplied
+                ? normalizedCouponCode
+                : "",
             }),
-          }).save()
-        )
+          }).save();
+        })
       );
 
       return res.status(200).json({
@@ -889,7 +992,10 @@ router.post("/create-order", async (req, res) => {
           transactionIds: createdTransactions.map((txn) => txn._id),
           key: process.env.RAZORPAY_KEY_ID,
           totals: {
-            finalTotal: packagePrice,
+            subtotal: packagePrice,
+            couponDiscount: fromPaise(couponDiscountPaise),
+            referralDiscount: fromPaise(referralDiscountPaise),
+            finalTotal,
           },
         },
       });

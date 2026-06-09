@@ -580,6 +580,7 @@ function CheckoutContent() {
             billingAddress,
             shippingAddress: sameAsBilling ? billingAddress : shippingAddress,
             sameAsBilling,
+            appliedCouponCode: appliedReferralCode || appliedCoupon?.code || "",
           },
           { withCredentials: true }
         );
@@ -1059,7 +1060,6 @@ function CheckoutContent() {
                 </div>
 
                 <aside className="lg:col-span-4 space-y-4">
-                  {checkoutType !== "group_package" && (
                   <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-900 mb-3">
                       Discount Coupons
@@ -1165,7 +1165,6 @@ function CheckoutContent() {
                       </p>
                     ) : null}
                   </div>
-                  )}
 
                   <div className="bg-gradient-to-b from-white to-slate-50 rounded-2xl p-4 border border-slate-200 shadow-sm sticky top-20">
                     <h3 className="text-xl font-bold text-slate-900 mb-4">
