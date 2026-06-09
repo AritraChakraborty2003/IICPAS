@@ -52,6 +52,31 @@ const getLowestCoursePrice = (course) => {
   return prices.length > 0 ? Math.min(...prices) : 0;
 };
 
+const DEFAULT_COURSE_HOURS = 80;
+
+// Course `duration` is free text (e.g. "3 months", "80 hours"). Pull the first
+// number out of it as the hours value, defaulting to 80 when none is present.
+const getCourseHours = (course) => {
+  const match = String(course?.duration || "").match(/\d+/);
+  const parsed = match ? Number(match[0]) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_COURSE_HOURS;
+};
+
+const getChapterCount = (course) =>
+  Array.isArray(course?.chapters) ? course.chapters.length : 0;
+
+const getTopicCount = (course) =>
+  Array.isArray(course?.chapters)
+    ? course.chapters.reduce(
+        (total, chapter) =>
+          total + (Array.isArray(chapter?.topics) ? chapter.topics.length : 0),
+        0
+      )
+    : 0;
+
+const getSimulationCount = (course) =>
+  Array.isArray(course?.simulations) ? course.simulations.length : 0;
+
 const normalizeCourseImageSrc = (rawImage, apiUrl) => {
   if (!rawImage || typeof rawImage !== "string") return null;
 
@@ -621,6 +646,34 @@ export default function CoursePage() {
                       <h3 className="text-base font-bold text-gray-900 group-hover:text-green-600 transition-colors line-clamp-2">
                         {course.title}
                       </h3>
+
+                      {/* Course Meta */}
+                      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 py-1 text-xs text-gray-600">
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>⏱️</span>
+                          <span className="font-semibold text-gray-800">
+                            {getCourseHours(course)} Hours
+                          </span>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>📖</span>
+                          <span className="font-semibold text-gray-800">
+                            {getChapterCount(course)} Chapters
+                          </span>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>📝</span>
+                          <span className="font-semibold text-gray-800">
+                            {getTopicCount(course)} Topics
+                          </span>
+                        </span>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span>🎮</span>
+                          <span className="font-semibold text-gray-800">
+                            {getSimulationCount(course)} Simulations
+                          </span>
+                        </span>
+                      </div>
 
                       {/* Price Section */}
                       <div className="flex items-center justify-between">
