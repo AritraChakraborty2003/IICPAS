@@ -447,7 +447,7 @@ export default function GroupPackagePage({
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
-            className="lg:col-span-1"
+            className="lg:col-span-1 xl:col-span-1"
           >
             <div className="sticky top-24 overflow-hidden rounded-2xl bg-white/90 shadow-xl backdrop-blur">
               <img
