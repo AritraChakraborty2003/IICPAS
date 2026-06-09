@@ -40,6 +40,7 @@ interface Blog {
   author: string;
   content: string;
   imageUrl?: string;
+  videoUrl?: string;
   status: string;
   createdAt?: string;
   updatedAt?: string;
@@ -52,6 +53,7 @@ interface BlogForm {
   content: string;
   image: File | null;
   previewUrl: string | null;
+  videoUrl: string;
 }
 
 // Dynamically import JoditEditor to avoid SSR issues
@@ -122,6 +124,7 @@ export default function BlogComponent() {
     content: "",
     image: null,
     previewUrl: null,
+    videoUrl: "",
   });
   const [formLoading, setFormLoading] = useState(false);
   const { hasPermission } = useAuth();
@@ -171,6 +174,7 @@ export default function BlogComponent() {
       content: "",
       image: null,
       previewUrl: null,
+      videoUrl: "",
     });
     setSelectedBlog(null);
     setMode("list");
@@ -262,6 +266,7 @@ export default function BlogComponent() {
             blog.imageUrl.startsWith("/") ? blog.imageUrl : "/" + blog.imageUrl
           }`
         : null,
+      videoUrl: blog.videoUrl || "",
     });
     setMode("edit");
   };
@@ -310,6 +315,7 @@ export default function BlogComponent() {
       if (form.image) {
         formData.append("image", form.image);
       }
+      formData.append("videoUrl", form.videoUrl);
 
       if (mode === "edit" && selectedBlog) {
         await axios.put(`${API_BASE}/blogs/${selectedBlog._id}`, formData);
@@ -675,6 +681,20 @@ export default function BlogComponent() {
               />
             </div>
           )}
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Video / YouTube URL (Optional)
+          </label>
+          <input
+            type="text"
+            name="videoUrl"
+            value={form.videoUrl}
+            onChange={handleFormChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter YouTube URL or video link to show at the top of the article"
+          />
         </div>
 
         <div>

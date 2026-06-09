@@ -6,6 +6,7 @@ const BlogSchema = new mongoose.Schema(
     author: { type: String, required: true },
     content: { type: String, required: true },
     imageUrl: { type: String }, // file path
+    videoUrl: { type: String }, // youtube or file url
     status: {
       type: String,
       enum: ["active", "inactive"],

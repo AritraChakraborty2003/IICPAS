@@ -3,7 +3,7 @@ import Blog from "../models/Blogs.js";
 // CREATE BLOG
 export const createBlog = async (req, res) => {
   try {
-    const { title, author, content, status } = req.body;
+    const { title, author, content, status, videoUrl } = req.body;
     let imageUrl = "";
     if (req.file) {
       imageUrl = req.file.path.replace(/\\/g, "/");
@@ -13,6 +13,7 @@ export const createBlog = async (req, res) => {
       author,
       content,
       imageUrl,
+      videoUrl,
       status: status || "active",
     });
     await blog.save();
@@ -46,7 +47,7 @@ export const getBlog = async (req, res) => {
 // UPDATE BLOG
 export const updateBlog = async (req, res) => {
   try {
-    const { title, author, content, status } = req.body;
+    const { title, author, content, status, videoUrl } = req.body;
     let imageUrl;
     if (req.file) {
       imageUrl = req.file.path.replace(/\\/g, "/");
@@ -58,6 +59,7 @@ export const updateBlog = async (req, res) => {
     if (content) blog.content = content;
     if (typeof status !== "undefined") blog.status = status;
     if (imageUrl) blog.imageUrl = imageUrl;
+    if (typeof videoUrl !== "undefined") blog.videoUrl = videoUrl;
     await blog.save();
     res.json(blog);
   } catch (err) {

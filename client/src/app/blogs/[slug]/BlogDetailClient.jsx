@@ -141,6 +141,24 @@ export default function BlogDetailClient({ blog, allBlogs }) {
     return `${base}${value.startsWith("/") ? value : `/${value}`}`;
   };
 
+  const videoUrlRaw = blogToRender.videoUrl || "";
+  let videoUrl = videoUrlRaw;
+  let isYouTube = false;
+  
+  if (videoUrlRaw) {
+    if (videoUrlRaw.includes("youtube.com") || videoUrlRaw.includes("youtu.be")) {
+      isYouTube = true;
+      if (videoUrlRaw.includes("youtube.com/watch?v=")) {
+        videoUrl = videoUrlRaw.replace("watch?v=", "embed/").split("&")[0];
+      } else if (videoUrlRaw.includes("youtu.be/")) {
+        videoUrl = videoUrlRaw.replace("youtu.be/", "youtube.com/embed/").split("?")[0];
+      }
+    } else if (!/^https?:\/\//.test(videoUrlRaw)) {
+      const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      videoUrl = `${base}${videoUrlRaw.startsWith("/") ? videoUrlRaw : `/${videoUrlRaw}`}`;
+    }
+  }
+
   const handleShare = async () => {
     const currentUrl =
       typeof window !== "undefined" ? window.location.href : "/blogs";
@@ -235,6 +253,25 @@ export default function BlogDetailClient({ blog, allBlogs }) {
                   ))}
                 </div>
               )}
+
+              {videoUrl ? (
+                <div className="rounded-3xl overflow-hidden mb-8 border border-slate-200 shadow-sm bg-black p-0 w-full aspect-video">
+                  {isYouTube ? (
+                    <iframe
+                      src={videoUrl}
+                      className="w-full h-full border-none"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <video
+                      src={videoUrl}
+                      controls
+                      className="w-full h-full object-cover"
+                    ></video>
+                  )}
+                </div>
+              ) : null}
 
               <div className="rounded-3xl overflow-hidden mb-8 border border-slate-200 shadow-sm bg-slate-50 p-2">
                 <Image
