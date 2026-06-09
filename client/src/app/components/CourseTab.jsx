@@ -1184,7 +1184,7 @@ export default function CourseTab() {
                         <img
                           src={getCourseImageSrc(course)}
                           alt={course.title}
-                          className="h-[230px] w-full object-contain transition-transform duration-500 group-hover:scale-105 lg:h-full"
+                          className="h-[230px] w-full object-cover transition-transform duration-500 group-hover:scale-105 lg:h-full"
                           onError={(e) => {
                             e.target.src = "/images/a1.jpeg";
                           }}
