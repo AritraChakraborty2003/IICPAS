@@ -12,6 +12,7 @@ import {
   Download,
 } from "lucide-react";
 import Header from "../../components/Header";
+import CoursesSidebarMarquee from "../../../components/CoursesSidebarMarquee";
 import Footer from "../../components/Footer";
 import LoginModal from "../../components/LoginModal";
 import jsPDF from "jspdf";
@@ -239,9 +240,12 @@ export default function GroupPackagePage({
       <Header />
 
       <div className="pt-32 sm:pt-40 lg:pt-48 pb-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8 ml-16">
-          {/* LEFT */}
-          <div className="lg:col-span-2">
+        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 mr-0 lg:mr-4 grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-[280px_1fr_350px] gap-8">
+          {/* Courses Marquee (Left) */}
+          <CoursesSidebarMarquee />
+
+          {/* MIDDLE */}
+          <div className="lg:col-span-2 xl:col-span-1">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
