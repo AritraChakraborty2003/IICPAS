@@ -4,6 +4,7 @@ interface ThinHeroSectionProps {
   title: string;
   breadcrumb?: string;
   className?: string;
+  children?: React.ReactNode;
 }
 
 // Add shimmer animation styles
@@ -66,6 +67,7 @@ export default function ThinHeroSection({
   title,
   breadcrumb,
   className,
+  children,
 }: ThinHeroSectionProps) {
   return (
     <>
@@ -78,29 +80,32 @@ export default function ThinHeroSection({
             <div className="glare-overlay"></div>
 
             {/* Content */}
-            <div className="relative z-10 text-left pl-6">
-              <h1 className="text-md md:text-xl font-bold text-white relative">
-                {/* 4D Effect with multiple shadows */}
-                <span
-                  className="relative z-10"
-                  style={{
-                    textShadow: `
-                    1px 1px 0px rgba(0,0,0,0.3),
-                    2px 2px 0px rgba(0,0,0,0.2),
-                    3px 3px 0px rgba(0,0,0,0.1),
-                    4px 4px 8px rgba(0,0,0,0.4)
-                  `,
-                  }}
-                >
-                  {title}
-                </span>
-              </h1>
-              {breadcrumb && (
-                <p className="mt-1 text-sm text-white/90 font-medium">
-                  {breadcrumb}
-                </p>
-              )}
-            </div>
+              <div className="relative z-10 flex flex-col md:flex-row items-center justify-between pl-6 pr-6 w-full gap-4">
+                <div className="text-left">
+                  <h1 className="text-md md:text-xl font-bold text-white relative">
+                    {/* 4D Effect with multiple shadows */}
+                    <span
+                      className="relative z-10"
+                      style={{
+                        textShadow: `
+                        1px 1px 0px rgba(0,0,0,0.3),
+                        2px 2px 0px rgba(0,0,0,0.2),
+                        3px 3px 0px rgba(0,0,0,0.1),
+                        4px 4px 8px rgba(0,0,0,0.4)
+                      `,
+                      }}
+                    >
+                      {title}
+                    </span>
+                  </h1>
+                  {breadcrumb && (
+                    <p className="mt-1 text-sm text-white/90 font-medium">
+                      {breadcrumb}
+                    </p>
+                  )}
+                </div>
+                {children && <div className="z-10">{children}</div>}
+              </div>
           </div>
         </div>
       </section>
