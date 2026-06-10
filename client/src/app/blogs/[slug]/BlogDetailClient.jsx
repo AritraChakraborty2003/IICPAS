@@ -198,6 +198,27 @@ export default function BlogDetailClient({ blog, allBlogs }) {
             <span className="line-clamp-1 text-slate-600">{blogToRender.title}</span>
           </div>
 
+          {videoUrl ? (
+            <div className="mb-8">
+              <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-xl shadow-slate-200/50 bg-black w-full aspect-video">
+                {isYouTube ? (
+                  <iframe
+                    src={videoUrl}
+                    className="w-full h-full border-none"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                ) : (
+                  <video
+                    src={videoUrl}
+                    controls
+                    className="w-full h-full object-cover"
+                  ></video>
+                )}
+              </div>
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
             <article className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-5 sm:p-8 lg:p-10">
               <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-600 mb-5">
@@ -253,25 +274,6 @@ export default function BlogDetailClient({ blog, allBlogs }) {
                   ))}
                 </div>
               )}
-
-              {videoUrl ? (
-                <div className="rounded-3xl overflow-hidden mb-8 border border-slate-200 shadow-sm bg-black p-0 w-full aspect-video">
-                  {isYouTube ? (
-                    <iframe
-                      src={videoUrl}
-                      className="w-full h-full border-none"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  ) : (
-                    <video
-                      src={videoUrl}
-                      controls
-                      className="w-full h-full object-cover"
-                    ></video>
-                  )}
-                </div>
-              ) : null}
 
               <div className="rounded-3xl overflow-hidden mb-8 border border-slate-200 shadow-sm bg-slate-50 p-2">
                 <Image

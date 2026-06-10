@@ -7,6 +7,7 @@ import {
   getStudentCourseBookings,
   getAdminCourseBookings,
   resendBookingInvoice,
+  deleteCourseBooking,
   downloadBookingInvoice,
   downloadPublicBookingInvoice,
 } from "../controllers/courseBookingController.js";
@@ -23,6 +24,12 @@ router.post(
   requireAuth,
   requirePermission("bookings", "update"),
   resendBookingInvoice
+);
+router.delete(
+  "/admin/:id",
+  requireAuth,
+  requirePermission("bookings", "delete"),
+  deleteCourseBooking
 );
 router.get("/public/:id/invoice", downloadPublicBookingInvoice);
 router.get("/:id/invoice", isStudent, downloadBookingInvoice);

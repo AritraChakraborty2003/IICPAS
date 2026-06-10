@@ -87,6 +87,22 @@ export default function AdminBookingsTab() {
     }
   };
 
+  const handleDeleteBooking = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this booking? This action cannot be undone.")) {
+      return;
+    }
+    const token = localStorage.getItem("adminToken");
+    try {
+      await axios.delete(`${API_BASE}/v1/course-bookings/admin/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Booking deleted");
+      fetchBookings();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to delete booking");
+    }
+  };
+
   const handleDownloadInvoice = async (id) => {
     const token = localStorage.getItem("adminToken");
     try {
@@ -233,6 +249,13 @@ export default function AdminBookingsTab() {
                           className="rounded-md bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
                         >
                           Download
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteBooking(booking._id)}
+                          className="rounded-md bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                        >
+                          Delete
                         </button>
                       </div>
                     </td>
