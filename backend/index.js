@@ -34,6 +34,7 @@ import quizRoutes from "./routes/Content/quizRoutes.js";
 import revisionTestRoutes from "./routes/Content/revisionTestRoutes.js";
 import categoryRoutes from "./routes/Content/categoryRoutes.js";
 import LiveSessionRoutes from "./routes/LiveSessionRoutes/LiveSessionRoutes.js";
+import classRoutes from "./routes/ClassManagementRoutes/classRoutes.js";
 import courseLevelsRoutes from "./routes/courseLevelsRoutes.js";
 import groupPricingRoutes from "./routes/groupPricingRoutes.js";
 import specialOfferRoutes from "./routes/specialOfferRoutes.js";
@@ -45,6 +46,7 @@ import jobRoutes from "./routes/jobRoutes.js";
 import aboutRoutes from "./routes/WebsiteRoutes/aboutRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import { startLiveSessionReminderScheduler } from "./services/liveSessionReminderScheduler.js";
+import { startClassAutoConvertScheduler } from "./services/classAutoConvertScheduler.js";
 
 //TicketRoutes
 import ticketRoutes from "./routes/TicketRoutes.js";
@@ -173,6 +175,7 @@ app.use("/api/news", newsRoutes);
 app.use("/api", leadRoutes);
 app.use("/", JobAdminRoutes);
 app.use("/api/live-sessions", LiveSessionRoutes);
+app.use("/api/classes", classRoutes);
 app.use("/", JobApplyRoutes);
 
 //Content Routes
@@ -364,6 +367,7 @@ io.on("connection", (socket) => {
 // Make io available globally for use in controllers
 global.io = io;
 startLiveSessionReminderScheduler();
+startClassAutoConvertScheduler();
 //Contact Info Routes
 app.use("/api/contact-info", contactLimiter, contactInfoRoutes);
 
