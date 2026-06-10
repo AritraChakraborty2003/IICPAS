@@ -255,6 +255,22 @@ interface TopicData {
   updatedAt: string;
 }
 
+// A class scheduled in admin "Class Management" (ClassSession on the backend).
+interface ClassSessionItem {
+  _id: string;
+  title: string;
+  type: "live" | "recorded";
+  status?: string;
+  date?: string;
+  time?: string;
+  durationMinutes?: number;
+  meetingLink?: string;
+  recordingUrl?: string;
+  courses?: Array<{ _id?: string; title?: string }> | string[];
+  chapters?: Array<{ _id?: string; title?: string }> | string[];
+  topics?: Array<{ _id?: string; title?: string }> | string[];
+}
+
 interface QuizQuestion {
   _id: string;
   question: string;
@@ -633,6 +649,8 @@ export default function DigitalHubClient({
   const [classModalKind, setClassModalKind] = useState<"live" | "recorded">(
     "live"
   );
+  // Classes scheduled in admin "Class Management" for this course.
+  const [classSessions, setClassSessions] = useState<ClassSessionItem[]>([]);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [ticketForm, setTicketForm] = useState({
@@ -1050,6 +1068,40 @@ export default function DigitalHubClient({
       }) || null
     );
   }, [effectiveCourseSlugOrId, resolvedCourseId, studentPurchasedCourses]);
+
+  // Load classes scheduled in admin "Class Management" for this course so the
+  // topic view can list the live/recorded classes linked to it.
+  useEffect(() => {
+    if (isDemo || !resolvedCourseId) {
+      setClassSessions([]);
+      return;
+    }
+
+    let cancelled = false;
+    const loadClasses = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/classes/course/${resolvedCourseId}`
+        );
+        if (!res.ok) {
+          if (!cancelled) setClassSessions([]);
+          return;
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setClassSessions(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        if (!cancelled) setClassSessions([]);
+      }
+    };
+
+    loadClasses();
+    return () => {
+      cancelled = true;
+    };
+  }, [isDemo, resolvedCourseId, API_BASE]);
+
   const courseBatchWindowState = useMemo(
     () => getBatchWindowState(activePurchasedCourseRecord),
     [activePurchasedCourseRecord, batchClockTick]
