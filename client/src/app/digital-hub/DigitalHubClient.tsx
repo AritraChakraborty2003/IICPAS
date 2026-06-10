@@ -3836,15 +3836,34 @@ export default function DigitalHubClient({
                         Chapter topics {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
-                      {/* New: Watch Live Videos Button */}
-                      {selectedTopic?.lessons?.some(l => l.kind === "live") ? (
+                      {/* Watch Live Class videos for this topic */}
+                      {selectedTopic?.lessons?.some((l) => l.kind === "live") ? (
                         <button
                           type="button"
-                          onClick={() => setIsLiveSessionsModalOpen(true)}
+                          onClick={() => {
+                            setClassModalKind("live");
+                            setIsLiveSessionsModalOpen(true);
+                          }}
                           className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700"
                         >
                           <Target className="h-4 w-4" />
-                          Watch Live Videos
+                          Watch Live Class
+                        </button>
+                      ) : null}
+                      {/* Watch Recorded videos for this topic */}
+                      {selectedTopic?.lessons?.some(
+                        (l) => l.kind === "recorded"
+                      ) || selectedTopic?.introVideo ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setClassModalKind("recorded");
+                            setIsLiveSessionsModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                        >
+                          <Target className="h-4 w-4" />
+                          Watch Recorded Videos
                         </button>
                       ) : null}
                     </div>
