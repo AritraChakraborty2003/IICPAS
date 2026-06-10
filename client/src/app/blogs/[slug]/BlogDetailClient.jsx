@@ -200,27 +200,6 @@ export default function BlogDetailClient({ blog, allBlogs }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
             <article className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-200 p-5 sm:p-8 lg:p-10">
-              {videoUrl ? (
-                <div className="mb-7">
-                  <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-md shadow-slate-200/50 bg-black w-full max-w-xl mx-auto aspect-video">
-                    {isYouTube ? (
-                      <iframe
-                        src={videoUrl}
-                        className="w-full h-full border-none"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      ></iframe>
-                    ) : (
-                      <video
-                        src={videoUrl}
-                        controls
-                        className="w-full h-full object-cover"
-                      ></video>
-                    )}
-                  </div>
-                </div>
-              ) : null}
-
               <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-slate-600 mb-5">
                 <span className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 font-medium">
                   <Tag className="w-3 h-3" />
@@ -295,6 +274,27 @@ export default function BlogDetailClient({ blog, allBlogs }) {
             </article>
 
             <aside className="space-y-5 lg:sticky lg:top-28">
+              {videoUrl ? (
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-3">
+                  <div className="rounded-xl overflow-hidden border border-slate-200 bg-black w-full aspect-video">
+                    {isYouTube ? (
+                      <iframe
+                        src={videoUrl}
+                        className="w-full h-full border-none"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    ) : (
+                      <video
+                        src={videoUrl}
+                        controls
+                        className="w-full h-full object-cover"
+                      ></video>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                 <h3 className="text-base font-semibold text-slate-900 mb-4">
                   Our Articles
