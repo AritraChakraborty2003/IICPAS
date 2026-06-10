@@ -1106,6 +1106,24 @@ export default function DigitalHubClient({
     () => getBatchWindowState(activePurchasedCourseRecord),
     [activePurchasedCourseRecord, batchClockTick]
   );
+
+  // Class Management classes scoped to the currently selected topic, split by
+  // resolved type (a finished live class is presented as recorded).
+  const topicClassSessions = useMemo(() => {
+    const topicId = selectedTopic?._id ? String(selectedTopic._id) : "";
+    if (!topicId) return { live: [], recorded: [] };
+
+    const matchesTopic = (cls: ClassSessionItem) =>
+      (Array.isArray(cls.topics) ? cls.topics : []).some(
+        (t) => String((t as { _id?: string })?._id || t || "") === topicId
+      );
+
+    const forTopic = classSessions.filter(matchesTopic);
+    return {
+      live: forTopic.filter((c) => c.type === "live"),
+      recorded: forTopic.filter((c) => c.type === "recorded"),
+    };
+  }, [classSessions, selectedTopic?._id]);
   const shouldFailSafeRestrictAccess = Boolean(
     !isDemo &&
       studentPurchasedCoursesLoaded &&
@@ -3888,15 +3906,9 @@ export default function DigitalHubClient({
                         Chapter topics {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
-                      {/* Watch Live Class videos for this topic — only classes
-                          scheduled in Class Management (linked to a LiveSession) */}
-                      {selectedTopic?.lessons?.some(
-                        (l) =>
-                          l.kind === "live" &&
-                          (l.sourceType === "liveSession" ||
-                            (l.liveSessionId &&
-                              typeof l.liveSessionId === "object"))
-                      ) ? (
+                      {/* Watch Live Class — classes scheduled in Class Management
+                          for this course/chapter/topic */}
+                      {topicClassSessions.live.length > 0 ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -3909,15 +3921,9 @@ export default function DigitalHubClient({
                           Watch Live Class
                         </button>
                       ) : null}
-                      {/* Watch Recorded videos for this topic — only classes
-                          scheduled in Class Management (linked to a LiveSession) */}
-                      {selectedTopic?.lessons?.some(
-                        (l) =>
-                          l.kind === "recorded" &&
-                          (l.sourceType === "liveSession" ||
-                            (l.liveSessionId &&
-                              typeof l.liveSessionId === "object"))
-                      ) ? (
+                      {/* Watch Recorded — classes scheduled in Class Management
+                          that have finished and converted to recorded */}
+                      {topicClassSessions.recorded.length > 0 ? (
                         <button
                           type="button"
                           onClick={() => {
