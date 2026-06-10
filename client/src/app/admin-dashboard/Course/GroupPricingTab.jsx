@@ -67,6 +67,9 @@ const GroupPricingTab = ({ onBack }) => {
     courseIds: [],
     groupPrice: "",
     description: "",
+    metaTitle: "",
+    metaDescription: "",
+    metaKeywords: "",
     image: null,
     recordedPrice: "",
     recordedFinalPrice: "",
@@ -133,6 +136,9 @@ const GroupPricingTab = ({ onBack }) => {
       courseIds: [],
       groupPrice: "",
       description: "",
+      metaTitle: "",
+      metaDescription: "",
+      metaKeywords: "",
       image: null,
       recordedPrice: "",
       recordedFinalPrice: "",
@@ -174,6 +180,9 @@ const GroupPricingTab = ({ onBack }) => {
       courseIds: courseIds,
       groupPrice: item.groupPrice.toString(),
       description: item.description || "",
+      metaTitle: item.metaTitle || "",
+      metaDescription: item.metaDescription || "",
+      metaKeywords: item.metaKeywords || "",
       image: null,
       recordedPrice: item.pricing?.recordedSession?.price?.toString() || "",
       recordedFinalPrice:
@@ -290,6 +299,9 @@ const GroupPricingTab = ({ onBack }) => {
       formDataToSend.append("courseIds", JSON.stringify(formData.courseIds));
       formDataToSend.append("groupPrice", formData.groupPrice);
       formDataToSend.append("description", formData.description);
+      formDataToSend.append("metaTitle", formData.metaTitle);
+      formDataToSend.append("metaDescription", formData.metaDescription);
+      formDataToSend.append("metaKeywords", formData.metaKeywords);
       formDataToSend.append("recordedPrice", formData.recordedPrice);
       formDataToSend.append("recordedFinalPrice", formData.recordedFinalPrice);
       formDataToSend.append("recordedDiscount", formData.recordedDiscount);
@@ -653,6 +665,43 @@ const GroupPricingTab = ({ onBack }) => {
                 setFormData({ ...formData, description: e.target.value })
               }
               placeholder="Describe this group pricing package..."
+            />
+
+            {/* SEO / Meta Section */}
+            <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+              SEO / Meta Information
+            </Typography>
+            <TextField
+              fullWidth
+              label="Meta Title"
+              value={formData.metaTitle}
+              onChange={(e) =>
+                setFormData({ ...formData, metaTitle: e.target.value })
+              }
+              placeholder="Title that appears in search engines and browser tabs"
+              helperText="Leave blank to use the group name. Recommended: up to ~60 characters."
+            />
+            <TextField
+              fullWidth
+              label="Meta Description"
+              multiline
+              rows={2}
+              value={formData.metaDescription}
+              onChange={(e) =>
+                setFormData({ ...formData, metaDescription: e.target.value })
+              }
+              placeholder="Short summary shown in search engine results"
+              helperText="Leave blank to use the description. Recommended: up to ~160 characters."
+            />
+            <TextField
+              fullWidth
+              label="Meta Keywords / Tags"
+              value={formData.metaKeywords}
+              onChange={(e) =>
+                setFormData({ ...formData, metaKeywords: e.target.value })
+              }
+              placeholder="e.g., gst course, taxation training, accounting"
+              helperText="Comma-separated keywords for SEO."
             />
 
             {/* Pricing Section */}

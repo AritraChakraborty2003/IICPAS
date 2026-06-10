@@ -39,6 +39,19 @@ const GroupPricingSchema = new Schema({
     type: String,
     default: "",
   },
+  // SEO meta fields
+  metaTitle: {
+    type: String,
+    default: "",
+  },
+  metaDescription: {
+    type: String,
+    default: "",
+  },
+  metaKeywords: {
+    type: String,
+    default: "",
+  },
   // Dual pricing for recorded and live sessions
   pricing: {
     recordedSession: {

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, useEffect, use, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   ChevronDown,
@@ -79,12 +79,7 @@ type GroupPricingResponse = {
   totalRatings?: number;
 };
 
-export default function GroupPackagePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = use(params);
+export default function GroupPackageClient({ slug }: { slug: string }) {
   const [pkg, setPkg] = useState<GroupPricingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);

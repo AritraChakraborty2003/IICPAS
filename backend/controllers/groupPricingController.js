@@ -189,6 +189,9 @@ export const createGroupPricing = async (req, res) => {
       courseIds,
       groupPrice,
       description,
+      metaTitle,
+      metaDescription,
+      metaKeywords,
       recordedPrice,
       recordedFinalPrice,
       recordedDiscount,
@@ -305,6 +308,9 @@ export const createGroupPricing = async (req, res) => {
       courseIds: parsedCourseIds,
       groupPrice: parseFloat(groupPrice),
       description: description || "",
+      metaTitle: metaTitle || "",
+      metaDescription: metaDescription || "",
+      metaKeywords: metaKeywords || "",
       image: image,
       pricing: {
         recordedSession: {
@@ -384,6 +390,9 @@ export const updateGroupPricing = async (req, res) => {
       groupPrice,
       status,
       description,
+      metaTitle,
+      metaDescription,
+      metaKeywords,
       recordedPrice,
       recordedFinalPrice,
       recordedDiscount,
@@ -465,6 +474,10 @@ export const updateGroupPricing = async (req, res) => {
     if (parsedCourseIds) groupPricing.courseIds = parsedCourseIds;
     if (groupPrice) groupPricing.groupPrice = parseFloat(groupPrice);
     if (description !== undefined) groupPricing.description = description;
+    if (metaTitle !== undefined) groupPricing.metaTitle = metaTitle;
+    if (metaDescription !== undefined)
+      groupPricing.metaDescription = metaDescription;
+    if (metaKeywords !== undefined) groupPricing.metaKeywords = metaKeywords;
     if (status) groupPricing.status = status;
     if (image) groupPricing.image = image;
 
