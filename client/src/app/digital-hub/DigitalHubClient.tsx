@@ -4953,106 +4953,182 @@ export default function DigitalHubClient({
             className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
             onClick={() => setIsLiveSessionsModalOpen(false)}
           />
-          <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
-              <div>
-                <p className="text-sm font-medium uppercase tracking-[0.2em] text-emerald-600">
-                  Live Sessions
-                </p>
-                <h3 className="text-lg font-semibold text-slate-900 sm:text-xl">
-                  {selectedTopic?.title}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsLiveSessionsModalOpen(false)}
-                className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
-                aria-label="Close live sessions"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="max-h-[70vh] overflow-y-auto p-4 sm:p-6">
-              <div className="space-y-4">
-                {buildTopicLessonRows(selectedTopic ? [selectedTopic] : [], "live")
-                  .filter(row => isTopicLessonVisible(row))
-                  .map((row) => {
-                    const url = getTopicLessonSourceUrl(row);
-                    const sourceLabel = getTopicLessonSourceLabel(row);
-                    const liveSession = row.liveSessionId && typeof row.liveSessionId === "object" ? row.liveSessionId : null;
-                    
-                    return (
-                      <div
-                        key={row.id}
-                        className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100"
-                      >
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="min-w-0">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white">
-                                <Target className="h-3.5 w-3.5" />
-                                Live
-                              </span>
-                              <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
-                                {sourceLabel}
-                              </span>
-                              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                                Order {row.order}
-                              </span>
-                            </div>
+          {(() => {
+            const liveRows = buildTopicLessonRows(
+              selectedTopic ? [selectedTopic] : [],
+              "live"
+            ).filter((row) => isTopicLessonVisible(row));
+            const recordedRows = buildTopicLessonRows(
+              selectedTopic ? [selectedTopic] : [],
+              "recorded"
+            ).filter((row) => isTopicLessonVisible(row));
 
-                            <h4 className="mt-2 text-base font-semibold text-slate-900">
-                              {row.title}
-                            </h4>
+            const isLive = classModalKind === "live";
+            const activeRows = isLive ? liveRows : recordedRows;
 
-                            <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
-                              <span className="inline-flex items-center gap-1">
-                                <Calendar className="h-3.5 w-3.5" />
-                                Publish: {formatTopicLessonDateTime(row.publishAt)}
-                              </span>
-                              {liveSession ? (
-                                <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
-                                  <Calendar className="h-3.5 w-3.5" />
-                                  Session: {formatTopicLessonDateTime(liveSession.date)}
-                                  {liveSession.time ? ` • ${liveSession.time}` : ""}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
+            const renderRow = (row: ReturnType<typeof buildTopicLessonRows>[number]) => {
+              const url = getTopicLessonSourceUrl(row);
+              const sourceLabel = getTopicLessonSourceLabel(row);
+              const live =
+                row.liveSessionId && typeof row.liveSessionId === "object"
+                  ? row.liveSessionId
+                  : null;
+              const rowIsLive = row.kind === "live";
 
-                          <div className="flex shrink-0 items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => window.open(url, "_blank", "noopener,noreferrer")}
-                              disabled={!url}
-                              className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition shadow-sm ${
-                                url ? "bg-emerald-600 hover:bg-emerald-700 hover:shadow-md" : "cursor-not-allowed bg-slate-300"
-                              }`}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                              Join Live Session
-                            </button>
-                          </div>
-                        </div>
+              return (
+                <div
+                  key={row.id}
+                  className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white ${
+                            rowIsLive ? "bg-emerald-600" : "bg-blue-600"
+                          }`}
+                        >
+                          <Target className="h-3.5 w-3.5" />
+                          {rowIsLive ? "Live" : "Recorded"}
+                        </span>
+                        <span
+                          className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
+                            rowIsLive
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                              : "border-blue-200 bg-blue-50 text-blue-800"
+                          }`}
+                        >
+                          {sourceLabel}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                          Order {row.order}
+                        </span>
                       </div>
-                    );
-                  })}
-                
-                {buildTopicLessonRows(selectedTopic ? [selectedTopic] : [], "live")
-                  .filter(row => isTopicLessonVisible(row)).length === 0 && (
-                  <div className="py-12 text-center">
-                    <Target className="mx-auto h-12 w-12 text-slate-200" />
-                    <p className="mt-4 text-slate-500">No active live sessions available for this topic.</p>
+
+                      <h4 className="mt-2 text-base font-semibold text-slate-900">
+                        {row.title}
+                      </h4>
+                      <p className="mt-1 text-sm text-slate-600">
+                        Topic:{" "}
+                        <span className="font-medium">{row.topicTitle}</span>
+                      </p>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                        <span className="inline-flex items-center gap-1">
+                          <Calendar className="h-3.5 w-3.5" />
+                          Publish: {formatTopicLessonDateTime(row.publishAt)}
+                        </span>
+                        {live ? (
+                          <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
+                            <Calendar className="h-3.5 w-3.5" />
+                            Session: {formatTopicLessonDateTime(live.date)}
+                            {live.time ? ` • ${live.time}` : ""}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          window.open(url, "_blank", "noopener,noreferrer")
+                        }
+                        disabled={!url}
+                        className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition shadow-sm ${
+                          url
+                            ? rowIsLive
+                              ? "bg-emerald-600 hover:bg-emerald-700 hover:shadow-md"
+                              : "bg-blue-600 hover:bg-blue-700 hover:shadow-md"
+                            : "cursor-not-allowed bg-slate-300"
+                        }`}
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        {rowIsLive ? "Join Live Class" : "Watch Recorded"}
+                      </button>
+                    </div>
                   </div>
-                )}
+                </div>
+              );
+            };
+
+            return (
+              <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/10">
+                <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-6">
+                  <div>
+                    <p
+                      className={`text-sm font-medium uppercase tracking-[0.2em] ${
+                        isLive ? "text-emerald-600" : "text-blue-600"
+                      }`}
+                    >
+                      {isLive ? "Live Classes" : "Recorded Classes"}
+                    </p>
+                    <h3 className="text-lg font-semibold text-slate-900 sm:text-xl">
+                      {selectedTopic?.title}
+                    </h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsLiveSessionsModalOpen(false)}
+                    className="rounded-full p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                    aria-label="Close classes"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                {/* Live / Recorded toggle */}
+                <div className="flex gap-2 border-b border-slate-200 px-4 py-3 sm:px-6">
+                  <button
+                    type="button"
+                    onClick={() => setClassModalKind("live")}
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                      isLive
+                        ? "bg-emerald-600 text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    Live ({liveRows.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setClassModalKind("recorded")}
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition-colors ${
+                      !isLive
+                        ? "bg-blue-600 text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    Recorded ({recordedRows.length})
+                  </button>
+                </div>
+
+                <div className="max-h-[70vh] overflow-y-auto p-4 sm:p-6">
+                  <div className="space-y-4">
+                    {activeRows.map(renderRow)}
+
+                    {activeRows.length === 0 && (
+                      <div className="py-12 text-center">
+                        <Target className="mx-auto h-12 w-12 text-slate-200" />
+                        <p className="mt-4 text-slate-500">
+                          {isLive
+                            ? "No active live classes available for this topic."
+                            : "No recorded classes available for this topic."}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center sm:px-6">
+                  <p className="text-xs text-slate-500">
+                    {isLive
+                      ? "Join live classes to interact with instructors and fellow students."
+                      : "Watch recorded classes anytime to learn at your own pace."}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 text-center sm:px-6">
-              <p className="text-xs text-slate-500">
-                Join live sessions to interact with instructors and fellow students.
-              </p>
-            </div>
-          </div>
+            );
+          })()}
         </div>
       )}
 
