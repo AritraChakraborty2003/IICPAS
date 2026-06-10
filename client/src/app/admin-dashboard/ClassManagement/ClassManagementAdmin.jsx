@@ -323,7 +323,7 @@ export default function ClassManagementAdmin() {
       const payload = {
         ...form,
         durationMinutes: Number(form.durationMinutes) || 60,
-        price: Number(form.price) || 0,
+        price: 0,
         maxParticipants: Number(form.maxParticipants) || 100,
       };
 
