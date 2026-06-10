@@ -20,9 +20,9 @@ const EMPTY_FORM = {
   title: "",
   description: "",
   instructor: "",
-  course: "",
-  chapter: "",
-  topic: "",
+  courses: [],
+  chapters: [],
+  topics: [],
   date: "",
   time: "",
   durationMinutes: 60,
@@ -31,6 +31,8 @@ const EMPTY_FORM = {
   price: 0,
   maxParticipants: 100,
 };
+
+const idOf = (v) => String(v?._id || v || "");
 
 const formatDate = (value) => {
   const d = new Date(value);
@@ -48,9 +50,7 @@ const TypeBadge = ({ type }) => {
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
-        isLive
-          ? "bg-red-100 text-red-700"
-          : "bg-indigo-100 text-indigo-700"
+        isLive ? "bg-red-100 text-red-700" : "bg-indigo-100 text-indigo-700"
       }`}
     >
       {isLive ? (
@@ -63,11 +63,49 @@ const TypeBadge = ({ type }) => {
   );
 };
 
+// Reusable multi-select checkbox group
+const CheckboxGroup = ({ label, options, selected, onToggle, disabled, emptyText }) => (
+  <div>
+    <label className="mb-1 block text-sm font-medium text-gray-700">
+      {label}
+    </label>
+    <div
+      className={`max-h-36 space-y-1 overflow-y-auto rounded-lg border border-gray-300 p-2 ${
+        disabled ? "bg-gray-100" : "bg-white"
+      }`}
+    >
+      {options.length === 0 ? (
+        <p className="px-1 py-2 text-xs text-gray-400">{emptyText}</p>
+      ) : (
+        options.map((opt) => {
+          const id = idOf(opt);
+          const checked = selected.includes(id);
+          return (
+            <label
+              key={id}
+              className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-gray-50"
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                disabled={disabled}
+                onChange={() => onToggle(id)}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-gray-700">{opt.title}</span>
+            </label>
+          );
+        })
+      )}
+    </div>
+  </div>
+);
+
 export default function ClassManagementAdmin() {
   const [classes, setClasses] = useState([]);
   const [courses, setCourses] = useState([]);
-  const [chapters, setChapters] = useState([]);
-  const [topics, setTopics] = useState([]);
+  const [chapters, setChapters] = useState([]); // combined pool for selected courses
+  const [topics, setTopics] = useState([]); // combined pool for selected chapters
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -80,9 +118,7 @@ export default function ClassManagementAdmin() {
 
   const authHeaders = useCallback(() => {
     const token =
-      typeof window !== "undefined"
-        ? localStorage.getItem("adminToken")
-        : null;
+      typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
     return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
 
@@ -90,9 +126,7 @@ export default function ClassManagementAdmin() {
     try {
       setLoading(true);
       setError("");
-      const res = await fetch(`${API}/api/classes`, {
-        headers: authHeaders(),
-      });
+      const res = await fetch(`${API}/api/classes`, { headers: authHeaders() });
       if (!res.ok) throw new Error("Failed to fetch classes");
       const data = await res.json();
       setClasses(Array.isArray(data) ? data : []);
@@ -105,9 +139,7 @@ export default function ClassManagementAdmin() {
 
   const fetchCourses = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/api/courses`, {
-        headers: authHeaders(),
-      });
+      const res = await fetch(`${API}/api/courses`, { headers: authHeaders() });
       if (!res.ok) return;
       const data = await res.json();
       const list = Array.isArray(data?.courses)
@@ -121,47 +153,75 @@ export default function ClassManagementAdmin() {
     }
   }, [authHeaders]);
 
-  const fetchChapters = useCallback(
-    async (courseId) => {
-      if (!courseId) {
+  // Fetch & merge chapters for a set of course ids
+  const fetchChaptersFor = useCallback(
+    async (courseIds) => {
+      if (!courseIds.length) {
         setChapters([]);
-        return;
+        return [];
       }
       try {
-        const res = await fetch(`${API}/api/chapters/course/${courseId}`, {
-          headers: authHeaders(),
+        const results = await Promise.all(
+          courseIds.map(async (cid) => {
+            const res = await fetch(`${API}/api/chapters/course/${cid}`, {
+              headers: authHeaders(),
+            });
+            if (!res.ok) return [];
+            const data = await res.json();
+            return Array.isArray(data?.chapters) ? data.chapters : [];
+          })
+        );
+        const merged = [];
+        const seen = new Set();
+        results.flat().forEach((ch) => {
+          const id = idOf(ch);
+          if (id && !seen.has(id)) {
+            seen.add(id);
+            merged.push(ch);
+          }
         });
-        if (!res.ok) {
-          setChapters([]);
-          return;
-        }
-        const data = await res.json();
-        setChapters(Array.isArray(data?.chapters) ? data.chapters : []);
+        setChapters(merged);
+        return merged;
       } catch {
         setChapters([]);
+        return [];
       }
     },
     [authHeaders]
   );
 
-  const fetchTopics = useCallback(
-    async (chapterId) => {
-      if (!chapterId) {
+  // Fetch & merge topics for a set of chapter ids
+  const fetchTopicsFor = useCallback(
+    async (chapterIds) => {
+      if (!chapterIds.length) {
         setTopics([]);
-        return;
+        return [];
       }
       try {
-        const res = await fetch(`${API}/api/topics/by-chapter/${chapterId}`, {
-          headers: authHeaders(),
+        const results = await Promise.all(
+          chapterIds.map(async (chid) => {
+            const res = await fetch(`${API}/api/topics/by-chapter/${chid}`, {
+              headers: authHeaders(),
+            });
+            if (!res.ok) return [];
+            const data = await res.json();
+            return Array.isArray(data) ? data : [];
+          })
+        );
+        const merged = [];
+        const seen = new Set();
+        results.flat().forEach((t) => {
+          const id = idOf(t);
+          if (id && !seen.has(id)) {
+            seen.add(id);
+            merged.push(t);
+          }
         });
-        if (!res.ok) {
-          setTopics([]);
-          return;
-        }
-        const data = await res.json();
-        setTopics(Array.isArray(data) ? data : []);
+        setTopics(merged);
+        return merged;
       } catch {
         setTopics([]);
+        return [];
       }
     },
     [authHeaders]
@@ -189,17 +249,18 @@ export default function ClassManagementAdmin() {
     setShowModal(true);
   };
 
-  const openEdit = (cls) => {
-    const courseId = cls.course?._id || cls.course || "";
-    const chapterId = cls.chapter?._id || cls.chapter || "";
-    const topicId = cls.topic?._id || cls.topic || "";
+  const openEdit = async (cls) => {
+    const courseIds = (cls.courses || []).map(idOf);
+    const chapterIds = (cls.chapters || []).map(idOf);
+    const topicIds = (cls.topics || []).map(idOf);
+
     setForm({
       title: cls.title || "",
       description: cls.description || "",
       instructor: cls.instructor || "",
-      course: courseId,
-      chapter: chapterId,
-      topic: topicId,
+      courses: courseIds,
+      chapters: chapterIds,
+      topics: topicIds,
       date: cls.date ? new Date(cls.date).toISOString().slice(0, 10) : "",
       time: cls.time || "",
       durationMinutes: cls.durationMinutes || 60,
@@ -209,26 +270,51 @@ export default function ClassManagementAdmin() {
       maxParticipants: cls.maxParticipants || 100,
     });
     setEditingId(cls._id);
-    if (courseId) fetchChapters(courseId);
-    if (chapterId) fetchTopics(chapterId);
     setShowModal(true);
+    const chs = await fetchChaptersFor(courseIds);
+    await fetchTopicsFor(chapterIds.length ? chapterIds : chs.map(idOf));
   };
 
-  const handleCourseChange = (courseId) => {
-    setForm((f) => ({ ...f, course: courseId, chapter: "", topic: "" }));
-    setTopics([]);
-    fetchChapters(courseId);
+  // Toggle a course; re-derive chapter pool and prune now-invalid selections
+  const toggleCourse = async (cid) => {
+    const next = form.courses.includes(cid)
+      ? form.courses.filter((x) => x !== cid)
+      : [...form.courses, cid];
+    setForm((f) => ({ ...f, courses: next }));
+    const chs = await fetchChaptersFor(next);
+    const validChapterIds = new Set(chs.map(idOf));
+    setForm((f) => {
+      const keptChapters = f.chapters.filter((c) => validChapterIds.has(c));
+      return { ...f, chapters: keptChapters };
+    });
   };
 
-  const handleChapterChange = (chapterId) => {
-    setForm((f) => ({ ...f, chapter: chapterId, topic: "" }));
-    fetchTopics(chapterId);
+  const toggleChapter = async (chid) => {
+    const next = form.chapters.includes(chid)
+      ? form.chapters.filter((x) => x !== chid)
+      : [...form.chapters, chid];
+    setForm((f) => ({ ...f, chapters: next }));
+    const tps = await fetchTopicsFor(next);
+    const validTopicIds = new Set(tps.map(idOf));
+    setForm((f) => ({
+      ...f,
+      topics: f.topics.filter((t) => validTopicIds.has(t)),
+    }));
+  };
+
+  const toggleTopic = (tid) => {
+    setForm((f) => ({
+      ...f,
+      topics: f.topics.includes(tid)
+        ? f.topics.filter((x) => x !== tid)
+        : [...f.topics, tid],
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.title || !form.course || !form.date || !form.time) {
-      setError("Title, course, date and time are required");
+    if (!form.title || form.courses.length === 0 || !form.date || !form.time) {
+      setError("Title, at least one course, date and time are required");
       return;
     }
     try {
@@ -236,8 +322,6 @@ export default function ClassManagementAdmin() {
       setError("");
       const payload = {
         ...form,
-        chapter: form.chapter || null,
-        topic: form.topic || null,
         durationMinutes: Number(form.durationMinutes) || 60,
         price: Number(form.price) || 0,
         maxParticipants: Number(form.maxParticipants) || 100,
@@ -295,6 +379,12 @@ export default function ClassManagementAdmin() {
       setError(err?.message || "Failed to convert class");
     }
   };
+
+  const joinTitles = (arr) =>
+    (arr || [])
+      .map((x) => x?.title)
+      .filter(Boolean)
+      .join(", ");
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -355,7 +445,7 @@ export default function ClassManagementAdmin() {
                 Class
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
-                Course / Chapter / Topic
+                Courses / Chapters / Topics
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Schedule
@@ -385,9 +475,7 @@ export default function ClassManagementAdmin() {
               filteredClasses.map((cls) => (
                 <tr key={cls._id} className="hover:bg-gray-50">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">
-                      {cls.title}
-                    </div>
+                    <div className="font-medium text-gray-900">{cls.title}</div>
                     {cls.instructor && (
                       <div className="text-xs text-gray-500">
                         {cls.instructor}
@@ -395,12 +483,14 @@ export default function ClassManagementAdmin() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    <div>{cls.course?.title || "—"}</div>
-                    <div className="text-xs text-gray-400">
-                      {[cls.chapter?.title, cls.topic?.title]
-                        .filter(Boolean)
-                        .join(" › ")}
-                    </div>
+                    <div>{joinTitles(cls.courses) || "—"}</div>
+                    {(cls.chapters?.length || cls.topics?.length) ? (
+                      <div className="text-xs text-gray-400">
+                        {[joinTitles(cls.chapters), joinTitles(cls.topics)]
+                          .filter(Boolean)
+                          .join(" › ")}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
                     <div className="flex items-center gap-1">
@@ -484,62 +574,37 @@ export default function ClassManagementAdmin() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Course *
-                  </label>
-                  <select
-                    value={form.course}
-                    onChange={(e) => handleCourseChange(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                    required
-                  >
-                    <option value="">Select course</option>
-                    {courses.map((c) => (
-                      <option key={c._id} value={c._id}>
-                        {c.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Chapter
-                  </label>
-                  <select
-                    value={form.chapter}
-                    onChange={(e) => handleChapterChange(e.target.value)}
-                    disabled={!form.course}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-                  >
-                    <option value="">Select chapter</option>
-                    {chapters.map((ch) => (
-                      <option key={ch._id} value={ch._id}>
-                        {ch.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Topic
-                  </label>
-                  <select
-                    value={form.topic}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, topic: e.target.value }))
-                    }
-                    disabled={!form.chapter}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-                  >
-                    <option value="">Select topic</option>
-                    {topics.map((t) => (
-                      <option key={t._id} value={t._id}>
-                        {t.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CheckboxGroup
+                  label="Courses *"
+                  options={courses}
+                  selected={form.courses}
+                  onToggle={toggleCourse}
+                  emptyText="No courses available"
+                />
+                <CheckboxGroup
+                  label="Chapters"
+                  options={chapters}
+                  selected={form.chapters}
+                  onToggle={toggleChapter}
+                  disabled={form.courses.length === 0}
+                  emptyText={
+                    form.courses.length === 0
+                      ? "Select a course first"
+                      : "No chapters"
+                  }
+                />
+                <CheckboxGroup
+                  label="Topics"
+                  options={topics}
+                  selected={form.topics}
+                  onToggle={toggleTopic}
+                  disabled={form.chapters.length === 0}
+                  emptyText={
+                    form.chapters.length === 0
+                      ? "Select a chapter first"
+                      : "No topics"
+                  }
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -700,7 +765,11 @@ export default function ClassManagementAdmin() {
                   disabled={saving}
                   className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
                 >
-                  {saving ? "Saving…" : editingId ? "Update Class" : "Create Class"}
+                  {saving
+                    ? "Saving…"
+                    : editingId
+                      ? "Update Class"
+                      : "Create Class"}
                 </button>
               </div>
             </form>

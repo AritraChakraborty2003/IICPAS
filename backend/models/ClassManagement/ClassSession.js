@@ -19,22 +19,10 @@ const classSessionSchema = new Schema(
     description: { type: String, default: "" },
     instructor: { type: String, default: "" },
 
-    // Relations to the course content hierarchy
-    course: {
-      type: Schema.Types.ObjectId,
-      ref: "Course",
-      required: true,
-    },
-    chapter: {
-      type: Schema.Types.ObjectId,
-      ref: "Chapter",
-      default: null,
-    },
-    topic: {
-      type: Schema.Types.ObjectId,
-      ref: "Topic",
-      default: null,
-    },
+    // Relations to the course content hierarchy (multi-select)
+    courses: [{ type: Schema.Types.ObjectId, ref: "Course" }],
+    chapters: [{ type: Schema.Types.ObjectId, ref: "Chapter" }],
+    topics: [{ type: Schema.Types.ObjectId, ref: "Topic" }],
 
     // Class type: starts as "live", auto-converts to "recorded" when finished
     type: {

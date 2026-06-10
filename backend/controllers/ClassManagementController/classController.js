@@ -6,10 +6,19 @@ import {
 } from "../../utils/classScheduleHelpers.js";
 
 const POPULATE = [
-  { path: "course", select: "title category slug image" },
-  { path: "chapter", select: "title" },
-  { path: "topic", select: "title" },
+  { path: "courses", select: "title category slug image" },
+  { path: "chapters", select: "title" },
+  { path: "topics", select: "title" },
 ];
+
+// Normalize a value into a clean array of ids (drops empties/duplicates)
+const toIdArray = (value) => {
+  if (value === undefined || value === null) return [];
+  const arr = Array.isArray(value) ? value : [value];
+  return Array.from(
+    new Set(arr.map((v) => String(v?._id || v || "")).filter(Boolean))
+  );
+};
 
 /**
  * Apply on-read status: if a live class window has elapsed, reflect it as
@@ -35,7 +44,7 @@ export const getAllClasses = async (req, res) => {
   try {
     const { type, course, active } = req.query;
     const filter = {};
-    if (course) filter.course = course;
+    if (course) filter.courses = course;
     if (active === "true") filter.isActive = true;
     if (active === "false") filter.isActive = false;
 
@@ -73,7 +82,7 @@ export const getClassesByCourse = async (req, res) => {
   try {
     const { type } = req.query;
     let classes = await ClassSession.find({
-      course: req.params.courseId,
+      courses: req.params.courseId,
       isActive: true,
     })
       .populate(POPULATE)
@@ -98,9 +107,10 @@ export const createClass = async (req, res) => {
       title,
       description = "",
       instructor = "",
-      course,
-      chapter = null,
-      topic = null,
+      courses: coursesInput,
+      course, // legacy single-value support
+      chapters: chaptersInput,
+      topics: topicsInput,
       date,
       time,
       durationMinutes = 60,
@@ -112,15 +122,19 @@ export const createClass = async (req, res) => {
       maxParticipants = 100,
     } = req.body;
 
-    if (!title || !course || !date || !time) {
-      return res
-        .status(400)
-        .json({ message: "title, course, date and time are required" });
+    const courses = toIdArray(coursesInput ?? course);
+    const chapters = toIdArray(chaptersInput);
+    const topics = toIdArray(topicsInput);
+
+    if (!title || courses.length === 0 || !date || !time) {
+      return res.status(400).json({
+        message: "title, at least one course, date and time are required",
+      });
     }
 
-    const courseExists = await Course.exists({ _id: course });
-    if (!courseExists) {
-      return res.status(400).json({ message: "Course not found" });
+    const courseCount = await Course.countDocuments({ _id: { $in: courses } });
+    if (courseCount !== courses.length) {
+      return res.status(400).json({ message: "One or more courses not found" });
     }
 
     const { startAt, endAt } = computeClassWindow(
@@ -134,9 +148,9 @@ export const createClass = async (req, res) => {
       title,
       description,
       instructor,
-      course,
-      chapter: chapter || null,
-      topic: topic || null,
+      courses,
+      chapters,
+      topics,
       type: "live",
       date,
       time,
@@ -169,9 +183,6 @@ export const updateClass = async (req, res) => {
       "title",
       "description",
       "instructor",
-      "course",
-      "chapter",
-      "topic",
       "type",
       "date",
       "time",
@@ -188,6 +199,17 @@ export const updateClass = async (req, res) => {
 
     for (const f of fields) {
       if (req.body[f] !== undefined) cls[f] = req.body[f];
+    }
+
+    // Multi-select relations
+    if (req.body.courses !== undefined || req.body.course !== undefined) {
+      cls.courses = toIdArray(req.body.courses ?? req.body.course);
+    }
+    if (req.body.chapters !== undefined) {
+      cls.chapters = toIdArray(req.body.chapters);
+    }
+    if (req.body.topics !== undefined) {
+      cls.topics = toIdArray(req.body.topics);
     }
 
     // Recompute the schedule window if any timing input changed
