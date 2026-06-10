@@ -15,6 +15,7 @@ const router = express.Router();
 
 // Public routes
 router.get('/', getActiveCookiePolicy);
+router.get('/active', getActiveCookiePolicy);
 
 // Admin routes
 router.get('/admin/all', requireAuth, isAdmin, getAllCookiePolicies);

@@ -474,6 +474,36 @@ const NAVIGATION_GROUPS = [
       },
     ],
   },
+  {
+    id: "policy-pages",
+    label: "Policy Pages",
+    icon: <FaShieldAlt />,
+    items: [
+      { id: "privacy-policy", label: "Privacy Policy", icon: <FaShieldAlt /> },
+      { id: "refund-policy", label: "Refund Policy", icon: <FaShieldAlt /> },
+      {
+        id: "terms-of-service",
+        label: "Terms of Service",
+        icon: <FaShieldAlt />,
+      },
+      {
+        id: "terms-and-conditions",
+        label: "Terms & Conditions",
+        icon: <FaShieldAlt />,
+      },
+      { id: "cookie-policy", label: "Cookie Policy", icon: <FaShieldAlt /> },
+      {
+        id: "confidentiality-policy",
+        label: "Confidentiality Policy",
+        icon: <FaShieldAlt />,
+      },
+      {
+        id: "disclaimer-policy",
+        label: "Disclaimer Policy",
+        icon: <FaShieldAlt />,
+      },
+    ],
+  },
 ];
 
 function AdminDashboardContent() {
@@ -495,6 +525,7 @@ function AdminDashboardContent() {
       "system-management": false,
       "admission-management": false,
       "booking-operations": false,
+      "policy-pages": false,
     }
   );
   const router = useRouter();
