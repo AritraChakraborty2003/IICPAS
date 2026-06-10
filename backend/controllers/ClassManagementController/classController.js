@@ -1,5 +1,7 @@
+import mongoose from "mongoose";
 import ClassSession from "../../models/ClassManagement/ClassSession.js";
 import Course from "../../models/Content/Course.js";
+import Student from "../../models/Students.js";
 import {
   computeClassWindow,
   deriveLiveStatus,
@@ -90,6 +92,64 @@ export const getClassesByCourse = async (req, res) => {
       .lean();
 
     classes = classes.map(withResolvedType);
+    if (type === "live" || type === "recorded") {
+      classes = classes.filter((c) => c.type === type);
+    }
+
+    res.status(200).json(classes);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// GET /api/classes/for-student/:studentId
+// Returns the student's classes (only for purchased/enrolled courses), with
+// each class' type resolved (a finished live class is presented as recorded).
+// Supports ?type=live|recorded to fetch one bucket.
+export const getClassesForStudent = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) {
+      return res.status(400).json({ message: "Invalid student ID" });
+    }
+
+    const student = await Student.findById(studentId)
+      .select("course courseAccessOverrides")
+      .lean();
+
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    // Collect purchased course IDs (direct course array + unlocked overrides)
+    const purchasedCourseIds = new Set(
+      (Array.isArray(student.course) ? student.course : []).map((id) =>
+        String(id)
+      )
+    );
+    if (Array.isArray(student.courseAccessOverrides)) {
+      student.courseAccessOverrides.forEach((entry) => {
+        if (entry && !entry.isLocked && entry.courseId) {
+          purchasedCourseIds.add(String(entry.courseId));
+        }
+      });
+    }
+
+    if (purchasedCourseIds.size === 0) {
+      return res.status(200).json([]);
+    }
+
+    let classes = await ClassSession.find({
+      isActive: true,
+      courses: { $in: Array.from(purchasedCourseIds) },
+    })
+      .populate(POPULATE)
+      .sort({ startAt: -1 })
+      .lean();
+
+    classes = classes.map(withResolvedType);
+
+    const { type } = req.query;
     if (type === "live" || type === "recorded") {
       classes = classes.filter((c) => c.type === type);
     }

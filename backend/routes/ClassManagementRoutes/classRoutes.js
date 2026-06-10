@@ -3,6 +3,7 @@ import {
   getAllClasses,
   getClassById,
   getClassesByCourse,
+  getClassesForStudent,
   createClass,
   updateClass,
   deleteClass,
@@ -17,6 +18,9 @@ router.get("/", getAllClasses);
 
 // Classes for a specific course (student-facing)
 router.get("/course/:courseId", getClassesByCourse);
+
+// All of a student's classes across their purchased courses (student-facing)
+router.get("/for-student/:studentId", getClassesForStudent);
 
 // Single class
 router.get("/:id", getClassById);
