@@ -709,11 +709,10 @@ export default function ClassManagementAdmin() {
                   <input
                     type="number"
                     min={0}
-                    value={form.price}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, price: e.target.value }))
-                    }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    value={0}
+                    readOnly
+                    disabled
+                    className="w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 px-3 py-2 text-sm text-gray-500 focus:border-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
