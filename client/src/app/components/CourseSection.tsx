@@ -231,6 +231,46 @@ const CourseSection = memo(function CourseSection() {
     router.push(`/course/${course.slug}`);
   };
 
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Duplicate the list so the marquee can loop seamlessly.
+  const marqueeCourses = courses.length > 0 ? [...courses, ...courses] : [];
+
+  // Auto-scroll the track. The track width is doubled (list rendered twice),
+  // so when we pass the halfway point we reset to 0 for a seamless loop.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track || courses.length === 0) return;
+
+    let frame: number;
+    const speed = 0.6; // pixels per frame
+
+    const step = () => {
+      if (!isPaused) {
+        track.scrollLeft += speed;
+        const half = track.scrollWidth / 2;
+        if (track.scrollLeft >= half) {
+          track.scrollLeft -= half;
+        }
+      }
+      frame = requestAnimationFrame(step);
+    };
+
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [courses, isPaused]);
+
+  const scrollByCard = (direction: "left" | "right") => {
+    const track = trackRef.current;
+    if (!track) return;
+    const amount = 320; // approx one card width + gap
+    track.scrollBy({
+      left: direction === "left" ? -amount : amount,
+      behavior: "smooth",
+    });
+  };
+
   return (
     <section className="py-16 px-4 md:px-20 bg-[#f9fbfa] min-h-[600px]">
       <div className="max-w-7xl mx-auto">
@@ -241,47 +281,77 @@ const CourseSection = memo(function CourseSection() {
           </span>
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {courses.slice(0, 3).map((course) => (
-            <div
-              key={course._id}
-              className="bg-white rounded-lg shadow-lg overflow-hidden min-h-[400px]"
-            >
-              <div className="relative h-48 w-full">
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="w-full h-full object-cover block"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="bg-[#3cd664] text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {course.category}
-                  </span>
-                </div>
-              </div>
+        <div
+          className="relative"
+          onMouseEnter={() => setIsPaused(true)}
+          onMouseLeave={() => setIsPaused(false)}
+        >
+          {/* Left arrow */}
+          <button
+            type="button"
+            aria-label="Previous courses"
+            onClick={() => scrollByCard("left")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full w-11 h-11 flex items-center justify-center text-gray-700 hover:bg-[#3cd664] hover:text-white transition-colors -ml-2 md:-ml-5"
+          >
+            <FaChevronLeft />
+          </button>
 
-              <div className="p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2">
-                  {course.title}
-                </h3>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-[#3cd664]">
-                      {student
-                        ? `₹${course.price.toLocaleString()}`
-                        : "₹ (login to view)"}
+          {/* Marquee track */}
+          <div
+            ref={trackRef}
+            className="flex gap-8 overflow-x-hidden py-2 px-1 scroll-smooth"
+          >
+            {marqueeCourses.map((course, index) => (
+              <div
+                key={`${course._id}-${index}`}
+                className="bg-white rounded-lg shadow-lg overflow-hidden min-h-[400px] flex-shrink-0 w-[300px]"
+              >
+                <div className="relative h-48 w-full">
+                  <img
+                    src={course.image}
+                    alt={course.title}
+                    className="w-full h-full object-cover block"
+                  />
+                  <div className="absolute top-4 left-4">
+                    <span className="bg-[#3cd664] text-white px-3 py-1 rounded-full text-sm font-medium">
+                      {course.category}
                     </span>
                   </div>
                 </div>
-                <button
-                  onClick={() => handleEnrollNow(course)}
-                  className="w-full bg-[#3cd664] text-white py-3 px-4 rounded-lg font-semibold"
-                >
-                  Enroll Now
-                </button>
+
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-3 line-clamp-2">
+                    {course.title}
+                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-[#3cd664]">
+                        {student
+                          ? `₹${course.price.toLocaleString()}`
+                          : "₹ (login to view)"}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleEnrollNow(course)}
+                    className="w-full bg-[#3cd664] text-white py-3 px-4 rounded-lg font-semibold"
+                  >
+                    Enroll Now
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+
+          {/* Right arrow */}
+          <button
+            type="button"
+            aria-label="Next courses"
+            onClick={() => scrollByCard("right")}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full w-11 h-11 flex items-center justify-center text-gray-700 hover:bg-[#3cd664] hover:text-white transition-colors -mr-2 md:-mr-5"
+          >
+            <FaChevronRight />
+          </button>
         </div>
 
         <div className="text-center mt-12">
