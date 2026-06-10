@@ -1,0 +1,712 @@
+"use client";
+
+import { getApiOrigin } from "@/lib/apiBase";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  CalendarDays,
+  Clock3,
+  Edit3,
+  PlayCircle,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Video,
+  X,
+} from "lucide-react";
+
+const API = getApiOrigin();
+
+const EMPTY_FORM = {
+  title: "",
+  description: "",
+  instructor: "",
+  course: "",
+  chapter: "",
+  topic: "",
+  date: "",
+  time: "",
+  durationMinutes: 60,
+  meetingLink: "",
+  recordingUrl: "",
+  price: 0,
+  maxParticipants: 100,
+};
+
+const formatDate = (value) => {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return new Intl.DateTimeFormat("en-IN", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(d);
+};
+
+const TypeBadge = ({ type }) => {
+  const isLive = type === "live";
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${
+        isLive
+          ? "bg-red-100 text-red-700"
+          : "bg-indigo-100 text-indigo-700"
+      }`}
+    >
+      {isLive ? (
+        <PlayCircle className="h-3.5 w-3.5" />
+      ) : (
+        <Video className="h-3.5 w-3.5" />
+      )}
+      {isLive ? "Live" : "Recorded"}
+    </span>
+  );
+};
+
+export default function ClassManagementAdmin() {
+  const [classes, setClasses] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [chapters, setChapters] = useState([]);
+  const [topics, setTopics] = useState([]);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [filterType, setFilterType] = useState("all");
+
+  const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [saving, setSaving] = useState(false);
+
+  const authHeaders = useCallback(() => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("adminToken")
+        : null;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }, []);
+
+  const fetchClasses = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
+      const res = await fetch(`${API}/api/classes`, {
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to fetch classes");
+      const data = await res.json();
+      setClasses(Array.isArray(data) ? data : []);
+    } catch (err) {
+      setError(err?.message || "Failed to fetch classes");
+    } finally {
+      setLoading(false);
+    }
+  }, [authHeaders]);
+
+  const fetchCourses = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/courses`, {
+        headers: authHeaders(),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      const list = Array.isArray(data?.courses)
+        ? data.courses
+        : Array.isArray(data)
+          ? data
+          : [];
+      setCourses(list);
+    } catch (err) {
+      console.error("Failed to fetch courses:", err);
+    }
+  }, [authHeaders]);
+
+  const fetchChapters = useCallback(
+    async (courseId) => {
+      if (!courseId) {
+        setChapters([]);
+        return;
+      }
+      try {
+        const res = await fetch(`${API}/api/chapters/course/${courseId}`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) {
+          setChapters([]);
+          return;
+        }
+        const data = await res.json();
+        setChapters(Array.isArray(data?.chapters) ? data.chapters : []);
+      } catch {
+        setChapters([]);
+      }
+    },
+    [authHeaders]
+  );
+
+  const fetchTopics = useCallback(
+    async (chapterId) => {
+      if (!chapterId) {
+        setTopics([]);
+        return;
+      }
+      try {
+        const res = await fetch(`${API}/api/topics/by-chapter/${chapterId}`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) {
+          setTopics([]);
+          return;
+        }
+        const data = await res.json();
+        setTopics(Array.isArray(data) ? data : []);
+      } catch {
+        setTopics([]);
+      }
+    },
+    [authHeaders]
+  );
+
+  useEffect(() => {
+    fetchClasses();
+    fetchCourses();
+  }, [fetchClasses, fetchCourses]);
+
+  const filteredClasses = useMemo(() => {
+    if (filterType === "all") return classes;
+    return classes.filter((c) => c.type === filterType);
+  }, [classes, filterType]);
+
+  const resetForm = () => {
+    setForm(EMPTY_FORM);
+    setEditingId(null);
+    setChapters([]);
+    setTopics([]);
+  };
+
+  const openCreate = () => {
+    resetForm();
+    setShowModal(true);
+  };
+
+  const openEdit = (cls) => {
+    const courseId = cls.course?._id || cls.course || "";
+    const chapterId = cls.chapter?._id || cls.chapter || "";
+    const topicId = cls.topic?._id || cls.topic || "";
+    setForm({
+      title: cls.title || "",
+      description: cls.description || "",
+      instructor: cls.instructor || "",
+      course: courseId,
+      chapter: chapterId,
+      topic: topicId,
+      date: cls.date ? new Date(cls.date).toISOString().slice(0, 10) : "",
+      time: cls.time || "",
+      durationMinutes: cls.durationMinutes || 60,
+      meetingLink: cls.meetingLink || "",
+      recordingUrl: cls.recordingUrl || "",
+      price: cls.price || 0,
+      maxParticipants: cls.maxParticipants || 100,
+    });
+    setEditingId(cls._id);
+    if (courseId) fetchChapters(courseId);
+    if (chapterId) fetchTopics(chapterId);
+    setShowModal(true);
+  };
+
+  const handleCourseChange = (courseId) => {
+    setForm((f) => ({ ...f, course: courseId, chapter: "", topic: "" }));
+    setTopics([]);
+    fetchChapters(courseId);
+  };
+
+  const handleChapterChange = (chapterId) => {
+    setForm((f) => ({ ...f, chapter: chapterId, topic: "" }));
+    fetchTopics(chapterId);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!form.title || !form.course || !form.date || !form.time) {
+      setError("Title, course, date and time are required");
+      return;
+    }
+    try {
+      setSaving(true);
+      setError("");
+      const payload = {
+        ...form,
+        chapter: form.chapter || null,
+        topic: form.topic || null,
+        durationMinutes: Number(form.durationMinutes) || 60,
+        price: Number(form.price) || 0,
+        maxParticipants: Number(form.maxParticipants) || 100,
+      };
+
+      const url = editingId
+        ? `${API}/api/classes/${editingId}`
+        : `${API}/api/classes`;
+      const method = editingId ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || "Failed to save class");
+      }
+      setShowModal(false);
+      resetForm();
+      fetchClasses();
+    } catch (err) {
+      setError(err?.message || "Failed to save class");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this class? This cannot be undone.")) return;
+    try {
+      const res = await fetch(`${API}/api/classes/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to delete class");
+      fetchClasses();
+    } catch (err) {
+      setError(err?.message || "Failed to delete class");
+    }
+  };
+
+  const handleConvert = async (id) => {
+    if (!window.confirm("Convert this live class to a recorded class now?"))
+      return;
+    try {
+      const res = await fetch(`${API}/api/classes/${id}/convert`, {
+        method: "PATCH",
+        headers: authHeaders(),
+      });
+      if (!res.ok) throw new Error("Failed to convert class");
+      fetchClasses();
+    } catch (err) {
+      setError(err?.message || "Failed to convert class");
+    }
+  };
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-blue-900">Class Management</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Schedule live classes that auto-convert to recorded after they end.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={fetchClasses}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <RefreshCw className="h-4 w-4" /> Refresh
+          </button>
+          <button
+            onClick={openCreate}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+          >
+            <Plus className="h-4 w-4" /> Create Class
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <div className="mb-4 flex gap-2">
+        {[
+          { id: "all", label: "All" },
+          { id: "live", label: "Live" },
+          { id: "recorded", label: "Recorded" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setFilterType(tab.id)}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+              filterType === tab.id
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Class
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Course / Chapter / Topic
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Schedule
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Type
+              </th>
+              <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {loading ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+                  Loading…
+                </td>
+              </tr>
+            ) : filteredClasses.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-10 text-center text-gray-400">
+                  No classes found. Create one to get started.
+                </td>
+              </tr>
+            ) : (
+              filteredClasses.map((cls) => (
+                <tr key={cls._id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-gray-900">
+                      {cls.title}
+                    </div>
+                    {cls.instructor && (
+                      <div className="text-xs text-gray-500">
+                        {cls.instructor}
+                      </div>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    <div>{cls.course?.title || "—"}</div>
+                    <div className="text-xs text-gray-400">
+                      {[cls.chapter?.title, cls.topic?.title]
+                        .filter(Boolean)
+                        .join(" › ")}
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <CalendarDays className="h-3.5 w-3.5 text-gray-400" />
+                      {formatDate(cls.date)}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-gray-400">
+                      <Clock3 className="h-3 w-3" />
+                      {cls.time} · {cls.durationMinutes}m
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <TypeBadge type={cls.type} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      {cls.type === "live" && (
+                        <button
+                          onClick={() => handleConvert(cls._id)}
+                          title="Convert to recorded now"
+                          className="rounded-md p-1.5 text-indigo-600 hover:bg-indigo-50"
+                        >
+                          <Video className="h-4 w-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => openEdit(cls)}
+                        title="Edit"
+                        className="rounded-md p-1.5 text-blue-600 hover:bg-blue-50"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(cls._id)}
+                        title="Delete"
+                        className="rounded-md p-1.5 text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-blue-900">
+                {editingId ? "Edit Class" : "Create Class"}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  resetForm();
+                }}
+                className="rounded-md p-1 text-gray-400 hover:bg-gray-100"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Title *
+                </label>
+                <input
+                  type="text"
+                  value={form.title}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, title: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Course *
+                  </label>
+                  <select
+                    value={form.course}
+                    onChange={(e) => handleCourseChange(e.target.value)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    required
+                  >
+                    <option value="">Select course</option>
+                    {courses.map((c) => (
+                      <option key={c._id} value={c._id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Chapter
+                  </label>
+                  <select
+                    value={form.chapter}
+                    onChange={(e) => handleChapterChange(e.target.value)}
+                    disabled={!form.course}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                  >
+                    <option value="">Select chapter</option>
+                    {chapters.map((ch) => (
+                      <option key={ch._id} value={ch._id}>
+                        {ch.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Topic
+                  </label>
+                  <select
+                    value={form.topic}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, topic: e.target.value }))
+                    }
+                    disabled={!form.chapter}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                  >
+                    <option value="">Select topic</option>
+                    {topics.map((t) => (
+                      <option key={t._id} value={t._id}>
+                        {t.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={form.date}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, date: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Start Time *
+                  </label>
+                  <input
+                    type="time"
+                    value={form.time}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, time: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Duration (min) *
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.durationMinutes}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        durationMinutes: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Instructor
+                </label>
+                <input
+                  type="text"
+                  value={form.instructor}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, instructor: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Live Meeting Link
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://meet…"
+                    value={form.meetingLink}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, meetingLink: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Recording URL (after class)
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="https://…/recording"
+                    value={form.recordingUrl}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, recordingUrl: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Price
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={form.price}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, price: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Max Participants
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.maxParticipants}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        maxParticipants: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
+                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="rounded-lg bg-blue-600 px-5 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                >
+                  {saving ? "Saving…" : editingId ? "Update Class" : "Create Class"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

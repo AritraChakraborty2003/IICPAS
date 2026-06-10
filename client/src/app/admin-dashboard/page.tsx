@@ -130,6 +130,7 @@ import LiveBookingsTab from "./LiveBookingsTab";
 import OurPartnersTab from "./OurPartnersTab";
 import ReferralCodeSettingsTab from "./ReferralCodeSettingsTab";
 import RecordedSessionAdmin from "./RecordedSessionAdmin";
+import ClassManagementAdmin from "./ClassManagement/ClassManagementAdmin";
 
 // All available modules with their permissions (unused - replaced by NAVIGATION_GROUPS)
 /*
@@ -286,6 +287,11 @@ const NAVIGATION_GROUPS = [
     label: "Session Management",
     icon: <FaCalendarAlt />,
     items: [
+      {
+        id: "class-management",
+        label: "Class Management",
+        icon: <FaCalendarAlt />,
+      },
       { id: "live-session", label: "Live Session", icon: <FaCalendarAlt /> },
       {
         id: "recorded-session",
@@ -777,7 +783,9 @@ function AdminDashboardContent() {
         }`}
       >
         {/* Permission-based content rendering */}
-        {activeTab === "live-session" ? (
+        {activeTab === "class-management" ? (
+          <ClassManagementAdmin />
+        ) : activeTab === "live-session" ? (
           <LiveSessionAdmin draftKey={landingDraftKey} />
         ) : activeTab === "recorded-session" ? (
           <RecordedSessionAdmin />
