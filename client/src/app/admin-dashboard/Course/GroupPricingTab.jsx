@@ -67,6 +67,7 @@ const GroupPricingTab = ({ onBack }) => {
     courseIds: [],
     groupPrice: "",
     description: "",
+    duration: "",
     metaTitle: "",
     metaDescription: "",
     metaKeywords: "",
@@ -136,6 +137,7 @@ const GroupPricingTab = ({ onBack }) => {
       courseIds: [],
       groupPrice: "",
       description: "",
+      duration: "",
       metaTitle: "",
       metaDescription: "",
       metaKeywords: "",
@@ -180,6 +182,7 @@ const GroupPricingTab = ({ onBack }) => {
       courseIds: courseIds,
       groupPrice: item.groupPrice.toString(),
       description: item.description || "",
+      duration: item.duration || "",
       metaTitle: item.metaTitle || "",
       metaDescription: item.metaDescription || "",
       metaKeywords: item.metaKeywords || "",
@@ -299,6 +302,7 @@ const GroupPricingTab = ({ onBack }) => {
       formDataToSend.append("courseIds", JSON.stringify(formData.courseIds));
       formDataToSend.append("groupPrice", formData.groupPrice);
       formDataToSend.append("description", formData.description);
+      formDataToSend.append("duration", formData.duration);
       formDataToSend.append("metaTitle", formData.metaTitle);
       formDataToSend.append("metaDescription", formData.metaDescription);
       formDataToSend.append("metaKeywords", formData.metaKeywords);
@@ -653,6 +657,17 @@ const GroupPricingTab = ({ onBack }) => {
               }
               required
               inputProps={{ min: 0, step: 0.01 }}
+            />
+
+            <TextField
+              fullWidth
+              label="Duration"
+              value={formData.duration}
+              onChange={(e) =>
+                setFormData({ ...formData, duration: e.target.value })
+              }
+              placeholder="e.g., 62 Hrs, 3 months, 6 weeks"
+              helperText="Shown on the course card. Leave blank to hide."
             />
 
             <TextField

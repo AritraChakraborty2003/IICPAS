@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { memo } from "react";
 import axios from "axios";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 interface Course {
   _id: string;

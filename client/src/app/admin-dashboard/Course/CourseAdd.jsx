@@ -25,6 +25,7 @@ const initialForm = {
   category: null,
   title: "",
   slug: "",
+  duration: "",
   price: "",
   discount: "",
   status: "Active",
@@ -501,6 +502,17 @@ export default function CourseAddTab({ onBack }) {
                 placeholder="Enter course slug"
                 className="w-full border p-2 rounded"
                 value={form.slug || ""}
+                onChange={handleInputChange}
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <label className="block mb-1 font-semibold">Duration</label>
+              <input
+                name="duration"
+                placeholder="e.g., 3 months, 6 weeks, 40 hours"
+                className="w-full border p-2 rounded"
+                value={form.duration}
                 onChange={handleInputChange}
                 autoComplete="off"
               />

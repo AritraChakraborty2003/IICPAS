@@ -143,10 +143,12 @@ export default function GroupCourseCard({
               </span>
             </span>
           </div>
-          <div className="flex items-center gap-1">
-            <span>📅</span>
-            <span className="font-medium">3 weeks</span>
-          </div>
+          {groupPricing.duration && (
+            <div className="flex items-center gap-1">
+              <span>📅</span>
+              <span className="font-medium">{groupPricing.duration}</span>
+            </div>
+          )}
         </div>
 
         {/* Price Section */}
