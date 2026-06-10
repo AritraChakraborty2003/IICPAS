@@ -630,6 +630,9 @@ export default function DigitalHubClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isIntroVideoModalOpen, setIsIntroVideoModalOpen] = useState(false);
   const [isLiveSessionsModalOpen, setIsLiveSessionsModalOpen] = useState(false);
+  const [classModalKind, setClassModalKind] = useState<"live" | "recorded">(
+    "live"
+  );
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [ticketForm, setTicketForm] = useState({
