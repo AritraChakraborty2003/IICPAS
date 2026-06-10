@@ -35,6 +35,10 @@ const GroupPricingSchema = new Schema({
     type: String,
     default: "",
   },
+  duration: {
+    type: String,
+    default: "",
+  },
   image: {
     type: String,
     default: "",
