@@ -192,8 +192,8 @@ const CourseSection = memo(function CourseSection() {
               .filter((c) => c.status === "Active")
               .sort(
                 (a, b) =>
-                  new Date(b.createdAt || 0).getTime() -
-                  new Date(a.createdAt || 0).getTime()
+                  new Date(a.createdAt || 0).getTime() -
+                  new Date(b.createdAt || 0).getTime()
               );
             setCourses(activeCourses);
           } else {
@@ -244,7 +244,7 @@ const CourseSection = memo(function CourseSection() {
     if (!track || courses.length === 0) return;
 
     let frame: number;
-    const speed = 0.6; // pixels per frame
+    const speed = 1.5; // pixels per frame
 
     const step = () => {
       if (!isPaused) {
