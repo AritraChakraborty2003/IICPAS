@@ -3836,8 +3836,15 @@ export default function DigitalHubClient({
                         Chapter topics {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
-                      {/* Watch Live Class videos for this topic */}
-                      {selectedTopic?.lessons?.some((l) => l.kind === "live") ? (
+                      {/* Watch Live Class videos for this topic — only classes
+                          scheduled in Class Management (linked to a LiveSession) */}
+                      {selectedTopic?.lessons?.some(
+                        (l) =>
+                          l.kind === "live" &&
+                          (l.sourceType === "liveSession" ||
+                            (l.liveSessionId &&
+                              typeof l.liveSessionId === "object"))
+                      ) ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -3850,10 +3857,15 @@ export default function DigitalHubClient({
                           Watch Live Class
                         </button>
                       ) : null}
-                      {/* Watch Recorded videos for this topic */}
+                      {/* Watch Recorded videos for this topic — only classes
+                          scheduled in Class Management (linked to a LiveSession) */}
                       {selectedTopic?.lessons?.some(
-                        (l) => l.kind === "recorded"
-                      ) || selectedTopic?.introVideo ? (
+                        (l) =>
+                          l.kind === "recorded" &&
+                          (l.sourceType === "liveSession" ||
+                            (l.liveSessionId &&
+                              typeof l.liveSessionId === "object"))
+                      ) ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -4954,14 +4966,27 @@ export default function DigitalHubClient({
             onClick={() => setIsLiveSessionsModalOpen(false)}
           />
           {(() => {
+            // Only show classes that were scheduled in Class Management, i.e.
+            // lessons linked to a LiveSession (sourceType "liveSession" or a
+            // populated liveSessionId). Exclude manually-added links/uploads.
+            const isClassManagementRow = (
+              row: ReturnType<typeof buildTopicLessonRows>[number]
+            ) =>
+              row.sourceType === "liveSession" ||
+              (!!row.liveSessionId && typeof row.liveSessionId === "object");
+
             const liveRows = buildTopicLessonRows(
               selectedTopic ? [selectedTopic] : [],
               "live"
-            ).filter((row) => isTopicLessonVisible(row));
+            )
+              .filter((row) => isTopicLessonVisible(row))
+              .filter(isClassManagementRow);
             const recordedRows = buildTopicLessonRows(
               selectedTopic ? [selectedTopic] : [],
               "recorded"
-            ).filter((row) => isTopicLessonVisible(row));
+            )
+              .filter((row) => isTopicLessonVisible(row))
+              .filter(isClassManagementRow);
 
             const isLive = classModalKind === "live";
             const activeRows = isLive ? liveRows : recordedRows;
