@@ -17,13 +17,7 @@ import {
   getBatchTopicState,
   parseDateOrNull,
 } from "../utils/batchWindowState";
-import {
-  buildTopicLessonRows,
-  formatTopicLessonDateTime,
-  getTopicLessonSourceLabel,
-  getTopicLessonSourceUrl,
-  isTopicLessonVisible,
-} from "@/lib/topicLessons";
+import { formatTopicLessonDateTime } from "@/lib/topicLessons";
 
 // Type definitions
 interface Task {
@@ -5024,43 +5018,28 @@ export default function DigitalHubClient({
             onClick={() => setIsLiveSessionsModalOpen(false)}
           />
           {(() => {
-            // Only show classes that were scheduled in Class Management, i.e.
-            // lessons linked to a LiveSession (sourceType "liveSession" or a
-            // populated liveSessionId). Exclude manually-added links/uploads.
-            const isClassManagementRow = (
-              row: ReturnType<typeof buildTopicLessonRows>[number]
-            ) =>
-              row.sourceType === "liveSession" ||
-              (!!row.liveSessionId && typeof row.liveSessionId === "object");
-
-            const liveRows = buildTopicLessonRows(
-              selectedTopic ? [selectedTopic] : [],
-              "live"
-            )
-              .filter((row) => isTopicLessonVisible(row))
-              .filter(isClassManagementRow);
-            const recordedRows = buildTopicLessonRows(
-              selectedTopic ? [selectedTopic] : [],
-              "recorded"
-            )
-              .filter((row) => isTopicLessonVisible(row))
-              .filter(isClassManagementRow);
+            const liveRows = topicClassSessions.live;
+            const recordedRows = topicClassSessions.recorded;
 
             const isLive = classModalKind === "live";
             const activeRows = isLive ? liveRows : recordedRows;
 
-            const renderRow = (row: ReturnType<typeof buildTopicLessonRows>[number]) => {
-              const url = getTopicLessonSourceUrl(row);
-              const sourceLabel = getTopicLessonSourceLabel(row);
-              const live =
-                row.liveSessionId && typeof row.liveSessionId === "object"
-                  ? row.liveSessionId
-                  : null;
-              const rowIsLive = row.kind === "live";
+            const renderRow = (cls: ClassSessionItem) => {
+              const rowIsLive = cls.type === "live";
+              const url = rowIsLive
+                ? cls.meetingLink || ""
+                : cls.recordingUrl || cls.meetingLink || "";
+              const chapterTitles = (Array.isArray(cls.chapters)
+                ? cls.chapters
+                : []
+              )
+                .map((c) => (c as { title?: string })?.title)
+                .filter(Boolean)
+                .join(", ");
 
               return (
                 <div
-                  key={row.id}
+                  key={cls._id}
                   className="rounded-xl border border-slate-200 bg-slate-50 p-4 transition-colors hover:bg-slate-100"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -5074,40 +5053,29 @@ export default function DigitalHubClient({
                           <Target className="h-3.5 w-3.5" />
                           {rowIsLive ? "Live" : "Recorded"}
                         </span>
-                        <span
-                          className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${
-                            rowIsLive
-                              ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                              : "border-blue-200 bg-blue-50 text-blue-800"
-                          }`}
-                        >
-                          {sourceLabel}
-                        </span>
-                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
-                          Order {row.order}
-                        </span>
+                        {cls.durationMinutes ? (
+                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">
+                            {cls.durationMinutes} min
+                          </span>
+                        ) : null}
                       </div>
 
                       <h4 className="mt-2 text-base font-semibold text-slate-900">
-                        {row.title}
+                        {cls.title}
                       </h4>
-                      <p className="mt-1 text-sm text-slate-600">
-                        Topic:{" "}
-                        <span className="font-medium">{row.topicTitle}</span>
-                      </p>
+                      {chapterTitles ? (
+                        <p className="mt-1 text-sm text-slate-600">
+                          Chapter:{" "}
+                          <span className="font-medium">{chapterTitles}</span>
+                        </p>
+                      ) : null}
 
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-500">
                         <span className="inline-flex items-center gap-1">
                           <Calendar className="h-3.5 w-3.5" />
-                          Publish: {formatTopicLessonDateTime(row.publishAt)}
+                          {formatTopicLessonDateTime(cls.date)}
+                          {cls.time ? ` • ${cls.time}` : ""}
                         </span>
-                        {live ? (
-                          <span className="inline-flex items-center gap-1 font-medium text-emerald-600">
-                            <Calendar className="h-3.5 w-3.5" />
-                            Session: {formatTopicLessonDateTime(live.date)}
-                            {live.time ? ` • ${live.time}` : ""}
-                          </span>
-                        ) : null}
                       </div>
                     </div>
 
