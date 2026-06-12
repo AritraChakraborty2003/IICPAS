@@ -652,7 +652,7 @@ export default function CourseDetailClient({
               >
                 {/* Video Section */}
                 <div className="relative">
-                  <div className="aspect-video bg-gray-900 relative overflow-hidden">
+                  <div className="aspect-video bg-gray-100 relative overflow-hidden">
                     {/* Course Thumbnail - Direct Image Test */}
                     <img
                       src={
@@ -663,7 +663,7 @@ export default function CourseDetailClient({
                           : "/images/a1.jpeg" // fallback
                       }
                       alt={`${course?.title || "Course"} - Course Preview`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain"
                       onError={(e) => {
                         console.log("Image failed, using fallback");
                         e.currentTarget.src = "/images/a1.jpeg";
