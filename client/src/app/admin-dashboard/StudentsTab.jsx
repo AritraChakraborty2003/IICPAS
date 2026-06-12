@@ -731,6 +731,7 @@ function StudentsTable({
   const [statusUpdatingId, setStatusUpdatingId] = useState(null);
   const [updatingCourseId, setUpdatingCourseId] = useState(null);
   const [sendingEmailId, setSendingEmailId] = useState(null);
+  const [liveClassUpdatingId, setLiveClassUpdatingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("all"); // "all", "paid", "unpaid"
 
