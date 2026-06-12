@@ -1659,7 +1659,155 @@ export default function CourseTab() {
                             </div>
                           )}
                         </div>
-                      ) : (
+                      ) : activeTab === "liveSchedule" ? (() => {
+                        const liveData = courseLiveData[course._id];
+                        if (!liveData || liveData.loading) {
+                          return (
+                            <div className="flex items-center justify-center py-12 text-slate-500">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3" />
+                              Loading live sessions &amp; classes...
+                            </div>
+                          );
+                        }
+                        const { sessions, classes } = liveData;
+                        if (sessions.length === 0 && classes.length === 0) {
+                          return (
+                            <div className="text-center py-12 text-slate-500">
+                              <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
+                              <p className="text-base font-medium">No Live Sessions Scheduled</p>
+                              <p className="text-sm mt-1 text-slate-400">There are currently no live sessions or live classes for this course.</p>
+                            </div>
+                          );
+                        }
+                        const formatDate = (d) => {
+                          const date = new Date(d);
+                          if (Number.isNaN(date.getTime())) return "Date TBD";
+                          return date.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+                        };
+                        const formatTimeRange = (t) => {
+                          if (!t) return "";
+                          const [start, end] = t.split(" - ");
+                          const fmt = (s) => {
+                            const d = new Date(`2000-01-01T${s}`);
+                            return Number.isNaN(d.getTime()) ? s : d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+                          };
+                          return end ? `${fmt(start)} – ${fmt(end)}` : fmt(start);
+                        };
+                        const sessionStatus = (s) => {
+                          const now = new Date();
+                          const date = new Date(s.date);
+                          if (Number.isNaN(date.getTime())) return "upcoming";
+                          if (!s.time) return now < date ? "upcoming" : "completed";
+                          const [startStr, endStr] = s.time.split(" - ");
+                          const [sh, sm] = (startStr || "").split(":").map(Number);
+                          const [eh, em] = (endStr || "").split(":").map(Number);
+                          const start = new Date(date); start.setHours(sh || 0, sm || 0, 0, 0);
+                          const end = new Date(date); end.setHours(eh || sh || 0, em || sm || 0, 0, 0);
+                          if (now >= new Date(start.getTime() - 3600000) && now <= new Date(end.getTime() + 3600000)) return "live";
+                          return now < start ? "upcoming" : "completed";
+                        };
+                        const statusBadge = (st) =>
+                          st === "live" ? "bg-red-100 text-red-600" :
+                          st === "upcoming" ? "bg-yellow-100 text-yellow-700" :
+                          "bg-green-100 text-green-700";
+                        return (
+                          <div className="space-y-6">
+                            {sessions.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">Live Sessions</h4>
+                                <div className="space-y-3">
+                                  {sessions.map((s) => {
+                                    const st = sessionStatus(s);
+                                    const isEnrolled = s.isEnrolled;
+                                    return (
+                                      <div key={s._id} className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                        <div className="flex items-start justify-between gap-3">
+                                          <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-slate-800 text-base">{s.title}</p>
+                                            {s.description && <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">{s.description}</p>}
+                                            <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+                                              <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(s.date)}</span>
+                                              {s.time && <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{formatTimeRange(s.time)}</span>}
+                                              {s.maxParticipants > 0 && <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" />Max {s.maxParticipants}</span>}
+                                              {s.instructor && <span className="font-medium text-slate-600">Instructor: {s.instructor}</span>}
+                                            </div>
+                                          </div>
+                                          <div className="flex flex-col items-end gap-2 shrink-0">
+                                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${statusBadge(st)}`}>
+                                              {st.charAt(0).toUpperCase() + st.slice(1)}
+                                            </span>
+                                            {isEnrolled && (
+                                              <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">Enrolled</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="mt-3 flex flex-wrap gap-2">
+                                          {isEnrolled && st === "live" && s.link && (
+                                            <a href={s.link} target="_blank" rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-md text-xs font-medium">
+                                              <Play className="w-3.5 h-3.5" /> Join Now
+                                            </a>
+                                          )}
+                                          {isEnrolled && st === "completed" && s.link && (
+                                            <a href={s.link} target="_blank" rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-medium">
+                                              <ExternalLink className="w-3.5 h-3.5" /> View Recording
+                                            </a>
+                                          )}
+                                          {!isEnrolled && (
+                                            <a href={`/live-session`} target="_blank" rel="noopener noreferrer"
+                                              className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-md text-xs font-medium">
+                                              Register
+                                            </a>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
+                            {classes.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-semibold uppercase tracking-wide text-slate-500 mb-3">Live Classes</h4>
+                                <div className="space-y-3">
+                                  {classes.map((c) => (
+                                    <div key={c._id} className="bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                                      <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-semibold text-slate-800 text-base">{c.title}</p>
+                                          <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-500">
+                                            <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" />{formatDate(c.date || c.startAt)}</span>
+                                            {c.time && <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" />{c.time}</span>}
+                                            {c.durationMinutes > 0 && <span>{c.durationMinutes}m</span>}
+                                            {c.instructor && <span className="font-medium text-slate-600">Instructor: {c.instructor}</span>}
+                                          </div>
+                                          {Array.isArray(c.chapters) && c.chapters.length > 0 && (
+                                            <p className="mt-1 text-xs text-slate-500">
+                                              Chapters: {c.chapters.map((ch) => ch?.title).filter(Boolean).join(", ")}
+                                            </p>
+                                          )}
+                                        </div>
+                                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold shrink-0 ${statusBadge(c.status || "upcoming")}`}>
+                                          {(c.status || "upcoming").charAt(0).toUpperCase() + (c.status || "upcoming").slice(1)}
+                                        </span>
+                                      </div>
+                                      {c.meetingLink && (
+                                        <div className="mt-3">
+                                          <a href={c.meetingLink} target="_blank" rel="noopener noreferrer"
+                                            className="inline-flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-xs font-medium">
+                                            <ExternalLink className="w-3.5 h-3.5" /> Open Class
+                                          </a>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })() : (
                         renderContentList()
                       )}
                     </div>
