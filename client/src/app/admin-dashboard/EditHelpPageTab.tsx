@@ -114,6 +114,10 @@ export default function EditHelpPageTab({ onBack, helpPageId }: EditHelpPageTabP
         setForm({
           hero: d.hero,
           categories: d.categories || [emptyCategory()],
+          support: d.support || {
+            phone: { number: "+91 97736 10185", hours: "Mon-Fri, 9 AM - 6 PM" },
+            email: { address: "info@iicpa.in", responseTime: "Response within 24 hours" },
+          },
           metaTitle: d.metaTitle || "",
           metaDescription: d.metaDescription || "",
         });
@@ -131,6 +135,7 @@ export default function EditHelpPageTab({ onBack, helpPageId }: EditHelpPageTabP
       const payload = {
         hero: form.hero,
         categories: form.categories,
+        support: form.support,
         metaTitle: form.metaTitle,
         metaDescription: form.metaDescription,
       };
@@ -307,6 +312,75 @@ export default function EditHelpPageTab({ onBack, helpPageId }: EditHelpPageTabP
               onChange={(e) => setForm((f) => ({ ...f, metaDescription: e.target.value }))}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+          </div>
+        </div>
+      </div>
+
+      {/* Still Need Help? */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
+        <h2 className="text-base font-semibold text-gray-700">Still Need Help? (Contact Info)</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-600">Phone Support</p>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Phone Number</label>
+              <input
+                value={form.support.phone.number}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    support: { ...f.support, phone: { ...f.support.phone, number: e.target.value } },
+                  }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="+91 97736 10185"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Hours</label>
+              <input
+                value={form.support.phone.hours}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    support: { ...f.support, phone: { ...f.support.phone, hours: e.target.value } },
+                  }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Mon-Fri, 9 AM - 6 PM"
+              />
+            </div>
+          </div>
+          <div className="space-y-3">
+            <p className="text-sm font-medium text-gray-600">Email Support</p>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Email Address</label>
+              <input
+                value={form.support.email.address}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    support: { ...f.support, email: { ...f.support.email, address: e.target.value } },
+                  }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="info@iicpa.in"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Response Time</label>
+              <input
+                value={form.support.email.responseTime}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    support: { ...f.support, email: { ...f.support.email, responseTime: e.target.value } },
+                  }))
+                }
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Response within 24 hours"
+              />
+            </div>
           </div>
         </div>
       </div>
