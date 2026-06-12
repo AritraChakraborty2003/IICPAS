@@ -41,11 +41,15 @@ interface Course {
   };
   pricing?: {
     recordedSession?: {
+      title?: string;
+      buttonText?: string;
       finalPrice?: number;
       price?: number;
       discount?: number;
     };
     liveSession?: {
+      title?: string;
+      buttonText?: string;
       finalPrice?: number;
       price?: number;
       discount?: number;
