@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Calendar,
@@ -125,6 +126,7 @@ export default function LiveSchedule({
   const [error, setError] = useState<string | null>(null);
   const [enrolledSessions, setEnrolledSessions] = useState<string[]>([]);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const router = useRouter();
 
   const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -200,18 +202,24 @@ export default function LiveSchedule({
     }
   };
 
-  const handleEnrollSession = async (sessionId: string) => {
+  const handleEnrollSession = async (session: LiveSession) => {
     if (!student) {
       setShowLoginModal(true);
       return;
     }
+    // Paid session → go to the landing/payment page
+    if (session.price > 0) {
+      router.push(`/live-session/landing/${session._id}`);
+      return;
+    }
+    // Free session → direct enroll
     try {
       await axios.post(
         `${API_BASE}/api/v1/students/enroll-live-session/${student._id}`,
-        { sessionId },
+        { sessionId: session._id },
         { withCredentials: true }
       );
-      setEnrolledSessions((prev) => [...prev, sessionId]);
+      setEnrolledSessions((prev) => [...prev, session._id]);
       alert("Successfully enrolled in live session!");
     } catch (err: any) {
       if (err.response?.data?.message?.includes("already enrolled")) {
@@ -382,7 +390,7 @@ export default function LiveSchedule({
                           </>
                         ) : (
                           <button
-                            onClick={() => handleEnrollSession(session._id)}
+                            onClick={() => handleEnrollSession(session)}
                             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
                           >
                             {session.price > 0 ? `Buy • ₹${session.price}` : "Enroll Free"}
