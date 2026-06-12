@@ -689,89 +689,95 @@ export default function CourseDetailClient({
                   </div>
 
                   {/* Pricing Cards - Side by Side */}
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    {/* Recorded Lecture Option */}
-                    <div className="border-2 border-[#3cd664] rounded-lg p-2">
-                      <div className="mb-2">
-                        <div className="text-center mb-1">
-                          <span className="text-xs font-bold text-[#3cd664] block">
-                            {course?.pricing?.recordedSession?.title ||
-                              "DIGITAL HUB RECORDED SESSION"}
-                          </span>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm font-bold text-[#3cd664]">
-                            {student
-                              ? `₹${getSessionPrice("recorded").toLocaleString()}`
-                              : "₹ (login to view)"}
-                          </div>
-                          {student &&
-                            course?.pricing?.recordedSession?.discount &&
-                            course.pricing.recordedSession.discount > 0 && (
-                              <div className="text-xs text-gray-500 line-through">
-                                ₹
-                                {course.pricing.recordedSession.price.toLocaleString()}
+                  {(() => {
+                    const hasRecorded = (course?.pricing?.recordedSession?.price || 0) > 0 || (course?.pricing?.recordedSession?.finalPrice || 0) > 0;
+                    const hasLive = (course?.pricing?.liveSession?.price || 0) > 0 || (course?.pricing?.liveSession?.finalPrice || 0) > 0;
+                    const bothAvailable = hasRecorded && hasLive;
+                    if (!hasRecorded && !hasLive) return null;
+                    return (
+                      <div className={`grid ${bothAvailable ? "grid-cols-2" : "grid-cols-1"} gap-2 mb-4`}>
+                        {/* Recorded Session */}
+                        {hasRecorded && (
+                          <div className="border-2 border-[#3cd664] rounded-lg p-2">
+                            <div className="mb-2">
+                              <div className="text-center mb-1">
+                                <span className="text-xs font-bold text-[#3cd664] block">
+                                  {course?.pricing?.recordedSession?.title ||
+                                    "DIGITAL HUB RECORDED SESSION"}
+                                </span>
                               </div>
-                            )}
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() =>
-                          student
-                            ? handleAddToCart(course._id || course.id, "recorded")
-                            : openAuthModal("register")
-                        }
-                        className="w-full bg-[#3cd664] hover:bg-[#33bb58] text-white font-bold py-1 px-2 rounded text-xs"
-                      >
-                        {student
-                          ? course?.pricing?.recordedSession?.buttonText ||
-                            "Add Digital Hub"
-                          : "Register to unlock"}
-                      </button>
-                    </div>
-
-                    {/* Live Lecture Option */}
-                    <div className="border-2 border-blue-500 rounded-lg p-2">
-                      <div className="mb-2">
-                        <div className="text-center mb-1">
-                          <span className="text-xs font-bold text-blue-500 block">
-                            {course?.pricing?.liveSession?.title ||
-                              "DIGITAL HUB LIVE SESSION"}
-                          </span>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-sm font-bold text-blue-500">
-                            {student
-                              ? `₹${getSessionPrice("live").toLocaleString()}`
-                              : "₹ (login to view)"}
-                          </div>
-                          {student &&
-                            course?.pricing?.liveSession?.discount &&
-                            course.pricing.liveSession.discount > 0 && (
-                              <div className="text-xs text-gray-500 line-through">
-                                ₹
-                                {course.pricing.liveSession.price.toLocaleString()}
+                              <div className="text-center">
+                                <div className="text-sm font-bold text-[#3cd664]">
+                                  {student
+                                    ? `₹${getSessionPrice("recorded").toLocaleString()}`
+                                    : "₹ (login to view)"}
+                                </div>
+                                {student &&
+                                  course?.pricing?.recordedSession?.discount &&
+                                  course.pricing.recordedSession.discount > 0 && (
+                                    <div className="text-xs text-gray-500 line-through">
+                                      ₹{course.pricing.recordedSession.price.toLocaleString()}
+                                    </div>
+                                  )}
                               </div>
-                            )}
-                        </div>
-                      </div>
+                            </div>
+                            <button
+                              onClick={() =>
+                                student
+                                  ? handleAddToCart(course._id || course.id, "recorded")
+                                  : openAuthModal("register")
+                              }
+                              className="w-full bg-[#3cd664] hover:bg-[#33bb58] text-white font-bold py-1 px-2 rounded text-xs"
+                            >
+                              {student
+                                ? course?.pricing?.recordedSession?.buttonText || "Add Digital Hub"
+                                : "Register to unlock"}
+                            </button>
+                          </div>
+                        )}
 
-                      <button
-                        onClick={() =>
-                          student
-                            ? handleAddToCart(course._id || course.id, "live")
-                            : openAuthModal("register")
-                        }
-                        className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
-                      >
-                        {student
-                          ? course?.pricing?.liveSession?.buttonText ||
-                            "Add Digital Hub+"
-                          : "Register to unlock"}
-                      </button>
-                    </div>
-                  </div>
+                        {/* Live Session */}
+                        {hasLive && (
+                          <div className="border-2 border-blue-500 rounded-lg p-2">
+                            <div className="mb-2">
+                              <div className="text-center mb-1">
+                                <span className="text-xs font-bold text-blue-500 block">
+                                  {course?.pricing?.liveSession?.title ||
+                                    "DIGITAL HUB LIVE SESSION"}
+                                </span>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-sm font-bold text-blue-500">
+                                  {student
+                                    ? `₹${getSessionPrice("live").toLocaleString()}`
+                                    : "₹ (login to view)"}
+                                </div>
+                                {student &&
+                                  course?.pricing?.liveSession?.discount &&
+                                  course.pricing.liveSession.discount > 0 && (
+                                    <div className="text-xs text-gray-500 line-through">
+                                      ₹{course.pricing.liveSession.price.toLocaleString()}
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() =>
+                                student
+                                  ? handleAddToCart(course._id || course.id, "live")
+                                  : openAuthModal("register")
+                              }
+                              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-1 px-2 rounded text-xs"
+                            >
+                              {student
+                                ? course?.pricing?.liveSession?.buttonText || "Add Digital Hub+"
+                                : "Register to unlock"}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Checkout Button */}
                   {cartCount > 0 && (
