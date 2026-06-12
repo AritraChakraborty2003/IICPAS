@@ -420,10 +420,9 @@ export default function LiveSchedule({
               <Video className="w-3.5 h-3.5" /> Live Classes
             </h4>
             <div className="grid gap-5">
-              {liveClasses.map((cls, index) => {
+              {liveClasses.filter((cls) => cls.type !== "recorded").map((cls, index) => {
                 const clsDate = cls.date || cls.startAt || "";
-                const isRecorded = cls.type === "recorded";
-                const clsStatus = isRecorded ? "completed" : (cls.status || "scheduled");
+                const clsStatus = cls.status || "scheduled";
 
                 return (
                   <motion.div
@@ -440,11 +439,6 @@ export default function LiveSchedule({
                           <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusBadgeClass(clsStatus)}`}>
                             {statusLabel(clsStatus)}
                           </span>
-                          {isRecorded && (
-                            <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                              <Video className="w-3 h-3" /> Recorded
-                            </span>
-                          )}
                         </div>
 
                         {cls.description && (
@@ -481,14 +475,7 @@ export default function LiveSchedule({
                       </div>
 
                       <div className="flex flex-row lg:flex-col gap-2 shrink-0">
-                        {isRecorded && (cls as any).recordingUrl ? (
-                          <button
-                            onClick={() => handleJoinSession((cls as any).recordingUrl)}
-                            className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors"
-                          >
-                            <Video className="w-4 h-4" /> Watch Recording
-                          </button>
-                        ) : cls.meetingLink ? (
+                        {cls.meetingLink ? (
                           <a
                             href={cls.meetingLink}
                             target="_blank"
@@ -500,7 +487,7 @@ export default function LiveSchedule({
                         ) : (
                           <span className="inline-flex items-center gap-2 bg-gray-100 text-gray-500 font-medium py-2.5 px-5 rounded-lg text-sm">
                             <Clock className="w-4 h-4" />
-                            {isRecorded ? "Recording soon" : "Link pending"}
+                            Link pending
                           </span>
                         )}
                       </div>
