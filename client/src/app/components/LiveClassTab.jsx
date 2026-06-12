@@ -529,7 +529,7 @@ export default function LiveClassTab({
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {filteredLiveClasses.map((session) => {
                 const status = getSessionStatus(session);
-                const isEnrolled = session.isEnrolled || enrolledSessionSet.has(String(session._id));
+                const isEnrolled = session.isDirectlyEnrolled || enrolledSessionSet.has(String(session._id));
                 const courseTitle = getCourseTitle(session);
                 const chapterTitle = getChapterTitle(session);
 
@@ -623,9 +623,13 @@ export default function LiveClassTab({
                       ) : (
                         <button
                           onClick={() => handleEnrollClick(session)}
-                          className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-md transition-all hover:scale-105"
+                          className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md transition-all hover:scale-105 text-white ${
+                            session.price > 0
+                              ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                              : "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700"
+                          }`}
                         >
-                          {session.price > 0 ? `Buy Now • ₹${session.price}` : "Register Free"}
+                          {session.price > 0 ? `Pay Now • ₹${session.price}` : "Register Free"}
                         </button>
                       )}
                     </div>
