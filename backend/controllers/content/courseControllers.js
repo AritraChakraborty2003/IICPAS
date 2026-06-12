@@ -43,7 +43,7 @@ export const getStudentCourses = async (req, res) => {
         studentId: student._id,
         status: "approved",
       })
-        .select("courseId status verifiedAt updatedAt createdAt")
+        .select("courseId sessionType status verifiedAt updatedAt createdAt")
         .lean(),
     ]);
 

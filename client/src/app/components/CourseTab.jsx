@@ -1442,7 +1442,7 @@ export default function CourseTab() {
                           "assignments",
                           "experiments",
                           "tests",
-                          "liveSchedule",
+                          ...(course.sessionType !== "recorded" ? ["liveSchedule"] : []),
                         ].map((tab) => (
                           <div
                             key={tab}
@@ -1659,7 +1659,7 @@ export default function CourseTab() {
                             </div>
                           )}
                         </div>
-                      ) : activeTab === "liveSchedule" ? (() => {
+                      ) : activeTab === "liveSchedule" && course.sessionType !== "recorded" ? (() => {
                         const liveData = courseLiveData[course._id];
                         if (!liveData || liveData.loading) {
                           return (

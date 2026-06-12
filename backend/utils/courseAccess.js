@@ -183,6 +183,22 @@ const buildPurchaseIndex = ({ bookings = [], transactions = [] }) => {
   return purchaseIndex;
 };
 
+const buildSessionTypeIndex = (transactions = []) => {
+  const sessionTypeIndex = new Map();
+
+  (Array.isArray(transactions) ? transactions : []).forEach((transaction) => {
+    if (String(transaction?.status || "").toLowerCase() !== "approved") return;
+    const courseId = toIdString(transaction?.courseId);
+    if (!courseId || !transaction?.sessionType) return;
+
+    const existing = sessionTypeIndex.get(courseId);
+    if (existing === "live") return;
+    sessionTypeIndex.set(courseId, transaction.sessionType);
+  });
+
+  return sessionTypeIndex;
+};
+
 const buildOverrideIndex = (student) => {
   const overrides = Array.isArray(student?.courseAccessOverrides)
     ? student.courseAccessOverrides
@@ -265,6 +281,7 @@ export const buildCourseAccessEntries = ({
   transactions = [],
 }) => {
   const purchaseIndex = buildPurchaseIndex({ bookings, transactions });
+  const sessionTypeIndex = buildSessionTypeIndex(transactions);
   const overrideIndex = buildOverrideIndex(student);
   const batchLockIndex = normalizeBatchCourseLocks(student?.batchId);
   const fallbackDate = toValidDate(student?.createdAt) || new Date();
@@ -287,6 +304,7 @@ export const buildCourseAccessEntries = ({
       const isLocked = Boolean(override?.isLocked);
       const isExpired = expiresAt ? expiresAt.getTime() < Date.now() : false;
       const isBatchExpired = batchAccessState.batchAccessState === "expired";
+      const sessionType = sessionTypeIndex.get(courseId) || null;
 
       return {
         ...baseCourse,
@@ -308,6 +326,7 @@ export const buildCourseAccessEntries = ({
         batchLockEndsAt: batchLock?.end_time ? batchLock.end_time.toISOString() : null,
         batchChapters: batchLock?.chapters || [],
         isExpired,
+        sessionType,
         status: isLocked || isExpired || isBatchExpired ? "Inactive" : "Active",
       };
     } catch (error) {
