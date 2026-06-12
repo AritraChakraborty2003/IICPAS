@@ -82,11 +82,10 @@ export default function RecordedSessionTab() {
           const completed = sessions
             .filter((session) => {
               const enrolled = session?.isEnrolled === true;
-              const hasLink = session?.link && session.link.trim() !== "";
               const over =
                 String(session?.status || "").toLowerCase() === "completed" ||
                 isSessionOver(session);
-              return enrolled && hasLink && over;
+              return enrolled && over;
             })
             .sort(
               (a, b) =>
@@ -173,11 +172,14 @@ export default function RecordedSessionTab() {
             >
               <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <PlayCircleIcon className="w-5 h-5 text-blue-600" />
                     <h3 className="text-lg font-bold text-blue-800">
                       {session.title}
                     </h3>
+                    <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+                      ● Recorded
+                    </span>
                   </div>
 
                   <p className="text-sm text-gray-600 mb-3 line-clamp-3">
@@ -212,13 +214,20 @@ export default function RecordedSessionTab() {
                     <div className="text-xs text-gray-500">Paid</div>
                   </div>
 
-                  <button
-                    onClick={() => handleWatchSession(session.link)}
-                    className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
-                  >
-                    <PlayCircleIcon className="w-4 h-4" />
-                    Watch Now
-                  </button>
+                  {session.link && session.link.trim() !== "" ? (
+                    <button
+                      onClick={() => handleWatchSession(session.link)}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
+                    >
+                      <PlayCircleIcon className="w-4 h-4" />
+                      Watch Now
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2 bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium">
+                      <ClockIcon className="w-4 h-4" />
+                      Recording coming soon
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

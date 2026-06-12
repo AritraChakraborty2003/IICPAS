@@ -180,8 +180,7 @@ export default function LiveClassTab({
               (session) =>
                 session.status === "active" ||
                 session.status === "upcoming" ||
-                session.status === "live" ||
-                session.status === "completed"
+                session.status === "live"
             )
             .sort(sortByDateThenTitle)
         );
@@ -512,8 +511,12 @@ export default function LiveClassTab({
 
           {filteredLiveClasses.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-gray-500 text-lg mb-4">
-                No live sessions found for the selected course and chapter.
+              <p className="text-gray-500 text-lg mb-2">
+                No upcoming or active live sessions found.
+              </p>
+              <p className="text-gray-400 text-sm mb-6">
+                Sessions that have ended are automatically moved to{" "}
+                <span className="font-medium text-blue-600">Recorded Sessions</span>.
               </p>
               <button
                 onClick={handleEnrollNewSessions}
