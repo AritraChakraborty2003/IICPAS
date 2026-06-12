@@ -23,6 +23,8 @@ interface LiveSession {
   link: string;
   price: number;
   category: string;
+  courseId?: string;
+  courseIds?: string[];
   maxParticipants: number;
   thumbnail: string;
   status: string;
@@ -59,12 +61,19 @@ export default function LiveSchedule({
       setLoading(true);
       const response = await axios.get(`${API_BASE}/api/live-sessions`);
 
-      // Filter sessions by course category
-      const filteredSessions = response.data.filter(
-        (session: LiveSession) =>
-          session.category === courseCategory ||
-          session.category === "CA Foundation"
-      );
+      // Filter sessions by courseId first, then fall back to category match
+      const filteredSessions = response.data.filter((session: LiveSession) => {
+        if (courseId) {
+          const matchesId =
+            String(session.courseId) === String(courseId) ||
+            (Array.isArray((session as any).courseIds) &&
+              (session as any).courseIds.some(
+                (id: any) => String(id) === String(courseId)
+              ));
+          if (matchesId) return true;
+        }
+        return session.category === courseCategory;
+      });
 
       setLiveSessions(filteredSessions);
     } catch (err) {
