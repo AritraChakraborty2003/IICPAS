@@ -114,26 +114,21 @@ export const getClassesForStudent = async (req, res) => {
     }
 
     const student = await Student.findById(studentId)
-      .select("course courseAccessOverrides")
+      .select("course")
       .lean();
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
 
-    // Collect purchased course IDs (direct course array + unlocked overrides)
+    // Only use directly purchased course IDs (student.course array).
+    // Admin overrides and free enrollments are excluded so that recorded
+    // classes only appear for courses the student actually paid for.
     const purchasedCourseIds = new Set(
       (Array.isArray(student.course) ? student.course : []).map((id) =>
         String(id)
       )
     );
-    if (Array.isArray(student.courseAccessOverrides)) {
-      student.courseAccessOverrides.forEach((entry) => {
-        if (entry && !entry.isLocked && entry.courseId) {
-          purchasedCourseIds.add(String(entry.courseId));
-        }
-      });
-    }
 
     if (purchasedCourseIds.size === 0) {
       return res.status(200).json([]);
