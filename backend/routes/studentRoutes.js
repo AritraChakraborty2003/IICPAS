@@ -2074,6 +2074,56 @@ router.put(
   }
 );
 
+// Toggle live class access for a student
+router.put(
+  "/admin/live-class-access/:studentId",
+  requireAuth,
+  isAdmin,
+  async (req, res) => {
+    try {
+      const { studentId } = req.params;
+      const { enabled } = req.body || {};
+      const normalizedEnabled = normalizeBooleanInput(enabled);
+
+      if (!mongoose.Types.ObjectId.isValid(studentId)) {
+        return res.status(400).json({ message: "Invalid student ID format" });
+      }
+
+      if (normalizedEnabled === null) {
+        return res.status(400).json({
+          message: "Invalid enabled value. Expected true or false.",
+        });
+      }
+
+      const student = await Student.findById(studentId);
+      if (!student) {
+        return res.status(404).json({ message: "Student not found" });
+      }
+
+      student.liveClassAccessEnabled = normalizedEnabled;
+      await student.save();
+
+      return res.json({
+        success: true,
+        message: student.liveClassAccessEnabled
+          ? "Live Class access enabled for this student"
+          : "Live Class access disabled for this student",
+        student: {
+          id: student._id,
+          name: student.name,
+          liveClassAccessEnabled: Boolean(student.liveClassAccessEnabled),
+        },
+      });
+    } catch (err) {
+      console.error("Live class access update error:", err);
+      return res.status(500).json({
+        message: "Failed to update Live Class access",
+        error: err.message,
+      });
+    }
+  }
+);
+
 // Legacy profile update route (keeping for backward compatibility)
 router.patch("/student/profile/:id", async (req, res) => {
   try {

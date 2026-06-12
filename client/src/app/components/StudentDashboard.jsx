@@ -119,11 +119,12 @@ function StudentDashboardContent() {
   };
 
   // Sidebar tabs
+  const liveClassEnabled = student?.liveClassAccessEnabled !== false;
   const tabs = [
     { id: "courses", icon: <FaBook />, label: "Courses" },
     { id: "revision", icon: <FaBook />, label: "Assessment" },
     { id: "live", icon: <FaVideo />, label: "Live Session", dot: true },
-    { id: "live-class", icon: <FaPlay />, label: "Live Class", dot: true },
+    ...(liveClassEnabled ? [{ id: "live-class", icon: <FaPlay />, label: "Live Class", dot: true }] : []),
     { id: "recorded-class", icon: <FaVideo />, label: "Recorded Class", dot: true },
     { id: "recorded", icon: <FaPlay />, label: "Recorded Sessions", dot: true },
     { id: "news", icon: <FaNewspaper />, label: "News" },
@@ -168,9 +169,14 @@ function StudentDashboardContent() {
         "invoices",
       ].includes(tab)
     ) {
-      setActiveTab(tab);
+      // Redirect away from live-class if access is disabled
+      if (tab === "live-class" && student?.liveClassAccessEnabled === false) {
+        setActiveTab("courses");
+      } else {
+        setActiveTab(tab);
+      }
     }
-  }, [searchParams]);
+  }, [searchParams, student]);
 
   useEffect(() => {
     const accessDenied = searchParams.get("accessDenied");

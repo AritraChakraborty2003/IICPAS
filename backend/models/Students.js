@@ -120,6 +120,7 @@ const StudentSchema = new mongoose.Schema(
     },
     coinBalance: { type: Number, default: 0, min: 0 },
     digitalHubAccessOverride: { type: Boolean, default: false },
+    liveClassAccessEnabled: { type: Boolean, default: true },
   },
   { timestamps: true }
 );
