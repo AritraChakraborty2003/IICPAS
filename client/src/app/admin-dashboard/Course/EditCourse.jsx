@@ -484,7 +484,7 @@ export default function EditCourse({ courseId, onBack }) {
               placeholder="e.g., 3 months, 6 weeks, 40 hours"
             />
             <label>Course Image</label>
-            <p className="text-xs text-gray-500 mb-2">Recommended size: 1280×720 px (16:9 banner)</p>
+            <p className="text-xs text-gray-500 mb-2">Recommended size: 1600×896 px (16:9 banner)</p>
             <input
               type="file"
               name="image"
