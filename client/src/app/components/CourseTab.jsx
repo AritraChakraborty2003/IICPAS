@@ -17,8 +17,8 @@ import {
   Save,
   Close,
   ArrowBack,
-  Event,
 } from "@mui/icons-material";
+import { Calendar, Clock, Users, Play, ExternalLink } from "lucide-react";
 import {
   FaShoppingCart,
   FaStar,
@@ -131,6 +131,7 @@ export default function CourseTab() {
   const [courseRatings, setCourseRatings] = useState({}); // Store existing ratings
   const [expandedChapterKeys, setExpandedChapterKeys] = useState({});
   const [, setBatchClockTick] = useState(0);
+  const [courseLiveData, setCourseLiveData] = useState({}); // { [courseId]: { sessions: [], classes: [], loading: false } }
   const router = useRouter();
   const searchParams = useSearchParams();
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
