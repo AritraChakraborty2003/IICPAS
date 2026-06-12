@@ -520,6 +520,7 @@ export default function CourseTab() {
     if (!courseChapters[courseId]) {
       fetchChaptersForCourse(courseId);
     }
+    fetchLiveDataForCourse(courseId);
   };
 
   const getCourseImageSrc = (course) => {
@@ -571,6 +572,8 @@ export default function CourseTab() {
         return <Science />;
       case "tests":
         return <QuestionAnswer />;
+      case "liveSchedule":
+        return <Calendar className="w-5 h-5" />;
       default:
         return <Book />;
     }
@@ -586,6 +589,8 @@ export default function CourseTab() {
         return "Exp";
       case "tests":
         return "Conf";
+      case "liveSchedule":
+        return "Live Schedule";
       default:
         return "Chapter";
     }
