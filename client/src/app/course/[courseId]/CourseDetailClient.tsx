@@ -593,6 +593,7 @@ export default function CourseDetailClient({
                   <div>
                     <LiveSchedule
                       courseCategory={course.category || "CA Foundation"}
+                      courseId={course._id || courseId}
                       student={student}
                     />
                   </div>
