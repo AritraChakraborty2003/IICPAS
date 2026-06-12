@@ -1442,6 +1442,7 @@ export default function CourseTab() {
                           "assignments",
                           "experiments",
                           "tests",
+                          "liveSchedule",
                         ].map((tab) => (
                           <div
                             key={tab}
