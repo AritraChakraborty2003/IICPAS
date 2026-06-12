@@ -115,6 +115,8 @@ import IICPAReviewTab from "./IICPAReviewTab";
 import EditConfidentialityPolicyTab from "./EditConfidentialityPolicyTab";
 import EditDisclaimerPolicyTab from "./EditDisclaimerPolicyTab";
 import EditIICPAReviewTab from "./EditIICPAReviewTab";
+import HelpPageTab from "./HelpPageTab";
+import EditHelpPageTab from "./EditHelpPageTab";
 import TransactionsTab from "./TransactionsTab";
 import IndividualRequestsTab from "./IndividualRequestsTab";
 import AdmissionManagementTab from "./AdmissionManagementTab";
@@ -502,6 +504,7 @@ const NAVIGATION_GROUPS = [
         label: "Disclaimer Policy",
         icon: <FaShieldAlt />,
       },
+      { id: "help-page", label: "Help Page", icon: <FaShieldAlt /> },
     ],
   },
 ];
@@ -1021,6 +1024,15 @@ function AdminDashboardContent() {
           <EditDisclaimerPolicyTab
             onBack={() => setActiveTab("disclaimer-policy")}
             policyId={activeTab.replace("edit-disclaimer-policy-", "")}
+          />
+        ) : activeTab === "help-page" ? (
+          <HelpPageTab
+            onEditHelpPage={(id) => setActiveTab(`edit-help-page-${id}`)}
+          />
+        ) : activeTab.startsWith("edit-help-page") ? (
+          <EditHelpPageTab
+            onBack={() => setActiveTab("help-page")}
+            helpPageId={activeTab.replace("edit-help-page-", "")}
           />
         ) : activeTab === "iicpa-review" ? (
           <IICPAReviewTab
