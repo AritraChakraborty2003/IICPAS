@@ -484,6 +484,7 @@ export default function EditCourse({ courseId, onBack }) {
               placeholder="e.g., 3 months, 6 weeks, 40 hours"
             />
             <label>Course Image</label>
+            <p className="text-xs text-gray-500 mb-2">Recommended size: 1280×720 px (16:9 banner)</p>
             <input
               type="file"
               name="image"
@@ -491,39 +492,55 @@ export default function EditCourse({ courseId, onBack }) {
               onChange={handleInputChange}
               className="w-full"
             />
-            {/* Show existing image */}
+            {/* Show existing image with dimensions and path */}
             {form.imageUrl && (
-              <div className="mt-2">
-                <p className="text-sm text-gray-600 mb-1">Current Image:</p>
+              <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Current Banner Image</p>
                 <img
                   src={
                     form.imageUrl.startsWith("http")
                       ? form.imageUrl
-                      : `${
-                          getApiOrigin()
-                        }${form.imageUrl}`
+                      : `${getApiOrigin()}${form.imageUrl}`
                   }
                   alt="Current Course"
-                  className="h-24 rounded shadow border"
+                  className="w-full max-w-sm rounded shadow border object-contain bg-white"
+                  onLoad={(e) => {
+                    const info = e.target.nextSibling;
+                    if (info) info.textContent = `${e.target.naturalWidth} × ${e.target.naturalHeight} px`;
+                  }}
                   onError={(e) => {
                     e.target.style.display = "none";
-                    e.target.nextSibling.style.display = "block";
                   }}
                 />
-                <p className="text-xs text-red-500" style={{ display: "none" }}>
-                  Image not found
+                <p className="text-xs font-semibold text-blue-600 mt-1"></p>
+                <p className="text-xs text-gray-500 mt-1 break-all">
+                  Full URL:{" "}
+                  <a
+                    href={form.imageUrl.startsWith("http") ? form.imageUrl : `https://api.iicpa.in${form.imageUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    {form.imageUrl.startsWith("http") ? form.imageUrl : `https://api.iicpa.in${form.imageUrl}`}
+                  </a>
                 </p>
               </div>
             )}
-            {/* Show preview of newly selected image */}
+            {/* Show preview of newly selected image with dimensions */}
             {form.image && (
-              <div className="mt-2">
-                <p className="text-sm text-gray-600 mb-1">New Image Preview:</p>
+              <div className="mt-3 border border-blue-200 rounded-lg p-3 bg-blue-50">
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-2">New Image Preview</p>
                 <img
                   src={URL.createObjectURL(form.image)}
                   alt="New Course Preview"
-                  className="h-24 rounded shadow border"
+                  className="w-full max-w-sm rounded shadow border object-contain bg-white"
+                  onLoad={(e) => {
+                    const info = e.target.nextSibling;
+                    if (info) info.textContent = `${e.target.naturalWidth} × ${e.target.naturalHeight} px`;
+                  }}
                 />
+                <p className="text-xs font-semibold text-blue-600 mt-1"></p>
+                <p className="text-xs text-gray-500 mt-1 break-all">File: {form.image.name} ({(form.image.size / 1024).toFixed(1)} KB)</p>
               </div>
             )}
             
