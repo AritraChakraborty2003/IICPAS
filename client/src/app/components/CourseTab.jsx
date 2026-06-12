@@ -1217,11 +1217,11 @@ export default function CourseTab() {
                   // State 1: Cleaner Course Overview Card
                   <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_48px_-28px_rgba(15,23,42,0.35)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-30px_rgba(15,23,42,0.45)]">
                     <div className="flex flex-col lg:flex-row">
-                      <div className="relative overflow-hidden bg-gray-100 h-[230px] lg:h-auto lg:w-[280px] lg:shrink-0 lg:self-stretch">
+                      <div className="relative overflow-hidden lg:w-[320px] lg:shrink-0 lg:self-stretch aspect-video lg:aspect-auto">
                         <img
                           src={getCourseImageSrc(course)}
                           alt={course.title}
-                          className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           onError={(e) => {
                             e.target.src = "/images/a1.jpeg";
                           }}
