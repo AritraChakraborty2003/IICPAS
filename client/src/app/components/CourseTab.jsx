@@ -462,6 +462,36 @@ export default function CourseTab() {
     }
   };
 
+  const fetchLiveDataForCourse = async (courseId) => {
+    if (!studentId || courseLiveData[courseId]) return;
+    setCourseLiveData((prev) => ({ ...prev, [courseId]: { sessions: [], classes: [], loading: true } }));
+    try {
+      const [sessionsRes, classesRes] = await Promise.all([
+        axios.get(`${API}/api/live-sessions/for-student/${studentId}`, { withCredentials: true }).catch(() => ({ data: [] })),
+        axios.get(`${API}/api/classes/for-student/${studentId}?type=live`, { withCredentials: true }).catch(() => ({ data: [] })),
+      ]);
+
+      const allSessions = Array.isArray(sessionsRes.data) ? sessionsRes.data : [];
+      const filteredSessions = allSessions.filter(
+        (s) => String(s?.courseId?._id || s?.courseId || "") === String(courseId)
+      );
+
+      const allClasses = Array.isArray(classesRes.data) ? classesRes.data : [];
+      const filteredClasses = allClasses.filter((c) =>
+        Array.isArray(c?.courses)
+          ? c.courses.some((co) => String(co?._id || co) === String(courseId))
+          : String(c?.courseId?._id || c?.courseId || "") === String(courseId)
+      );
+
+      setCourseLiveData((prev) => ({
+        ...prev,
+        [courseId]: { sessions: filteredSessions, classes: filteredClasses, loading: false },
+      }));
+    } catch {
+      setCourseLiveData((prev) => ({ ...prev, [courseId]: { sessions: [], classes: [], loading: false } }));
+    }
+  };
+
   // Handle detailed view toggle
   const handleDetailedToggle = (courseId) => {
     // Check if course is purchased before allowing detailed view
