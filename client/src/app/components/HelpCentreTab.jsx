@@ -40,6 +40,10 @@ export default function HelpCentreTab() {
     title: "Help Centre",
     subtitle: "Find answers to common questions and get support"
   });
+  const [supportData, setSupportData] = useState({
+    phone: { number: "+91 97736 10185", hours: "Mon-Fri, 9 AM - 6 PM" },
+    email: { address: "info@iicpa.in", responseTime: "Response within 24 hours" },
+  });
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -50,6 +54,7 @@ export default function HelpCentreTab() {
       if (res.data) {
         if (res.data.hero) setHeroData(res.data.hero);
         if (res.data.categories) setFaqCategories(res.data.categories);
+        if (res.data.support) setSupportData(res.data.support);
       }
     } catch (error) {
       console.error("Error fetching help data:", error);
@@ -229,19 +234,19 @@ export default function HelpCentreTab() {
             </div>
             <div>
               <p className="font-medium text-gray-900">Phone Support</p>
-              <p className="text-gray-600">+91 97736 10185</p>
-              <p className="text-sm text-gray-500">Mon-Fri, 9 AM - 6 PM</p>
+              <p className="text-gray-600">{supportData.phone?.number}</p>
+              <p className="text-sm text-gray-500">{supportData.phone?.hours}</p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="p-2 bg-green-100 rounded-lg">
               <FaEnvelope className="text-green-600" />
             </div>
             <div>
               <p className="font-medium text-gray-900">Email Support</p>
-              <p className="text-gray-600">info@iicpa.in</p>
-              <p className="text-sm text-gray-500">Response within 24 hours</p>
+              <p className="text-gray-600">{supportData.email?.address}</p>
+              <p className="text-sm text-gray-500">{supportData.email?.responseTime}</p>
             </div>
           </div>
         </div>

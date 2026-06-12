@@ -22,9 +22,15 @@ interface HeroData {
   button2: { text: string; link: string };
 }
 
+interface SupportContact {
+  phone: { number: string; hours: string };
+  email: { address: string; responseTime: string };
+}
+
 interface FormData {
   hero: HeroData;
   categories: Category[];
+  support: SupportContact;
   metaTitle: string;
   metaDescription: string;
 }
@@ -60,6 +66,10 @@ export default function EditHelpPageTab({ onBack, helpPageId }: EditHelpPageTabP
       button2: { text: "Browse Courses", link: "/course" },
     },
     categories: [emptyCategory()],
+    support: {
+      phone: { number: "+91 97736 10185", hours: "Mon-Fri, 9 AM - 6 PM" },
+      email: { address: "info@iicpa.in", responseTime: "Response within 24 hours" },
+    },
     metaTitle: "Help Centre | IICPA Institute",
     metaDescription: "Find answers to common questions about IICPA Institute.",
   });
@@ -78,6 +88,10 @@ export default function EditHelpPageTab({ onBack, helpPageId }: EditHelpPageTabP
         setForm({
           hero: data.hero,
           categories: data.categories || [emptyCategory()],
+          support: data.support || {
+            phone: { number: "+91 97736 10185", hours: "Mon-Fri, 9 AM - 6 PM" },
+            email: { address: "info@iicpa.in", responseTime: "Response within 24 hours" },
+          },
           metaTitle: data.meta?.title || "",
           metaDescription: data.meta?.description || "",
         });

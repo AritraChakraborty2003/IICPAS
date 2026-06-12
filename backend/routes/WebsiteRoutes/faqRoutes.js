@@ -166,6 +166,16 @@ router.get("/", async (req, res) => {
             ],
           },
         ],
+        support: {
+          phone: {
+            number: "+91 97736 10185",
+            hours: "Mon-Fri, 9 AM - 6 PM",
+          },
+          email: {
+            address: "info@iicpa.in",
+            responseTime: "Response within 24 hours",
+          },
+        },
         meta: {
           title: "FAQ - Frequently Asked Questions | IICPA Institute",
           description:

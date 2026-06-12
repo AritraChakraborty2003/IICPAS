@@ -46,6 +46,18 @@ const faqSchema = new mongoose.Schema(
       textColor: { type: String, default: "text-gray-800" }
     },
 
+    // Still Need Help support contacts
+    support: {
+      phone: {
+        number: { type: String, default: "+91 97736 10185" },
+        hours: { type: String, default: "Mon-Fri, 9 AM - 6 PM" },
+      },
+      email: {
+        address: { type: String, default: "info@iicpa.in" },
+        responseTime: { type: String, default: "Response within 24 hours" },
+      },
+    },
+
     // FAQ Categories
     categories: [
       {
@@ -129,6 +141,7 @@ faqSchema.methods.getFormattedData = function() {
   return {
     hero: this.hero,
     categories: this.categories,
+    support: this.support,
     meta: {
       title: this.metaTitle,
       description: this.metaDescription,
