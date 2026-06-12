@@ -692,54 +692,12 @@ export default function CourseDetailClient({
                     </button>
                   </div>
 
-                  {/* Pricing Cards - Side by Side */}
+                  {/* Pricing Cards */}
                   {(() => {
-                    const hasRecorded = (course?.pricing?.recordedSession?.price || 0) > 0 || (course?.pricing?.recordedSession?.finalPrice || 0) > 0;
                     const hasLive = (course?.pricing?.liveSession?.price || 0) > 0 || (course?.pricing?.liveSession?.finalPrice || 0) > 0;
-                    const bothAvailable = hasRecorded && hasLive;
-                    if (!hasRecorded && !hasLive) return null;
+                    if (!hasLive) return null;
                     return (
-                      <div className={`grid ${bothAvailable ? "grid-cols-2" : "grid-cols-1"} gap-2 mb-4`}>
-                        {/* Recorded Session */}
-                        {hasRecorded && (
-                          <div className="border-2 border-[#3cd664] rounded-lg p-2">
-                            <div className="mb-2">
-                              <div className="text-center mb-1">
-                                <span className="text-xs font-bold text-[#3cd664] block">
-                                  {course?.pricing?.recordedSession?.title ||
-                                    "DIGITAL HUB RECORDED SESSION"}
-                                </span>
-                              </div>
-                              <div className="text-center">
-                                <div className="text-sm font-bold text-[#3cd664]">
-                                  {student
-                                    ? `₹${getSessionPrice("recorded").toLocaleString()}`
-                                    : "₹ (login to view)"}
-                                </div>
-                                {student &&
-                                  course?.pricing?.recordedSession?.discount &&
-                                  course.pricing.recordedSession.discount > 0 && (
-                                    <div className="text-xs text-gray-500 line-through">
-                                      ₹{(course.pricing.recordedSession.price ?? 0).toLocaleString()}
-                                    </div>
-                                  )}
-                              </div>
-                            </div>
-                            <button
-                              onClick={() =>
-                                student
-                                  ? handleAddToCart(course._id || course.id, "recorded")
-                                  : openAuthModal("register")
-                              }
-                              className="w-full bg-[#3cd664] hover:bg-[#33bb58] text-white font-bold py-1 px-2 rounded text-xs"
-                            >
-                              {student
-                                ? course?.pricing?.recordedSession?.buttonText || "Add Digital Hub"
-                                : "Register to unlock"}
-                            </button>
-                          </div>
-                        )}
-
+                      <div className="grid grid-cols-1 gap-2 mb-4">
                         {/* Live Session */}
                         {hasLive && (
                           <div className="border-2 border-blue-500 rounded-lg p-2">
