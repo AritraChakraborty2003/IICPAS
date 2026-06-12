@@ -626,7 +626,7 @@ router.get("/", async (req, res) => {
       .populate("enrolledRecordedSessions", "title")
       .populate("batchId", "code mode size assignedCount courseLocks")
       .select(
-        "name email phone mode location center status batchId batchCode batchMode batchAssignedAt course enrolledLiveSessions enrolledRecordedSessions digitalHubAccessOverride courseAccessOverrides receipts createdAt updatedAt"
+        "name email phone mode location center status batchId batchCode batchMode batchAssignedAt course enrolledLiveSessions enrolledRecordedSessions digitalHubAccessOverride courseAccessOverrides liveClassAccessEnabled receipts createdAt updatedAt"
       )
       .sort({ createdAt: -1 })
       .lean();

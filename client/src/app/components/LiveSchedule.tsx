@@ -30,11 +30,13 @@ interface LiveSession {
 
 interface LiveScheduleProps {
   courseCategory: string;
+  courseId?: string;
   student?: any;
 }
 
 export default function LiveSchedule({
   courseCategory,
+  courseId,
   student,
 }: LiveScheduleProps) {
   const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
@@ -50,7 +52,7 @@ export default function LiveSchedule({
     if (student) {
       fetchEnrolledSessions();
     }
-  }, [courseCategory, student]);
+  }, [courseCategory, courseId, student]);
 
   const fetchLiveSessions = async () => {
     try {
