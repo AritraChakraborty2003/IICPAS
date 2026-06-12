@@ -500,10 +500,16 @@ export const getLiveSessionsForStudent = async (req, res) => {
 
       // Evaluate enrollment: either enrolled directly in student profile, or student has enrolledStudents in session, or purchased course matches
       const isDirectlyEnrolled = enrolledLiveSessionIds.has(String(session._id)) ||
-        (Array.isArray(session.enrolledStudents) && session.enrolledStudents.some((id) => String(id) === String(studentId)));
+        (Array.isArray(session.enrolledStudents) && session.enrolledStudents.some((s) => {
+          const sid = s?._id || s;
+          return String(sid) === String(studentId);
+        }));
 
-      const isCourseLinkedPurchased = (session.courseId && purchasedCourseIdSet.has(String(session.courseId))) ||
-        (Array.isArray(session.courseIds) && session.courseIds.some((id) => purchasedCourseIdSet.has(String(id))));
+      // courseId and courseIds are populated objects — extract ._id before comparing
+      const extractId = (val) => String(val?._id || val || "");
+      const isCourseLinkedPurchased =
+        (session.courseId && purchasedCourseIdSet.has(extractId(session.courseId))) ||
+        (Array.isArray(session.courseIds) && session.courseIds.some((id) => purchasedCourseIdSet.has(extractId(id))));
 
       const isEnrolled = isDirectlyEnrolled || isCourseLinkedPurchased;
 
