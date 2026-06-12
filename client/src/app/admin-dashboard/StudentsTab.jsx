@@ -904,6 +904,29 @@ function StudentsTable({
     }
   };
 
+  const handleToggleLiveClassAccess = async (student) => {
+    const nextEnabled = student.liveClassAccessEnabled !== false ? false : true;
+    try {
+      setLiveClassUpdatingId(student._id);
+      const token = localStorage.getItem("adminToken");
+      await axios.put(
+        `${API_BASE}/v1/students/admin/live-class-access/${student._id}`,
+        { enabled: nextEnabled },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
+      toast.success(
+        nextEnabled
+          ? `Live Class enabled for ${student.name}`
+          : `Live Class disabled for ${student.name}`
+      );
+      onStudentUpdated?.();
+    } catch (error) {
+      toast.error(getFetchErrorMessage(error, "Failed to update Live Class access"));
+    } finally {
+      setLiveClassUpdatingId(null);
+    }
+  };
+
   // Export students to Excel
   const exportToExcel = () => {
     if (students.length === 0) {
@@ -1063,6 +1086,9 @@ function StudentsTable({
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Suspend
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Live Class
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
