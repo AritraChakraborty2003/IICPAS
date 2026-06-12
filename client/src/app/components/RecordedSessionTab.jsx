@@ -76,16 +76,15 @@ export default function RecordedSessionTab() {
           const sessions = Array.isArray(response.data) ? response.data : [];
 
           // A session counts as a recording if:
-          // 1. The student is enrolled (purchased course or directly enrolled)
+          // 1. The student directly purchased/enrolled in the live session (not just because they bought the linked course)
           // 2. The session has ended — either server says "completed" OR date/time has passed
-          // 3. There is a recording link
           const completed = sessions
             .filter((session) => {
-              const enrolled = session?.isEnrolled === true;
+              const directlyEnrolled = session?.isDirectlyEnrolled === true;
               const over =
                 String(session?.status || "").toLowerCase() === "completed" ||
                 isSessionOver(session);
-              return enrolled && over;
+              return directlyEnrolled && over;
             })
             .sort(
               (a, b) =>

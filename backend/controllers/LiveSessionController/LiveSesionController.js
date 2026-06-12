@@ -520,6 +520,7 @@ export const getLiveSessionsForStudent = async (req, res) => {
         enrolledCount: session.enrolledStudents?.length || 0,
         imageUrl: finalImageUrl,
         isEnrolled,
+        isDirectlyEnrolled,
       };
     });
 
