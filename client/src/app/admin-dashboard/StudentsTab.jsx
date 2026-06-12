@@ -1271,6 +1271,36 @@ function StudentsTable({
                       );
                     })()}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const liveEnabled = student.liveClassAccessEnabled !== false;
+                      const isUpdating = liveClassUpdatingId === student._id;
+                      return (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={liveEnabled}
+                            onClick={() => handleToggleLiveClassAccess(student)}
+                            disabled={isUpdating}
+                            title={liveEnabled ? "Disable Live Class" : "Enable Live Class"}
+                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                              liveEnabled ? "bg-green-500" : "bg-red-500"
+                            } ${isUpdating ? "opacity-60 cursor-not-allowed" : ""}`}
+                          >
+                            <span
+                              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                liveEnabled ? "translate-x-6" : "translate-x-1"
+                              }`}
+                            />
+                          </button>
+                          <span className={`text-xs font-semibold ${liveEnabled ? "text-green-600" : "text-red-600"}`}>
+                            {isUpdating ? "..." : liveEnabled ? "On" : "Off"}
+                          </span>
+                        </div>
+                      );
+                    })()}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex flex-wrap gap-1">
                       {/* Contact Actions */}
@@ -3084,7 +3114,7 @@ export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [studentsError, setStudentsError] = useState("");
-  const [activeTab, setActiveTab] = useState("add"); // "add", "list", "details", "access", "live-class-access", or "profile"
+  const [activeTab, setActiveTab] = useState("add"); // "add", "list", "details", "access", or "profile"
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const hasLoadedStudentsRef = useRef(false);
   const pendingCourseAccessOverridesRef = useRef(new Map());
@@ -3117,7 +3147,7 @@ export default function StudentsTab() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "list" || activeTab === "access" || activeTab === "live-class-access") {
+    if (activeTab === "list" || activeTab === "access") {
       refreshStudents();
     }
   }, [activeTab, refreshStudents]);
@@ -3206,17 +3236,6 @@ export default function StudentsTab() {
           Digital Hub Access
         </Button>
         <Button
-          onClick={() => setActiveTab("live-class-access")}
-          className={`flex items-center gap-2 px-6 py-3 ${
-            activeTab === "live-class-access"
-              ? "bg-indigo-500 text-white shadow-lg"
-              : "bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50"
-          }`}
-        >
-          <FaPlay size={16} />
-          Live Class Access
-        </Button>
-        <Button
           onClick={() => setActiveTab("profile")}
           className={`flex items-center gap-2 px-6 py-3 ${
             activeTab === "profile"
@@ -3281,25 +3300,6 @@ export default function StudentsTab() {
             ) : (
               <DigitalHubAccessTab
                 key="digitalhubaccess"
-                students={students}
-                loading={loading}
-                onStudentUpdated={handleStudentsUpdated}
-              />
-            ))}
-          {activeTab === "live-class-access" &&
-            (loading ? (
-              <motion.div
-                key="live-class-access-loader"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex items-center justify-center h-64"
-              >
-                <Loader2 className="animate-spin text-indigo-500" size={36} />
-              </motion.div>
-            ) : (
-              <LiveClassAccessTab
-                key="liveclassaccess"
                 students={students}
                 loading={loading}
                 onStudentUpdated={handleStudentsUpdated}
