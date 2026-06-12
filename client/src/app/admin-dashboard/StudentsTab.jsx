@@ -2272,10 +2272,11 @@ function DigitalHubAccessTab({ students, loading, onStudentUpdated }) {
   );
 }
 
-// Live Class Access Tab Component
-function LiveClassAccessTab({ students, loading, onStudentUpdated }) {
+// (LiveClassAccessTab removed — toggle is now inline in View Students table)
+
+// placeholder to keep the marker — delete this comment after confirming build
+function _unused_placeholder() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [updatingStudentId, setUpdatingStudentId] = useState(null);
 
   const filteredStudents = students.filter(
     (student) =>
