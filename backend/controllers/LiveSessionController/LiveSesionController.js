@@ -488,10 +488,11 @@ export const getLiveSessionsForStudent = async (req, res) => {
       const durationMinutes = Math.round(durationMs / (1000 * 60));
 
       let dynamicStatus = session.status;
-      if (session.status === "active") {
+      // Compute status from date/time for all non-inactive sessions
+      if (session.status !== "inactive") {
         if (now < sessionStart) dynamicStatus = "upcoming";
         else if (now >= sessionStart && now <= sessionEnd) dynamicStatus = "live";
-        else if (now > sessionEnd) dynamicStatus = "completed";
+        else dynamicStatus = "completed";
       }
 
       let finalImageUrl = session.imageUrl || session.thumbnail;
