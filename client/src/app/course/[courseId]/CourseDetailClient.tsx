@@ -720,7 +720,7 @@ export default function CourseDetailClient({
                                   course?.pricing?.recordedSession?.discount &&
                                   course.pricing.recordedSession.discount > 0 && (
                                     <div className="text-xs text-gray-500 line-through">
-                                      ₹{course.pricing.recordedSession.price.toLocaleString()}
+                                      ₹{(course.pricing.recordedSession.price ?? 0).toLocaleString()}
                                     </div>
                                   )}
                               </div>
