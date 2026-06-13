@@ -210,13 +210,22 @@ const sendStudentScheduleWhatsApp = async (student, batch, courseSchedules) => {
 
     await sendWhatsAppTemplateMessage({
       to: phone,
-      templateName: "student_schedule_details",
-      bodyParameters: [
-        { type: "text", text: student.name || "Student" },
-        { type: "text", text: batch.code || "Batch" },
-        { type: "text", text: scheduleText },
-        { type: "text", text: portalUrl }
-      ]
+      templateName: "student_schedule_details_v2",
+      components: [
+        {
+          type: "header",
+          parameters: [{ type: "text", text: batch.code || "Batch" }],
+        },
+        {
+          type: "body",
+          parameters: [
+            { type: "text", text: student.name || "Student" },
+            { type: "text", text: batch.code || "Batch" },
+            { type: "text", text: scheduleText },
+            { type: "text", text: portalUrl },
+          ],
+        },
+      ],
     });
     console.log(`WhatsApp schedule message sent successfully to ${phone} (${student.name})`);
   } catch (error) {
