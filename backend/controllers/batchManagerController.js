@@ -190,8 +190,8 @@ const buildWhatsAppScheduleText = (courseSchedules) => {
     return `📚 ${course.title}\n📅 ${course.startTime} - ${course.endTime}${chaptersText ? "\n" + chaptersText : ""}`;
   }).join("\n\n");
 
-  if (text.length > 1000) {
-    text = text.substring(0, 990) + "\n... (and more online)";
+  if (text.length > 600) {
+    text = text.substring(0, 590) + "... (see full schedule online)";
   }
   return text;
 };
