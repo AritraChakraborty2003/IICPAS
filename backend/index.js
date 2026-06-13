@@ -47,6 +47,7 @@ import aboutRoutes from "./routes/WebsiteRoutes/aboutRoutes.js";
 import bookingRoutes from "./routes/bookingRoutes.js";
 import { startLiveSessionReminderScheduler } from "./services/liveSessionReminderScheduler.js";
 import { startClassAutoConvertScheduler } from "./services/classAutoConvertScheduler.js";
+import { startClassReminderScheduler } from "./services/classReminderScheduler.js";
 
 //TicketRoutes
 import ticketRoutes from "./routes/TicketRoutes.js";
@@ -368,6 +369,7 @@ io.on("connection", (socket) => {
 global.io = io;
 startLiveSessionReminderScheduler();
 startClassAutoConvertScheduler();
+startClassReminderScheduler();
 //Contact Info Routes
 app.use("/api/contact-info", contactLimiter, contactInfoRoutes);
 

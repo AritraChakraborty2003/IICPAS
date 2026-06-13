@@ -63,6 +63,10 @@ const classSessionSchema = new Schema(
     autoConverted: { type: Boolean, default: false },
     convertedAt: { type: Date, default: null },
 
+    // Reminder tracking
+    reminder24hSent: { type: Boolean, default: false },
+    reminder1hSent: { type: Boolean, default: false },
+
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }
