@@ -204,7 +204,8 @@ const sendStudentScheduleWhatsApp = async (student, batch, courseSchedules) => {
       return;
     }
 
-    const scheduleText = buildWhatsAppScheduleText(courseSchedules);
+    const rawScheduleText = buildWhatsAppScheduleText(courseSchedules);
+    const scheduleText = rawScheduleText.replace(/\n/g, " | ").replace(/\t/g, " ").replace(/ {5,}/g, "    ");
     const clientUrl = process.env.CLIENT_URL || "https://www.iicpa.in";
     const portalUrl = `${clientUrl}/student-login`;
 
