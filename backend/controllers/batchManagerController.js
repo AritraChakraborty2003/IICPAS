@@ -229,7 +229,8 @@ const sendStudentScheduleWhatsApp = async (student, batch, courseSchedules) => {
     });
     console.log(`WhatsApp schedule message sent successfully to ${phone} (${student.name})`);
   } catch (error) {
-    console.error(`Failed to send WhatsApp schedule message to student ${student._id || student.name}:`, error);
+    const apiError = error?.response?.data || error?.message || error;
+    console.error(`Failed to send WhatsApp schedule message to student ${student._id || student.name}:`, JSON.stringify(apiError));
   }
 };
 
