@@ -80,7 +80,7 @@ const COURSE_PURCHASE_WHATSAPP_TEMPLATE_NAME =
   "txq_payment_share_1";
 const LIVE_SESSION_WHATSAPP_TEMPLATE_NAME =
   process.env.WHATSAPP_LIVE_SESSION_TEMPLATE_NAME ||
-  "live_session_enrollment_iicpa";
+  "live_session_enrollment_v2";
 const resolveRequestApiBaseUrl = (req) => {
   const forwardedProto = String(req.headers["x-forwarded-proto"] || "")
     .split(",")[0]
@@ -212,7 +212,7 @@ const sendCoursePurchaseWhatsAppInvoice = async (
   };
 };
 
-const buildLiveSessionInvoiceComponents = ({ studentName, invoiceUrl }) => [
+const buildLiveSessionInvoiceComponents = ({ studentName, invoiceUrl, sessionTitle, sessionDate, sessionLink }) => [
   {
     type: "header",
     parameters: [
@@ -228,10 +228,10 @@ const buildLiveSessionInvoiceComponents = ({ studentName, invoiceUrl }) => [
   {
     type: "body",
     parameters: [
-      {
-        type: "text",
-        text: studentName || "Student",
-      },
+      { type: "text", text: studentName || "Student" },
+      { type: "text", text: sessionTitle || "Live Session" },
+      { type: "text", text: sessionDate || "Date TBD" },
+      { type: "text", text: sessionLink || "Link will be shared soon" },
     ],
   },
 ];
@@ -266,6 +266,11 @@ const sendLiveSessionWhatsAppInvoice = async (
   }
 
   const studentName = booking?.requesterName || "Student";
+  const sessionTitle = booking?.title || "Live Session";
+  const sessionDate = booking?.date
+    ? new Date(booking.date).toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
+    : "Date TBD";
+  const sessionLink = booking?.link || "Link will be shared soon";
 
   const response = await sendWhatsAppTemplateMessage({
     to: recipient,
@@ -273,6 +278,9 @@ const sendLiveSessionWhatsAppInvoice = async (
     components: buildLiveSessionInvoiceComponents({
       studentName,
       invoiceUrl,
+      sessionTitle,
+      sessionDate,
+      sessionLink,
     }),
   });
 
