@@ -123,6 +123,8 @@ app.use(
       "https://www.iicpa.in",
       "https://admin-master.iicpa.in",
       "https://www.admin-master.comu",
+      "https://taxesquire.in",
+      "https://www.taxesquire.in",
     ], // your frontend URL
     credentials: true,
   })
