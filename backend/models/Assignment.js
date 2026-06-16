@@ -79,21 +79,24 @@ const simulationSchema = new mongoose.Schema({
   },
 });
 
+const questionSchema = new mongoose.Schema(
+  {
+    question: { type: String, default: "" },
+    context: { type: String, default: "" },
+    type: { type: String, default: "" },
+    options: { type: [String], default: [] },
+    correctAnswer: { type: String, default: "" },
+    explanation: { type: String, default: "" },
+  },
+  { _id: false }
+);
+
 const questionSetSchema = new mongoose.Schema({
   name: String,
   description: String,
   excelFile: String,
   excelBase64: String,
-  questions: [
-    {
-      question: String,
-      context: String,
-      type: String,
-      options: [String],
-      correctAnswer: String,
-      explanation: String,
-    },
-  ],
+  questions: { type: [questionSchema], default: [] },
   totalQuestions: Number,
   timeLimit: Number,
   passingScore: Number,
