@@ -45,6 +45,7 @@ export default function EditCourse({ courseId, onBack }) {
   const [simulations, setSimulations] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState([]);
+  const [levelOptions, setLevelOptions] = useState([]);
 
   const joditConfig = useMemo(
     () => ({
@@ -157,9 +158,19 @@ export default function EditCourse({ courseId, onBack }) {
     }
   }, []);
 
+  const loadLevels = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/course-levels`);
+      setLevelOptions(Array.isArray(res.data) ? res.data : []);
+    } catch {
+      setLevelOptions([]);
+    }
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     loadCategories();
+    loadLevels();
 
     const handleFocus = () => {
       loadCategories();
@@ -192,6 +203,7 @@ export default function EditCourse({ courseId, onBack }) {
         metaTitle: c.metaTitle || "",
         metaKeywords: c.metaKeywords || "",
         metaDescription: c.metaDescription || "",
+        level: c.level || "",
         image: null,
         imageUrl: c.image || "",
         dashboardImage: null,
@@ -215,7 +227,7 @@ export default function EditCourse({ courseId, onBack }) {
     });
 
     return () => window.removeEventListener("focus", handleFocus);
-  }, [courseId, loadCategories]);
+  }, [courseId, loadCategories, loadLevels]);
 
   if (!form || !mounted) return <div className="p-8">Loading course...</div>;
 
@@ -460,6 +472,20 @@ export default function EditCourse({ courseId, onBack }) {
               onChange={handleCategoryChange}
               placeholder="Select category"
             />
+            <label>Level</label>
+            <select
+              name="level"
+              value={form.level}
+              onChange={handleInputChange}
+              className="w-full border p-2 rounded"
+            >
+              <option value="">-- Select Level --</option>
+              {levelOptions.map((l) => (
+                <option key={l.value} value={l.value}>
+                  {l.label}
+                </option>
+              ))}
+            </select>
             <label>Title</label>
             <input
               name="title"
