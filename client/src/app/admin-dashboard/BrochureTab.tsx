@@ -49,6 +49,9 @@ interface BrochurePage {
   backgroundColor: string;
   overlayImages: OverlayImage[];
   content: string;
+  textX: number;
+  textY: number;
+  textColor: string;
   chapterId: string;
   topicId: string;
 }
@@ -57,6 +60,9 @@ interface CoverPage {
   backgroundColor: string;
   overlayImages: OverlayImage[];
   content: string;
+  textX: number;
+  textY: number;
+  textColor: string;
 }
 interface Brochure {
   _id: string;
@@ -75,6 +81,9 @@ const defaultCover = (): CoverPage => ({
   backgroundColor: "#1e3a5f",
   overlayImages: [],
   content: "",
+  textX: 24,
+  textY: 24,
+  textColor: "#ffffff",
 });
 
 const defaultPage = (overrides?: Partial<BrochurePage>): BrochurePage => ({
@@ -83,6 +92,9 @@ const defaultPage = (overrides?: Partial<BrochurePage>): BrochurePage => ({
   backgroundColor: "#ffffff",
   overlayImages: [],
   content: "",
+  textX: 24,
+  textY: 24,
+  textColor: "#1a1a1a",
   chapterId: "",
   topicId: "",
   ...overrides,
@@ -92,7 +104,6 @@ const defaultPage = (overrides?: Partial<BrochurePage>): BrochurePage => ({
 
 interface DraggableImageProps {
   img: OverlayImage;
-  idx: number;
   selected: boolean;
   onSelect: () => void;
   onChange: (updated: OverlayImage) => void;
@@ -198,6 +209,29 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
   const [uploading, setUploading] = useState(false);
   const bgInputRef = useRef<HTMLInputElement>(null);
   const overlayInputRef = useRef<HTMLInputElement>(null);
+  const textDragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+
+  const handleTextDragMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedOverlay(null);
+    textDragRef.current = { startX: e.clientX, startY: e.clientY, origX: page.textX ?? 24, origY: page.textY ?? 24 };
+    const onMove = (me: MouseEvent) => {
+      if (!textDragRef.current) return;
+      onUpdate({
+        ...page,
+        textX: Math.max(0, textDragRef.current.origX + me.clientX - textDragRef.current.startX),
+        textY: Math.max(0, textDragRef.current.origY + me.clientY - textDragRef.current.startY),
+      } as BrochurePage | CoverPage);
+    };
+    const onUp = () => {
+      textDragRef.current = null;
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  };
 
   const updateOverlay = (idx: number, updated: OverlayImage) => {
     const overlayImages = [...page.overlayImages];
@@ -264,25 +298,34 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
         >
           + Add Image
         </button>
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-3 ml-auto">
+          <label className="text-xs text-gray-500">Text Color</label>
+          <input
+            type="color"
+            value={page.textColor ?? "#1a1a1a"}
+            onChange={(e) => onUpdate({ ...page, textColor: e.target.value } as BrochurePage | CoverPage)}
+            className="w-8 h-8 rounded cursor-pointer border border-gray-300"
+            title="Text color on canvas"
+          />
           <label className="text-xs text-gray-500">BG Color</label>
           <input
             type="color"
             value={page.backgroundColor}
             onChange={(e) => onUpdate({ ...page, backgroundColor: e.target.value } as BrochurePage | CoverPage)}
             className="w-8 h-8 rounded cursor-pointer border border-gray-300"
+            title="Background color"
           />
         </div>
         <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
         <input ref={overlayInputRef} type="file" accept="image/*" className="hidden" onChange={handleOverlayUpload} />
       </div>
 
-      {/* Canvas preview */}
+      {/* Canvas — background + overlay images + text content rendered on top */}
       <div
-        className="relative rounded-lg overflow-hidden border border-gray-300 select-none"
+        className="relative rounded-lg overflow-hidden border border-gray-300"
         style={{
           width: "100%",
-          minHeight: 340,
+          minHeight: 420,
           backgroundColor: page.backgroundColor,
           backgroundImage: page.backgroundImage ? `url(${page.backgroundImage})` : "none",
           backgroundSize: "cover",
@@ -290,11 +333,11 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
         }}
         onClick={() => setSelectedOverlay(null)}
       >
+        {/* Overlay images (draggable) */}
         {page.overlayImages.map((img, idx) => (
           <DraggableImage
             key={idx}
             img={img}
-            idx={idx}
             selected={selectedOverlay === idx}
             onSelect={() => setSelectedOverlay(idx)}
             onChange={(updated) => updateOverlay(idx, updated)}
@@ -302,10 +345,39 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
           />
         ))}
 
+        {/* Text content rendered ON TOP of the background — drag to reposition */}
+        {page.content && (
+          <div
+            className="absolute overflow-auto"
+            style={{
+              zIndex: 5,
+              left: page.textX ?? 24,
+              top: page.textY ?? 24,
+              maxWidth: "calc(100% - 48px)",
+              cursor: "move",
+              color: page.textColor ?? "#1a1a1a",
+              padding: "8px 12px",
+              borderRadius: 4,
+              background: "rgba(0,0,0,0.04)",
+            }}
+            onMouseDown={handleTextDragMouseDown}
+            onClick={(e) => e.stopPropagation()}
+            dangerouslySetInnerHTML={{ __html: page.content }}
+          />
+        )}
+
+        {/* Empty state hint */}
+        {page.overlayImages.length === 0 && !page.backgroundImage && !page.content && (
+          <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-sm pointer-events-none select-none">
+            Upload a background, add images, or write content below
+          </div>
+        )}
+
         {/* Selected overlay controls */}
         {selectedOverlay !== null && page.overlayImages[selectedOverlay] && (
           <div
-            className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded-lg shadow p-2 flex gap-3 items-center z-50"
+            className="absolute bottom-2 left-2 bg-white/90 backdrop-blur-sm rounded-lg shadow p-2 flex gap-3 items-center"
+            style={{ zIndex: 60 }}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
@@ -325,23 +397,19 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
             />
           </div>
         )}
-
-        {page.overlayImages.length === 0 && !page.backgroundImage && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-sm pointer-events-none">
-            Upload background or add images above
-          </div>
-        )}
       </div>
 
-      {/* Rich text editor for this page */}
+      {/* Rich text editor — content feeds live into the canvas above */}
       {showEditor && (
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Page Content (Rich Text)</label>
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-medium">
+            ✏️ Edit Content — renders on background above
+          </div>
           <OptimizedJoditEditor
             value={(page as BrochurePage).content ?? (page as CoverPage).content}
             onChange={(val) => onUpdate({ ...page, content: val } as BrochurePage | CoverPage)}
-            placeholder="Write brochure content here..."
-            height={250}
+            placeholder="Type here — text will appear on top of the background image..."
+            height={220}
             uploadApi={`${API_BASE}/brochures/upload-image`}
           />
         </div>
