@@ -20,23 +20,26 @@ export const createAssignment = async (req, res) => {
       tasks: tasks || [],
       content: content || [],
       simulations: simulations || [],
-      questionSets: (questionSets || []).map((qs) => ({
-        name: qs.name,
-        description: qs.description,
-        excelBase64: qs.excelBase64,
-        totalQuestions: qs.totalQuestions,
-        timeLimit: qs.timeLimit,
-        passingScore: qs.passingScore,
-        order: qs.order,
-        questions: (qs.questions || []).map((q) => ({
-          question: q.question,
-          options: Array.isArray(q.options) ? q.options : [],
-          correctAnswer: q.correctAnswer,
-          context: q.context,
-          type: q.type,
-          explanation: q.explanation,
-        })),
-      })),
+      questionSets: (questionSets || []).map((qs) => {
+        const rawQuestions = typeof qs.questions === "string" ? JSON.parse(qs.questions) : (qs.questions || []);
+        return {
+          name: qs.name,
+          description: qs.description,
+          excelBase64: qs.excelBase64,
+          totalQuestions: qs.totalQuestions,
+          timeLimit: qs.timeLimit,
+          passingScore: qs.passingScore,
+          order: qs.order,
+          questions: rawQuestions.map((q) => ({
+            question: q.question,
+            options: Array.isArray(q.options) ? q.options : (typeof q.options === "string" ? JSON.parse(q.options) : []),
+            correctAnswer: q.correctAnswer,
+            context: q.context,
+            type: q.type,
+            explanation: q.explanation,
+          })),
+        };
+      }),
     });
 
     await assignment.save();
@@ -203,23 +206,27 @@ export const updateAssignment = async (req, res) => {
     if (content !== undefined) assignment.content = content;
     if (simulations !== undefined) assignment.simulations = simulations;
     if (questionSets !== undefined) {
-      assignment.questionSets = questionSets.map((qs) => ({
-        name: qs.name,
-        description: qs.description,
-        excelBase64: qs.excelBase64,
-        totalQuestions: qs.totalQuestions,
-        timeLimit: qs.timeLimit,
-        passingScore: qs.passingScore,
-        order: qs.order,
-        questions: (qs.questions || []).map((q) => ({
-          question: q.question,
-          options: Array.isArray(q.options) ? q.options : [],
-          correctAnswer: q.correctAnswer,
-          context: q.context,
-          type: q.type,
-          explanation: q.explanation,
-        })),
-      }));
+      const parsedSets = typeof questionSets === "string" ? JSON.parse(questionSets) : questionSets;
+      assignment.questionSets = parsedSets.map((qs) => {
+        const rawQuestions = typeof qs.questions === "string" ? JSON.parse(qs.questions) : (qs.questions || []);
+        return {
+          name: qs.name,
+          description: qs.description,
+          excelBase64: qs.excelBase64,
+          totalQuestions: qs.totalQuestions,
+          timeLimit: qs.timeLimit,
+          passingScore: qs.passingScore,
+          order: qs.order,
+          questions: rawQuestions.map((q) => ({
+            question: q.question,
+            options: Array.isArray(q.options) ? q.options : (typeof q.options === "string" ? JSON.parse(q.options) : []),
+            correctAnswer: q.correctAnswer,
+            context: q.context,
+            type: q.type,
+            explanation: q.explanation,
+          })),
+        };
+      });
     }
 
     await assignment.save();
