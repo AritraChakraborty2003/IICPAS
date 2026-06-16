@@ -431,11 +431,13 @@ export default function AssignmentBuilder({
           questions: qs.questions.map((q) => ({
             id: q.id,
             question: q.question.trim(),
-            option1: q.option1.trim(),
-            option2: q.option2.trim(),
-            option3: q.option3.trim(),
-            option4: q.option4.trim(),
-            correct: q.correct.trim(),
+            options: [
+              q.option1.trim(),
+              q.option2.trim(),
+              q.option3.trim(),
+              q.option4.trim(),
+            ],
+            correctAnswer: q.correct.trim(),
           })),
           order: index,
         })),
