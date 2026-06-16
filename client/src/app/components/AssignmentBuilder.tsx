@@ -91,7 +91,23 @@ export default function AssignmentBuilder({
       setTasks(editingItem.tasks || []);
       setContent(editingItem.content || []);
       setSimulations(editingItem.simulations || []);
-      setQuestionSets(editingItem.questionSets || []);
+      // Map backend format (options[], correctAnswer) back to internal format (option1-4, correct)
+      const mappedQuestionSets = (editingItem.questionSets || []).map((qs: any) => ({
+        id: qs._id || qs.id || Date.now().toString(),
+        name: qs.name || "",
+        description: qs.description || "",
+        excelBase64: qs.excelBase64 || "",
+        questions: (qs.questions || []).map((q: any) => ({
+          id: q._id || q.id || Date.now().toString(),
+          question: q.question || "",
+          option1: Array.isArray(q.options) ? (q.options[0] || "") : (q.option1 || ""),
+          option2: Array.isArray(q.options) ? (q.options[1] || "") : (q.option2 || ""),
+          option3: Array.isArray(q.options) ? (q.options[2] || "") : (q.option3 || ""),
+          option4: Array.isArray(q.options) ? (q.options[3] || "") : (q.option4 || ""),
+          correct: q.correctAnswer || q.correct || "",
+        })),
+      }));
+      setQuestionSets(mappedQuestionSets);
     }
   }, [editingItem]);
 
@@ -378,12 +394,12 @@ export default function AssignmentBuilder({
         if (qs.questions && qs.questions.length > 0) {
           for (const q of qs.questions) {
             if (
-              !q.question.trim() ||
-              !q.option1.trim() ||
-              !q.option2.trim() ||
-              !q.option3.trim() ||
-              !q.option4.trim() ||
-              !q.correct.trim()
+              !(q.question || "").trim() ||
+              !(q.option1 || "").trim() ||
+              !(q.option2 || "").trim() ||
+              !(q.option3 || "").trim() ||
+              !(q.option4 || "").trim() ||
+              !(q.correct || "").trim()
             ) {
               alert(
                 `Please complete all fields for questions in question set: ${qs.name}`
@@ -400,8 +416,8 @@ export default function AssignmentBuilder({
         description: description.trim(),
         chapterId,
         tasks: tasks.map((task, index) => ({
-          taskName: task.taskName.trim(),
-          instructions: task.instructions.trim(),
+          taskName: (task.taskName || "").trim(),
+          instructions: (task.instructions || "").trim(),
           order: index,
         })),
         content: content.map((item, index) => ({
@@ -413,8 +429,8 @@ export default function AssignmentBuilder({
         })),
         simulations: simulations.map((sim, index) => ({
           type: sim.type,
-          title: sim.title.trim(),
-          description: sim.description.trim(),
+          title: (sim.title || "").trim(),
+          description: (sim.description || "").trim(),
           config: sim.config,
           isOptional: sim.isOptional,
           order: index,
@@ -430,14 +446,14 @@ export default function AssignmentBuilder({
           excelBase64: qs.excelBase64,
           questions: qs.questions.map((q) => ({
             id: q.id,
-            question: q.question.trim(),
+            question: (q.question || "").trim(),
             options: [
-              q.option1.trim(),
-              q.option2.trim(),
-              q.option3.trim(),
-              q.option4.trim(),
+              (q.option1 || "").trim(),
+              (q.option2 || "").trim(),
+              (q.option3 || "").trim(),
+              (q.option4 || "").trim(),
             ],
-            correctAnswer: q.correct.trim(),
+            correctAnswer: (q.correct || "").trim(),
           })),
           order: index,
         })),
