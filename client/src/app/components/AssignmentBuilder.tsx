@@ -83,16 +83,17 @@ export default function AssignmentBuilder({
   >("content");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize form with editing data if available
+  // Initialize form with editing data if available — fetch fresh from API to get full question data
   useEffect(() => {
-    if (editingItem) {
-      setTitle(editingItem.title || "");
-      setDescription(editingItem.description || "");
-      setTasks(editingItem.tasks || []);
-      setContent(editingItem.content || []);
-      setSimulations(editingItem.simulations || []);
-      // Map backend format (options[], correctAnswer) back to internal format (option1-4, correct)
-      const mappedQuestionSets = (editingItem.questionSets || []).map((qs: any) => ({
+    if (!editingItem?._id) return;
+
+    const applyData = (data: any) => {
+      setTitle(data.title || "");
+      setDescription(data.description || "");
+      setTasks(data.tasks || []);
+      setContent(data.content || []);
+      setSimulations(data.simulations || []);
+      const mappedQuestionSets = (data.questionSets || []).map((qs: any) => ({
         id: qs._id || qs.id || Date.now().toString(),
         name: qs.name || "",
         description: qs.description || "",
@@ -108,7 +109,18 @@ export default function AssignmentBuilder({
         })),
       }));
       setQuestionSets(mappedQuestionSets);
-    }
+    };
+
+    // Fetch fresh from API to ensure full question data is loaded
+    axios.get(`${API_BASE}/assignments/${editingItem._id}`)
+      .then((res) => {
+        const data = res.data?.data ?? res.data;
+        applyData(data);
+      })
+      .catch(() => {
+        // Fallback to editingItem if fetch fails
+        applyData(editingItem);
+      });
   }, [editingItem]);
 
   const addTask = () => {
