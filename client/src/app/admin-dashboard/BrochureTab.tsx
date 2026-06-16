@@ -1,5 +1,5 @@
 "use client";
-import { getApiBase } from "@/lib/apiBase";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import dynamic from "next/dynamic";
@@ -424,8 +424,6 @@ export default function BrochureTab() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [brochures, setBrochures] = useState<Brochure[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-  const [selectedChapters, setSelectedChapters] = useState<Record<string, boolean>>({});
-  const [selectedTopics, setSelectedTopics] = useState<Record<string, boolean>>({});
   const [coverPage, setCoverPage] = useState<CoverPage>(defaultCover());
   const [pages, setPages] = useState<BrochurePage[]>([]);
   const [activePage, setActivePage] = useState<"cover" | number>("cover");
@@ -459,14 +457,14 @@ export default function BrochureTab() {
     const res = await axios.post(`${API_BASE}/brochures/upload-image`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data.imageUrl;
+    const raw: string = res.data.imageUrl;
+    const uploadsPath = raw.replace(/^https?:\/\/[^/]+/, "");
+    return `${getApiOrigin()}${uploadsPath}`;
   }, []);
 
   const handleCourseSelect = async (courseId: string) => {
     if (!courseId) {
       setSelectedCourse(null);
-      setSelectedChapters({});
-      setSelectedTopics({});
       setCoverPage(defaultCover());
       setPages([]);
       setActivePage("cover");
@@ -480,22 +478,19 @@ export default function BrochureTab() {
 
       const existing = brochures.find((b) => b.courseId === courseId);
       if (existing) {
-        // Restore selections
-        const chMap: Record<string, boolean> = {};
-        const topicMap: Record<string, boolean> = {};
-        existing.chapters.forEach((ch) => {
-          chMap[ch.chapterId] = true;
-          ch.topics.forEach((t) => { topicMap[t.topicId] = true; });
-        });
-        setSelectedChapters(chMap);
-        setSelectedTopics(topicMap);
         setCoverPage(existing.coverPage ?? defaultCover());
         setPages(existing.pages ?? []);
       } else {
-        setSelectedChapters({});
-        setSelectedTopics({});
+        // Auto-generate one page per chapter + one per topic
+        const autoPages: BrochurePage[] = [];
+        (course.chapters ?? []).forEach((ch) => {
+          autoPages.push(defaultPage({ pageTitle: ch.title, chapterId: ch._id }));
+          (ch.topics ?? []).forEach((t) => {
+            autoPages.push(defaultPage({ pageTitle: t.title, chapterId: ch._id, topicId: t._id }));
+          });
+        });
         setCoverPage(defaultCover());
-        setPages([]);
+        setPages(autoPages);
       }
       setActivePage("cover");
     } catch {
@@ -503,41 +498,6 @@ export default function BrochureTab() {
     } finally {
       setLoadingCourse(false);
     }
-  };
-
-  const toggleChapter = (chapterId: string, topics: Topic[]) => {
-    const next = !selectedChapters[chapterId];
-    setSelectedChapters((prev) => ({ ...prev, [chapterId]: next }));
-    if (!next) {
-      const topicMap = { ...selectedTopics };
-      topics.forEach((t) => { topicMap[t._id] = false; });
-      setSelectedTopics(topicMap);
-    }
-  };
-
-  const toggleTopic = (topicId: string) => {
-    setSelectedTopics((prev) => ({ ...prev, [topicId]: !prev[topicId] }));
-  };
-
-  // Auto-generate pages from selected chapters/topics when user clicks "Generate Pages"
-  const generatePages = () => {
-    if (!selectedCourse) return;
-    const newPages: BrochurePage[] = [];
-    (selectedCourse.chapters ?? [])
-      .filter((ch) => selectedChapters[ch._id])
-      .forEach((ch) => {
-        // One page per chapter
-        newPages.push(defaultPage({ pageTitle: ch.title, chapterId: ch._id }));
-        // One page per selected topic
-        (ch.topics ?? [])
-          .filter((t) => selectedTopics[t._id])
-          .forEach((t) => {
-            newPages.push(defaultPage({ pageTitle: t.title, chapterId: ch._id, topicId: t._id }));
-          });
-      });
-    setPages(newPages);
-    setActivePage(newPages.length > 0 ? 0 : "cover");
-    setMessage({ type: "success", text: `Generated ${newPages.length} page(s). Now edit each page below.` });
   };
 
   const addBlankPage = () => {
@@ -562,15 +522,11 @@ export default function BrochureTab() {
     setSaving(true);
     setMessage(null);
     try {
-      const chapters: BrochureChapter[] = (selectedCourse.chapters ?? [])
-        .filter((ch) => selectedChapters[ch._id])
-        .map((ch) => ({
-          chapterId: ch._id,
-          chapterName: ch.title,
-          topics: (ch.topics ?? [])
-            .filter((t) => selectedTopics[t._id])
-            .map((t) => ({ topicId: t._id, topicName: t.title })),
-        }));
+      const chapters: BrochureChapter[] = (selectedCourse.chapters ?? []).map((ch) => ({
+        chapterId: ch._id,
+        chapterName: ch.title,
+        topics: (ch.topics ?? []).map((t) => ({ topicId: t._id, topicName: t.title })),
+      }));
 
       await axios.post(`${API_BASE}/brochures`, {
         courseId: selectedCourse._id,
@@ -603,7 +559,6 @@ export default function BrochureTab() {
     handleCourseSelect(brochure.courseId);
   };
 
-  // Sidebar page list
   const pageList = [
     { label: "Cover Page", key: "cover" as const },
     ...pages.map((p, i) => ({ label: p.pageTitle || `Page ${i + 1}`, key: i as number })),
@@ -619,99 +574,45 @@ export default function BrochureTab() {
         </div>
       )}
 
-      {/* ── Course & Chapter Selector ── */}
-      <div className="bg-white rounded-xl shadow p-6 space-y-4">
-        <h3 className="text-lg font-semibold text-gray-700">1. Select Course & Topics</h3>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-600 mb-1">Select Course</label>
+      {/* ── Course selector + editor in one block ── */}
+      <div className="bg-white rounded-xl shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center gap-4">
           <select
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 min-w-[220px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             onChange={(e) => handleCourseSelect(e.target.value)}
             value={selectedCourse?._id ?? ""}
           >
-            <option value="">-- Choose a course --</option>
+            <option value="">-- Select a course to build brochure --</option>
             {courses.map((c) => (
               <option key={c._id} value={c._id}>{c.title}</option>
             ))}
           </select>
-        </div>
 
-        {loadingCourse && <p className="text-sm text-gray-500 animate-pulse">Loading course details...</p>}
-
-        {selectedCourse && !loadingCourse && (
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-gray-600">Select chapters and topics to include:</p>
-
-            {(selectedCourse.chapters ?? []).length === 0 && (
-              <p className="text-sm text-gray-400">No chapters found for this course.</p>
-            )}
-
-            {(selectedCourse.chapters ?? []).map((chapter) => (
-              <div key={chapter._id} className="border border-gray-200 rounded-lg overflow-hidden">
-                <label className="flex items-center gap-3 px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100">
-                  <input
-                    type="checkbox"
-                    checked={!!selectedChapters[chapter._id]}
-                    onChange={() => toggleChapter(chapter._id, chapter.topics ?? [])}
-                    className="w-4 h-4 accent-blue-600"
-                  />
-                  <span className="font-medium text-gray-800 text-sm">{chapter.title}</span>
-                </label>
-                {selectedChapters[chapter._id] && (
-                  <div className="px-8 py-2 space-y-1 bg-white">
-                    {(chapter.topics ?? []).length === 0 && (
-                      <p className="text-xs text-gray-400 py-1">No topics in this chapter.</p>
-                    )}
-                    {(chapter.topics ?? []).map((topic) => (
-                      <label key={topic._id} className="flex items-center gap-3 py-1 cursor-pointer hover:text-blue-600">
-                        <input
-                          type="checkbox"
-                          checked={!!selectedTopics[topic._id]}
-                          onChange={() => toggleTopic(topic._id)}
-                          className="w-4 h-4 accent-blue-600"
-                        />
-                        <span className="text-sm text-gray-700">{topic.title}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            <div className="flex gap-3 pt-1">
-              <button
-                onClick={generatePages}
-                className="px-4 py-2 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 transition"
-              >
-                Generate Pages from Selection
-              </button>
+          {selectedCourse && (
+            <>
               <button
                 onClick={addBlankPage}
                 className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
               >
                 + Blank Page
               </button>
-            </div>
-          </div>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition ml-auto"
+              >
+                {saving ? "Saving..." : "Save Brochure"}
+              </button>
+            </>
+          )}
+        </div>
+
+        {loadingCourse && (
+          <p className="px-6 py-4 text-sm text-gray-500 animate-pulse">Loading course...</p>
         )}
-      </div>
 
-      {/* ── Visual Editor ── */}
-      {selectedCourse && !loadingCourse && (
-        <div className="bg-white rounded-xl shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-700">2. Build Brochure Pages</h3>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition"
-            >
-              {saving ? "Saving..." : "Save Brochure"}
-            </button>
-          </div>
-
-          <div className="flex min-h-[600px]">
+        {selectedCourse && !loadingCourse && (
+          <div className="flex min-h-[640px]">
             {/* Sidebar */}
             <aside className="w-52 border-r border-gray-100 bg-gray-50 flex-shrink-0 overflow-y-auto">
               <div className="p-3 space-y-1">
@@ -741,9 +642,7 @@ export default function BrochureTab() {
             <div className="flex-1 p-6 overflow-y-auto space-y-4">
               {activePage === "cover" ? (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-gray-700">Cover Page</h4>
-                  </div>
+                  <h4 className="font-semibold text-gray-700">Cover Page</h4>
                   <PageCanvas
                     page={coverPage}
                     onUpdate={(u) => setCoverPage(u as CoverPage)}
@@ -753,7 +652,7 @@ export default function BrochureTab() {
               ) : (
                 typeof activePage === "number" && pages[activePage] && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
                       <input
                         type="text"
                         value={pages[activePage].pageTitle}
@@ -778,8 +677,14 @@ export default function BrochureTab() {
               )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {!selectedCourse && !loadingCourse && (
+          <div className="px-6 py-16 text-center text-gray-400 text-sm">
+            Select a course above to start building its brochure
+          </div>
+        )}
+      </div>
 
       {/* ── Saved Brochures Table ── */}
       <div className="bg-white rounded-xl shadow p-6">
