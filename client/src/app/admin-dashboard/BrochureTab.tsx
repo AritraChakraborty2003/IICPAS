@@ -211,6 +211,15 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
   const overlayInputRef = useRef<HTMLInputElement>(null);
   const textDragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
 
+  // Read file as base64 data URL — works instantly, no server needed
+  const readAsDataURL = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
   const handleTextDragMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -250,8 +259,13 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file);
-      onUpdate({ ...page, backgroundImage: url } as BrochurePage | CoverPage);
+      // Use base64 for instant preview; also upload to server for persistence
+      const dataUrl = await readAsDataURL(file);
+      onUpdate({ ...page, backgroundImage: dataUrl } as BrochurePage | CoverPage);
+      // Upload in background and swap URL once done
+      uploadImage(file).then((serverUrl) => {
+        onUpdate({ ...page, backgroundImage: serverUrl } as BrochurePage | CoverPage);
+      }).catch(() => { /* keep base64 if upload fails */ });
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -263,10 +277,18 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
     if (!file) return;
     setUploading(true);
     try {
-      const url = await uploadImage(file);
-      const newImg: OverlayImage = { url, x: 40, y: 40, width: 200, height: 150, opacity: 1, zIndex: page.overlayImages.length + 1 };
+      const dataUrl = await readAsDataURL(file);
+      const newImg: OverlayImage = { url: dataUrl, x: 40, y: 40, width: 200, height: 150, opacity: 1, zIndex: page.overlayImages.length + 1 };
+      const newIdx = page.overlayImages.length;
       onUpdate({ ...page, overlayImages: [...page.overlayImages, newImg] } as BrochurePage | CoverPage);
-      setSelectedOverlay(page.overlayImages.length);
+      setSelectedOverlay(newIdx);
+      // Upload in background and swap URL
+      uploadImage(file).then((serverUrl) => {
+        onUpdate({
+          ...page,
+          overlayImages: [...page.overlayImages, { ...newImg, url: serverUrl }],
+        } as BrochurePage | CoverPage);
+      }).catch(() => { /* keep base64 */ });
     } finally {
       setUploading(false);
       e.target.value = "";
