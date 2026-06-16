@@ -14,6 +14,7 @@ import LeadsTab from "./LeadsTab";
 import Drawer from "react-modern-drawer";
 import ManageMetaTags from "./Course/ManageMetaTags";
 import BlogComponent from "./BlogComponent";
+import BrochureTab from "./BrochureTab";
 import CollegeTab from "./CollegeTab";
 import CalendarTab from "./CalendarTab";
 import AboutUsTab from "./AboutUsTab";
@@ -338,6 +339,7 @@ const NAVIGATION_GROUPS = [
       { id: "blogs", label: "Blogs", icon: <FaBlogger /> },
       { id: "testimonials", label: "Testimonials", icon: <FaQuoteRight /> },
       { id: "faq", label: "FAQ", icon: <FaUserTie /> },
+      { id: "brochure", label: "Manage Brochure", icon: <FaFileAlt /> },
       { id: "about-us", label: "About Us Section", icon: <FaBook /> },
       { id: "our-partners", label: "Our Partners", icon: <FaUsers /> },
       {
@@ -901,6 +903,8 @@ function AdminDashboardContent() {
           <IPWhitelistTab />
         ) : activeTab === "demo-digital-hub" ? (
           <DemoDigitalHubTab />
+        ) : activeTab === "brochure" ? (
+          <BrochureTab />
         ) : activeTab === "faq" ? (
           <FAQTab />
         ) : activeTab === "news" ? (
