@@ -503,16 +503,8 @@ export default function BrochureTab() {
         setCoverPage(existing.coverPage ?? defaultCover());
         setPages(existing.pages ?? []);
       } else {
-        // Auto-generate one page per chapter + one per topic
-        const autoPages: BrochurePage[] = [];
-        (course.chapters ?? []).forEach((ch) => {
-          autoPages.push(defaultPage({ pageTitle: ch.title, chapterId: ch._id }));
-          (ch.topics ?? []).forEach((t) => {
-            autoPages.push(defaultPage({ pageTitle: t.title, chapterId: ch._id, topicId: t._id }));
-          });
-        });
         setCoverPage(defaultCover());
-        setPages(autoPages);
+        setPages([]);
       }
       setActivePage("cover");
     } catch {
