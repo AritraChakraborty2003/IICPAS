@@ -1,8 +1,6 @@
 import express from "express";
 import multer from "multer";
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   getAllBrochures,
   getBrochureByCourse,
@@ -10,13 +8,10 @@ import {
   deleteBrochure,
 } from "../controllers/brochureController.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const router = express.Router();
 
-// Absolute path so it always resolves correctly regardless of cwd
-const brochureImageDir = path.resolve(__dirname, "../../uploads/brochure-images");
+// Use the same relative path that express.static("uploads") in index.js serves
+const brochureImageDir = "uploads/brochure-images";
 if (!fs.existsSync(brochureImageDir)) {
   fs.mkdirSync(brochureImageDir, { recursive: true });
 }
