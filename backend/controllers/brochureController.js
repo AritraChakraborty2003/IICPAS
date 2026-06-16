@@ -21,14 +21,22 @@ export const getBrochureByCourse = async (req, res) => {
 
 export const saveBrochure = async (req, res) => {
   try {
-    const { courseId, courseName, chapters } = req.body;
+    const { courseId, courseName, chapters, coverPage, pages } = req.body;
     if (!courseId || !courseName) {
       return res.status(400).json({ success: false, error: "courseId and courseName are required" });
     }
 
+    const updateData = {
+      courseId,
+      courseName,
+      chapters: chapters || [],
+      coverPage: coverPage || {},
+      pages: pages || [],
+    };
+
     const brochure = await Brochure.findOneAndUpdate(
       { courseId },
-      { courseId, courseName, chapters: chapters || [] },
+      updateData,
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
