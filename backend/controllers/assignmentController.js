@@ -20,7 +20,23 @@ export const createAssignment = async (req, res) => {
       tasks: tasks || [],
       content: content || [],
       simulations: simulations || [],
-      questionSets: questionSets || [],
+      questionSets: (questionSets || []).map((qs) => ({
+        name: qs.name,
+        description: qs.description,
+        excelBase64: qs.excelBase64,
+        totalQuestions: qs.totalQuestions,
+        timeLimit: qs.timeLimit,
+        passingScore: qs.passingScore,
+        order: qs.order,
+        questions: (qs.questions || []).map((q) => ({
+          question: q.question,
+          options: Array.isArray(q.options) ? q.options : [],
+          correctAnswer: q.correctAnswer,
+          context: q.context,
+          type: q.type,
+          explanation: q.explanation,
+        })),
+      })),
     });
 
     await assignment.save();
@@ -173,16 +189,40 @@ export const getAssignment = async (req, res) => {
 // Update assignment
 export const updateAssignment = async (req, res) => {
   try {
-    const assignment = await Assignment.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
+    const { title, description, chapterId, tasks, content, simulations, questionSets } = req.body;
+
+    const assignment = await Assignment.findById(req.params.id);
     if (!assignment) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Assignment not found" });
+      return res.status(404).json({ success: false, error: "Assignment not found" });
     }
+
+    if (title !== undefined) assignment.title = title;
+    if (description !== undefined) assignment.description = description;
+    if (chapterId !== undefined) assignment.chapterId = chapterId;
+    if (tasks !== undefined) assignment.tasks = tasks;
+    if (content !== undefined) assignment.content = content;
+    if (simulations !== undefined) assignment.simulations = simulations;
+    if (questionSets !== undefined) {
+      assignment.questionSets = questionSets.map((qs) => ({
+        name: qs.name,
+        description: qs.description,
+        excelBase64: qs.excelBase64,
+        totalQuestions: qs.totalQuestions,
+        timeLimit: qs.timeLimit,
+        passingScore: qs.passingScore,
+        order: qs.order,
+        questions: (qs.questions || []).map((q) => ({
+          question: q.question,
+          options: Array.isArray(q.options) ? q.options : [],
+          correctAnswer: q.correctAnswer,
+          context: q.context,
+          type: q.type,
+          explanation: q.explanation,
+        })),
+      }));
+    }
+
+    await assignment.save();
     res.status(200).json({ success: true, data: assignment });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
