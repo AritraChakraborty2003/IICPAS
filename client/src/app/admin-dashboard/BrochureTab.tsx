@@ -201,10 +201,9 @@ interface PageCanvasProps {
   page: BrochurePage | CoverPage;
   onUpdate: (updated: BrochurePage | CoverPage) => void;
   uploadImage: (file: File) => Promise<string>;
-  showEditor?: boolean;
 }
 
-function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanvasProps) {
+function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   const [selectedOverlay, setSelectedOverlay] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const bgInputRef = useRef<HTMLInputElement>(null);
@@ -421,21 +420,31 @@ function PageCanvas({ page, onUpdate, uploadImage, showEditor = true }: PageCanv
         )}
       </div>
 
-      {/* Rich text editor — content feeds live into the canvas above */}
-      {showEditor && (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-medium">
-            ✏️ Edit Content — renders on background above
-          </div>
-          <OptimizedJoditEditor
-            value={(page as BrochurePage).content ?? (page as CoverPage).content}
-            onChange={(val) => onUpdate({ ...page, content: val } as BrochurePage | CoverPage)}
-            placeholder="Type here — text will appear on top of the background image..."
-            height={220}
-            uploadApi={`${API_BASE}/brochures/upload-image`}
-          />
-        </div>
-      )}
+    </div>
+  );
+}
+
+// ─── Stable content editor — isolated so typing never re-mounts the editor ───
+
+interface ContentEditorProps {
+  initialValue: string;
+  onCommit: (val: string) => void;
+  pageKey: string; // changes when page switches, forcing a fresh mount
+}
+
+function ContentEditor({ initialValue, onCommit, pageKey }: ContentEditorProps) {
+  return (
+    <div key={pageKey} className="border border-gray-200 rounded-lg overflow-hidden">
+      <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-medium">
+        ✏️ Edit Content — text renders on background above
+      </div>
+      <OptimizedJoditEditor
+        value={initialValue}
+        onChange={onCommit}
+        placeholder="Type here — text will appear on top of the background image..."
+        height={220}
+        uploadApi={`${API_BASE}/brochures/upload-image`}
+      />
     </div>
   );
 }
@@ -662,6 +671,11 @@ export default function BrochureTab() {
                     onUpdate={(u) => setCoverPage(u as CoverPage)}
                     uploadImage={uploadImage}
                   />
+                  <ContentEditor
+                    pageKey="cover"
+                    initialValue={coverPage.content}
+                    onCommit={(val) => setCoverPage((prev) => ({ ...prev, content: val }))}
+                  />
                 </div>
               ) : (
                 typeof activePage === "number" && pages[activePage] && (
@@ -685,6 +699,11 @@ export default function BrochureTab() {
                       page={pages[activePage]}
                       onUpdate={(u) => updatePage(activePage, u as BrochurePage)}
                       uploadImage={uploadImage}
+                    />
+                    <ContentEditor
+                      pageKey={`page-${activePage}`}
+                      initialValue={pages[activePage].content}
+                      onCommit={(val) => updatePage(activePage, { ...pages[activePage], content: val })}
                     />
                   </div>
                 )
