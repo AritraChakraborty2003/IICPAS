@@ -1,5 +1,5 @@
 "use client";
-import { getApiBase } from "@/lib/apiBase";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
 import React, { useState, useEffect } from "react";
 import {
@@ -220,7 +220,14 @@ const GroupPricingTab = ({ onBack }) => {
           ? item.pricing.liveSessionCenter.discount.toString()
           : "",
     });
-    setImagePreview(item.image || null);
+    const rawImage = item.image || null;
+    setImagePreview(
+      rawImage
+        ? rawImage.startsWith("http")
+          ? rawImage
+          : `${getApiOrigin()}${rawImage}`
+        : null
+    );
     setOpenDialog(true);
   };
 
