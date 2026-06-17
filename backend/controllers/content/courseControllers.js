@@ -6,10 +6,9 @@ import Transaction from "../../models/Transaction.js";
 import { buildCourseAccessEntries } from "../../utils/courseAccess.js";
 
 export const getAllCourses = async (req, res) => {
-  const courses = await Course.find().populate({
-    path: "chapters",
-    populate: POPULATE_TOPICS_WITH_LESSONS,
-  });
+  const courses = await Course.find()
+    .sort({ position: 1, createdAt: 1 })
+    .populate({ path: "chapters", populate: POPULATE_TOPICS_WITH_LESSONS });
   res.json(courses);
 };
 
@@ -323,6 +322,23 @@ export const getCourseLevels = async (req, res) => {
   } catch (error) {
     console.error("Error fetching course levels:", error);
     res.status(500).json({ error: "Failed to fetch course levels" });
+  }
+};
+
+// Accepts: { orderedIds: ["id1","id2",...] } — sets position = index for each
+export const reorderCourses = async (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return res.status(400).json({ error: "orderedIds array is required" });
+    }
+    const bulkOps = orderedIds.map((id, index) => ({
+      updateOne: { filter: { _id: id }, update: { $set: { position: index } } },
+    }));
+    await Course.bulkWrite(bulkOps);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 };
 

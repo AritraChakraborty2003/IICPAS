@@ -8,6 +8,7 @@ router.get("/all", courseController.getAllCourses);
 router.get("/available", courseController.getAvailableCourses);
 router.get("/student-courses/:studentId", courseController.getStudentCourses);
 router.post("/", upload.fields([{ name: "image", maxCount: 1 }, { name: "dashboardImage", maxCount: 1 }]), courseController.createCourse);
+router.put("/reorder", courseController.reorderCourses);
 router.put("/:id", upload.fields([{ name: "image", maxCount: 1 }, { name: "dashboardImage", maxCount: 1 }]), courseController.updateCourse);
 router.delete("/:id", courseController.deleteCourse);
 router.get("/:id", courseController.getCourse);

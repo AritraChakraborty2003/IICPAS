@@ -14,7 +14,8 @@ const CourseSchema = new Schema({
   },
   discount: { type: Number, default: 0 },
   status: { type: String, default: "Active", enum: ["Active", "Inactive"] },
-  duration: { type: String, default: "" }, // Course duration (e.g., "3 months", "6 weeks")
+  duration: { type: String, default: "" },
+  position: { type: Number, default: 0 }, // Course duration (e.g., "3 months", "6 weeks")
 
   // --- Added fields to match your form ---
   video: { type: String }, // Video URL or ID
