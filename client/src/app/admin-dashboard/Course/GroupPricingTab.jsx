@@ -86,6 +86,7 @@ const GroupPricingTab = ({ onBack }) => {
     liveDiscountCenter: "0",
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageDimensions, setImageDimensions] = useState(null);
 
   const courseLevels = [
     { value: "Executive Level", label: "Executive Level" },
@@ -156,6 +157,7 @@ const GroupPricingTab = ({ onBack }) => {
       liveDiscountCenter: "0",
     });
     setImagePreview(null);
+    setImageDimensions(null);
     setOpenDialog(true);
   };
 
@@ -221,13 +223,18 @@ const GroupPricingTab = ({ onBack }) => {
           : "",
     });
     const rawImage = item.image || null;
-    setImagePreview(
-      rawImage
-        ? rawImage.startsWith("http")
-          ? rawImage
-          : `${getApiOrigin()}${rawImage}`
-        : null
-    );
+    const fullImageUrl = rawImage
+      ? rawImage.startsWith("http")
+        ? rawImage
+        : `${getApiOrigin()}${rawImage}`
+      : null;
+    setImagePreview(fullImageUrl);
+    setImageDimensions(null);
+    if (fullImageUrl) {
+      const img = new Image();
+      img.onload = () => setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+      img.src = fullImageUrl;
+    }
     setOpenDialog(true);
   };
 
@@ -237,7 +244,11 @@ const GroupPricingTab = ({ onBack }) => {
       setFormData({ ...formData, image: file });
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result);
+        const dataUrl = reader.result;
+        setImagePreview(dataUrl);
+        const img = new Image();
+        img.onload = () => setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+        img.src = dataUrl;
       };
       reader.readAsDataURL(file);
     }
@@ -959,20 +970,30 @@ const GroupPricingTab = ({ onBack }) => {
               />
               {imagePreview && (
                 <Box sx={{ mt: 2 }}>
-                  <Typography variant="body2" sx={{ mb: 1 }}>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                     Image Preview:
                   </Typography>
                   <img
                     src={imagePreview}
                     alt="Group Pricing Preview"
                     style={{
-                      maxWidth: "200px",
-                      maxHeight: "150px",
+                      width: "100%",
+                      maxWidth: "480px",
+                      height: "270px",
                       objectFit: "cover",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       border: "1px solid #ddd",
+                      display: "block",
                     }}
                   />
+                  <Typography variant="caption" sx={{ display: "block", mt: 0.5, color: "#555" }}>
+                    {imageDimensions
+                      ? `Current image size: ${imageDimensions.width} × ${imageDimensions.height} px`
+                      : "Measuring image..."}
+                  </Typography>
+                  <Typography variant="caption" sx={{ display: "block", color: "#888" }}>
+                    Recommended: 480 × 270 px (16:9 ratio) for best display.
+                  </Typography>
                 </Box>
               )}
             </Box>
