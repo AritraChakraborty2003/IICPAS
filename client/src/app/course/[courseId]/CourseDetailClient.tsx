@@ -694,18 +694,56 @@ export default function CourseDetailClient({
 
                   {/* Pricing Cards */}
                   {(() => {
+                    const hasRecorded = (course?.pricing?.recordedSession?.price || 0) > 0 || (course?.pricing?.recordedSession?.finalPrice || 0) > 0;
                     const hasLive = (course?.pricing?.liveSession?.price || 0) > 0 || (course?.pricing?.liveSession?.finalPrice || 0) > 0;
-                    if (!hasLive) return null;
+                    if (!hasRecorded && !hasLive) return null;
                     return (
                       <div className="grid grid-cols-1 gap-2 mb-4">
+                        {/* Recorded Session */}
+                        {hasRecorded && (
+                          <div className="border-2 border-green-500 rounded-lg p-2">
+                            <div className="mb-2">
+                              <div className="text-center mb-1">
+                                <span className="text-xs font-bold text-green-600 block">
+                                  {course?.pricing?.recordedSession?.title || "RECORDED SESSION"}
+                                </span>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-sm font-bold text-green-600">
+                                  {student
+                                    ? `₹${getSessionPrice("recorded").toLocaleString()}`
+                                    : "₹ (login to view)"}
+                                </div>
+                                {student &&
+                                  course?.pricing?.recordedSession?.discount &&
+                                  course.pricing.recordedSession.discount > 0 && (
+                                    <div className="text-xs text-gray-500 line-through">
+                                      ₹{course.pricing.recordedSession.price?.toLocaleString()}
+                                    </div>
+                                  )}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() =>
+                                student
+                                  ? handleAddToCart(course._id || course.id, "recorded")
+                                  : openAuthModal("register")
+                              }
+                              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-1 px-2 rounded text-xs"
+                            >
+                              {student
+                                ? course?.pricing?.recordedSession?.buttonText || "Add Recorded Session"
+                                : "Register to unlock"}
+                            </button>
+                          </div>
+                        )}
                         {/* Live Session */}
                         {hasLive && (
                           <div className="border-2 border-blue-500 rounded-lg p-2">
                             <div className="mb-2">
                               <div className="text-center mb-1">
                                 <span className="text-xs font-bold text-blue-500 block">
-                                  {course?.pricing?.liveSession?.title ||
-                                    "DIGITAL HUB LIVE SESSION"}
+                                  {course?.pricing?.liveSession?.title || "DIGITAL HUB LIVE SESSION"}
                                 </span>
                               </div>
                               <div className="text-center">
@@ -718,7 +756,7 @@ export default function CourseDetailClient({
                                   course?.pricing?.liveSession?.discount &&
                                   course.pricing.liveSession.discount > 0 && (
                                     <div className="text-xs text-gray-500 line-through">
-                                      ₹{course.pricing.liveSession.price.toLocaleString()}
+                                      ₹{course.pricing.liveSession.price?.toLocaleString()}
                                     </div>
                                   )}
                               </div>
