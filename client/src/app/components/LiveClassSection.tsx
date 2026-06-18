@@ -108,14 +108,13 @@ export default function LiveClassSection() {
   };
 
   const handleJoinLiveClick = () => {
-    // Find the first active session or navigate to live page
     const activeSession = liveSessions.find(
       (session) => session.status === "active"
     );
     if (activeSession && activeSession.link) {
       handleSessionClick(activeSession);
     } else {
-      router.push("/live");
+      router.push("/live-session");
     }
   };
   return (
