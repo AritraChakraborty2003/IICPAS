@@ -49,6 +49,7 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import { startLiveSessionReminderScheduler } from "./services/liveSessionReminderScheduler.js";
 import { startClassAutoConvertScheduler } from "./services/classAutoConvertScheduler.js";
 import { startClassReminderScheduler } from "./services/classReminderScheduler.js";
+import { startLiveSessionAutoCompleteScheduler } from "./services/liveSessionAutoCompleteScheduler.js";
 
 //TicketRoutes
 import ticketRoutes from "./routes/TicketRoutes.js";

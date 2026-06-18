@@ -394,7 +394,7 @@ export const getAllLiveSessions = async (req, res) => {
 
       let dynamicStatus = session.status;
 
-      if (session.status === "active") {
+      if (session.status !== "inactive") {
         if (now < sessionStart) {
           dynamicStatus = "upcoming";
         } else if (now >= sessionStart && now <= sessionEnd) {
@@ -722,8 +722,7 @@ export const getLiveSessionById = async (req, res) => {
 
     let dynamicStatus = session.status;
 
-    // Only calculate dynamic status if session is active in database
-    if (session.status === "active") {
+    if (session.status !== "inactive") {
       if (now < sessionStart) {
         dynamicStatus = "upcoming";
       } else if (now >= sessionStart && now <= sessionEnd) {
@@ -732,7 +731,6 @@ export const getLiveSessionById = async (req, res) => {
         dynamicStatus = "completed";
       }
     }
-    // If session is inactive in database, keep it as inactive
 
     const sessionObj = normalizeLiveSessionResponse(session);
     const paidBookingCount = await Booking.countDocuments({
