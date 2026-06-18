@@ -24,6 +24,7 @@ import LiveSchedule from "../../components/LiveSchedule";
 import { useCart } from "../../../hooks/useCart";
 
 import axios from "axios";
+import { formatTextAsParagraphs } from "../../../lib/blogUtils";
 
 interface Course {
   _id?: string;
@@ -411,9 +412,11 @@ export default function CourseDetailClient({
 
                 {/* Description */}
                 <div
-                  className="text-sm text-gray-700 leading-relaxed mb-8"
+                  className="text-sm text-gray-700 leading-relaxed mb-8 [&>p]:mb-3"
                   dangerouslySetInnerHTML={{
-                    __html: course.description || "No description available.",
+                    __html:
+                      formatTextAsParagraphs(course.description) ||
+                      "<p>No description available.</p>",
                   }}
                 />
 
