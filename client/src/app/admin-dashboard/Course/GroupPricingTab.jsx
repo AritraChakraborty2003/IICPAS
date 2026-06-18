@@ -421,6 +421,24 @@ const GroupPricingTab = ({ onBack }) => {
     }
   };
 
+  const computeGroupDuration = (selectedIds, courseList) => {
+    if (!selectedIds?.length || !courseList?.length) return "";
+    let totalHours = 0;
+    let hasAny = false;
+    selectedIds.forEach((id) => {
+      const course = courseList.find((c) => c._id === id);
+      if (!course?.duration) return;
+      const match = course.duration.match(/(\d+(\.\d+)?)/);
+      if (match) {
+        totalHours += parseFloat(match[1]);
+        hasAny = true;
+      }
+    });
+    if (!hasAny) return "";
+    const weeks = (totalHours / 6).toFixed(1).replace(/\.0$/, "");
+    return `${totalHours} Hours (${weeks} weeks)`;
+  };
+
   const getSelectedCourseNames = (courseIds) => {
     if (!courseIds || !Array.isArray(courseIds)) return [];
 
@@ -655,9 +673,14 @@ const GroupPricingTab = ({ onBack }) => {
               <Select
                 multiple
                 value={formData.courseIds}
-                onChange={(e) =>
-                  setFormData({ ...formData, courseIds: e.target.value })
-                }
+                onChange={(e) => {
+                  const newIds = e.target.value;
+                  setFormData({
+                    ...formData,
+                    courseIds: newIds,
+                    duration: computeGroupDuration(newIds, courses),
+                  });
+                }}
                 label="Select Courses"
                 renderValue={(selected) => (
                   <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
@@ -694,16 +717,40 @@ const GroupPricingTab = ({ onBack }) => {
               inputProps={{ min: 0, step: 0.01 }}
             />
 
-            <TextField
-              fullWidth
-              label="Duration"
-              value={formData.duration}
-              onChange={(e) =>
-                setFormData({ ...formData, duration: e.target.value })
-              }
-              placeholder="e.g., 62 Hrs, 3 months, 6 weeks"
-              helperText="Shown on the course card. Leave blank to hide."
-            />
+            <Box>
+              <TextField
+                fullWidth
+                label="Duration"
+                value={formData.duration}
+                onChange={(e) =>
+                  setFormData({ ...formData, duration: e.target.value })
+                }
+                placeholder="e.g., 62 Hours (10 weeks)"
+                helperText={(() => {
+                  if (!formData.courseIds?.length) return "Shown on the course card. Leave blank to hide.";
+                  const breakdown = formData.courseIds.map((id) => {
+                    const c = courses.find((x) => x._id === id);
+                    return c ? `${c.title}: ${c.duration || "—"}` : null;
+                  }).filter(Boolean).join(" | ");
+                  return `Auto-computed from selected courses. ${breakdown}`;
+                })()}
+              />
+              {formData.courseIds?.length > 0 && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  sx={{ mt: 0.5, fontSize: 12 }}
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      duration: computeGroupDuration(formData.courseIds, courses),
+                    })
+                  }
+                >
+                  Recalculate from courses
+                </Button>
+              )}
+            </Box>
 
             <TextField
               fullWidth
