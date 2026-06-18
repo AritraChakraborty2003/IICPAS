@@ -75,8 +75,8 @@ const getTopicCount = (course) =>
     : 0;
 
 const SIMULATION_KEYWORD_MAP = [
-  { keywords: ["gst", "goods and service", "goods & service", "gstr", "e-way", "eway", "e-invoice", "einvoice", "individual gst"], count: 17 },
-  { keywords: ["tds", "tax deducted at source", "tds computation"], count: 4 },
+  { keywords: ["gst", "goods and service", "goods & service", "gstr", "e-way", "eway", "e-invoice", "einvoice", "individual gst"], count: 11 },
+  { keywords: ["tds", "tax deducted at source", "tds computation"], count: 6 },
   { keywords: ["accounting", "tally", "accountant"], count: 6 },
 ];
 
