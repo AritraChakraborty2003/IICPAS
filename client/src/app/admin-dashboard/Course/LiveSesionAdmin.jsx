@@ -335,6 +335,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     endTime: "",
     date: "",
     link: "",
+    passcode: "",
     price: "",
     category: "",
     maxParticipants: "",
@@ -857,6 +858,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
         endTime,
         date: session.date.split("T")[0],
         link: session.link,
+        passcode: session.passcode || "",
         price: session.price,
         category: session.category || "",
         maxParticipants: session.maxParticipants || "",
@@ -989,6 +991,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       endTime: "",
       date: "",
       link: "",
+      passcode: "",
       price: "",
       category: "",
       maxParticipants: "",
@@ -2499,6 +2502,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
             "startTime",
             "endTime",
             "link",
+            "passcode",
             "price",
             "maxParticipants",
           ].map((name) => {
@@ -2519,6 +2523,8 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                 ? "End Time"
                 : name === "link"
                 ? "Meeting Link"
+                : name === "passcode"
+                ? "Passcode (Optional)"
                 : name === "price"
                 ? "Price (In Rupees)"
                 : "Max Participants";
@@ -2555,9 +2561,13 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                     className="w-full border px-4 py-3 rounded-lg bg-gray-50"
                     placeholder={label}
                     value={form[name]}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, [name]: e.target.value }))
-                    }
+                    pattern={name === "passcode" ? "[A-Za-z0-9]*" : undefined}
+                    onChange={(e) => {
+                      const val = name === "passcode"
+                        ? e.target.value.replace(/[^A-Za-z0-9]/g, "")
+                        : e.target.value;
+                      setForm((f) => ({ ...f, [name]: val }));
+                    }}
                   />
                 )}
               </div>

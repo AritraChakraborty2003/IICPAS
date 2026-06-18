@@ -20,6 +20,7 @@ const liveSessionSchema = new mongoose.Schema(
     time: { type: String, required: true },
     date: { type: Date, required: true },
     link: { type: String, required: true },
+    passcode: { type: String, default: "" },
     price: { type: Number, default: 0 },
     category: { type: String, default: "" },
     maxParticipants: { type: Number, default: 50 },
