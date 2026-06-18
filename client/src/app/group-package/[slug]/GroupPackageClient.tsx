@@ -77,6 +77,10 @@ type GroupPricingResponse = {
   };
   averageRating?: number;
   totalRatings?: number;
+  certificate?: {
+    image?: string;
+    text?: string;
+  };
 };
 
 export default function GroupPackageClient({ slug }: { slug: string }) {
@@ -84,7 +88,7 @@ export default function GroupPackageClient({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<number[]>([]);
-  const [activeTab, setActiveTab] = useState<"syllabus" | "pricing">(
+  const [activeTab, setActiveTab] = useState<"syllabus" | "pricing" | "certificate">(
     "syllabus"
   );
   const [student, setStudent] = useState<any>(null);
@@ -289,7 +293,7 @@ export default function GroupPackageClient({ slug }: { slug: string }) {
               <div className="mb-6 flex overflow-x-auto rounded-lg bg-gray-100 p-1">
                 <button
                   onClick={() => setActiveTab("syllabus")}
-                  className={`flex-1 min-w-[120px] rounded-md py-2 text-sm font-medium ${
+                  className={`flex-1 min-w-[100px] rounded-md py-2 text-sm font-medium ${
                     activeTab === "syllabus"
                       ? "bg-white text-green-600 shadow"
                       : "text-gray-600 hover:text-gray-900"
@@ -299,7 +303,7 @@ export default function GroupPackageClient({ slug }: { slug: string }) {
                 </button>
                 <button
                   onClick={() => setActiveTab("pricing")}
-                  className={`flex-1 min-w-[120px] rounded-md py-2 text-sm font-medium ${
+                  className={`flex-1 min-w-[100px] rounded-md py-2 text-sm font-medium ${
                     activeTab === "pricing"
                       ? "bg-white text-green-600 shadow"
                       : "text-gray-600 hover:text-gray-900"
@@ -307,6 +311,18 @@ export default function GroupPackageClient({ slug }: { slug: string }) {
                 >
                   Pricing
                 </button>
+                {(pkg.certificate?.image || pkg.certificate?.text) && (
+                  <button
+                    onClick={() => setActiveTab("certificate")}
+                    className={`flex-1 min-w-[100px] rounded-md py-2 text-sm font-medium ${
+                      activeTab === "certificate"
+                        ? "bg-white text-green-600 shadow"
+                        : "text-gray-600 hover:text-gray-900"
+                    }`}
+                  >
+                    Certificate
+                  </button>
+                )}
               </div>
 
               {/* --- Syllabus Tab --- */}
@@ -391,6 +407,33 @@ export default function GroupPackageClient({ slug }: { slug: string }) {
                     </div>
                   ))}
                 </>
+              )}
+
+              {/* --- Certificate Tab --- */}
+              {activeTab === "certificate" && (
+                <div className="space-y-5">
+                  <h3 className="bg-gradient-to-r from-blue-500 to-green-500 bg-clip-text text-lg font-bold text-transparent">
+                    Sample Certificate
+                  </h3>
+                  {pkg.certificate?.image && (
+                    <div className="relative overflow-hidden rounded-2xl border border-gray-200 shadow-lg">
+                      <img
+                        src={
+                          pkg.certificate.image.startsWith("http")
+                            ? pkg.certificate.image
+                            : `${SERVER_BASE}${pkg.certificate.image}`
+                        }
+                        alt="Sample Certificate"
+                        className="w-full object-contain"
+                      />
+                    </div>
+                  )}
+                  {pkg.certificate?.text && (
+                    <p className="rounded-xl border border-green-100 bg-green-50 px-5 py-4 text-sm leading-relaxed text-gray-700">
+                      {pkg.certificate.text}
+                    </p>
+                  )}
+                </div>
               )}
 
               {/* --- Pricing Tab --- */}

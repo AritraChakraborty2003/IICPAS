@@ -1014,6 +1014,54 @@ const GroupPricingTab = ({ onBack }) => {
                 </Box>
               )}
             </Box>
+
+            {/* Certificate Section */}
+            <Box sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: 2 }}>
+              <Typography variant="body1" sx={{ mb: 2, fontWeight: 600 }}>
+                Sample Certificate (Optional)
+              </Typography>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                Certificate Image
+              </Typography>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    setFormData({ ...formData, certificateImage: file });
+                    const reader = new FileReader();
+                    reader.onloadend = () => setCertImagePreview(reader.result);
+                    reader.readAsDataURL(file);
+                  }
+                }}
+                style={{ marginBottom: 12 }}
+              />
+              {certImagePreview && (
+                <Box sx={{ mt: 1, mb: 2 }}>
+                  <img
+                    src={certImagePreview}
+                    alt="Certificate Preview"
+                    style={{
+                      width: "100%",
+                      maxWidth: "480px",
+                      borderRadius: "8px",
+                      border: "1px solid #ddd",
+                      display: "block",
+                    }}
+                  />
+                </Box>
+              )}
+              <TextField
+                fullWidth
+                label="Certificate Description / Text"
+                multiline
+                rows={3}
+                value={formData.certificateText}
+                onChange={(e) => setFormData({ ...formData, certificateText: e.target.value })}
+                placeholder="e.g. Upon completion, students receive an industry-recognised certificate from IICPA Institute."
+              />
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
