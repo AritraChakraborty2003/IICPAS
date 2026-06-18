@@ -74,8 +74,21 @@ const getTopicCount = (course) =>
       )
     : 0;
 
-const getSimulationCount = (course) =>
-  Array.isArray(course?.simulations) ? course.simulations.length : 0;
+const SIMULATION_KEYWORD_MAP = [
+  { keywords: ["gst", "goods and service", "goods & service", "gstr", "e-way", "eway", "e-invoice", "einvoice", "individual gst"], count: 17 },
+  { keywords: ["tds", "tax deducted at source", "tds computation"], count: 4 },
+  { keywords: ["accounting", "tally", "accountant"], count: 6 },
+];
+
+const getSimulationCount = (course) => {
+  if (Array.isArray(course?.simulations) && course.simulations.length > 0)
+    return course.simulations.length;
+  const text = `${course?.title || ""} ${course?.category || ""}`.toLowerCase();
+  for (const { keywords, count } of SIMULATION_KEYWORD_MAP) {
+    if (keywords.some((kw) => text.includes(kw))) return count;
+  }
+  return 0;
+};
 
 const normalizeCourseImageSrc = (rawImage, apiUrl) => {
   if (!rawImage || typeof rawImage !== "string") return null;

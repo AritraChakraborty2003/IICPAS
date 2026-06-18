@@ -1178,11 +1178,12 @@ export default function DigitalHubClient({
   const isTopicLocked = useCallback((topicIndex: number, topicId?: string) => {
     if (isDemo) return false;
 
-    // Always check topic-level batch windows first — they take priority
-    // over all chapter-level and course-level preview restrictions.
-    // This allows individually scheduled topics (e.g., "Accounting Cycle"
-    // starting May 13) to unlock correctly even when the course batch is
-    // still in "preview" phase.
+    // If the chapter itself is locked, so are all its topics.
+    if (isSelectedChapterLocked) return true;
+
+    // Check individual topic-level batch windows. These allow individually
+    // scheduled topics to unlock at their specific time — useful both in
+    // preview phase (early access) and in active phase (progressive unlock).
     const granularTopicState = getBatchTopicState(activePurchasedCourseRecord, selectedChapter?._id, topicId);
     if (granularTopicState.hasBatchWindow) {
       return granularTopicState.isLocked;
@@ -1199,13 +1200,10 @@ export default function DigitalHubClient({
       }
     }
 
-    // If the chapter itself is locked, so are all its topics.
-    if (isSelectedChapterLocked) return true;
-
     // Preview-lock: only lock topics after index 0 when in preview mode,
     // unless the topic has its own explicitly active window (handled above).
     return shouldPreviewLockTopics && topicIndex > 0;
-  }, [isDemo, activePurchasedCourseRecord, selectedChapter, isSelectedChapterLocked, shouldPreviewLockTopics]);
+  }, [isDemo, isSelectedChapterLocked, activePurchasedCourseRecord, selectedChapter, shouldPreviewLockTopics]);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -3636,6 +3634,17 @@ export default function DigitalHubClient({
                       </h3>
                       {visibleTopics.map((topic: TopicData, index) => {
                         const topicLocked = isTopicLocked(index, topic._id);
+                        const topicWindow = topicLocked
+                          ? (() => {
+                              const clientState = getBatchTopicState(activePurchasedCourseRecord, selectedChapter?._id, topic._id);
+                              if (clientState.hasBatchWindow && clientState.startsAt) return clientState;
+                              const serverWindow = selectedChapter?.topicBatchWindows?.find(
+                                (w) => String(w.topicId) === String(topic._id)
+                              );
+                              if (serverWindow?.hasBatchWindow && serverWindow.startsAt) return serverWindow;
+                              return null;
+                            })()
+                          : null;
                         return (
                           <button
                             key={topic._id}
@@ -3670,9 +3679,15 @@ export default function DigitalHubClient({
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="font-medium">{topic.title}</div>
+                                {topicLocked && topicWindow?.startsAt && (
+                                  <div className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
+                                    <Calendar className="h-3 w-3 shrink-0" />
+                                    Unlocks {new Date(topicWindow.startsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                                  </div>
+                                )}
                               </div>
                               {topicLocked ? (
-                                <Lock className="h-4 w-4 text-amber-500" />
+                                <Lock className="h-4 w-4 text-amber-500 shrink-0" />
                               ) : null}
                               {selectedChapter?.completedTopicIds?.includes(
                                 topic._id
