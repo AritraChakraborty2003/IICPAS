@@ -287,9 +287,7 @@ export default function RecordedSessionAdmin() {
     return sessions
       .filter(
         (session) =>
-          String(session?.status || "").toLowerCase() === "completed" &&
-          session?.link &&
-          session.link.trim() !== ""
+          String(session?.status || "").toLowerCase() === "completed"
       )
       .sort((left, right) => {
         const leftTime = new Date(left?.date || 0).getTime();
