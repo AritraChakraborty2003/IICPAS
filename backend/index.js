@@ -375,6 +375,7 @@ global.io = io;
 startLiveSessionReminderScheduler();
 startClassAutoConvertScheduler();
 startClassReminderScheduler();
+startLiveSessionAutoCompleteScheduler();
 //Contact Info Routes
 app.use("/api/contact-info", contactLimiter, contactInfoRoutes);
 
