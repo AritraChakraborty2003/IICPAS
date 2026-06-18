@@ -124,12 +124,10 @@ export default function CertificateTab() {
     fetchStudentAndCourses();
   }, [fetchStudentAndCourses]);
 
-  const handleDownload = (courseTitle) => {
-    // In a real application, this would trigger a download of a generated PDF
-    // For now, we use the fallback image or a placeholder behavior
+  const handleDownload = (courseId, courseTitle) => {
     const link = document.createElement("a");
-    link.href = "/certificate.jpeg";
-    link.download = `Certificate_${courseTitle.replace(/\s+/g, "_")}.jpeg`;
+    link.href = getCertificateImage(courseId, groupCourseIds);
+    link.download = `Certificate_${courseTitle.replace(/\s+/g, "_")}.jpg`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -258,7 +256,7 @@ export default function CertificateTab() {
                           <button
                              onClick={(e) => {
                                e.stopPropagation();
-                               if (isCompleted) handleDownload(course.title);
+                               if (isCompleted) handleDownload(course._id, course.title);
                              }}
                              disabled={!isCompleted}
                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
@@ -299,7 +297,7 @@ export default function CertificateTab() {
               
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => selectedCertificate.isCompleted && handleDownload(selectedCertificate.course.title)}
+                  onClick={() => selectedCertificate.isCompleted && handleDownload(selectedCertificate.course._id, selectedCertificate.course.title)}
                   disabled={!selectedCertificate.isCompleted}
                   className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 border ${
                     selectedCertificate.isCompleted 
