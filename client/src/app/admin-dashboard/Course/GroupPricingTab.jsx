@@ -367,6 +367,10 @@ const GroupPricingTab = ({ onBack }) => {
       if (formData.image) {
         formDataToSend.append("image", formData.image);
       }
+      if (formData.certificateImage) {
+        formDataToSend.append("certificateImage", formData.certificateImage);
+      }
+      formDataToSend.append("certificateText", formData.certificateText || "");
 
       if (editingItem) {
         await axios.put(
