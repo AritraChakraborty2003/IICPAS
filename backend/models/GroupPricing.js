@@ -43,6 +43,10 @@ const GroupPricingSchema = new Schema({
     type: String,
     default: "",
   },
+  certificate: {
+    image: { type: String, default: "" },
+    text: { type: String, default: "" },
+  },
   // SEO meta fields
   metaTitle: {
     type: String,

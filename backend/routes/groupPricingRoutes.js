@@ -26,11 +26,16 @@ router.get("/:id", getGroupPricingById);
 // POST /api/group-pricing/:id/enroll - Enroll student in group package
 router.post("/:id/enroll", enrollInGroupPackage);
 
+const uploadFields = uploadGroupPricingImage.fields([
+  { name: "image", maxCount: 1 },
+  { name: "certificateImage", maxCount: 1 },
+]);
+
 // POST /api/group-pricing - Create new group pricing configuration
-router.post("/", uploadGroupPricingImage.single("image"), createGroupPricing);
+router.post("/", uploadFields, createGroupPricing);
 
 // PUT /api/group-pricing/:id - Update group pricing configuration
-router.put("/:id", uploadGroupPricingImage.single("image"), updateGroupPricing);
+router.put("/:id", uploadFields, updateGroupPricing);
 
 // DELETE /api/group-pricing/:id - Delete group pricing configuration
 router.delete("/:id", deleteGroupPricing);

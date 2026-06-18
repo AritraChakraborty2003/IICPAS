@@ -180,9 +180,6 @@ export const getGroupPricingById = async (req, res) => {
 // Create new group pricing configuration
 export const createGroupPricing = async (req, res) => {
   try {
-    console.log("Create Group Pricing - Request body:", req.body);
-    console.log("Create Group Pricing - Request file:", req.file);
-
     const {
       groupName,
       level,
@@ -193,6 +190,7 @@ export const createGroupPricing = async (req, res) => {
       metaTitle,
       metaDescription,
       metaKeywords,
+      certificateText,
       recordedPrice,
       recordedFinalPrice,
       recordedDiscount,
@@ -206,8 +204,11 @@ export const createGroupPricing = async (req, res) => {
       liveFinalPriceCenter,
       liveDiscountCenter,
     } = req.body;
-    const image = req.file
-      ? `/uploads/group_pricing_images/${req.file.filename}`
+    const image = req.files?.image?.[0]
+      ? `/uploads/group_pricing_images/${req.files.image[0].filename}`
+      : "";
+    const certificateImage = req.files?.certificateImage?.[0]
+      ? `/uploads/group_pricing_images/${req.files.certificateImage[0].filename}`
       : "";
 
     // Parse courseIds if it's a string (from FormData)
@@ -314,6 +315,10 @@ export const createGroupPricing = async (req, res) => {
       metaDescription: metaDescription || "",
       metaKeywords: metaKeywords || "",
       image: image,
+      certificate: {
+        image: certificateImage,
+        text: certificateText || "",
+      },
       pricing: {
         recordedSession: {
           price: parseFloat(recordedPrice),
@@ -396,6 +401,7 @@ export const updateGroupPricing = async (req, res) => {
       metaTitle,
       metaDescription,
       metaKeywords,
+      certificateText,
       recordedPrice,
       recordedFinalPrice,
       recordedDiscount,
@@ -409,8 +415,11 @@ export const updateGroupPricing = async (req, res) => {
       liveFinalPriceCenter,
       liveDiscountCenter,
     } = req.body;
-    const image = req.file
-      ? `/uploads/group_pricing_images/${req.file.filename}`
+    const image = req.files?.image?.[0]
+      ? `/uploads/group_pricing_images/${req.files.image[0].filename}`
+      : undefined;
+    const certificateImage = req.files?.certificateImage?.[0]
+      ? `/uploads/group_pricing_images/${req.files.certificateImage[0].filename}`
       : undefined;
 
     // Parse courseIds if it's a string (from FormData)
@@ -484,6 +493,8 @@ export const updateGroupPricing = async (req, res) => {
     if (metaKeywords !== undefined) groupPricing.metaKeywords = metaKeywords;
     if (status) groupPricing.status = status;
     if (image) groupPricing.image = image;
+    if (certificateImage) groupPricing.certificate.image = certificateImage;
+    if (certificateText !== undefined) groupPricing.certificate.text = certificateText;
 
     // Update pricing structure
     if (recordedPrice || recordedFinalPrice || recordedDiscount !== undefined) {

@@ -112,6 +112,31 @@ router.get("/topics/:topicId", async (req, res) => {
   }
 });
 
+// Reorder chapters within a course
+router.put("/reorder/:courseId", async (req, res) => {
+  try {
+    const { courseId } = req.params;
+    const { orderedIds } = req.body;
+
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return res.status(400).json({ message: "orderedIds array is required" });
+    }
+
+    const course = await Course.findById(courseId);
+    if (!course) {
+      return res.status(404).json({ message: "Course not found" });
+    }
+
+    course.chapters = orderedIds;
+    await course.save();
+
+    res.json({ success: true, message: "Chapters reordered" });
+  } catch (error) {
+    console.error("Error reordering chapters:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // Reorder topics within a chapter
 router.put("/:chapterId/topics/reorder", async (req, res) => {
   try {

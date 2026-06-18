@@ -72,6 +72,8 @@ const GroupPricingTab = ({ onBack }) => {
     metaDescription: "",
     metaKeywords: "",
     image: null,
+    certificateImage: null,
+    certificateText: "",
     recordedPrice: "",
     recordedFinalPrice: "",
     recordedDiscount: "",
@@ -86,6 +88,7 @@ const GroupPricingTab = ({ onBack }) => {
     liveDiscountCenter: "0",
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [certImagePreview, setCertImagePreview] = useState(null);
   const [imageDimensions, setImageDimensions] = useState(null);
 
   const courseLevels = [
@@ -143,6 +146,8 @@ const GroupPricingTab = ({ onBack }) => {
       metaDescription: "",
       metaKeywords: "",
       image: null,
+      certificateImage: null,
+      certificateText: "",
       recordedPrice: "",
       recordedFinalPrice: "",
       recordedDiscount: "",
@@ -158,6 +163,7 @@ const GroupPricingTab = ({ onBack }) => {
     });
     setImagePreview(null);
     setImageDimensions(null);
+    setCertImagePreview(null);
     setOpenDialog(true);
   };
 
@@ -189,6 +195,8 @@ const GroupPricingTab = ({ onBack }) => {
       metaDescription: item.metaDescription || "",
       metaKeywords: item.metaKeywords || "",
       image: null,
+      certificateImage: null,
+      certificateText: item.certificate?.text || "",
       recordedPrice: item.pricing?.recordedSession?.price?.toString() || "",
       recordedFinalPrice:
         item.pricing?.recordedSession?.finalPrice?.toString() || "",
@@ -235,6 +243,11 @@ const GroupPricingTab = ({ onBack }) => {
       img.onload = () => setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
       img.src = fullImageUrl;
     }
+    const rawCertImage = item.certificate?.image || null;
+    const fullCertUrl = rawCertImage
+      ? rawCertImage.startsWith("http") ? rawCertImage : `${getApiOrigin()}${rawCertImage}`
+      : null;
+    setCertImagePreview(fullCertUrl);
     setOpenDialog(true);
   };
 

@@ -14,17 +14,31 @@ import {
   TextField,
   Typography,
   Stack,
-  Chip,
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { DataGrid } from "@mui/x-data-grid";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import axios from "axios";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { useAuth } from "@/contexts/AuthContext";
+
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const MySwal = withReactContent(Swal);
 const API_BASE = getApiBase();
@@ -39,11 +53,63 @@ const formatDateTime = (value) => {
   }).format(date);
 };
 
+function SortableChapterRow({ chapter, index, courseName, onViewTopics, onEditChapter, onDelete, hasPermission }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: chapter._id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    background: isDragging ? "#e3f2fd" : index % 2 === 0 ? "#fff" : "#fafafa",
+  };
+
+  return (
+    <tr ref={setNodeRef} style={style}>
+      <td style={{ padding: "12px 8px", width: 36, cursor: "grab", color: "#bbb", textAlign: "center" }} {...attributes} {...listeners}>
+        <DragIndicatorIcon fontSize="small" sx={{ display: "block", margin: "0 auto" }} />
+      </td>
+      <td style={{ padding: "12px 16px", fontSize: 15, color: "#475569" }}>{index + 1}</td>
+      <td style={{ padding: "12px 16px", fontSize: 15 }}>{courseName}</td>
+      <td style={{ padding: "12px 16px", fontSize: 15, fontWeight: 500 }}>{chapter.title}</td>
+      <td style={{ padding: "12px 16px", fontSize: 14, color: "#475569" }}>
+        {formatDateTime(chapter.publishAt || chapter.updatedAt || chapter.createdAt)}
+      </td>
+      <td style={{ padding: "12px 16px" }}>
+        <Stack direction="row" spacing={1}>
+          {hasPermission("course", "read") && (
+            <Button
+              variant="contained"
+              color="primary"
+              size="small"
+              onClick={() => onViewTopics(chapter)}
+              sx={{ textTransform: "none", fontWeight: 600, fontSize: 13 }}
+            >
+              Topics
+            </Button>
+          )}
+          {hasPermission("course", "update") && (
+            <Tooltip title="Edit Chapter">
+              <IconButton color="info" size="small" onClick={() => onEditChapter(chapter)}>
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {hasPermission("course", "delete") && (
+            <Tooltip title="Delete Chapter">
+              <IconButton color="error" size="small" onClick={() => onDelete(chapter._id)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
+      </td>
+    </tr>
+  );
+}
+
 const ChapterList = forwardRef(
-  (
-    { courseId, courseName, onViewCourse, onViewTopics, onEditChapter },
-    ref
-  ) => {
+  ({ courseId, courseName, onViewCourse, onViewTopics, onEditChapter }, ref) => {
     const [chapters, setChapters] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
@@ -52,29 +118,21 @@ const ChapterList = forwardRef(
     const [saving, setSaving] = useState(false);
     const { hasPermission } = useAuth();
 
-    useImperativeHandle(ref, () => ({
-      fetchChapters,
-    }));
+    const sensors = useSensors(
+      useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+    );
+
+    useImperativeHandle(ref, () => ({ fetchChapters }));
 
     const fetchChapters = useCallback(() => {
       setLoading(true);
-      console.log("Fetching chapters for courseId:", courseId);
       axios
         .get(`${API_BASE}/chapters/course/${courseId}`)
         .then((res) => {
-          console.log("Chapters API response:", res.data);
-          if (res.data.success) {
-            setChapters(res.data.chapters || []);
-            console.log("Set chapters:", res.data.chapters || []);
-          } else {
-            setChapters([]);
-            console.log("No success, set empty chapters");
-          }
+          if (res.data.success) setChapters(res.data.chapters || []);
+          else setChapters([]);
         })
-        .catch((error) => {
-          console.error("Error fetching chapters:", error);
-          setChapters([]);
-        })
+        .catch(() => setChapters([]))
         .finally(() => setLoading(false));
     }, [courseId]);
 
@@ -103,103 +161,25 @@ const ChapterList = forwardRef(
       }
     };
 
-    const filteredChapters = chapters.filter((ch) =>
-      ch.title.toLowerCase().includes(search.toLowerCase())
-    );
-
-    console.log("Chapters state:", chapters);
-    console.log("Filtered chapters:", filteredChapters);
-
-    // Columns definition WITHOUT status
-    const columns = [
-      {
-        field: "srNo",
-        headerName: "Sr. No.",
-        width: 80,
-        valueGetter: (params) => {
-          if (!params || !params.row) return null;
-          return (
-            filteredChapters.findIndex((ch) => ch._id === params.row._id) + 1
-          );
-        },
-        sortable: false,
-        filterable: false,
-      },
-      {
-        field: "courseName",
-        headerName: "Course Name",
-        flex: 1,
-        valueGetter: () => courseName,
-      },
-      { field: "title", headerName: "Chapter Name", flex: 1 },
-      {
-        field: "dateTime",
-        headerName: "Date & Time",
-        width: 180,
-        sortable: false,
-        filterable: false,
-        valueGetter: (params) =>
-          params?.row?.publishAt ||
-          params?.row?.updatedAt ||
-          params?.row?.createdAt ||
-          "",
-        renderCell: (params) => (
-          <span style={{ fontSize: 14, color: "#475569" }}>
-            {formatDateTime(params.value)}
-          </span>
-        ),
-      },
-      {
-        field: "actions",
-        headerName: "Action",
-        width: 220,
-        sortable: false,
-        filterable: false,
-        renderCell: (params) => (
-          <Stack direction="row" spacing={1}>
-            {hasPermission("course", "read") && (
-              <Button
-                variant="contained"
-                color="primary"
-                size="small"
-                onClick={() => onViewTopics(params.row)}
-              >
-                Topics
-              </Button>
-            )}
-
-            {hasPermission("course", "update") && (
-              <Tooltip title="Edit Chapter">
-                <IconButton
-                  color="info"
-                  size="small"
-                  onClick={() => onEditChapter(params.row)}
-                >
-                  <EditIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-
-            {hasPermission("course", "delete") && (
-              <Tooltip title="Delete Chapter">
-                <IconButton
-                  color="error"
-                  size="small"
-                  onClick={() => handleDelete(params.row._id)}
-                >
-                  <DeleteIcon />
-                </IconButton>
-              </Tooltip>
-            )}
-          </Stack>
-        ),
-      },
-    ];
+    const handleDragEnd = async ({ active, over }) => {
+      if (!over || active.id === over.id) return;
+      const oldIndex = chapters.findIndex((c) => c._id === active.id);
+      const newIndex = chapters.findIndex((c) => c._id === over.id);
+      const reordered = arrayMove(chapters, oldIndex, newIndex);
+      setChapters(reordered);
+      try {
+        await axios.put(`${API_BASE}/chapters/reorder/${courseId}`, {
+          orderedIds: reordered.map((c) => c._id),
+        });
+      } catch {
+        MySwal.fire("Error!", "Failed to save chapter order", "error");
+        fetchChapters();
+      }
+    };
 
     const handleAddChapter = async (e) => {
       e.preventDefault();
       if (!newTitle.trim()) return;
-
       setSaving(true);
       try {
         await axios.post(`${API_BASE}/chapters/by-course/${courseId}`, {
@@ -225,18 +205,16 @@ const ChapterList = forwardRef(
       setSaving(false);
     };
 
+    const filteredChapters = chapters.filter((ch) =>
+      ch.title.toLowerCase().includes(search.toLowerCase())
+    );
+
     return (
       <Box sx={{ p: 3 }}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          mb={2}
-        >
+        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
           <Typography variant="h5" fontWeight={700}>
             Chapters for "{courseName}"
           </Typography>
-
           <Stack direction="row" spacing={2} alignItems="center">
             <TextField
               placeholder="Search..."
@@ -245,7 +223,6 @@ const ChapterList = forwardRef(
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
-
             {!addingChapter && hasPermission("course", "add") && (
               <Button
                 variant="contained"
@@ -264,9 +241,8 @@ const ChapterList = forwardRef(
                 Add Chapter
               </Button>
             )}
-
             <Button variant="outlined" onClick={onViewCourse}>
-              View Course
+              VIEW COURSE
             </Button>
           </Stack>
         </Stack>
@@ -275,14 +251,7 @@ const ChapterList = forwardRef(
           <Box
             component="form"
             onSubmit={handleAddChapter}
-            sx={{
-              bgcolor: "white",
-              p: 3,
-              borderRadius: 2,
-              boxShadow: 3,
-              maxWidth: 480,
-              mb: 3,
-            }}
+            sx={{ bgcolor: "white", p: 3, borderRadius: 2, boxShadow: 3, maxWidth: 480, mb: 3 }}
           >
             <Stack spacing={2}>
               <TextField
@@ -292,14 +261,10 @@ const ChapterList = forwardRef(
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
               />
-
               <Stack direction="row" spacing={2} justifyContent="flex-end">
                 <Button
                   variant="outlined"
-                  onClick={() => {
-                    setAddingChapter(false);
-                    setNewTitle("");
-                  }}
+                  onClick={() => { setAddingChapter(false); setNewTitle(""); }}
                   disabled={saving}
                 >
                   Cancel
@@ -312,32 +277,62 @@ const ChapterList = forwardRef(
           </Box>
         )}
 
-        <Box sx={{ bgcolor: "white", borderRadius: 3, boxShadow: 2, p: 2 }}>
-          <DataGrid
-            autoHeight
-            rows={filteredChapters.map((ch) => ({ ...ch, id: ch._id }))}
-            columns={columns}
-            pageSize={10}
-            rowsPerPageOptions={[10, 20, 50]}
-            loading={loading}
-            disableRowSelectionOnClick
-            sx={{
-              border: "none",
-              fontSize: 15,
-              "& .MuiDataGrid-cell": {
-                borderBottom: "1px solid #e0e0e0",
-              },
-              "& .MuiDataGrid-columnHeaders": {
-                background: "#f6f8fa",
-                fontWeight: 700,
-                fontSize: 15,
-              },
-            }}
-          />
+        <Box sx={{ bgcolor: "white", borderRadius: 3, boxShadow: 2, overflow: "hidden" }}>
+          {loading ? (
+            <Box sx={{ p: 4, textAlign: "center", color: "#888" }}>Loading chapters...</Box>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext
+                items={filteredChapters.map((c) => c._id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ background: "#f6f8fa" }}>
+                      <th style={{ padding: "14px 8px", width: 36 }} title="Drag to reorder" />
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 700, fontSize: 15 }}>Sr. No.</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 700, fontSize: 15 }}>Course Name</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 700, fontSize: 15 }}>Chapter Name</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 700, fontSize: 15 }}>Date & Time</th>
+                      <th style={{ padding: "14px 16px", textAlign: "left", fontWeight: 700, fontSize: 15 }}>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredChapters.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ padding: 32, textAlign: "center", color: "#888" }}>
+                          No chapters found.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredChapters.map((chapter, index) => (
+                        <SortableChapterRow
+                          key={chapter._id}
+                          chapter={chapter}
+                          index={index}
+                          courseName={courseName}
+                          onViewTopics={onViewTopics}
+                          onEditChapter={onEditChapter}
+                          onDelete={handleDelete}
+                          hasPermission={hasPermission}
+                        />
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </SortableContext>
+            </DndContext>
+          )}
         </Box>
+
+        <Typography variant="caption" sx={{ mt: 1.5, display: "block", color: "#888" }}>
+          Drag the ⠿ handle to reorder chapters. Order is saved automatically.
+        </Typography>
       </Box>
     );
   }
 );
+
+ChapterList.displayName = "ChapterList";
 
 export default ChapterList;
