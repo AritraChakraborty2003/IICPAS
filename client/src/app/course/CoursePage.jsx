@@ -667,12 +667,14 @@ export default function CoursePage() {
                             {getTopicCount(course)} Topics
                           </span>
                         </span>
-                        <span className="inline-flex items-center gap-1.5">
-                          <span>🎮</span>
-                          <span className="font-semibold text-gray-800">
-                            {getSimulationCount(course)} Simulations
+                        {getSimulationCount(course) > 0 && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span>🎮</span>
+                            <span className="font-semibold text-gray-800">
+                              {getSimulationCount(course)} Simulations
+                            </span>
                           </span>
-                        </span>
+                        )}
                       </div>
 
                       {/* Price Section */}
