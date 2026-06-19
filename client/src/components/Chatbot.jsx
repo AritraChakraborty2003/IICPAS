@@ -237,6 +237,12 @@ const Chatbot = () => {
       text: welcomeText,
       isBot: true,
       timestamp: new Date(),
+      actions: [
+        { label: "Check Prices", trigger: "get prices" },
+        { label: "View Courses", trigger: "what courses do you offer?" },
+        { label: "Course Duration", trigger: "what is the duration?" },
+        { label: "Certificates", trigger: "do you provide certificates?" }
+      ]
     };
 
     setHasLead(true);
@@ -309,30 +315,62 @@ const Chatbot = () => {
     "what courses do you offer?": {
       text: "We offer courses in Accounting, HR, Finance, US CMA, and Excel. Here are our top courses:",
       showCourses: true,
+      actions: [
+        { label: "Check Prices", trigger: "get prices" },
+        { label: "Course Duration", trigger: "what is the duration?" }
+      ]
     },
     "how much do courses cost?": {
       text: "Course prices vary by level and content. Here is a list of our courses with their prices:",
       showCourses: true,
+      actions: [
+        { label: "View Courses", trigger: "what courses do you offer?" },
+        { label: "Do you provide certificates?", trigger: "do you provide certificates?" }
+      ]
     },
     "what is the duration?": {
       text: "Course duration depends on the level and content. Foundation courses typically take 2-4 weeks, Core courses 4-8 weeks, and Expert courses 8-12 weeks. Check individual course pages for specific details.",
+      actions: [
+        { label: "Check Prices", trigger: "get prices" },
+        { label: "How do I enroll?", trigger: "how do i enroll?" }
+      ]
     },
     "do you provide certificates?": {
       text: "Yes! We provide completion certificates for all our courses. These certificates are industry-recognized and can help boost your career prospects.",
+      actions: [
+        { label: "View Courses", trigger: "what courses do you offer?" },
+        { label: "How do I enroll?", trigger: "how do i enroll?" }
+      ]
     },
     "how do i enroll?": {
       text: "Simply click the 'Enroll Now' button on any course card, or visit the course detail page. You'll be redirected to our enrollment process where you can complete your registration.",
+      actions: [
+        { label: "Check Prices", trigger: "get prices" },
+        { label: "What are the prerequisites?", trigger: "what are the prerequisites?" }
+      ]
     },
     "what are the prerequisites?": {
       text: "Prerequisites vary by course level. Foundation courses have no prerequisites, Core courses may require basic knowledge, and Expert courses typically require intermediate to advanced knowledge in the subject area.",
+      actions: [
+        { label: "View Courses", trigger: "what courses do you offer?" }
+      ]
     },
     "get prices": {
       text: "Sure! Here are our available courses and their pricing:",
       showCourses: true,
+      actions: [
+        { label: "How do I enroll?", trigger: "how do i enroll?" },
+        { label: "Do you provide certificates?", trigger: "do you provide certificates?" }
+      ]
     },
     default: {
       text: "I'm here to help with course-related questions! Here are our available courses and their pricing. You can also ask me about specific details like certificates or enrollment.",
       showCourses: true,
+      actions: [
+        { label: "Check Prices", trigger: "get prices" },
+        { label: "View Courses", trigger: "what courses do you offer?" },
+        { label: "Course Duration", trigger: "what is the duration?" }
+      ]
     },
   };
 
