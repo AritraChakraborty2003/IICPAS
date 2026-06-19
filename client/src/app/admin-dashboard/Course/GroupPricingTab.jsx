@@ -629,116 +629,19 @@ const GroupPricingTab = ({ onBack }) => {
           create one.
         </Alert>
       ) : (
-        <Grid container spacing={3}>
-          {groupPricing.map((item) => (
-            <Grid item xs={12} md={6} lg={4} key={item._id}>
-              <Card
-                sx={{
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
-                  border: "1px solid #e8eaf6",
-                  "&:hover": {
-                    boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
-                  },
-                }}
-              >
-                <CardContent sx={{ flexGrow: 1 }}>
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                    mb={2}
-                  >
-                    <Chip
-                      label={item.level}
-                      color="primary"
-                      variant="outlined"
-                      sx={{ fontWeight: 600 }}
-                    />
-                    <Stack direction="row" spacing={1}>
-                      <Tooltip title="Edit" arrow>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleEdit(item)}
-                          sx={{
-                            bgcolor: "#e3f2fd",
-                            color: "#1976d2",
-                            "&:hover": { bgcolor: "#bbdefb" },
-                          }}
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Delete" arrow>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDelete(item)}
-                          sx={{
-                            bgcolor: "#ffebee",
-                            color: "#d32f2f",
-                            "&:hover": { bgcolor: "#ffcdd2" },
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </Stack>
-
-                  {item.groupName && (
-                    <Typography
-                      variant="h5"
-                      sx={{ mb: 1, color: "#1976d2", fontWeight: 700 }}
-                    >
-                      {item.groupName}
-                    </Typography>
-                  )}
-
-                  <Typography
-                    variant="h6"
-                    sx={{ mb: 1, color: "#2e7d32", fontWeight: 600 }}
-                  >
-                    ₹{item.groupPrice.toLocaleString()}
-                  </Typography>
-
-                  {item.description && (
-                    <Typography
-                      component="div"
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2, "& p": { margin: "0 0 8px 0" } }}
-                      dangerouslySetInnerHTML={{
-                        __html: formatTextAsParagraphs(item.description),
-                      }}
-                    />
-                  )}
-
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ mb: 1, fontWeight: 600 }}
-                  >
-                    Courses Included:
-                  </Typography>
-                  <Stack spacing={0.5}>
-                    {getSelectedCourseNames(item.courseIds).map(
-                      (courseName, index) => (
-                        <Chip
-                          key={index}
-                          label={courseName}
-                          size="small"
-                          variant="outlined"
-                          sx={{ fontSize: "0.75rem" }}
-                        />
-                      )
-                    )}
-                  </Stack>
-                </CardContent>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={groupPricing.map((i) => i._id)} strategy={verticalListSortingStrategy}>
+            {groupPricing.map((item) => (
+              <SortableGroupCard
+                key={item._id}
+                item={item}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                courseNames={getSelectedCourseNames(item.courseIds)}
+              />
+            ))}
+          </SortableContext>
+        </DndContext>
       )}
 
       {/* Add/Edit Dialog */}
