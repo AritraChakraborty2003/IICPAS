@@ -26,10 +26,10 @@ function LaunchOverlay({ onStart }: { onStart: () => void }) {
 function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   return (
     <div className="relative flex h-[52px] shrink-0 items-center border-b border-[#e0e0e0] bg-white shadow-sm">
-      {/* Hamburger — pinned to left edge, always visible */}
+      {/* Hamburger — always visible on the far left */}
       <button
         onClick={onToggleSidebar}
-        className="flex h-full w-[52px] shrink-0 items-center justify-center border-r border-[#e0e0e0] text-[#555] hover:bg-[#f5f5f5] hover:text-[#222]"
+        className="flex h-full w-[48px] shrink-0 items-center justify-center text-[#555] hover:bg-[#f5f5f5] hover:text-[#222]"
       >
         <Menu size={20} />
       </button>
