@@ -122,6 +122,15 @@ function Sidebar({ open, onHomeClick, mainView }: {
 
 // ─── Welcome / Home page (4 cards) ────────────────────────────────────────────
 function WelcomePage({ onEditClick }: { onEditClick: () => void }) {
+  const [tickCard, setTickCard] = useState<string | null>(null);
+
+  const handleViewDetails = (title: string) => {
+    setTickCard(title);
+    setTimeout(() => {
+      setTickCard(null);
+      onEditClick();
+    }, 1600);
+  };
   const cards = [
     {
       color: "#1a6fa8",
@@ -170,7 +179,19 @@ function WelcomePage({ onEditClick }: { onEditClick: () => void }) {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#f4f6fb]">
+    <div className="relative flex-1 overflow-y-auto bg-[#f4f6fb]">
+      {/* Green tick overlay — high z-index, centred above everything */}
+      {tickCard && (
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/70 backdrop-blur-[3px]">
+          <div className="flex h-[110px] w-[110px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.18),0_0_0_22px_rgba(34,197,94,0.08)]">
+            <svg viewBox="0 0 52 52" className="h-[58px] w-[58px]" fill="none">
+              <polyline points="14,27 23,36 38,18" stroke="white" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <p className="mt-5 text-[20px] font-bold text-green-700">{tickCard} Selected!</p>
+          <p className="mt-1 text-[13px] text-[#666]">Opening details…</p>
+        </div>
+      )}
       {/* Breadcrumb */}
       <div className="flex items-center justify-between border-b border-[#e8e8e8] bg-white px-6 py-2">
         <div className="text-[12px] text-[#888]">
@@ -216,7 +237,7 @@ function WelcomePage({ onEditClick }: { onEditClick: () => void }) {
               {/* View Details button */}
               <div className="px-3 pb-3">
                 <button
-                  onClick={onEditClick}
+                  onClick={() => handleViewDetails(card.title)}
                   className="w-full rounded py-1.5 text-[12px] font-semibold text-white transition hover:opacity-90"
                   style={{ backgroundColor: card.color }}
                 >
