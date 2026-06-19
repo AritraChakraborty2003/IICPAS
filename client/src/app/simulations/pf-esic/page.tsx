@@ -8,9 +8,17 @@ const experiments = [
   {
     title: "Shram Suvidha 1 — Sign Up & Login",
     description:
-      "Exact UI replica of the Shram Suvidha 2.0 Portal Sign-Up and Login flow. Register with dummy credentials and login to see the employer dashboard.",
+      "Exact UI replica of the Shram Suvidha 2.0 Portal Sign-Up and Login flow. Register with dummy credentials and login to see the success screen.",
     route: "/simulations/pf-esic/shram-suvidha-1",
     badge: "PF & ESIC",
+    icon: FaDesktop,
+  },
+  {
+    title: "Shram Suvidha 2 — Edit User Profile",
+    description:
+      "Replica of the Shram Suvidha unified portal's Edit User dashboard — fill in all fields (name, PAN, address, eContact, identifier) and click Update to see the success tick.",
+    route: "/simulations/pf-esic/shram-suvidha-2",
+    badge: "User Management",
     icon: FaDesktop,
   },
 ];
