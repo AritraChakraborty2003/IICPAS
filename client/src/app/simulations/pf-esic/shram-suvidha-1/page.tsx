@@ -412,12 +412,13 @@ function LoginSuccess() {
 // ─── Root ──────────────────────────────────────────────────────────────────────
 export default function ShramSuvidha1Page() {
   const [launched, setLaunched] = useState(false);
-  const [view, setView] = useState<View>("signup");
-
-  if (!launched) return <LaunchScreen onStart={() => setLaunched(true)} />;
+  const [view, setView] = useState<View>("login");
 
   return (
     <PageBg>
+      {/* Portal always rendered — launch overlay sits on top before start */}
+      {!launched && <LaunchOverlay onStart={() => setLaunched(true)} />}
+
       <TopNav onSignInClick={() => setView("login")} onSignUpClick={() => setView("signup")} />
       <main className="flex flex-1 flex-col px-4 pb-10">
         {view === "signup"   && <SignUpPage  onSuccess={() => setView("login")}    onLoginClick={() => setView("login")} />}
