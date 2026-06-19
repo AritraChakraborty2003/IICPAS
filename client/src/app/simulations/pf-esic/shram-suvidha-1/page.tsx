@@ -185,13 +185,13 @@ function ActionButtons({ onSubmit, onReset, submitLabel }: {
   onSubmit: () => void; onReset: () => void; submitLabel: React.ReactNode;
 }) {
   return (
-    <div className="mt-7 flex gap-0">
+    <div className="mt-7 flex gap-3">
       <button onClick={onSubmit}
-        className="flex flex-1 items-center justify-center gap-2 rounded-l bg-[#233f8f] py-3 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#1a3070] active:scale-[0.99]">
+        className="flex flex-1 items-center justify-center gap-2 rounded bg-[#233f8f] py-3 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#1a3070] active:scale-[0.99]">
         {submitLabel}
       </button>
       <button onClick={onReset}
-        className="flex flex-1 items-center justify-center rounded-r bg-[#c0392b] py-3 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#a93226] active:scale-[0.99]">
+        className="flex flex-1 items-center justify-center rounded bg-[#b03a2e] py-3 text-[15px] font-bold text-white shadow-sm transition hover:bg-[#922b21] active:scale-[0.99]">
         Reset
       </button>
     </div>
