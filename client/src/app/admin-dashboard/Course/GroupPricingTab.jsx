@@ -52,6 +52,82 @@ import { CSS } from "@dnd-kit/utilities";
 
 const MySwal = withReactContent(Swal);
 const API_BASE = getApiBase();
+
+function SortableGroupCard({ item, onEdit, onDelete, courseNames }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: item._id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <Box ref={setNodeRef} style={style} sx={{ mb: 2 }}>
+      <Card
+        sx={{
+          boxShadow: isDragging ? "0 8px 30px rgba(0,0,0,0.18)" : "0 4px 20px rgba(0,0,0,0.08)",
+          border: "1px solid #e8eaf6",
+        }}
+      >
+        <CardContent>
+          <Stack direction="row" alignItems="flex-start" spacing={1}>
+            <Box
+              {...attributes}
+              {...listeners}
+              sx={{ cursor: "grab", color: "#aaa", pt: "2px", flexShrink: 0 }}
+            >
+              <DragIndicatorIcon />
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                <Chip label={item.level} color="primary" variant="outlined" sx={{ fontWeight: 600 }} />
+                <Stack direction="row" spacing={1}>
+                  <Tooltip title="Edit" arrow>
+                    <IconButton size="small" onClick={() => onEdit(item)} sx={{ bgcolor: "#e3f2fd", color: "#1976d2", "&:hover": { bgcolor: "#bbdefb" } }}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Delete" arrow>
+                    <IconButton size="small" onClick={() => onDelete(item)} sx={{ bgcolor: "#ffebee", color: "#d32f2f", "&:hover": { bgcolor: "#ffcdd2" } }}>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              </Stack>
+              {item.groupName && (
+                <Typography variant="h5" sx={{ mb: 0.5, color: "#1976d2", fontWeight: 700 }}>
+                  {item.groupName}
+                </Typography>
+              )}
+              <Typography variant="h6" sx={{ mb: 1, color: "#2e7d32", fontWeight: 600 }}>
+                ₹{item.groupPrice.toLocaleString()}
+              </Typography>
+              {item.description && (
+                <Typography
+                  component="div"
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2, "& p": { margin: "0 0 8px 0" } }}
+                  dangerouslySetInnerHTML={{ __html: formatTextAsParagraphs(item.description) }}
+                />
+              )}
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Courses Included:
+              </Typography>
+              <Stack spacing={0.5}>
+                {courseNames.map((name, idx) => (
+                  <Chip key={idx} label={name} size="small" variant="outlined" sx={{ fontSize: "0.75rem" }} />
+                ))}
+              </Stack>
+            </Box>
+          </Stack>
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
 const extractCourseList = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.courses)) return payload.courses;
@@ -106,6 +182,8 @@ const GroupPricingTab = ({ onBack }) => {
   const [certImagePreview, setCertImagePreview] = useState(null);
   const [imageDimensions, setImageDimensions] = useState(null);
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+
   const courseLevels = [
     { value: "Executive Level", label: "Executive Level" },
     { value: "Professional Level", label: "Professional Level" },
@@ -145,6 +223,26 @@ const GroupPricingTab = ({ onBack }) => {
     } catch (error) {
       console.error("Error fetching courses:", error);
       setCourses([]);
+    }
+  };
+
+  const handleDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = groupPricing.findIndex((i) => i._id === active.id);
+    const newIndex = groupPricing.findIndex((i) => i._id === over.id);
+    const reordered = arrayMove(groupPricing, oldIndex, newIndex);
+    setGroupPricing(reordered);
+
+    try {
+      await axios.put(`${API_BASE}/group-pricing/reorder/order`, {
+        orderedIds: reordered.map((i) => i._id),
+      });
+    } catch (error) {
+      console.error("Error saving order:", error);
+      toast.error("Failed to save order");
+      fetchGroupPricing();
     }
   };
 
