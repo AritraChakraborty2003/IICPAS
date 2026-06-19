@@ -28,6 +28,10 @@ const syncStudentEnrollment = async (transaction) => {
     ) {
       student.enrolledRecordedSessions.push(transaction.courseId);
     }
+    // Disable live class access if the student has no live enrollments
+    if (student.enrolledLiveSessions.length === 0) {
+      student.liveClassAccessEnabled = false;
+    }
   } else if (transaction.sessionType === "live") {
     if (
       !student.enrolledLiveSessions.some((id) =>
@@ -36,6 +40,8 @@ const syncStudentEnrollment = async (transaction) => {
     ) {
       student.enrolledLiveSessions.push(transaction.courseId);
     }
+    // Ensure live class access is on when they have a live enrollment
+    student.liveClassAccessEnabled = true;
   }
 
   student.cart = student.cart.filter(
