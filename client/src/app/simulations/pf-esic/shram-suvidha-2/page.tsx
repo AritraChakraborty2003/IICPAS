@@ -58,15 +58,16 @@ function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 }
 
 // ─── Sidebar ───────────────────────────────────────────────────────────────────
-function Sidebar({ open }: { open: boolean }) {
+function Sidebar({ open, onHomeClick, mainView }: {
+  open: boolean;
+  onHomeClick: () => void;
+  mainView: "edit" | "welcome" | "success";
+}) {
   const [expanded, setExpanded] = useState<string>("home");
-
   const toggle = (k: string) => setExpanded((p) => (p === k ? "" : k));
 
   return (
-    <aside
-      className={`shrink-0 overflow-hidden border-r border-[#e0e0e0] bg-white transition-all duration-200 ${open ? "w-[185px]" : "w-0"}`}
-    >
+    <aside className={`shrink-0 overflow-hidden border-r border-[#e0e0e0] bg-white transition-all duration-200 ${open ? "w-[185px]" : "w-0"}`}>
       {/* Ministry logo block */}
       <div className="flex items-center gap-2 border-b border-[#e8e8e8] px-3 py-3">
         <img src="/images/simulations/satyamev-jayate.jpg" alt="Emblem"
@@ -88,11 +89,13 @@ function Sidebar({ open }: { open: boolean }) {
           { key: "license", label: "License", children: [] },
         ].map(({ key, label, children }) => (
           <div key={key}>
+            {/* Home gets red border highlight on all sides */}
             <button
-              onClick={() => toggle(key)}
-              className={`flex w-full items-center justify-between px-3 py-2 text-[13px] transition ${
-                expanded === key ? "text-[#1a6fa8]" : "text-[#333]"
-              } hover:bg-[#f0f4ff]`}
+              onClick={() => { toggle(key); if (key === "home") onHomeClick(); }}
+              className={`flex w-full items-center justify-between px-3 py-2 text-[13px] transition
+                ${expanded === key ? "text-[#1a6fa8]" : "text-[#333]"}
+                ${key === "home" ? "border-2 border-[#e53e3e] bg-[#fff5f5]" : "hover:bg-[#f0f4ff]"}
+              `}
             >
               <span className="flex items-center gap-2">
                 <span className={`h-[7px] w-[7px] rounded-full border-2 ${expanded === key ? "border-[#1a6fa8] bg-[#1a6fa8]" : "border-[#888] bg-white"}`} />
@@ -103,9 +106,10 @@ function Sidebar({ open }: { open: boolean }) {
             {children.length > 0 && expanded === key && (
               <div className="bg-[#f8faff]">
                 {children.map((c) => (
-                  <div key={c} className="cursor-pointer py-1.5 pl-8 text-[12px] text-[#1a6fa8] hover:underline">
+                  <button key={c} onClick={onHomeClick}
+                    className={`block w-full cursor-pointer py-1.5 pl-8 text-left text-[12px] hover:underline ${mainView === "welcome" ? "font-semibold text-[#c0392b]" : "text-[#1a6fa8]"}`}>
                     • {c}
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -113,6 +117,117 @@ function Sidebar({ open }: { open: boolean }) {
         ))}
       </nav>
     </aside>
+  );
+}
+
+// ─── Welcome / Home page (4 cards) ────────────────────────────────────────────
+function WelcomePage({ onEditClick }: { onEditClick: () => void }) {
+  const cards = [
+    {
+      color: "#1a6fa8",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75a2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V19.5a2.25 2.25 0 002.25 2.25h.75" />
+        </svg>
+      ),
+      title: "Registration",
+      subtitle: "OSH & WC Code, 2020",
+      items: ["Account & Authentication", "Establishment Identity", "Establishment Details"],
+    },
+    {
+      color: "#27ae60",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.955 11.955 0 003 10c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.249-8.25-3.286z" />
+        </svg>
+      ),
+      title: "Licence",
+      subtitle: "Form XII",
+      items: ["Contractor Details", "Principal Employer Details", "Work Details"],
+    },
+    {
+      color: "#8e44ad",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+      ),
+      title: "Returns",
+      subtitle: "Form IX",
+      items: ["General Information", "Hours of Work", "Manpower Details"],
+    },
+    {
+      color: "#e67e22",
+      icon: (
+        <svg viewBox="0 0 24 24" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+        </svg>
+      ),
+      title: "Notices",
+      subtitle: "Notices",
+      items: ["Notice Details", "Employer Details", "Work Details"],
+    },
+  ];
+
+  return (
+    <div className="flex-1 overflow-y-auto bg-[#f4f6fb]">
+      {/* Breadcrumb */}
+      <div className="flex items-center justify-between border-b border-[#e8e8e8] bg-white px-6 py-2">
+        <div className="text-[12px] text-[#888]">
+          <span className="cursor-pointer text-[#1a6fa8] hover:underline" onClick={onEditClick}>Welcome Page</span>
+        </div>
+        <div className="text-[12px] font-semibold text-[#c0392b]">
+          Date &amp; Time: {new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}, {new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })} am
+        </div>
+      </div>
+
+      <div className="p-6">
+        {/* Pre-Requisites label row */}
+        <div className="mb-3 grid grid-cols-4 gap-4">
+          {cards.map((c) => (
+            <div key={c.title} className="text-center text-[11px] font-semibold uppercase tracking-wider text-[#888]">
+              Pre-Requisites
+            </div>
+          ))}
+        </div>
+
+        {/* Cards */}
+        <div className="grid grid-cols-4 gap-4">
+          {cards.map((card) => (
+            <div key={card.title} className="flex flex-col overflow-hidden rounded-lg bg-white shadow-sm">
+              {/* Icon header */}
+              <div className="flex flex-col items-center justify-center py-5" style={{ color: card.color }}>
+                {card.icon}
+              </div>
+              {/* Title */}
+              <div className="border-t border-[#eee] px-3 pb-1 pt-2 text-center">
+                <div className="text-[14px] font-bold" style={{ color: card.color }}>{card.title}</div>
+                <div className="text-[11px] text-[#888]">{card.subtitle}</div>
+              </div>
+              {/* Items */}
+              <div className="flex-1 px-3 pb-3">
+                {card.items.map((item) => (
+                  <div key={item} className="flex items-start gap-1.5 py-1 text-[11px] text-[#555]">
+                    <span className="mt-[3px] h-1.5 w-1.5 shrink-0 rounded-full bg-[#ccc]" />
+                    {item}
+                  </div>
+                ))}
+              </div>
+              {/* View Details button */}
+              <div className="px-3 pb-3">
+                <button
+                  onClick={onEditClick}
+                  className="w-full rounded py-1.5 text-[12px] font-semibold text-white transition hover:opacity-90"
+                  style={{ backgroundColor: card.color }}
+                >
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -396,18 +511,24 @@ function UpdateSuccess() {
 export default function ShramSuvidha2Page() {
   const [launched, setLaunched] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [done, setDone] = useState(false);
+  const [mainView, setMainView] = useState<"edit" | "welcome" | "success">("edit");
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f4f6fb]">
       {!launched && <LaunchOverlay onStart={() => setLaunched(true)} />}
       <TopBar onToggleSidebar={() => setSidebarOpen((v) => !v)} />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar open={sidebarOpen} />
-        {/* Green right border accent — visible in screenshot */}
+        <Sidebar
+          open={sidebarOpen}
+          onHomeClick={() => setMainView("welcome")}
+          mainView={mainView}
+        />
+        {/* Green right border accent */}
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-1 flex-col overflow-hidden">
-            {done ? <UpdateSuccess /> : <EditUserForm onSuccess={() => setDone(true)} />}
+            {mainView === "welcome" && <WelcomePage onEditClick={() => setMainView("edit")} />}
+            {mainView === "edit"    && <EditUserForm onSuccess={() => setMainView("success")} />}
+            {mainView === "success" && <UpdateSuccess />}
           </div>
           <div className="w-[4px] shrink-0 bg-[#2ecc71]" />
         </div>
