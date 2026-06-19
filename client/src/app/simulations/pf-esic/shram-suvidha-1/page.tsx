@@ -13,31 +13,25 @@ const LOGIN_PASS     = "IICPA@123";
 const SIGNUP_CAP     = "CEKbpR";
 const LOGIN_CAP      = "fByGYp";
 
-// ─── Launch Screen ─────────────────────────────────────────────────────────────
-function LaunchScreen({ onStart }: { onStart: () => void }) {
+// ─── Launch overlay (blurred portal behind, button centred on top) ─────────────
+function LaunchOverlay({ onStart }: { onStart: () => void }) {
+  const [starting, setStarting] = useState(false);
+  const handle = () => {
+    if (starting) return;
+    setStarting(true);
+    setTimeout(onStart, 1200);
+  };
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gradient-to-br from-[#1a3a5c] via-[#1e4976] to-[#0f2a45]">
-      <div className="flex flex-col items-center gap-6 text-center">
-        <div className="flex items-center gap-4">
-          <div className="flex h-[72px] w-[72px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-white shadow-lg">
-            <img src="/images/simulations/satyamev-jayate.jpg" alt="Emblem"
-              className="h-full w-full object-cover"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          </div>
-          <div className="text-left">
-            <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-blue-300">Government of India</div>
-            <div className="text-2xl font-black tracking-tight text-white">SHRAM SUVIDHA 2.0</div>
-            <div className="text-[12px] text-blue-200">Ministry of Labour &amp; Employment</div>
-          </div>
-        </div>
-        <p className="max-w-sm text-sm text-blue-200/80">
-          PF &amp; ESIC Registration Simulation — interactive replica of the Shram Suvidha Portal sign-up and login flow.
-        </p>
-        <button onClick={onStart}
-          className="mt-2 rounded-lg bg-[#e8b800] px-10 py-3 text-[15px] font-bold uppercase tracking-widest text-[#1a3a5c] shadow-lg transition hover:bg-yellow-400 active:scale-95">
-          START EXPERIMENT
-        </button>
-      </div>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#07111f]/25 backdrop-blur-[2px]">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.05),transparent_30%),radial-gradient(circle_at_bottom_right,rgba(44,122,140,0.08),transparent_26%),linear-gradient(135deg,rgba(7,17,31,0.16)_0%,rgba(11,27,51,0.12)_50%,rgba(8,17,31,0.16)_100%)]" />
+      <button
+        type="button"
+        onClick={handle}
+        disabled={starting}
+        className="relative z-10 inline-flex min-h-[72px] w-[min(84vw,34rem)] items-center justify-center rounded-[22px] bg-[#1244b8] px-6 text-lg font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_40px_rgba(18,68,184,0.30)] transition-transform duration-200 hover:scale-[1.02] hover:bg-[#0f3a9a] disabled:cursor-wait disabled:opacity-80 sm:min-h-[78px] sm:px-8 sm:text-xl"
+      >
+        {starting ? "LOADING..." : "START EXPERIMENT"}
+      </button>
     </div>
   );
 }
