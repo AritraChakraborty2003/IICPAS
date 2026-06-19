@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { 
-  FaDownload, 
-  FaEye, 
-  FaLock, 
+import {
+  FaDownload,
+  FaEye,
+  FaLock,
   FaCertificate,
   FaCheckCircle,
-  FaExternalLinkAlt
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { motion } from "framer-motion";
