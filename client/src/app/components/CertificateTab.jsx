@@ -63,23 +63,6 @@ export default function CertificateTab() {
         const enrolledCourses = extractCourseList(coursesRes.data);
         setCourses(enrolledCourses);
 
-        // Fetch group packages to know which course IDs belong to group packages
-        try {
-          const groupRes = await axios.get(`${API}/api/group-pricing`);
-          const groups = Array.isArray(groupRes.data)
-            ? groupRes.data
-            : groupRes.data?.data || [];
-          const ids = new Set();
-          groups.forEach((g) =>
-            (g.courseIds || []).forEach((c) =>
-              ids.add(String(typeof c === "object" ? c._id : c))
-            )
-          );
-          setGroupCourseIds(ids);
-        } catch {
-          // non-fatal — falls back to single certificate image
-        }
-
         // Fetch progress for each course
         const progressPromises = enrolledCourses.map(async (course) => {
           const courseDetail = extractCourseRecord(course);
@@ -122,7 +105,7 @@ export default function CertificateTab() {
 
   const handleDownload = (courseId, courseTitle) => {
     const link = document.createElement("a");
-    link.href = getCertificateImage(courseId, groupCourseIds);
+    link.href = getCertificateImage();
     link.download = `Certificate_${courseTitle.replace(/\s+/g, "_")}.jpg`;
     document.body.appendChild(link);
     link.click();
@@ -188,7 +171,7 @@ export default function CertificateTab() {
                         onClick={() => setSelectedCertificate({ course, isCompleted, progress })}
                       >
                         <img
-                          src={getCertificateImage(course._id, groupCourseIds)}
+                          src={getCertificateImage()}
                           alt={course.title}
                           className={`w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 ${
                             !isCompleted ? "blur-[2px] grayscale opacity-40 shrink-0" : "shrink-0"
@@ -319,7 +302,7 @@ export default function CertificateTab() {
               <div className="max-w-4xl w-full">
                 <div className="relative aspect-[1.414/1] rounded-2xl overflow-hidden bg-[#1e293b] shadow-2xl border border-white/5 transition-all duration-500">
                   <img
-                    src={getCertificateImage(selectedCertificate.course._id, groupCourseIds)}
+                    src={getCertificateImage()}
                     alt="Full Certificate"
                     className={`w-full h-full object-contain transition-all duration-1000 ${
                       !selectedCertificate.isCompleted ? "blur-[3px] grayscale opacity-60 scale-105" : ""
