@@ -25,13 +25,16 @@ function LaunchOverlay({ onStart }: { onStart: () => void }) {
 // ─── Top Bar ───────────────────────────────────────────────────────────────────
 function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   return (
-    <div className="flex h-[52px] shrink-0 items-center border-b border-[#e0e0e0] bg-white px-4 shadow-sm">
-      {/* Hamburger */}
-      <button onClick={onToggleSidebar} className="mr-4 text-[#555] hover:text-[#222]">
+    <div className="relative flex h-[52px] shrink-0 items-center border-b border-[#e0e0e0] bg-white shadow-sm">
+      {/* Hamburger — pinned to left edge, always visible */}
+      <button
+        onClick={onToggleSidebar}
+        className="flex h-full w-[52px] shrink-0 items-center justify-center border-r border-[#e0e0e0] text-[#555] hover:bg-[#f5f5f5] hover:text-[#222]"
+      >
         <Menu size={20} />
       </button>
 
-      {/* Title — centred absolutely */}
+      {/* Title — centred in the full bar */}
       <div className="absolute left-1/2 -translate-x-1/2 select-none text-[20px] font-black tracking-tight"
         style={{ fontFamily: "'Arial Black', sans-serif" }}>
         <span className="text-[#1a6fa8]">SHRAM SUVIDHA</span>
@@ -40,7 +43,7 @@ function TopBar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
       </div>
 
       {/* Right controls */}
-      <div className="ml-auto flex items-center gap-2 text-[12px] text-[#333]">
+      <div className="ml-auto flex items-center gap-2 pr-4 text-[12px] text-[#333]">
         <button className="flex items-center gap-1 rounded border border-[#ccc] bg-[#f8f8f8] px-2.5 py-1 text-[11px] hover:bg-[#eee]">
           Post: External User <ChevronDown size={11} className="ml-0.5" />
         </button>
@@ -74,7 +77,7 @@ function Sidebar({ open, onHomeClick, mainView }: {
   ];
 
   return (
-    <aside className={`shrink-0 overflow-hidden border-r border-[#ddd] bg-white transition-all duration-200 ${open ? "w-[190px]" : "w-0"}`}>
+    <aside className={`shrink-0 overflow-hidden border-r border-[#ddd] bg-white transition-all duration-200 ${open ? "w-[240px]" : "w-0"}`}>
       {/* Ministry logo */}
       <div className="flex items-start gap-2 px-3 py-4">
         <img src="/images/simulations/satyamev-jayate.jpg" alt="Emblem"
