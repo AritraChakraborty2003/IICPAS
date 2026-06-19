@@ -124,7 +124,8 @@ export const buildBatchCourseScheduleEmail = ({ studentName, batch, courseSchedu
       <!-- Header -->
       <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #ffffff; padding: 32px 24px; text-align: center;">
         <h1 style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.5px; color: #3cd664;">IICPA Institute</h1>
-        <p style="margin: 8px 0 0 0; font-size: 16px; color: #3cd664; font-weight: 600;">Your Detailed Class Schedule</p>
+        <p style="margin: 8px 0 16px 0; font-size: 16px; color: #3cd664; font-weight: 600;">Your Detailed Class Schedule</p>
+        <a href="https://iicpa.in" target="_blank" style="display: inline-block; background-color: #3cd664; color: #0f172a; text-decoration: none; font-size: 14px; font-weight: 700; padding: 10px 28px; border-radius: 6px; letter-spacing: 0.5px;">Visit Website</a>
       </div>
       
       <!-- Content -->
