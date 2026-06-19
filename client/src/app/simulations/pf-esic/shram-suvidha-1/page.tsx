@@ -393,35 +393,24 @@ function LoginPage({ onSuccess, onSignUpClick }: { onSuccess: () => void; onSign
   );
 }
 
-// ─── Post-login Dashboard ──────────────────────────────────────────────────────
-function Dashboard({ onLogout }: { onLogout: () => void }) {
+// ─── Post-login Success (green tick centred, no dashboard) ────────────────────
+function LoginSuccess() {
   return (
-    <div className="mx-auto my-8 w-full max-w-[860px] rounded bg-white px-8 py-8 shadow-[0_2px_18px_rgba(0,0,0,0.14)]">
-      <div className="mb-6 flex items-center gap-3 rounded border border-green-300 bg-green-50 px-5 py-4">
-        <CheckCircle size={32} className="shrink-0 text-green-500" />
-        <div>
-          <div className="text-[16px] font-bold text-green-800">Login Successful!</div>
-          <div className="text-[13px] text-green-700">Welcome to Shram Suvidha 2.0 — your PF &amp; ESIC compliance portal.</div>
-        </div>
+    <div className="flex flex-1 flex-col items-center justify-center py-24">
+      {/* Animated green tick circle */}
+      <div className="flex h-[110px] w-[110px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.18),0_0_0_22px_rgba(34,197,94,0.08)]">
+        <svg viewBox="0 0 52 52" className="h-[58px] w-[58px]" fill="none">
+          <polyline
+            points="14,27 23,36 38,18"
+            stroke="white"
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </div>
-      <h2 className="mb-4 text-[20px] font-bold text-[#222]">Employer Dashboard</h2>
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
-        {[
-          { label: "EPF Registration", c: "bg-blue-50 border-blue-200 text-blue-800" },
-          { label: "ESIC Registration", c: "bg-purple-50 border-purple-200 text-purple-800" },
-          { label: "Monthly PF Return", c: "bg-amber-50 border-amber-200 text-amber-800" },
-          { label: "ESIC Half-Yearly Return", c: "bg-emerald-50 border-emerald-200 text-emerald-800" },
-          { label: "Unified Annual Return", c: "bg-rose-50 border-rose-200 text-rose-800" },
-          { label: "View / Download Challan", c: "bg-cyan-50 border-cyan-200 text-cyan-800" },
-        ].map((item) => (
-          <div key={item.label} className={`cursor-pointer rounded border px-4 py-4 text-[13px] font-semibold transition hover:opacity-80 ${item.c}`}>
-            {item.label}
-          </div>
-        ))}
-      </div>
-      <button onClick={onLogout} className="mt-8 rounded border border-[#bbb] px-5 py-2 text-[13px] text-[#555] hover:bg-[#f5f5f5]">
-        Sign Out
-      </button>
+      <p className="mt-6 text-[22px] font-bold text-[#1a7a3a]">Login Successful!</p>
+      <p className="mt-1 text-[14px] text-[#555]">Welcome to Shram Suvidha 2.0</p>
     </div>
   );
 }
@@ -436,10 +425,10 @@ export default function ShramSuvidha1Page() {
   return (
     <PageBg>
       <TopNav onSignInClick={() => setView("login")} onSignUpClick={() => setView("signup")} />
-      <main className="flex-1 px-4 pb-10">
-        {view === "signup"    && <SignUpPage  onSuccess={() => setView("login")}     onLoginClick={() => setView("login")} />}
-        {view === "login"     && <LoginPage   onSuccess={() => setView("loggedIn")}  onSignUpClick={() => setView("signup")} />}
-        {view === "loggedIn"  && <Dashboard   onLogout={() => setView("login")} />}
+      <main className="flex flex-1 flex-col px-4 pb-10">
+        {view === "signup"   && <SignUpPage  onSuccess={() => setView("login")}    onLoginClick={() => setView("login")} />}
+        {view === "login"    && <LoginPage   onSuccess={() => setView("loggedIn")} onSignUpClick={() => setView("signup")} />}
+        {view === "loggedIn" && <LoginSuccess />}
       </main>
       <footer className="mt-auto border-t border-[#bbb] bg-white py-3 text-center text-[11px] text-[#888]">
         © 2024 Ministry of Labour &amp; Employment, Government of India &nbsp;|&nbsp; Shram Suvidha 2.0 — Simulation for educational purposes only
