@@ -96,7 +96,7 @@ function TopNav({ onSignInClick, onSignUpClick }: { onSignInClick: () => void; o
 
         {/* Portal name */}
         <div className="text-center">
-          <div className="text-[40px] font-black leading-none tracking-tight text-[#1a6fa8]"
+          <div className="text-[40px] font-black leading-none tracking-tight text-[#2c7a8c]"
             style={{ fontFamily: "'Arial Black', 'Franklin Gothic Medium', sans-serif" }}>
             SHRAM SUVIDHA 2.0
           </div>
