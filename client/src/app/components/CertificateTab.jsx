@@ -33,10 +33,7 @@ const extractCourseRecord = (payload) => {
   return payload;
 };
 
-const getCertificateImage = (courseId, groupCourseIds) => {
-  if (groupCourseIds.has(String(courseId))) return "/group-course-certificate.jpg";
-  return "/single-certificate.jpg";
-};
+const getCertificateImage = () => "/single-certificate.jpg";
 
 export default function CertificateTab() {
   const [student, setStudent] = useState(null);
@@ -44,7 +41,6 @@ export default function CertificateTab() {
   const [loading, setLoading] = useState(true);
   const [progressMap, setProgressMap] = useState({});
   const [selectedCertificate, setSelectedCertificate] = useState(null);
-  const [groupCourseIds, setGroupCourseIds] = useState(new Set());
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
