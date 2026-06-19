@@ -66,55 +66,62 @@ function Sidebar({ open, onHomeClick, mainView }: {
   const [expanded, setExpanded] = useState<string>("home");
   const toggle = (k: string) => setExpanded((p) => (p === k ? "" : k));
 
+  const items = [
+    { key: "home",           label: "Home",           children: ["Home"] },
+    { key: "establishments", label: "Establishments", children: ["Establishments"] },
+    { key: "registration",   label: "Registration",   children: ["Registration"] },
+    { key: "license",        label: "License",        children: ["License"] },
+  ];
+
   return (
-    <aside className={`shrink-0 overflow-hidden border-r border-[#e0e0e0] bg-white transition-all duration-200 ${open ? "w-[185px]" : "w-0"}`}>
-      {/* Ministry logo block */}
-      <div className="flex items-center gap-2 border-b border-[#e8e8e8] px-3 py-3">
+    <aside className={`shrink-0 overflow-hidden border-r border-[#ddd] bg-white transition-all duration-200 ${open ? "w-[190px]" : "w-0"}`}>
+      {/* Ministry logo */}
+      <div className="flex items-start gap-2 px-3 py-4">
         <img src="/images/simulations/satyamev-jayate.jpg" alt="Emblem"
-          className="h-[38px] w-[38px] shrink-0 object-contain"
+          className="mt-0.5 h-[42px] w-[42px] shrink-0 object-contain"
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-        <div className="text-[10px] leading-[1.4] text-[#444]">
-          <div className="font-bold text-[#222]">MINISTRY OF LABOUR &amp;</div>
-          <div className="font-bold text-[#222]">EMPLOYMENT</div>
+        <div className="text-[10px] leading-[1.5] text-[#333]">
+          <div className="font-bold">MINISTRY OF LABOUR &</div>
+          <div className="font-bold">EMPLOYMENT</div>
           <div className="text-[9px] text-[#666]">GOVERNMENT OF INDIA</div>
         </div>
       </div>
 
-      {/* Nav */}
-      <nav className="py-1">
-        {[
-          { key: "home", label: "Home", children: ["Home"] },
-          { key: "establishments", label: "Establishments", children: [] },
-          { key: "registration", label: "Registration", children: [] },
-          { key: "license", label: "License", children: [] },
-        ].map(({ key, label, children }) => (
-          <div key={key}>
-            {/* Home gets red border highlight on all sides */}
-            <button
-              onClick={() => { toggle(key); if (key === "home") onHomeClick(); }}
-              className={`flex w-full items-center justify-between px-3 py-2 text-[13px] transition
-                ${expanded === key ? "text-[#1a6fa8]" : "text-[#333]"}
-                ${key === "home" ? "border-2 border-[#e53e3e] bg-[#fff5f5]" : "hover:bg-[#f0f4ff]"}
-              `}
-            >
-              <span className="flex items-center gap-2">
-                <span className={`h-[7px] w-[7px] rounded-full border-2 ${expanded === key ? "border-[#1a6fa8] bg-[#1a6fa8]" : "border-[#888] bg-white"}`} />
-                {label}
-              </span>
-              {children.length > 0 && (expanded === key ? <ChevronUp size={13} /> : <ChevronDown size={13} />)}
-            </button>
-            {children.length > 0 && expanded === key && (
-              <div className="bg-[#f8faff]">
-                {children.map((c) => (
-                  <button key={c} onClick={onHomeClick}
-                    className={`block w-full cursor-pointer py-1.5 pl-8 text-left text-[12px] hover:underline ${mainView === "welcome" ? "font-semibold text-[#c0392b]" : "text-[#1a6fa8]"}`}>
-                    • {c}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+      {/* Nav items — exact match to screenshot */}
+      <nav className="border-t border-[#e8e8e8]">
+        {items.map(({ key, label, children }) => {
+          const isHome = key === "home";
+          const isExpanded = expanded === key;
+          return (
+            <div key={key}>
+              <button
+                onClick={() => { toggle(key); if (isHome) onHomeClick(); }}
+                className={`flex w-full items-center justify-between border-b border-[#ececec] py-[9px] pl-3 pr-2 text-[13px] text-[#333] hover:bg-[#f5f5f5]`}
+              >
+                <span className="flex items-center gap-2">
+                  {/* Bullet dot */}
+                  <span className="h-[6px] w-[6px] shrink-0 rounded-full bg-[#555]" />
+                  <span className="font-medium">{label}</span>
+                </span>
+                {isExpanded ? <ChevronUp size={13} className="text-[#888]" /> : <ChevronDown size={13} className="text-[#888]" />}
+              </button>
+
+              {/* Sub-items */}
+              {isExpanded && (
+                <div className="border-b border-[#ececec] bg-[#fafafa]">
+                  {children.map((c) => (
+                    <button key={c} onClick={() => { if (isHome) onHomeClick(); }}
+                      className={`block w-full py-[7px] pl-8 text-left text-[12px] hover:bg-[#f0f4ff]
+                        ${mainView === "welcome" && isHome ? "font-semibold text-[#1a6fa8]" : "text-[#555]"}
+                      `}>
+                      • {c}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </nav>
     </aside>
   );
