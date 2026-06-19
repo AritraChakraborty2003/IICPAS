@@ -10,13 +10,28 @@ export const getAllGroupPricing = async (req, res) => {
     const groupPricing = await GroupPricing.find({ status: "Active" })
       .populate({
         path: "courseIds",
-        select: "title category level price",
+        select: "title category level price duration",
         populate: {
           path: "chapters",
           select: "title topics",
         },
       })
-      .sort({ level: 1, createdAt: -1 });
+      .sort({ order: 1, createdAt: -1 });
+
+    const computeDurationFromCourses = (courses) => {
+      let totalHours = 0;
+      let hasAny = false;
+      (courses || []).forEach((c) => {
+        const match = String(c?.duration || "").match(/(\d+(\.\d+)?)/);
+        if (match) {
+          totalHours += parseFloat(match[1]);
+          hasAny = true;
+        }
+      });
+      if (!hasAny) return "";
+      const weeks = (totalHours / 6).toFixed(1).replace(/\.0$/, "");
+      return `${totalHours} Hours (${weeks} weeks)`;
+    };
 
     // Ensure center pricing structures exist for all records and generate slugs if missing
     const groupPricingWithDefaults = groupPricing.map((pricing) => {
@@ -30,8 +45,14 @@ export const getAllGroupPricing = async (req, res) => {
           .trim("-"); // Remove leading/trailing hyphens
       }
 
-      if (!pricing.pricing.recordedSessionCenter) {
-        pricing.pricing.recordedSessionCenter = {
+      // Auto-compute duration from courses if not set
+      const pricingObj = pricing.toObject ? pricing.toObject() : pricing;
+      if (!pricingObj.duration) {
+        pricingObj.duration = computeDurationFromCourses(pricingObj.courseIds);
+      }
+
+      if (!pricingObj.pricing.recordedSessionCenter) {
+        pricingObj.pricing.recordedSessionCenter = {
           title: "DIGITAL HUB+ RECORDED SESSION+ CENTER",
           buttonText: "Add Digital Hub+ Center",
           price: 0,
@@ -40,8 +61,8 @@ export const getAllGroupPricing = async (req, res) => {
         };
       }
 
-      if (!pricing.pricing.liveSessionCenter) {
-        pricing.pricing.liveSessionCenter = {
+      if (!pricingObj.pricing.liveSessionCenter) {
+        pricingObj.pricing.liveSessionCenter = {
           title: "DIGITAL HUB+ LIVE SESSION+ CENTER",
           buttonText: "Add Digital Hub+ Center",
           price: 0,
@@ -50,7 +71,7 @@ export const getAllGroupPricing = async (req, res) => {
         };
       }
 
-      return pricing;
+      return pricingObj;
     });
 
     res.json(groupPricingWithDefaults);
@@ -679,6 +700,24 @@ export const getGroupPricingByLevel = async (req, res) => {
       message: "Failed to fetch group pricing",
       error: error.message,
     });
+  }
+};
+
+// Reorder group pricing items
+export const reorderGroupPricing = async (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+    if (!Array.isArray(orderedIds) || orderedIds.length === 0) {
+      return res.status(400).json({ success: false, message: "orderedIds must be a non-empty array" });
+    }
+    const bulkOps = orderedIds.map((id, index) => ({
+      updateOne: { filter: { _id: id }, update: { $set: { order: index } } },
+    }));
+    await GroupPricing.bulkWrite(bulkOps);
+    res.json({ success: true, message: "Order updated" });
+  } catch (error) {
+    console.error("Error reordering group pricing:", error);
+    res.status(500).json({ success: false, message: "Failed to reorder", error: error.message });
   }
 };
 

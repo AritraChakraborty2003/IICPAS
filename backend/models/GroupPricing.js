@@ -184,6 +184,10 @@ const GroupPricingSchema = new Schema({
     default: "Active",
     enum: ["Active", "Inactive"],
   },
+  order: {
+    type: Number,
+    default: 0,
+  },
   createdAt: {
     type: Date,
     default: Date.now,

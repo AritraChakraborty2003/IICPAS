@@ -6,6 +6,7 @@ import {
   createGroupPricing,
   updateGroupPricing,
   deleteGroupPricing,
+  reorderGroupPricing,
   getGroupPricingByLevel,
   getCoursesByLevel,
   enrollInGroupPackage,
@@ -39,6 +40,9 @@ router.put("/:id", uploadFields, updateGroupPricing);
 
 // DELETE /api/group-pricing/:id - Delete group pricing configuration
 router.delete("/:id", deleteGroupPricing);
+
+// PUT /api/group-pricing/reorder - Reorder group pricing items
+router.put("/reorder/order", reorderGroupPricing);
 
 // GET /api/group-pricing/level/:level - Get group pricing by level
 router.get("/level/:level", getGroupPricingByLevel);
