@@ -10,6 +10,7 @@ import {
   updateLiveSession,
   deleteLiveSession,
   toggleStatus,
+  syncCompletedSessions,
 } from "../../controllers/LiveSessionController/LiveSesionController.js";
 
 const router = express.Router();
@@ -43,5 +44,8 @@ router.delete("/:id", deleteLiveSession);
 
 // Toggle session status
 router.patch("/toggle/:id", toggleStatus);
+
+// Bulk sync: mark all past-date sessions as completed
+router.post("/sync-completed", syncCompletedSessions);
 
 export default router;

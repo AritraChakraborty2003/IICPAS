@@ -1019,6 +1019,42 @@ export const deleteLiveSession = async (req, res) => {
   }
 };
 
+export const syncCompletedSessions = async (req, res) => {
+  try {
+    const now = new Date();
+    const sessions = await LiveSession.find({ status: { $ne: "completed" } });
+
+    const toComplete = sessions.filter((session) => {
+      if (session.status === "inactive") return false;
+      const sessionDate = new Date(session.date);
+      const [, endTime = "23:59"] = session.time
+        ? session.time.split(" - ")
+        : [];
+      const [endHour = 23, endMinute = 59] = endTime.split(":").map(Number);
+      const sessionEnd = new Date(sessionDate);
+      sessionEnd.setHours(endHour, endMinute, 0, 0);
+      return now > sessionEnd;
+    });
+
+    if (toComplete.length === 0) {
+      return res.status(200).json({ message: "No sessions to sync", synced: 0 });
+    }
+
+    await LiveSession.updateMany(
+      { _id: { $in: toComplete.map((s) => s._id) } },
+      { $set: { status: "completed" } }
+    );
+
+    res.status(200).json({
+      message: `${toComplete.length} session(s) marked as completed`,
+      synced: toComplete.length,
+      sessionIds: toComplete.map((s) => s._id),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export const toggleStatus = async (req, res) => {
   try {
     const session = await LiveSession.findById(req.params.id);
