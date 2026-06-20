@@ -5708,7 +5708,8 @@ export default function DigitalHubClient({
           display: block !important;
           margin-left: auto !important;
           margin-right: auto !important;
-          max-width: 100% !important;
+          max-width: 720px !important;
+          width: 100% !important;
         }
 
         /* Center wrappers that hold a video/iframe (e.g. responsive embeds) */
