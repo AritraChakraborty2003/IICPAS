@@ -742,6 +742,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       time: `${form.startTime} - ${form.endTime}`,
       date: form.date,
       link: form.link,
+      passcode: form.passcode,
       price: Number(form.price),
       category: form.category,
       maxParticipants: Number(form.maxParticipants),
