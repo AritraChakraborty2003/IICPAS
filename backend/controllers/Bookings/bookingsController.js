@@ -91,7 +91,7 @@ export const createBooking = async (req, res) => {
     }
 
     liveSession = await LiveSession.findById(liveSessionId)
-      .select("_id title date time link duration")
+      .select("_id title date time link duration passcode")
       .lean();
     if (!liveSession) {
       return res.status(404).json({ error: "Live session not found" });

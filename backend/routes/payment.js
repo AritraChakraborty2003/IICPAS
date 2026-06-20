@@ -2347,7 +2347,7 @@ router.get("/receipts/booking/:bookingId/download/public", async (req, res) => {
 
     const booking = await Booking.findById(bookingId)
       .populate("studentId", "name email")
-      .populate("liveSessionId", "title date time link");
+      .populate("liveSessionId", "title date time link passcode");
 
     if (!booking || !booking.liveSessionId) {
       return res.status(404).json({
@@ -2375,6 +2375,7 @@ router.get("/receipts/booking/:bookingId/download/public", async (req, res) => {
       link: booking.link || booking.liveSessionId?.link || "",
       time: booking.time || booking.liveSessionId?.time || "",
       date: booking.date || booking.liveSessionId?.date || null,
+      passcode: booking.liveSessionId?.passcode || "",
     });
 
     const fileName = `Live-Session-Invoice-${String(booking._id)
@@ -2402,7 +2403,7 @@ router.get(
     try {
       const booking = await Booking.findById(req.params.bookingId)
         .populate("studentId", "name email")
-        .populate("liveSessionId", "title date time link");
+        .populate("liveSessionId", "title date time link passcode");
 
       if (!booking || !booking.liveSessionId) {
         return res.status(404).json({
@@ -2431,6 +2432,7 @@ router.get(
         link: booking.link || booking.liveSessionId?.link || "",
         time: booking.time || booking.liveSessionId?.time || "",
         date: booking.date || booking.liveSessionId?.date || null,
+        passcode: booking.liveSessionId?.passcode || "",
       });
 
       const fileName = `Live-Session-Invoice-${String(booking._id)
