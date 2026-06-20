@@ -262,6 +262,41 @@ export const generateLiveSessionReceiptPDF = async (booking) => {
       amountY += 20;
     });
 
+    y += amountCardHeight + 10;
+
+    // Session access details card (join link + passcode)
+    const sessionLink = String(booking?.link || "").trim();
+    const sessionPasscode = String(booking?.passcode || "").trim();
+    const sessionTime = String(booking?.time || "").trim();
+
+    if (sessionLink || sessionPasscode || sessionTime) {
+      const accessRows = [];
+      if (sessionTime) accessRows.push(["Session Time", sessionTime]);
+      if (sessionLink) accessRows.push(["Join Link", sessionLink]);
+      if (sessionPasscode) accessRows.push(["Passcode", sessionPasscode]);
+
+      const accessCardHeight = 24 + accessRows.length * 32;
+      drawCard(y, accessCardHeight, "#f0fdf4");
+      doc
+        .font("Helvetica-Bold")
+        .fontSize(9.5)
+        .fillColor(colors.green)
+        .text("SESSION ACCESS", left + 16, y + 12);
+
+      let accessY = y + 28;
+      accessRows.forEach(([label, value]) => {
+        doc.font("Helvetica-Bold").fontSize(8.5).fillColor(colors.muted).text(label, left + 16, accessY, {
+          width: contentWidth - 32,
+        });
+        doc.font("Helvetica").fontSize(9.5).fillColor(colors.navy).text(value, left + 16, accessY + 12, {
+          width: contentWidth - 32,
+        });
+        accessY += 32;
+      });
+
+      y += accessCardHeight + 10;
+    }
+
     doc
       .font("Helvetica")
       .fontSize(7.5)
