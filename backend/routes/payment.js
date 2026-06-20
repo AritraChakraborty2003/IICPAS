@@ -214,7 +214,7 @@ const sendCoursePurchaseWhatsAppInvoice = async (
 
 const buildLiveSessionInvoiceComponents = ({ studentName, invoiceUrl, sessionTitle, sessionDate, sessionLink, sessionPasscode }) => {
   const linkWithPasscode = sessionPasscode
-    ? `${sessionLink}\nPasscode: ${sessionPasscode}`
+    ? `${sessionLink || "Link will be shared soon"} | Passcode: ${sessionPasscode}`
     : sessionLink || "Link will be shared soon";
 
   return [
