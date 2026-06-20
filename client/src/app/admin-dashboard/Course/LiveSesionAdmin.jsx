@@ -28,6 +28,7 @@ import ViewModuleIcon from "@mui/icons-material/ViewModule";
 import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import {
@@ -1861,6 +1862,14 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                               <DeleteIcon />
                             </IconButton>
                           </Tooltip>
+                          <Tooltip title="Mark as Completed (move to Recorded)">
+                            <IconButton
+                              onClick={() => markSessionCompleted(s._id)}
+                              sx={{ color: "#16a34a" }}
+                            >
+                              <TaskAltIcon />
+                            </IconButton>
+                          </Tooltip>
                         </>
                       )}
                       <Tooltip title="View enrolled users">
@@ -1987,6 +1996,15 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
                                   onClick={() => handleDelete(session._id)}
                                 >
                                   <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Mark as Completed (move to Recorded)">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => markSessionCompleted(session._id)}
+                                  sx={{ color: "#16a34a" }}
+                                >
+                                  <TaskAltIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             </>
