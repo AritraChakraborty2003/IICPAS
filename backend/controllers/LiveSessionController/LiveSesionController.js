@@ -375,15 +375,23 @@ const sessionTimeToUTC = (baseDate, hour, minute) => {
 
 // Compute IST-aware start/end UTC timestamps from a session record
 const computeSessionWindow = (session) => {
-  const [startPart = "10:00", endPart = "12:00"] = session.time
-    ? session.time.split(" - ")
-    : [];
+  const parts = (session.time || "").split(" - ");
+  const startPart = parts[0] || "00:00";
+  const endPart = parts[1] || null;
   const { hour: sh, minute: sm } = parseSessionTime(startPart);
-  const { hour: eh, minute: em } = parseSessionTime(endPart);
   const start = sessionTimeToUTC(session.date, sh, sm);
-  let end = sessionTimeToUTC(session.date, eh, em);
-  // If end <= start the class crosses midnight — push end to the next day
-  if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+  let end;
+  if (endPart) {
+    const { hour: eh, minute: em } = parseSessionTime(endPart);
+    end = sessionTimeToUTC(session.date, eh, em);
+    // If end <= start the class crosses midnight — push end to the next day
+    if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+  } else {
+    end = new Date(start.getTime() + 2 * 60 * 60 * 1000);
+  }
+  // Hard cap: always expire 24h after start (catches bad AM/PM entries)
+  const cap = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  if (end > cap) end = cap;
   return { sessionStart: start, sessionEnd: end };
 };
 
@@ -1025,6 +1033,18 @@ export const deleteLiveSession = async (req, res) => {
     const deleted = await LiveSession.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ error: "Session not found" });
     res.status(200).json({ message: "Deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+export const markSessionAsCompleted = async (req, res) => {
+  try {
+    const session = await LiveSession.findById(req.params.id);
+    if (!session) return res.status(404).json({ error: "Session not found" });
+    session.status = "completed";
+    await session.save();
+    res.status(200).json({ message: "Session marked as completed" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

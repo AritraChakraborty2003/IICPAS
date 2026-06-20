@@ -987,13 +987,12 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
       const token = checkTokenValidity();
       if (!token) return;
 
-      const res = await fetch(`${API}/api/live-sessions/${id}`, {
+      const res = await fetch(`${API}/api/live-sessions/${id}/complete`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status: "completed" }),
       });
 
       if (res.ok) {

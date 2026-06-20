@@ -11,6 +11,7 @@ import {
   deleteLiveSession,
   toggleStatus,
   syncCompletedSessions,
+  markSessionAsCompleted,
 } from "../../controllers/LiveSessionController/LiveSesionController.js";
 
 const router = express.Router();
@@ -36,14 +37,17 @@ router.post("/:id/enroll", enrollInLiveSession);
 // Unenroll from live session
 router.post("/:id/unenroll", unenrollFromLiveSession);
 
-// Update live session
+// Toggle session status
+router.patch("/toggle/:id", toggleStatus);
+
+// Mark a single session as completed — must be before the generic /:id patch
+router.patch("/:id/complete", markSessionAsCompleted);
+
+// Update live session (generic — must come last among PATCH routes)
 router.patch("/:id", updateLiveSession);
 
 // Delete live session
 router.delete("/:id", deleteLiveSession);
-
-// Toggle session status
-router.patch("/toggle/:id", toggleStatus);
 
 // Bulk sync: mark all past-date sessions as completed
 router.post("/sync-completed", syncCompletedSessions);

@@ -40,34 +40,42 @@ export const processExpiredLiveSessions = async () => {
 
     const expiredIds = [];
 
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+
     for (const session of sessions) {
-      if (!session.date || !session.time) continue;
+      if (!session.date) continue;
 
-      const parts = session.time.split(" - ");
-      if (parts.length < 2) continue;
+      const parts = (session.time || "").split(" - ");
+      const startPart = parts[0] || "00:00";
+      const endPart = parts[1] || null;
 
-      const endTimePart = parts[1];
-      const { hour, minute } = parseTimeString(endTimePart);
-
-      // session.date is stored in UTC; time strings are in IST (UTC+5:30).
-      // Build sessionEnd as an IST wall-clock time to avoid server-timezone mismatch.
-      const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
-      const dateInIST = new Date(session.date.getTime() + IST_OFFSET_MS);
-      dateInIST.setUTCHours(hour, minute, 0, 0);
-      let sessionEnd = new Date(dateInIST.getTime() - IST_OFFSET_MS);
-
-      // Also compute start to detect past-midnight end times
-      const startPart = parts[0];
+      // Build IST start timestamp
       const startParsed = parseTimeString(startPart);
       const startInIST = new Date(session.date.getTime() + IST_OFFSET_MS);
       startInIST.setUTCHours(startParsed.hour, startParsed.minute, 0, 0);
       const sessionStart = new Date(startInIST.getTime() - IST_OFFSET_MS);
-      // If end <= start the class crosses midnight — push end to the next day
-      if (sessionEnd <= sessionStart) {
-        sessionEnd = new Date(sessionEnd.getTime() + 24 * 60 * 60 * 1000);
+
+      let sessionEnd;
+      if (endPart) {
+        const { hour, minute } = parseTimeString(endPart);
+        const dateInIST = new Date(session.date.getTime() + IST_OFFSET_MS);
+        dateInIST.setUTCHours(hour, minute, 0, 0);
+        sessionEnd = new Date(dateInIST.getTime() - IST_OFFSET_MS);
+        // If end <= start the class crosses midnight — push end to next day
+        if (sessionEnd <= sessionStart) {
+          sessionEnd = new Date(sessionEnd.getTime() + 24 * 60 * 60 * 1000);
+        }
+      } else {
+        // No end time: expire 2 hours after start
+        sessionEnd = new Date(sessionStart.getTime() + 2 * 60 * 60 * 1000);
       }
 
-      if (now > sessionEnd) {
+      // Also expire if the session date itself is more than 24h in the past
+      // (catches sessions with bad end times like AM instead of PM)
+      const dayAfterStart = new Date(sessionStart.getTime() + 24 * 60 * 60 * 1000);
+      const isExpired = now > sessionEnd || now > dayAfterStart;
+
+      if (isExpired) {
         expiredIds.push(session._id);
       }
     }
