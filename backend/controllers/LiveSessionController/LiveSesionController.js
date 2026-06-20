@@ -1024,15 +1024,28 @@ export const syncCompletedSessions = async (req, res) => {
     const now = new Date();
     const sessions = await LiveSession.find({ status: { $ne: "completed" } });
 
+    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
     const toComplete = sessions.filter((session) => {
       if (session.status === "inactive") return false;
-      const sessionDate = new Date(session.date);
-      const [, endTime = "23:59"] = session.time
+      const [, endTimePart = "11:59 PM"] = session.time
         ? session.time.split(" - ")
         : [];
-      const [endHour = 23, endMinute = 59] = endTime.split(":").map(Number);
-      const sessionEnd = new Date(sessionDate);
-      sessionEnd.setHours(endHour, endMinute, 0, 0);
+      // Parse both "HH:MM AM/PM" and "HH:MM" (24h) formats
+      const amPmMatch = endTimePart.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      let endHour, endMinute;
+      if (amPmMatch) {
+        endHour = parseInt(amPmMatch[1], 10);
+        endMinute = parseInt(amPmMatch[2], 10);
+        const period = amPmMatch[3].toUpperCase();
+        if (period === "AM" && endHour === 12) endHour = 0;
+        if (period === "PM" && endHour !== 12) endHour += 12;
+      } else {
+        [endHour = 23, endMinute = 59] = endTimePart.split(":").map(Number);
+      }
+      // Time strings are in IST; build sessionEnd in IST to avoid server-timezone mismatch
+      const dateInIST = new Date(new Date(session.date).getTime() + IST_OFFSET_MS);
+      dateInIST.setUTCHours(endHour, endMinute, 0, 0);
+      const sessionEnd = new Date(dateInIST.getTime() - IST_OFFSET_MS);
       return now > sessionEnd;
     });
 

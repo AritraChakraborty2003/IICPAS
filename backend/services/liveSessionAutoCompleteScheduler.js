@@ -49,8 +49,14 @@ export const processExpiredLiveSessions = async () => {
       const endTimePart = parts[1];
       const { hour, minute } = parseTimeString(endTimePart);
 
-      const sessionEnd = new Date(session.date);
-      sessionEnd.setHours(hour, minute, 0, 0);
+      // session.date is stored in UTC; time strings are in IST (UTC+5:30).
+      // Build sessionEnd as an IST wall-clock time to avoid server-timezone mismatch.
+      const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+      const dateInIST = new Date(session.date.getTime() + IST_OFFSET_MS);
+      // Zero out the time portion in IST, then add the end hour/minute
+      dateInIST.setUTCHours(hour, minute, 0, 0);
+      // Convert back to UTC for comparison
+      const sessionEnd = new Date(dateInIST.getTime() - IST_OFFSET_MS);
 
       if (now > sessionEnd) {
         expiredIds.push(session._id);

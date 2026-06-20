@@ -54,12 +54,17 @@ const getLowestCoursePrice = (course) => {
 
 const DEFAULT_COURSE_HOURS = 80;
 
-// Course `duration` is free text (e.g. "3 months", "80 hours"). Pull the first
-// number out of it as the hours value, defaulting to 80 when none is present.
+// Course `duration` is free text (e.g. "48 Hours (8 weeks)"). Pull the first number as hours.
 const getCourseHours = (course) => {
   const match = String(course?.duration || "").match(/\d+/);
   const parsed = match ? Number(match[0]) : NaN;
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_COURSE_HOURS;
+};
+
+// Extract weeks from duration string like "48 Hours (8 weeks)"
+const getCourseWeeks = (course) => {
+  const match = String(course?.duration || "").match(/(\d+(?:\.\d+)?)\s*week/i);
+  return match ? match[1] : null;
 };
 
 const getChapterCount = (course) =>
@@ -675,7 +680,7 @@ export default function CoursePage() {
                         <span className="inline-flex items-center gap-1.5">
                           <span>⏱️</span>
                           <span className="font-semibold text-gray-800">
-                            {getCourseHours(course)} Hours
+                            {getCourseHours(course)} Hrs{getCourseWeeks(course) ? ` (${getCourseWeeks(course)} weeks)` : ""}
                           </span>
                         </span>
                         <span className="inline-flex items-center gap-1.5">
