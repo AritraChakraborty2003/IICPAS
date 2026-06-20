@@ -113,6 +113,8 @@ export default function CourseTab() {
   const [courses, setCourses] = useState([]);
   const [purchasedCourses, setPurchasedCourses] = useState([]); // Student's purchased courses
   const [availableCourses, setAvailableCourses] = useState([]); // All available courses
+  const [groupPackages, setGroupPackages] = useState([]); // CCA / Master group packages for super student
+  const [isSuperStudent, setIsSuperStudent] = useState(false);
   const [loading, setLoading] = useState(false); // Initialize as false to prevent initial blinking
   const [lastAccessedCourse, setLastAccessedCourse] = useState(null);
   const [selectedCourse, setSelectedCourse] = useState(null);
@@ -169,6 +171,8 @@ export default function CourseTab() {
         const student = response.data.student;
         studentIdVal = student._id;
         setStudentId(student._id);
+        const isSuper = Boolean(student.digitalHubAccessOverride);
+        setIsSuperStudent(isSuper);
 
         // Fetch purchased courses
         if (student.course && student.course.length > 0) {
@@ -189,6 +193,17 @@ export default function CourseTab() {
             }
           } catch (courseErr) {
             console.error("Error fetching student purchased courses:", courseErr);
+          }
+        }
+
+        // Fetch group packages for super student
+        if (isSuper) {
+          try {
+            const gpRes = await axios.get(`${API}/api/group-pricing`, { withCredentials: true });
+            const gpData = Array.isArray(gpRes.data) ? gpRes.data : [];
+            setGroupPackages(gpData);
+          } catch (gpErr) {
+            console.error("Error fetching group packages:", gpErr);
           }
         }
       }
@@ -1834,6 +1849,102 @@ export default function CourseTab() {
 	          })
 	        )}
       </div>
+
+      {/* Group Packages Section for Super Student */}
+      {isSuperStudent && groupPackages.length > 0 && (
+        <div className="px-6 pb-6">
+          <div className="mb-6 mt-2">
+            <span className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-purple-700">
+              Super Student Access
+            </span>
+            <h2 className="mt-3 text-2xl font-bold bg-gradient-to-r from-purple-900 to-indigo-700 bg-clip-text text-transparent">
+              CCA &amp; Master Packages
+            </h2>
+            <p className="mt-1 text-sm text-gray-600">
+              All group packages are unlocked for your account.
+            </p>
+          </div>
+          <div className="space-y-6">
+            {groupPackages.map((pkg) => {
+              const courseList = Array.isArray(pkg.courseIds) ? pkg.courseIds : [];
+              const imageUrl = pkg.image
+                ? pkg.image.startsWith("http")
+                  ? pkg.image
+                  : `${API}${pkg.image.startsWith("/") ? "" : "/"}${pkg.image}`
+                : "/images/a1.jpeg";
+              return (
+                <div
+                  key={pkg._id}
+                  className="overflow-hidden rounded-[28px] border border-purple-200 bg-white shadow-[0_18px_48px_-28px_rgba(88,28,135,0.2)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_-30px_rgba(88,28,135,0.3)]"
+                >
+                  <div className="flex flex-col lg:flex-row">
+                    <div className="relative overflow-hidden shrink-0 w-full h-[200px] lg:w-[280px] lg:h-auto lg:self-stretch">
+                      <img
+                        src={imageUrl}
+                        alt={pkg.groupName}
+                        className="absolute inset-0 h-full w-full object-cover object-center"
+                        onError={(e) => { e.target.src = "/images/a1.jpeg"; }}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-900/10 to-transparent" />
+                      <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-purple-600/90 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                          {pkg.level || "Package"}
+                        </span>
+                        <span className="rounded-full bg-emerald-500/95 px-3 py-1 text-xs font-semibold text-white shadow-sm">
+                          Unlocked
+                        </span>
+                      </div>
+                      <div className="absolute bottom-4 left-4">
+                        <span className="rounded-full bg-slate-950/65 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                          {courseList.length} {courseList.length === 1 ? "course" : "courses"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-1 flex-col gap-4 p-5 sm:p-6">
+                      <div>
+                        <h3 className="text-xl font-bold text-slate-900">{pkg.groupName}</h3>
+                        {pkg.description && (
+                          <p className="mt-2 text-sm text-slate-600 line-clamp-2">{pkg.description}</p>
+                        )}
+                      </div>
+
+                      {courseList.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 mb-2">
+                            Included Courses
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {courseList.map((c) => (
+                              <span
+                                key={c._id || c}
+                                className="rounded-full border border-purple-100 bg-purple-50 px-3 py-1 text-xs font-medium text-purple-700"
+                              >
+                                {c.title || "Course"}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-2 sm:flex-row mt-auto">
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/group-package/${pkg.slug || pkg._id}`)}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-purple-300 bg-white px-5 py-3 text-sm font-semibold text-purple-700 transition hover:bg-purple-50 sm:w-auto"
+                        >
+                          <Book className="text-lg" />
+                          View Package
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Form Modal */}
       {renderForm()}

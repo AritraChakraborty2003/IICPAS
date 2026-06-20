@@ -37,6 +37,8 @@ const getCertificateImage = () => "/single-certificate.jpg";
 export default function CertificateTab() {
   const [student, setStudent] = useState(null);
   const [courses, setCourses] = useState([]);
+  const [groupPackages, setGroupPackages] = useState([]);
+  const [isSuperStudent, setIsSuperStudent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [progressMap, setProgressMap] = useState({});
   const [selectedCertificate, setSelectedCertificate] = useState(null);
@@ -53,6 +55,8 @@ export default function CertificateTab() {
       if (studentRes.data && studentRes.data.student) {
         const studentInfo = studentRes.data.student;
         setStudent(studentInfo);
+        const isSuper = Boolean(studentInfo.digitalHubAccessOverride);
+        setIsSuperStudent(isSuper);
 
         const coursesRes = await axios.get(
           `${API}/api/courses/student-courses/${studentInfo._id}`,
@@ -61,6 +65,16 @@ export default function CertificateTab() {
 
         const enrolledCourses = extractCourseList(coursesRes.data);
         setCourses(enrolledCourses);
+
+        // Fetch group packages for super student
+        if (isSuper) {
+          try {
+            const gpRes = await axios.get(`${API}/api/group-pricing`, { withCredentials: true });
+            setGroupPackages(Array.isArray(gpRes.data) ? gpRes.data : []);
+          } catch {
+            setGroupPackages([]);
+          }
+        }
 
         // Fetch progress for each course
         const progressPromises = enrolledCourses.map(async (course) => {
@@ -253,6 +267,108 @@ export default function CertificateTab() {
                 })}
               </div>
             )}
+
+            {/* Group Package Certificates for Super Student */}
+            {isSuperStudent && groupPackages.length > 0 && (
+              <div className="mt-12">
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                    CCA &amp; Master Certificates
+                  </h2>
+                  <p className="text-gray-400 mt-1 text-sm">
+                    Certificates for all group packages unlocked for your account.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                  {groupPackages.map((pkg) => {
+                    const certImage = pkg.certificate?.image
+                      ? pkg.certificate.image.startsWith("http")
+                        ? pkg.certificate.image
+                        : `${API}${pkg.certificate.image.startsWith("/") ? "" : "/"}${pkg.certificate.image}`
+                      : getCertificateImage();
+
+                    return (
+                      <motion.div
+                        key={pkg._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ y: -5 }}
+                        className="group relative flex flex-col bg-[#1e293b]/40 backdrop-blur-xl border border-purple-500/20 rounded-3xl overflow-hidden hover:border-purple-500/50 hover:shadow-[0_20px_50px_-15px_rgba(168,85,247,0.2)] transition-all duration-500"
+                      >
+                        <div
+                          className="relative aspect-[16/10] overflow-hidden cursor-pointer"
+                          onClick={() =>
+                            setSelectedCertificate({
+                              course: { _id: pkg._id, title: pkg.groupName },
+                              isCompleted: true,
+                              progress: 100,
+                              certImage,
+                            })
+                          }
+                        >
+                          <img
+                            src={certImage}
+                            alt={pkg.groupName}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 shrink-0"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent opacity-80" />
+                          <div className="absolute top-4 right-4 bg-purple-500/20 backdrop-blur-md p-2 rounded-xl border border-purple-500/20 shadow-xl">
+                            <FaCheckCircle className="text-purple-400 text-lg" />
+                          </div>
+                        </div>
+
+                        <div className="p-5 flex flex-col flex-1 justify-between">
+                          <div className="mb-4">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-1 block">
+                              {pkg.level || "Group Package"}
+                            </span>
+                            <h3 className="text-base font-bold text-gray-100 group-hover:text-purple-400 transition-colors line-clamp-2 leading-relaxed">
+                              {pkg.groupName}
+                            </h3>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                            <button
+                              onClick={() =>
+                                setSelectedCertificate({
+                                  course: { _id: pkg._id, title: pkg.groupName },
+                                  isCompleted: true,
+                                  progress: 100,
+                                  certImage,
+                                })
+                              }
+                              className="flex items-center gap-2 group/btn"
+                            >
+                              <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover/btn:bg-purple-600 group-hover/btn:text-white transition-all shadow-lg">
+                                <FaEye className="text-sm" />
+                              </div>
+                              <span className="text-xs font-bold text-gray-400 group-hover/btn:text-white transition-colors">View Certificate</span>
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const link = document.createElement("a");
+                                link.href = certImage;
+                                link.download = `Certificate_${pkg.groupName.replace(/\s+/g, "_")}.jpg`;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                toast.success("Certificate download started!");
+                              }}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-gray-400 hover:bg-emerald-600 hover:text-white border border-white/10 hover:border-transparent transition-all"
+                              title="Download Certificate"
+                            >
+                              <FaDownload className="text-xs" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="relative w-full bg-[#1e293b] rounded-[2rem] border border-white/10 shadow-[0_0_100px_-20px_rgba(0,0,0,0.8)] overflow-hidden scale-in-95 group/modal animate-in fade-in zoom-in duration-300">
@@ -275,11 +391,21 @@ export default function CertificateTab() {
               
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => selectedCertificate.isCompleted && handleDownload(selectedCertificate.course._id, selectedCertificate.course.title)}
+                  onClick={() => {
+                    if (!selectedCertificate.isCompleted) return;
+                    const imgSrc = selectedCertificate.certImage || getCertificateImage();
+                    const link = document.createElement("a");
+                    link.href = imgSrc;
+                    link.download = `Certificate_${selectedCertificate.course.title.replace(/\s+/g, "_")}.jpg`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    toast.success("Certificate download started!");
+                  }}
                   disabled={!selectedCertificate.isCompleted}
                   className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 border ${
-                    selectedCertificate.isCompleted 
-                      ? "bg-blue-600 text-white hover:bg-blue-500 shadow-blue-900/40" 
+                    selectedCertificate.isCompleted
+                      ? "bg-blue-600 text-white hover:bg-blue-500 shadow-blue-900/40"
                       : "bg-gray-800/50 text-gray-500 border-white/5 cursor-not-allowed opacity-50"
                   }`}
                 >
@@ -301,7 +427,7 @@ export default function CertificateTab() {
               <div className="max-w-4xl w-full">
                 <div className="relative aspect-[1.414/1] rounded-2xl overflow-hidden bg-[#1e293b] shadow-2xl border border-white/5 transition-all duration-500">
                   <img
-                    src={getCertificateImage()}
+                    src={selectedCertificate.certImage || getCertificateImage()}
                     alt="Full Certificate"
                     className={`w-full h-full object-contain transition-all duration-1000 ${
                       !selectedCertificate.isCompleted ? "blur-[3px] grayscale opacity-60 scale-105" : ""

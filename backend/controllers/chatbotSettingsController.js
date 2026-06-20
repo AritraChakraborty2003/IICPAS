@@ -54,19 +54,22 @@ export const getChatbotSettings = async (req, res) => {
 // Update chatbot settings
 export const updateChatbotSettings = async (req, res) => {
   try {
-    const { assistantName, welcomeMessage, status } = req.body;
-    
+    const { assistantName, welcomeMessage, status, welcomeQuickReplies, responses, defaultResponse } = req.body;
+
     let settings = await ChatbotSettings.findOne();
-    
+
     if (!settings) {
       settings = new ChatbotSettings();
     }
-    
+
     // Update fields
     if (assistantName !== undefined) settings.assistantName = assistantName;
     if (welcomeMessage !== undefined) settings.welcomeMessage = welcomeMessage;
     if (status !== undefined) settings.status = status;
-    
+    if (welcomeQuickReplies !== undefined) settings.welcomeQuickReplies = welcomeQuickReplies;
+    if (responses !== undefined) settings.responses = responses;
+    if (defaultResponse !== undefined) settings.defaultResponse = defaultResponse;
+
     await settings.save();
     
     res.status(200).json({

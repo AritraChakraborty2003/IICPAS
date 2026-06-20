@@ -10,6 +10,24 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 const CHATBOT_OPEN_EVENT = "iicpa:open-chatbot";
 const CHATBOT_OPEN_SESSION_KEY = "iicpa_chatbot_open_pending";
 
+const DEFAULT_SETTINGS = {
+  assistantName: "Neha Singh",
+  profilePicture:
+    "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
+  welcomeMessage:
+    "Hi! I'm your course assistant. I'm here to help you with course details, pricing, and enrollment.",
+  status: "Online",
+  welcomeQuickReplies: [
+    { label: "Check Prices", trigger: "get prices" },
+    { label: "View Courses", trigger: "what courses do you offer?" },
+    { label: "Course Duration", trigger: "what is the duration?" },
+    { label: "Certificates", trigger: "do you provide certificates?" },
+  ],
+  responses: [],
+  defaultResponse:
+    "I'm here to help with course-related questions! Here are our available courses and their pricing.",
+};
+
 const Chatbot = () => {
   const pathname = usePathname();
   const isDigitalHubRoute = pathname?.includes("/digital-hub");
@@ -23,25 +41,15 @@ const Chatbot = () => {
   if (pathname?.includes("/live-session")) {
     return null;
   }
+
   const [isOpen, setIsOpen] = useState(true);
   const [leadFormVisible, setLeadFormVisible] = useState(true);
   const [hasLead, setHasLead] = useState(false);
-  const [leadData, setLeadData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [leadData, setLeadData] = useState({ name: "", email: "", phone: "" });
   const [leadErrors, setLeadErrors] = useState({});
   const [isLeadSubmitting, setIsLeadSubmitting] = useState(false);
   const [sessionId, setSessionId] = useState(null);
-  const [chatbotSettings, setChatbotSettings] = useState({
-    assistantName: "Neha Singh",
-    profilePicture:
-      "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face",
-    welcomeMessage:
-      "Hi! I'm your course assistant. I'm here to help you with course details, pricing, and enrollment.",
-    status: "Online",
-  });
+  const [chatbotSettings, setChatbotSettings] = useState(DEFAULT_SETTINGS);
   const [messages, setMessages] = useState([]);
   const [courses, setCourses] = useState([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -54,7 +62,6 @@ const Chatbot = () => {
 
   const renderMarkdown = (text) => {
     if (!text) return "";
-
     const boldText = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
     const italicText = boldText.replace(/\*(.*?)\*/g, "<em>$1</em>");
     return italicText.replace(/\n/g, "<br>");
@@ -71,22 +78,17 @@ const Chatbot = () => {
     if (trimmedName.length < 2) {
       errors.name = "Name must be at least 2 characters";
     }
-
     if (!/^\d{10}$/.test(normalizedPhone)) {
       errors.phone = "Please enter a valid 10-digit phone number";
     }
-
     if (trimmedEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
       errors.email = "Please enter a valid email address";
     }
-
     return errors;
   };
 
   useEffect(() => {
-    if (!sessionId) {
-      setSessionId(uuidv4());
-    }
+    if (!sessionId) setSessionId(uuidv4());
   }, [sessionId]);
 
   useEffect(() => {
@@ -94,10 +96,9 @@ const Chatbot = () => {
       try {
         const response = await fetch(`${API_BASE}/api/chatbot/settings`);
         if (!response.ok) return;
-
         const data = await response.json();
         if (data.success) {
-          setChatbotSettings(data.settings);
+          setChatbotSettings({ ...DEFAULT_SETTINGS, ...data.settings });
         }
       } catch (error) {
         console.error("Error fetching chatbot settings:", error);
@@ -109,8 +110,10 @@ const Chatbot = () => {
         const response = await fetch(`${API_BASE}/api/courses`);
         if (!response.ok) return;
         const data = await response.json();
-        // The API might return { success: true, courses: [...] } or just an array
-        const coursesList = data.courses || data.data?.courses || (Array.isArray(data) ? data : []);
+        const coursesList =
+          data.courses ||
+          data.data?.courses ||
+          (Array.isArray(data) ? data : []);
         setCourses(coursesList);
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -127,7 +130,6 @@ const Chatbot = () => {
 
   useEffect(() => {
     const openChatbot = () => setIsOpen(true);
-
     try {
       if (window.sessionStorage.getItem(CHATBOT_OPEN_SESSION_KEY) === "true") {
         window.sessionStorage.removeItem(CHATBOT_OPEN_SESSION_KEY);
@@ -136,45 +138,36 @@ const Chatbot = () => {
     } catch (error) {
       console.error("Error reading chatbot open state:", error);
     }
-
     window.addEventListener(CHATBOT_OPEN_EVENT, openChatbot);
-
-    return () => {
-      window.removeEventListener(CHATBOT_OPEN_EVENT, openChatbot);
-    };
+    return () => window.removeEventListener(CHATBOT_OPEN_EVENT, openChatbot);
   }, []);
 
   useEffect(() => {
     const checkForModals = () => {
-      // Find all dialogs, presentations, custom modals, or overlays in the document
       const elements = document.querySelectorAll(
         '.backdrop-blur, .backdrop-blur-lg, .swal2-container, [role="dialog"], [role="presentation"], .modal, [class*="modal-"], [class*="Modal-"]'
       );
-
       let modalFound = false;
       for (const el of Array.from(elements)) {
-        // Exclude the chatbot container itself and its children
-        if (el.closest('.chatbot-container') || el.id === 'chatbot-root' || el.closest('#chatbot-root')) {
+        if (
+          el.closest(".chatbot-container") ||
+          el.id === "chatbot-root" ||
+          el.closest("#chatbot-root")
+        )
           continue;
-        }
-
-        // Exclude elements that are hidden or have 0 size
         const rect = el.getBoundingClientRect();
         if (rect.width > 0 && rect.height > 0) {
           modalFound = true;
           break;
         }
       }
-
-      // Check document.body classes for modal-open or swal-shown states
       if (
-        document.body.classList.contains('swal2-shown') ||
-        document.body.classList.contains('modal-open') ||
-        document.body.style.overflow === 'hidden'
+        document.body.classList.contains("swal2-shown") ||
+        document.body.classList.contains("modal-open") ||
+        document.body.style.overflow === "hidden"
       ) {
         modalFound = true;
       }
-
       if (modalFound) {
         setIsOpen(false);
       } else if (!isExplicitlyClosedRef.current) {
@@ -182,24 +175,15 @@ const Chatbot = () => {
       }
     };
 
-    // Run initial check
     checkForModals();
-
-    // Use MutationObserver to observe DOM changes
-    const observer = new MutationObserver(() => {
-      checkForModals();
-    });
-
+    const observer = new MutationObserver(checkForModals);
     observer.observe(document.body, {
       childList: true,
       subtree: true,
       attributes: true,
-      attributeFilter: ['class', 'style', 'open']
+      attributeFilter: ["class", "style", "open"],
     });
-
-    // Also run a fallback interval in case React state updates don't trigger the observer properly
     const interval = setInterval(checkForModals, 500);
-
     return () => {
       observer.disconnect();
       clearInterval(interval);
@@ -208,13 +192,10 @@ const Chatbot = () => {
 
   const saveChatMessage = async (message, userDetails = null) => {
     if (!sessionId) return;
-
     try {
       await fetch(`${API_BASE}/api/chat/save-message`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           sessionId,
           message,
@@ -229,48 +210,30 @@ const Chatbot = () => {
   };
 
   const startChatWithLead = (details, saveFailed = false) => {
-    const welcomeText =
-      `Hi ${details.name}! I'm your course assistant. How can I help you with our courses today?`;
-
+    const welcomeText = `Hi ${details.name}! I'm ${chatbotSettings.assistantName}, your course assistant. How can I help you today?`;
     const botMessage = {
       id: Date.now(),
       text: welcomeText,
       isBot: true,
       timestamp: new Date(),
-      actions: [
-        { label: "Check Prices", trigger: "get prices" },
-        { label: "View Courses", trigger: "what courses do you offer?" },
-        { label: "Course Duration", trigger: "what is the duration?" },
-        { label: "Certificates", trigger: "do you provide certificates?" }
-      ]
+      actions: chatbotSettings.welcomeQuickReplies || DEFAULT_SETTINGS.welcomeQuickReplies,
     };
-
     setHasLead(true);
     setLeadFormVisible(false);
     setMessages((prev) => (prev.length ? prev : [botMessage]));
-
-    if (messages.length === 0) {
-      saveChatMessage(botMessage, details);
-    }
-
-    if (saveFailed) {
-      console.warn("Lead save failed, chat unlocked with local lead data.");
-    }
+    if (messages.length === 0) saveChatMessage(botMessage, details);
+    if (saveFailed) console.warn("Lead save failed, chat unlocked with local lead data.");
   };
 
   const handleLeadInputChange = (field, value) => {
     setLeadData((prev) => ({ ...prev, [field]: value }));
-    if (leadErrors[field]) {
-      setLeadErrors((prev) => ({ ...prev, [field]: "" }));
-    }
+    if (leadErrors[field]) setLeadErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const handleLeadSubmit = async (e) => {
     e.preventDefault();
-
     const errors = validateLeadForm();
     setLeadErrors(errors);
-
     if (Object.keys(errors).length > 0) return;
 
     const preparedLead = {
@@ -278,15 +241,11 @@ const Chatbot = () => {
       phone: normalizePhone(leadData.phone),
       email: leadData.email.trim(),
     };
-
     setIsLeadSubmitting(true);
-
     try {
       const response = await fetch(`${API_BASE}/api/v1/chatbot-leads`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...preparedLead,
           source: "chatbot",
@@ -294,12 +253,10 @@ const Chatbot = () => {
           message: "Lead captured from chatbot pre-chat form",
         }),
       });
-
       if (!response.ok) {
         const responseText = await response.text();
         throw new Error(responseText || "Failed to save chatbot lead");
       }
-
       setLeadData(preparedLead);
       startChatWithLead(preparedLead, false);
     } catch (error) {
@@ -311,67 +268,19 @@ const Chatbot = () => {
     }
   };
 
-  const responses = {
-    "what courses do you offer?": {
-      text: "We offer courses in Accounting, HR, Finance, US CMA, and Excel. Here are our top courses:",
+  // Build a lookup map from dynamic settings responses
+  const getResponseForTrigger = (triggerText) => {
+    const settingsResponses = chatbotSettings.responses || [];
+    const matched = settingsResponses.find(
+      (r) => r.trigger.toLowerCase() === triggerText.toLowerCase()
+    );
+    if (matched) return matched;
+    // fallback default
+    return {
+      text: chatbotSettings.defaultResponse || DEFAULT_SETTINGS.defaultResponse,
       showCourses: true,
-      actions: [
-        { label: "Check Prices", trigger: "get prices" },
-        { label: "Course Duration", trigger: "what is the duration?" }
-      ]
-    },
-    "how much do courses cost?": {
-      text: "Course prices vary by level and content. Here is a list of our courses with their prices:",
-      showCourses: true,
-      actions: [
-        { label: "View Courses", trigger: "what courses do you offer?" },
-        { label: "Do you provide certificates?", trigger: "do you provide certificates?" }
-      ]
-    },
-    "what is the duration?": {
-      text: "Course duration depends on the level and content. Foundation courses typically take 2-4 weeks, Core courses 4-8 weeks, and Expert courses 8-12 weeks. Check individual course pages for specific details.",
-      actions: [
-        { label: "Check Prices", trigger: "get prices" },
-        { label: "How do I enroll?", trigger: "how do i enroll?" }
-      ]
-    },
-    "do you provide certificates?": {
-      text: "Yes! We provide completion certificates for all our courses. These certificates are industry-recognized and can help boost your career prospects.",
-      actions: [
-        { label: "View Courses", trigger: "what courses do you offer?" },
-        { label: "How do I enroll?", trigger: "how do i enroll?" }
-      ]
-    },
-    "how do i enroll?": {
-      text: "Simply click the 'Enroll Now' button on any course card, or visit the course detail page. You'll be redirected to our enrollment process where you can complete your registration.",
-      actions: [
-        { label: "Check Prices", trigger: "get prices" },
-        { label: "What are the prerequisites?", trigger: "what are the prerequisites?" }
-      ]
-    },
-    "what are the prerequisites?": {
-      text: "Prerequisites vary by course level. Foundation courses have no prerequisites, Core courses may require basic knowledge, and Expert courses typically require intermediate to advanced knowledge in the subject area.",
-      actions: [
-        { label: "View Courses", trigger: "what courses do you offer?" }
-      ]
-    },
-    "get prices": {
-      text: "Sure! Here are our available courses and their pricing:",
-      showCourses: true,
-      actions: [
-        { label: "How do I enroll?", trigger: "how do i enroll?" },
-        { label: "Do you provide certificates?", trigger: "do you provide certificates?" }
-      ]
-    },
-    default: {
-      text: "I'm here to help with course-related questions! Here are our available courses and their pricing. You can also ask me about specific details like certificates or enrollment.",
-      showCourses: true,
-      actions: [
-        { label: "Check Prices", trigger: "get prices" },
-        { label: "View Courses", trigger: "what courses do you offer?" },
-        { label: "Course Duration", trigger: "what is the duration?" }
-      ]
-    },
+      actions: chatbotSettings.welcomeQuickReplies || DEFAULT_SETTINGS.welcomeQuickReplies,
+    };
   };
 
   const processMessage = (text) => {
@@ -385,42 +294,49 @@ const Chatbot = () => {
 
     const userMessage = {
       id: messages.length + 1,
-      text: text,
+      text,
       isBot: false,
       timestamp: new Date(),
     };
-
     setMessages((prev) => [...prev, userMessage]);
     saveChatMessage(userMessage, activeUserDetails);
 
-    const botResponseData = responses[text.toLowerCase()] || responses.default;
-
+    const responseData = getResponseForTrigger(text);
     const botResponse = {
       id: messages.length + 2,
-      text: botResponseData.text,
+      text: responseData.text,
       isBot: true,
       timestamp: new Date(),
-      type: botResponseData.showCourses ? "courses" : "text",
-      actions: botResponseData.actions || [],
+      type: responseData.showCourses ? "courses" : "text",
+      actions: responseData.actions || [],
     };
 
     setTimeout(() => {
       setMessages((prev) => [...prev, botResponse]);
       saveChatMessage(botResponse, activeUserDetails);
-    }, 1000);
+    }, 800);
 
     setInputMessage("");
   };
 
-  const handleSendMessage = () => {
-    processMessage(inputMessage);
-  };
-
+  const handleSendMessage = () => processMessage(inputMessage);
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
       handleSendMessage();
     }
+  };
+
+  const getCoursePrice = (course) => {
+    const finalPrice =
+      course.pricing?.recordedSession?.finalPrice ||
+      course.pricing?.liveSession?.finalPrice ||
+      null;
+    const originalPrice = course.price;
+    const discount = course.discount || 0;
+    const discountedPrice =
+      finalPrice || (discount > 0 ? originalPrice - (originalPrice * discount) / 100 : null);
+    return { originalPrice, discountedPrice, discount };
   };
 
   return (
@@ -433,7 +349,8 @@ const Chatbot = () => {
             exit={{ opacity: 0, y: 20, scale: 0.8 }}
             className={`chatbot-container fixed z-40 flex h-[500px] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl ${chatWindowPositionClasses}`}
           >
-            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 flex items-center justify-between">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 flex items-center justify-between flex-shrink-0">
               <div className="flex items-center space-x-2">
                 <div className="w-8 h-8 rounded-full overflow-hidden bg-white bg-opacity-20 flex items-center justify-center">
                   <img
@@ -463,10 +380,15 @@ const Chatbot = () => {
               </button>
             </div>
 
+            {/* Lead Form */}
             {leadFormVisible && !hasLead ? (
               <div className="flex-1 p-6 overflow-y-auto">
                 <div className="bg-gray-100 rounded-2xl p-4 mb-4 text-gray-800 text-sm leading-relaxed">
-                  Hi! I&apos;m your course assistant. Please share your details to start the chat.
+                  <div
+                    dangerouslySetInnerHTML={{
+                      __html: renderMarkdown(chatbotSettings.welcomeMessage),
+                    }}
+                  />
                 </div>
 
                 <form className="space-y-4" onSubmit={handleLeadSubmit}>
@@ -539,7 +461,8 @@ const Chatbot = () => {
               </div>
             ) : (
               <>
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-0">
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
                   {messages.map((message) => (
                     <motion.div
                       key={message.id}
@@ -548,78 +471,103 @@ const Chatbot = () => {
                       className={`flex ${message.isBot ? "justify-start" : "justify-end"}`}
                     >
                       <div
-                        className={`max-w-[85%] p-4 rounded-2xl ${
+                        className={`max-w-[85%] p-3 rounded-2xl ${
                           message.isBot
                             ? "bg-gray-100 text-gray-800"
                             : "bg-green-500 text-white"
                         }`}
                       >
                         <div
-                          className="text-base leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: renderMarkdown(message.text) }}
+                          className="text-sm leading-relaxed"
+                          dangerouslySetInnerHTML={{
+                            __html: renderMarkdown(message.text),
+                          }}
                         />
 
+                        {/* Course cards with real pricing */}
                         {message.type === "courses" && courses.length > 0 && (
-                          <div className="mt-4 space-y-3 overflow-hidden">
-                            {courses.slice(0, 5).map((course) => (
-                              <div
-                                key={course._id}
-                                className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
-                              >
-                                <p className="text-sm font-bold text-gray-800 truncate">
-                                  {course.title.split(" ").slice(0, 3).join(" ")}
-                                </p>
-                                <p className="text-xs text-green-600 font-semibold mt-1">
-                                  ₹{course.price}
-                                </p>
-                                <div className="flex items-center space-x-2 mt-2">
-                                  <a
-                                    href={`/course/${course.slug || course._id}`}
-                                    className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-bold py-1.5 rounded-lg text-center transition-colors"
-                                  >
-                                    VIEW
-                                  </a>
-                                  <a
-                                    href={`https://wa.me/919593330999?text=${encodeURIComponent(`Hi! I'm interested in the ${course.title} course. Can you help me?`)}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg transition-colors"
-                                  >
-                                    <svg
-                                      className="w-3 h-3 fill-current"
-                                      viewBox="0 0 24 24"
+                          <div className="mt-3 space-y-2 overflow-hidden">
+                            {courses.slice(0, 5).map((course) => {
+                              const { originalPrice, discountedPrice, discount } =
+                                getCoursePrice(course);
+                              return (
+                                <div
+                                  key={course._id}
+                                  className="bg-white rounded-xl p-3 shadow-sm border border-gray-100"
+                                >
+                                  <p className="text-xs font-bold text-gray-800 leading-tight">
+                                    {course.title.split(" ").slice(0, 5).join(" ")}
+                                  </p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    {discountedPrice && discountedPrice < originalPrice ? (
+                                      <>
+                                        <span className="text-xs text-green-600 font-bold">
+                                          ₹{Math.round(discountedPrice).toLocaleString("en-IN")}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400 line-through">
+                                          ₹{originalPrice.toLocaleString("en-IN")}
+                                        </span>
+                                        <span className="text-[10px] bg-green-100 text-green-700 px-1 rounded font-semibold">
+                                          {discount}% off
+                                        </span>
+                                      </>
+                                    ) : (
+                                      <span className="text-xs text-green-600 font-bold">
+                                        ₹{originalPrice.toLocaleString("en-IN")}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-2 mt-2">
+                                    <a
+                                      href={`/course/${course.slug || course._id}`}
+                                      className="flex-1 bg-green-50 hover:bg-green-100 text-green-700 text-[10px] font-bold py-1.5 rounded-lg text-center transition-colors"
                                     >
-                                      <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.438 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
-                                    </svg>
-                                  </a>
+                                      VIEW COURSE
+                                    </a>
+                                    <a
+                                      href={`https://wa.me/919593330999?text=${encodeURIComponent(
+                                        `Hi! I'm interested in the ${course.title} course. Can you help me?`
+                                      )}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="bg-green-500 hover:bg-green-600 text-white p-1.5 rounded-lg transition-colors"
+                                      title="WhatsApp"
+                                    >
+                                      <svg className="w-3 h-3 fill-current" viewBox="0 0 24 24">
+                                        <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.438 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" />
+                                      </svg>
+                                    </a>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                             {courses.length > 5 && (
                               <a
                                 href="/course"
-                                className="block text-center text-[10px] font-bold text-green-600 hover:underline"
+                                className="block text-center text-[10px] font-bold text-green-600 hover:underline pt-1"
                               >
-                                VIEW ALL COURSES
+                                VIEW ALL COURSES →
                               </a>
                             )}
                           </div>
                         )}
 
+                        {/* Quick reply action buttons */}
                         {message.actions && message.actions.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2">
+                          <div className="mt-3 flex flex-wrap gap-1.5">
                             {message.actions.map((action, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => processMessage(action.trigger)}
-                                className="bg-white border border-green-500 text-green-600 text-xs font-bold px-3 py-1.5 rounded-full hover:bg-green-50 transition-colors"
+                                className="bg-white border border-green-500 text-green-600 text-xs font-semibold px-2.5 py-1 rounded-full hover:bg-green-50 transition-colors"
                               >
                                 {action.label}
                               </button>
                             ))}
                           </div>
                         )}
-                        <p className="text-xs opacity-70 mt-2">
+
+                        <p className="text-[10px] opacity-60 mt-1.5">
                           {message.timestamp.toLocaleTimeString([], {
                             hour: "2-digit",
                             minute: "2-digit",
@@ -631,7 +579,8 @@ const Chatbot = () => {
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-4 border-t border-gray-200">
+                {/* Input */}
+                <div className="p-3 border-t border-gray-200 flex-shrink-0">
                   <div className="flex items-center space-x-2">
                     <input
                       type="text"
@@ -655,6 +604,7 @@ const Chatbot = () => {
         )}
       </AnimatePresence>
 
+      {/* Floating button */}
       <div className={`fixed z-50 ${chatButtonPositionClasses}`}>
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -663,7 +613,7 @@ const Chatbot = () => {
             isExplicitlyClosedRef.current = false;
             setIsOpen(true);
           }}
-          className="bg-gradient-to-r from-green-500 to-green-600 text-white p-1 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden"
+          className="bg-gradient-to-r from-green-500 to-green-600 text-white p-1 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
         >
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-white bg-opacity-20 flex items-center justify-center">
             <img
