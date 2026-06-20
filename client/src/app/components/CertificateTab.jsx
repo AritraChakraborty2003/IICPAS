@@ -293,15 +293,16 @@ export default function CertificateTab() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         whileHover={{ y: -5 }}
-                        className="group relative flex flex-col bg-[#1e293b]/40 backdrop-blur-xl border border-purple-500/20 rounded-3xl overflow-hidden hover:border-purple-500/50 hover:shadow-[0_20px_50px_-15px_rgba(168,85,247,0.2)] transition-all duration-500"
+                        className="group relative flex flex-col bg-[#1e293b]/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:border-blue-500/50 hover:shadow-[0_20px_50px_-15px_rgba(59,130,246,0.2)] transition-all duration-500"
                       >
+                        {/* Card Header Preview */}
                         <div
                           className="relative aspect-[16/10] overflow-hidden cursor-pointer"
                           onClick={() =>
                             setSelectedCertificate({
                               course: { _id: pkg._id, title: pkg.groupName },
-                              isCompleted: true,
-                              progress: 100,
+                              isCompleted: false,
+                              progress: 0,
                               certImage,
                             })
                           }
@@ -309,20 +310,37 @@ export default function CertificateTab() {
                           <img
                             src={certImage}
                             alt={pkg.groupName}
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 shrink-0"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 blur-[2px] grayscale opacity-40 shrink-0"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent opacity-80" />
-                          <div className="absolute top-4 right-4 bg-purple-500/20 backdrop-blur-md p-2 rounded-xl border border-purple-500/20 shadow-xl">
-                            <FaCheckCircle className="text-purple-400 text-lg" />
+
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
+                            <div className="w-12 h-12 bg-black/60 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/10 shadow-2xl mb-3">
+                              <FaLock className="text-amber-500 text-xl" />
+                            </div>
+                            <div className="bg-amber-500/10 backdrop-blur-md px-3 py-1 rounded-full border border-amber-500/20">
+                              <span className="text-amber-500 text-[10px] font-bold uppercase tracking-widest">Locked Preview</span>
+                            </div>
+                          </div>
+
+                          <div className="absolute bottom-0 left-0 right-0 p-4">
+                            <div className="flex justify-between items-end mb-1.5 px-1">
+                              <span className="text-[9px] font-bold text-gray-400 uppercase tracking-tight">Progress</span>
+                              <span className="text-[10px] font-black text-amber-500">0%</span>
+                            </div>
+                            <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                              <div 
+                                className="h-full bg-gradient-to-r from-amber-600 to-amber-400 transition-all duration-1000" 
+                                style={{ width: `0%` }} 
+                              />
+                            </div>
                           </div>
                         </div>
 
+                        {/* Card Body */}
                         <div className="p-5 flex flex-col flex-1 justify-between">
                           <div className="mb-4">
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-purple-400 mb-1 block">
-                              {pkg.level || "Group Package"}
-                            </span>
-                            <h3 className="text-base font-bold text-gray-100 group-hover:text-purple-400 transition-colors line-clamp-2 leading-relaxed">
+                            <h3 className="text-base font-bold text-gray-100 group-hover:text-blue-400 transition-colors line-clamp-2 leading-relaxed">
                               {pkg.groupName}
                             </h3>
                           </div>
@@ -332,14 +350,14 @@ export default function CertificateTab() {
                               onClick={() =>
                                 setSelectedCertificate({
                                   course: { _id: pkg._id, title: pkg.groupName },
-                                  isCompleted: true,
-                                  progress: 100,
+                                  isCompleted: false,
+                                  progress: 0,
                                   certImage,
                                 })
                               }
                               className="flex items-center gap-2 group/btn"
                             >
-                              <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 group-hover/btn:bg-purple-600 group-hover/btn:text-white transition-all shadow-lg">
+                              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 group-hover/btn:bg-blue-600 group-hover/btn:text-white transition-all shadow-lg shadow-blue-900/10">
                                 <FaEye className="text-sm" />
                               </div>
                               <span className="text-xs font-bold text-gray-400 group-hover/btn:text-white transition-colors">View Certificate</span>
@@ -348,16 +366,10 @@ export default function CertificateTab() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                const link = document.createElement("a");
-                                link.href = certImage;
-                                link.download = `Certificate_${pkg.groupName.replace(/\s+/g, "_")}.jpg`;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                                toast.success("Certificate download started!");
                               }}
-                              className="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 text-gray-400 hover:bg-emerald-600 hover:text-white border border-white/10 hover:border-transparent transition-all"
-                              title="Download Certificate"
+                              disabled={true}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center transition-all bg-gray-800/30 text-gray-600 cursor-not-allowed opacity-30"
+                              title="Complete course to download"
                             >
                               <FaDownload className="text-xs" />
                             </button>
