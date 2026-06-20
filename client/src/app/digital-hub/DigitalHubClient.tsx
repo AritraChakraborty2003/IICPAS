@@ -172,6 +172,7 @@ import {
   Lock,
   Calendar,
   ExternalLink,
+  Video,
 } from "lucide-react";
 
 type ContentKey =
@@ -3936,13 +3937,20 @@ export default function DigitalHubClient({
                         <button
                           type="button"
                           onClick={() => {
-                            setClassModalKind("recorded");
-                            setIsLiveSessionsModalOpen(true);
+                            const sorted = [...topicClassSessions.recorded].sort(
+                              (a, b) =>
+                                new Date(b.date || 0).getTime() -
+                                new Date(a.date || 0).getTime()
+                            );
+                            const latest = sorted[0];
+                            const url =
+                              latest?.recordingUrl || latest?.meetingLink || "";
+                            if (url) window.open(url, "_blank", "noopener,noreferrer");
                           }}
-                          className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                          className="inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-green-700"
                         >
-                          <Target className="h-4 w-4" />
-                          Watch Recorded Videos
+                          <Video className="h-4 w-4" />
+                          Watch Live Class
                         </button>
                       ) : null}
                     </div>
