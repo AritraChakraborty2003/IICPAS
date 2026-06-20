@@ -153,6 +153,7 @@ export const createBooking = async (req, res) => {
           link: booking.link || liveSession?.link || "",
           time: liveSession?.time || "",
           date: booking.date || liveSession?.date || null,
+          passcode: liveSession?.passcode || "",
         },
         null
       );

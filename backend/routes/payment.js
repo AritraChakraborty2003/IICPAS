@@ -212,29 +212,35 @@ const sendCoursePurchaseWhatsAppInvoice = async (
   };
 };
 
-const buildLiveSessionInvoiceComponents = ({ studentName, invoiceUrl, sessionTitle, sessionDate, sessionLink }) => [
-  {
-    type: "header",
-    parameters: [
-      {
-        type: "document",
-        document: {
-          link: invoiceUrl,
-          filename: "invoice.pdf",
+const buildLiveSessionInvoiceComponents = ({ studentName, invoiceUrl, sessionTitle, sessionDate, sessionLink, sessionPasscode }) => {
+  const linkWithPasscode = sessionPasscode
+    ? `${sessionLink}\nPasscode: ${sessionPasscode}`
+    : sessionLink || "Link will be shared soon";
+
+  return [
+    {
+      type: "header",
+      parameters: [
+        {
+          type: "document",
+          document: {
+            link: invoiceUrl,
+            filename: "invoice.pdf",
+          },
         },
-      },
-    ],
-  },
-  {
-    type: "body",
-    parameters: [
-      { type: "text", text: studentName || "Student" },
-      { type: "text", text: sessionTitle || "Live Session" },
-      { type: "text", text: sessionDate || "Date TBD" },
-      { type: "text", text: sessionLink || "Link will be shared soon" },
-    ],
-  },
-];
+      ],
+    },
+    {
+      type: "body",
+      parameters: [
+        { type: "text", text: studentName || "Student" },
+        { type: "text", text: sessionTitle || "Live Session" },
+        { type: "text", text: sessionDate || "Date TBD" },
+        { type: "text", text: linkWithPasscode },
+      ],
+    },
+  ];
+};
 
 const sendLiveSessionWhatsAppInvoice = async (
   booking,
@@ -271,6 +277,7 @@ const sendLiveSessionWhatsAppInvoice = async (
     ? new Date(booking.date).toLocaleDateString("en-IN", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
     : "Date TBD";
   const sessionLink = booking?.link || "Link will be shared soon";
+  const sessionPasscode = String(booking?.passcode || "").trim();
 
   const response = await sendWhatsAppTemplateMessage({
     to: recipient,
@@ -281,6 +288,7 @@ const sendLiveSessionWhatsAppInvoice = async (
       sessionTitle,
       sessionDate,
       sessionLink,
+      sessionPasscode,
     }),
   });
 
@@ -515,7 +523,7 @@ const sendReceiptForLiveSessionBooking = async (
   let bookingForEmail = booking;
   if (booking.liveSessionId) {
     const liveSession = await LiveSession.findById(booking.liveSessionId)
-      .select("link time date")
+      .select("link time date passcode")
       .lean();
     if (liveSession) {
       bookingForEmail = {
@@ -523,6 +531,7 @@ const sendReceiptForLiveSessionBooking = async (
         link: booking.link || liveSession.link || "",
         time: booking.time || liveSession.time || "",
         date: booking.date || liveSession.date || null,
+        passcode: liveSession.passcode || "",
       };
     }
   }
@@ -548,7 +557,7 @@ const sendReceiptForLiveSessionBooking = async (
 
   if (needsWhatsApp) {
     try {
-      const whatsappResult = await sendLiveSessionWhatsAppInvoice(booking, {
+      const whatsappResult = await sendLiveSessionWhatsAppInvoice(bookingForEmail, {
         publicApiBaseUrl,
       });
       if (whatsappResult?.skipped) {

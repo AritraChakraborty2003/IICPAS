@@ -35,6 +35,7 @@ export const sendLiveSessionReceiptEmail = async (booking, pdfBuffer) => {
     booking?.time || booking?.liveSessionId?.time || ""
   ).trim();
   const sessionDate = formatSessionDate(booking?.date || booking?.liveSessionId?.date);
+  const sessionPasscode = String(booking?.passcode || booking?.liveSessionId?.passcode || "").trim();
   const hasInvoiceAttachment = Boolean(pdfBuffer);
   const invoiceLabel = `LS-INV-${String(booking?._id || "").slice(-8).toUpperCase()}`;
 
@@ -83,6 +84,11 @@ export const sendLiveSessionReceiptEmail = async (booking, pdfBuffer) => {
           ${
             sessionJoinLink
               ? `<p><strong>Joining Link:</strong> <a href="${sessionJoinLink}" target="_blank" rel="noopener noreferrer">${sessionJoinLink}</a></p>`
+              : ""
+          }
+          ${
+            sessionPasscode
+              ? `<p><strong>Passcode:</strong> <span style="background:#f1f5f9;padding:2px 8px;border-radius:4px;font-family:monospace;font-size:15px;letter-spacing:1px;">${sessionPasscode}</span></p>`
               : ""
           }
           ${
