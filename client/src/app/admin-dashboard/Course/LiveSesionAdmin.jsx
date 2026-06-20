@@ -317,6 +317,7 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
   const [loadingCourses, setLoadingCourses] = useState(false);
   const [loadingChapters, setLoadingChapters] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [syncingCompleted, setSyncingCompleted] = useState(false);
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [editId, setEditId] = useState(null);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
@@ -935,6 +936,38 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
     } catch (error) {
       console.error("Toggle error:", error);
       Swal.fire("Error!", "Failed to update session status", "error");
+    }
+  };
+
+  const syncCompletedSessions = async () => {
+    try {
+      setSyncingCompleted(true);
+      const token = checkTokenValidity();
+      if (!token) return;
+
+      const res = await fetch(`${API}/api/live-sessions/sync-completed`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        await fetchSessions();
+        Swal.fire(
+          "Synced!",
+          data.synced > 0
+            ? `${data.synced} expired session(s) moved to Recorded Sessions.`
+            : "All sessions are already up to date.",
+          "success"
+        );
+      } else {
+        Swal.fire("Error", data.error || "Sync failed", "error");
+      }
+    } catch (err) {
+      console.error("Sync error:", err);
+      Swal.fire("Error", "Failed to sync sessions", "error");
+    } finally {
+      setSyncingCompleted(false);
     }
   };
 
@@ -1595,6 +1628,14 @@ export default function LiveSesionAdmin({ draftKey = "" } = {}) {
               }}
             >
               View Bookings ({sessionBookings.length})
+            </Button>
+            <Button
+              variant="outlined"
+              sx={{ borderColor: "#16a34a", color: "#16a34a" }}
+              disabled={syncingCompleted}
+              onClick={syncCompletedSessions}
+            >
+              {syncingCompleted ? "Syncing..." : "Sync Recorded Sessions"}
             </Button>
             {/* View Mode Toggle */}
             <div className="flex items-center bg-gray-100 rounded-lg p-1">
