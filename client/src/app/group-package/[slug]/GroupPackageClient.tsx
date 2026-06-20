@@ -281,7 +281,7 @@ export default function GroupPackageClient({ slug }: { slug: string }) {
               </div>
 
               <div
-                className="mb-6 text-sm leading-relaxed text-gray-700"
+                className="mb-6 text-sm leading-relaxed text-gray-700 [&>p]:mb-4 [&>p:last-child]:mb-0"
                 dangerouslySetInnerHTML={{
                   __html:
                     formatTextAsParagraphs(pkg.description) ||
