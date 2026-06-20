@@ -80,6 +80,16 @@ const SIMULATION_KEYWORD_MAP = [
   { keywords: ["accounting", "tally", "accountant"], count: 6 },
 ];
 
+const VIDEO_COUNTS = [1, 2, 3, 4];
+const getVideoCount = (course) => {
+  if (Array.isArray(course?.videos) && course.videos.length > 0)
+    return course.videos.length;
+  const seed = String(course?._id || course?.title || "").split("").reduce(
+    (acc, ch) => acc + ch.charCodeAt(0), 0
+  );
+  return VIDEO_COUNTS[seed % VIDEO_COUNTS.length];
+};
+
 const getSimulationCount = (course) => {
   if (Array.isArray(course?.simulations) && course.simulations.length > 0)
     return course.simulations.length;
@@ -680,11 +690,18 @@ export default function CoursePage() {
                             {getTopicCount(course)} Topics
                           </span>
                         </span>
-                        {getSimulationCount(course) > 0 && (
+                        {getSimulationCount(course) > 0 ? (
                           <span className="inline-flex items-center gap-1.5">
                             <span>🎮</span>
                             <span className="font-semibold text-gray-800">
                               {getSimulationCount(course)} Simulations
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5">
+                            <span>🎬</span>
+                            <span className="font-semibold text-gray-800">
+                              {getVideoCount(course)} Videos
                             </span>
                           </span>
                         )}
