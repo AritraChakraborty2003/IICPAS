@@ -350,6 +350,43 @@ export const createLiveSession = async (req, res) => {
   }
 };
 
+// Parse "HH:MM" (24h) or "HH:MM AM/PM" (12h) into { hour, minute }
+const parseSessionTime = (str = "") => {
+  const ampm = str.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (ampm) {
+    let h = parseInt(ampm[1], 10);
+    const m = parseInt(ampm[2], 10);
+    const p = ampm[3].toUpperCase();
+    if (p === "AM" && h === 12) h = 0;
+    if (p === "PM" && h !== 12) h += 12;
+    return { hour: h, minute: m };
+  }
+  const parts = str.trim().split(":");
+  return { hour: parseInt(parts[0], 10) || 0, minute: parseInt(parts[1], 10) || 0 };
+};
+
+// Build a UTC Date for an IST wall-clock hour/minute on a given base date
+const SESSION_IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+const sessionTimeToUTC = (baseDate, hour, minute) => {
+  const d = new Date(new Date(baseDate).getTime() + SESSION_IST_OFFSET_MS);
+  d.setUTCHours(hour, minute, 0, 0);
+  return new Date(d.getTime() - SESSION_IST_OFFSET_MS);
+};
+
+// Compute IST-aware start/end UTC timestamps from a session record
+const computeSessionWindow = (session) => {
+  const [startPart = "10:00", endPart = "12:00"] = session.time
+    ? session.time.split(" - ")
+    : [];
+  const { hour: sh, minute: sm } = parseSessionTime(startPart);
+  const { hour: eh, minute: em } = parseSessionTime(endPart);
+  const start = sessionTimeToUTC(session.date, sh, sm);
+  let end = sessionTimeToUTC(session.date, eh, em);
+  // If end <= start the class crosses midnight — push end to the next day
+  if (end <= start) end = new Date(end.getTime() + 24 * 60 * 60 * 1000);
+  return { sessionStart: start, sessionEnd: end };
+};
+
 export const getAllLiveSessions = async (req, res) => {
   try {
     const sessions = await populateLiveSession(LiveSession.find());
@@ -376,21 +413,8 @@ export const getAllLiveSessions = async (req, res) => {
     const transformedSessions = sessions.map((session) => {
       const sessionObj = normalizeLiveSessionResponse(session);
       const now = new Date();
-      const sessionDate = new Date(session.date);
-      const [startTime, endTime] = session.time
-        ? session.time.split(" - ")
-        : ["10:00", "12:00"];
-
-      const sessionStart = new Date(sessionDate);
-      const [startHour, startMinute] = startTime.split(":").map(Number);
-      sessionStart.setHours(startHour, startMinute, 0, 0);
-
-      const sessionEnd = new Date(sessionDate);
-      const [endHour, endMinute] = endTime.split(":").map(Number);
-      sessionEnd.setHours(endHour, endMinute, 0, 0);
-
-      const durationMs = sessionEnd.getTime() - sessionStart.getTime();
-      const durationMinutes = Math.round(durationMs / (1000 * 60));
+      const { sessionStart, sessionEnd } = computeSessionWindow(session);
+      const durationMinutes = Math.round((sessionEnd - sessionStart) / (1000 * 60));
 
       let dynamicStatus = session.status;
 
@@ -399,7 +423,7 @@ export const getAllLiveSessions = async (req, res) => {
           dynamicStatus = "upcoming";
         } else if (now >= sessionStart && now <= sessionEnd) {
           dynamicStatus = "live";
-        } else if (now > sessionEnd) {
+        } else {
           dynamicStatus = "completed";
         }
       }
@@ -471,21 +495,8 @@ export const getLiveSessionsForStudent = async (req, res) => {
     const transformedSessions = sessions.map((session) => {
       const sessionObj = normalizeLiveSessionResponse(session);
       const now = new Date();
-      const sessionDate = new Date(session.date);
-      const [startTime, endTime] = session.time
-        ? session.time.split(" - ")
-        : ["10:00", "12:00"];
-
-      const sessionStart = new Date(sessionDate);
-      const [startHour, startMinute] = startTime.split(":").map(Number);
-      sessionStart.setHours(startHour, startMinute, 0, 0);
-
-      const sessionEnd = new Date(sessionDate);
-      const [endHour, endMinute] = endTime.split(":").map(Number);
-      sessionEnd.setHours(endHour, endMinute, 0, 0);
-
-      const durationMs = sessionEnd.getTime() - sessionStart.getTime();
-      const durationMinutes = Math.round(durationMs / (1000 * 60));
+      const { sessionStart, sessionEnd } = computeSessionWindow(session);
+      const durationMinutes = Math.round((sessionEnd - sessionStart) / (1000 * 60));
 
       let dynamicStatus = session.status;
       // Compute status from date/time for all non-inactive sessions
@@ -1024,28 +1035,9 @@ export const syncCompletedSessions = async (req, res) => {
     const now = new Date();
     const sessions = await LiveSession.find({ status: { $ne: "completed" } });
 
-    const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
     const toComplete = sessions.filter((session) => {
       if (session.status === "inactive") return false;
-      const [, endTimePart = "11:59 PM"] = session.time
-        ? session.time.split(" - ")
-        : [];
-      // Parse both "HH:MM AM/PM" and "HH:MM" (24h) formats
-      const amPmMatch = endTimePart.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
-      let endHour, endMinute;
-      if (amPmMatch) {
-        endHour = parseInt(amPmMatch[1], 10);
-        endMinute = parseInt(amPmMatch[2], 10);
-        const period = amPmMatch[3].toUpperCase();
-        if (period === "AM" && endHour === 12) endHour = 0;
-        if (period === "PM" && endHour !== 12) endHour += 12;
-      } else {
-        [endHour = 23, endMinute = 59] = endTimePart.split(":").map(Number);
-      }
-      // Time strings are in IST; build sessionEnd in IST to avoid server-timezone mismatch
-      const dateInIST = new Date(new Date(session.date).getTime() + IST_OFFSET_MS);
-      dateInIST.setUTCHours(endHour, endMinute, 0, 0);
-      const sessionEnd = new Date(dateInIST.getTime() - IST_OFFSET_MS);
+      const { sessionEnd } = computeSessionWindow(session);
       return now > sessionEnd;
     });
 

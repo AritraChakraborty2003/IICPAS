@@ -53,10 +53,19 @@ export const processExpiredLiveSessions = async () => {
       // Build sessionEnd as an IST wall-clock time to avoid server-timezone mismatch.
       const IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;
       const dateInIST = new Date(session.date.getTime() + IST_OFFSET_MS);
-      // Zero out the time portion in IST, then add the end hour/minute
       dateInIST.setUTCHours(hour, minute, 0, 0);
-      // Convert back to UTC for comparison
-      const sessionEnd = new Date(dateInIST.getTime() - IST_OFFSET_MS);
+      let sessionEnd = new Date(dateInIST.getTime() - IST_OFFSET_MS);
+
+      // Also compute start to detect past-midnight end times
+      const startPart = parts[0];
+      const startParsed = parseTimeString(startPart);
+      const startInIST = new Date(session.date.getTime() + IST_OFFSET_MS);
+      startInIST.setUTCHours(startParsed.hour, startParsed.minute, 0, 0);
+      const sessionStart = new Date(startInIST.getTime() - IST_OFFSET_MS);
+      // If end <= start the class crosses midnight — push end to the next day
+      if (sessionEnd <= sessionStart) {
+        sessionEnd = new Date(sessionEnd.getTime() + 24 * 60 * 60 * 1000);
+      }
 
       if (now > sessionEnd) {
         expiredIds.push(session._id);
