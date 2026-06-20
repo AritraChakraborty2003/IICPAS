@@ -395,8 +395,32 @@ const computeSessionWindow = (session) => {
   return { sessionStart: start, sessionEnd: end };
 };
 
+const syncExpiredSessionsInDb = async () => {
+  try {
+    const now = new Date();
+    const sessions = await LiveSession.find({ status: { $ne: "completed" } });
+
+    const toComplete = sessions.filter((session) => {
+      if (session.status === "inactive") return false;
+      const { sessionEnd } = computeSessionWindow(session);
+      return now > sessionEnd;
+    });
+
+    if (toComplete.length > 0) {
+      await LiveSession.updateMany(
+        { _id: { $in: toComplete.map((s) => s._id) } },
+        { $set: { status: "completed" } }
+      );
+      console.log(`[LiveSessionSync] Read-sync auto-completed ${toComplete.length} session(s)`);
+    }
+  } catch (err) {
+    console.error("Error in syncExpiredSessionsInDb:", err);
+  }
+};
+
 export const getAllLiveSessions = async (req, res) => {
   try {
+    await syncExpiredSessionsInDb();
     const sessions = await populateLiveSession(LiveSession.find());
     const sessionIds = sessions.map((session) => session._id);
     const paidBookings = await Booking.aggregate([
@@ -467,6 +491,7 @@ export const getLiveSessionsForStudent = async (req, res) => {
     if (!studentId || !mongoose.Types.ObjectId.isValid(studentId)) {
       return res.status(400).json({ error: "Invalid student ID" });
     }
+    await syncExpiredSessionsInDb();
 
     const student = await Student.findById(studentId)
       .select("course courseAccessOverrides enrolledLiveSessions")
@@ -715,6 +740,7 @@ export const getCourseLiveLessonsForStudent = async (req, res) => {
 
 export const getLiveSessionById = async (req, res) => {
   try {
+    await syncExpiredSessionsInDb();
     const session = await populateLiveSession(
       LiveSession.findById(req.params.id)
     );

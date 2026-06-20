@@ -529,7 +529,7 @@ export default function LiveClassTab({
             <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
               {filteredLiveClasses.map((session) => {
                 const status = getSessionStatus(session);
-                const isEnrolled = session.isDirectlyEnrolled || enrolledSessionSet.has(String(session._id));
+                const isEnrolled = session.isEnrolled === true || session.isDirectlyEnrolled || enrolledSessionSet.has(String(session._id));
                 const courseTitle = getCourseTitle(session);
                 const chapterTitle = getChapterTitle(session);
 
