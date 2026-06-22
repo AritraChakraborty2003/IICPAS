@@ -1,5 +1,5 @@
 "use client";
-import { getApiBase, getApiOrigin } from "@/lib/apiBase";
+import { getApiBase } from "@/lib/apiBase";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import dynamic from "next/dynamic";
@@ -554,9 +554,7 @@ export default function BrochureTab() {
     const res = await axios.post(`${API_BASE}/brochures/upload-image`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    const raw: string = res.data.imageUrl;
-    const uploadsPath = raw.replace(/^https?:\/\/[^/]+/, "");
-    return `${getApiOrigin()}${uploadsPath}`;
+    return res.data.imageUrl as string;
   }, []);
 
   const handleCourseSelect = async (courseId: string) => {
