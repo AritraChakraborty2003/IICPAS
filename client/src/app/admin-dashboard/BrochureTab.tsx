@@ -1000,43 +1000,58 @@ export default function BrochureTab() {
       </div>
 
       {/* ── Copy Brochure Modal ── */}
-      {copyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-800">Copy Brochure</h3>
-            <p className="text-sm text-gray-500">
-              Copying <span className="font-medium text-gray-700">"{copyModal.brochure.courseName}"</span> — select the destination course.
-            </p>
-            <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={copyTargetCourseId}
-              onChange={(e) => setCopyTargetCourseId(e.target.value)}
-            >
-              <option value="">-- Select destination course --</option>
-              {courses
-                .filter((c) => c._id !== copyModal.brochure.courseId)
-                .map((c) => (
-                  <option key={c._id} value={c._id}>{c.title}</option>
-                ))}
-            </select>
-            <div className="flex justify-end gap-3 pt-1">
-              <button
-                onClick={() => setCopyModal(null)}
-                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCopy}
-                disabled={!copyTargetCourseId || copying}
-                className="px-5 py-2 text-sm text-white bg-amber-500 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition font-medium"
-              >
-                {copying ? "Copying..." : "Copy Brochure"}
-              </button>
+      {copyModal && (() => {
+        const usedCourseIds = new Set(brochures.map((b) => b.courseId));
+        const availableCourses = courses.filter(
+          (c) => c._id !== copyModal.brochure.courseId && !usedCourseIds.has(c._id)
+        );
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-800">Copy Brochure</h3>
+                <button onClick={() => setCopyModal(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              </div>
+              <p className="text-sm text-gray-500">
+                Copying design from <span className="font-medium text-gray-700">"{copyModal.brochure.courseName}"</span> to a new course.
+              </p>
+              {availableCourses.length === 0 ? (
+                <p className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  All courses already have a brochure. Delete an existing brochure first to copy here.
+                </p>
+              ) : (
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  value={copyTargetCourseId}
+                  onChange={(e) => setCopyTargetCourseId(e.target.value)}
+                >
+                  <option value="">-- Select destination course --</option>
+                  {availableCourses.map((c) => (
+                    <option key={c._id} value={c._id}>{c.title}</option>
+                  ))}
+                </select>
+              )}
+              <div className="flex justify-end gap-3 pt-1">
+                <button
+                  onClick={() => setCopyModal(null)}
+                  className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+                {availableCourses.length > 0 && (
+                  <button
+                    onClick={handleCopy}
+                    disabled={!copyTargetCourseId || copying}
+                    className="px-5 py-2 text-sm text-white bg-amber-500 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition font-medium"
+                  >
+                    {copying ? "Copying..." : "Copy Brochure"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
