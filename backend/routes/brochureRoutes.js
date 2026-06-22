@@ -76,6 +76,30 @@ router.delete("/images/:filename", (req, res) => {
   }
 });
 
+// Proxy an uploaded brochure image as base64 — avoids browser CORS for PDF generation
+router.get("/image-proxy", (req, res) => {
+  try {
+    const url = decodeURIComponent(req.query.url || "");
+    if (!url) return res.status(400).json({ success: false, error: "Missing url" });
+
+    // Extract just the filename from the URL — only serve files from our own upload dir
+    const filename = url.split("/uploads/brochure-images/").pop();
+    if (!filename || filename.includes("..") || filename.includes("/")) {
+      return res.status(400).json({ success: false, error: "Invalid path" });
+    }
+    const filepath = `${brochureImageDir}/${filename}`;
+    if (!fs.existsSync(filepath)) return res.status(404).json({ success: false, error: "Not found" });
+
+    const data = fs.readFileSync(filepath);
+    const ext = filename.split(".").pop()?.toLowerCase() || "jpeg";
+    const mime = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : ext === "gif" ? "image/gif" : "image/jpeg";
+    const base64 = `data:${mime};base64,${data.toString("base64")}`;
+    res.json({ success: true, base64 });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get("/", getAllBrochures);
 router.get("/course/:courseId", getBrochureByCourse);
 router.post("/", saveBrochure);
