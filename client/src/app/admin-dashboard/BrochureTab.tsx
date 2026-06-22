@@ -687,9 +687,46 @@ export default function BrochureTab() {
     } catch { /* ignore */ }
   };
 
+  // Compress image to stay under ~900 KB before uploading (handles nginx 1MB limit)
+  const compressImage = (file: File): Promise<File> =>
+    new Promise((resolve) => {
+      const MAX_PX = 1920;   // max dimension
+      const QUALITY = 0.82;  // JPEG quality
+      const TARGET_BYTES = 900 * 1024; // stop compressing below this
+
+      if (file.size <= TARGET_BYTES) { resolve(file); return; }
+
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > MAX_PX || height > MAX_PX) {
+          const ratio = Math.min(MAX_PX / width, MAX_PX / height);
+          width = Math.round(width * ratio);
+          height = Math.round(height * ratio);
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(new File([blob], file.name, { type: "image/jpeg" }));
+            else resolve(file);
+          },
+          "image/jpeg",
+          QUALITY
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+
   const uploadImage = useCallback(async (file: File): Promise<string> => {
+    const compressed = await compressImage(file);
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append("image", compressed);
     const res = await axios.post(`${API_BASE}/brochures/upload-image`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
