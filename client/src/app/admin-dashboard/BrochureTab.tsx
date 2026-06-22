@@ -548,8 +548,8 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
           />
         ))}
 
-        {/* Text content rendered ON TOP of the background — drag to reposition */}
-        {page.content && (
+        {/* Text content — drag to reposition, click to edit inline */}
+        {(page.content !== undefined) && (
           <div
             className="absolute"
             style={{
@@ -557,32 +557,57 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
               left: page.textX ?? 24,
               top: page.textY ?? 24,
               maxWidth: "calc(100% - 48px)",
-              cursor: "move",
-              color: page.textColor ?? "#1a1a1a",
-              fontWeight: page.textBold ? "bold" : "normal",
-              fontSize: page.textSize ?? 16,
-              padding: "8px 12px",
-              borderRadius: 4,
+              minWidth: 80,
+              minHeight: 24,
             }}
-            onMouseDown={handleTextDragMouseDown}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* style tag forces text properties to override any Jodit inline styles */}
             <style>{`
-              .brochure-text-content * { color: inherit !important; font-size: inherit !important; }
-              .brochure-text-content p { margin: 0 0 4px 0; }
+              .brochure-text-editable { outline: none; }
+              .brochure-text-editable:focus { outline: 2px dashed rgba(99,102,241,0.7); outline-offset: 4px; border-radius: 3px; }
+              .brochure-text-editable * { color: inherit !important; font-size: inherit !important; }
+              .brochure-text-editable p { margin: 0 0 4px 0; }
             `}</style>
             <div
-              className="brochure-text-content"
+              className="brochure-text-editable"
+              contentEditable
+              suppressContentEditableWarning
+              onMouseDown={(e) => {
+                // only drag if not already focused (i.e. not in edit mode)
+                if (document.activeElement !== e.currentTarget) {
+                  handleTextDragMouseDown(e);
+                }
+              }}
+              onFocus={() => setSelectedOverlay(null)}
+              onBlur={(e) => {
+                // commit innerHTML back as content
+                onUpdate({ ...page, content: e.currentTarget.innerHTML } as BrochurePage | CoverPage);
+              }}
               dangerouslySetInnerHTML={{ __html: page.content }}
+              style={{
+                cursor: "text",
+                color: page.textColor ?? "#1a1a1a",
+                fontWeight: page.textBold ? "bold" : "normal",
+                fontSize: page.textSize ?? 16,
+                padding: "8px 12px",
+                borderRadius: 4,
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+              }}
+            />
+            {/* Drag handle strip at top so user can still reposition while editing is possible */}
+            <div
+              style={{ position: "absolute", top: 0, left: 0, right: 0, height: 10, cursor: "move", zIndex: 10 }}
+              onMouseDown={handleTextDragMouseDown}
+              title="Drag to reposition"
             />
           </div>
         )}
 
-        {/* Empty state hint */}
+        {/* Empty state hint — only when no background, no overlays, and text box is unfocused empty */}
         {page.overlayImages.length === 0 && !page.backgroundImage && !page.content && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-sm pointer-events-none select-none">
-            Upload a background, add images, or write content below
+          <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-sm pointer-events-none select-none" style={{ zIndex: 1 }}>
+            Click text area to type · Upload a background · Add images
           </div>
         )}
 
