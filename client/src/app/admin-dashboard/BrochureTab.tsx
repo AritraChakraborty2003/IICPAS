@@ -220,6 +220,7 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   const [library, setLibrary] = useState<UploadedImage[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
   const overlayInputRef = useRef<HTMLInputElement>(null);
   const libInputRef = useRef<HTMLInputElement>(null);
