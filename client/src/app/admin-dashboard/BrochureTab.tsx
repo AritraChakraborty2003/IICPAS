@@ -450,7 +450,7 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
             <button
               key={color}
               title={title}
-              onClick={() => onUpdate({ ...page, textColor: color } as BrochurePage | CoverPage)}
+              onMouseDown={(e) => { e.preventDefault(); applyTextColor(color); }}
               className="w-5 h-5 rounded-full border-2 transition hover:scale-110"
               style={{
                 backgroundColor: color,
@@ -461,7 +461,7 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
           <input
             type="color"
             value={page.textColor ?? "#1a1a1a"}
-            onChange={(e) => onUpdate({ ...page, textColor: e.target.value } as BrochurePage | CoverPage)}
+            onChange={(e) => applyTextColor(e.target.value)}
             className="w-6 h-6 rounded cursor-pointer border border-gray-300"
             title="Custom text color"
           />
@@ -601,13 +601,14 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
             <style>{`
               .brochure-text-editable { outline: none; }
               .brochure-text-editable:focus { outline: 2px dashed rgba(99,102,241,0.7); outline-offset: 4px; border-radius: 3px; }
-              .brochure-text-editable * { color: inherit !important; font-size: inherit !important; }
+              .brochure-text-editable * { font-size: inherit !important; }
               .brochure-text-editable p { margin: 0 0 4px 0; }
             `}</style>
             <div
               className="brochure-text-editable"
               contentEditable
               suppressContentEditableWarning
+              ref={textEditRef}
               onMouseDown={(e) => {
                 // only drag if not already focused (i.e. not in edit mode)
                 if (document.activeElement !== e.currentTarget) {
