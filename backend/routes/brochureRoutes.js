@@ -45,6 +45,22 @@ router.post("/upload-image", uploadBrochureImage.single("image"), (req, res) => 
   }
 });
 
+// List all uploaded brochure images
+router.get("/images", (req, res) => {
+  try {
+    const baseUrl = (process.env.API_URL || process.env.API_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/api\/?$/, "");
+    const files = fs.existsSync(brochureImageDir)
+      ? fs.readdirSync(brochureImageDir).reverse()
+      : [];
+    const data = files
+      .filter((f) => /\.(jpe?g|png|gif|webp|svg)$/i.test(f))
+      .map((f) => ({ filename: f, url: `${baseUrl}/uploads/brochure-images/${f}` }));
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get("/", getAllBrochures);
 router.get("/course/:courseId", getBrochureByCourse);
 router.post("/", saveBrochure);

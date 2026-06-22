@@ -211,12 +211,62 @@ interface PageCanvasProps {
   uploadImage: (file: File) => Promise<string>;
 }
 
+interface UploadedImage { url: string; filename: string; }
+
 function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   const [selectedOverlay, setSelectedOverlay] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [library, setLibrary] = useState<UploadedImage[]>([]);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const bgInputRef = useRef<HTMLInputElement>(null);
   const overlayInputRef = useRef<HTMLInputElement>(null);
+  const libInputRef = useRef<HTMLInputElement>(null);
   const textDragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
+
+  const fetchLibrary = async () => {
+    setLibraryLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE}/brochures/images`);
+      setLibrary(res.data?.data ?? []);
+    } catch { /* ignore */ } finally {
+      setLibraryLoading(false);
+    }
+  };
+
+  const toggleLibrary = () => {
+    if (!libraryOpen) fetchLibrary();
+    setLibraryOpen((v) => !v);
+  };
+
+  const handleLibraryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const url = await uploadImage(file);
+      setLibrary((prev) => [{ url, filename: file.name }, ...prev]);
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const copyUrl = (url: string) => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedUrl(url);
+      setTimeout(() => setCopiedUrl(null), 2000);
+    });
+  };
+
+  const setAsBg = (url: string) => onUpdate({ ...page, backgroundImage: url } as BrochurePage | CoverPage);
+
+  const insertAsOverlay = (url: string) => {
+    const newImg: OverlayImage = { url, x: 40, y: 40, width: 200, height: 150, opacity: 1, zIndex: page.overlayImages.length + 1 };
+    onUpdate({ ...page, overlayImages: [...page.overlayImages, newImg] } as BrochurePage | CoverPage);
+    setSelectedOverlay(page.overlayImages.length);
+  };
 
   // Read file as base64 data URL — works instantly, no server needed
   const readAsDataURL = (file: File): Promise<string> =>
@@ -326,6 +376,13 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
         >
           + Add Image
         </button>
+        <button
+          onClick={toggleLibrary}
+          className={`px-3 py-1.5 text-xs rounded border transition ${libraryOpen ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-400 hover:bg-violet-50"}`}
+        >
+          {libraryOpen ? "Hide Library" : "Image Library"}
+        </button>
+        <input ref={libInputRef} type="file" accept="image/*" className="hidden" onChange={handleLibraryUpload} />
         <div className="flex flex-wrap items-center gap-2 ml-auto">
           {/* Bold toggle */}
           <button
@@ -388,6 +445,57 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
         <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
         <input ref={overlayInputRef} type="file" accept="image/*" className="hidden" onChange={handleOverlayUpload} />
       </div>
+
+      {/* Image Library Panel */}
+      {libraryOpen && (
+        <div className="border border-violet-200 rounded-lg bg-violet-50 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-violet-700">Image Library</span>
+            <button
+              onClick={() => libInputRef.current?.click()}
+              disabled={uploading}
+              className="px-3 py-1 text-xs bg-violet-600 text-white rounded hover:bg-violet-700 disabled:opacity-50 transition"
+            >
+              {uploading ? "Uploading..." : "Upload New Image"}
+            </button>
+          </div>
+          {libraryLoading ? (
+            <p className="text-xs text-gray-400 text-center py-4">Loading...</p>
+          ) : library.length === 0 ? (
+            <p className="text-xs text-gray-400 text-center py-4">No images uploaded yet. Click "Upload New Image" above.</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+              {library.map((img, i) => (
+                <div key={i} className="bg-white rounded border border-gray-200 p-2 flex flex-col gap-1.5">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.url} alt={img.filename} className="w-full h-20 object-cover rounded" />
+                  <p className="text-[10px] text-gray-500 truncate" title={img.url}>{img.url}</p>
+                  <div className="flex gap-1 flex-wrap">
+                    <button
+                      onClick={() => copyUrl(img.url)}
+                      className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
+                    >
+                      {copiedUrl === img.url ? "Copied!" : "Copy"}
+                    </button>
+                    <button
+                      onClick={() => setAsBg(img.url)}
+                      className="px-2 py-0.5 text-[10px] bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition"
+                    >
+                      Set BG
+                    </button>
+                    <button
+                      onClick={() => insertAsOverlay(img.url)}
+                      className="px-2 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition"
+                    >
+                      Insert
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Canvas — background + overlay images + text content rendered on top */}
       <div
