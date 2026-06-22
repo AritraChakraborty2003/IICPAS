@@ -159,6 +159,67 @@ export default function BlogDetailClient({ blog, allBlogs }) {
     }
   }
 
+  const handleDownloadPDF = async () => {
+    const { jsPDF } = await import("jspdf");
+    const doc = new jsPDF();
+    const PAGE_H = 297;
+    const MARGIN = 20;
+    const MAX_W = 170;
+    let y = MARGIN;
+
+    const checkPage = (needed) => {
+      if (y + needed > PAGE_H - MARGIN) { doc.addPage(); y = MARGIN; }
+    };
+
+    const writeLine = (text, x, size, lineH, font = "normal") => {
+      if (!text) return;
+      doc.setFontSize(size);
+      doc.setFont("helvetica", font);
+      const lines = doc.splitTextToSize(String(text), MAX_W - (x - MARGIN));
+      checkPage(lines.length * lineH);
+      doc.text(lines, x, y);
+      y += lines.length * lineH;
+    };
+
+    // Title
+    writeLine(blogToRender.title, MARGIN, 18, 9, "bold");
+    y += 4;
+
+    // Meta
+    if (blogToRender.author) writeLine(`By ${blogToRender.author}`, MARGIN, 10, 5);
+    if (blogToRender.createdAt) {
+      const d = new Date(blogToRender.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
+      writeLine(d, MARGIN, 10, 5);
+    }
+    if (tags.length) writeLine(`Tags: ${tags.join(", ")}`, MARGIN, 10, 5);
+    y += 6;
+
+    // Content — strip HTML tags
+    const plainContent = (blogToRender.content || "")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<\/h[1-6]>/gi, "\n")
+      .replace(/<li>/gi, "• ")
+      .replace(/<\/li>/gi, "\n")
+      .replace(/<[^>]*>/g, "")
+      .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/&nbsp;/g, " ").replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+
+    const paragraphs = plainContent.split(/\n\n+/);
+    for (const para of paragraphs) {
+      const lines = para.split("\n");
+      for (const line of lines) {
+        if (line.trim()) writeLine(line.trim(), MARGIN, 11, 6);
+        else y += 3;
+      }
+      y += 3;
+    }
+
+    doc.save(`${(blogToRender.title || "Blog").replace(/\s+/g, "_")}.pdf`);
+  };
+
   const handleShare = async () => {
     const currentUrl =
       typeof window !== "undefined" ? window.location.href : "/blogs";
@@ -231,13 +292,23 @@ export default function BlogDetailClient({ blog, allBlogs }) {
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight max-w-4xl">
                   {blogToRender.title}
                 </h1>
-                <button
-                  onClick={handleShare}
-                  className="shrink-0 p-3 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-100 transition"
-                  aria-label="Share article"
-                >
-                  <Share2 className="w-5 h-5" />
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={handleDownloadPDF}
+                    className="p-3 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-100 transition"
+                    aria-label="Download as PDF"
+                    title="Download PDF"
+                  >
+                    <Download className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={handleShare}
+                    className="p-3 rounded-full border border-slate-200 text-slate-600 hover:bg-slate-100 transition"
+                    aria-label="Share article"
+                  >
+                    <Share2 className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
 
               {tags.length > 0 && (
