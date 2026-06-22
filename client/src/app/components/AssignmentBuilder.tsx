@@ -86,6 +86,54 @@ export default function AssignmentBuilder({
   >("content");
   const [isSaving, setIsSaving] = useState(false);
 
+  // Per-content-item editor refs and image picker state
+  const editorRefs = useRef<Record<string, OptimizedJoditEditorHandle | null>>({});
+  const [uploadedImages, setUploadedImages] = useState<Array<{ id: string; cdnUrl: string; filename: string; size?: number }>>([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
+  const [imagePickerOpen, setImagePickerOpen] = useState<string | null>(null); // content item id
+  const [imageUploading, setImageUploading] = useState(false);
+
+  const fetchUploadedImages = async () => {
+    setImagesLoading(true);
+    try {
+      const res = await axios.get(`${STATIC_CDN_BASE}/files/images`);
+      if (res.data?.success) {
+        setUploadedImages(
+          (res.data.data || []).map((f: any) => ({
+            id: f.id || f._id || f.filename,
+            cdnUrl: f.cdnUrl || f.url || "",
+            filename: f.filename || f.originalName || "",
+            size: f.size,
+          }))
+        );
+      }
+    } catch {
+      // non-critical
+    } finally {
+      setImagesLoading(false);
+    }
+  };
+
+  const handleUploadImageForEditor = async (file: File, contentId: string) => {
+    setImageUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await axios.post(`${STATIC_CDN_BASE}/upload/image`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      const url: string = res.data?.data?.cdnUrl || res.data?.cdnUrl || res.data?.imageUrl || "";
+      if (url) {
+        editorRefs.current[contentId]?.insertImage(url);
+        await fetchUploadedImages();
+      }
+    } catch (err: any) {
+      alert("Image upload failed: " + (err?.response?.data?.error || err.message));
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
   // Initialize form with editing data if available — fetch fresh from API to get full question data
   useEffect(() => {
     if (!editingItem?._id) return;
@@ -786,6 +834,7 @@ export default function AssignmentBuilder({
                             style={{ minHeight: "400px" }}
                           >
                             <OptimizedJoditEditor
+                              ref={(el) => { editorRefs.current[item.id] = el; }}
                               value={item.richTextContent || ""}
                               onChange={(newContent: string) =>
                                 updateContent(
@@ -808,6 +857,79 @@ export default function AssignmentBuilder({
                             <p className="text-xs text-gray-400 italic">
                               POWERED BY JODIT
                             </p>
+                          </div>
+
+                          {/* Image Picker Panel */}
+                          <div className="mt-3 border border-gray-200 rounded-lg p-3 bg-gray-50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-gray-700">🖼️ Insert Image into Editor</span>
+                              <div className="flex gap-2">
+                                <label className={`cursor-pointer px-3 py-1.5 rounded text-xs font-medium text-white ${imageUploading ? "bg-gray-400" : "bg-purple-500 hover:bg-purple-600"} transition-colors`}>
+                                  {imageUploading ? "Uploading..." : "Upload Image"}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    disabled={imageUploading}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) handleUploadImageForEditor(file, item.id);
+                                      e.target.value = "";
+                                    }}
+                                  />
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (imagePickerOpen === item.id) {
+                                      setImagePickerOpen(null);
+                                    } else {
+                                      setImagePickerOpen(item.id);
+                                      fetchUploadedImages();
+                                    }
+                                  }}
+                                  className="px-3 py-1.5 rounded text-xs font-medium bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                                >
+                                  {imagePickerOpen === item.id ? "Hide Library" : "Browse Library"}
+                                </button>
+                              </div>
+                            </div>
+
+                            {imagePickerOpen === item.id && (
+                              <div className="mt-2">
+                                {imagesLoading ? (
+                                  <p className="text-xs text-gray-500 text-center py-3">Loading images...</p>
+                                ) : uploadedImages.length === 0 ? (
+                                  <p className="text-xs text-gray-500 text-center py-3">No images uploaded yet. Upload one above.</p>
+                                ) : (
+                                  <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                                    {uploadedImages.map((img) => (
+                                      <div
+                                        key={img.id}
+                                        className="relative group border border-gray-200 rounded overflow-hidden bg-white"
+                                      >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={img.cdnUrl}
+                                          alt={img.filename}
+                                          className="w-full h-20 object-cover"
+                                        />
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            editorRefs.current[item.id]?.insertImage(img.cdnUrl);
+                                            setImagePickerOpen(null);
+                                          }}
+                                          className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs font-medium"
+                                        >
+                                          INSERT
+                                        </button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       )}
