@@ -319,21 +319,31 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
         >
           + Add Image
         </button>
-        <div className="flex items-center gap-3 ml-auto">
-          <label className="text-xs text-gray-500">Text Color</label>
+        <div className="flex items-center gap-2 ml-auto">
+          <label className="text-xs text-gray-500">Text</label>
+          <button
+            title="White text"
+            onClick={() => onUpdate({ ...page, textColor: "#ffffff" } as BrochurePage | CoverPage)}
+            className="w-6 h-6 rounded border-2 border-gray-300 bg-white hover:border-gray-500 transition"
+          />
+          <button
+            title="Black text"
+            onClick={() => onUpdate({ ...page, textColor: "#000000" } as BrochurePage | CoverPage)}
+            className="w-6 h-6 rounded border-2 border-gray-300 bg-black hover:border-gray-500 transition"
+          />
           <input
             type="color"
             value={page.textColor ?? "#1a1a1a"}
             onChange={(e) => onUpdate({ ...page, textColor: e.target.value } as BrochurePage | CoverPage)}
-            className="w-8 h-8 rounded cursor-pointer border border-gray-300"
-            title="Text color on canvas"
+            className="w-7 h-7 rounded cursor-pointer border border-gray-300"
+            title="Custom text color"
           />
-          <label className="text-xs text-gray-500">BG Color</label>
+          <label className="text-xs text-gray-500 ml-1">BG</label>
           <input
             type="color"
             value={page.backgroundColor}
             onChange={(e) => onUpdate({ ...page, backgroundColor: e.target.value } as BrochurePage | CoverPage)}
-            className="w-8 h-8 rounded cursor-pointer border border-gray-300"
+            className="w-7 h-7 rounded cursor-pointer border border-gray-300"
             title="Background color"
           />
         </div>
@@ -379,7 +389,6 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
               color: page.textColor ?? "#1a1a1a",
               padding: "8px 12px",
               borderRadius: 4,
-              background: "rgba(0,0,0,0.04)",
             }}
             onMouseDown={handleTextDragMouseDown}
             onClick={(e) => e.stopPropagation()}
