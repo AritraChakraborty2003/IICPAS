@@ -32,7 +32,7 @@ router.post("/upload-image", uploadAssignmentImage.any(), (req, res) => {
   try {
     const file = (req.files && req.files[0]) || req.file;
     if (!file) return res.status(400).json({ success: false, error: "No file uploaded" });
-    const baseUrl = process.env.API_URL || `${req.protocol}://${req.get("host")}`;
+    const baseUrl = (process.env.API_URL || process.env.API_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/api\/?$/, "");
     const fileUrl = `${baseUrl}/uploads/assignment-images/${file.filename}`;
     res.json({ baseurl: "", files: [fileUrl], error: 0, message: "File uploaded successfully" });
   } catch (err) {
