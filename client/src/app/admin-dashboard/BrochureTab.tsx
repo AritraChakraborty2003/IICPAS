@@ -223,7 +223,6 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   const bgInputRef = useRef<HTMLInputElement>(null);
   const overlayInputRef = useRef<HTMLInputElement>(null);
   const libInputRef = useRef<HTMLInputElement>(null);
-  const textDragRef = useRef<{ startX: number; startY: number; origX: number; origY: number } | null>(null);
 
   const fetchLibrary = async () => {
     setLibraryLoading(true);
