@@ -604,10 +604,11 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
       </div>
 
       {/* Canvas — background + overlay images + text content rendered on top */}
+      {/* CANVAS_WIDTH=830 kept in sync with PDF SCALE in CourseDetailClient */}
       <div
         className="relative rounded-lg border border-gray-300"
         style={{
-          width: "100%",
+          width: 830,
           minHeight: 420,
           backgroundColor: page.backgroundColor,
           backgroundImage: page.backgroundImage ? `url(${page.backgroundImage})` : "none",

@@ -241,8 +241,40 @@ export default function CourseDetailClient({
         } catch { return ""; }
       };
 
-      const stripHtml = (html: string) =>
-        html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+      // Canvas in editor is fixed at 830px wide — scale to A4 landscape 297mm
+      const CANVAS_W = 830;
+      const SCALE = W / CANVAS_W;
+
+      // Parse inline-colored spans from execCommand HTML into segments
+      type TextSegment = { text: string; color: string; bold: boolean; size: number };
+      const parseHtmlSegments = (html: string, defaultColor: string, defaultBold: boolean, defaultSize: number): TextSegment[] => {
+        const segments: TextSegment[] = [];
+        const div = document.createElement("div");
+        div.innerHTML = html;
+        const walk = (node: Node, color: string, bold: boolean, size: number) => {
+          if (node.nodeType === Node.TEXT_NODE) {
+            const t = (node.textContent || "").replace(/ /g, " ");
+            if (t) segments.push({ text: t, color, bold, size });
+          } else if (node.nodeType === Node.ELEMENT_NODE) {
+            const el = node as HTMLElement;
+            const tag = el.tagName.toLowerCase();
+            if (tag === "br") { segments.push({ text: "\n", color, bold, size }); return; }
+            let c = el.style.color || color;
+            // parse rgb(r,g,b) → hex
+            const rgbMatch = c.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+            if (rgbMatch) {
+              c = "#" + [rgbMatch[1], rgbMatch[2], rgbMatch[3]].map((n) => parseInt(n).toString(16).padStart(2, "0")).join("");
+            }
+            const b = bold || tag === "b" || tag === "strong" || el.style.fontWeight === "bold";
+            const fsMatch = el.style.fontSize?.match(/(\d+)/);
+            const s = fsMatch ? parseInt(fsMatch[1]) : size;
+            if (tag === "p" && segments.length > 0) segments.push({ text: "\n", color: c, bold: b, size: s });
+            el.childNodes.forEach((child) => walk(child, c, b, s));
+          }
+        };
+        div.childNodes.forEach((n) => walk(n, defaultColor, defaultBold, defaultSize));
+        return segments.length ? segments : [{ text: div.innerText || "", color: defaultColor, bold: defaultBold, size: defaultSize }];
+      };
 
       const renderPage = async (pageData: any, isFirst: boolean) => {
         if (!isFirst) doc.addPage();
@@ -261,8 +293,7 @@ export default function CourseDetailClient({
           }
         }
 
-        // Overlay images (scaled from canvas ~900px wide)
-        const SCALE = W / 900;
+        // Overlay images — x/y/width/height are in editor canvas pixels (830px wide)
         for (const ov of (pageData.overlayImages || [])) {
           if (!ov.url) continue;
           const b64 = await proxyImage(ov.url);
@@ -274,20 +305,43 @@ export default function CourseDetailClient({
           }
         }
 
-        // Text content
+        // Text content — honour per-span colors and font sizes from execCommand
         if (pageData.content) {
-          const text = stripHtml(pageData.content);
-          if (text) {
-            const tc = hexToRgb(pageData.textColor || "#ffffff");
-            doc.setTextColor(tc.r, tc.g, tc.b);
-            const fontSize = Math.max(8, Math.min(pageData.textSize || 14, 32));
-            doc.setFontSize(fontSize);
-            doc.setFont("helvetica", pageData.textBold ? "bold" : "normal");
-            const x = Math.max(5, (pageData.textX ?? 24) * SCALE);
-            const y = Math.max(10, (pageData.textY ?? 24) * SCALE);
-            const lines = doc.splitTextToSize(text, W - x - 8);
-            doc.text(lines, x, y);
+          const defaultColor = pageData.textColor || "#1a1a1a";
+          const defaultBold = !!pageData.textBold;
+          const defaultSize = pageData.textSize || 14;
+          const segments = parseHtmlSegments(pageData.content, defaultColor, defaultBold, defaultSize);
+          const x = Math.max(5, (pageData.textX ?? 24) * SCALE);
+          let y = Math.max(10, (pageData.textY ?? 24) * SCALE);
+          const lineH = (defaultSize * SCALE) * 1.4;
+
+          let lineBuffer: TextSegment[] = [];
+          const flushLine = () => {
+            if (!lineBuffer.length) return;
+            let cx = x;
+            for (const seg of lineBuffer) {
+              const tc = hexToRgb(seg.color);
+              doc.setTextColor(tc.r, tc.g, tc.b);
+              const sz = Math.max(6, Math.min(seg.size, 48));
+              doc.setFontSize(sz);
+              doc.setFont("helvetica", seg.bold ? "bold" : "normal");
+              doc.text(seg.text, cx, y);
+              cx += doc.getTextWidth(seg.text);
+            }
+            y += lineH;
+            lineBuffer = [];
+          };
+
+          for (const seg of segments) {
+            if (seg.text === "\n") { flushLine(); continue; }
+            // Split on embedded newlines
+            const parts = seg.text.split("\n");
+            for (let i = 0; i < parts.length; i++) {
+              if (i > 0) flushLine();
+              if (parts[i]) lineBuffer.push({ ...seg, text: parts[i] });
+            }
           }
+          flushLine();
         }
       };
 
