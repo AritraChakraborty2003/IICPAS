@@ -284,20 +284,25 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
     });
 
   const handleTextDragMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
+    // Don't preventDefault — let the browser focus contentEditable normally.
+    // Only begin dragging after the mouse moves ≥4px (distinguishes click from drag).
     e.stopPropagation();
-    setSelectedOverlay(null);
-    textDragRef.current = { startX: e.clientX, startY: e.clientY, origX: page.textX ?? 24, origY: page.textY ?? 24 };
+    const startX = e.clientX, startY = e.clientY;
+    const origX = page.textX ?? 24, origY = page.textY ?? 24;
+    let dragging = false;
+
     const onMove = (me: MouseEvent) => {
-      if (!textDragRef.current) return;
+      const dx = me.clientX - startX, dy = me.clientY - startY;
+      if (!dragging && Math.sqrt(dx * dx + dy * dy) < 4) return;
+      if (!dragging) { dragging = true; setSelectedOverlay(null); }
+      me.preventDefault();
       onUpdate({
         ...page,
-        textX: Math.max(0, textDragRef.current.origX + me.clientX - textDragRef.current.startX),
-        textY: Math.max(0, textDragRef.current.origY + me.clientY - textDragRef.current.startY),
+        textX: Math.max(0, origX + dx),
+        textY: Math.max(0, origY + dy),
       } as BrochurePage | CoverPage);
     };
     const onUp = () => {
-      textDragRef.current = null;
       window.removeEventListener("mousemove", onMove);
       window.removeEventListener("mouseup", onUp);
     };
