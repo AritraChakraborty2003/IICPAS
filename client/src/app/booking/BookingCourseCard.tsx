@@ -18,13 +18,13 @@ export default function BookingCourseCard({
 
   return (
     <article className="group rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-      <div className="relative h-44 overflow-hidden bg-slate-100">
+      <div className="relative h-48 overflow-hidden bg-white flex items-center justify-center">
         <Image
           src={course.image}
           alt={course.title}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-contain transition-transform duration-500 group-hover:scale-105"
         />
       </div>
 
