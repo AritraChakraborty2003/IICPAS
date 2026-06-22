@@ -675,33 +675,43 @@ export default function BrochureTab() {
       {/* ── Course selector + editor in one block ── */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center gap-4">
-          <select
-            className="flex-1 min-w-[220px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            onChange={(e) => handleCourseSelect(e.target.value)}
-            value={selectedCourse?._id ?? ""}
-          >
-            <option value="">-- Select a course to build brochure --</option>
-            {courses.map((c) => (
-              <option key={c._id} value={c._id}>{c.title}</option>
-            ))}
-          </select>
-
-          {selectedCourse && (
+          {selectedCourse ? (
             <>
               <button
+                onClick={() => handleCourseSelect("")}
+                className="flex items-center gap-1.5 px-3 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition font-medium"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back
+              </button>
+              <span className="text-sm font-semibold text-gray-700 truncate max-w-xs">{selectedCourse.title}</span>
+              <button
                 onClick={addBlankPage}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition"
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition ml-auto"
               >
                 + Blank Page
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition ml-auto"
+                className="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition"
               >
                 {saving ? "Saving..." : "Save Brochure"}
               </button>
             </>
+          ) : (
+            <select
+              className="flex-1 min-w-[220px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => handleCourseSelect(e.target.value)}
+              value=""
+            >
+              <option value="">-- Select a course to build brochure --</option>
+              {courses.map((c) => (
+                <option key={c._id} value={c._id}>{c.title}</option>
+              ))}
+            </select>
           )}
         </div>
 
