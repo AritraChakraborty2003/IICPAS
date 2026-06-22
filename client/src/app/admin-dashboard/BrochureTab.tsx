@@ -353,14 +353,15 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
 
       {/* Canvas — background + overlay images + text content rendered on top */}
       <div
-        className="relative rounded-lg overflow-hidden border border-gray-300"
+        className="relative rounded-lg border border-gray-300"
         style={{
           width: "100%",
           minHeight: 420,
           backgroundColor: page.backgroundColor,
           backgroundImage: page.backgroundImage ? `url(${page.backgroundImage})` : "none",
-          backgroundSize: "cover",
+          backgroundSize: "100% 100%",
           backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
         }}
         onClick={() => setSelectedOverlay(null)}
       >
