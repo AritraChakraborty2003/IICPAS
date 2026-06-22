@@ -635,6 +635,9 @@ export default function BrochureTab() {
   const [saving, setSaving] = useState(false);
   const [loadingCourse, setLoadingCourse] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [copyModal, setCopyModal] = useState<{ brochure: Brochure } | null>(null);
+  const [copyTargetCourseId, setCopyTargetCourseId] = useState("");
+  const [copying, setCopying] = useState(false);
 
   useEffect(() => {
     fetchCourses();
@@ -761,6 +764,40 @@ export default function BrochureTab() {
 
   const handleLoadBrochure = (brochure: Brochure) => {
     handleCourseSelect(brochure.courseId);
+  };
+
+  const openCopyModal = (brochure: Brochure) => {
+    setCopyTargetCourseId("");
+    setCopyModal({ brochure });
+  };
+
+  const handleCopy = async () => {
+    if (!copyModal || !copyTargetCourseId) return;
+    const targetCourse = courses.find((c) => c._id === copyTargetCourseId);
+    if (!targetCourse) return;
+    setCopying(true);
+    try {
+      const src = copyModal.brochure;
+      const chapters: BrochureChapter[] = (targetCourse.chapters ?? []).map((ch) => ({
+        chapterId: ch._id,
+        chapterName: ch.title,
+        topics: (ch.topics ?? []).map((t) => ({ topicId: t._id, topicName: t.title })),
+      }));
+      await axios.post(`${API_BASE}/brochures`, {
+        courseId: targetCourse._id,
+        courseName: targetCourse.title,
+        chapters,
+        coverPage: src.coverPage,
+        pages: src.pages,
+      });
+      setMessage({ type: "success", text: `Brochure copied to "${targetCourse.title}" successfully!` });
+      fetchBrochures();
+      setCopyModal(null);
+    } catch {
+      setMessage({ type: "error", text: "Failed to copy brochure." });
+    } finally {
+      setCopying(false);
+    }
   };
 
   const pageList = [
@@ -934,12 +971,18 @@ export default function BrochureTab() {
                     <td className="py-3 pr-4 text-gray-600">{b.chapters.length} chapter(s)</td>
                     <td className="py-3 pr-4 text-gray-600">{(b.pages ?? []).length} page(s)</td>
                     <td className="py-3 pr-4 text-gray-500">{new Date(b.updatedAt).toLocaleDateString()}</td>
-                    <td className="py-3 flex gap-2">
+                    <td className="py-3 flex gap-2 flex-wrap">
                       <button
                         onClick={() => handleLoadBrochure(b)}
                         className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium hover:bg-blue-200 transition"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => openCopyModal(b)}
+                        className="px-3 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium hover:bg-amber-200 transition"
+                      >
+                        Copy
                       </button>
                       <button
                         onClick={() => handleDelete(b._id)}
@@ -955,6 +998,45 @@ export default function BrochureTab() {
           </div>
         )}
       </div>
+
+      {/* ── Copy Brochure Modal ── */}
+      {copyModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
+            <h3 className="text-lg font-semibold text-gray-800">Copy Brochure</h3>
+            <p className="text-sm text-gray-500">
+              Copying <span className="font-medium text-gray-700">"{copyModal.brochure.courseName}"</span> — select the destination course.
+            </p>
+            <select
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={copyTargetCourseId}
+              onChange={(e) => setCopyTargetCourseId(e.target.value)}
+            >
+              <option value="">-- Select destination course --</option>
+              {courses
+                .filter((c) => c._id !== copyModal.brochure.courseId)
+                .map((c) => (
+                  <option key={c._id} value={c._id}>{c.title}</option>
+                ))}
+            </select>
+            <div className="flex justify-end gap-3 pt-1">
+              <button
+                onClick={() => setCopyModal(null)}
+                className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCopy}
+                disabled={!copyTargetCourseId || copying}
+                className="px-5 py-2 text-sm text-white bg-amber-500 rounded-lg hover:bg-amber-600 disabled:opacity-50 transition font-medium"
+              >
+                {copying ? "Copying..." : "Copy Brochure"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
