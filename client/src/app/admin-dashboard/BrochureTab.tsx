@@ -435,6 +435,8 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
 }
 
 // ─── Stable content editor — isolated so typing never re-mounts the editor ───
+// Holds its own local draft so parent re-renders never interrupt typing.
+// Commits to parent only on blur.
 
 interface ContentEditorProps {
   initialValue: string;
@@ -443,14 +445,23 @@ interface ContentEditorProps {
 }
 
 function ContentEditor({ initialValue, onCommit, pageKey }: ContentEditorProps) {
+  const [draft, setDraft] = React.useState(initialValue);
+
+  // When switching pages (pageKey changes) sync initialValue into draft
+  React.useEffect(() => {
+    setDraft(initialValue);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pageKey]);
+
   return (
     <div key={pageKey} className="border border-gray-200 rounded-lg overflow-hidden">
       <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-medium">
         ✏️ Edit Content — text renders on background above
       </div>
       <OptimizedJoditEditor
-        value={initialValue}
-        onChange={onCommit}
+        value={draft}
+        onChange={setDraft}
+        onBlur={onCommit}
         placeholder="Type here — text will appear on top of the background image..."
         height={220}
         uploadApi={`${API_BASE}/brochures/upload-image`}
