@@ -79,6 +79,10 @@ const liveSessionSchema = new mongoose.Schema(
     enrolledStudents: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Student" },
     ],
+
+    // WhatsApp reminder tracking (separate from email reminderSettings)
+    reminder24hSent: { type: Boolean, default: false },
+    reminder1hSent: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
