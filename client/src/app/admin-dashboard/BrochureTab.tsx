@@ -380,7 +380,7 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
         {/* Text content rendered ON TOP of the background — drag to reposition */}
         {page.content && (
           <div
-            className="absolute overflow-auto"
+            className="absolute"
             style={{
               zIndex: 5,
               left: page.textX ?? 24,
@@ -393,8 +393,17 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
             }}
             onMouseDown={handleTextDragMouseDown}
             onClick={(e) => e.stopPropagation()}
-            dangerouslySetInnerHTML={{ __html: page.content }}
-          />
+          >
+            {/* style tag forces text color to override any Jodit inline styles */}
+            <style>{`
+              .brochure-text-content * { color: inherit !important; }
+              .brochure-text-content p { margin: 0 0 4px 0; }
+            `}</style>
+            <div
+              className="brochure-text-content"
+              dangerouslySetInnerHTML={{ __html: page.content }}
+            />
+          </div>
         )}
 
         {/* Empty state hint */}
@@ -434,33 +443,29 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   );
 }
 
-// ─── Stable content editor — isolated so typing never re-mounts the editor ───
-// Holds its own local draft so parent re-renders never interrupt typing.
-// Commits to parent only on blur.
+// ─── Stable content editor ────────────────────────────────────────────────────
+// Truly uncontrolled: value is only passed on mount (controlled by `key`).
+// During typing, NO state updates happen — zero re-renders, perfectly smooth.
+// Commits to parent only on blur so the canvas preview refreshes then.
 
 interface ContentEditorProps {
   initialValue: string;
   onCommit: (val: string) => void;
-  pageKey: string; // changes when page switches, forcing a fresh mount
+  pageKey: string;
 }
 
 function ContentEditor({ initialValue, onCommit, pageKey }: ContentEditorProps) {
-  const [draft, setDraft] = React.useState(initialValue);
-
-  // When switching pages (pageKey changes) sync initialValue into draft
-  React.useEffect(() => {
-    setDraft(initialValue);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pageKey]);
-
   return (
+    // key={pageKey} remounts the whole subtree when switching pages,
+    // which gives Jodit a fresh initialValue without ever pushing value updates.
     <div key={pageKey} className="border border-gray-200 rounded-lg overflow-hidden">
       <div className="px-3 py-2 bg-gray-50 border-b border-gray-200 text-xs text-gray-500 font-medium">
-        ✏️ Edit Content — text renders on background above
+        ✏️ Edit Content — click away to update preview on canvas
       </div>
       <OptimizedJoditEditor
-        value={draft}
-        onChange={setDraft}
+        key={pageKey}
+        value={initialValue}
+        onChange={() => { /* intentionally empty — no state updates during typing */ }}
         onBlur={onCommit}
         placeholder="Type here — text will appear on top of the background image..."
         height={220}
