@@ -18,7 +18,7 @@ export default function BookingCourseCard({
 
   return (
     <article className="group rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-      <div className="relative h-48 overflow-hidden bg-white flex items-center justify-center">
+      <div className="relative h-44 overflow-hidden bg-white flex items-center justify-center">
         <Image
           src={course.image}
           alt={course.title}

@@ -796,7 +796,7 @@ export default function BookingPageClient({
             {showSkeleton ? (
               <BookingSkeletonGrid count={9} showFilterSkeleton={loading && courses.length === 0} />
             ) : (
-              <div id="booking-courses-grid" className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div id="booking-courses-grid" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredGroupPricing.length > 0 && (
                   <>
                     <div className="col-span-full pt-4">
