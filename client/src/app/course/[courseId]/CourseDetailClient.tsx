@@ -212,7 +212,6 @@ export default function CourseDetailClient({
 
   const generateBrochurePDF = async () => {
     try {
-      // Fetch brochure for this course
       const res = await axios.get(`${API_BASE}/api/brochures/course/${course._id || courseId}`);
       const brochure = res.data?.data;
       if (!brochure) { alert("No brochure available for this course yet."); return; }
@@ -222,52 +221,56 @@ export default function CourseDetailClient({
       const W = 297, H = 210;
 
       const hexToRgb = (hex: string) => {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return { r, g, b };
+        const clean = (hex || "#ffffff").replace("#", "").padEnd(6, "0");
+        return {
+          r: parseInt(clean.slice(0, 2), 16) || 0,
+          g: parseInt(clean.slice(2, 4), 16) || 0,
+          b: parseInt(clean.slice(4, 6), 16) || 0,
+        };
       };
 
-      const loadImageAsDataUrl = (url: string): Promise<string> =>
-        new Promise((resolve) => {
-          const img = new Image();
-          img.crossOrigin = "anonymous";
-          img.onload = () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = img.naturalWidth;
-            canvas.height = img.naturalHeight;
-            canvas.getContext("2d")!.drawImage(img, 0, 0);
-            resolve(canvas.toDataURL("image/jpeg", 0.85));
-          };
-          img.onerror = () => resolve("");
-          img.src = url;
-        });
+      // Fetch image via backend proxy (avoids all CORS issues — reads from disk)
+      const proxyImage = async (url: string): Promise<string> => {
+        if (!url) return "";
+        if (url.startsWith("data:")) return url;
+        try {
+          const r = await axios.get(
+            `${API_BASE}/api/brochures/image-proxy?url=${encodeURIComponent(url)}`
+          );
+          return r.data?.base64 || "";
+        } catch { return ""; }
+      };
 
-      const stripHtml = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      const stripHtml = (html: string) =>
+        html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "\n").replace(/<[^>]*>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/\n{3,}/g, "\n\n").trim();
 
       const renderPage = async (pageData: any, isFirst: boolean) => {
         if (!isFirst) doc.addPage();
 
-        // Background color
+        // Background color fill
         const bg = hexToRgb(pageData.backgroundColor || "#ffffff");
         doc.setFillColor(bg.r, bg.g, bg.b);
         doc.rect(0, 0, W, H, "F");
 
-        // Background image
-        if (pageData.backgroundImage && !pageData.backgroundImage.startsWith("data:")) {
-          const dataUrl = await loadImageAsDataUrl(pageData.backgroundImage);
-          if (dataUrl) doc.addImage(dataUrl, "JPEG", 0, 0, W, H);
-        } else if (pageData.backgroundImage?.startsWith("data:")) {
-          doc.addImage(pageData.backgroundImage, "JPEG", 0, 0, W, H);
+        // Background image (full page)
+        if (pageData.backgroundImage) {
+          const b64 = await proxyImage(pageData.backgroundImage);
+          if (b64) {
+            const fmt = b64.includes("image/png") ? "PNG" : "JPEG";
+            try { doc.addImage(b64, fmt, 0, 0, W, H); } catch { /* skip bad image */ }
+          }
         }
 
-        // Overlay images
+        // Overlay images (scaled from canvas ~900px wide)
+        const SCALE = W / 900;
         for (const ov of (pageData.overlayImages || [])) {
           if (!ov.url) continue;
-          const dataUrl = ov.url.startsWith("data:") ? ov.url : await loadImageAsDataUrl(ov.url);
-          if (dataUrl) {
-            const scale = W / 900; // canvas was ~900px wide
-            doc.addImage(dataUrl, "JPEG", ov.x * scale, ov.y * scale, ov.width * scale, ov.height * scale);
+          const b64 = await proxyImage(ov.url);
+          if (b64) {
+            const fmt = b64.includes("image/png") ? "PNG" : "JPEG";
+            try {
+              doc.addImage(b64, fmt, ov.x * SCALE, ov.y * SCALE, ov.width * SCALE, ov.height * SCALE);
+            } catch { /* skip */ }
           }
         }
 
@@ -275,23 +278,20 @@ export default function CourseDetailClient({
         if (pageData.content) {
           const text = stripHtml(pageData.content);
           if (text) {
-            const tc = hexToRgb(pageData.textColor || "#1a1a1a");
+            const tc = hexToRgb(pageData.textColor || "#ffffff");
             doc.setTextColor(tc.r, tc.g, tc.b);
-            const fontSize = Math.max(8, Math.min(pageData.textSize || 14, 24));
+            const fontSize = Math.max(8, Math.min(pageData.textSize || 14, 32));
             doc.setFontSize(fontSize);
             doc.setFont("helvetica", pageData.textBold ? "bold" : "normal");
-            const scale = W / 900;
-            const x = (pageData.textX ?? 24) * scale;
-            const y = (pageData.textY ?? 24) * scale;
-            const lines = doc.splitTextToSize(text, W - x - 10);
-            doc.text(lines, x, y + fontSize * 0.35);
+            const x = Math.max(5, (pageData.textX ?? 24) * SCALE);
+            const y = Math.max(10, (pageData.textY ?? 24) * SCALE);
+            const lines = doc.splitTextToSize(text, W - x - 8);
+            doc.text(lines, x, y);
           }
         }
       };
 
-      // Cover page
       await renderPage(brochure.coverPage, true);
-      // Content pages
       for (const pg of (brochure.pages || [])) {
         await renderPage(pg, false);
       }
