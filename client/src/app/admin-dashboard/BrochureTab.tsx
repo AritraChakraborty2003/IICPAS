@@ -52,6 +52,8 @@ interface BrochurePage {
   textX: number;
   textY: number;
   textColor: string;
+  textBold: boolean;
+  textSize: number;
   chapterId: string;
   topicId: string;
 }
@@ -63,6 +65,8 @@ interface CoverPage {
   textX: number;
   textY: number;
   textColor: string;
+  textBold: boolean;
+  textSize: number;
 }
 interface Brochure {
   _id: string;
@@ -84,6 +88,8 @@ const defaultCover = (): CoverPage => ({
   textX: 24,
   textY: 24,
   textColor: "#ffffff",
+  textBold: false,
+  textSize: 16,
 });
 
 const defaultPage = (overrides?: Partial<BrochurePage>): BrochurePage => ({
@@ -95,6 +101,8 @@ const defaultPage = (overrides?: Partial<BrochurePage>): BrochurePage => ({
   textX: 24,
   textY: 24,
   textColor: "#1a1a1a",
+  textBold: false,
+  textSize: 16,
   chapterId: "",
   topicId: "",
   ...overrides,
@@ -261,10 +269,10 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
       // Use base64 for instant preview; also upload to server for persistence
       const dataUrl = await readAsDataURL(file);
       onUpdate({ ...page, backgroundImage: dataUrl } as BrochurePage | CoverPage);
-      // Upload in background and swap URL once done
+      // Upload in background and swap the background URL; use callback form to avoid stale page ref
       uploadImage(file).then((serverUrl) => {
         onUpdate({ ...page, backgroundImage: serverUrl } as BrochurePage | CoverPage);
-      }).catch(() => { /* keep base64 if upload fails */ });
+      }).catch(() => { /* keep base64 if upload fails — stripped on save */ });
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -281,13 +289,12 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
       const newIdx = page.overlayImages.length;
       onUpdate({ ...page, overlayImages: [...page.overlayImages, newImg] } as BrochurePage | CoverPage);
       setSelectedOverlay(newIdx);
-      // Upload in background and swap URL
+      // Upload in background; swap URL at the captured index via the updateOverlay callback
+      const capturedIdx = newIdx;
+      const capturedImg = newImg;
       uploadImage(file).then((serverUrl) => {
-        onUpdate({
-          ...page,
-          overlayImages: [...page.overlayImages, { ...newImg, url: serverUrl }],
-        } as BrochurePage | CoverPage);
-      }).catch(() => { /* keep base64 */ });
+        updateOverlay(capturedIdx, { ...capturedImg, url: serverUrl });
+      }).catch(() => { /* keep base64 until next save attempt */ });
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -319,23 +326,54 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
         >
           + Add Image
         </button>
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex flex-wrap items-center gap-2 ml-auto">
+          {/* Bold toggle */}
+          <button
+            title="Bold text"
+            onClick={() => onUpdate({ ...page, textBold: !page.textBold } as BrochurePage | CoverPage)}
+            className={`px-2.5 py-1 text-xs font-bold rounded border transition ${page.textBold ? "bg-gray-800 text-white border-gray-800" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"}`}
+          >
+            B
+          </button>
+          {/* Font size dropdown */}
+          <select
+            value={page.textSize ?? 16}
+            onChange={(e) => onUpdate({ ...page, textSize: Number(e.target.value) } as BrochurePage | CoverPage)}
+            className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white text-gray-700 cursor-pointer"
+            title="Text size"
+          >
+            {[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map((s) => (
+              <option key={s} value={s}>{s}px</option>
+            ))}
+          </select>
+          {/* Text color label + palette */}
           <label className="text-xs text-gray-500">Text</label>
-          <button
-            title="White text"
-            onClick={() => onUpdate({ ...page, textColor: "#ffffff" } as BrochurePage | CoverPage)}
-            className="w-6 h-6 rounded border-2 border-gray-300 bg-white hover:border-gray-500 transition"
-          />
-          <button
-            title="Black text"
-            onClick={() => onUpdate({ ...page, textColor: "#000000" } as BrochurePage | CoverPage)}
-            className="w-6 h-6 rounded border-2 border-gray-300 bg-black hover:border-gray-500 transition"
-          />
+          {[
+            { color: "#ffffff", title: "White" },
+            { color: "#000000", title: "Black" },
+            { color: "#ef4444", title: "Red" },
+            { color: "#3b82f6", title: "Blue" },
+            { color: "#22c55e", title: "Green" },
+            { color: "#f59e0b", title: "Amber" },
+            { color: "#a855f7", title: "Purple" },
+            { color: "#f97316", title: "Orange" },
+          ].map(({ color, title }) => (
+            <button
+              key={color}
+              title={title}
+              onClick={() => onUpdate({ ...page, textColor: color } as BrochurePage | CoverPage)}
+              className="w-5 h-5 rounded-full border-2 transition hover:scale-110"
+              style={{
+                backgroundColor: color,
+                borderColor: (page.textColor ?? "#1a1a1a") === color ? "#6366f1" : "#d1d5db",
+              }}
+            />
+          ))}
           <input
             type="color"
             value={page.textColor ?? "#1a1a1a"}
             onChange={(e) => onUpdate({ ...page, textColor: e.target.value } as BrochurePage | CoverPage)}
-            className="w-7 h-7 rounded cursor-pointer border border-gray-300"
+            className="w-6 h-6 rounded cursor-pointer border border-gray-300"
             title="Custom text color"
           />
           <label className="text-xs text-gray-500 ml-1">BG</label>
@@ -343,7 +381,7 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
             type="color"
             value={page.backgroundColor}
             onChange={(e) => onUpdate({ ...page, backgroundColor: e.target.value } as BrochurePage | CoverPage)}
-            className="w-7 h-7 rounded cursor-pointer border border-gray-300"
+            className="w-6 h-6 rounded cursor-pointer border border-gray-300"
             title="Background color"
           />
         </div>
@@ -388,15 +426,17 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
               maxWidth: "calc(100% - 48px)",
               cursor: "move",
               color: page.textColor ?? "#1a1a1a",
+              fontWeight: page.textBold ? "bold" : "normal",
+              fontSize: page.textSize ?? 16,
               padding: "8px 12px",
               borderRadius: 4,
             }}
             onMouseDown={handleTextDragMouseDown}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* style tag forces text color to override any Jodit inline styles */}
+            {/* style tag forces text properties to override any Jodit inline styles */}
             <style>{`
-              .brochure-text-content * { color: inherit !important; }
+              .brochure-text-content * { color: inherit !important; font-size: inherit !important; }
               .brochure-text-content p { margin: 0 0 4px 0; }
             `}</style>
             <div
@@ -566,6 +606,15 @@ export default function BrochureTab() {
     setPages((prev) => prev.map((p, i) => (i === idx ? updated : p)));
   };
 
+  const stripBase64 = <T extends { backgroundImage: string; overlayImages: OverlayImage[] }>(p: T): T => ({
+    ...p,
+    backgroundImage: p.backgroundImage?.startsWith("data:") ? "" : p.backgroundImage,
+    overlayImages: p.overlayImages.map((img) => ({
+      ...img,
+      url: img.url?.startsWith("data:") ? "" : img.url,
+    })),
+  });
+
   const handleSave = async () => {
     if (!selectedCourse) return;
     setSaving(true);
@@ -581,8 +630,8 @@ export default function BrochureTab() {
         courseId: selectedCourse._id,
         courseName: selectedCourse.title,
         chapters,
-        coverPage,
-        pages,
+        coverPage: stripBase64(coverPage),
+        pages: pages.map(stripBase64),
       });
 
       setMessage({ type: "success", text: "Brochure saved successfully!" });
