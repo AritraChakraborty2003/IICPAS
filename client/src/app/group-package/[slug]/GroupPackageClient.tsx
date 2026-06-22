@@ -162,36 +162,68 @@ export default function GroupPackageClient({ slug }: { slug: string }) {
   const generatePDF = () => {
     if (!pkg) return;
     const doc = new jsPDF();
-    let y = 20;
+    const PAGE_H = 297;
+    const MARGIN = 20;
+    const MAX_W = 170;
+    let y = MARGIN;
+
+    const checkPage = (needed: number) => {
+      if (y + needed > PAGE_H - MARGIN) {
+        doc.addPage();
+        y = MARGIN;
+      }
+    };
+
+    const writeLine = (text: string, x: number, size: number, lineH: number, font = "normal") => {
+      doc.setFontSize(size);
+      doc.setFont("helvetica", font);
+      const lines = doc.splitTextToSize(text, MAX_W - (x - MARGIN));
+      checkPage(lines.length * lineH);
+      doc.text(lines, x, y);
+      y += lines.length * lineH;
+    };
+
+    // Title
+    checkPage(12);
     doc.setFontSize(18);
-    doc.text(`${pkg.groupName} - Syllabus`, 20, y);
-    y += 10;
-    const cleanDesc = (pkg.description || "").replace(/<[^>]*>/g, "");
-    const lines = doc.splitTextToSize(cleanDesc, 170);
-    doc.text(lines, 20, y);
-    y += lines.length * 6 + 10;
-    pkg.courseIds.forEach((c, idx) => {
-      doc.setFont("helvetica", "bold");
-      doc.text(`${idx + 1}. ${c.title}`, 20, y);
-      y += 6;
+    doc.setFont("helvetica", "bold");
+    doc.text(`${pkg.groupName} - Syllabus`, MARGIN, y);
+    y += 12;
+
+    // Description
+    const cleanDesc = (pkg.description || "").replace(/<[^>]*>/g, "").trim();
+    if (cleanDesc) {
+      doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.text(`Duration: ${c.duration || "N/A"}`, 20, y);
-      y += 6;
-      doc.text(`Level: ${c.level || "N/A"}`, 20, y);
-      y += 6;
+      const descLines = doc.splitTextToSize(cleanDesc, MAX_W);
+      checkPage(descLines.length * 5);
+      doc.text(descLines, MARGIN, y);
+      y += descLines.length * 5 + 8;
+    }
+
+    pkg.courseIds.forEach((c, idx) => {
+      // Course title
+      checkPage(10);
+      writeLine(`${idx + 1}. ${c.title}`, MARGIN, 13, 7, "bold");
+
+      // Duration / Level
+      writeLine(`Duration: ${c.duration || "N/A"}`, MARGIN, 10, 5);
+      writeLine(`Level: ${c.level || "N/A"}`, MARGIN, 10, 5);
+      y += 2;
+
       if (c.chapters?.length) {
-        c.chapters.forEach((ch) => {
-          doc.text(`• ${ch.title}`, 26, y);
-          y += 5;
-          ch.topics?.forEach((t) => {
+        c.chapters.forEach((ch: any) => {
+          checkPage(6);
+          writeLine(`• ${ch.title}`, MARGIN + 6, 10, 5, "bold");
+          ch.topics?.forEach((t: any) => {
             const txt = typeof t === "string" ? t : t?.title || "";
-            doc.text(`- ${txt}`, 32, y);
-            y += 4;
+            if (txt) writeLine(`- ${txt}`, MARGIN + 12, 9, 4);
           });
         });
       }
-      y += 6;
+      y += 8;
     });
+
     doc.save(`${pkg.groupName.replace(/\s+/g, "_")}_Syllabus.pdf`);
   };
 

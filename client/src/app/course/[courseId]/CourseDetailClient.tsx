@@ -358,121 +358,67 @@ export default function CourseDetailClient({
 
   const generateSyllabusPDF = () => {
     const doc = new jsPDF();
-    let yPosition = 20;
+    const PAGE_H = 297;
+    const MARGIN = 20;
+    const MAX_W = 170;
+    let y = MARGIN;
 
-    // Add title
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text("Course Syllabus", 20, yPosition);
-    yPosition += 15;
+    const checkPage = (needed: number) => {
+      if (y + needed > PAGE_H - MARGIN) { doc.addPage(); y = MARGIN; }
+    };
 
-    // Add course title
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text(course.title || "Course Details", 20, yPosition);
-    yPosition += 20;
+    const writeLine = (text: string, x: number, size: number, lineH: number, font = "normal") => {
+      doc.setFontSize(size);
+      doc.setFont("helvetica", font);
+      const lines = doc.splitTextToSize(text, MAX_W - (x - MARGIN));
+      checkPage(lines.length * lineH);
+      doc.text(lines, x, y);
+      y += lines.length * lineH;
+    };
 
-    // Add course description
+    writeLine("Course Syllabus", MARGIN, 20, 10, "bold");
+    y += 2;
+    writeLine(course.title || "Course Details", MARGIN, 16, 9, "bold");
+    y += 6;
+
     if (course.description) {
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "normal");
-      // Remove HTML tags from description
-      const cleanDescription = course.description.replace(/<[^>]*>/g, "");
-      const descriptionLines = doc.splitTextToSize(cleanDescription, 170);
-      doc.text(descriptionLines, 20, yPosition);
-      yPosition += descriptionLines.length * 6 + 10;
+      const clean = course.description.replace(/<[^>]*>/g, "").trim();
+      if (clean) { writeLine(clean, MARGIN, 11, 6); y += 6; }
     }
 
-    // Add course details
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Course Information:", 20, yPosition);
-    yPosition += 10;
+    writeLine("Course Information:", MARGIN, 13, 7, "bold");
+    writeLine(`Duration: ${course.duration || "N/A"}`, MARGIN, 11, 6);
+    writeLine(`Level: ${course.level || "N/A"}`, MARGIN, 11, 6);
+    writeLine(`Price: Rs. ${course.price || "N/A"}`, MARGIN, 11, 6);
+    y += 8;
 
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Duration: ${course.duration || "N/A"}`, 20, yPosition);
-    yPosition += 6;
-    doc.text(`Level: ${course.level || "N/A"}`, 20, yPosition);
-    yPosition += 6;
-    doc.text(`Price: Rs. ${course.price || "N/A"}`, 20, yPosition);
-    yPosition += 15;
-
-    // Add syllabus content
-    if (course.chapters && course.chapters.length > 0) {
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Detailed Syllabus:", 20, yPosition);
-      yPosition += 10;
-
-      course.chapters.forEach((chapter: any, index: number) => {
-        // Check if we need a new page
-        if (yPosition > 250) {
-          doc.addPage();
-          yPosition = 20;
-        }
-
-        // Chapter title
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text(`${index + 1}. ${chapter.title}`, 20, yPosition);
-        yPosition += 8;
-
-        // Chapter topics
-        if (chapter.topics && chapter.topics.length > 0) {
-          doc.setFontSize(10);
-          doc.setFont("helvetica", "normal");
+    const renderChapters = (chapters: any[]) => {
+      checkPage(10);
+      writeLine("Detailed Syllabus:", MARGIN, 13, 7, "bold");
+      y += 2;
+      chapters.forEach((chapter: any, index: number) => {
+        checkPage(8);
+        writeLine(`${index + 1}. ${chapter.title}`, MARGIN, 12, 6, "bold");
+        if (chapter.topics?.length) {
           chapter.topics.forEach((topic: any) => {
-            if (yPosition > 270) {
-              doc.addPage();
-              yPosition = 20;
-            }
-            doc.text(`• ${topic.title || topic}`, 30, yPosition);
-            yPosition += 5;
+            const txt = typeof topic === "string" ? topic : topic?.title || "";
+            if (txt) writeLine(`• ${txt}`, MARGIN + 8, 10, 5);
           });
         }
-        yPosition += 5;
+        y += 3;
       });
-    } else if (course.syllabus && course.syllabus.length > 0) {
-      // Fallback to dummy syllabus data
-      doc.setFontSize(14);
-      doc.setFont("helvetica", "bold");
-      doc.text("Detailed Syllabus:", 20, yPosition);
-      yPosition += 10;
+    };
 
-      course.syllabus.forEach((chapter: any, index: number) => {
-        // Check if we need a new page
-        if (yPosition > 250) {
-          doc.addPage();
-          yPosition = 20;
-        }
-
-        // Chapter title
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text(`${index + 1}. ${chapter.title}`, 20, yPosition);
-        yPosition += 8;
-
-        // Chapter topics
-        if (chapter.topics && chapter.topics.length > 0) {
-          doc.setFontSize(10);
-          doc.setFont("helvetica", "normal");
-          chapter.topics.forEach((topic: string) => {
-            if (yPosition > 270) {
-              doc.addPage();
-              yPosition = 20;
-            }
-            doc.text(`• ${topic}`, 30, yPosition);
-            yPosition += 5;
-          });
-        }
-        yPosition += 5;
-      });
+    if (course.chapters?.length) {
+      renderChapters(course.chapters);
+    } else if (course.syllabus?.length) {
+      renderChapters(course.syllabus.map((ch: any) => ({
+        ...ch,
+        topics: ch.topics?.map((t: string) => ({ title: t })),
+      })));
     }
 
-    // Save the PDF
-    const fileName = `${course.title || "Course"}_Syllabus.pdf`;
-    doc.save(fileName);
+    doc.save(`${(course.title || "Course").replace(/\s+/g, "_")}_Syllabus.pdf`);
   };
 
   // Dynamic tabs based on course data

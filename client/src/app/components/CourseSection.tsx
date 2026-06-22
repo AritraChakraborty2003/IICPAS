@@ -299,7 +299,7 @@ const CourseSection = memo(function CourseSection() {
           {/* Marquee track */}
           <div
             ref={trackRef}
-            className="flex gap-8 overflow-x-hidden py-2 px-1 scroll-smooth"
+            className="flex gap-8 overflow-x-hidden py-2 px-8 scroll-smooth"
           >
             {marqueeCourses.map((course, index) => (
               <div

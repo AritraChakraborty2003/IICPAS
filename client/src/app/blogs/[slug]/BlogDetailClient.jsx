@@ -2,7 +2,7 @@
 
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { Calendar, Clock, User, Tag, ArrowLeft, Share2 } from "lucide-react";
+import { Calendar, Clock, User, Tag, ArrowLeft, Share2, Download } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useMemo } from "react";
