@@ -647,6 +647,9 @@ export default function BrochureTab() {
   const [copyModal, setCopyModal] = useState<{ brochure: Brochure } | null>(null);
   const [copyTargetCourseId, setCopyTargetCourseId] = useState("");
   const [copying, setCopying] = useState(false);
+  const [chapterModal, setChapterModal] = useState<{ pageIdx: number } | null>(null);
+  const [chapterFrom, setChapterFrom] = useState(1);
+  const [chapterTo, setChapterTo] = useState(1);
 
   useEffect(() => {
     fetchCourses();
@@ -809,6 +812,35 @@ export default function BrochureTab() {
     }
   };
 
+  const openChapterModal = (pageIdx: number) => {
+    const total = selectedCourse?.chapters?.length ?? 1;
+    setChapterFrom(1);
+    setChapterTo(Math.min(5, total));
+    setChapterModal({ pageIdx });
+  };
+
+  const insertChapters = () => {
+    if (!chapterModal || !selectedCourse) return;
+    const chapters = selectedCourse.chapters ?? [];
+    const from = Math.max(1, chapterFrom);
+    const to = Math.min(chapters.length, chapterTo);
+    const selected = chapters.slice(from - 1, to);
+
+    const html = selected.map((ch) => {
+      const topicList = (ch.topics ?? []).length > 0
+        ? `<ul style="margin:4px 0 8px 16px; padding:0;">${ch.topics.map((t) => `<li style="margin:2px 0;">${t.title}</li>`).join("")}</ul>`
+        : "";
+      return `<p style="margin:0 0 2px 0;"><strong>${ch.title}</strong></p>${topicList}`;
+    }).join("");
+
+    updatePage(chapterModal.pageIdx, {
+      ...pages[chapterModal.pageIdx],
+      content: (pages[chapterModal.pageIdx].content || "") + html,
+      pageTitle: pages[chapterModal.pageIdx].pageTitle || `Chapters ${from}–${to}`,
+    });
+    setChapterModal(null);
+  };
+
   const pageList = [
     { label: "Cover Page", key: "cover" as const },
     ...pages.map((p, i) => ({ label: p.pageTitle || `Page ${i + 1}`, key: i as number })),
@@ -917,14 +949,23 @@ export default function BrochureTab() {
               ) : (
                 typeof activePage === "number" && pages[activePage] && (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <input
                         type="text"
                         value={pages[activePage].pageTitle}
                         onChange={(e) => updatePage(activePage, { ...pages[activePage], pageTitle: e.target.value })}
                         placeholder="Page title..."
-                        className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        className="flex-1 min-w-[160px] border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
                       />
+                      <button
+                        onClick={() => openChapterModal(activePage)}
+                        className="flex items-center gap-1.5 px-3 py-2 text-xs bg-violet-100 text-violet-700 rounded-lg hover:bg-violet-200 transition font-medium"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 10h16M4 14h10" />
+                        </svg>
+                        Load Chapters &amp; Topics
+                      </button>
                       <button
                         onClick={() => deletePage(activePage)}
                         className="px-3 py-2 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition"
