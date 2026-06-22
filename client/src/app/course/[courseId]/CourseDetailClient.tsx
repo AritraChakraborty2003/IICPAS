@@ -210,6 +210,98 @@ export default function CourseDetailClient({
     );
   };
 
+  const generateBrochurePDF = async () => {
+    try {
+      // Fetch brochure for this course
+      const res = await axios.get(`${API_BASE}/api/brochures/course/${course._id || courseId}`);
+      const brochure = res.data?.data;
+      if (!brochure) { alert("No brochure available for this course yet."); return; }
+
+      const { jsPDF: JsPDF } = await import("jspdf");
+      const doc = new JsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const W = 297, H = 210;
+
+      const hexToRgb = (hex: string) => {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return { r, g, b };
+      };
+
+      const loadImageAsDataUrl = (url: string): Promise<string> =>
+        new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d")!.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/jpeg", 0.85));
+          };
+          img.onerror = () => resolve("");
+          img.src = url;
+        });
+
+      const stripHtml = (html: string) => html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+
+      const renderPage = async (pageData: any, isFirst: boolean) => {
+        if (!isFirst) doc.addPage();
+
+        // Background color
+        const bg = hexToRgb(pageData.backgroundColor || "#ffffff");
+        doc.setFillColor(bg.r, bg.g, bg.b);
+        doc.rect(0, 0, W, H, "F");
+
+        // Background image
+        if (pageData.backgroundImage && !pageData.backgroundImage.startsWith("data:")) {
+          const dataUrl = await loadImageAsDataUrl(pageData.backgroundImage);
+          if (dataUrl) doc.addImage(dataUrl, "JPEG", 0, 0, W, H);
+        } else if (pageData.backgroundImage?.startsWith("data:")) {
+          doc.addImage(pageData.backgroundImage, "JPEG", 0, 0, W, H);
+        }
+
+        // Overlay images
+        for (const ov of (pageData.overlayImages || [])) {
+          if (!ov.url) continue;
+          const dataUrl = ov.url.startsWith("data:") ? ov.url : await loadImageAsDataUrl(ov.url);
+          if (dataUrl) {
+            const scale = W / 900; // canvas was ~900px wide
+            doc.addImage(dataUrl, "JPEG", ov.x * scale, ov.y * scale, ov.width * scale, ov.height * scale);
+          }
+        }
+
+        // Text content
+        if (pageData.content) {
+          const text = stripHtml(pageData.content);
+          if (text) {
+            const tc = hexToRgb(pageData.textColor || "#1a1a1a");
+            doc.setTextColor(tc.r, tc.g, tc.b);
+            const fontSize = Math.max(8, Math.min(pageData.textSize || 14, 24));
+            doc.setFontSize(fontSize);
+            doc.setFont("helvetica", pageData.textBold ? "bold" : "normal");
+            const scale = W / 900;
+            const x = (pageData.textX ?? 24) * scale;
+            const y = (pageData.textY ?? 24) * scale;
+            const lines = doc.splitTextToSize(text, W - x - 10);
+            doc.text(lines, x, y + fontSize * 0.35);
+          }
+        }
+      };
+
+      // Cover page
+      await renderPage(brochure.coverPage, true);
+      // Content pages
+      for (const pg of (brochure.pages || [])) {
+        await renderPage(pg, false);
+      }
+
+      doc.save(`${(course.title || "Brochure").replace(/\s+/g, "_")}_Brochure.pdf`);
+    } catch (err: any) {
+      alert("Failed to generate brochure: " + (err?.message || "Unknown error"));
+    }
+  };
+
   const generateSyllabusPDF = () => {
     const doc = new jsPDF();
     let yPosition = 20;
@@ -439,17 +531,26 @@ export default function CourseDetailClient({
                 {/* Tab Content */}
                 {activeTab === "syllabus" && (
                   <div>
-                    <div className="mb-4 flex justify-between items-center">
+                    <div className="mb-4 flex justify-between items-center flex-wrap gap-2">
                       <h3 className="text-lg font-bold bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent">
                         Course Syllabus
                       </h3>
-                      <button
-                        onClick={generateSyllabusPDF}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
-                      >
-                        <Download className="w-4 h-4" />
-                        View full Syllabus
-                      </button>
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          onClick={generateBrochurePDF}
+                          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm font-medium"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download Brochure
+                        </button>
+                        <button
+                          onClick={generateSyllabusPDF}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm font-medium"
+                        >
+                          <Download className="w-4 h-4" />
+                          View full Syllabus
+                        </button>
+                      </div>
                     </div>
 
                     {/* Dynamic syllabus from chapters */}
