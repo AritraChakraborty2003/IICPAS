@@ -142,11 +142,11 @@ export default function BlogSection() {
                   <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-white/60 to-white/40 backdrop-blur-xl" />
 
                   {/* Optimized Image Container */}
-                  <div className="relative overflow-hidden h-72 group-hover:scale-105 transition-transform duration-500">
+                  <div className="relative overflow-hidden h-56 bg-white flex items-center justify-center">
                     <img
                       src={imageUrl}
                       alt={blog.title}
-                      className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                      className="w-full h-full object-contain transition-all duration-700 group-hover:scale-105"
                       onError={(e) => {
                         e.target.src = getFallbackImage(blog.title);
                       }}
