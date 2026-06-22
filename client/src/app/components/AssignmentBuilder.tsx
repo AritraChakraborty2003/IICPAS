@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
-import OptimizedJoditEditor from "./OptimizedJoditEditor";
+import OptimizedJoditEditor, { OptimizedJoditEditorHandle } from "./OptimizedJoditEditor";
 import { getApiBase } from "../../lib/apiBase";
+
+const STATIC_CDN_BASE =
+  process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
 
 const API_BASE = getApiBase();
 
