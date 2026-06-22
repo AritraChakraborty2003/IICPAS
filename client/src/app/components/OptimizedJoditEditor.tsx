@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import React, { useRef, useEffect, useCallback, useState } from "react";
+import React, { useRef, useEffect, useCallback, useState, forwardRef, useImperativeHandle } from "react";
 import dynamic from "next/dynamic";
 import { DEFAULT_CONTENT_FONT_FAMILY } from "../utils/contentFontFamily";
 import { joditFontControl } from "../utils/joditFontConfig";
@@ -42,7 +42,11 @@ interface OptimizedJoditEditorProps {
   videoUploadApi?: string;
 }
 
-export default function OptimizedJoditEditor({
+export interface OptimizedJoditEditorHandle {
+  insertImage: (url: string) => void;
+}
+
+const OptimizedJoditEditor = forwardRef<OptimizedJoditEditorHandle, OptimizedJoditEditorProps>(function OptimizedJoditEditor({
   value,
   onChange,
   onBlur,
@@ -53,9 +57,17 @@ export default function OptimizedJoditEditor({
   uploadApi,
   enableVideo = false,
   videoUploadApi,
-}: OptimizedJoditEditorProps) {
+}, ref) {
   const editorRef = useRef<any>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    insertImage: (url: string) => {
+      if (editorRef.current?.selection) {
+        editorRef.current.selection.insertImage(url);
+      }
+    },
+  }));
 
   // Debounced change handler to prevent typing interruption
   const debouncedOnChange = useCallback(
@@ -435,4 +447,6 @@ export default function OptimizedJoditEditor({
       `}</style>
     </div>
   );
-}
+});
+
+export default OptimizedJoditEditor;
