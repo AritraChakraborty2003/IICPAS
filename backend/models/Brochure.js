@@ -23,6 +23,8 @@ const brochurePageSchema = new mongoose.Schema(
     textX: { type: Number, default: 24 },
     textY: { type: Number, default: 24 },
     textColor: { type: String, default: "#1a1a1a" },
+    textBold: { type: Boolean, default: false },
+    textSize: { type: Number, default: 16 },
     chapterId: { type: String, default: "" },
     topicId: { type: String, default: "" },
   },
@@ -58,6 +60,8 @@ const brochureSchema = new mongoose.Schema(
       textX: { type: Number, default: 24 },
       textY: { type: Number, default: 24 },
       textColor: { type: String, default: "#ffffff" },
+      textBold: { type: Boolean, default: false },
+      textSize: { type: Number, default: 16 },
     },
     // Per-section editor pages
     pages: [brochurePageSchema],
