@@ -326,8 +326,9 @@ export default function OptimizedJoditEditor({
           accept: "image/*",
           process: function (resp: any) {
             return {
+              baseurl: resp.baseurl || "",
               files: resp.files || [],
-              error: resp.error || false,
+              error: resp.error || 0,
               message: resp.message || "",
             };
           },

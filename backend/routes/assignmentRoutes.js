@@ -26,13 +26,15 @@ const uploadAssignmentImage = multer({
 });
 
 // Image upload for assignment rich text content (Jodit editor)
-// Returns { files: [url] } — the format Jodit's uploader expects
-router.post("/upload-image", uploadAssignmentImage.single("files[]"), (req, res) => {
+// Jodit sends the file as multipart with field name "files[]"
+// Returns { baseurl: "", files: [fullUrl] } — the format Jodit's uploader process() expects
+router.post("/upload-image", uploadAssignmentImage.any(), (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ success: false, error: "No file uploaded" });
+    const file = (req.files && req.files[0]) || req.file;
+    if (!file) return res.status(400).json({ success: false, error: "No file uploaded" });
     const baseUrl = process.env.API_URL || `${req.protocol}://${req.get("host")}`;
-    const fileUrl = `${baseUrl}/uploads/assignment-images/${req.file.filename}`;
-    res.json({ files: [fileUrl] });
+    const fileUrl = `${baseUrl}/uploads/assignment-images/${file.filename}`;
+    res.json({ baseurl: "", files: [fileUrl], error: 0, message: "File uploaded successfully" });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
