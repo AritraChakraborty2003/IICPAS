@@ -35,7 +35,7 @@ const uploadBrochureImage = multer({
 router.post("/upload-image", uploadBrochureImage.single("image"), (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, error: "No file uploaded" });
-    const baseUrl = process.env.API_URL || `${req.protocol}://${req.get("host")}`;
+    const baseUrl = (process.env.API_URL || process.env.API_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/api\/?$/, "");
     res.json({
       success: true,
       imageUrl: `${baseUrl}/uploads/brochure-images/${req.file.filename}`,

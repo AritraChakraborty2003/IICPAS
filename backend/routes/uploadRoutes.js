@@ -69,7 +69,7 @@ router.post("/video", requireAuth, isAdmin, uploadVideo.single("video"), (req, r
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
     // Use API_URL from environment if available, otherwise use request host
-    const baseUrl = process.env.API_URL || `${req.protocol}://${req.get("host")}`;
+    const baseUrl = (process.env.API_URL || process.env.API_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/api\/?$/, "");
     const videoUrl = `${baseUrl}/uploads/videos/${req.file.filename}`;
 
     res.json({ videoUrl });
@@ -86,7 +86,7 @@ router.post("/image", requireAuth, isAdmin, uploadImage.single("image"), (req, r
 
     // Return the image path that can be used by the frontend
     // Since images are served from /uploads, we return the full path
-    const baseUrl = process.env.API_URL || `${req.protocol}://${req.get("host")}`;
+    const baseUrl = (process.env.API_URL || process.env.API_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/api\/?$/, "");
     const imageUrl = `${baseUrl}/uploads/images/${req.file.filename}`;
     
     // Also return a relative path for frontend use
