@@ -306,11 +306,11 @@ const CourseSection = memo(function CourseSection() {
                 key={`${course._id}-${index}`}
                 className="bg-white rounded-lg shadow-lg overflow-hidden min-h-[400px] flex-shrink-0 w-[300px]"
               >
-                <div className="relative h-48 w-full">
+                <div className="relative h-48 w-full bg-white flex items-center justify-center overflow-hidden">
                   <img
                     src={course.image}
                     alt={course.title}
-                    className="w-full h-full object-cover block"
+                    className="w-full h-full object-contain block"
                   />
                   <div className="absolute top-4 left-4">
                     <span className="bg-[#3cd664] text-white px-3 py-1 rounded-full text-sm font-medium">
