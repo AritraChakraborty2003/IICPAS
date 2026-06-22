@@ -216,7 +216,6 @@ interface UploadedImage { url: string; filename: string; }
 function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   const [selectedOverlay, setSelectedOverlay] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
-  const [libraryOpen, setLibraryOpen] = useState(false);
   const [library, setLibrary] = useState<UploadedImage[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
@@ -235,10 +234,7 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
     }
   };
 
-  const toggleLibrary = () => {
-    if (!libraryOpen) fetchLibrary();
-    setLibraryOpen((v) => !v);
-  };
+  useEffect(() => { fetchLibrary(); }, []);
 
   const handleLibraryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -355,33 +351,15 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
 
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
+      {/* Toolbar — text/color controls only */}
       <div className="flex flex-wrap gap-2 items-center">
-        <button
-          onClick={() => bgInputRef.current?.click()}
-          disabled={uploading}
-          className="px-3 py-1.5 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 transition"
-        >
-          {uploading ? "Uploading..." : page.backgroundImage ? "Change Background" : "Upload Background Image"}
-        </button>
         {page.backgroundImage && (
           <button onClick={removeBg} className="px-3 py-1.5 text-xs bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition">
             Remove Background
           </button>
         )}
-        <button
-          onClick={() => overlayInputRef.current?.click()}
-          disabled={uploading}
-          className="px-3 py-1.5 text-xs bg-emerald-600 text-white rounded hover:bg-emerald-700 disabled:opacity-50 transition"
-        >
-          + Add Image
-        </button>
-        <button
-          onClick={toggleLibrary}
-          className={`px-3 py-1.5 text-xs rounded border transition ${libraryOpen ? "bg-violet-600 text-white border-violet-600" : "bg-white text-violet-700 border-violet-400 hover:bg-violet-50"}`}
-        >
-          {libraryOpen ? "Hide Library" : "Image Library"}
-        </button>
+        <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
+        <input ref={overlayInputRef} type="file" accept="image/*" className="hidden" onChange={handleOverlayUpload} />
         <input ref={libInputRef} type="file" accept="image/*" className="hidden" onChange={handleLibraryUpload} />
         <div className="flex flex-wrap items-center gap-2 ml-auto">
           {/* Bold toggle */}
@@ -442,60 +420,77 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
             title="Background color"
           />
         </div>
-        <input ref={bgInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgUpload} />
-        <input ref={overlayInputRef} type="file" accept="image/*" className="hidden" onChange={handleOverlayUpload} />
       </div>
 
-      {/* Image Library Panel */}
-      {libraryOpen && (
-        <div className="border border-violet-200 rounded-lg bg-violet-50 p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-violet-700">Image Library</span>
-            <button
-              onClick={() => libInputRef.current?.click()}
-              disabled={uploading}
-              className="px-3 py-1 text-xs bg-violet-600 text-white rounded hover:bg-violet-700 disabled:opacity-50 transition"
-            >
-              {uploading ? "Uploading..." : "Upload New Image"}
-            </button>
-          </div>
+      {/* ── Upload Images Panel (always visible) ── */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50 border-b border-gray-200">
+          <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Upload Images</span>
+          <button
+            onClick={fetchLibrary}
+            className="text-xs text-blue-600 hover:underline"
+          >
+            Refresh Files
+          </button>
+        </div>
+
+        {/* Upload buttons */}
+        <div className="flex gap-2 px-4 py-3 border-b border-gray-100">
+          <button
+            onClick={() => libInputRef.current?.click()}
+            disabled={uploading}
+            className="px-4 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 transition"
+          >
+            {uploading ? "Uploading..." : "Upload Single Image"}
+          </button>
+        </div>
+
+        {/* Previously uploaded images */}
+        <div className="px-4 py-3">
           {libraryLoading ? (
-            <p className="text-xs text-gray-400 text-center py-4">Loading...</p>
+            <p className="text-xs text-gray-400 text-center py-6">Loading...</p>
           ) : library.length === 0 ? (
-            <p className="text-xs text-gray-400 text-center py-4">No images uploaded yet. Click "Upload New Image" above.</p>
+            <p className="text-xs text-gray-400 text-center py-6">No images uploaded yet. Upload one above.</p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-              {library.map((img, i) => (
-                <div key={i} className="bg-white rounded border border-gray-200 p-2 flex flex-col gap-1.5">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={img.url} alt={img.filename} className="w-full h-20 object-cover rounded" />
-                  <p className="text-[10px] text-gray-500 truncate" title={img.url}>{img.url}</p>
-                  <div className="flex gap-1 flex-wrap">
-                    <button
-                      onClick={() => copyUrl(img.url)}
-                      className="px-2 py-0.5 text-[10px] bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition"
-                    >
-                      {copiedUrl === img.url ? "Copied!" : "Copy"}
-                    </button>
-                    <button
-                      onClick={() => setAsBg(img.url)}
-                      className="px-2 py-0.5 text-[10px] bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition"
-                    >
-                      Set BG
-                    </button>
-                    <button
-                      onClick={() => insertAsOverlay(img.url)}
-                      className="px-2 py-0.5 text-[10px] bg-emerald-100 text-emerald-700 rounded hover:bg-emerald-200 transition"
-                    >
-                      Insert
-                    </button>
+            <>
+              <p className="text-xs text-gray-500 mb-2 font-medium">Previously Uploaded Images:</p>
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {library.map((img, i) => (
+                  <div key={i} className="flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img.url} alt={img.filename} className="w-14 h-10 object-cover rounded border border-gray-200 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] font-medium text-gray-700 truncate">{img.filename}</p>
+                      <p className="text-[10px] text-gray-400 truncate" title={img.url}>{img.url}</p>
+                    </div>
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => copyUrl(img.url)}
+                        className="px-2.5 py-1 text-[11px] font-medium bg-white border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition"
+                      >
+                        {copiedUrl === img.url ? "Copied!" : "Copy"}
+                      </button>
+                      <button
+                        onClick={() => setAsBg(img.url)}
+                        className="px-2.5 py-1 text-[11px] font-medium bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+                      >
+                        Set BG
+                      </button>
+                      <button
+                        onClick={() => insertAsOverlay(img.url)}
+                        className="px-2.5 py-1 text-[11px] font-medium bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
+                      >
+                        Insert
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
-      )}
+      </div>
 
       {/* Canvas — background + overlay images + text content rendered on top */}
       <div
