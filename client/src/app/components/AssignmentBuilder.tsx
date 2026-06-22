@@ -271,55 +271,49 @@ export default function AssignmentBuilder({
   // Excel parsing function
   const parseExcelFile = async (file: File, questionSetId: string) => {
     try {
-      // Read file as base64
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target?.result as string;
+      const text = await file.text();
+      const lines = text.split("\n");
+      const questions: Array<{
+        id: string;
+        question: string;
+        option1: string;
+        option2: string;
+        option3: string;
+        option4: string;
+        correct: string;
+      }> = [];
 
-        // For now, we'll use a simple CSV-like approach
-        // In production, you might want to use a library like xlsx
-        const text = await file.text();
-        const lines = text.split("\n");
-        const questions: Array<{
-          id: string;
-          question: string;
-          option1: string;
-          option2: string;
-          option3: string;
-          option4: string;
-          correct: string;
-        }> = [];
-
-        // Skip header row and parse each line
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (line) {
-            const columns = line
-              .split(",")
-              .map((col) => col.trim().replace(/^"|"$/g, ""));
-            if (columns.length >= 6) {
-              questions.push({
-                id: Date.now().toString() + i,
-                question: columns[0] || "",
-                option1: columns[1] || "",
-                option2: columns[2] || "",
-                option3: columns[3] || "",
-                option4: columns[4] || "",
-                correct: columns[5] || "",
-              });
-            }
+      // Skip header row and parse each line
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line) {
+          const columns = line
+            .split(",")
+            .map((col) => col.trim().replace(/^"|"$/g, ""));
+          if (columns.length >= 6) {
+            questions.push({
+              id: Date.now().toString() + i,
+              question: columns[0] || "",
+              option1: columns[1] || "",
+              option2: columns[2] || "",
+              option3: columns[3] || "",
+              option4: columns[4] || "",
+              correct: columns[5] || "",
+            });
           }
         }
+      }
 
-        // Update the question set with parsed questions
-        updateQuestionSet(questionSetId, "questions", questions);
-        updateQuestionSet(questionSetId, "excelBase64", base64);
+      // Single state update — avoids stale-closure overwrite from two sequential calls
+      setQuestionSets((prev) =>
+        prev.map((qs) =>
+          qs.id === questionSetId ? { ...qs, questions } : qs
+        )
+      );
 
-        alert(
-          `Successfully parsed ${questions.length} questions from Excel file!`
-        );
-      };
-      reader.readAsDataURL(file);
+      alert(
+        `Successfully parsed ${questions.length} questions from Excel file!`
+      );
     } catch (error) {
       console.error("Error parsing Excel file:", error);
       alert(
@@ -800,6 +794,7 @@ export default function AssignmentBuilder({
                               placeholder="Start writing your assignment content..."
                               height={400}
                               className="border border-gray-300 rounded-md"
+                              uploadApi={`${API_BASE}/assignments/upload-image`}
                             />
                           </div>
                           <div className="flex justify-between items-center mt-2">
