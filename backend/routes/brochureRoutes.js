@@ -38,7 +38,7 @@ router.post("/upload-image", uploadBrochureImage.single("image"), (req, res) => 
     const baseUrl = (process.env.API_URL || process.env.API_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/api\/?$/, "");
     res.json({
       success: true,
-      imageUrl: `${baseUrl}/uploads/brochure-images/${req.file.filename}`,
+      imageUrl: `${baseUrl}/uploads/brochure-images/${encodeURIComponent(req.file.filename)}`,
     });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -54,7 +54,7 @@ router.get("/images", (req, res) => {
       : [];
     const data = files
       .filter((f) => /\.(jpe?g|png|gif|webp|svg)$/i.test(f))
-      .map((f) => ({ filename: f, url: `${baseUrl}/uploads/brochure-images/${f}` }));
+      .map((f) => ({ filename: f, url: `${baseUrl}/uploads/brochure-images/${encodeURIComponent(f)}` }));
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
@@ -83,7 +83,7 @@ router.get("/image-proxy", (req, res) => {
     if (!url) return res.status(400).json({ success: false, error: "Missing url" });
 
     // Extract just the filename from the URL — only serve files from our own upload dir
-    const filename = url.split("/uploads/brochure-images/").pop();
+    const filename = decodeURIComponent(url.split("/uploads/brochure-images/").pop() || "");
     if (!filename || filename.includes("..") || filename.includes("/")) {
       return res.status(400).json({ success: false, error: "Invalid path" });
     }
