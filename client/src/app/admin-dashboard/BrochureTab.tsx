@@ -216,6 +216,7 @@ interface UploadedImage { url: string; filename: string; }
 function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   const [selectedOverlay, setSelectedOverlay] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [library, setLibrary] = useState<UploadedImage[]>([]);
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
@@ -239,10 +240,19 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   const handleLibraryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploadError(null);
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError("File too large. Maximum size is 10 MB.");
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
     try {
       const url = await uploadImage(file);
       setLibrary((prev) => [{ url, filename: file.name }, ...prev]);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { error?: string } }; message?: string })?.response?.data?.error || (err as { message?: string })?.message || "Upload failed.";
+      setUploadError(msg);
     } finally {
       setUploading(false);
       e.target.value = "";
@@ -444,14 +454,20 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
         </div>
 
         {/* Upload buttons */}
-        <div className="flex gap-2 px-4 py-3 border-b border-gray-100">
-          <button
-            onClick={() => libInputRef.current?.click()}
-            disabled={uploading}
-            className="px-4 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 transition"
-          >
-            {uploading ? "Uploading..." : "Upload Single Image"}
-          </button>
+        <div className="flex flex-col gap-2 px-4 py-3 border-b border-gray-100">
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={() => { setUploadError(null); libInputRef.current?.click(); }}
+              disabled={uploading}
+              className="px-4 py-1.5 text-xs font-medium bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 transition"
+            >
+              {uploading ? "Uploading..." : "Upload Single Image"}
+            </button>
+            <span className="text-[11px] text-gray-400">Max 10 MB · JPG, PNG, WebP, GIF</span>
+          </div>
+          {uploadError && (
+            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-1.5">{uploadError}</p>
+          )}
         </div>
 
         {/* Previously uploaded images */}
@@ -1048,6 +1064,102 @@ export default function BrochureTab() {
           </div>
         )}
       </div>
+
+      {/* ── Load Chapters & Topics Modal ── */}
+      {chapterModal && selectedCourse && (() => {
+        const total = selectedCourse.chapters?.length ?? 0;
+        const chapters = selectedCourse.chapters ?? [];
+        const from = Math.max(1, chapterFrom);
+        const to = Math.min(total, chapterTo);
+        const preview = chapters.slice(from - 1, to);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <h3 className="text-base font-semibold text-gray-800">Load Chapters &amp; Topics</h3>
+                <button onClick={() => setChapterModal(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              </div>
+
+              {/* Range picker */}
+              <div className="px-6 py-4 border-b border-gray-100 space-y-3">
+                <p className="text-xs text-gray-500">
+                  Course has <span className="font-semibold text-gray-700">{total}</span> chapter{total !== 1 ? "s" : ""}. Select the range to insert into this page.
+                </p>
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col gap-1 flex-1">
+                    <label className="text-xs text-gray-500 font-medium">From chapter</label>
+                    <input
+                      type="number" min={1} max={total}
+                      value={chapterFrom}
+                      onChange={(e) => setChapterFrom(Math.min(Number(e.target.value), chapterTo))}
+                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                    />
+                  </div>
+                  <span className="text-gray-400 mt-5">—</span>
+                  <div className="flex flex-col gap-1 flex-1">
+                    <label className="text-xs text-gray-500 font-medium">To chapter</label>
+                    <input
+                      type="number" min={chapterFrom} max={total}
+                      value={chapterTo}
+                      onChange={(e) => setChapterTo(Math.max(Number(e.target.value), chapterFrom))}
+                      className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400"
+                    />
+                  </div>
+                </div>
+                {/* Quick range buttons */}
+                <div className="flex gap-2 flex-wrap">
+                  {total > 0 && Array.from({ length: Math.ceil(total / 5) }, (_, i) => {
+                    const f = i * 5 + 1, t = Math.min(f + 4, total);
+                    return (
+                      <button key={i} onClick={() => { setChapterFrom(f); setChapterTo(t); }}
+                        className="px-2.5 py-1 text-xs bg-violet-50 text-violet-700 border border-violet-200 rounded hover:bg-violet-100 transition"
+                      >
+                        {f}–{t}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2">
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Preview ({preview.length} chapter{preview.length !== 1 ? "s" : ""})</p>
+                {preview.length === 0 ? (
+                  <p className="text-sm text-gray-400">No chapters in selected range.</p>
+                ) : preview.map((ch, i) => (
+                  <div key={ch._id} className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                    <p className="text-sm font-semibold text-gray-800">{from + i}. {ch.title}</p>
+                    {ch.topics?.length > 0 && (
+                      <ul className="mt-1 space-y-0.5 pl-4 list-disc">
+                        {ch.topics.map((t) => (
+                          <li key={t._id} className="text-xs text-gray-600">{t.title}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100">
+                <button onClick={() => setChapterModal(null)}
+                  className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={insertChapters}
+                  disabled={preview.length === 0}
+                  className="px-5 py-2 text-sm text-white bg-violet-600 rounded-lg hover:bg-violet-700 disabled:opacity-50 transition font-medium"
+                >
+                  Insert into Editor
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Copy Brochure Modal ── */}
       {copyModal && (() => {
