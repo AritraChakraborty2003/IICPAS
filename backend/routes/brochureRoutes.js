@@ -61,6 +61,21 @@ router.get("/images", (req, res) => {
   }
 });
 
+// Delete an uploaded brochure image file
+router.delete("/images/:filename", (req, res) => {
+  try {
+    const filename = req.params.filename;
+    if (!filename || filename.includes("/") || filename.includes("..")) {
+      return res.status(400).json({ success: false, error: "Invalid filename" });
+    }
+    const filepath = `${brochureImageDir}/${filename}`;
+    if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 router.get("/", getAllBrochures);
 router.get("/course/:courseId", getBrochureByCourse);
 router.post("/", saveBrochure);

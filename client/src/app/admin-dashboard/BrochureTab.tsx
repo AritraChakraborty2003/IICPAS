@@ -349,6 +349,14 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
 
   const removeBg = () => onUpdate({ ...page, backgroundImage: "" } as BrochurePage | CoverPage);
 
+  const deleteLibraryImage = async (filename: string) => {
+    if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+    try {
+      await axios.delete(`${API_BASE}/brochures/images/${encodeURIComponent(filename)}`);
+      setLibrary((prev) => prev.filter((img) => img.filename !== filename));
+    } catch { /* ignore */ }
+  };
+
   return (
     <div className="space-y-4">
       {/* Toolbar — text/color controls only */}
@@ -482,6 +490,12 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
                         className="px-2.5 py-1 text-[11px] font-medium bg-emerald-600 text-white rounded hover:bg-emerald-700 transition"
                       >
                         Insert
+                      </button>
+                      <button
+                        onClick={() => deleteLibraryImage(img.filename)}
+                        className="px-2.5 py-1 text-[11px] font-medium bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>
