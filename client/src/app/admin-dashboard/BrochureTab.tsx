@@ -223,6 +223,38 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
   const bgInputRef = useRef<HTMLInputElement>(null);
   const overlayInputRef = useRef<HTMLInputElement>(null);
   const libInputRef = useRef<HTMLInputElement>(null);
+  const textEditRef = useRef<HTMLDivElement>(null);
+
+  // Returns true if the contentEditable text box has a non-collapsed selection
+  const hasTextSelection = () => {
+    const sel = window.getSelection();
+    return !!sel && !sel.isCollapsed && textEditRef.current?.contains(sel.anchorNode);
+  };
+
+  const applyTextColor = (color: string) => {
+    if (hasTextSelection()) {
+      // Apply color only to selected text via execCommand
+      document.execCommand("foreColor", false, color);
+      // Commit updated innerHTML
+      if (textEditRef.current) {
+        onUpdate({ ...page, content: textEditRef.current.innerHTML } as BrochurePage | CoverPage);
+      }
+    } else {
+      // No selection — change the default color for the whole text block
+      onUpdate({ ...page, textColor: color } as BrochurePage | CoverPage);
+    }
+  };
+
+  const applyBold = () => {
+    if (hasTextSelection()) {
+      document.execCommand("bold", false);
+      if (textEditRef.current) {
+        onUpdate({ ...page, content: textEditRef.current.innerHTML } as BrochurePage | CoverPage);
+      }
+    } else {
+      onUpdate({ ...page, textBold: !page.textBold } as BrochurePage | CoverPage);
+    }
+  };
 
   const fetchLibrary = async () => {
     setLibraryLoading(true);
@@ -387,7 +419,7 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
           {/* Bold toggle */}
           <button
             title="Bold text"
-            onClick={() => onUpdate({ ...page, textBold: !page.textBold } as BrochurePage | CoverPage)}
+            onMouseDown={(e) => { e.preventDefault(); applyBold(); }}
             className={`px-2.5 py-1 text-xs font-bold rounded border transition ${page.textBold ? "bg-gray-800 text-white border-gray-800" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"}`}
           >
             B
