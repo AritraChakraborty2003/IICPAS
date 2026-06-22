@@ -256,6 +256,46 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
     }
   };
 
+  // execCommand fontSize uses 1-7 scale; we map px sizes to that scale
+  const PX_SIZES = [10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48, 56, 64, 72];
+  // execCommand fontSize values 1-7 map roughly to: 10,13,16,18,24,32,48px
+  // Instead we wrap selected text in a <span style="font-size:Xpx"> manually
+  const applySelectionFontSize = (delta: number) => {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !textEditRef.current?.contains(sel.anchorNode)) {
+      // No selection — adjust global textSize
+      const cur = page.textSize ?? 16;
+      const idx = PX_SIZES.indexOf(cur);
+      const next = idx === -1
+        ? PX_SIZES.find((s) => (delta > 0 ? s > cur : s < cur)) ?? cur
+        : PX_SIZES[Math.max(0, Math.min(PX_SIZES.length - 1, idx + delta))];
+      onUpdate({ ...page, textSize: next } as BrochurePage | CoverPage);
+      return;
+    }
+    // Wrap selected text in a span with new font size
+    const range = sel.getRangeAt(0);
+    // Detect current font size of the anchor node
+    const anchorEl = sel.anchorNode?.parentElement;
+    const curPx = anchorEl ? parseInt(window.getComputedStyle(anchorEl).fontSize) : (page.textSize ?? 16);
+    const idx = PX_SIZES.findIndex((s) => s >= curPx);
+    const nextPx = PX_SIZES[Math.max(0, Math.min(PX_SIZES.length - 1, (idx === -1 ? PX_SIZES.length - 1 : idx) + delta))];
+    const span = document.createElement("span");
+    span.style.fontSize = `${nextPx}px`;
+    try {
+      range.surroundContents(span);
+    } catch {
+      // surroundContents fails for multi-element selections; use extractContents
+      span.appendChild(range.extractContents());
+      range.insertNode(span);
+    }
+    // Restore selection
+    sel.removeAllRanges();
+    const newRange = document.createRange();
+    newRange.selectNodeContents(span);
+    sel.addRange(newRange);
+    onUpdate({ ...page, content: textEditRef.current.innerHTML } as BrochurePage | CoverPage);
+  };
+
   const fetchLibrary = async () => {
     setLibraryLoading(true);
     try {
@@ -424,17 +464,22 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
           >
             B
           </button>
-          {/* Font size dropdown */}
-          <select
-            value={page.textSize ?? 16}
-            onChange={(e) => onUpdate({ ...page, textSize: Number(e.target.value) } as BrochurePage | CoverPage)}
-            className="text-xs border border-gray-300 rounded px-1.5 py-1 bg-white text-gray-700 cursor-pointer"
-            title="Text size"
+          {/* Font size: decrease / label / increase — works on selection or whole block */}
+          <button
+            title="Decrease font size"
+            onMouseDown={(e) => { e.preventDefault(); applySelectionFontSize(-1); }}
+            className="px-2 py-1 text-xs font-bold rounded border bg-white text-gray-700 border-gray-300 hover:bg-gray-100 transition"
           >
-            {[10, 12, 14, 16, 18, 20, 24, 28, 32, 40, 48].map((s) => (
-              <option key={s} value={s}>{s}px</option>
-            ))}
-          </select>
+            A−
+          </button>
+          <span className="text-xs text-gray-500 min-w-[28px] text-center select-none">{page.textSize ?? 16}</span>
+          <button
+            title="Increase font size"
+            onMouseDown={(e) => { e.preventDefault(); applySelectionFontSize(1); }}
+            className="px-2 py-1 text-xs font-bold rounded border bg-white text-gray-700 border-gray-300 hover:bg-gray-100 transition"
+          >
+            A+
+          </button>
           {/* Text color label + palette */}
           <label className="text-xs text-gray-500">Text</label>
           {[
@@ -601,7 +646,7 @@ function PageCanvas({ page, onUpdate, uploadImage }: PageCanvasProps) {
             <style>{`
               .brochure-text-editable { outline: none; }
               .brochure-text-editable:focus { outline: 2px dashed rgba(99,102,241,0.7); outline-offset: 4px; border-radius: 3px; }
-              .brochure-text-editable * { font-size: inherit !important; }
+              .brochure-text-editable * { }
               .brochure-text-editable p { margin: 0 0 4px 0; }
             `}</style>
             <div
