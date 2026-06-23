@@ -479,7 +479,16 @@ export default function CaseStudyBuilder({
           name: qs.name.trim(),
           description: qs.description.trim(),
           excelBase64: qs.excelBase64,
-          questions: qs.questions,
+          questions: (qs.questions || []).map((q) => ({
+            question: (q.question || "").trim(),
+            options: [
+              (q.option1 || "").trim(),
+              (q.option2 || "").trim(),
+              (q.option3 || "").trim(),
+              (q.option4 || "").trim(),
+            ],
+            correctAnswer: (q.correct || "").trim(),
+          })),
           order: index,
         })),
       };
