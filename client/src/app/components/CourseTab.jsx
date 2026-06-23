@@ -797,15 +797,16 @@ export default function CourseTab() {
                 
                 const previousChapter = index > 0 ? (courseChapters[selectedCourse._id] || [])[index - 1] : null;
                 const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
+                const chapterIsHardLocked = selectedCourseAccessWindow.isBatchPostEndLocked
+                  ? true
+                  : batchChapterState.hasBatchWindow
+                  ? batchChapterState.isLocked
+                  : selectedCourseAccessWindow.isPreviewOnly
+                  ? index > 0
+                  : Boolean(chapter?.isLocked);
                 const chapterIsLocked = isSuperStudent
-                  ? (index > 0 && isPrevUncompleted)
-                  : (selectedCourseAccessWindow.isBatchPostEndLocked
-                    ? true
-                    : batchChapterState.hasBatchWindow
-                    ? batchChapterState.isLocked
-                    : selectedCourseAccessWindow.isPreviewOnly
-                    ? index > 0
-                    : Boolean(chapter?.isLocked));
+                  ? false
+                  : (chapterIsHardLocked || isPrevUncompleted);
                 const chapterKey = `${selectedCourse._id}-${chapter._id || index}`;
 
                 return (
@@ -1491,15 +1492,16 @@ export default function CourseTab() {
                               const batchChapterState = getBatchChapterState(courseAccessWindow.access, chapter._id || index);
                               const previousChapter = index > 0 ? (courseChapters[course._id] || [])[index - 1] : null;
                               const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
+                              const chapterIsHardLocked = courseAccessWindow.isBatchPostEndLocked
+                                ? true
+                                : batchChapterState.hasBatchWindow
+                                ? batchChapterState.isLocked
+                                : courseAccessWindow.isPreviewOnly
+                                ? index > 0
+                                : Boolean(chapter?.isLocked);
                               const chapterIsLocked = isSuperStudent
-                                ? (index > 0 && isPrevUncompleted)
-                                : (courseAccessWindow.isBatchPostEndLocked
-                                  ? true
-                                  : batchChapterState.hasBatchWindow
-                                  ? batchChapterState.isLocked
-                                  : courseAccessWindow.isPreviewOnly
-                                  ? index > 0
-                                  : Boolean(chapter?.isLocked));
+                                ? false
+                                : (chapterIsHardLocked || isPrevUncompleted);
                               const chapterKey = `${course._id}-${chapter._id || index}`;
 
                               return (
