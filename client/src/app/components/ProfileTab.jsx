@@ -676,11 +676,12 @@ export default function ProfileTab({ onImageUpdated }) {
                                 );
                                 const previousChapter = chapterIndex > 0 ? chapters[chapterIndex - 1] : null;
                                 const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
-                                const chapterIsLocked = isBatchExpired
+                                const chapterIsHardLocked = isBatchExpired
                                   ? true
                                   : isPreviewBeforeStart
                                   ? chapterIndex > 0
-                                  : isPrevUncompleted || Boolean(chapter?.isLocked);
+                                  : Boolean(chapter?.isLocked);
+                                const chapterIsLocked = chapterIsHardLocked || isPrevUncompleted;
                                 const chapterKey = `${courseId}-${chapterId}`;
                                 const chapterExpanded = Boolean(
                                   expandedProfileChapters[chapterKey]
@@ -697,9 +698,9 @@ export default function ProfileTab({ onImageUpdated }) {
                                         onClick={() =>
                                           toggleProfileChapter(courseId, chapterId)
                                         }
-                                        disabled={chapterIsLocked}
+                                        disabled={chapterIsHardLocked}
                                         className={`flex-1 text-left text-sm font-medium text-gray-800 ${
-                                          chapterIsLocked ? "cursor-not-allowed" : ""
+                                          chapterIsHardLocked ? "cursor-not-allowed" : ""
                                         }`}
                                       >
                                         {chapter?.title || `Chapter ${chapterIndex + 1}`}
@@ -716,23 +717,28 @@ export default function ProfileTab({ onImageUpdated }) {
                                         </span>
                                         <button
                                           type="button"
-                                          disabled={chapterIsLocked}
+                                          disabled={chapterIsHardLocked}
                                           onClick={() =>
-                                            !chapterIsLocked &&
+                                            !chapterIsHardLocked &&
                                             router.push(
                                               `${digitalHubPath}/${encodeURIComponent(chapterId)}`
                                             )
                                           }
                                           className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-                                            chapterIsLocked
+                                            chapterIsHardLocked
                                               ? "cursor-not-allowed bg-slate-200 text-slate-500"
                                               : "bg-blue-600 text-white hover:bg-blue-700"
                                           }`}
                                         >
-                                          {chapterIsLocked ? (
+                                          {chapterIsHardLocked ? (
                                             <span className="inline-flex items-center gap-1">
                                               <Lock className="h-3.5 w-3.5" />
                                               <span>Locked</span>
+                                            </span>
+                                          ) : chapterIsLocked ? (
+                                            <span className="inline-flex items-center gap-1">
+                                              <Lock className="h-3.5 w-3.5" />
+                                              <span>Open in Digital Hub</span>
                                             </span>
                                           ) : (
                                             "Open in Digital Hub"

@@ -1170,6 +1170,16 @@ export default function DigitalHubClient({
   const visibleTopics = isDemo
     ? topics.slice(0, 1)
     : topics;
+  const getChapterHardLockState = useCallback(
+    (chapter: ChapterData | null | undefined, chapterIndex: number) => {
+      if (isDemo) return false;
+      if (shouldFailSafeRestrictAccess) {
+        return chapterIndex > 0;
+      }
+      return Boolean(chapter?.isLocked);
+    },
+    [isDemo, shouldFailSafeRestrictAccess]
+  );
   const getChapterLockState = useCallback(
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
       if (isDemo) return false;
@@ -1196,6 +1206,10 @@ export default function DigitalHubClient({
     selectedChapterIndex >= 0
       ? getChapterLockState(selectedChapter, selectedChapterIndex)
       : false;
+  const isSelectedChapterHardLocked =
+    selectedChapterIndex >= 0
+      ? getChapterHardLockState(selectedChapter, selectedChapterIndex)
+      : false;
   const firstUnlockedChapterIndex = useMemo(
     () =>
       visibleChapters.findIndex(
@@ -1211,6 +1225,9 @@ export default function DigitalHubClient({
     selectedChapterIndex === firstUnlockedChapterIndex;
   const isTopicLocked = useCallback((topicIndex: number, topicId?: string) => {
     if (isDemo) return false;
+
+    // First topic of any chapter is always unlocked so the student can start/progress.
+    if (topicIndex === 0) return false;
 
     // If the chapter itself is locked, so are all its topics.
     if (isSelectedChapterLocked) return true;
@@ -1738,6 +1755,10 @@ export default function DigitalHubClient({
       const chapterIndex = visibleChapters.findIndex(
         (entry) => String(entry?._id) === String(chapter?._id)
       );
+      const isChapterHardLocked = getChapterHardLockState(
+        chapter,
+        chapterIndex >= 0 ? chapterIndex : 0
+      );
       const isChapterAccessLocked = getChapterLockState(
         chapter,
         chapterIndex >= 0 ? chapterIndex : 0
@@ -1748,7 +1769,7 @@ export default function DigitalHubClient({
       setSelectedCaseStudy(null);
       setSelectedAssignment(null);
 
-      if (isChapterAccessLocked) {
+      if (isChapterHardLocked) {
         if (navigationMode !== "none") {
           const targetPath = buildChapterPath(chapter._id);
           if (navigationMode === "replace") {
@@ -1794,8 +1815,8 @@ export default function DigitalHubClient({
         const shouldLimitToFirstTopic =
           !isDemo &&
           (courseBatchWindowState.isBatchPreviewOnly ||
-            shouldFailSafeRestrictAccessRef.current) &&
-          !isChapterAccessLocked;
+            shouldFailSafeRestrictAccessRef.current ||
+            isChapterAccessLocked);
         const completedIds = chapter.completedTopicIds || [];
         const properTopicFallback = availableTopics.find((topic, index) => {
           const isCompleted = completedIds.includes(topic._id);
@@ -1832,6 +1853,7 @@ export default function DigitalHubClient({
       fetchAssignments,
       fetchCaseStudies,
       getChapterLockState,
+      getChapterHardLockState,
       isDemo,
       courseBatchWindowState.isBatchPreviewOnly,
       courseBatchWindowState.isBatchPostEndLocked,
@@ -3458,53 +3480,55 @@ export default function DigitalHubClient({
                   {visibleChapters.length > 0 ? (
                     visibleChapters.map((chapter: ChapterData, index) => {
                       const chapterLocked = !isDemo && getChapterLockState(chapter, index);
+                      const chapterHardLocked = !isDemo && getChapterHardLockState(chapter, index);
 
                       return (
-                      <button
-                        key={chapter._id}
-                        type="button"
-                        disabled={chapterLocked}
-                        onClick={() => {
-                          if (chapterLocked) return;
-                          setChapterDropdownOpen(false);
-                          handleChapterSelect(chapter);
-                        }}
-                        className={`w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 ${
-                          chapterLocked
-                            ? "cursor-not-allowed text-slate-400 bg-stone-50"
-                            : "text-slate-700 hover:bg-blue-50"
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div
-                            className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-medium ${
-                              chapterLocked
-                                ? "bg-stone-300"
-                                : isDarkMode
-                                ? "bg-emerald-600"
-                                : "bg-amber-500"
-                            }`}
-                          >
-                            {index + 1}
+                        <button
+                          key={chapter._id}
+                          type="button"
+                          disabled={chapterHardLocked}
+                          onClick={() => {
+                            if (chapterHardLocked) return;
+                            setChapterDropdownOpen(false);
+                            handleChapterSelect(chapter);
+                          }}
+                          className={`w-full border-b border-stone-200 last:border-b-0 px-4 py-3 text-left transition-colors flex items-center justify-between gap-3 ${
+                            chapterHardLocked
+                              ? "cursor-not-allowed text-slate-400 bg-stone-50"
+                              : "text-slate-700 hover:bg-blue-50"
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <div
+                              className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-xs font-medium ${
+                                chapterLocked
+                                  ? "bg-stone-300"
+                                  : isDarkMode
+                                  ? "bg-emerald-600"
+                                  : "bg-amber-500"
+                              }`}
+                            >
+                              {index + 1}
+                            </div>
+                            <span className="font-medium">{chapter.title}</span>
+                            {chapterLocked && (
+                              <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            )}
                           </div>
-                          <span className="font-medium">{chapter.title}</span>
-                          {chapterLocked && (
-                            <Lock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs">
-                          {chapterLocked ? (
-                            <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-700 flex items-center gap-1">
-                              Locked
-                            </span>
-                          ) : (
-                            <span className="rounded-full bg-blue-100 px-2 py-1 font-semibold text-blue-700">
-                              {getChapterCompletionPercent(chapter)}%
-                            </span>
-                          )}
-                        </div>
-                      </button>
-                    )})
+                          <div className="flex items-center gap-2 text-xs">
+                            {chapterLocked ? (
+                              <span className="rounded-full bg-amber-100 px-2 py-1 font-semibold text-amber-700 flex items-center gap-1">
+                                Locked
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-blue-100 px-2 py-1 font-semibold text-blue-700">
+                                {getChapterCompletionPercent(chapter)}%
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })
                   ) : (
                     <div className="px-4 py-3 text-gray-500 text-center">
                       No chapters available
