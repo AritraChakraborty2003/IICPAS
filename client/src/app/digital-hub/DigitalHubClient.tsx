@@ -1176,9 +1176,15 @@ export default function DigitalHubClient({
       if (shouldFailSafeRestrictAccess) {
         return chapterIndex > 0;
       }
+      if (chapterIndex > 0 && visibleChapters.length > 0) {
+        const previousChapter = visibleChapters[chapterIndex - 1];
+        if (previousChapter && !previousChapter.isCompleted) {
+          return true;
+        }
+      }
       return Boolean(chapter?.isLocked);
     },
-    [isDemo, shouldFailSafeRestrictAccess]
+    [isDemo, shouldFailSafeRestrictAccess, visibleChapters]
   );
   const selectedChapterIndex = useMemo(() => {
     if (!selectedChapter?._id) return -1;

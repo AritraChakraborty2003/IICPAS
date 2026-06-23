@@ -795,13 +795,15 @@ export default function CourseTab() {
                 );
                 const batchChapterState = getBatchChapterState(selectedCourseAccessWindow.access, chapter._id || index);
                 
+                const previousChapter = index > 0 ? (courseChapters[selectedCourse._id] || [])[index - 1] : null;
+                const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
                 const chapterIsLocked = selectedCourseAccessWindow.isBatchPostEndLocked
                   ? true
                   : batchChapterState.hasBatchWindow
                   ? batchChapterState.isLocked
                   : selectedCourseAccessWindow.isPreviewOnly
                   ? index > 0
-                  : Boolean(chapter?.isLocked);
+                  : isPrevUncompleted || Boolean(chapter?.isLocked);
                 const chapterKey = `${selectedCourse._id}-${chapter._id || index}`;
 
                 return (
@@ -1485,13 +1487,15 @@ export default function CourseTab() {
                           courseChapters[course._id].length > 0 ? (
                             courseChapters[course._id].map((chapter, index) => {
                               const batchChapterState = getBatchChapterState(courseAccessWindow.access, chapter._id || index);
+                              const previousChapter = index > 0 ? (courseChapters[course._id] || [])[index - 1] : null;
+                              const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
                               const chapterIsLocked = courseAccessWindow.isBatchPostEndLocked
                                 ? true
                                 : batchChapterState.hasBatchWindow
                                 ? batchChapterState.isLocked
                                 : courseAccessWindow.isPreviewOnly
                                 ? index > 0
-                                : Boolean(chapter?.isLocked);
+                                : isPrevUncompleted || Boolean(chapter?.isLocked);
                               const chapterKey = `${course._id}-${chapter._id || index}`;
 
                               return (

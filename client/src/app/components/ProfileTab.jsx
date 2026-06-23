@@ -674,11 +674,13 @@ export default function ProfileTab({ onImageUpdated }) {
                                   chapter,
                                   chapterIndex
                                 );
+                                const previousChapter = chapterIndex > 0 ? chapters[chapterIndex - 1] : null;
+                                const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
                                 const chapterIsLocked = isBatchExpired
                                   ? true
                                   : isPreviewBeforeStart
                                   ? chapterIndex > 0
-                                  : Boolean(chapter?.isLocked);
+                                  : isPrevUncompleted || Boolean(chapter?.isLocked);
                                 const chapterKey = `${courseId}-${chapterId}`;
                                 const chapterExpanded = Boolean(
                                   expandedProfileChapters[chapterKey]
