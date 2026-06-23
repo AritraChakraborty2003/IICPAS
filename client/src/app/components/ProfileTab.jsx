@@ -134,6 +134,7 @@ export default function ProfileTab({ onImageUpdated }) {
     email: "",
     phone: "",
     image: "",
+    digitalHubAccessOverride: false,
   });
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
@@ -294,6 +295,7 @@ export default function ProfileTab({ onImageUpdated }) {
           email: currentStudent.email,
           phone: currentStudent.phone || "",
           image: currentStudent.image || "",
+          digitalHubAccessOverride: Boolean(currentStudent.digitalHubAccessOverride),
         });
         if (currentStudent?._id) {
           fetchProfileCourses(currentStudent._id);
@@ -582,9 +584,10 @@ export default function ProfileTab({ onImageUpdated }) {
                   const chapters = courseChaptersByCourse[courseId] || [];
                   const isExpanded = Boolean(expandedProfileCourses[courseId]);
                   const courseAccessWindow = getCourseAccessWindow(course);
-                  const isCourseLocked = courseAccessWindow.isHardLocked;
-                  const isPreviewBeforeStart = courseAccessWindow.isPreviewOnly;
-                  const isBatchExpired = courseAccessWindow.isBatchPostEndLocked;
+                  const isOverride = Boolean(student.digitalHubAccessOverride);
+                  const isCourseLocked = isOverride ? false : courseAccessWindow.isHardLocked;
+                  const isPreviewBeforeStart = isOverride ? false : courseAccessWindow.isPreviewOnly;
+                  const isBatchExpired = isOverride ? false : courseAccessWindow.isBatchPostEndLocked;
                   const digitalHubPath = `/digital-hub/${encodeURIComponent(
                     course?.slug || courseId
                   )}`;
@@ -674,11 +677,15 @@ export default function ProfileTab({ onImageUpdated }) {
                                   chapter,
                                   chapterIndex
                                 );
-                                const chapterIsLocked = isBatchExpired
-                                  ? true
-                                  : isPreviewBeforeStart
-                                  ? chapterIndex > 0
-                                  : Boolean(chapter?.isLocked);
+                                const previousChapter = chapterIndex > 0 ? chapters[chapterIndex - 1] : null;
+                                const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
+                                const chapterIsLocked = isOverride
+                                  ? (chapterIndex > 0 && isPrevUncompleted)
+                                  : (isBatchExpired
+                                    ? true
+                                    : isPreviewBeforeStart
+                                    ? chapterIndex > 0
+                                    : Boolean(chapter?.isLocked));
                                 const chapterKey = `${courseId}-${chapterId}`;
                                 const chapterExpanded = Boolean(
                                   expandedProfileChapters[chapterKey]

@@ -892,6 +892,7 @@ export default function DigitalHubClient({
   const [studentRegisteredAt, setStudentRegisteredAt] = useState<string | null>(
     null
   );
+  const [digitalHubAccessOverride, setDigitalHubAccessOverride] = useState(false);
   const [authResolved, setAuthResolved] = useState(false);
   const [studentCourseBookings, setStudentCourseBookings] = useState<
     CourseBookingRecord[]
@@ -1173,22 +1174,40 @@ export default function DigitalHubClient({
   const getChapterHardLockState = useCallback(
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
       if (isDemo) return false;
+      if (digitalHubAccessOverride) {
+        if (chapterIndex > 0 && visibleChapters.length > 0) {
+          const previousChapter = visibleChapters[chapterIndex - 1];
+          if (previousChapter && !previousChapter.isCompleted) {
+            return true;
+          }
+        }
+        return false;
+      }
       if (shouldFailSafeRestrictAccess) {
         return chapterIndex > 0;
       }
       return Boolean(chapter?.isLocked);
     },
-    [isDemo, shouldFailSafeRestrictAccess]
+    [isDemo, shouldFailSafeRestrictAccess, digitalHubAccessOverride, visibleChapters]
   );
   const getChapterLockState = useCallback(
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
       if (isDemo) return false;
+      if (digitalHubAccessOverride) {
+        if (chapterIndex > 0 && visibleChapters.length > 0) {
+          const previousChapter = visibleChapters[chapterIndex - 1];
+          if (previousChapter && !previousChapter.isCompleted) {
+            return true;
+          }
+        }
+        return false;
+      }
       if (shouldFailSafeRestrictAccess) {
         return chapterIndex > 0;
       }
       return Boolean(chapter?.isLocked);
     },
-    [isDemo, shouldFailSafeRestrictAccess]
+    [isDemo, shouldFailSafeRestrictAccess, digitalHubAccessOverride, visibleChapters]
   );
   const selectedChapterIndex = useMemo(() => {
     if (!selectedChapter?._id) return -1;
@@ -1219,6 +1238,11 @@ export default function DigitalHubClient({
     selectedChapterIndex === firstUnlockedChapterIndex;
   const isTopicLocked = useCallback((topicIndex: number, topicId?: string) => {
     if (isDemo) return false;
+
+    // If student has digitalHubAccessOverride, all topics in an open chapter are fully open/unlocked
+    if (digitalHubAccessOverride) {
+      return isSelectedChapterLocked;
+    }
 
     // First topic of any chapter is always unlocked so the student can start/progress.
     if (topicIndex === 0) return false;
@@ -1267,6 +1291,7 @@ export default function DigitalHubClient({
     shouldPreviewLockTopics,
     visibleTopics,
     completedTopicIds,
+    digitalHubAccessOverride,
   ]);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
@@ -2544,6 +2569,7 @@ export default function DigitalHubClient({
           setStudentId(currentStudentId);
           setStudentName(response.data?.student?.name || "");
           setStudentRegisteredAt(response.data?.student?.createdAt || null);
+          setDigitalHubAccessOverride(Boolean(response.data?.student?.digitalHubAccessOverride));
           await fetchStudentCoins(currentStudentId);
           return;
         }
@@ -2556,6 +2582,7 @@ export default function DigitalHubClient({
       setStudentId(null);
       setStudentName("");
       setStudentRegisteredAt(null);
+      setDigitalHubAccessOverride(false);
       setPoints(0);
     };
 

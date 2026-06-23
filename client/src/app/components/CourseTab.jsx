@@ -302,7 +302,7 @@ export default function CourseTab() {
     };
   };
 
-  const isCourseLocked = (courseId) => getCourseAccessWindow(courseId).isHardLocked;
+  const isCourseLocked = (courseId) => isSuperStudent ? false : getCourseAccessWindow(courseId).isHardLocked;
 
   // Handle Buy Now functionality
   const handleBuyNow = (course) => {
@@ -795,13 +795,17 @@ export default function CourseTab() {
                 );
                 const batchChapterState = getBatchChapterState(selectedCourseAccessWindow.access, chapter._id || index);
                 
-                const chapterIsLocked = selectedCourseAccessWindow.isBatchPostEndLocked
-                  ? true
-                  : batchChapterState.hasBatchWindow
-                  ? batchChapterState.isLocked
-                  : selectedCourseAccessWindow.isPreviewOnly
-                  ? index > 0
-                  : Boolean(chapter?.isLocked);
+                const previousChapter = index > 0 ? (courseChapters[selectedCourse._id] || [])[index - 1] : null;
+                const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
+                const chapterIsLocked = isSuperStudent
+                  ? (index > 0 && isPrevUncompleted)
+                  : (selectedCourseAccessWindow.isBatchPostEndLocked
+                    ? true
+                    : batchChapterState.hasBatchWindow
+                    ? batchChapterState.isLocked
+                    : selectedCourseAccessWindow.isPreviewOnly
+                    ? index > 0
+                    : Boolean(chapter?.isLocked));
                 const chapterKey = `${selectedCourse._id}-${chapter._id || index}`;
 
                 return (
@@ -1207,7 +1211,7 @@ export default function CourseTab() {
             const progressValue = getProgressValue(course);
             const description = getCourseDescription(course, isPurchased);
             const courseAccessWindow = getCourseAccessWindow(course._id);
-            const isHardLocked = courseAccessWindow.isHardLocked;
+            const isHardLocked = isSuperStudent ? false : courseAccessWindow.isHardLocked;
             const overviewStats = [
               {
                 label: "Category",
@@ -1485,13 +1489,17 @@ export default function CourseTab() {
                           courseChapters[course._id].length > 0 ? (
                             courseChapters[course._id].map((chapter, index) => {
                               const batchChapterState = getBatchChapterState(courseAccessWindow.access, chapter._id || index);
-                              const chapterIsLocked = courseAccessWindow.isBatchPostEndLocked
-                                ? true
-                                : batchChapterState.hasBatchWindow
-                                ? batchChapterState.isLocked
-                                : courseAccessWindow.isPreviewOnly
-                                ? index > 0
-                                : Boolean(chapter?.isLocked);
+                              const previousChapter = index > 0 ? (courseChapters[course._id] || [])[index - 1] : null;
+                              const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
+                              const chapterIsLocked = isSuperStudent
+                                ? (index > 0 && isPrevUncompleted)
+                                : (courseAccessWindow.isBatchPostEndLocked
+                                  ? true
+                                  : batchChapterState.hasBatchWindow
+                                  ? batchChapterState.isLocked
+                                  : courseAccessWindow.isPreviewOnly
+                                  ? index > 0
+                                  : Boolean(chapter?.isLocked));
                               const chapterKey = `${course._id}-${chapter._id || index}`;
 
                               return (
