@@ -63,8 +63,11 @@ const OptimizedJoditEditor = forwardRef<OptimizedJoditEditorHandle, OptimizedJod
 
   useImperativeHandle(ref, () => ({
     insertImage: (url: string) => {
-      if (editorRef.current?.selection) {
-        editorRef.current.selection.insertImage(url);
+      if (editorRef.current) {
+        editorRef.current.focus();
+        if (editorRef.current.selection) {
+          editorRef.current.selection.insertImage(url);
+        }
       }
     },
   }));

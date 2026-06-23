@@ -589,7 +589,7 @@ export default function CoursePage() {
                     }}
                   >
                     {/* Image Section */}
-                    <div className="relative h-44 w-full rounded-t-xl overflow-hidden bg-gray-100">
+                    <div className="relative h-44 w-full rounded-t-xl overflow-hidden bg-white flex items-center justify-center">
                       {courseImageSrc ? (
                         <Image
                           src={courseImageSrc}
