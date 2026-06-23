@@ -1175,12 +1175,6 @@ export default function DigitalHubClient({
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
       if (isDemo) return false;
       if (digitalHubAccessOverride) {
-        if (chapterIndex > 0 && visibleChapters.length > 0) {
-          const previousChapter = visibleChapters[chapterIndex - 1];
-          if (previousChapter && !previousChapter.isCompleted) {
-            return true;
-          }
-        }
         return false;
       }
       if (shouldFailSafeRestrictAccess) {
@@ -1188,26 +1182,25 @@ export default function DigitalHubClient({
       }
       return Boolean(chapter?.isLocked);
     },
-    [isDemo, shouldFailSafeRestrictAccess, digitalHubAccessOverride, visibleChapters]
+    [isDemo, shouldFailSafeRestrictAccess, digitalHubAccessOverride]
   );
   const getChapterLockState = useCallback(
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
       if (isDemo) return false;
       if (digitalHubAccessOverride) {
-        if (chapterIndex > 0 && visibleChapters.length > 0) {
-          const previousChapter = visibleChapters[chapterIndex - 1];
-          if (previousChapter && !previousChapter.isCompleted) {
-            return true;
-          }
-        }
         return false;
       }
-      if (shouldFailSafeRestrictAccess) {
-        return chapterIndex > 0;
+      const isHardLocked = getChapterHardLockState(chapter, chapterIndex);
+      if (isHardLocked) return true;
+      if (chapterIndex > 0 && visibleChapters.length > 0) {
+        const previousChapter = visibleChapters[chapterIndex - 1];
+        if (previousChapter && !previousChapter.isCompleted) {
+          return true;
+        }
       }
-      return Boolean(chapter?.isLocked);
+      return false;
     },
-    [isDemo, shouldFailSafeRestrictAccess, digitalHubAccessOverride, visibleChapters]
+    [isDemo, getChapterHardLockState, digitalHubAccessOverride, visibleChapters]
   );
   const selectedChapterIndex = useMemo(() => {
     if (!selectedChapter?._id) return -1;
