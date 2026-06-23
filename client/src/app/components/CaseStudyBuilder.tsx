@@ -269,9 +269,36 @@ export default function CaseStudyBuilder({
       id: Date.now().toString(),
       name: "",
       description: "",
-      questions: [],
+      questions: [
+        {
+          id: Date.now().toString(),
+          question: "",
+          option1: "",
+          option2: "",
+          option3: "",
+          option4: "",
+          correct: "",
+        },
+      ],
     };
     setQuestionSets([...questionSets, newQuestionSet]);
+  };
+
+  const addQuestion = (questionSetId: string) => {
+    const newQuestion = {
+      id: Date.now().toString(),
+      question: "",
+      option1: "",
+      option2: "",
+      option3: "",
+      option4: "",
+      correct: "",
+    };
+    const questionSet = questionSets.find((qs) => qs.id === questionSetId);
+    if (questionSet) {
+      const updatedQuestions = [...(questionSet.questions || []), newQuestion];
+      updateQuestionSet(questionSetId, "questions", updatedQuestions);
+    }
   };
 
   const updateQuestionSet = (
@@ -286,6 +313,60 @@ export default function CaseStudyBuilder({
 
   const removeQuestionSet = (id: string) => {
     setQuestionSets(questionSets.filter((qs) => qs.id !== id));
+  };
+
+  // Excel parsing function
+  const parseExcelFile = async (file: File, questionSetId: string) => {
+    try {
+      const text = await file.text();
+      const lines = text.split("\n");
+      const questions: Array<{
+        id: string;
+        question: string;
+        option1: string;
+        option2: string;
+        option3: string;
+        option4: string;
+        correct: string;
+      }> = [];
+
+      // Skip header row and parse each line
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line) {
+          const columns = line
+            .split(",")
+            .map((col) => col.trim().replace(/^"|"$/g, ""));
+          if (columns.length >= 6) {
+            questions.push({
+              id: Date.now().toString() + i,
+              question: columns[0] || "",
+              option1: columns[1] || "",
+              option2: columns[2] || "",
+              option3: columns[3] || "",
+              option4: columns[4] || "",
+              correct: columns[5] || "",
+            });
+          }
+        }
+      }
+
+      // Single state update — avoids stale-closure overwrite from two sequential calls
+      setQuestionSets((prev) =>
+        prev.map((qs) =>
+          qs.id === questionSetId ? { ...qs, questions } : qs
+        )
+      );
+
+      alert(
+        `Successfully parsed ${questions.length} questions from Excel file!`
+      );
+    } catch (error) {
+      console.error("Error parsing Excel file:", error);
+      alert(
+        "Error parsing Excel file. Please ensure it's in the correct format."
+      );
+    }
   };
 
   const handleSave = async () => {
