@@ -50,7 +50,7 @@ const mergeChaptersWithProgress = (chapters, progressPayload, options = {}) => {
           ? index > 0
           : typeof progressEntry.isLocked === "boolean"
           ? progressEntry.isLocked
-          : index > 0,
+          : Boolean(chapter?.isLocked),
       isCompleted: Boolean(progressEntry.isCompleted),
       completion:
         typeof progressEntry.completionPercent === "number"
@@ -674,14 +674,11 @@ export default function ProfileTab({ onImageUpdated }) {
                                   chapter,
                                   chapterIndex
                                 );
-                                const previousChapter = chapterIndex > 0 ? chapters[chapterIndex - 1] : null;
-                                const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
-                                const chapterIsHardLocked = isBatchExpired
+                                const chapterIsLocked = isBatchExpired
                                   ? true
                                   : isPreviewBeforeStart
                                   ? chapterIndex > 0
                                   : Boolean(chapter?.isLocked);
-                                const chapterIsLocked = chapterIsHardLocked || isPrevUncompleted;
                                 const chapterKey = `${courseId}-${chapterId}`;
                                 const chapterExpanded = Boolean(
                                   expandedProfileChapters[chapterKey]
@@ -698,9 +695,9 @@ export default function ProfileTab({ onImageUpdated }) {
                                         onClick={() =>
                                           toggleProfileChapter(courseId, chapterId)
                                         }
-                                        disabled={chapterIsHardLocked}
+                                        disabled={chapterIsLocked}
                                         className={`flex-1 text-left text-sm font-medium text-gray-800 ${
-                                          chapterIsHardLocked ? "cursor-not-allowed" : ""
+                                          chapterIsLocked ? "cursor-not-allowed" : ""
                                         }`}
                                       >
                                         {chapter?.title || `Chapter ${chapterIndex + 1}`}
@@ -717,28 +714,23 @@ export default function ProfileTab({ onImageUpdated }) {
                                         </span>
                                         <button
                                           type="button"
-                                          disabled={chapterIsHardLocked}
+                                          disabled={chapterIsLocked}
                                           onClick={() =>
-                                            !chapterIsHardLocked &&
+                                            !chapterIsLocked &&
                                             router.push(
                                               `${digitalHubPath}/${encodeURIComponent(chapterId)}`
                                             )
                                           }
                                           className={`rounded-md px-3 py-1.5 text-xs font-medium ${
-                                            chapterIsHardLocked
+                                            chapterIsLocked
                                               ? "cursor-not-allowed bg-slate-200 text-slate-500"
                                               : "bg-blue-600 text-white hover:bg-blue-700"
                                           }`}
                                         >
-                                          {chapterIsHardLocked ? (
+                                          {chapterIsLocked ? (
                                             <span className="inline-flex items-center gap-1">
                                               <Lock className="h-3.5 w-3.5" />
                                               <span>Locked</span>
-                                            </span>
-                                          ) : chapterIsLocked ? (
-                                            <span className="inline-flex items-center gap-1">
-                                              <Lock className="h-3.5 w-3.5" />
-                                              <span>Open in Digital Hub</span>
                                             </span>
                                           ) : (
                                             "Open in Digital Hub"

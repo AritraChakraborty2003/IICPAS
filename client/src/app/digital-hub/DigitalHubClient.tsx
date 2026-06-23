@@ -1186,15 +1186,9 @@ export default function DigitalHubClient({
       if (shouldFailSafeRestrictAccess) {
         return chapterIndex > 0;
       }
-      if (chapterIndex > 0 && visibleChapters.length > 0) {
-        const previousChapter = visibleChapters[chapterIndex - 1];
-        if (previousChapter && !previousChapter.isCompleted) {
-          return true;
-        }
-      }
       return Boolean(chapter?.isLocked);
     },
-    [isDemo, shouldFailSafeRestrictAccess, visibleChapters]
+    [isDemo, shouldFailSafeRestrictAccess]
   );
   const selectedChapterIndex = useMemo(() => {
     if (!selectedChapter?._id) return -1;
@@ -1232,6 +1226,17 @@ export default function DigitalHubClient({
     // If the chapter itself is locked, so are all its topics.
     if (isSelectedChapterLocked) return true;
 
+    // Sequential lock inside the chapter: topic index > 0 is locked if the previous topic is not completed.
+    if (topicIndex > 0 && visibleTopics.length > 0) {
+      const prevTopic = visibleTopics[topicIndex - 1];
+      if (prevTopic) {
+        const isPrevTopicCompleted = completedTopicIds.includes(prevTopic._id);
+        if (!isPrevTopicCompleted) {
+          return true; // Lock because previous topic is not completed
+        }
+      }
+    }
+
     // Check individual topic-level batch windows. These allow individually
     // scheduled topics to unlock at their specific time — useful both in
     // preview phase (early access) and in active phase (progressive unlock).
@@ -1254,7 +1259,15 @@ export default function DigitalHubClient({
     // Preview-lock: only lock topics after index 0 when in preview mode,
     // unless the topic has its own explicitly active window (handled above).
     return shouldPreviewLockTopics && topicIndex > 0;
-  }, [isDemo, isSelectedChapterLocked, activePurchasedCourseRecord, selectedChapter, shouldPreviewLockTopics]);
+  }, [
+    isDemo,
+    isSelectedChapterLocked,
+    activePurchasedCourseRecord,
+    selectedChapter,
+    shouldPreviewLockTopics,
+    visibleTopics,
+    completedTopicIds,
+  ]);
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
