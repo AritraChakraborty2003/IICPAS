@@ -1186,21 +1186,9 @@ export default function DigitalHubClient({
   );
   const getChapterLockState = useCallback(
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
-      if (isDemo) return false;
-      if (digitalHubAccessOverride) {
-        return false;
-      }
-      const isHardLocked = getChapterHardLockState(chapter, chapterIndex);
-      if (isHardLocked) return true;
-      if (chapterIndex > 0 && visibleChapters.length > 0) {
-        const previousChapter = visibleChapters[chapterIndex - 1];
-        if (previousChapter && !previousChapter.isCompleted) {
-          return true;
-        }
-      }
-      return false;
+      return getChapterHardLockState(chapter, chapterIndex);
     },
-    [isDemo, getChapterHardLockState, digitalHubAccessOverride, visibleChapters]
+    [getChapterHardLockState]
   );
   const selectedChapterIndex = useMemo(() => {
     if (!selectedChapter?._id) return -1;
