@@ -795,16 +795,13 @@ export default function CourseTab() {
                 );
                 const batchChapterState = getBatchChapterState(selectedCourseAccessWindow.access, chapter._id || index);
                 
-                const previousChapter = index > 0 ? (courseChapters[selectedCourse._id] || [])[index - 1] : null;
-                const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
-                const chapterIsHardLocked = selectedCourseAccessWindow.isBatchPostEndLocked
+                const chapterIsLocked = selectedCourseAccessWindow.isBatchPostEndLocked
                   ? true
                   : batchChapterState.hasBatchWindow
                   ? batchChapterState.isLocked
                   : selectedCourseAccessWindow.isPreviewOnly
                   ? index > 0
                   : Boolean(chapter?.isLocked);
-                const chapterIsLocked = chapterIsHardLocked || isPrevUncompleted;
                 const chapterKey = `${selectedCourse._id}-${chapter._id || index}`;
 
                 return (
@@ -821,15 +818,15 @@ export default function CourseTab() {
                         </div>
                         <button
                           type="button"
-                          disabled={chapterIsHardLocked}
+                          disabled={chapterIsLocked}
                           onClick={() =>
-                            !chapterIsHardLocked &&
+                            !chapterIsLocked &&
                             toggleDetailedChapter(
                               selectedCourse._id,
                               chapter._id || index
                             )
                           }
-                          className={`text-left ${chapterIsHardLocked ? "cursor-not-allowed" : ""}`}
+                          className={`text-left ${chapterIsLocked ? "cursor-not-allowed" : ""}`}
                         >
                           <div className="flex items-center gap-2">
                             <p className="font-semibold text-gray-800">
@@ -881,26 +878,21 @@ export default function CourseTab() {
                       <div className="mt-3 rounded-md border border-gray-200 bg-white p-3">
                         <button
                           type="button"
-                          disabled={chapterIsHardLocked}
+                          disabled={chapterIsLocked}
                           onClick={() =>
-                            !chapterIsHardLocked &&
+                            !chapterIsLocked &&
                             handleOpenChapter(selectedCourse, chapter, index)
                           }
                           className={`mb-3 rounded-md px-3 py-1.5 text-sm font-medium ${
-                            chapterIsHardLocked
+                            chapterIsLocked
                               ? "cursor-not-allowed bg-slate-200 text-slate-500"
                               : "bg-blue-600 text-white hover:bg-blue-700"
                           }`}
                         >
-                          {chapterIsHardLocked ? (
+                          {chapterIsLocked ? (
                             <span className="inline-flex items-center gap-1">
                               <Lock className="h-3.5 w-3.5" />
                               <span>Locked</span>
-                            </span>
-                          ) : chapterIsLocked ? (
-                            <span className="inline-flex items-center gap-1">
-                              <Lock className="h-3.5 w-3.5" />
-                              <span>Open in Digital Hub</span>
                             </span>
                           ) : (
                             "Open in Digital Hub"
@@ -1493,16 +1485,13 @@ export default function CourseTab() {
                           courseChapters[course._id].length > 0 ? (
                             courseChapters[course._id].map((chapter, index) => {
                               const batchChapterState = getBatchChapterState(courseAccessWindow.access, chapter._id || index);
-                              const previousChapter = index > 0 ? (courseChapters[course._id] || [])[index - 1] : null;
-                              const isPrevUncompleted = previousChapter ? !previousChapter.isCompleted : false;
-                              const chapterIsHardLocked = courseAccessWindow.isBatchPostEndLocked
+                              const chapterIsLocked = courseAccessWindow.isBatchPostEndLocked
                                 ? true
                                 : batchChapterState.hasBatchWindow
                                 ? batchChapterState.isLocked
                                 : courseAccessWindow.isPreviewOnly
                                 ? index > 0
                                 : Boolean(chapter?.isLocked);
-                              const chapterIsLocked = chapterIsHardLocked || isPrevUncompleted;
                               const chapterKey = `${course._id}-${chapter._id || index}`;
 
                               return (
@@ -1519,16 +1508,16 @@ export default function CourseTab() {
                                     </div>
                                     <button
                                       type="button"
-                                      disabled={chapterIsHardLocked}
+                                      disabled={chapterIsLocked}
                                       onClick={() =>
-                                        !chapterIsHardLocked &&
+                                        !chapterIsLocked &&
                                         toggleDetailedChapter(
                                           course._id,
                                           chapter._id || index
                                         )
                                       }
                                       className={`text-left flex-1 min-w-0 ${
-                                        chapterIsHardLocked ? "cursor-not-allowed" : ""
+                                        chapterIsLocked ? "cursor-not-allowed" : ""
                                       }`}
                                     >
                                       <div className="flex items-center gap-2">
@@ -1579,26 +1568,21 @@ export default function CourseTab() {
                                     </span>
                                     <button
                                       type="button"
-                                      disabled={chapterIsHardLocked}
+                                      disabled={chapterIsLocked}
                                       onClick={() =>
-                                        !chapterIsHardLocked &&
+                                        !chapterIsLocked &&
                                         handleOpenChapter(course, chapter, index)
                                       }
                                       className={`px-3 py-1.5 rounded-md text-xs font-medium ${
-                                        chapterIsHardLocked
+                                        chapterIsLocked
                                           ? "cursor-not-allowed bg-slate-200 text-slate-500"
                                           : "bg-blue-600 text-white hover:bg-blue-700"
                                       }`}
                                     >
-                                      {chapterIsHardLocked ? (
+                                      {chapterIsLocked ? (
                                         <span className="inline-flex items-center gap-1">
                                           <Lock className="h-3.5 w-3.5" />
                                           <span>Locked</span>
-                                        </span>
-                                      ) : chapterIsLocked ? (
-                                        <span className="inline-flex items-center gap-1">
-                                          <Lock className="h-3.5 w-3.5" />
-                                          <span>Open in Digital Hub</span>
                                         </span>
                                       ) : (
                                         "Open in Digital Hub"
