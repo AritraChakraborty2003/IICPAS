@@ -359,6 +359,33 @@ const extractCourseRecord = (payload: unknown): Record<string, unknown> | null =
   return candidate;
 };
 
+const extractCourseList = (payload: unknown): CourseAccessRecord[] => {
+  if (!payload || typeof payload !== "object") return [];
+  if (Array.isArray(payload)) return payload as CourseAccessRecord[];
+
+  const candidate = payload as {
+    courses?: CourseAccessRecord[];
+    data?: CourseAccessRecord[] | { courses?: CourseAccessRecord[] };
+  };
+
+  if (Array.isArray(candidate.courses)) {
+    return candidate.courses;
+  }
+
+  if (candidate.data && typeof candidate.data === "object") {
+    if (Array.isArray(candidate.data)) {
+      return candidate.data as CourseAccessRecord[];
+    }
+    const dataObj = candidate.data as { courses?: CourseAccessRecord[] };
+    if (Array.isArray(dataObj.courses)) {
+      return dataObj.courses;
+    }
+  }
+
+  return [];
+};
+
+
 const getRandomQuestions = (
   questions: QuizQuestion[],
   limit: number = QUIZ_QUESTION_LIMIT
@@ -1763,6 +1790,19 @@ export default function DigitalHubClient({
           (courseBatchWindowState.isBatchPreviewOnly ||
             shouldFailSafeRestrictAccessRef.current) &&
           !isChapterAccessLocked;
+        const completedIds = chapter.completedTopicIds || [];
+        const properTopicFallback = availableTopics.find((topic, index) => {
+          const isCompleted = completedIds.includes(topic._id);
+          const granularTopicState = getBatchTopicState(
+            activePurchasedCourseRecord,
+            chapter._id,
+            topic._id
+          );
+          const isLocked = granularTopicState.hasBatchWindow
+            ? granularTopicState.isLocked
+            : false;
+          return !isCompleted && !isLocked;
+        }) || availableTopics[0] || null;
         const storedTopic = preferredTopicId
           ? shouldLimitToFirstTopic
             ? null
@@ -1770,7 +1810,7 @@ export default function DigitalHubClient({
           : null;
         const firstTopic = shouldLimitToFirstTopic
           ? availableTopics[0] || null
-          : storedTopic || availableTopics[0] || null;
+          : storedTopic || properTopicFallback;
         if (firstTopic) {
           handleTopicSelect(firstTopic);
         }
@@ -1797,12 +1837,13 @@ export default function DigitalHubClient({
       storeLastSelection,
       splitContentIntoPages,
       visibleChapters,
+      activePurchasedCourseRecord,
     ]
   );
 
   const handleChapterSelect = useCallback(
     (chapter: ChapterData) => {
-      selectChapterContent(chapter, "push", chapter.topics?.[0]?._id);
+      selectChapterContent(chapter, "push");
     },
     [selectChapterContent]
   );
