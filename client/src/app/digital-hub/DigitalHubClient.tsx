@@ -435,8 +435,8 @@ const mergeChapterProgress = (
       completedTopicIds: summary?.completedTopicIds || [],
       completedAssignmentIds: summary?.completedAssignmentIds || [],
       completedQuestionSetIds: summary?.completedQuestionSetIds || [],
-      topicBatchWindows: Array.isArray((summary as Record<string, unknown>)?.topicBatchWindows)
-        ? (summary as Record<string, unknown>).topicBatchWindows as ChapterData["topicBatchWindows"]
+      topicBatchWindows: Array.isArray((summary as any)?.topicBatchWindows)
+        ? (summary as any).topicBatchWindows as ChapterData["topicBatchWindows"]
         : chapter.topicBatchWindows || [],
     };
   });
