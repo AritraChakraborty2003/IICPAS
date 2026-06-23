@@ -1319,25 +1319,226 @@ export default function CaseStudyBuilder({
                     </div>
                     <div className="mt-4">
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Excel File Upload
+                        Excel File Upload (CSV format)
                       </label>
-                      <input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              const base64 = reader.result as string;
-                              updateQuestionSet(qs.id, "excelBase64", base64);
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                      />
+                      <div className="space-y-2">
+                        <input
+                          type="file"
+                          accept=".csv,.xlsx,.xls"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              parseExcelFile(file, qs.id);
+                            }
+                          }}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                        <p className="text-xs text-gray-500">
+                          Expected CSV format:
+                          Question,Option1,Option2,Option3,Option4,CorrectAnswer
+                        </p>
+                        <div className="flex gap-2 mt-2">
+                          <button
+                            type="button"
+                            onClick={() => addQuestion(qs.id)}
+                            className="bg-green-500 text-white px-3 py-2 rounded text-sm hover:bg-green-600"
+                          >
+                            + Add Question Manually
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const sampleData =
+                                "Question,Option1,Option2,Option3,Option4,CorrectAnswer\nWhat is the capital of France?,Paris,London,Berlin,Madrid,Paris\nWhat is 2+2?,3,4,5,6,4";
+                              const blob = new Blob([sampleData], {
+                                type: "text/csv",
+                              });
+                              const url = window.URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = "sample_questions.csv";
+                              a.click();
+                              window.URL.revokeObjectURL(url);
+                            }}
+                            className="bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
+                          >
+                            Download Sample CSV
+                          </button>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Display Parsed Questions */}
+                    {qs.questions && qs.questions.length > 0 && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Parsed Questions ({qs.questions.length})
+                        </label>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
+                          {qs.questions.map((question, qIndex) => (
+                            <div
+                              key={question.id}
+                              className="border border-gray-200 rounded-lg p-3 bg-gray-50"
+                            >
+                              <div className="flex justify-between items-start mb-2">
+                                <span className="text-sm font-medium text-gray-700">
+                                  Question {qIndex + 1}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const updatedQuestions =
+                                      qs.questions.filter(
+                                        (q) => q.id !== question.id
+                                      );
+                                    updateQuestionSet(
+                                      qs.id,
+                                      "questions",
+                                      updatedQuestions
+                                    );
+                                  }}
+                                  className="text-red-600 hover:text-red-800 text-sm"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                              <div className="space-y-2">
+                                <input
+                                  type="text"
+                                  placeholder="Question"
+                                  value={question.question}
+                                  onChange={(e) => {
+                                    const updatedQuestions = qs.questions.map(
+                                      (q) =>
+                                        q.id === question.id
+                                          ? { ...q, question: e.target.value }
+                                          : q
+                                    );
+                                    updateQuestionSet(
+                                      qs.id,
+                                      "questions",
+                                      updatedQuestions
+                                    );
+                                  }}
+                                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Option 1"
+                                    value={question.option1}
+                                    onChange={(e) => {
+                                      const updatedQuestions = qs.questions.map(
+                                        (q) =>
+                                          q.id === question.id
+                                            ? { ...q, option1: e.target.value }
+                                            : q
+                                      );
+                                      updateQuestionSet(
+                                        qs.id,
+                                        "questions",
+                                        updatedQuestions
+                                      );
+                                    }}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Option 2"
+                                    value={question.option2}
+                                    onChange={(e) => {
+                                      const updatedQuestions = qs.questions.map(
+                                        (q) =>
+                                          q.id === question.id
+                                            ? { ...q, option2: e.target.value }
+                                            : q
+                                      );
+                                      updateQuestionSet(
+                                        qs.id,
+                                        "questions",
+                                        updatedQuestions
+                                      );
+                                    }}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Option 3"
+                                    value={question.option3}
+                                    onChange={(e) => {
+                                      const updatedQuestions = qs.questions.map(
+                                        (q) =>
+                                          q.id === question.id
+                                            ? { ...q, option3: e.target.value }
+                                            : q
+                                      );
+                                      updateQuestionSet(
+                                        qs.id,
+                                        "questions",
+                                        updatedQuestions
+                                      );
+                                    }}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                  <input
+                                    type="text"
+                                    placeholder="Option 4"
+                                    value={question.option4}
+                                    onChange={(e) => {
+                                      const updatedQuestions = qs.questions.map(
+                                        (q) =>
+                                          q.id === question.id
+                                            ? { ...q, option4: e.target.value }
+                                            : q
+                                      );
+                                      updateQuestionSet(
+                                        qs.id,
+                                        "questions",
+                                        updatedQuestions
+                                      );
+                                    }}
+                                    className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                  />
+                                </div>
+                                <select
+                                  value={question.correct}
+                                  onChange={(e) => {
+                                    const updatedQuestions = qs.questions.map(
+                                      (q) =>
+                                        q.id === question.id
+                                          ? { ...q, correct: e.target.value }
+                                          : q
+                                    );
+                                    updateQuestionSet(
+                                      qs.id,
+                                      "questions",
+                                      updatedQuestions
+                                    );
+                                  }}
+                                  className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                                >
+                                  <option value="">
+                                    Select Correct Answer
+                                  </option>
+                                  <option value={question.option1}>
+                                    {question.option1 || "Option 1"}
+                                  </option>
+                                  <option value={question.option2}>
+                                    {question.option2 || "Option 2"}
+                                  </option>
+                                  <option value={question.option3}>
+                                    {question.option3 || "Option 3"}
+                                  </option>
+                                  <option value={question.option4}>
+                                    {question.option4 || "Option 4"}
+                                  </option>
+                                </select>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
                 {questionSets.length === 0 && (
