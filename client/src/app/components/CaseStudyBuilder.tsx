@@ -133,14 +133,41 @@ export default function CaseStudyBuilder({
 
   // Initialize form with editing data if available
   useEffect(() => {
-    if (editingItem) {
-      setTitle(editingItem.title || "");
-      setDescription(editingItem.description || "");
-      setTasks(editingItem.tasks || []);
-      setContent(editingItem.content || []);
-      setSimulations(editingItem.simulations || []);
-      setQuestionSets(editingItem.questionSets || []);
-    }
+    if (!editingItem?._id) return;
+
+    const applyData = (data: any) => {
+      setTitle(data.title || "");
+      setDescription(data.description || "");
+      setTasks(data.tasks || []);
+      setContent(data.content || []);
+      setSimulations(data.simulations || []);
+      const mappedQuestionSets = (data.questionSets || []).map((qs: any) => ({
+        id: qs._id || qs.id || Date.now().toString(),
+        name: qs.name || "",
+        description: qs.description || "",
+        excelBase64: qs.excelBase64 || "",
+        questions: (qs.questions || []).map((q: any) => ({
+          id: q._id || q.id || Date.now().toString(),
+          question: q.question || "",
+          option1: Array.isArray(q.options) ? (q.options[0] || "") : (q.option1 || ""),
+          option2: Array.isArray(q.options) ? (q.options[1] || "") : (q.option2 || ""),
+          option3: Array.isArray(q.options) ? (q.options[2] || "") : (q.option3 || ""),
+          option4: Array.isArray(q.options) ? (q.options[3] || "") : (q.option4 || ""),
+          correct: q.correctAnswer || q.correct || "",
+        })),
+      }));
+      setQuestionSets(mappedQuestionSets);
+    };
+
+    axios.get(`${getApiBase()}/case-studies/${editingItem._id}`)
+      .then((res) => {
+        const data = res.data?.data ?? res.data;
+        applyData(data);
+      })
+      .catch(() => {
+        // Fallback to editingItem if fetch fails
+        applyData(editingItem);
+      });
   }, [editingItem]);
 
   const addTask = () => {
