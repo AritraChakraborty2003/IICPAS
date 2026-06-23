@@ -60,11 +60,36 @@ const OptimizedJoditEditor = forwardRef<OptimizedJoditEditorHandle, OptimizedJod
 }, ref) {
   const editorRef = useRef<any>(null);
   const [isEditorReady, setIsEditorReady] = useState(false);
+  const savedRangeRef = useRef<Range | null>(null);
+
+  const saveSelection = () => {
+    if (editorRef.current) {
+      try {
+        const sel = editorRef.current.win.getSelection();
+        if (sel && sel.rangeCount > 0) {
+          savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  };
 
   useImperativeHandle(ref, () => ({
     insertImage: (url: string) => {
       if (editorRef.current) {
         editorRef.current.focus();
+        if (savedRangeRef.current) {
+          try {
+            const sel = editorRef.current.win.getSelection();
+            if (sel) {
+              sel.removeAllRanges();
+              sel.addRange(savedRangeRef.current);
+            }
+          } catch (e) {
+            console.error("Failed to restore selection:", e);
+          }
+        }
         if (editorRef.current.selection) {
           editorRef.current.selection.insertImage(url);
         }
@@ -323,6 +348,17 @@ const OptimizedJoditEditor = forwardRef<OptimizedJoditEditorHandle, OptimizedJod
         if (event.key.length === 1) {
           // Single character input - let it process normally
         }
+      },
+
+      // Capture selection on blur and interaction to restore selection later
+      blur: function () {
+        saveSelection();
+      },
+      mouseup: function () {
+        saveSelection();
+      },
+      keyup: function () {
+        saveSelection();
       },
     },
 
