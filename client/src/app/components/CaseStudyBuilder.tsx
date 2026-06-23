@@ -55,7 +55,15 @@ interface QuestionSet {
   name: string;
   description: string;
   excelBase64?: string;
-  questions: any[];
+  questions: Array<{
+    id: string;
+    question: string;
+    option1: string;
+    option2: string;
+    option3: string;
+    option4: string;
+    correct: string;
+  }>;
 }
 
 export default function CaseStudyBuilder({
