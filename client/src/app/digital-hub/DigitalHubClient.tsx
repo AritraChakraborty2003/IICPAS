@@ -3927,7 +3927,7 @@ export default function DigitalHubClient({
                               onClick={() => {
                                 if (isLocked) {
                                   setToastMessage(
-                                    "Complete all topics to unlock assessments."
+                                    "Complete all topics to unlock assignments."
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
