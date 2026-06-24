@@ -3914,7 +3914,7 @@ export default function DigitalHubClient({
                   {assignments.length > 0 && (
                     <>
                       <h3 className="text-sm font-semibold text-slate-500 mb-2 mt-4">
-                        Assessments
+                        Assignments
                       </h3>
                       {assignments
                         .slice(0, 2)
