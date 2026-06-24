@@ -4491,76 +4491,272 @@ export default function DigitalHubClient({
                 </>
               ) : selectedCaseStudy ? (
                 <>
+                  <h1 className="text-4xl font-bold text-emerald-600 mb-8">
+                    {selectedCaseStudy.title}
+                  </h1>
                   <div className="text-lg leading-relaxed bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-slate-900">
-                    <div className="mb-6">
-                      <p className="text-slate-700">
-                        {selectedCaseStudy.description}
-                      </p>
-                    </div>
+                    {selectedCaseStudy.description && (
+                      <div className="mb-6">
+                        <p className="text-slate-700">{selectedCaseStudy.description}</p>
+                      </div>
+                    )}
 
-                    {/* Task Instructions */}
-                    {selectedCaseStudy.tasks &&
-                      selectedCaseStudy.tasks.length > 0 && (
-                        <div className="mb-8 p-6 bg-amber-50 border border-amber-200 rounded-xl">
-                          <p className="text-amber-800">
-                            {selectedCaseStudy.tasks[0].instructions}
-                          </p>
+                    {/* Tasks */}
+                    {selectedCaseStudy.tasks && selectedCaseStudy.tasks.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-xl font-semibold text-emerald-800 mb-4">
+                          Tasks ({selectedCaseStudy.tasks.length})
+                        </h3>
+                        <div className="space-y-4">
+                          {selectedCaseStudy.tasks.map((task, index) => (
+                            <div key={task._id || index} className="p-6 bg-emerald-50 border border-emerald-200 rounded-lg">
+                              <h4 className="text-lg font-semibold text-emerald-800 mb-2">
+                                Task {index + 1}{task.taskName ? `: ${task.taskName}` : ""}
+                              </h4>
+                              <p className="text-emerald-700">{task.instructions}</p>
+                            </div>
+                          ))}
                         </div>
-                      )}
+                      </div>
+                    )}
+
+                    {/* Content */}
+                    {selectedCaseStudy.content && selectedCaseStudy.content.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-xl font-semibold text-emerald-800 mb-4">
+                          Content ({selectedCaseStudy.content.length})
+                        </h3>
+                        <div className="space-y-4">
+                          {selectedCaseStudy.content.map((content, index) => (
+                            <div key={content._id || index} className="p-6 bg-stone-50 border border-stone-200 rounded-lg">
+                              {content.type === "video" && content.videoUrl && (
+                                <div className="mb-4">
+                                  <video
+                                    controls
+                                    controlsList="nodownload noplaybackrate noremoteplayback"
+                                    disablePictureInPicture
+                                    disableRemotePlayback
+                                    onContextMenu={(e) => e.preventDefault()}
+                                    className="w-full max-w-5xl rounded-lg"
+                                  >
+                                    <source src={content.videoUrl} type="video/mp4" />
+                                  </video>
+                                </div>
+                              )}
+                              {content.type === "text" && content.textContent && (
+                                <div
+                                  className="digital-hub-content text-slate-700 whitespace-pre-wrap"
+                                  style={{ fontFamily: DIGITAL_HUB_FONT_STACK }}
+                                >
+                                  {content.textContent}
+                                </div>
+                              )}
+                              {content.type === "rich" && content.richTextContent && (
+                                <div
+                                  className="digital-hub-content text-slate-700"
+                                  ref={topicContentRef}
+                                  dangerouslySetInnerHTML={{
+                                    __html: normalizeDigitalHubContent(content.richTextContent),
+                                  }}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Simulations */}
-                    <div className="space-y-6">
-                      {selectedCaseStudy.simulations &&
-                      selectedCaseStudy.simulations.length > 0 ? (
-                        selectedCaseStudy.simulations.map(
-                          (simulation: Simulation, index: number) => (
-                            <div
-                              key={simulation._id}
-                              className="bg-stone-50 border border-stone-200 rounded-lg p-6"
-                            >
-                              <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                                {simulation.title}
-                              </h3>
-                              <p className="text-slate-700 mb-4">
-                                {simulation.description}
-                              </p>
-
-                              {/* Render AccountingExperimentCard */}
+                    {selectedCaseStudy.simulations && selectedCaseStudy.simulations.length > 0 && (
+                      <div className="mb-8">
+                        <h3 className="text-xl font-semibold text-emerald-800 mb-4">
+                          Simulations ({selectedCaseStudy.simulations.length})
+                        </h3>
+                        <div className="space-y-6">
+                          {selectedCaseStudy.simulations.map((simulation: Simulation, index: number) => (
+                            <div key={simulation._id || index} className="bg-stone-50 border border-stone-200 rounded-lg p-6">
+                              <h4 className="text-lg font-semibold text-slate-800 mb-2">
+                                Simulation {index + 1}: {simulation.title}
+                              </h4>
+                              <p className="text-slate-700 mb-4">{simulation.description}</p>
                               <AccountingExperimentCard
                                 experimentNumber={index + 1}
                                 statement={simulation.statement || simulation.description || ""}
                                 correctEntries={simulation.correctEntries || []}
                                 onComplete={(isCorrect) => {
-                                  console.log(
-                                    `Experiment ${index + 1} completed:`,
-                                    isCorrect
-                                  );
+                                  console.log(`Simulation ${index + 1} completed:`, isCorrect);
                                 }}
                               />
                             </div>
-                          )
-                        )
-                      ) : null}
-                    </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                    {firstAssignment ? (
+                    {/* Question Sets */}
+                    {selectedCaseStudy.questionSets && selectedCaseStudy.questionSets.length > 0 && (
+                      <div className="space-y-6">
+                        {selectedCaseStudy.questionSets.map((questionSet: QuestionSet) => (
+                          <div key={questionSet._id} className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
+                            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                              <div>
+                                <h3 className="text-lg font-semibold text-emerald-800">{questionSet.name}</h3>
+                                <p className="text-emerald-700 mt-1">{questionSet.description}</p>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-3">
+                                <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                                  completedQuestionSetIds.includes(questionSet._id)
+                                    ? "bg-emerald-100 text-emerald-700"
+                                    : "bg-amber-100 text-amber-700"
+                                }`}>
+                                  {completedQuestionSetIds.includes(questionSet._id) ? "Completed" : "Pending"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => markProgressItemComplete("questionSet", questionSet._id, "Question set submitted and marked as completed.")}
+                                  disabled={completedQuestionSetIds.includes(questionSet._id) || progressMutationKey === `questionSet:${questionSet._id}`}
+                                  className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all ${
+                                    completedQuestionSetIds.includes(questionSet._id)
+                                      ? "cursor-not-allowed bg-emerald-300"
+                                      : "bg-emerald-600 hover:bg-emerald-700"
+                                  }`}
+                                >
+                                  {completedQuestionSetIds.includes(questionSet._id)
+                                    ? "Completed"
+                                    : progressMutationKey === `questionSet:${questionSet._id}`
+                                    ? "Saving..."
+                                    : "Submit Question Set"}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="bg-white border border-gray-200 rounded-lg p-6">
+                              <h4 className="text-lg font-semibold text-emerald-800 mb-6">Assessment Questions</h4>
+                              {questionSet.questions && questionSet.questions.length > 0 ? (
+                                <div className="space-y-6">
+                                  {questionSet.questions.map((question, qIndex) => {
+                                    const qsId = questionSet._id;
+                                    const submitted = assignmentSubmitted[qsId];
+                                    const selectedOpt = assignmentAnswers[qsId]?.[qIndex];
+                                    const isCorrect = submitted && selectedOpt === question.correctAnswer;
+                                    const isWrong = submitted && selectedOpt && selectedOpt !== question.correctAnswer;
+                                    return (
+                                      <div key={qIndex} className="mb-8 p-4 bg-gray-50 rounded-lg">
+                                        <h5 className="text-md font-semibold text-gray-800 mb-3">
+                                          {qIndex + 1}. {question.question}
+                                        </h5>
+                                        {question.context && (
+                                          <p className="text-sm text-gray-600 mb-3 italic">{question.context}</p>
+                                        )}
+                                        <div className="space-y-2">
+                                          {question.options && question.options.map((option, oIndex) => {
+                                            const isSelected = selectedOpt === option;
+                                            const isCorrectOption = submitted && option === question.correctAnswer;
+                                            const isWrongSelected = submitted && isSelected && option !== question.correctAnswer;
+                                            return (
+                                              <label key={oIndex} className={`flex items-center space-x-3 cursor-pointer p-2 rounded-lg transition-colors ${
+                                                isCorrectOption
+                                                  ? "bg-emerald-50 border border-emerald-300"
+                                                  : isWrongSelected
+                                                  ? "bg-red-50 border border-red-300"
+                                                  : isSelected
+                                                  ? "bg-emerald-50 border border-emerald-200"
+                                                  : "hover:bg-gray-100 border border-transparent"
+                                              }`}>
+                                                <input
+                                                  type="radio"
+                                                  name={`cs-qs-${qsId}-q-${qIndex}`}
+                                                  value={option}
+                                                  checked={isSelected}
+                                                  disabled={submitted}
+                                                  onChange={() => {
+                                                    playAnswerFeedbackSound(option === question.correctAnswer);
+                                                    setAssignmentAnswers((prev) => ({
+                                                      ...prev,
+                                                      [qsId]: { ...(prev[qsId] || {}), [qIndex]: option },
+                                                    }));
+                                                  }}
+                                                  className="w-4 h-4 accent-emerald-600"
+                                                />
+                                                <span className={`text-gray-700 ${isCorrectOption ? "font-semibold text-emerald-700" : isWrongSelected ? "text-red-600" : ""}`}>
+                                                  {option}
+                                                </span>
+                                                {isCorrectOption && <span className="ml-auto text-emerald-600 text-xs font-medium">✓ Correct</span>}
+                                                {isWrongSelected && <span className="ml-auto text-red-500 text-xs font-medium">✗ Wrong</span>}
+                                              </label>
+                                            );
+                                          })}
+                                        </div>
+                                        {submitted && question.explanation && (
+                                          <div className="mt-3 p-3 bg-stone-50 rounded border-l-4 border-emerald-400">
+                                            <p className="text-sm text-slate-800">
+                                              <strong>Explanation:</strong> {question.explanation}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                                  {!assignmentSubmitted[questionSet._id] ? (
+                                    <button
+                                      onClick={() => {
+                                        const qsId = questionSet._id;
+                                        const answers = assignmentAnswers[qsId] || {};
+                                        const total = questionSet.questions.length;
+                                        const correct = questionSet.questions.filter((q, i) => answers[i] === q.correctAnswer).length;
+                                        if (correct === total) {
+                                          playCelebrationSound();
+                                        } else {
+                                          playWrongAnswerSound();
+                                        }
+                                        setAssignmentResults((prev) => ({ ...prev, [qsId]: { correct, total } }));
+                                        setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: true }));
+                                      }}
+                                      className="mt-4 rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+                                    >
+                                      Submit Answers
+                                    </button>
+                                  ) : (
+                                    <div className="mt-4 flex items-center gap-4">
+                                      <span className={`text-sm font-semibold ${assignmentResults[questionSet._id]?.correct === assignmentResults[questionSet._id]?.total ? "text-emerald-600" : "text-amber-600"}`}>
+                                        Score: {assignmentResults[questionSet._id]?.correct ?? 0} / {assignmentResults[questionSet._id]?.total ?? 0}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          const qsId = questionSet._id;
+                                          setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: false }));
+                                          setAssignmentAnswers((prev) => ({ ...prev, [qsId]: {} }));
+                                          setAssignmentResults((prev) => { const n = { ...prev }; delete n[qsId]; return n; });
+                                        }}
+                                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                      >
+                                        Try Again
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-slate-500 text-sm">No questions in this set.</p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {firstAssignment && (
                       <div className="mt-8 flex justify-end">
                         <button
                           type="button"
-                          onClick={() => {
-                            handleAssignmentSelect(firstAssignment);
-                          }}
+                          onClick={() => handleAssignmentSelect(firstAssignment)}
                           className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
-                            isDarkMode
-                              ? "bg-emerald-600 hover:bg-emerald-700"
-                              : "bg-blue-600 hover:bg-blue-700"
+                            isDarkMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"
                           }`}
                         >
                           <span>Continue</span>
                           <span aria-hidden="true">→</span>
                         </button>
                       </div>
-                    ) : null}
+                    )}
                   </div>
                 </>
               ) : selectedAssignment ? (
