@@ -4886,7 +4886,13 @@ export default function DigitalHubClient({
                                 questionSet.questions.length > 0 ? (
                                   <div className="space-y-6">
                                     {questionSet.questions.map(
-                                      (question, qIndex) => (
+                                      (question, qIndex) => {
+                                        const qsId = questionSet._id;
+                                        const submitted = assignmentSubmitted[qsId];
+                                        const selectedOpt = assignmentAnswers[qsId]?.[qIndex];
+                                        const isCorrect = submitted && selectedOpt === question.correctAnswer;
+                                        const isWrong = submitted && selectedOpt && selectedOpt !== question.correctAnswer;
+                                        return (
                                         <div
                                           key={qIndex}
                                           className="mb-8 p-4 bg-gray-50 rounded-lg"
@@ -4902,23 +4908,48 @@ export default function DigitalHubClient({
                                           <div className="space-y-2">
                                             {question.options &&
                                               question.options.map(
-                                                (option, oIndex) => (
+                                                (option, oIndex) => {
+                                                  const isSelected = selectedOpt === option;
+                                                  const isCorrectOption = submitted && option === question.correctAnswer;
+                                                  const isWrongSelected = submitted && isSelected && option !== question.correctAnswer;
+                                                  return (
                                                   <label
                                                     key={oIndex}
-                                                    className="flex items-center space-x-3 cursor-pointer"
+                                                    className={`flex items-center space-x-3 cursor-pointer p-2 rounded-lg transition-colors ${
+                                                      isCorrectOption
+                                                        ? "bg-emerald-50 border border-emerald-300"
+                                                        : isWrongSelected
+                                                        ? "bg-red-50 border border-red-300"
+                                                        : isSelected
+                                                        ? "bg-emerald-50 border border-emerald-200"
+                                                        : "hover:bg-gray-100 border border-transparent"
+                                                    }`}
                                                   >
                                                     <input
-                                                      type="checkbox"
-                                                      className="w-4 h-4 text-emerald-600 rounded"
+                                                      type="radio"
+                                                      name={`qs-${qsId}-q-${qIndex}`}
+                                                      value={option}
+                                                      checked={isSelected}
+                                                      disabled={submitted}
+                                                      onChange={() =>
+                                                        setAssignmentAnswers((prev) => ({
+                                                          ...prev,
+                                                          [qsId]: { ...(prev[qsId] || {}), [qIndex]: option },
+                                                        }))
+                                                      }
+                                                      className="w-4 h-4 accent-emerald-600"
                                                     />
-                                                    <span className="text-gray-700">
+                                                    <span className={`text-gray-700 ${isCorrectOption ? "font-semibold text-emerald-700" : isWrongSelected ? "text-red-600" : ""}`}>
                                                       {option}
                                                     </span>
+                                                    {isCorrectOption && <span className="ml-auto text-emerald-600 text-xs font-medium">✓ Correct</span>}
+                                                    {isWrongSelected && <span className="ml-auto text-red-500 text-xs font-medium">✗ Wrong</span>}
                                                   </label>
-                                                )
+                                                  );
+                                                }
                                               )}
                                           </div>
-                                          {question.explanation && (
+                                          {submitted && question.explanation && (
                                             <div className="mt-3 p-3 bg-stone-50 rounded border-l-4 border-emerald-400">
                                               <p className="text-sm text-slate-800">
                                                 <strong>Explanation:</strong>{" "}
@@ -4927,7 +4958,43 @@ export default function DigitalHubClient({
                                             </div>
                                           )}
                                         </div>
-                                      )
+                                        );
+                                      }
+                                    )}
+                                    {/* Submit / Result row */}
+                                    {!assignmentSubmitted[questionSet._id] ? (
+                                      <button
+                                        onClick={() => {
+                                          const qsId = questionSet._id;
+                                          const answers = assignmentAnswers[qsId] || {};
+                                          const total = questionSet.questions.length;
+                                          const correct = questionSet.questions.filter(
+                                            (q, i) => answers[i] === q.correctAnswer
+                                          ).length;
+                                          setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: true }));
+                                          setAssignmentResults((prev) => ({ ...prev, [qsId]: { correct, total } }));
+                                        }}
+                                        className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors"
+                                      >
+                                        Submit Answers
+                                      </button>
+                                    ) : (
+                                      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
+                                        <p className="text-lg font-bold text-emerald-800">
+                                          Score: {assignmentResults[questionSet._id]?.correct ?? 0} / {assignmentResults[questionSet._id]?.total ?? 0}
+                                        </p>
+                                        <button
+                                          onClick={() => {
+                                            const qsId = questionSet._id;
+                                            setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: false }));
+                                            setAssignmentAnswers((prev) => ({ ...prev, [qsId]: {} }));
+                                            setAssignmentResults((prev) => { const n = { ...prev }; delete n[qsId]; return n; });
+                                          }}
+                                          className="mt-2 px-4 py-1.5 text-sm text-emerald-700 border border-emerald-400 rounded-lg hover:bg-emerald-100 transition-colors"
+                                        >
+                                          Try Again
+                                        </button>
+                                      </div>
                                     )}
 
                                     {/* Question Set Info */}
