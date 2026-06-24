@@ -3798,11 +3798,9 @@ export default function DigitalHubClient({
                   {caseStudies.length > 0 && (
                     <>
                       <h3 className="text-sm font-semibold text-slate-500 mb-2 mt-4">
-                        Simulations
+                        Case Studies
                       </h3>
-                      {caseStudies
-                        .slice(0, 2)
-                        .map((caseStudy: CaseStudy, index) => {
+                      {caseStudies.map((caseStudy: CaseStudy, index) => {
                           const isLocked = !allTopicsCompleted;
 
                           return (
@@ -3811,7 +3809,7 @@ export default function DigitalHubClient({
                               onClick={() => {
                                 if (isLocked) {
                                   setToastMessage(
-                                    "Complete all topics to unlock simulations."
+                                    "Complete all topics to unlock case studies."
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
@@ -3832,18 +3830,18 @@ export default function DigitalHubClient({
                             >
                               <div className="flex items-center space-x-3">
                                 <div
-                                  className={`w-6 h-6 ${
+                                  className={`w-6 h-6 shrink-0 ${
                                     isLocked ? "bg-slate-400" : "bg-emerald-600"
                                   } text-white rounded-full flex items-center justify-center text-sm font-medium`}
                                 >
                                   {isLocked ? (
                                     <Lock className="h-3 w-3" />
                                   ) : (
-                                    `S${index + 1}`
+                                    `${index + 1}`
                                   )}
                                 </div>
-                                <span className="font-medium">
-                                  Simulation {index + 1}
+                                <span className="font-medium line-clamp-2">
+                                  {caseStudy.title}
                                 </span>
                               </div>
                             </button>
