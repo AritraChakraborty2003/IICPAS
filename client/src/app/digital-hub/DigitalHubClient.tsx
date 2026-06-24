@@ -3794,66 +3794,60 @@ export default function DigitalHubClient({
                     </>
                   )}
 
-                  {/* Simulations Section — simulations nested inside case studies */}
-                  {(() => {
-                    const allSimulations = caseStudies.flatMap((cs) =>
-                      (cs.simulations || []).map((sim) => ({ ...sim, parentCaseStudy: cs }))
-                    );
-                    if (allSimulations.length === 0) return null;
-                    return (
-                      <>
-                        <h3 className="text-sm font-semibold text-slate-500 mb-2 mt-4">
-                          Simulations
-                        </h3>
-                        {allSimulations.map((sim, index) => {
-                          const isLocked = !allTopicsCompleted;
-                          return (
-                            <button
-                              key={sim._id}
-                              onClick={() => {
-                                if (isLocked) {
-                                  setToastMessage(
-                                    "Complete all topics to unlock simulations."
-                                  );
-                                  setShowToast(true);
-                                  setTimeout(() => setShowToast(false), 3000);
-                                  return;
-                                }
-                                closeSidebarIfMobile();
-                                handleCaseStudySelect(sim.parentCaseStudy);
-                              }}
-                              className={`w-full text-left p-3 rounded-xl transition-colors border ${
-                                isLocked
-                                  ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
-                                  : selectedCaseStudy?._id === sim.parentCaseStudy._id
-                                  ? "bg-emerald-50 border-emerald-300"
-                                  : "hover:bg-emerald-50 hover:text-slate-900 border-stone-200"
-                              } ${
-                                isDarkMode ? "text-slate-100" : "text-slate-700"
-                              }`}
-                            >
-                              <div className="flex items-center space-x-3">
-                                <div
-                                  className={`w-6 h-6 shrink-0 ${
-                                    isLocked ? "bg-slate-400" : "bg-purple-600"
-                                  } text-white rounded-full flex items-center justify-center text-sm font-medium`}
-                                >
-                                  {isLocked ? (
-                                    <Lock className="h-3 w-3" />
-                                  ) : (
-                                    `S${index + 1}`
-                                  )}
-                                </div>
-                                <span className="font-medium line-clamp-2">
-                                  {sim.title || `Simulation ${index + 1}`}
-                                </span>
+                  {/* Simulations Section */}
+                  {caseStudies.length > 0 && (
+                    <>
+                      <h3 className="text-sm font-semibold text-slate-500 mb-2 mt-4">
+                        Simulations
+                      </h3>
+                      {caseStudies.map((caseStudy: CaseStudy, index) => {
+                        const isLocked = !allTopicsCompleted;
+                        return (
+                          <button
+                            key={caseStudy._id}
+                            onClick={() => {
+                              if (isLocked) {
+                                setToastMessage(
+                                  "Complete all topics to unlock simulations."
+                                );
+                                setShowToast(true);
+                                setTimeout(() => setShowToast(false), 3000);
+                                return;
+                              }
+                              closeSidebarIfMobile();
+                              handleCaseStudySelect(caseStudy);
+                            }}
+                            className={`w-full text-left p-3 rounded-xl transition-colors border ${
+                              isLocked
+                                ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
+                                : selectedCaseStudy?._id === caseStudy._id
+                                ? "bg-purple-50 border-purple-300"
+                                : "hover:bg-purple-50 hover:text-slate-900 border-stone-200"
+                            } ${
+                              isDarkMode ? "text-slate-100" : "text-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <div
+                                className={`w-6 h-6 shrink-0 ${
+                                  isLocked ? "bg-slate-400" : "bg-purple-600"
+                                } text-white rounded-full flex items-center justify-center text-sm font-medium`}
+                              >
+                                {isLocked ? (
+                                  <Lock className="h-3 w-3" />
+                                ) : (
+                                  `S${index + 1}`
+                                )}
                               </div>
-                            </button>
-                          );
-                        })}
-                      </>
-                    );
-                  })()}
+                              <span className="font-medium line-clamp-2">
+                                Simulation {index + 1}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </>
+                  )}
 
                   {/* Case Studies Section */}
                   {caseStudies.length > 0 && (
