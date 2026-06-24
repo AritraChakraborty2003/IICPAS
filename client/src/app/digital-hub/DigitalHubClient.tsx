@@ -910,6 +910,12 @@ export default function DigitalHubClient({
     null
   );
   const [batchClockTick, setBatchClockTick] = useState(0);
+  // Assignment MCQ state: { [questionSetId]: { [questionIndex]: selectedOption } }
+  const [assignmentAnswers, setAssignmentAnswers] = useState<Record<string, Record<number, string>>>({});
+  // { [questionSetId]: boolean }
+  const [assignmentSubmitted, setAssignmentSubmitted] = useState<Record<string, boolean>>({});
+  // { [questionSetId]: { correct: number, total: number } }
+  const [assignmentResults, setAssignmentResults] = useState<Record<string, { correct: number; total: number }>>({});
   const hasRenderedContent = Boolean(
     selectedTopic || selectedAssignment || selectedCaseStudy || topicContent
   );
@@ -4715,9 +4721,6 @@ export default function DigitalHubClient({
                                   key={content._id || index}
                                   className="p-6 bg-stone-50 border border-stone-200 rounded-lg"
                                 >
-                                  <h4 className="text-lg font-semibold text-slate-800 mb-2">
-                                    Content {index + 1} - {content.type}
-                                  </h4>
                                   {content.type === "video" &&
                                     content.videoUrl && (
                                       <div className="mb-4">
