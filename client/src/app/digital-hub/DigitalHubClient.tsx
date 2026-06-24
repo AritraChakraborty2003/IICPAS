@@ -4528,30 +4528,8 @@ export default function DigitalHubClient({
                               {/* Render AccountingExperimentCard */}
                               <AccountingExperimentCard
                                 experimentNumber={index + 1}
-                                statement={
-                                  simulation.description ||
-                                  "Mock transaction: Paid wages to employees for the first two weeks of January, aggregating Rs.25000."
-                                }
-                                correctEntries={
-                                  simulation.correctEntries || [
-                                    {
-                                      id: "1",
-                                      date: "15/01/2025",
-                                      type: "Debit",
-                                      particulars: "Salary A/c",
-                                      debit: "25000",
-                                      credit: "",
-                                    },
-                                    {
-                                      id: "2",
-                                      date: "15/01/2025",
-                                      type: "Credit",
-                                      particulars: "Cash A/c",
-                                      debit: "",
-                                      credit: "25000",
-                                    },
-                                  ]
-                                }
+                                statement={simulation.statement || simulation.description || ""}
+                                correctEntries={simulation.correctEntries || []}
                                 onComplete={(isCorrect) => {
                                   console.log(
                                     `Experiment ${index + 1} completed:`,
@@ -4562,48 +4540,7 @@ export default function DigitalHubClient({
                             </div>
                           )
                         )
-                      ) : (
-                        /* Mock Simulation when no simulations exist */
-                        <div className="bg-stone-50 border border-stone-200 rounded-lg p-6">
-                          <h3 className="text-lg font-semibold text-slate-800 mb-4">
-                            Mock Simulation
-                          </h3>
-                          <p className="text-slate-700 mb-4">
-                            This is a mock simulation to demonstrate the
-                            AccountingExperimentCard component.
-                          </p>
-
-                          {/* Render AccountingExperimentCard with mock data */}
-                          <AccountingExperimentCard
-                            experimentNumber={1}
-                            statement="Mock transaction: Paid wages to employees for the first two weeks of January, aggregating Rs.25000."
-                            correctEntries={[
-                              {
-                                id: "1",
-                                date: "15/01/2025",
-                                type: "Debit",
-                                particulars: "Salary A/c",
-                                debit: "25000",
-                                credit: "",
-                              },
-                              {
-                                id: "2",
-                                date: "15/01/2025",
-                                type: "Credit",
-                                particulars: "Cash A/c",
-                                debit: "",
-                                credit: "25000",
-                              },
-                            ]}
-                            onComplete={(isCorrect) => {
-                              console.log(
-                                "Mock experiment completed:",
-                                isCorrect
-                              );
-                            }}
-                          />
-                        </div>
-                      )}
+                      ) : null}
                     </div>
 
                     {firstAssignment ? (
@@ -4931,12 +4868,13 @@ export default function DigitalHubClient({
                                                       value={option}
                                                       checked={isSelected}
                                                       disabled={submitted}
-                                                      onChange={() =>
+                                                      onChange={() => {
+                                                        playAnswerFeedbackSound(option === question.correctAnswer);
                                                         setAssignmentAnswers((prev) => ({
                                                           ...prev,
                                                           [qsId]: { ...(prev[qsId] || {}), [qIndex]: option },
-                                                        }))
-                                                      }
+                                                        }));
+                                                      }}
                                                       className="w-4 h-4 accent-emerald-600"
                                                     />
                                                     <span className={`text-gray-700 ${isCorrectOption ? "font-semibold text-emerald-700" : isWrongSelected ? "text-red-600" : ""}`}>
@@ -4971,6 +4909,11 @@ export default function DigitalHubClient({
                                           const correct = questionSet.questions.filter(
                                             (q, i) => answers[i] === q.correctAnswer
                                           ).length;
+                                          if (correct === total) {
+                                            playCelebrationSound();
+                                          } else {
+                                            playAnswerFeedbackSound(false);
+                                          }
                                           setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: true }));
                                           setAssignmentResults((prev) => ({ ...prev, [qsId]: { correct, total } }));
                                         }}

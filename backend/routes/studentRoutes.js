@@ -98,6 +98,7 @@ const transporter = nodemailer.createTransport({
 });
 
 const registrationOtpStore = new Map();
+const emailOtpStore = new Map();
 const REGISTRATION_OTP_TTL_MS = 10 * 60 * 1000;
 const REGISTRATION_WHATSAPP_TEMPLATE_NAME = "otp_template";
 const HOMEPAGE_GATE_OTP_TTL_MS = 10 * 60 * 1000;
@@ -122,6 +123,16 @@ const getRegistrationOtpEntry = (email) => {
   if (!entry) return null;
   if (entry.expiresAt < Date.now()) {
     registrationOtpStore.delete(email);
+    return null;
+  }
+  return entry;
+};
+
+const getEmailOtpEntry = (email) => {
+  const entry = emailOtpStore.get(email);
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    emailOtpStore.delete(email);
     return null;
   }
   return entry;
@@ -381,6 +392,41 @@ router.post("/register/send-otp", async (req, res) => {
   }
 });
 
+router.post("/register/send-email-otp", async (req, res) => {
+  const email = normalizeEmail(req.body.email);
+  const name = String(req.body.name || "").trim();
+
+  if (!email || !name) {
+    return res.status(400).json({ message: "Name and email are required" });
+  }
+
+  try {
+    const existing = await Student.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    emailOtpStore.set(email, {
+      otp,
+      expiresAt: Date.now() + REGISTRATION_OTP_TTL_MS,
+    });
+
+    await transporter.sendMail({
+      from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "IICPA Registration OTP",
+      html: `<p>Hi ${name},</p><p>Your OTP for IICPA registration is: <strong style="font-size:1.2em">${otp}</strong></p><p>This OTP is valid for 10 minutes. Do not share it with anyone.</p><p>Thank you,<br/>IICPA Institute</p>`,
+    });
+
+    res.json({ message: "Email OTP sent" });
+  } catch (err) {
+    emailOtpStore.delete(email);
+    console.error("Error sending registration email OTP:", err);
+    res.status(500).json({ message: "Failed to send email OTP" });
+  }
+});
+
 router.post("/homepage-gate/send-otp", async (req, res) => {
   const phone = normalizePhone(req.body.phone);
 
@@ -476,7 +522,11 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "OTP is required" });
     }
 
-    const storedOtp = getRegistrationOtpEntry(normalizedWhatsAppPhone);
+    const otpMethod = req.body.otpMethod === "email" ? "email" : "whatsapp";
+    const storedOtp =
+      otpMethod === "email"
+        ? getEmailOtpEntry(normalizedEmail)
+        : getRegistrationOtpEntry(normalizedWhatsAppPhone);
     if (!storedOtp || storedOtp.otp !== submittedOtp) {
       return res.status(400).json({ message: "OTP invalid or expired" });
     }
@@ -520,6 +570,7 @@ router.post("/register", async (req, res) => {
 
       await student.save();
       registrationOtpStore.delete(normalizedWhatsAppPhone);
+      emailOtpStore.delete(normalizedEmail);
     } catch (saveError) {
       if (saveError?.code === 11000) {
         return res.status(400).json({

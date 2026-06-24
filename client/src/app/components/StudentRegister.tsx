@@ -42,6 +42,7 @@ export default function StudentRegisterForm() {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [otpMethod, setOtpMethod] = useState<"whatsapp" | "email">("whatsapp");
   const [registerOtpSent, setRegisterOtpSent] = useState(false);
   const [registerOtp, setRegisterOtp] = useState("");
   const [sendingRegisterOtp, setSendingRegisterOtp] = useState(false);
@@ -69,7 +70,7 @@ export default function StudentRegisterForm() {
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
-    if (name === "name" || name === "phone") {
+    if (name === "name" || name === "phone" || (name === "email" && otpMethod === "email")) {
       setRegisterOtpSent(false);
       setRegisterOtp("");
     }
@@ -103,7 +104,11 @@ export default function StudentRegisterForm() {
       return toast.error("Passwords do not match!");
     }
     if (!registerOtpSent || !registerOtp) {
-      return toast.error("Please send and verify the WhatsApp OTP first");
+      return toast.error(
+        otpMethod === "email"
+          ? "Please send and verify the Email OTP first"
+          : "Please send and verify the WhatsApp OTP first"
+      );
     }
 
     try {
@@ -117,6 +122,7 @@ export default function StudentRegisterForm() {
           location,
           center,
           otp: registerOtp,
+          otpMethod,
           ...(referralCode ? { referralCode } : {}),
         },
         { withCredentials: true }
@@ -190,29 +196,36 @@ export default function StudentRegisterForm() {
   };
 
   const handleSendRegisterOtp = async () => {
-    if (!form.name || !form.phone) {
-      return toast.error("Name and mobile number are required");
+    if (!form.name) {
+      return toast.error("Please enter your name first");
+    }
+    if (otpMethod === "whatsapp" && !form.phone) {
+      return toast.error("Mobile number is required");
+    }
+    if (otpMethod === "email" && !form.email) {
+      return toast.error("Email address is required");
     }
 
     setSendingRegisterOtp(true);
     try {
-      await axios.post(
-        `${API}/api/v1/students/register/send-otp`,
-        { name: form.name, phone: form.phone },
-        { withCredentials: true }
-      );
+      if (otpMethod === "email") {
+        await axios.post(
+          `${API}/api/v1/students/register/send-email-otp`,
+          { name: form.name, email: form.email },
+          { withCredentials: true }
+        );
+        toast.success("OTP sent to your email address.", { style: { zIndex: 9999 } });
+      } else {
+        await axios.post(
+          `${API}/api/v1/students/register/send-otp`,
+          { name: form.name, phone: form.phone },
+          { withCredentials: true }
+        );
+        toast.success("WhatsApp OTP sent to your mobile number.", { style: { zIndex: 9999 } });
+      }
       setRegisterOtpSent(true);
-      toast.success("WhatsApp OTP sent to your mobile number.", {
-        style: {
-          zIndex: 9999,
-        },
-      });
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to send WhatsApp OTP", {
-        style: {
-          zIndex: 9999,
-        },
-      });
+      toast.error(err?.response?.data?.message || "Failed to send OTP", { style: { zIndex: 9999 } });
     } finally {
       setSendingRegisterOtp(false);
     }
@@ -337,39 +350,59 @@ export default function StudentRegisterForm() {
             {mode === "register" && (
               <form onSubmit={handleRegister} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Input label="Full Name" name="name" value={form.name} onChange={handleChange} />
+
+                <div className="sm:col-span-2">
+                  <Input label="Phone" name="phone" type="tel" value={form.phone} onChange={handleChange} />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} />
+                </div>
+
                 <div className="sm:col-span-2">
                   <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
-                    Phone
+                    Verify via
                   </label>
-                  <div className="flex flex-col gap-2">
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={form.phone}
-                      onChange={handleChange}
-                      autoComplete="off"
-                      placeholder="Phone"
-                      className="h-12 min-w-0 flex-1 rounded-xl border border-slate-300 px-4 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
-                    />
+                  <div className="inline-flex rounded-xl bg-slate-100 p-1 text-sm mb-2">
                     <button
                       type="button"
-                      onClick={handleSendRegisterOtp}
-                      disabled={sendingRegisterOtp}
-                      className="h-11 w-full rounded-xl border border-emerald-600 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
+                      onClick={() => { setOtpMethod("whatsapp"); setRegisterOtpSent(false); setRegisterOtp(""); }}
+                      className={`rounded-lg px-4 py-1.5 transition ${otpMethod === "whatsapp" ? "bg-white font-semibold text-emerald-700 shadow-sm" : "text-slate-600"}`}
                     >
-                      {sendingRegisterOtp
-                        ? "Sending..."
-                        : registerOtpSent
-                        ? "Resend OTP"
-                        : "Send WhatsApp OTP"}
+                      WhatsApp OTP
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setOtpMethod("email"); setRegisterOtpSent(false); setRegisterOtp(""); }}
+                      className={`rounded-lg px-4 py-1.5 transition ${otpMethod === "email" ? "bg-white font-semibold text-emerald-700 shadow-sm" : "text-slate-600"}`}
+                    >
+                      Email OTP
                     </button>
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">We’ll send the OTP on WhatsApp to this number.</p>
+                  <button
+                    type="button"
+                    onClick={handleSendRegisterOtp}
+                    disabled={sendingRegisterOtp}
+                    className="h-11 w-full rounded-xl border border-emerald-600 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {sendingRegisterOtp
+                      ? "Sending..."
+                      : registerOtpSent
+                      ? "Resend OTP"
+                      : otpMethod === "email"
+                      ? "Send Email OTP"
+                      : "Send WhatsApp OTP"}
+                  </button>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {otpMethod === "email"
+                      ? "OTP will be sent to your email address."
+                      : "OTP will be sent to your WhatsApp number."}
+                  </p>
                 </div>
 
                 <div className="sm:col-span-2">
                   <Input
-                    label="WhatsApp OTP"
+                    label="OTP"
                     value={registerOtp}
                     onChange={(e: any) => setRegisterOtp(e.target.value)}
                   />
@@ -393,10 +426,6 @@ export default function StudentRegisterForm() {
                     aria-label="Center selection"
                     styles={compactSelectStyles}
                   />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <Input label="Email" name="email" type="email" value={form.email} onChange={handleChange} />
                 </div>
 
                 <div className="sm:col-span-2">
