@@ -134,6 +134,8 @@ export default function CourseTab() {
   const [expandedChapterKeys, setExpandedChapterKeys] = useState({});
   const [, setBatchClockTick] = useState(0);
   const [courseLiveData, setCourseLiveData] = useState({}); // { [courseId]: { sessions: [], classes: [], loading: false } }
+  const [courseCaseStudies, setCourseCaseStudies] = useState({}); // { [courseId]: CaseStudy[] }
+  const [courseCaseStudiesLoading, setCourseCaseStudiesLoading] = useState({});
   const router = useRouter();
   const searchParams = useSearchParams();
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -507,6 +509,29 @@ export default function CourseTab() {
     }
   };
 
+  // Fetch all case studies for a course by collecting them across all chapters
+  const fetchCaseStudiesForCourse = async (courseId) => {
+    if (courseCaseStudies[courseId] || courseCaseStudiesLoading[courseId]) return;
+    setCourseCaseStudiesLoading((prev) => ({ ...prev, [courseId]: true }));
+    try {
+      const chaptersRes = await axios.get(`${API}/api/chapters/course/${courseId}`);
+      const chapters = chaptersRes.data?.chapters || [];
+      const results = await Promise.all(
+        chapters.map((ch) =>
+          axios
+            .get(`${API}/api/case-studies/chapter/${ch._id}`)
+            .then((r) => (r.data?.success ? (r.data?.data || []).map((cs) => ({ ...cs, chapterTitle: ch.title })) : []))
+            .catch(() => [])
+        )
+      );
+      setCourseCaseStudies((prev) => ({ ...prev, [courseId]: results.flat() }));
+    } catch {
+      setCourseCaseStudies((prev) => ({ ...prev, [courseId]: [] }));
+    } finally {
+      setCourseCaseStudiesLoading((prev) => ({ ...prev, [courseId]: false }));
+    }
+  };
+
   // Handle detailed view toggle
   const handleDetailedToggle = (courseId) => {
     // Check if course is purchased before allowing detailed view
@@ -601,9 +626,9 @@ export default function CourseTab() {
       case "assignments":
         return "Assign";
       case "experiments":
-        return "Exp";
+        return "Simulations";
       case "tests":
-        return "Conf";
+        return "Case Studies";
       case "liveSchedule":
         return "Live Schedule";
       default:
@@ -1057,48 +1082,62 @@ export default function CourseTab() {
             )}
           </div>
         );
-      case "tests":
+      case "tests": {
+        const csList = courseCaseStudies[selectedCourse._id] || [];
+        const csLoading = courseCaseStudiesLoading[selectedCourse._id];
         return (
           <div className="space-y-3">
             <div className="mb-4">
-              <h3 className="text-lg font-semibold">Course Tests</h3>
+              <h3 className="text-lg font-semibold">Course Case Studies</h3>
             </div>
 
-            {selectedCourse.tests && selectedCourse.tests.length > 0 ? (
-              selectedCourse.tests.map((test, index) => (
+            {csLoading ? (
+              <div className="text-center py-8 text-gray-500">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-3" />
+                <p className="text-sm">Loading case studies...</p>
+              </div>
+            ) : csList.length > 0 ? (
+              csList.map((cs, index) => (
                 <div
-                  key={test._id || index}
-                  className="bg-gradient-to-r from-orange-50 to-amber-50 border border-orange-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
+                  key={cs._id || index}
+                  className="bg-gradient-to-r from-emerald-50 to-green-50 border border-emerald-200 rounded-lg p-4 hover:shadow-md transition-all duration-200"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                      <QuestionAnswer className="text-orange-600" />
+                    <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
+                      <Book className="text-emerald-600" />
                     </div>
-                    <div className="flex-1">
-                      <p className="font-semibold text-gray-800">
-                        {test.title || test.name}
-                      </p>
-                      {test.description && (
-                        <p className="text-sm text-gray-600">
-                          {test.description}
-                        </p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-800">{cs.title}</p>
+                      {cs.description && (
+                        <p className="text-sm text-gray-600 truncate">{cs.description}</p>
                       )}
-                      <p className="text-sm text-gray-600">Test {index + 1}</p>
+                      {cs.chapterTitle && (
+                        <p className="text-xs text-emerald-600 mt-0.5">Chapter: {cs.chapterTitle}</p>
+                      )}
                     </div>
-                    <span className="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm font-medium">
-                      {test.status || "Coming Soon"}
-                    </span>
+                    <div className="flex gap-1 shrink-0 flex-wrap justify-end">
+                      {cs.tasks?.length > 0 && (
+                        <span className="px-2 py-0.5 bg-pink-100 text-pink-700 rounded-full text-xs font-medium">{cs.tasks.length} tasks</span>
+                      )}
+                      {cs.simulations?.length > 0 && (
+                        <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">{cs.simulations.length} sims</span>
+                      )}
+                      {cs.questionSets?.length > 0 && (
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">{cs.questionSets.length} Q&A</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <QuestionAnswer className="mx-auto mb-4 text-4xl text-gray-300" />
-                <p>No tests available for this course.</p>
+                <Book className="mx-auto mb-4 text-4xl text-gray-300" />
+                <p>No case studies available for this course.</p>
               </div>
             )}
           </div>
         );
+      }
       default:
         return null;
     }
@@ -1464,7 +1503,12 @@ export default function CourseTab() {
                         ].map((tab) => (
                           <div
                             key={tab}
-                            onClick={() => setActiveTab(tab)}
+                            onClick={() => {
+                              setActiveTab(tab);
+                              if (tab === "tests" && selectedCourse?._id) {
+                                fetchCaseStudiesForCourse(selectedCourse._id);
+                              }
+                            }}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors min-w-[110px] justify-center border text-sm font-medium ${
                               activeTab === tab
                                 ? "bg-blue-600 text-white border-blue-600"
