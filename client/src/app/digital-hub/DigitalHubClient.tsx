@@ -3959,7 +3959,7 @@ export default function DigitalHubClient({
                                   )}
                                 </div>
                                 <span className="font-medium">
-                                  Assessment {index + 1}
+                                  Assignment {index + 1}
                                 </span>
                                 {selectedChapter?.completedAssignmentIds?.includes(
                                   assignment._id
