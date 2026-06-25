@@ -3807,7 +3807,7 @@ export default function DigitalHubClient({
                         Simulations
                       </h3>
                       {caseStudies.map((caseStudy: CaseStudy, index) => {
-                        const isLocked = !allTopicsCompleted;
+                        const isLocked = !digitalHubAccessOverride && !allTopicsCompleted;
                         return (
                           <button
                             key={caseStudy._id}
@@ -3862,7 +3862,7 @@ export default function DigitalHubClient({
                         Case Studies
                       </h3>
                       {caseStudies.map((caseStudy: CaseStudy, index) => {
-                        const isLocked = !allTopicsCompleted;
+                        const isLocked = !digitalHubAccessOverride && !allTopicsCompleted;
                         return (
                           <button
                             key={caseStudy._id}
@@ -3919,7 +3919,7 @@ export default function DigitalHubClient({
                       {assignments
                         .slice(0, 2)
                         .map((assignment: Assignment, index) => {
-                          const isLocked = !allTopicsCompleted;
+                          const isLocked = !digitalHubAccessOverride && !allTopicsCompleted;
 
                           return (
                             <button
