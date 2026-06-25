@@ -4504,9 +4504,6 @@ export default function DigitalHubClient({
                     {/* Tasks */}
                     {selectedCaseStudy.tasks && selectedCaseStudy.tasks.length > 0 && (
                       <div className="mb-8">
-                        <h3 className="text-xl font-semibold text-emerald-800 mb-4">
-                          Tasks ({selectedCaseStudy.tasks.length})
-                        </h3>
                         <div className="space-y-4">
                           {selectedCaseStudy.tasks.map((task, index) => (
                             <div key={task._id || index} className="p-6 bg-emerald-50 border border-emerald-200 rounded-lg">
@@ -4523,9 +4520,6 @@ export default function DigitalHubClient({
                     {/* Content */}
                     {selectedCaseStudy.content && selectedCaseStudy.content.length > 0 && (
                       <div className="mb-8">
-                        <h3 className="text-xl font-semibold text-emerald-800 mb-4">
-                          Content ({selectedCaseStudy.content.length})
-                        </h3>
                         <div className="space-y-4">
                           {selectedCaseStudy.content.map((content, index) => (
                             <div key={content._id || index} className="p-6 bg-stone-50 border border-stone-200 rounded-lg">
