@@ -342,6 +342,7 @@ const NAVIGATION_GROUPS = [
       { id: "faq", label: "FAQ", icon: <FaUserTie /> },
       { id: "brochure", label: "Manage Brochure", icon: <FaFileAlt /> },
       { id: "about-us", label: "About Us Section", icon: <FaBook /> },
+      { id: "join-live-section", label: "Join Live Section", icon: <FaLayerGroup /> },
       { id: "our-partners", label: "Our Partners", icon: <FaUsers /> },
       {
         id: "about-us-section",
@@ -376,7 +377,6 @@ const NAVIGATION_GROUPS = [
       },
       { id: "alert", label: "Alert", icon: <FaBell /> },
       { id: "demo-digital-hub", label: "Demo Digital Hub", icon: <FaBook /> },
-      { id: "join-live-section", label: "Join Live Section", icon: <FaLayerGroup /> },
       {
         id: "center-location",
         label: "Center Locations",
