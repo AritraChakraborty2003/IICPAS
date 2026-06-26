@@ -44,11 +44,6 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function LiveClassSection() {
   const router = useRouter();
-  const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
-  const [settings, setSettings] = useState<JoinLiveSectionSettings | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // Fallback static data for instant loading
   const fallbackSessions: LiveSession[] = [
     {
       _id: "1",
@@ -78,6 +73,9 @@ export default function LiveClassSection() {
       status: "active",
     },
   ];
+
+  const [liveSessions, setLiveSessions] = useState<LiveSession[]>(fallbackSessions);
+  const [settings, setSettings] = useState<JoinLiveSectionSettings | null>(null);
 
   useEffect(() => {
     fetchLiveSessions();
@@ -129,10 +127,6 @@ export default function LiveClassSection() {
       }
     } catch (error) {
       console.error("Error fetching live sessions:", error);
-      // Use fallback data if API fails
-      setLiveSessions(fallbackSessions);
-    } finally {
-      setLoading(false);
     }
   };
 

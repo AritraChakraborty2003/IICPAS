@@ -72,16 +72,6 @@ export default function YellowStatsStrip() {
     return iconMap[iconName] || FaGraduationCap;
   };
 
-  if (loading) {
-    return (
-      <section className="relative py-16 px-6 overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className={`relative ${yellowStatsStripData.colors.background} py-16 px-6 overflow-hidden`}>
       {/* Lightweight Background Elements */}
