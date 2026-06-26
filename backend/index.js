@@ -253,7 +253,9 @@ app.use("/api/v1/website/faq", faqRoutes);
 
 //Demo Digital Hub Routes
 import demoDigitalHubRoutes from "./routes/WebsiteRoutes/demoDigitalHubRoutes.js";
+import joinLiveSectionRoutes from "./routes/WebsiteRoutes/joinLiveSectionRoutes.js";
 app.use("/api/v1/website/demo-digital-hub", demoDigitalHubRoutes);
+app.use("/api/join-live-section", joinLiveSectionRoutes);
 
 //Ticket Routes
 app.use("/api/tickets", ticketRoutes);
