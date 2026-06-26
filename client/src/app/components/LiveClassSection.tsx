@@ -27,11 +27,25 @@ interface LiveSession {
   thumbnail?: string;
 }
 
+interface JoinLiveSectionSettings {
+  badgeText: string;
+  title: string;
+  titleHighlight: string;
+  description: string;
+  liveTagText: string;
+  buttonText: string;
+  image: {
+    url: string;
+    alt: string;
+  };
+}
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function LiveClassSection() {
   const router = useRouter();
   const [liveSessions, setLiveSessions] = useState<LiveSession[]>([]);
+  const [settings, setSettings] = useState<JoinLiveSectionSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   // Fallback static data for instant loading
@@ -67,7 +81,37 @@ export default function LiveClassSection() {
 
   useEffect(() => {
     fetchLiveSessions();
+    fetchSettings();
   }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/join-live-section`);
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data);
+      }
+    } catch (error) {
+      console.error("Error fetching join live settings:", error);
+    }
+  };
+
+  const getImageUrl = (url?: string) => {
+    if (!url) return "/images/live-class.jpg";
+    if (url.startsWith("http")) return url;
+    if (url.startsWith("/uploads/")) return `${API_URL}${url}`;
+    return url;
+  };
+
+  const currentSettings = settings || {
+    badgeText: "🎓 Join Live",
+    title: "Join Our Live Class, \nStart Your Online",
+    titleHighlight: "Journey",
+    description: "Experience interactive learning with our expert instructors in real-time sessions",
+    liveTagText: "LIVE · 01:30:56",
+    buttonText: "Join Live Class Now",
+    image: { url: "/images/live-class.jpg", alt: "Live Class Student" }
+  };
 
   const fetchLiveSessions = async () => {
     try {
@@ -165,32 +209,31 @@ export default function LiveClassSection() {
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-12 h-1 bg-gradient-to-r from-green-500 to-blue-500 rounded-full"></div>
                 <span className="text-green-600 font-bold text-lg uppercase tracking-wider flex items-center gap-2">
-                  🎓 Join Live
+                  {currentSettings.badgeText}
                 </span>
                 <div className="w-12 h-1 bg-gradient-to-r from-blue-500 to-green-500 rounded-full"></div>
               </div>
             </motion.div>
 
             <motion.h2
-              className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-6"
+              className="text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-6 whitespace-pre-wrap"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.02, delay: 0.01 }}
             >
-              Join Our Live Class, <br /> Start Your Online{" "}
+              {currentSettings.title}{" "}
               <span className="bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
-                Journey
+                {currentSettings.titleHighlight}
               </span>
             </motion.h2>
 
             <motion.p
-              className="text-base text-gray-600 mb-6 leading-relaxed"
+              className="text-base text-gray-600 mb-6 leading-relaxed whitespace-pre-wrap"
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.02, delay: 0.01 }}
             >
-              Experience interactive learning with our expert instructors in
-              real-time sessions
+              {currentSettings.description}
             </motion.p>
 
             {/* Modern Course Cards */}
@@ -327,7 +370,7 @@ export default function LiveClassSection() {
                   }}
                 >
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  LIVE · 01:30:56
+                  {currentSettings.liveTagText}
                 </motion.div>
 
                 {/* Modern Image with 3D Effects */}
@@ -341,11 +384,10 @@ export default function LiveClassSection() {
                     delay: 0.01,
                   }}
                 >
-                  <Image
-                    src="/images/live-class.jpg"
-                    alt="Live Class Student"
-                    fill
-                    className="object-cover object-center"
+                  <img
+                    src={getImageUrl(currentSettings.image.url)}
+                    alt={currentSettings.image.alt}
+                    className="absolute inset-0 w-full h-full object-cover object-center"
                     style={{
                       transform:
                         "perspective(1000px) rotateX(2deg) rotateY(-2deg)",
@@ -442,7 +484,7 @@ export default function LiveClassSection() {
                 whileTap={{ scale: 0.95 }}
                 onClick={handleJoinLiveClick}
               >
-                Join Live Class Now
+                {currentSettings.buttonText}
                 <motion.div
                   animate={{ x: [0, 5, 0] }}
                   transition={{ duration: 1.5 }}
