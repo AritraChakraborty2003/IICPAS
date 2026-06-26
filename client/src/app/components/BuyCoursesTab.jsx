@@ -255,7 +255,7 @@ export default function BuyCoursesTab() {
     const fetchData = async () => {
       try {
         const [coursesResponse, categoriesResponse] = await Promise.allSettled([
-          axios.get(`${API_BASE}/api/courses`),
+          axios.get(`${API_BASE}/api/courses?lite=true`),
           axios.get(`${API_BASE}/categories`),
         ]);
 

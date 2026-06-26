@@ -143,7 +143,7 @@ export default function Header({
       );
       const wishlistIDs = wishlistRes.data.wishlist || [];
 
-      const allCourses = await axios.get(`${API}/api/courses`);
+      const allCourses = await axios.get(`${API}/api/courses?lite=true`);
       const courseList = allCourses.data.courses || allCourses.data;
 
       // Process cart courses using new cart structure

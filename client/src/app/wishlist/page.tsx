@@ -54,7 +54,7 @@ export default function WishlistPage() {
       );
       const wishlistIDs = wishlistRes.data.wishlist || [];
 
-      const allCourses = await axios.get(`${API}/api/courses`);
+      const allCourses = await axios.get(`${API}/api/courses?lite=true`);
       const courseList = allCourses.data.courses || allCourses.data;
 
       const filteredWishlistCourses = courseList.filter((c: Course) =>

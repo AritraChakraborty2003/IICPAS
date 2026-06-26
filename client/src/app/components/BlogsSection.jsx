@@ -65,14 +65,9 @@ export default function BlogSection() {
   useEffect(() => {
     async function fetchBlogs() {
       try {
-        const res = await axios.get(`${API_BASE}/blogs`, { timeout: 5000 });
+        const res = await axios.get(`${API_BASE}/blogs?status=active&limit=6`, { timeout: 5000 });
         const blogList = extractBlogs(res.data);
-        // Filter only blogs that have status === "active" and limit to 3
-        const activeBlogs = blogList.filter(
-          (blog) => blog.status === "active"
-        );
-        const blogsToRender =
-          activeBlogs.length > 0 ? activeBlogs : DUMMY_BLOGS;
+        const blogsToRender = blogList.length > 0 ? blogList : DUMMY_BLOGS;
         setBlogs(blogsToRender.slice(0, 3));
       } catch (error) {
         console.error("Error fetching blogs:", error);

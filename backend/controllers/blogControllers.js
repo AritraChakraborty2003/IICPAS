@@ -26,7 +26,11 @@ export const createBlog = async (req, res) => {
 // GET ALL BLOGS
 export const getBlogs = async (req, res) => {
   try {
-    const blogs = await Blog.find().sort({ createdAt: -1 });
+    const { status, limit } = req.query;
+    const filter = status ? { status } : {};
+    const query = Blog.find(filter).sort({ createdAt: -1 });
+    if (limit) query.limit(parseInt(limit, 10));
+    const blogs = await query;
     res.json(blogs);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -107,7 +107,7 @@ const Chatbot = () => {
 
     const fetchCourses = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/courses`);
+        const response = await fetch(`${API_BASE}/api/courses?lite=true`);
         if (!response.ok) return;
         const data = await response.json();
         const coursesList =

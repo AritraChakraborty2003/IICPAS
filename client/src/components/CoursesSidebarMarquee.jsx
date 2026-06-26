@@ -61,7 +61,7 @@ export default function CoursesSidebarMarquee() {
     const fetchCourses = async () => {
       try {
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/courses`
+          `${process.env.NEXT_PUBLIC_API_URL}/api/courses?lite=true`
         );
         const coursesData = Array.isArray(response.data)
           ? response.data
