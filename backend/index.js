@@ -231,9 +231,7 @@ app.use("/api/contact", contactLimiter, contactRoutes);
 //Footer Routes
 import footerRoutes from "./routes/WebsiteRoutes/footerRoutes.js";
 import aboutUsRoutes from "./routes/WebsiteRoutes/aboutUsRoutes.js";
-import newsletterSubscriptionsRoutes from "./routes/WebsiteRoutes/newsletterSubscriptionsRoutes.js";
 import centerLocationSectionRoutes from "./routes/WebsiteRoutes/centerLocationSectionRoutes.js";
-import courseCategoriesRoutes from "./routes/WebsiteRoutes/courseCategoriesRoutes.js";
 app.use("/api/footer", footerRoutes);
 app.use("/api/about-us", aboutUsRoutes);
 
