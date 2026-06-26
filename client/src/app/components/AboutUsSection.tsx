@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { getApiBase, getApiOrigin } from "@/lib/apiBase";
 
 type AboutData = {
   title: string;
@@ -58,23 +59,27 @@ export default function AboutUsSection() {
   useEffect(() => {
     const fetchAboutData = async () => {
       try {
-        const API_BASE =
-          process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
-        const response = await fetch(`${API_BASE}/about`, {
-          next: { revalidate: 600 },
-        });
+        const API_BASE = getApiBase();
+        const response = await fetch(`${API_BASE}/about`);
 
         if (!response.ok) return;
 
         const data = await response.json();
         setAboutData((prev) => ({ ...prev, ...data }));
-      } catch {
-        // Keep fallback content.
+      } catch (err) {
+        console.error("Error fetching about data:", err);
       }
     };
 
     fetchAboutData();
   }, []);
+
+  const getMediaUrl = (url?: string) => {
+    if (!url) return "";
+    if (url.startsWith("http")) return url;
+    if (url.startsWith("/uploads/")) return `${getApiOrigin()}${url}`;
+    return url;
+  };
 
   useEffect(() => {
     if (!sectionRef.current) return;
@@ -114,10 +119,10 @@ export default function AboutUsSection() {
                   playsInline
                   preload="none"
                   muted={aboutData.video?.muted !== false}
-                  poster={aboutData.video?.poster || "/images/video-poster.jpg"}
+                  poster={getMediaUrl(aboutData.video?.poster) || "/images/video-poster.jpg"}
                 >
                   <source
-                    src={aboutData.video?.url || "/videos/aboutus.mp4"}
+                    src={getMediaUrl(aboutData.video?.url) || "/videos/aboutus.mp4"}
                     type="video/mp4"
                   />
                   Your browser does not support the video tag.
@@ -125,7 +130,7 @@ export default function AboutUsSection() {
               ) : (
                 <div className="relative">
                   <img
-                    src={aboutData.video?.poster || "/images/video-poster.jpg"}
+                    src={getMediaUrl(aboutData.video?.poster) || "/images/video-poster.jpg"}
                     alt="About IICPA"
                     className="w-full h-auto"
                     loading="lazy"
