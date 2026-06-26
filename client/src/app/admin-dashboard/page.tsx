@@ -19,6 +19,7 @@ import CollegeTab from "./CollegeTab";
 import CalendarTab from "./CalendarTab";
 import AboutUsTab from "./AboutUsTab";
 import AboutUsSectionTab from "./AboutUsSectionTab";
+import JoinLiveSectionTab from "./JoinLiveSectionTab";
 import ContactTab from "./ContactTab";
 import FooterTab from "./FooterTab";
 import YellowStatsStripTab from "./YellowStatsStripTab";
@@ -375,6 +376,7 @@ const NAVIGATION_GROUPS = [
       },
       { id: "alert", label: "Alert", icon: <FaBell /> },
       { id: "demo-digital-hub", label: "Demo Digital Hub", icon: <FaBook /> },
+      { id: "join-live-section", label: "Join Live Section", icon: <FaLayerGroup /> },
       {
         id: "center-location",
         label: "Center Locations",
@@ -845,6 +847,8 @@ function AdminDashboardContent() {
           <AboutUsTab />
         ) : activeTab === "about-us-section" ? (
           <AboutUsSectionTab />
+        ) : activeTab === "join-live-section" ? (
+          <JoinLiveSectionTab />
         ) : activeTab === "contact" ? (
           <ContactTab />
         ) : activeTab === "footer" ? (
