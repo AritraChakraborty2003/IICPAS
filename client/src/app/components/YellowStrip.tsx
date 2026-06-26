@@ -43,30 +43,22 @@ export default function YellowStatsStrip() {
       background: "bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900"
     }
   });
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
+    const fetchYellowStatsStripData = async () => {
+      try {
+        const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
+        const response = await fetch(`${API_BASE}/yellow-stats-strip`);
+        if (response.ok) {
+          const data = await response.json();
+          setYellowStatsStripData(data);
+        }
+      } catch (error) {
+        console.error("Error fetching Yellow Stats Strip data:", error);
+      }
+    };
+
     fetchYellowStatsStripData();
   }, []);
-
-  const fetchYellowStatsStripData = async () => {
-    try {
-      const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
-      const response = await fetch(`${API_BASE}/yellow-stats-strip`);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Yellow Stats Strip data received:", data);
-        console.log("Number of statistics:", data.statistics?.length || 0);
-        setYellowStatsStripData(data);
-      } else {
-        console.error("Failed to fetch yellow stats strip data:", response.status);
-      }
-    } catch (error) {
-      console.error("Error fetching Yellow Stats Strip data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getIconComponent = (iconName: string) => {
     const iconMap: { [key: string]: React.ComponentType<{ className?: string }> } = {

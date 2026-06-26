@@ -59,41 +59,23 @@ export default function WhyIICPA() {
     },
   });
 
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const fetchWhyIICPAData = async () => {
       try {
         const API_BASE =
           process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8080/api";
         const response = await fetch(`${API_BASE}/why-iicpa`);
-
         if (response.ok) {
           const data = await response.json();
-          console.log("WhyIICPA data fetched:", data);
           setWhyIICPAData(data);
-        } else {
-          console.error("Failed to fetch WhyIICPA data");
         }
       } catch (error) {
         console.error("Error fetching WhyIICPA data:", error);
-      } finally {
-        setLoading(false);
       }
     };
 
     fetchWhyIICPAData();
   }, []);
-
-  if (loading) {
-    return (
-      <section className="relative py-12 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-400"></div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section
