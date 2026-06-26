@@ -231,6 +231,9 @@ app.use("/api/contact", contactLimiter, contactRoutes);
 //Footer Routes
 import footerRoutes from "./routes/WebsiteRoutes/footerRoutes.js";
 import aboutUsRoutes from "./routes/WebsiteRoutes/aboutUsRoutes.js";
+import newsletterSubscriptionsRoutes from "./routes/WebsiteRoutes/newsletterSubscriptionsRoutes.js";
+import centerLocationSectionRoutes from "./routes/WebsiteRoutes/centerLocationSectionRoutes.js";
+import courseCategoriesRoutes from "./routes/WebsiteRoutes/courseCategoriesRoutes.js";
 app.use("/api/footer", footerRoutes);
 app.use("/api/about-us", aboutUsRoutes);
 
@@ -254,10 +257,10 @@ app.use("/api/v1/website/faq", faqRoutes);
 //Demo Digital Hub Routes
 import demoDigitalHubRoutes from "./routes/WebsiteRoutes/demoDigitalHubRoutes.js";
 import joinLiveSectionRoutes from "./routes/WebsiteRoutes/joinLiveSectionRoutes.js";
-app.use("/api/v1/website/demo-digital-hub", demoDigitalHubRoutes);
+app.use("/api/demo-digital-hub", demoDigitalHubRoutes);
 app.use("/api/join-live-section", joinLiveSectionRoutes);
-
-//Ticket Routes
+app.use("/api/center-location-section", centerLocationSectionRoutes);
+app.use("/api/faq", faqRoutes);
 app.use("/api/tickets", ticketRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/quotations", quotationRoutes);

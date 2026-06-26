@@ -41,6 +41,15 @@ interface Center {
   description: string;
 }
 
+interface CenterLocationSettings {
+  badgeText: string;
+  titlePart1: string;
+  titleHighlight1: string;
+  titlePart2: string;
+  titleHighlight2: string;
+  description: string;
+}
+
 export default function SearchCenter() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
@@ -52,6 +61,29 @@ export default function SearchCenter() {
   const [partnerSettings, setPartnerSettings] = useState(
     DEFAULT_OUR_PARTNERS_SETTINGS
   );
+  const [settings, setSettings] = useState<CenterLocationSettings | null>(null);
+
+  // Fetch section text config
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/center-location-section`);
+        setSettings(response.data);
+      } catch (error) {
+        console.error("Error fetching center location config:", error);
+      }
+    };
+    fetchSettings();
+  }, []);
+
+  const currentSettings = settings || {
+    badgeText: "Find Your Nearest Center",
+    titlePart1: "Search & Book",
+    titleHighlight1: "Courses",
+    titlePart2: "at",
+    titleHighlight2: "IICPA Centers",
+    description: "Find the nearest IICPA center, explore available courses, and book your preferred training program with just a few clicks.",
+  };
 
   // Fetch centers from API
   useEffect(() => {
@@ -371,7 +403,7 @@ export default function SearchCenter() {
           >
             <div className="w-12 h-1 bg-gradient-to-r from-green-500 to-blue-500 rounded-full"></div>
             <span className="text-green-600 font-bold text-sm uppercase tracking-wider">
-              Find Your Nearest Center
+              {currentSettings.badgeText}
             </span>
             <div className="w-12 h-1 bg-gradient-to-r from-blue-500 to-green-500 rounded-full"></div>
           </motion.div>
@@ -382,26 +414,25 @@ export default function SearchCenter() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
           >
-            Search & Book
+            {currentSettings.titlePart1}
             <span className="bg-gradient-to-r from-green-500 to-blue-500 bg-clip-text text-transparent">
               {" "}
-              Courses
+              {currentSettings.titleHighlight1}
             </span>{" "}
-            at
+            {currentSettings.titlePart2}
             <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
               {" "}
-              IICPA Centers
+              {currentSettings.titleHighlight2}
             </span>
           </motion.h2>
 
           <motion.p
-            className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed"
+            className="text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed whitespace-pre-wrap"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
           >
-            Find the nearest IICPA center, explore available courses, and book
-            your preferred training program with just a few clicks.
+            {currentSettings.description}
           </motion.p>
         </motion.div>
 

@@ -34,6 +34,8 @@ import "react-modern-drawer/dist/index.css";
 import TopicsManager from "./Topic/TopicsManager";
 import GuidesTab from "./GuidesTab";
 import KitsTab from "./KitsTab";
+import CenterLocationTab from "./CenterLocationTab";
+import CenterLocationSectionTab from "./CenterLocationSectionTab";
 import SpecialOffersTab from "./SpecialOffers/SpecialOffersTab";
 
 import {
@@ -377,6 +379,7 @@ const NAVIGATION_GROUPS = [
       },
       { id: "alert", label: "Alert", icon: <FaBell /> },
       { id: "demo-digital-hub", label: "Demo Digital Hub", icon: <FaBook /> },
+      { id: "center-location-section", label: "Center Location Section Header", icon: <FaLayerGroup /> },
       {
         id: "center-location",
         label: "Center Locations",
@@ -847,6 +850,8 @@ function AdminDashboardContent() {
           <AboutUsTab />
         ) : activeTab === "about-us-section" ? (
           <AboutUsSectionTab />
+        ) : activeTab === "center-location-section" ? (
+          <CenterLocationSectionTab />
         ) : activeTab === "join-live-section" ? (
           <JoinLiveSectionTab />
         ) : activeTab === "contact" ? (
@@ -938,14 +943,7 @@ function AdminDashboardContent() {
         ) : activeTab === "course-ratings" ? (
           <CourseRatingApprovalTab />
         ) : activeTab === "center-location" ? (
-          <div className="bg-white rounded-lg p-6">
-            <h2 className="text-xl font-bold mb-4">
-              Center Location Management
-            </h2>
-            <p className="text-gray-600">
-              Center location management functionality will be implemented here.
-            </p>
-          </div>
+          <CenterLocationTab />
         ) : activeTab === "special-offers" ? (
           <SpecialOffersTab onBack={handleBack} />
         ) : activeTab === "messages" ? (
