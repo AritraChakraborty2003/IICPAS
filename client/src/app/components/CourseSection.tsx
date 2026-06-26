@@ -151,6 +151,7 @@ const CourseSection = memo(function CourseSection() {
   const router = useRouter();
 
   const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
   const [student, setStudent] = useState<any>(null);
 
   useEffect(() => {
@@ -159,7 +160,7 @@ const CourseSection = memo(function CourseSection() {
         const API_BASE = getApiBase();
         const API_ORIGIN = getApiOrigin();
 
-        const response = await fetch(`${API_BASE}/courses`);
+        const response = await fetch(`${API_BASE}/courses?lite=true`);
 
         if (response.ok) {
           const data = await response.json();
@@ -205,6 +206,8 @@ const CourseSection = memo(function CourseSection() {
       } catch (error) {
         console.error("🔍 CourseSection - Error fetching courses:", error);
         setCourses(sampleCourses);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -271,6 +274,31 @@ const CourseSection = memo(function CourseSection() {
     });
   };
 
+  if (loading) {
+    return (
+      <section className="py-16 px-4 md:px-20 bg-[#f9fbfa] min-h-[600px]">
+        <div className="max-w-7xl mx-auto">
+          <div className="h-10 w-72 bg-gray-200 rounded-lg mx-auto mb-12 animate-pulse" />
+          <div className="flex gap-8 px-8 overflow-hidden">
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="bg-white rounded-lg shadow-lg overflow-hidden flex-shrink-0 w-[300px] animate-pulse"
+              >
+                <div className="h-48 bg-gray-200" />
+                <div className="p-6 space-y-3">
+                  <div className="h-5 bg-gray-200 rounded w-4/5" />
+                  <div className="h-4 bg-gray-200 rounded w-2/5" />
+                  <div className="h-10 bg-gray-200 rounded mt-4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="py-16 px-4 md:px-20 bg-[#f9fbfa] min-h-[600px]">
       <div className="max-w-7xl mx-auto">
@@ -310,6 +338,8 @@ const CourseSection = memo(function CourseSection() {
                   <img
                     src={course.image}
                     alt={course.title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-contain block"
                   />
                   <div className="absolute top-4 left-4">

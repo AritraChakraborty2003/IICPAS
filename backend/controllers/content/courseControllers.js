@@ -6,9 +6,18 @@ import Transaction from "../../models/Transaction.js";
 import { buildCourseAccessEntries } from "../../utils/courseAccess.js";
 
 export const getAllCourses = async (req, res) => {
-  const courses = await Course.find()
-    .sort({ position: 1, createdAt: 1 })
-    .populate({ path: "chapters", populate: POPULATE_TOPICS_WITH_LESSONS });
+  const lite = req.query.lite === "true";
+  const query = Course.find().sort({ position: 1, createdAt: 1 });
+
+  if (lite) {
+    query.select(
+      "_id title image price slug category discount status pricing createdAt position"
+    );
+  } else {
+    query.populate({ path: "chapters", populate: POPULATE_TOPICS_WITH_LESSONS });
+  }
+
+  const courses = await query;
   res.json(courses);
 };
 
