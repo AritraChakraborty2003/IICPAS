@@ -40,6 +40,17 @@ const simulationSchema = new mongoose.Schema({
   },
   title: String,
   description: String,
+  statement: String,
+  correctEntries: [
+    {
+      id: String,
+      date: String,
+      type: String,
+      particulars: String,
+      debit: String,
+      credit: String,
+    }
+  ],
   config: {
     accountTypes: [String],
     accountOptions: [String],

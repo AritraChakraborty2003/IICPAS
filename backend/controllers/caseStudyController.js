@@ -152,7 +152,7 @@ export const addContent = async (req, res) => {
 // Add simulation to case study
 export const addSimulation = async (req, res) => {
   try {
-    const { type, title, description, config, isOptional } = req.body;
+    const { type, title, description, statement, correctEntries, config, isOptional } = req.body;
     const caseStudy = await CaseStudy.findById(req.params.id);
 
     if (!caseStudy) {
@@ -165,6 +165,8 @@ export const addSimulation = async (req, res) => {
       type,
       title,
       description,
+      statement,
+      correctEntries,
       config,
       isOptional,
       order: caseStudy.simulations.length,
