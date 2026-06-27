@@ -45,7 +45,7 @@ const simulationSchema = new mongoose.Schema({
     {
       id: String,
       date: String,
-      type: String,
+      type: { type: String },
       particulars: String,
       debit: String,
       credit: String,
