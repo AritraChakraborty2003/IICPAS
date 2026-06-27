@@ -310,7 +310,7 @@ export const addContent = async (req, res) => {
 // Add simulation to assignment
 export const addSimulation = async (req, res) => {
   try {
-    const { type, title, description, config, isOptional } = req.body;
+    const { type, title, description, statement, correctEntries, config, isOptional } = req.body;
     const assignment = await Assignment.findById(req.params.id);
 
     if (!assignment) {
@@ -323,6 +323,8 @@ export const addSimulation = async (req, res) => {
       type,
       title,
       description,
+      statement,
+      correctEntries,
       config,
       isOptional,
       order: assignment.simulations.length,
