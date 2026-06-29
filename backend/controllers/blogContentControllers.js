@@ -122,3 +122,49 @@ export const deleteBlogContent = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
+
+// @desc    Create a single blog content
+// @route   POST /api/blog-content/single
+// @access  Private (API Key)
+export const createSingleBlogContent = async (req, res) => {
+  try {
+    const { name, ref, topic, date, category, year, status } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ success: false, message: "Please provide a name" });
+    }
+
+    const blogContent = await BlogContent.create({
+      name,
+      ref,
+      topic,
+      date,
+      category,
+      year,
+      status: status || "unpublished",
+    });
+
+    res.status(201).json({ success: true, data: blogContent });
+  } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ success: false, message: "Blog content with this name already exists" });
+    }
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};
+
+// @desc    Delete all blog contents
+// @route   DELETE /api/blog-content/delete-all
+// @access  Private (API Key)
+export const deleteAllBlogContents = async (req, res) => {
+  try {
+    const result = await BlogContent.deleteMany({});
+    res.status(200).json({ 
+      success: true, 
+      message: "All blog contents deleted successfully", 
+      deletedCount: result.deletedCount 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};

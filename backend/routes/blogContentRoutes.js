@@ -6,6 +6,8 @@ import {
   uploadBlogContent,
   updateBlogContent,
   deleteBlogContent,
+  createSingleBlogContent,
+  deleteAllBlogContents,
 } from "../controllers/blogContentControllers.js";
 
 const router = express.Router();
@@ -27,6 +29,10 @@ router.use(apiKeyMiddleware);
 router.route("/")
   .get(getBlogContents)
   .post(upload.single("file"), uploadBlogContent);
+
+// Note: Put specific routes before the /:name param route
+router.post("/single", createSingleBlogContent);
+router.delete("/delete-all", deleteAllBlogContents);
 
 router.route("/:name")
   .patch(updateBlogContent)
