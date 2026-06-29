@@ -234,6 +234,7 @@ export default function AccountingExperimentCard({
       if (!correctEntry) return false;
 
       return (
+        entry.date === correctEntry.date &&
         entry.type === correctEntry.type &&
         entry.particulars === correctEntry.particulars &&
         entry.debit === correctEntry.debit &&
@@ -427,24 +428,16 @@ export default function AccountingExperimentCard({
                 {entries.map((entry, index) => (
                   <tr key={entry.id} className="hover:bg-gray-50">
                     <td className="border border-gray-200 px-4 py-3">
-                      {index === 0 ? (
-                        // First row - editable date input
-                        <div className="relative">
-                          <input
-                            type="date"
-                            value={formatDateForInput(entry.date)}
-                            onChange={(e) =>
-                              updateEntry(entry.id, "date", formatDateForStorage(e.target.value))
-                            }
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                          />
-                        </div>
-                      ) : (
-                        // Subsequent rows - no date field
-                        <div className="text-gray-400 text-sm italic">
-                          Same date
-                        </div>
-                      )}
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={formatDateForInput(entry.date)}
+                          onChange={(e) =>
+                            updateEntry(entry.id, "date", formatDateForStorage(e.target.value))
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                        />
+                      </div>
                     </td>
                     <td className="border border-gray-200 px-4 py-3">
                       <select
