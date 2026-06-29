@@ -10,6 +10,28 @@ import {
   Play,
 } from "lucide-react";
 
+const formatDateForInput = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes("/")) {
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    }
+  }
+  return dateStr;
+};
+
+const formatDateForStorage = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes("-")) {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+  }
+  return dateStr;
+};
+
 interface JournalEntry {
   id: string;
   date: string;
@@ -111,11 +133,20 @@ export default function AccountingExperimentCard({
   const validateEntries = () => {
     // Extract date from problem statement
     const extractDateFromStatement = (statement: string) => {
+      // First try DD/MM/YYYY format
+      const ddMMyyyyMatch = statement.match(/(?:Date:\s*)?(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+      if (ddMMyyyyMatch) {
+        const day = ddMMyyyyMatch[1].padStart(2, "0");
+        const month = ddMMyyyyMatch[2].padStart(2, "0");
+        const year = ddMMyyyyMatch[3];
+        return `${day}/${month}/${year}`;
+      }
+
       const dateMatch = statement.match(
         /(\d+)(?:st|nd|rd|th)?\s+(January|February|March|April|May|June|July|August|September|October|November|December)/i
       );
       if (dateMatch) {
-        const day = dateMatch[1];
+        const day = dateMatch[1].padStart(2, "0");
         const month = dateMatch[2];
         const monthMap: { [key: string]: string } = {
           january: "01",
@@ -400,15 +431,13 @@ export default function AccountingExperimentCard({
                         // First row - editable date input
                         <div className="relative">
                           <input
-                            type="text"
-                            placeholder="dd/mm/yyyy"
-                            value={entry.date}
+                            type="date"
+                            value={formatDateForInput(entry.date)}
                             onChange={(e) =>
-                              updateEntry(entry.id, "date", e.target.value)
+                              updateEntry(entry.id, "date", formatDateForStorage(e.target.value))
                             }
                             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
                           />
-                          <Calendar className="absolute right-2 top-2.5 w-4 h-4 text-gray-400" />
                         </div>
                       ) : (
                         // Subsequent rows - no date field

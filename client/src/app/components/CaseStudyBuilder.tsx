@@ -8,6 +8,28 @@ import { getApiBase } from "../../lib/apiBase";
 const STATIC_CDN_BASE =
   process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
 
+const formatDateForInput = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes("/")) {
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    }
+  }
+  return dateStr;
+};
+
+const formatDateForStorage = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes("-")) {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+  }
+  return dateStr;
+};
+
 interface CaseStudyBuilderProps {
   chapterId: string;
   chapterName: string;
@@ -1079,16 +1101,15 @@ export default function CaseStudyBuilder({
                                   className="grid grid-cols-5 gap-2 p-3 border border-gray-200 rounded"
                                 >
                                   <input
-                                    type="text"
-                                    placeholder="Date"
-                                    value={entry.date}
+                                    type="date"
+                                    value={formatDateForInput(entry.date)}
                                     onChange={(e) => {
                                       const updatedEntries = [
                                         ...(sim.correctEntries || []),
                                       ];
                                       updatedEntries[entryIndex] = {
                                         ...entry,
-                                        date: e.target.value,
+                                        date: formatDateForStorage(e.target.value),
                                       };
                                       updateSimulation(
                                         sim.id,

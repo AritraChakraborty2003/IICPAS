@@ -9,6 +9,28 @@ import { getApiBase } from "../../lib/apiBase";
 const STATIC_CDN_BASE =
   process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
 
+const formatDateForInput = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes("/")) {
+    const parts = dateStr.split("/");
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+    }
+  }
+  return dateStr;
+};
+
+const formatDateForStorage = (dateStr: string) => {
+  if (!dateStr) return "";
+  if (dateStr.includes("-")) {
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+  }
+  return dateStr;
+};
+
 const API_BASE = getApiBase();
 
 interface AssignmentBuilderProps {
@@ -1133,14 +1155,13 @@ export default function AssignmentBuilder({
                                 </div>
                                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                                   <input
-                                    type="text"
-                                    placeholder="Date"
-                                    value={entry.date}
+                                    type="date"
+                                    value={formatDateForInput(entry.date)}
                                     onChange={(e) => {
                                       const updatedEntries =
                                         sim.correctEntries?.map((ent) =>
                                           ent.id === entry.id
-                                            ? { ...ent, date: e.target.value }
+                                            ? { ...ent, date: formatDateForStorage(e.target.value) }
                                             : ent
                                         ) || [];
                                       updateSimulation(
