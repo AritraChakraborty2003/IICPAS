@@ -331,12 +331,12 @@ export default function AccountingExperimentCard({
                     </td>
                     <td className="border border-gray-200 px-4 py-3">
                       <div className="space-y-2">
-                        <select
+                        <input
+                          type="text"
                           disabled
+                          placeholder="Select or enter Account"
                           className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-                        >
-                          <option value="">Select Account</option>
-                        </select>
+                        />
                         <input
                           type="text"
                           placeholder="Type narration here"
@@ -464,20 +464,21 @@ export default function AccountingExperimentCard({
                     </td>
                     <td className="border border-gray-200 px-4 py-3">
                       <div className="space-y-2">
-                        <select
+                        <input
+                          type="text"
+                          list={`account-options-${entry.id}`}
+                          placeholder="Select or enter Account"
                           value={entry.particulars}
                           onChange={(e) =>
                             updateEntry(entry.id, "particulars", e.target.value)
                           }
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                        >
-                          <option value="">Select Account</option>
+                        />
+                        <datalist id={`account-options-${entry.id}`}>
                           {accountOptions.map((account) => (
-                            <option key={account} value={account}>
-                              {account}
-                            </option>
+                            <option key={account} value={account} />
                           ))}
-                        </select>
+                        </datalist>
                         <input
                           type="text"
                           placeholder="Type narration here"
@@ -520,21 +521,26 @@ export default function AccountingExperimentCard({
                       />
                     </td>
                     <td className="border border-gray-200 px-4 py-3">
-                      {entries.length > 1 ? (
-                        <button
-                          onClick={() => removeRow(entry.id)}
-                          className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={addRow}
-                          className="bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 transition-colors"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      )}
+                      <div className="flex space-x-2">
+                        {entries.length > 1 && (
+                          <button
+                            onClick={() => removeRow(entry.id)}
+                            className="bg-red-500 text-white px-3 py-2 rounded-md hover:bg-red-600 transition-colors"
+                            title="Remove Row"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {index === entries.length - 1 && (
+                          <button
+                            onClick={addRow}
+                            className="bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 transition-colors"
+                            title="Add Row"
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
