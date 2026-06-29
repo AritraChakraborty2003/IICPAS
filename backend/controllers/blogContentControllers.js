@@ -168,3 +168,20 @@ export const deleteAllBlogContents = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
+
+// @desc    Get the first unpublished blog content
+// @route   GET /api/blog-content/first-unpublished
+// @access  Private (API Key)
+export const getFirstUnpublishedBlogContent = async (req, res) => {
+  try {
+    const blogContent = await BlogContent.findOne({ status: "unpublished" }).sort({ createdAt: 1 });
+    
+    if (!blogContent) {
+      return res.status(404).json({ success: false, message: "No unpublished blog content found" });
+    }
+
+    res.status(200).json({ success: true, data: blogContent });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};

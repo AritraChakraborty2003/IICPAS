@@ -8,6 +8,7 @@ import {
   deleteBlogContent,
   createSingleBlogContent,
   deleteAllBlogContents,
+  getFirstUnpublishedBlogContent,
 } from "../controllers/blogContentControllers.js";
 
 const router = express.Router();
@@ -33,6 +34,7 @@ router.route("/")
 // Note: Put specific routes before the /:name param route
 router.post("/single", createSingleBlogContent);
 router.delete("/delete-all", deleteAllBlogContents);
+router.get("/first-unpublished", getFirstUnpublishedBlogContent);
 
 router.route("/:name")
   .patch(updateBlogContent)
