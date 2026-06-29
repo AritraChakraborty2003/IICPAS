@@ -436,7 +436,7 @@ export default function Header({
   };
 
   const handleNavClick = (e, href) => {
-    if (href === "/") return;
+    if (href === "/" || href === "/blogs" || href?.startsWith("/blogs/")) return;
 
     const isWhatsAppVerified = typeof window !== "undefined" && window.sessionStorage.getItem("iicpa_whatsapp_verified") === "true";
     const loggedIn = isAdmin || student || isWhatsAppVerified;
