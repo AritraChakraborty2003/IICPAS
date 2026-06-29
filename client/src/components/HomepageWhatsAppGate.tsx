@@ -161,6 +161,7 @@ export default function HomepageWhatsAppGate() {
       "/register",
       "/simulations",
       "/live-session",
+      "/blogs",
     ];
 
     const isExempted = EXEMPTED_PATHS.some(
