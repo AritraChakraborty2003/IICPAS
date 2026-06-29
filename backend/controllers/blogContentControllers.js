@@ -1,5 +1,6 @@
 import fs from "fs";
 import csv from "csv-parser";
+import mongoose from "mongoose";
 import BlogContent from "../models/BlogContent.js";
 
 // @desc    Get all blog contents
@@ -86,16 +87,20 @@ export const uploadBlogContent = (req, res) => {
 // @access  Private (API Key)
 export const updateBlogContent = async (req, res) => {
   try {
-    const { name } = req.params;
+    const { name: identifier } = req.params;
     
+    const query = mongoose.Types.ObjectId.isValid(identifier) 
+      ? { $or: [{ _id: identifier }, { name: identifier }] }
+      : { name: identifier };
+
     const blogContent = await BlogContent.findOneAndUpdate(
-      { name },
+      query,
       req.body,
       { new: true, runValidators: true }
     );
 
     if (!blogContent) {
-      return res.status(404).json({ success: false, message: `No blog content found with name ${name}` });
+      return res.status(404).json({ success: false, message: `No blog content found with identifier ${identifier}` });
     }
 
     res.status(200).json({ success: true, data: blogContent });
@@ -109,12 +114,16 @@ export const updateBlogContent = async (req, res) => {
 // @access  Private (API Key)
 export const deleteBlogContent = async (req, res) => {
   try {
-    const { name } = req.params;
+    const { name: identifier } = req.params;
 
-    const blogContent = await BlogContent.findOneAndDelete({ name });
+    const query = mongoose.Types.ObjectId.isValid(identifier) 
+      ? { $or: [{ _id: identifier }, { name: identifier }] }
+      : { name: identifier };
+
+    const blogContent = await BlogContent.findOneAndDelete(query);
 
     if (!blogContent) {
-      return res.status(404).json({ success: false, message: `No blog content found with name ${name}` });
+      return res.status(404).json({ success: false, message: `No blog content found with identifier ${identifier}` });
     }
 
     res.status(200).json({ success: true, message: "Blog content deleted successfully", data: {} });
