@@ -246,7 +246,7 @@ export default function BlogDetailClient({ blog, allBlogs }) {
       <Header topOffset={40} />
       <section className="relative bg-gradient-to-b from-slate-50 via-white to-slate-100">
         <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.12),transparent_40%),radial-gradient(circle_at_top_left,rgba(34,197,94,0.1),transparent_35%)]" />
-        <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 md:px-8 pt-24 sm:pt-28 md:pt-32 pb-16">
+        <div className="relative max-w-[1500px] mx-auto px-4 sm:px-6 md:px-8 pt-24 sm:pt-28 md:pt-32 pb-16">
           <div className="flex items-center gap-2 text-sm text-slate-500 mb-6">
             <Link href="/" className="hover:text-emerald-600 transition">
               Home
