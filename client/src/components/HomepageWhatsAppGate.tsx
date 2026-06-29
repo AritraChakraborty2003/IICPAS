@@ -450,7 +450,7 @@ export default function HomepageWhatsAppGate() {
         initial={{ opacity: 0, scale: 0.95, y: 18 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.22, ease: "easeOut" }}
-        className="relative w-[92vw] max-w-[620px] overflow-hidden rounded-[28px] border border-white/15 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)]"
+        className={`relative w-[92vw] max-w-[620px] overflow-hidden rounded-[28px] border border-white/15 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.35)] ${pathname.startsWith("/blogs") ? "font-sans" : ""}`}
       >
         {showQuickAuth && (
           <button
