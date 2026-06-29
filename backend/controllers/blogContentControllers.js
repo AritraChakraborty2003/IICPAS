@@ -194,3 +194,29 @@ export const getFirstUnpublishedBlogContent = async (req, res) => {
     res.status(500).json({ success: false, message: "Server Error", error: error.message });
   }
 };
+
+// @desc    Toggle blog content status
+// @route   PATCH /api/blog-content/:name/toggle-status
+// @access  Private (API Key)
+export const toggleBlogContentStatus = async (req, res) => {
+  try {
+    const { name: identifier } = req.params;
+
+    const query = mongoose.Types.ObjectId.isValid(identifier) 
+      ? { $or: [{ _id: identifier }, { name: identifier }] }
+      : { name: identifier };
+
+    const blogContent = await BlogContent.findOne(query);
+
+    if (!blogContent) {
+      return res.status(404).json({ success: false, message: `No blog content found with identifier ${identifier}` });
+    }
+
+    blogContent.status = blogContent.status === "published" ? "unpublished" : "published";
+    await blogContent.save();
+
+    res.status(200).json({ success: true, status: blogContent.status, data: blogContent });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Server Error", error: error.message });
+  }
+};

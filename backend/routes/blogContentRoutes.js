@@ -9,6 +9,7 @@ import {
   createSingleBlogContent,
   deleteAllBlogContents,
   getFirstUnpublishedBlogContent,
+  toggleBlogContentStatus,
 } from "../controllers/blogContentControllers.js";
 
 const router = express.Router();
@@ -39,5 +40,7 @@ router.get("/first-unpublished", getFirstUnpublishedBlogContent);
 router.route("/:name")
   .patch(updateBlogContent)
   .delete(deleteBlogContent);
+
+router.patch("/:name/toggle-status", toggleBlogContentStatus);
 
 export default router;
