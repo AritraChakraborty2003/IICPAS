@@ -177,6 +177,7 @@ app.use("/api/contact-old", contactLimiter, contactRoutesOld);
 app.use("/api/companies", companyRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/blog-content", blogContentRoutes);
+app.use("/blog-content", blogContentRoutes); // Added for n8n compatibility
 app.use("/api/brochures", brochureRoutes);
 app.use("/api", alertRoutes);
 app.use("/api/news", newsRoutes);
