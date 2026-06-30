@@ -13,10 +13,22 @@ import {
   UserPlus2,
   ThumbsUp,
   RotateCcw,
+  Bell,
+  FileText,
+  Info,
+  ChevronDown,
+  LogOut,
+  Home as HomeIcon,
 } from "lucide-react";
 
 const LOGIN_USER = "APHYD1577313000";
 const LOGIN_PASS = "Epfo@123";
+
+const COMPANY_NAME = "IICPA Training Pvt Ltd";
+const COMPANY_LIN = "9778613527";
+const COMPANY_PAN = "BGRPA6026U";
+const COMPANY_ADDRESS =
+  "#258/1, 1st Floor, Demo Business Park, MG Road, Bengaluru, Karnataka 560001";
 
 // ─── Top simulation disclaimer ─────────────────────────────────────────────
 function SimBanner() {
