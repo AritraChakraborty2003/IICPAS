@@ -693,6 +693,12 @@ export default function EpfReg2Page() {
     setTimeout(() => setShowTick(false), 1400);
   };
 
+  const handleOtpSuccess = () => {
+    setView("success");
+    setShowTick(true);
+    setTimeout(() => setShowTick(false), 1400);
+  };
+
   const handleSignOut = () => {
     setLoggedInUan(null);
     setView("portal");
@@ -710,7 +716,7 @@ export default function EpfReg2Page() {
         <ChangePasswordPage onCancel={handleSignOut} onContinue={() => setView("otp")} />
       )}
       {view === "otp" && loggedInUan && (
-        <OtpVerificationPage onCancel={handleSignOut} onSuccess={() => setView("success")} />
+        <OtpVerificationPage onCancel={handleSignOut} onSuccess={handleOtpSuccess} />
       )}
       {view === "success" && <SuccessPage onBackToSignIn={handleSignOut} />}
       {view === "portal" && (
