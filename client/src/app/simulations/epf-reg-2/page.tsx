@@ -258,11 +258,16 @@ function DearMembersPanel() {
     "EPFO NEVER CALLS ANY MEMBER TO DEPOSIT ANY AMOUNT IN ANY BANK.",
     "PLEASE DO NOT RESPOND TO SUCH CALLS.",
   ];
+  const notice = "No last date is declared by EPFO for filing e-Nomination";
+
   return (
     <Panel title="Dear EPF Members !!" icon={<Users size={16} />}>
-      <p className="mb-3 text-[15px] font-bold text-[#c0392b]">
-        No last date is declared by EPFO for filing e-Nomination
-      </p>
+      <div className="mb-3 -mx-4 overflow-hidden border-b border-[#f0d6d3] bg-[#fdeee5] py-2">
+        <div className="dear-members-marquee flex w-max items-center gap-12 whitespace-nowrap px-4 text-[15px] font-bold text-[#c0392b]">
+          <span>{notice}</span>
+          <span aria-hidden="true">{notice}</span>
+        </div>
+      </div>
       <ul className="space-y-2 text-[13px] text-[#333]">
         {noticeLinks.map((text) => (
           <li key={text} className="flex gap-1.5">
