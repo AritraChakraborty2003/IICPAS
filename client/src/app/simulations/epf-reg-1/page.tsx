@@ -33,8 +33,8 @@ function Header() {
     <header className="border-b border-[#ddd] bg-white px-6 py-4">
       <div className="flex items-center gap-3">
         <img
-          src="/images/simulations/satyamev-jayate.jpg"
-          alt="Emblem"
+          src="/images/simulations/epfo.jpg"
+          alt="EPFO Logo"
           className="h-[54px] w-[54px] shrink-0 object-contain"
           onError={(e) => {
             (e.target as HTMLImageElement).style.display = "none";
