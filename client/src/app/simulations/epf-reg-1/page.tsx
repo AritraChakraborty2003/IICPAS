@@ -307,29 +307,6 @@ function WhatsNewPanel() {
   );
 }
 
-// ─── Logged-in success card (replaces Sign In panel content) ───────────────
-function LoginSuccess({ user, onRestart }: { user: string; onRestart: () => void }) {
-  return (
-    <Panel title="Establishment Sign In" headerClass="bg-[#2f80b5]" icon={<ArrowRight size={18} />}>
-      <div className="flex flex-col items-center justify-center gap-3 py-6 text-center">
-        <div className="flex h-[64px] w-[64px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_8px_rgba(34,197,94,0.18)]">
-          <CheckCircle size={32} className="text-white" />
-        </div>
-        <p className="text-[16px] font-bold text-[#1a7a3a]">Login Successful!</p>
-        <p className="text-[13px] text-[#555]">
-          Welcome, <span className="font-semibold">{user}</span>
-        </p>
-        <button
-          onClick={onRestart}
-          className="mt-2 rounded border border-[#2f80b5] px-4 py-1.5 text-[13px] font-semibold text-[#2f80b5] hover:bg-[#eef6fb]"
-        >
-          Sign out
-        </button>
-      </div>
-    </Panel>
-  );
-}
-
 // ─── Footer ─────────────────────────────────────────────────────────────────
 function Footer() {
   return (
@@ -341,34 +318,336 @@ function Footer() {
   );
 }
 
+// ─── Full-screen success tick overlay (shown briefly after login) ──────────
+function TickOverlay() {
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/45 backdrop-blur-sm">
+      <div
+        className="flex h-[100px] w-[100px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.25),0_0_0_22px_rgba(34,197,94,0.12)]"
+        style={{ animation: "epfTickPop 0.4s ease-out" }}
+      >
+        <CheckCircle size={52} className="text-white" />
+      </div>
+      <p className="text-[18px] font-bold text-white">Login Successful!</p>
+      <style jsx>{`
+        @keyframes epfTickPop {
+          0% {
+            transform: scale(0.4);
+            opacity: 0;
+          }
+          70% {
+            transform: scale(1.08);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── Dashboard header: company strip + nav bar ──────────────────────────────
+function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => void }) {
+  const navItems = ["Member", "Establishment", "Payments", "Dashboards", "User", "Admin", "Online Services", "ABRY"];
+  return (
+    <header className="border-b border-[#ddd] bg-white">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
+        <div className="flex items-center gap-3">
+          <img
+            src="/images/simulations/epfo.jpg"
+            alt="Logo"
+            className="h-[48px] w-[48px] shrink-0 object-contain"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+          <div className="leading-[1.3]">
+            <div className="text-[16px] font-bold text-[#1a4f8b]">
+              {COMPANY_NAME.toUpperCase()}, INDIA
+            </div>
+            <div className="text-[11px] font-bold tracking-wide text-[#c0392b]">
+              MINISTRY OF LABOUR &amp; EMPLOYMENT, SIMULATION
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center text-[12.5px] leading-[1.5]">
+          <div className="text-[#e8954b]">
+            Welcome: <span className="font-semibold">{user}</span>
+          </div>
+          <div className="font-semibold text-[#2f80b5]">{user}</div>
+          <div className="font-semibold text-[#2f80b5]">{COMPANY_NAME}</div>
+        </div>
+
+        <div className="text-right text-[11px] text-[#555]">
+          <div className="mb-1 flex items-center justify-end gap-2">
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A-</span>
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A</span>
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A+</span>
+            <span className="text-[#888]">employerfeedback[at]epfindia[dot]gov[dot]in</span>
+          </div>
+          <button onClick={onLogout} className="flex items-center justify-end gap-1 text-[#2f80b5] hover:underline">
+            <LogOut size={13} /> Logout
+          </button>
+          <div className="mt-1 text-[#888]">Mon 09 Aug 2021 (PV 3.3.30)</div>
+        </div>
+      </div>
+
+      <nav className="flex flex-wrap items-stretch bg-[#1a4f8b] text-white">
+        <button className="flex items-center gap-1.5 border-r border-white/15 px-4 py-2.5 text-[13px] font-medium hover:bg-white/10">
+          <HomeIcon size={14} /> Home
+        </button>
+        {navItems.map((item) => (
+          <button
+            key={item}
+            className="flex items-center gap-1 border-r border-white/15 px-4 py-2.5 text-[13px] font-medium hover:bg-white/10 whitespace-nowrap"
+          >
+            {item} <ChevronDown size={12} />
+          </button>
+        ))}
+      </nav>
+    </header>
+  );
+}
+
+// ─── Dashboard info panel: white bg, icon chip + blue title ────────────────
+function InfoPanel({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-[#f0c7a0] bg-[#fdf6e9] px-4 py-2.5">
+        <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded bg-[#e8954b] text-white">
+          {icon}
+        </span>
+        <span className="text-[15px] font-bold text-[#1a4f8b]">{title}</span>
+      </div>
+      <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+// ─── Alerts and To Do Tasks panel ───────────────────────────────────────────
+function AlertsPanel() {
+  const alerts = [
+    "Kind attention Employers. Now Aadhaar is mandatory for filing ECR.",
+    "KYC seeded at the time of member registration are available for approval after UAN allocation.",
+    "Member Basic Details Modification Approve Reject functionality is available.",
+  ];
+  const noticeLinks = [
+    "Notification of Section 142 of the Code of Social Security, 2020. Click here to read.",
+    "Important notice about Section 142 of the Code of Social Security, 2020. Click here to read.",
+  ];
+
+  return (
+    <InfoPanel icon={<Bell size={15} />} title="Alerts and To Do Tasks">
+      <ul className="space-y-2.5 text-[13.5px] text-[#c0392b]">
+        {alerts.map((text) => (
+          <li key={text} className="flex gap-2">
+            <Bell size={14} className="mt-0.5 shrink-0 text-[#e8954b]" />
+            <span>{text}</span>
+          </li>
+        ))}
+        {noticeLinks.map((text) => (
+          <li key={text} className="flex gap-2">
+            <FileText size={14} className="mt-0.5 shrink-0 text-[#c0392b]" />
+            <span className="cursor-pointer hover:underline">{text}</span>
+          </li>
+        ))}
+        <li className="flex items-center gap-2 text-[#333]">
+          <FileText size={14} className="shrink-0 text-[#888]" />
+          <span className="cursor-pointer hover:underline">ABRY Process Flow</span>
+        </li>
+      </ul>
+
+      <div className="mt-4 space-y-3">
+        <div className="flex flex-wrap items-center gap-3 rounded border border-[#f0c7b0] bg-[#fdeee5] px-3 py-2.5 text-[13px]">
+          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">NEW!</span>
+          <span>Do you wish to register at National Career Service (NCS) Portal ?</span>
+          <label className="flex items-center gap-1.5">
+            <input type="radio" name="ncs" defaultChecked className="accent-[#2f80b5]" /> YES
+          </label>
+          <button className="rounded bg-[#2f80b5] px-3 py-1 text-[12px] font-semibold text-white hover:bg-[#256a96]">
+            Register
+          </button>
+          <Info size={15} className="text-[#888]" />
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded border border-[#f0c7b0] bg-[#fdeee5] px-3 py-2.5 text-[13px]">
+          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">NEW!</span>
+          <span>
+            Click <span className="cursor-pointer text-[#2f80b5] hover:underline">here</span> to view PMGKY
+            Reimbursement Benefit Details.
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2.5 text-[13px]">
+          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">NEW!</span>
+          <span>
+            Click <span className="cursor-pointer text-[#2f80b5] hover:underline">here</span> to view pendency
+            statistics.
+          </span>
+        </div>
+
+        <div className="rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2.5 text-[13px] text-[#1a4f8b]">
+          <p className="font-bold">
+            File Monthly ECR in respect of employees who have completed 58 years of age before first week of
+            every month and submit their Pension/PF claim
+          </p>
+          <p className="mt-1">
+            Employees&apos; attaining 58 years of age in the current Month{" "}
+            <span className="cursor-pointer underline">PDF</span> |{" "}
+            <span className="cursor-pointer underline">Excel</span>
+          </p>
+        </div>
+      </div>
+    </InfoPanel>
+  );
+}
+
+// ─── Dashboard "What's New" panel ───────────────────────────────────────────
+function DashboardWhatsNewPanel() {
+  return (
+    <InfoPanel icon={<NotebookText size={15} />} title="What's New">
+      <div className="flex items-center gap-2 text-[13.5px] text-[#333]">
+        <FileText size={14} className="shrink-0 text-[#e8954b]" />
+        <span>Please submit the ecr of international worker immediately if he/she is leaving</span>
+      </div>
+    </InfoPanel>
+  );
+}
+
+// ─── Employer Profile panel ─────────────────────────────────────────────────
+function EmployerProfilePanel({ estId }: { estId: string }) {
+  const rows: [string, React.ReactNode][] = [
+    ["Est. Id", estId],
+    ["LIN", COMPANY_LIN],
+    ["PAN", COMPANY_PAN],
+    ["PF", "Un-Exempted"],
+    ["Pension", "Un-Exempted"],
+    ["EDLI", "Un-Exempted"],
+    [
+      "National Industrial Classification Code (NIC)",
+      <span key="nic" className="cursor-pointer text-[#2f80b5] hover:underline">
+        Update NIC2008 Code
+      </span>,
+    ],
+    ["Address", COMPANY_ADDRESS],
+    ["PF Office", "—"],
+  ];
+  return (
+    <InfoPanel icon={<UserPlus2 size={15} />} title="Employer Profile">
+      <p className="mb-3 text-center text-[14px] font-bold text-[#1a4f8b]">{COMPANY_NAME}</p>
+      <div className="divide-y divide-[#eee] text-[12.5px]">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid grid-cols-[auto_1fr] gap-3 py-2">
+            <span className="font-semibold text-[#555]">{label}</span>
+            <span className="text-right text-[#222]">{value}</span>
+          </div>
+        ))}
+      </div>
+    </InfoPanel>
+  );
+}
+
+// ─── Online Services panel ──────────────────────────────────────────────────
+function OnlineServicesPanel() {
+  return (
+    <InfoPanel icon={<Info size={15} />} title="Online Services">
+      <div className="divide-y divide-[#eee] text-[12.5px]">
+        <div className="grid grid-cols-[auto_1fr] gap-3 py-2">
+          <span className="font-semibold text-[#555]">No. Of Pending Transfer Claims</span>
+          <span className="text-right text-[#222]">-</span>
+        </div>
+        <div className="grid grid-cols-[auto_1fr] gap-3 py-2">
+          <span className="font-semibold text-[#555]">Oldest Claim Pending Since</span>
+          <span className="text-right text-[#222]">-</span>
+        </div>
+      </div>
+    </InfoPanel>
+  );
+}
+
+// ─── Post-login employer Dashboard ──────────────────────────────────────────
+function Dashboard({ user, onLogout }: { user: string; onLogout: () => void }) {
+  return (
+    <>
+      <DashboardHeader user={user} onLogout={onLogout} />
+      <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
+        <div className="grid gap-5 md:grid-cols-[2fr_1fr]">
+          <div className="flex flex-col gap-5">
+            <AlertsPanel />
+            <DashboardWhatsNewPanel />
+          </div>
+          <div className="flex flex-col gap-5">
+            <EmployerProfilePanel estId={user} />
+            <OnlineServicesPanel />
+          </div>
+        </div>
+      </main>
+      <footer className="mt-auto bg-[#1a3a66] py-4 text-center text-[12px] leading-relaxed text-[#dde6f0]">
+        <p>Designed, Developed and Hosted by: Employees&apos; Provident Fund Organisation, India</p>
+        <p>Last Updated Mon 09 Aug 2021 (PV 3.3.30)</p>
+      </footer>
+    </>
+  );
+}
+
 // ─── Root page ──────────────────────────────────────────────────────────────
 export default function EpfReg1Page() {
   const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
+  const [view, setView] = useState<"portal" | "dashboard">("portal");
+  const [showTick, setShowTick] = useState(false);
+
+  const handleLoginSuccess = (user: string) => {
+    setLoggedInUser(user);
+    setShowTick(true);
+    setTimeout(() => {
+      setShowTick(false);
+      setView("dashboard");
+    }, 1400);
+  };
+
+  const handleLogout = () => {
+    setLoggedInUser(null);
+    setView("portal");
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f0f0f0]">
       <SimBanner />
-      <Header />
+      {showTick && <TickOverlay />}
 
-      <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
-        <div className="grid gap-5 md:grid-cols-[2.4fr_1fr_1fr]">
-          <G20Banner />
-          <InstructionsPanel />
-          {loggedInUser ? (
-            <LoginSuccess user={loggedInUser} onRestart={() => setLoggedInUser(null)} />
-          ) : (
-            <SignInPanel onSuccess={setLoggedInUser} />
-          )}
-        </div>
+      {view === "dashboard" && loggedInUser ? (
+        <Dashboard user={loggedInUser} onLogout={handleLogout} />
+      ) : (
+        <>
+          <Header />
+          <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
+            <div className="grid gap-5 md:grid-cols-[2.4fr_1fr_1fr]">
+              <G20Banner />
+              <InstructionsPanel />
+              <SignInPanel onSuccess={handleLoginSuccess} />
+            </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <WelcomeEmployersPanel />
-          <ImportantLinksPanel />
-          <WhatsNewPanel />
-        </div>
-      </main>
-
-      <Footer />
+            <div className="grid gap-5 md:grid-cols-3">
+              <WelcomeEmployersPanel />
+              <ImportantLinksPanel />
+              <WhatsNewPanel />
+            </div>
+          </main>
+          <Footer />
+        </>
+      )}
     </div>
   );
 }
