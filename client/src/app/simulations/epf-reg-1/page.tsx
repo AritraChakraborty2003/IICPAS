@@ -450,17 +450,23 @@ function AlertsPanel() {
 
   return (
     <InfoPanel icon={<Bell size={15} />} title="Alerts and To Do Tasks">
-      <ul className="space-y-2.5 text-[13.5px] text-[#c0392b]">
-        {alerts.map((text) => (
-          <li key={text} className="flex gap-2">
-            <Bell size={14} className="mt-0.5 shrink-0 text-[#e8954b]" />
-            <span>{text}</span>
-          </li>
-        ))}
+      <ul className="space-y-2.5 text-[13.5px] text-[#333]">
+        {alerts.map((text, i) => {
+          const isNotification = i < 2;
+          return (
+            <li
+              key={text}
+              className={`flex gap-2 ${isNotification ? "font-semibold text-[#c0392b]" : "text-[#333]"}`}
+            >
+              <Bell size={14} className={`mt-0.5 shrink-0 ${isNotification ? "text-[#c0392b]" : "text-[#e8954b]"}`} />
+              <span>{text}</span>
+            </li>
+          );
+        })}
         {noticeLinks.map((text) => (
           <li key={text} className="flex gap-2">
-            <FileText size={14} className="mt-0.5 shrink-0 text-[#c0392b]" />
-            <span className="cursor-pointer hover:underline">{text}</span>
+            <FileText size={14} className="mt-0.5 shrink-0 text-[#888]" />
+            <span className="cursor-pointer text-[#2f80b5] hover:underline">{text}</span>
           </li>
         ))}
         <li className="flex items-center gap-2 text-[#333]">
