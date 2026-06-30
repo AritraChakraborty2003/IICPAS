@@ -552,20 +552,150 @@ function ChangePasswordPage({ onCancel, onContinue }: { onCancel: () => void; on
   );
 }
 
+// ─── Aadhaar OTP verification page (shown after "Get AADHAAR OTP") ─────────
+function OtpVerificationPage({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: () => void }) {
+  const [otp, setOtp] = useState("");
+  const [error, setError] = useState("");
+
+  const submit = () => {
+    if (!otp.trim()) {
+      setError("Please enter the AADHAAR OTP");
+      return;
+    }
+    if (otp !== DUMMY_OTP) {
+      setError(`Invalid OTP — use ${DUMMY_OTP} for this simulation`);
+      return;
+    }
+    setError("");
+    onSuccess();
+  };
+
+  return (
+    <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
+      <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b-2 border-[#e8954b] px-5 py-3.5">
+          <div className="flex items-center gap-2 text-[16px] font-bold text-[#8a4b16]">
+            <Menu size={18} /> Change Password&nbsp;:
+          </div>
+          <button className="flex h-[20px] w-[20px] items-center justify-center rounded border border-[#888] text-[#888]">
+            <Minus size={13} />
+          </button>
+        </div>
+
+        <div className="px-6 py-6">
+          <div className="mb-2 rounded bg-[#e3f3e1] px-4 py-3 text-[14px] font-semibold text-[#1a7a3a]">
+            An OTP has been sent to your AADHAAR linked mobile number: ********{MOBILE_LAST4}
+          </div>
+          <p className="mb-6 text-[12px] text-[#888]">
+            Use OTP <strong className="font-mono">{DUMMY_OTP}</strong> for this simulation.
+          </p>
+
+          <div className="mx-auto max-w-[680px] space-y-5">
+            <div className="rounded bg-[#eaf3fb] p-4 text-[13px] leading-relaxed text-[#1a4f8b]">
+              <label className="flex items-start gap-2">
+                <input type="checkbox" checked readOnly className="mt-1 h-4 w-4 accent-[#157a72]" />
+                <span>
+                  मैं पासवर्ड रीसेट करने के लिए अपनी पहचान स्थापित करने के उद्देश्य से आधार आधारित प्रमाणीकरण के
+                  लिए अपना आधार नंबर, वन टाइम पिन (ओटीपी) डेटा प्रदान करने की सहमति देता हूं। Version : [ Wed 06,
+                  September 2023 (PV 2.9.10)]
+                </span>
+              </label>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button className="flex items-center gap-1.5 rounded bg-[#2f80b5] px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-[#256a96]">
+                  <Play size={13} /> Listen to Consent
+                </button>
+                <select className="rounded border border-[#c0c0c0] bg-white px-2 py-1.5 text-[12.5px] text-[#333]">
+                  <option>English</option>
+                  <option>हिंदी</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
+              <label className="text-[14px] font-semibold text-[#333]">
+                AADHAAR OTP <span className="text-[#e53e3e]">*</span>
+              </label>
+              <input
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="AADHAAR OTP"
+                className="h-[42px] rounded border border-[#c0c0c0] bg-white px-3 text-[14px] italic text-[#157a72] outline-none placeholder:italic placeholder:text-[#157a72]/70 focus:border-[#157a72] focus:ring-1 focus:ring-[#157a72]"
+              />
+            </div>
+
+            {error && <p className="text-[12px] text-[#e53e3e]">{error}</p>}
+
+            <div className="flex flex-wrap gap-3 pt-1">
+              <button
+                onClick={submit}
+                className="rounded-full bg-[#157a72] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[#0f5f59]"
+              >
+                Change Password
+              </button>
+              <button
+                onClick={onCancel}
+                className="rounded-full bg-[#d98a86] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[#c97470]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+// ─── Final success page (UAN activated) ─────────────────────────────────────
+function SuccessPage({ onBackToSignIn }: { onBackToSignIn: () => void }) {
+  return (
+    <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-4 py-6">
+      <div className="flex items-center gap-2 text-[13px] text-[#555]">
+        <span className="cursor-pointer text-[#2f80b5] hover:underline" onClick={onBackToSignIn}>
+          Home
+        </span>
+        <span>/</span>
+        <span>Activate Your Uan</span>
+      </div>
+
+      <div className="flex items-start gap-3 rounded bg-[#e3f3e1] px-4 py-3 text-[14px] text-[#1a7a3a]">
+        <CheckCircle size={18} className="mt-0.5 shrink-0" />
+        <span>
+          Your UAN has been activated successfully and the default password has been sent to your registered
+          mobile number XXX XXX {MOBILE_LAST4}. Kindly change your default password using the change password
+          functionality upon successful login.
+        </span>
+      </div>
+
+      <button
+        onClick={onBackToSignIn}
+        className="mt-2 w-fit rounded-full bg-[#157a72] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[#0f5f59]"
+      >
+        Back to Sign In
+      </button>
+    </main>
+  );
+}
+
+type View = "portal" | "changePassword" | "otp" | "success";
+
 // ─── Root page ──────────────────────────────────────────────────────────────
 export default function EpfReg2Page() {
   const [launched, setLaunched] = useState(false);
   const [loggedInUan, setLoggedInUan] = useState<string | null>(null);
   const [showTick, setShowTick] = useState(false);
+  const [view, setView] = useState<View>("portal");
 
   const handleLoginSuccess = (uan: string) => {
     setLoggedInUan(uan);
+    setView("changePassword");
     setShowTick(true);
     setTimeout(() => setShowTick(false), 1400);
   };
 
   const handleSignOut = () => {
     setLoggedInUan(null);
+    setView("portal");
   };
 
   return (
@@ -576,9 +706,14 @@ export default function EpfReg2Page() {
 
       <Header />
 
-      {loggedInUan ? (
-        <ChangePasswordPage onCancel={handleSignOut} onDone={handleSignOut} />
-      ) : (
+      {view === "changePassword" && loggedInUan && (
+        <ChangePasswordPage onCancel={handleSignOut} onContinue={() => setView("otp")} />
+      )}
+      {view === "otp" && loggedInUan && (
+        <OtpVerificationPage onCancel={handleSignOut} onSuccess={() => setView("success")} />
+      )}
+      {view === "success" && <SuccessPage onBackToSignIn={handleSignOut} />}
+      {view === "portal" && (
         <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
           <div className="grid gap-5 md:grid-cols-[2.4fr_1fr]">
             <G20Banner />
