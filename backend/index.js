@@ -288,6 +288,8 @@ app.use("/api/invoice-company-settings", invoiceCompanySettingsRoutes);
 app.use("/api/job-sidebar-marquee-settings", jobSidebarMarqueeSettingsRoutes);
 app.use("/api/our-partners-settings", ourPartnersSettingsRoutes);
 app.use("/api/batch-manager", batchManagerRoutes);
+import zoomClipRoutes from "./routes/zoomClipRoutes.js";
+app.use("/api/zoom-clips", zoomClipRoutes);
 app.use("/api/v1/course-bookings", courseBookingRoutes);
 app.use("/api/bulk-email", bulkEmailRoutes);
 

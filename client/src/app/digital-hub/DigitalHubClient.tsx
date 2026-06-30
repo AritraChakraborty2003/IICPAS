@@ -667,6 +667,11 @@ export default function DigitalHubClient({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isIntroVideoModalOpen, setIsIntroVideoModalOpen] = useState(false);
+  const [manualIntroVideoUrl, setManualIntroVideoUrl] = useState<string | null>(null);
+  const [zoomSessionStatus, setZoomSessionStatus] = useState<
+    "idle" | "downloading" | "ready" | "error"
+  >("idle");
+  const [zoomSessionProgress, setZoomSessionProgress] = useState(0);
   const [isLiveSessionsModalOpen, setIsLiveSessionsModalOpen] = useState(false);
   const [classModalKind, setClassModalKind] = useState<"live" | "recorded">(
     "live"
@@ -1449,6 +1454,52 @@ export default function DigitalHubClient({
     },
     [API_BASE]
   );
+
+  const pollZoomSessionStatus = useCallback(async () => {
+    try {
+      const { data } = await axios.get(
+        `${API_BASE}/zoom-clips/accounting-overview/status`
+      );
+      setZoomSessionProgress(data.progress || 0);
+      if (data.status === "ready") {
+        setZoomSessionStatus("ready");
+        setManualIntroVideoUrl(data.url);
+        setIsIntroVideoModalOpen(true);
+        return;
+      }
+      if (data.status === "error") {
+        setZoomSessionStatus("error");
+        return;
+      }
+      setZoomSessionStatus("downloading");
+      setTimeout(pollZoomSessionStatus, 2000);
+    } catch (error) {
+      console.error("Error checking Zoom session status:", error);
+      setZoomSessionStatus("error");
+    }
+  }, [API_BASE]);
+
+  const handleWatchZoomSession = useCallback(async () => {
+    if (zoomSessionStatus === "downloading") return;
+    try {
+      const { data } = await axios.get(
+        `${API_BASE}/zoom-clips/accounting-overview/status`
+      );
+      if (data.status === "ready") {
+        setManualIntroVideoUrl(data.url);
+        setZoomSessionStatus("ready");
+        setIsIntroVideoModalOpen(true);
+        return;
+      }
+      setZoomSessionStatus("downloading");
+      setZoomSessionProgress(0);
+      await axios.post(`${API_BASE}/zoom-clips/accounting-overview/download`);
+      pollZoomSessionStatus();
+    } catch (error) {
+      console.error("Error starting Zoom session download:", error);
+      setZoomSessionStatus("error");
+    }
+  }, [API_BASE, zoomSessionStatus, pollZoomSessionStatus]);
 
   // Handle topic selection
   const handleTopicSelect = useCallback(
@@ -4103,6 +4154,20 @@ export default function DigitalHubClient({
                           Watch Live Class
                         </button>
                       ) : null}
+                      {resolvedCourseId === "6883d69cdac73382a0aa2b15" &&
+                      selectedTopic?.title === "Overview" ? (
+                        <button
+                          type="button"
+                          onClick={handleWatchZoomSession}
+                          disabled={zoomSessionStatus === "downloading"}
+                          className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-80"
+                        >
+                          <Video className="h-4 w-4" />
+                          {zoomSessionStatus === "downloading"
+                            ? `Preparing video… ${zoomSessionProgress}%`
+                            : "Watch Zoom Session"}
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -5335,11 +5400,14 @@ export default function DigitalHubClient({
       )}
 
       {/* Intro Video Modal */}
-      {isIntroVideoModalOpen && selectedTopicIntroVideo && (
+      {isIntroVideoModalOpen && (manualIntroVideoUrl || selectedTopicIntroVideo) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
-            onClick={() => setIsIntroVideoModalOpen(false)}
+            onClick={() => {
+              setIsIntroVideoModalOpen(false);
+              setManualIntroVideoUrl(null);
+            }}
           />
           <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-slate-950 shadow-2xl ring-1 ring-white/10">
             <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
@@ -5353,7 +5421,10 @@ export default function DigitalHubClient({
               </div>
               <button
                 type="button"
-                onClick={() => setIsIntroVideoModalOpen(false)}
+                onClick={() => {
+                  setIsIntroVideoModalOpen(false);
+                  setManualIntroVideoUrl(null);
+                }}
                 className="rounded-full p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
                 aria-label="Close intro video"
               >
@@ -5362,7 +5433,7 @@ export default function DigitalHubClient({
             </div>
             <div className="bg-black">
               <video
-                key={selectedTopicIntroVideo}
+                key={manualIntroVideoUrl || selectedTopicIntroVideo}
                 controls
                 controlsList="nodownload noplaybackrate noremoteplayback"
                 disablePictureInPicture
@@ -5372,7 +5443,7 @@ export default function DigitalHubClient({
                 onContextMenu={(event) => event.preventDefault()}
                 className="aspect-video w-full bg-black"
               >
-                <source src={selectedTopicIntroVideo} />
+                <source src={manualIntroVideoUrl || selectedTopicIntroVideo} />
                 Your browser does not support the video tag.
               </video>
             </div>
