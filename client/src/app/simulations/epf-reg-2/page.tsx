@@ -17,11 +17,14 @@ import {
   AlertCircle,
   HelpCircle,
   Play,
+  Phone,
 } from "lucide-react";
 
 const LOGIN_UAN = "100400800693";
 const LOGIN_PASS = "Member@123";
 const CAPTCHA_CODE = "P237M";
+const MOBILE_LAST4 = "1316";
+const DUMMY_OTP = "123456";
 
 // ─── Top simulation disclaimer ─────────────────────────────────────────────
 function SimBanner() {
@@ -328,10 +331,19 @@ function ImportantLinksPanel() {
 // ─── Footer ─────────────────────────────────────────────────────────────────
 function Footer() {
   return (
-    <footer className="mt-auto bg-[#3a3a3a] py-4 text-center text-[12px] leading-relaxed text-[#ddd]">
-      <p>Designed, Developed and Hosted by: IICPA, India</p>
-      <p>Last Updated Thu 05 Oct 2023 (PV 4.3.22)</p>
-      <p>This site is best viewed through Mozilla Firefox 52.x or higher.</p>
+    <footer className="mt-auto">
+      <div className="flex items-center justify-end gap-5 border-t border-[#ddd] bg-white px-6 py-2 text-[13px] font-semibold text-[#157a72]">
+        <span className="flex cursor-pointer items-center gap-1.5 hover:underline">
+          <Phone size={14} /> Contact Us
+        </span>
+        <span className="flex cursor-pointer items-center gap-1.5 hover:underline">
+          <HelpCircle size={14} /> FAQs
+        </span>
+      </div>
+      <div className="bg-[#157a72] py-3 text-center text-[12px] leading-relaxed text-white">
+        <p>©2015. Powered by EPFO Wed 06, September 2023 (PV 2.9.10)</p>
+        <p>This site is best viewed at 1920 x 1080 resolution in Mozilla Firefox 58.0+</p>
+      </div>
     </footer>
   );
 }
@@ -390,11 +402,10 @@ function LaunchOverlay({ onStart }: { onStart: () => void }) {
 }
 
 // ─── Mandatory "Change Password" page (shown right after first login) ──────
-function ChangePasswordPage({ onCancel, onDone }: { onCancel: () => void; onDone: () => void }) {
+function ChangePasswordPage({ onCancel, onContinue }: { onCancel: () => void; onContinue: () => void }) {
   const [form, setForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
 
   const submit = () => {
     if (!form.oldPassword.trim() || !form.newPassword.trim() || !form.confirmPassword.trim()) {
@@ -410,8 +421,7 @@ function ChangePasswordPage({ onCancel, onDone }: { onCancel: () => void; onDone
       return;
     }
     setError("");
-    setSubmitted(true);
-    setTimeout(onDone, 1800);
+    onContinue();
   };
 
   const reset = () => {
@@ -419,18 +429,6 @@ function ChangePasswordPage({ onCancel, onDone }: { onCancel: () => void; onDone
     setConsent(false);
     setError("");
   };
-
-  if (submitted) {
-    return (
-      <main className="mx-auto flex w-[98vw] flex-1 flex-col items-center justify-center gap-4 py-20 text-center">
-        <div className="flex h-[80px] w-[80px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.2)]">
-          <CheckCircle size={40} className="text-white" />
-        </div>
-        <p className="text-[18px] font-bold text-[#157a72]">Password Updated Successfully!</p>
-        <p className="text-[13px] text-[#555]">Redirecting you back to sign in&hellip;</p>
-      </main>
-    );
-  }
 
   return (
     <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
