@@ -4119,7 +4119,11 @@ export default function DigitalHubClient({
                       </span>
                       {/* Watch Live Class — classes scheduled in Class Management
                           for this course/chapter/topic */}
-                      {topicClassSessions.live.length > 0 ? (
+                      {topicClassSessions.live.length > 0 &&
+                      !(
+                        String(selectedChapter?._id) === "6883d69cdac73382a0aa2b15" &&
+                        selectedTopic?.title === "Overview"
+                      ) ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -4134,7 +4138,11 @@ export default function DigitalHubClient({
                       ) : null}
                       {/* Watch Recorded — classes scheduled in Class Management
                           that have finished and converted to recorded */}
-                      {topicClassSessions.recorded.length > 0 ? (
+                      {topicClassSessions.recorded.length > 0 &&
+                      !(
+                        String(selectedChapter?._id) === "6883d69cdac73382a0aa2b15" &&
+                        selectedTopic?.title === "Overview"
+                      ) ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -4160,12 +4168,12 @@ export default function DigitalHubClient({
                           type="button"
                           onClick={handleWatchZoomSession}
                           disabled={zoomSessionStatus === "downloading"}
-                          className="inline-flex items-center gap-2 rounded-full bg-sky-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-sky-700 disabled:cursor-not-allowed disabled:opacity-80"
+                          className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-80"
                         >
-                          <Video className="h-4 w-4" />
+                          <Target className="h-4 w-4" />
                           {zoomSessionStatus === "downloading"
                             ? `Preparing video… ${zoomSessionProgress}%`
-                            : "Watch Zoom Session"}
+                            : "Watch Live Class"}
                         </button>
                       ) : null}
                     </div>
