@@ -610,11 +610,9 @@ export default function EpfReg1Page() {
 
   const handleLoginSuccess = (user: string) => {
     setLoggedInUser(user);
+    setView("dashboard");
     setShowTick(true);
-    setTimeout(() => {
-      setShowTick(false);
-      setView("dashboard");
-    }, 1400);
+    setTimeout(() => setShowTick(false), 1400);
   };
 
   const handleLogout = () => {
