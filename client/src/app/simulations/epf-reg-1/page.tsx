@@ -608,8 +608,31 @@ function Dashboard({ user, onLogout }: { user: string; onLogout: () => void }) {
   );
 }
 
+// ─── Launch overlay (blurred portal behind, button centred on top) ─────────
+function LaunchOverlay({ onStart }: { onStart: () => void }) {
+  const [starting, setStarting] = useState(false);
+  const handle = () => {
+    if (starting) return;
+    setStarting(true);
+    setTimeout(onStart, 1200);
+  };
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#07111f]/25 px-4 backdrop-blur-[2px]">
+      <button
+        type="button"
+        onClick={handle}
+        disabled={starting}
+        className="relative z-10 inline-flex min-h-[72px] w-[min(84vw,34rem)] items-center justify-center rounded-[22px] bg-[#1244b8] px-6 text-lg font-black uppercase tracking-[0.12em] text-white shadow-[0_18px_40px_rgba(18,68,184,0.30)] transition-transform duration-200 hover:scale-[1.02] hover:bg-[#0f3a9a] disabled:cursor-wait disabled:opacity-80 sm:min-h-[78px] sm:px-8 sm:text-xl"
+      >
+        {starting ? "LOADING..." : "START EXPERIMENT"}
+      </button>
+    </div>
+  );
+}
+
 // ─── Root page ──────────────────────────────────────────────────────────────
 export default function EpfReg1Page() {
+  const [launched, setLaunched] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
   const [view, setView] = useState<"portal" | "dashboard">("portal");
   const [showTick, setShowTick] = useState(false);
@@ -629,6 +652,7 @@ export default function EpfReg1Page() {
   return (
     <div className="flex min-h-screen flex-col bg-[#f0f0f0]">
       <SimBanner />
+      {!launched && <LaunchOverlay onStart={() => setLaunched(true)} />}
       {showTick && <TickOverlay />}
 
       {view === "dashboard" && loggedInUser ? (
