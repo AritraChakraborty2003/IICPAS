@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   Users,
-  Lock,
   Eye,
   EyeOff,
   CheckCircle,
@@ -13,6 +12,11 @@ import {
   Link2,
   Boxes,
   ThumbsUp,
+  Menu,
+  Minus,
+  AlertCircle,
+  HelpCircle,
+  Play,
 } from "lucide-react";
 
 const LOGIN_UAN = "100400800693";
@@ -132,8 +136,15 @@ function MemberSignInPanel({ onSuccess }: { onSuccess: (uan: string) => void }) 
 
   return (
     <div className="relative mt-7 rounded-[10px] border border-[#d8d8d8] bg-white px-6 pb-6 pt-12 shadow-sm">
-      <div className="absolute left-1/2 top-0 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-[#157a72] bg-white shadow-sm">
-        <Users size={32} className="text-[#157a72]" />
+      <div className="absolute left-1/2 top-0 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border-[3px] border-[#157a72] bg-white shadow-sm">
+        <img
+          src="/images/simulations/home-user-image.png"
+          alt="Member"
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
       </div>
 
       <div className="mb-3 rounded border border-[#bee3da] bg-[#eaf7f4] px-3 py-2 text-[11.5px] text-[#157a72]">
@@ -378,29 +389,168 @@ function LaunchOverlay({ onStart }: { onStart: () => void }) {
   );
 }
 
-// ─── Post-login success card (replaces the sign-in panel) ──────────────────
-function LoginSuccess({ uan, onRestart }: { uan: string; onRestart: () => void }) {
-  return (
-    <div className="relative mt-7 rounded-[10px] border border-[#d8d8d8] bg-white px-6 pb-8 pt-12 text-center shadow-sm">
-      <div className="absolute left-1/2 top-0 flex h-[76px] w-[76px] -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-[#157a72] bg-white shadow-sm">
-        <Users size={32} className="text-[#157a72]" />
-      </div>
-      <div className="flex flex-col items-center gap-3">
-        <div className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_8px_rgba(34,197,94,0.18)]">
-          <CheckCircle size={30} className="text-white" />
+// ─── Mandatory "Change Password" page (shown right after first login) ──────
+function ChangePasswordPage({ onCancel, onDone }: { onCancel: () => void; onDone: () => void }) {
+  const [form, setForm] = useState({ oldPassword: "", newPassword: "", confirmPassword: "" });
+  const [consent, setConsent] = useState(false);
+  const [error, setError] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const submit = () => {
+    if (!form.oldPassword.trim() || !form.newPassword.trim() || !form.confirmPassword.trim()) {
+      setError("All fields are required");
+      return;
+    }
+    if (form.newPassword !== form.confirmPassword) {
+      setError("New Password and Confirm New Password do not match");
+      return;
+    }
+    if (!consent) {
+      setError("Please provide Aadhaar consent to continue");
+      return;
+    }
+    setError("");
+    setSubmitted(true);
+    setTimeout(onDone, 1800);
+  };
+
+  const reset = () => {
+    setForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
+    setConsent(false);
+    setError("");
+  };
+
+  if (submitted) {
+    return (
+      <main className="mx-auto flex w-[98vw] flex-1 flex-col items-center justify-center gap-4 py-20 text-center">
+        <div className="flex h-[80px] w-[80px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.2)]">
+          <CheckCircle size={40} className="text-white" />
         </div>
-        <p className="text-[16px] font-bold text-[#157a72]">Login Successful!</p>
-        <p className="text-[13px] text-[#555]">
-          Welcome, UAN <span className="font-semibold">{uan}</span>
-        </p>
-        <button
-          onClick={onRestart}
-          className="mt-2 rounded border border-[#157a72] px-4 py-1.5 text-[13px] font-semibold text-[#157a72] hover:bg-[#eaf7f4]"
-        >
-          Sign out
-        </button>
+        <p className="text-[18px] font-bold text-[#157a72]">Password Updated Successfully!</p>
+        <p className="text-[13px] text-[#555]">Redirecting you back to sign in&hellip;</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
+      <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b-2 border-[#e8954b] px-5 py-3.5">
+          <div className="flex items-center gap-2 text-[16px] font-bold text-[#8a4b16]">
+            <Menu size={18} /> Change Password&nbsp;:
+          </div>
+          <button className="flex h-[20px] w-[20px] items-center justify-center rounded border border-[#888] text-[#888]">
+            <Minus size={13} />
+          </button>
+        </div>
+
+        <div className="px-6 py-6">
+          <div className="mb-6 flex items-center gap-2 rounded bg-[#f7e3e1] px-4 py-3 text-[14px] font-bold text-[#c0392b]">
+            <AlertCircle size={18} className="shrink-0" />
+            Kindly update your password.
+          </div>
+
+          <div className="mx-auto max-w-[680px] space-y-5">
+            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
+              <label className="text-[14px] font-semibold text-[#333]">
+                Old Password <span className="text-[#e53e3e]">*</span>
+              </label>
+              <input
+                type="password"
+                value={form.oldPassword}
+                onChange={(e) => setForm((p) => ({ ...p, oldPassword: e.target.value }))}
+                placeholder="Old Password"
+                className="h-[42px] rounded border border-[#c0c0c0] bg-white px-3 text-[14px] italic text-[#157a72] outline-none placeholder:italic placeholder:text-[#157a72]/70 focus:border-[#157a72] focus:ring-1 focus:ring-[#157a72]"
+              />
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
+              <label className="text-[14px] font-semibold text-[#333]">
+                New Password <span className="text-[#e53e3e]">*</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="password"
+                  value={form.newPassword}
+                  onChange={(e) => setForm((p) => ({ ...p, newPassword: e.target.value }))}
+                  placeholder="New Password"
+                  className="h-[42px] flex-1 rounded border border-[#c0c0c0] bg-white px-3 text-[14px] italic text-[#157a72] outline-none placeholder:italic placeholder:text-[#157a72]/70 focus:border-[#157a72] focus:ring-1 focus:ring-[#157a72]"
+                />
+                <span className="flex h-[28px] w-[28px] shrink-0 items-center justify-center rounded-full bg-[#2f80b5] text-white">
+                  <HelpCircle size={15} />
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-[200px_1fr] items-center gap-4">
+              <label className="text-[14px] font-semibold text-[#333]">
+                Confirm New Password <span className="text-[#e53e3e]">*</span>
+              </label>
+              <input
+                type="password"
+                value={form.confirmPassword}
+                onChange={(e) => setForm((p) => ({ ...p, confirmPassword: e.target.value }))}
+                placeholder="Confirm New Password"
+                className="h-[42px] rounded border border-[#c0c0c0] bg-white px-3 text-[14px] italic text-[#157a72] outline-none placeholder:italic placeholder:text-[#157a72]/70 focus:border-[#157a72] focus:ring-1 focus:ring-[#157a72]"
+              />
+            </div>
+
+            <div className="rounded bg-[#eaf3fb] p-4 text-[13px] leading-relaxed text-[#1a4f8b]">
+              <label className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-[#157a72]"
+                />
+                <span>
+                  मैं पासवर्ड रीसेट करने के लिए अपनी पहचान स्थापित करने के उद्देश्य से आधार आधारित प्रमाणीकरण के
+                  लिए अपना आधार नंबर, वन टाइम पिन (ओटीपी) डेटा प्रदान करने की सहमति देता हूं। Version : [ Wed 06,
+                  September 2023 (PV 2.9.10) ]
+                </span>
+              </label>
+              <p className="mt-2">
+                I hereby consent to provide my Aadhaar Number, One Time Pin (OTP) data for Aadhaar based
+                authentication for the purpose of establishing my identity for password resetting Version : [ Wed
+                06, September 2023 (PV 2.9.10) ]
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button className="flex items-center gap-1.5 rounded bg-[#2f80b5] px-3 py-1.5 text-[12.5px] font-semibold text-white hover:bg-[#256a96]">
+                  <Play size={13} /> Listen to Consent
+                </button>
+                <select className="rounded border border-[#c0c0c0] bg-white px-2 py-1.5 text-[12.5px] text-[#333]">
+                  <option>English</option>
+                  <option>हिंदी</option>
+                </select>
+              </div>
+            </div>
+
+            {error && <p className="text-[12px] text-[#e53e3e]">{error}</p>}
+
+            <div className="flex flex-wrap gap-3 pt-1">
+              <button
+                onClick={submit}
+                className="rounded-full bg-[#157a72] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[#0f5f59]"
+              >
+                Get AADHAAR OTP
+              </button>
+              <button
+                onClick={reset}
+                className="rounded-full bg-[#d8b27a] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[#c79e60]"
+              >
+                Reset
+              </button>
+              <button
+                onClick={onCancel}
+                className="rounded-full bg-[#d98a86] px-6 py-2.5 text-[14px] font-bold text-white hover:bg-[#c97470]"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -416,6 +566,10 @@ export default function EpfReg2Page() {
     setTimeout(() => setShowTick(false), 1400);
   };
 
+  const handleSignOut = () => {
+    setLoggedInUan(null);
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-[#f0f0f0]">
       <SimBanner />
@@ -424,22 +578,22 @@ export default function EpfReg2Page() {
 
       <Header />
 
-      <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
-        <div className="grid gap-5 md:grid-cols-[2.4fr_1fr]">
-          <G20Banner />
-          {loggedInUan ? (
-            <LoginSuccess uan={loggedInUan} onRestart={() => setLoggedInUan(null)} />
-          ) : (
+      {loggedInUan ? (
+        <ChangePasswordPage onCancel={handleSignOut} onDone={handleSignOut} />
+      ) : (
+        <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
+          <div className="grid gap-5 md:grid-cols-[2.4fr_1fr]">
+            <G20Banner />
             <MemberSignInPanel onSuccess={handleLoginSuccess} />
-          )}
-        </div>
+          </div>
 
-        <div className="grid gap-5 md:grid-cols-3">
-          <DearMembersPanel />
-          <BenefitsPanel />
-          <ImportantLinksPanel />
-        </div>
-      </main>
+          <div className="grid gap-5 md:grid-cols-3">
+            <DearMembersPanel />
+            <BenefitsPanel />
+            <ImportantLinksPanel />
+          </div>
+        </main>
+      )}
 
       <Footer />
     </div>
