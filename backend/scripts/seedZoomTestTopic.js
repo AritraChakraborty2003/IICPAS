@@ -6,7 +6,10 @@ import Topic from "../models/Content/Topic.js";
 
 dotenv.config({ quiet: true });
 
-const COURSE_ID = "6883d69cdac73382a0aa2b15";
+// This is the Chapter _id (URL segment after the course slug is the
+// chapter id, not the course id — confirmed via the [courseSlug]/[chapterId]
+// route definition).
+const CHAPTER_ID = "6883d69cdac73382a0aa2b15";
 
 async function main() {
   await mongoose.connect(process.env.MONGODB_URI);
@@ -17,12 +20,12 @@ async function main() {
   });
 
   const chapter = await Chapter.create({
+    _id: new mongoose.Types.ObjectId(CHAPTER_ID),
     title: "Introduction to Basic Accounting",
     topics: [topic._id],
   });
 
   await Course.create({
-    _id: new mongoose.Types.ObjectId(COURSE_ID),
     category: "Accounting",
     title: "Accounting and Tally Certification Course (TEST SEED)",
     slug: "accounting-and-tally-certification-course",
@@ -30,7 +33,7 @@ async function main() {
     chapters: [chapter._id],
   });
 
-  console.log("Seeded course:", COURSE_ID, "chapter:", chapter._id, "topic:", topic._id);
+  console.log("Seeded chapter:", chapter._id, "topic:", topic._id);
 }
 
 main()

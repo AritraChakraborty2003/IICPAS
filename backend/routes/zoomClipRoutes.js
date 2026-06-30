@@ -2,16 +2,16 @@ import express from "express";
 import axios from "axios";
 import fs from "fs";
 import path from "path";
-import Course from "../models/Content/Course.js";
 import Chapter from "../models/Content/Chapter.js";
-import Topic from "../models/Content/Topic.js";
 
 const router = express.Router();
 
 // Single hardcoded clip this feature was built for. If more topics need this
 // later, this should become a per-topic config/DB field instead.
-const COURSE_ID = "6883d69cdac73382a0aa2b15";
-const CHAPTER_TITLE = "Introduction to Basic Accounting";
+// "6883d69cdac73382a0aa2b15" is the Chapter _id (the URL segment after the
+// course slug in /digital-hub/[courseSlug]/[chapterId] is the chapter, not
+// the course).
+const CHAPTER_ID = "6883d69cdac73382a0aa2b15";
 const TOPIC_TITLE = "Overview";
 const ZOOM_SHARE_LINK_FRAGMENT = "cpv9bM-FQjy7V-ISDE23nQ";
 const OUTPUT_FILENAME = "accounting-overview-intro.mp4";
@@ -30,13 +30,7 @@ function publicVideoUrl(req) {
 let job = { status: "idle", progress: 0, error: null };
 
 async function findTargetTopic() {
-  const course = await Course.findById(COURSE_ID).populate({
-    path: "chapters",
-    populate: { path: "topics" },
-  });
-  if (!course) throw new Error("Course not found");
-
-  const chapter = course.chapters.find((c) => c.title === CHAPTER_TITLE);
+  const chapter = await Chapter.findById(CHAPTER_ID).populate("topics");
   if (!chapter) throw new Error("Chapter not found");
 
   const topic = chapter.topics.find((t) => t.title === TOPIC_TITLE);

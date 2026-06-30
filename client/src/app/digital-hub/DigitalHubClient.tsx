@@ -4154,7 +4154,7 @@ export default function DigitalHubClient({
                           Watch Live Class
                         </button>
                       ) : null}
-                      {resolvedCourseId === "6883d69cdac73382a0aa2b15" &&
+                      {String(selectedChapter?._id) === "6883d69cdac73382a0aa2b15" &&
                       selectedTopic?.title === "Overview" ? (
                         <button
                           type="button"
