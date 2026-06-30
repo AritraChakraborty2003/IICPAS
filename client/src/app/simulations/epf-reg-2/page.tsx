@@ -284,6 +284,21 @@ function DearMembersPanel() {
           </li>
         ))}
       </ul>
+
+      <style jsx>{`
+        .dear-members-marquee {
+          animation: dearMembersScroll 14s linear infinite;
+        }
+
+        @keyframes dearMembersScroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+      `}</style>
     </Panel>
   );
 }
