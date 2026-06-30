@@ -327,7 +327,7 @@ function LoginSuccess({ user, onRestart }: { user: string; onRestart: () => void
 function Footer() {
   return (
     <footer className="mt-auto bg-[#3a3a3a] py-4 text-center text-[12px] leading-relaxed text-[#ddd]">
-      <p>Designed, Developed and Hosted by: Fincurious Innovations Private Limited, India</p>
+      <p>Designed, Developed and Hosted by: IICPA, India</p>
       <p>Last Updated Thu 05 Oct 2023 (PV 4.3.22)</p>
       <p>This site is best viewed through Mozilla Firefox 52.x or higher.</p>
     </footer>
@@ -344,7 +344,7 @@ export default function EpfReg1Page() {
       <Header />
 
       <main className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-5 px-5 py-6">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-[2.4fr_1fr_1fr]">
           <G20Banner />
           <InstructionsPanel />
           {loggedInUser ? (
