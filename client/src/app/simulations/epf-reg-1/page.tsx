@@ -343,7 +343,7 @@ export default function EpfReg1Page() {
       <SimBanner />
       <Header />
 
-      <main className="mx-auto flex w-full max-w-[1280px] flex-1 flex-col gap-5 px-5 py-6">
+      <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
         <div className="grid gap-5 md:grid-cols-[2.4fr_1fr_1fr]">
           <G20Banner />
           <InstructionsPanel />
