@@ -82,19 +82,14 @@ function Panel({
 function G20Banner() {
   return (
     <div className="flex h-full min-h-[360px] flex-col items-center justify-center gap-3 rounded border border-[#d8d8d8] bg-white p-6 text-center shadow-sm">
-      <div
-        className="text-[46px] font-black leading-none"
-        style={{ fontFamily: "'Arial Black', sans-serif" }}
-      >
-        <span className="text-[#ff9933]">G</span>
-        <span className="text-[#444]">2</span>
-        <span className="text-[#1b6ca8]">0</span>
-      </div>
-      <div className="text-[14px] font-semibold text-[#444]">भारत 2023 INDIA</div>
-      <div className="text-[13px] text-[#777]">वसुधैव कुटुम्बकम्</div>
-      <div className="mt-2 text-[12px] font-medium tracking-wide text-[#888]">
-        ONE EARTH &nbsp;•&nbsp; ONE FAMILY &nbsp;•&nbsp; ONE FUTURE
-      </div>
+      <img
+        src="/images/simulations/G20-Logo.jpg"
+        alt="G20 Logo"
+        className="max-h-[300px] w-auto object-contain"
+        onError={(e) => {
+          (e.target as HTMLImageElement).style.display = "none";
+        }}
+      />
     </div>
   );
 }
