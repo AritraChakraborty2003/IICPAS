@@ -22,6 +22,31 @@ const resolveBatchPhaseFromDates = (startsAt, endsAt) => {
   return "active";
 };
 
+// On the start day itself, the exact start time still gates access. Once a
+// later calendar day (UTC) arrives, the time-of-day no longer matters and
+// the content is unlocked regardless of the hour/minute an admin picked.
+const hasStartDatePassed = (startsAt) => {
+  if (!startsAt || Number.isNaN(startsAt.getTime())) return true;
+  const now = new Date();
+  const startDateOnly = Date.UTC(startsAt.getUTCFullYear(), startsAt.getUTCMonth(), startsAt.getUTCDate());
+  const nowDateOnly = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+
+  if (nowDateOnly > startDateOnly) return true;
+  if (nowDateOnly < startDateOnly) return false;
+  return now.getTime() >= startsAt.getTime();
+};
+
+// Chapter/topic drip windows unlock once their start date passes and never
+// re-lock once opened — the end time is a scheduling hint, not an expiry.
+const resolveDripLockState = (startsAt, endsAt) => {
+  if (!startsAt) {
+    return { phase: "active", isLocked: false };
+  }
+
+  const phase = hasStartDatePassed(startsAt) ? "active" : "preview";
+  return { phase, isLocked: phase === "preview" };
+};
+
 export const getBatchWindowState = (courseAccess) => {
   const batchLockStartsAt = parseDateOrNull(
     courseAccess?.batchLockStartsAt || null
@@ -78,12 +103,12 @@ export const getBatchChapterState = (courseAccess, chapterId) => {
 
   const startsAt = parseDateOrNull(chapterLock.start_time);
   const endsAt = parseDateOrNull(chapterLock.end_time);
-  const phase = resolveBatchPhaseFromDates(startsAt, endsAt);
+  const { phase, isLocked } = resolveDripLockState(startsAt, endsAt);
 
   return {
     hasBatchWindow: true,
     phase,
-    isLocked: phase !== "active",
+    isLocked,
     startsAt,
     endsAt,
   };
@@ -108,12 +133,12 @@ export const getBatchTopicState = (courseAccess, chapterId, topicId) => {
 
   const startsAt = parseDateOrNull(topicLock.start_time);
   const endsAt = parseDateOrNull(topicLock.end_time);
-  const phase = resolveBatchPhaseFromDates(startsAt, endsAt);
+  const { phase, isLocked } = resolveDripLockState(startsAt, endsAt);
 
   return {
     hasBatchWindow: true,
     phase,
-    isLocked: phase !== "active",
+    isLocked,
     startsAt,
     endsAt,
   };

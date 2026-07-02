@@ -29,6 +29,20 @@ const toIdString = (value) => {
   return String(value);
 };
 
+// On the start day itself, the exact start time still gates access. Once a
+// later calendar day (UTC) arrives, the time-of-day no longer matters and
+// the content is unlocked regardless of the hour/minute an admin picked.
+const hasStartDatePassed = (startsAt) => {
+  if (!startsAt || isNaN(startsAt.getTime())) return true;
+  const now = new Date();
+  const startDateOnly = Date.UTC(startsAt.getUTCFullYear(), startsAt.getUTCMonth(), startsAt.getUTCDate());
+  const nowDateOnly = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+
+  if (nowDateOnly > startDateOnly) return true;
+  if (nowDateOnly < startDateOnly) return false;
+  return now.getTime() >= startsAt.getTime();
+};
+
 const toObjectId = (value) => {
   if (value instanceof mongoose.Types.ObjectId) return value;
   const normalized = toIdString(value);
@@ -268,17 +282,11 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
     }
 
     if (!forceUnlockAll && chapterLock && (chapterLock.start_time || chapterLock.end_time)) {
+      // Chapter unlock is gated on the start time only — once it passes, the
+      // chapter stays unlocked. The end_time is a scheduling hint, not an
+      // expiry, so it never re-locks already-available content.
       const cStartsAt = chapterLock.start_time ? new Date(chapterLock.start_time) : null;
-      const cEndsAt = chapterLock.end_time ? new Date(chapterLock.end_time) : null;
-      const now = Date.now();
-
-      if (cStartsAt && cEndsAt && !isNaN(cStartsAt.getTime()) && !isNaN(cEndsAt.getTime())) {
-        unlocked = now >= cStartsAt.getTime() && now <= cEndsAt.getTime();
-      } else if (cStartsAt && !isNaN(cStartsAt.getTime())) {
-        unlocked = now >= cStartsAt.getTime();
-      } else if (cEndsAt && !isNaN(cEndsAt.getTime())) {
-        unlocked = now <= cEndsAt.getTime();
-      }
+      unlocked = hasStartDatePassed(cStartsAt);
     }
 
     const rawTopics = Array.isArray(chapter.topics) ? chapter.topics : [];
@@ -292,11 +300,10 @@ export const getDigitalHubCourseProgress = async (studentId, courseId) => {
       }
       const tStart = topicLock.start_time ? new Date(topicLock.start_time) : null;
       const tEnd = topicLock.end_time ? new Date(topicLock.end_time) : null;
-      const now = Date.now();
-      let topicActive = true;
-      if (tStart && tEnd) topicActive = now >= tStart.getTime() && now <= tEnd.getTime();
-      else if (tStart) topicActive = now >= tStart.getTime();
-      else if (tEnd) topicActive = now <= tEnd.getTime();
+      // Topic unlock is gated on the start date only — once that calendar
+      // day arrives, the topic stays unlocked. The end_time is a scheduling
+      // hint, not an expiry, so it never re-locks already-available content.
+      const topicActive = hasStartDatePassed(tStart);
       return {
         topicId,
         hasBatchWindow: true,
