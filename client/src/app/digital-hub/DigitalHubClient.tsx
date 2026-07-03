@@ -173,6 +173,12 @@ import {
   Calendar,
   ExternalLink,
   Video,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Maximize,
+  PhoneOff,
 } from "lucide-react";
 
 type ContentKey =
