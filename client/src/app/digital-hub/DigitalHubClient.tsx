@@ -5438,19 +5438,9 @@ export default function DigitalHubClient({
 
       {/* Intro Video Modal */}
       {isIntroVideoModalOpen && (manualIntroVideoUrl || selectedTopicIntroVideo) && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black">
-          <div className="flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3 sm:px-6">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
-                Intro Video
-              </p>
-              <h3 className="text-lg font-semibold text-white sm:text-xl">
-                {selectedTopic?.title}
-              </h3>
-            </div>
-          </div>
+        <div className="fixed inset-0 z-50 bg-black">
           <div
-            className="relative flex flex-1 items-center justify-center bg-black"
+            className="absolute inset-0 flex items-center justify-center bg-black"
             onClick={() => {
               const video = introVideoRef.current;
               if (!video) return;
@@ -5487,7 +5477,7 @@ export default function DigitalHubClient({
 
           {/* Zoom-style bottom control bar */}
           <div
-            className="bg-[#1c1c1e]/95 px-3 pb-3 pt-2 sm:px-6"
+            className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pb-6 pt-12 sm:px-6"
             onClick={(event) => event.stopPropagation()}
           >
             <input
