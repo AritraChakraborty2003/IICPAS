@@ -180,6 +180,15 @@ import {
   Maximize,
   PhoneOff,
   Users,
+  Mic,
+  MicOff,
+  VideoOff,
+  MessageSquare,
+  Smile,
+  Share,
+  Shield,
+  Sparkles,
+  MoreHorizontal,
 } from "lucide-react";
 
 type ContentKey =
@@ -5474,6 +5483,11 @@ export default function DigitalHubClient({
               <source src={manualIntroVideoUrl || selectedTopicIntroVideo} />
               Your browser does not support the video tag.
             </video>
+            
+            <div className="absolute bottom-20 left-4 z-10 flex items-center gap-2 rounded bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm sm:bottom-24 sm:left-6 sm:px-3 sm:py-1.5 sm:text-sm">
+              <MicOff className="h-3 w-3 text-red-500 sm:h-4 sm:w-4" />
+              CA POONAM GUPTA IICPA
+            </div>
           </div>
 
           {/* Zoom-style bottom control bar */}
@@ -5497,33 +5511,8 @@ export default function DigitalHubClient({
               aria-label="Seek video"
             />
             <div className="flex items-center justify-between">
-              <span className="w-24 text-xs font-medium text-slate-300 sm:w-28">
-                {formatPlaybackTime(introVideoCurrentTime)} /{" "}
-                {formatPlaybackTime(introVideoDuration)}
-              </span>
-
-              <div className="flex flex-1 items-center justify-center gap-4 sm:gap-6">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const video = introVideoRef.current;
-                    if (!video) return;
-                    video.muted = !video.muted;
-                    setIsIntroVideoMuted(video.muted);
-                  }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-slate-200 transition-colors hover:bg-white/10"
-                  aria-label={isIntroVideoMuted ? "Unmute" : "Mute"}
-                >
-                  {isIntroVideoMuted ? (
-                    <VolumeX className="h-5 w-5" />
-                  ) : (
-                    <Volume2 className="h-5 w-5" />
-                  )}
-                  <span className="text-[11px]">
-                    {isIntroVideoMuted ? "Unmute" : "Mute"}
-                  </span>
-                </button>
-
+              {/* Left group */}
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -5535,8 +5524,7 @@ export default function DigitalHubClient({
                       video.pause();
                     }
                   }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-slate-200 transition-colors hover:bg-white/10"
-                  aria-label={isIntroVideoPlaying ? "Pause" : "Play"}
+                  className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
                 >
                   {isIntroVideoPlaying ? (
                     <Pause className="h-5 w-5" />
@@ -5547,7 +5535,115 @@ export default function DigitalHubClient({
                     {isIntroVideoPlaying ? "Pause" : "Play"}
                   </span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const video = introVideoRef.current;
+                    if (!video) return;
+                    video.muted = !video.muted;
+                    setIsIntroVideoMuted(video.muted);
+                  }}
+                  className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
+                  aria-label={isIntroVideoMuted ? "Unmute" : "Mute"}
+                >
+                  {isIntroVideoMuted ? (
+                    <MicOff className="h-5 w-5 text-red-500" />
+                  ) : (
+                    <Mic className="h-5 w-5" />
+                  )}
+                  <span className="text-[11px]">
+                    {isIntroVideoMuted ? "Unmute" : "Mute"}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToastMessage("Camera not available");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }}
+                  className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
+                >
+                  <VideoOff className="h-5 w-5 text-red-500" />
+                  <span className="text-[11px]">Start Video</span>
+                </button>
+              </div>
 
+              {/* Middle group */}
+              <div className="flex flex-1 items-center justify-center gap-1 overflow-hidden sm:gap-4 md:flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToastMessage("Cannot see participants now");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }}
+                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+                  aria-label="Participants"
+                >
+                  <Users className="h-5 w-5" />
+                  <span className="text-[11px]">Participants</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToastMessage("Chat not available");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }}
+                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+                >
+                  <MessageSquare className="h-5 w-5" />
+                  <span className="text-[11px]">Chat</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToastMessage("React not available");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }}
+                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 md:flex sm:px-3"
+                >
+                  <Smile className="h-5 w-5" />
+                  <span className="text-[11px]">React</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToastMessage("Screen share not available");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }}
+                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 lg:flex sm:px-3"
+                >
+                  <Share className="h-5 w-5 text-green-500" />
+                  <span className="text-[11px]">Share</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToastMessage("Host tools not available");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }}
+                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 xl:flex sm:px-3"
+                >
+                  <Shield className="h-5 w-5" />
+                  <span className="text-[11px]">Host tools</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToastMessage("Zoom AI not available");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }}
+                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 2xl:flex sm:px-3"
+                >
+                  <Sparkles className="h-5 w-5 text-indigo-400" />
+                  <span className="text-[11px]">Zoom AI</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -5559,40 +5655,38 @@ export default function DigitalHubClient({
                       video.requestFullscreen();
                     }
                   }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-slate-200 transition-colors hover:bg-white/10"
-                  aria-label="Fullscreen"
+                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
                 >
                   <Maximize className="h-5 w-5" />
                   <span className="text-[11px]">Fullscreen</span>
                 </button>
-
                 <button
                   type="button"
                   onClick={() => {
-                    setToastMessage("Cannot see participants now");
+                    setToastMessage("More options not available");
                     setShowToast(true);
                     setTimeout(() => setShowToast(false), 3000);
                   }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-slate-200 transition-colors hover:bg-white/10"
-                  aria-label="Participants"
+                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
                 >
-                  <Users className="h-5 w-5" />
-                  <span className="text-[11px]">Participants</span>
+                  <MoreHorizontal className="h-5 w-5" />
+                  <span className="text-[11px]">More</span>
                 </button>
               </div>
 
-              <div className="flex w-24 justify-end sm:w-28">
+              {/* Right group */}
+              <div className="flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setIsIntroVideoModalOpen(false);
                     setManualIntroVideoUrl(null);
                   }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-red-500 transition-colors hover:bg-white/10"
-                  aria-label="Leave"
+                  className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-red-500 transition-colors hover:bg-white/10 sm:px-3"
+                  aria-label="End"
                 >
-                  <PhoneOff className="h-5 w-5" />
-                  <span className="text-[11px] font-medium">Leave</span>
+                  <PhoneOff className="h-5 w-5 rounded-full border border-red-500 p-0.5" />
+                  <span className="text-[11px] font-medium">End</span>
                 </button>
               </div>
             </div>
