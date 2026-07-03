@@ -527,6 +527,14 @@ const findChapterByIdentifier = (
   );
 };
 
+const formatPlaybackTime = (seconds: number) => {
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
+  const totalSeconds = Math.floor(seconds);
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
+};
+
 const toIdString = (value?: string | { _id?: string } | null) => {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -679,6 +687,16 @@ export default function DigitalHubClient({
   const [isIntroVideoMuted, setIsIntroVideoMuted] = useState(false);
   const [introVideoCurrentTime, setIntroVideoCurrentTime] = useState(0);
   const [introVideoDuration, setIntroVideoDuration] = useState(0);
+
+  useEffect(() => {
+    if (isIntroVideoModalOpen) {
+      setIsIntroVideoPlaying(true);
+      setIsIntroVideoMuted(false);
+      setIntroVideoCurrentTime(0);
+      setIntroVideoDuration(0);
+    }
+  }, [isIntroVideoModalOpen]);
+
   const [zoomSessionStatus, setZoomSessionStatus] = useState<
     "idle" | "downloading" | "ready" | "error"
   >("idle");
