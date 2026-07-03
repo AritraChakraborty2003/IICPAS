@@ -5534,14 +5534,17 @@ export default function DigitalHubClient({
                       video.pause();
                     }
                   }}
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-slate-200 transition-colors hover:bg-white/10"
                   aria-label={isIntroVideoPlaying ? "Pause" : "Play"}
                 >
                   {isIntroVideoPlaying ? (
-                    <Pause className="h-6 w-6" />
+                    <Pause className="h-5 w-5" />
                   ) : (
-                    <Play className="h-6 w-6" />
+                    <Play className="h-5 w-5" />
                   )}
+                  <span className="text-[11px]">
+                    {isIntroVideoPlaying ? "Pause" : "Play"}
+                  </span>
                 </button>
 
                 <button
@@ -5563,18 +5566,20 @@ export default function DigitalHubClient({
                 </button>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setIsIntroVideoModalOpen(false);
-                  setManualIntroVideoUrl(null);
-                }}
-                className="flex w-24 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 sm:w-28"
-                aria-label="Leave"
-              >
-                <PhoneOff className="h-4 w-4" />
-                Leave
-              </button>
+              <div className="flex w-24 justify-end sm:w-28">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsIntroVideoModalOpen(false);
+                    setManualIntroVideoUrl(null);
+                  }}
+                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-red-500 transition-colors hover:bg-white/10"
+                  aria-label="Leave"
+                >
+                  <PhoneOff className="h-5 w-5" />
+                  <span className="text-[11px] font-medium">Leave</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
