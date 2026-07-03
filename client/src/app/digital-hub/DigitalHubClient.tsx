@@ -674,6 +674,11 @@ export default function DigitalHubClient({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isIntroVideoModalOpen, setIsIntroVideoModalOpen] = useState(false);
   const [manualIntroVideoUrl, setManualIntroVideoUrl] = useState<string | null>(null);
+  const introVideoRef = useRef<HTMLVideoElement>(null);
+  const [isIntroVideoPlaying, setIsIntroVideoPlaying] = useState(true);
+  const [isIntroVideoMuted, setIsIntroVideoMuted] = useState(false);
+  const [introVideoCurrentTime, setIntroVideoCurrentTime] = useState(0);
+  const [introVideoDuration, setIntroVideoDuration] = useState(0);
   const [zoomSessionStatus, setZoomSessionStatus] = useState<
     "idle" | "downloading" | "ready" | "error"
   >("idle");
