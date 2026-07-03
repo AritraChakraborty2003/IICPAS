@@ -5409,52 +5409,43 @@ export default function DigitalHubClient({
 
       {/* Intro Video Modal */}
       {isIntroVideoModalOpen && (manualIntroVideoUrl || selectedTopicIntroVideo) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="absolute inset-0 bg-slate-950/75 backdrop-blur-sm"
-            onClick={() => {
-              setIsIntroVideoModalOpen(false);
-              setManualIntroVideoUrl(null);
-            }}
-          />
-          <div className="relative z-10 w-full max-w-4xl overflow-hidden rounded-2xl bg-slate-950 shadow-2xl ring-1 ring-white/10">
-            <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
-              <div>
-                <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
-                  Intro Video
-                </p>
-                <h3 className="text-lg font-semibold text-white sm:text-xl">
-                  {selectedTopic?.title}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsIntroVideoModalOpen(false);
-                  setManualIntroVideoUrl(null);
-                }}
-                className="rounded-full p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
-                aria-label="Close intro video"
-              >
-                <X className="h-5 w-5" />
-              </button>
+        <div className="fixed inset-0 z-50 flex flex-col bg-black">
+          <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/95 px-4 py-3 sm:px-6">
+            <div>
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
+                Intro Video
+              </p>
+              <h3 className="text-lg font-semibold text-white sm:text-xl">
+                {selectedTopic?.title}
+              </h3>
             </div>
-            <div className="bg-black">
-              <video
-                key={manualIntroVideoUrl || selectedTopicIntroVideo}
-                controls
-                controlsList="nodownload noplaybackrate noremoteplayback"
-                disablePictureInPicture
-                disableRemotePlayback
-                autoPlay
-                playsInline
-                onContextMenu={(event) => event.preventDefault()}
-                className="aspect-video w-full bg-black"
-              >
-                <source src={manualIntroVideoUrl || selectedTopicIntroVideo} />
-                Your browser does not support the video tag.
-              </video>
-            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setIsIntroVideoModalOpen(false);
+                setManualIntroVideoUrl(null);
+              }}
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-colors hover:bg-red-700"
+              aria-label="Close intro video"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="flex flex-1 items-center justify-center bg-black">
+            <video
+              key={manualIntroVideoUrl || selectedTopicIntroVideo}
+              controls
+              controlsList="nodownload noplaybackrate noremoteplayback"
+              disablePictureInPicture
+              disableRemotePlayback
+              autoPlay
+              playsInline
+              onContextMenu={(event) => event.preventDefault()}
+              className="h-full max-h-full w-full max-w-full object-contain bg-black"
+            >
+              <source src={manualIntroVideoUrl || selectedTopicIntroVideo} />
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
       )}
