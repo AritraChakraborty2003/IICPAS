@@ -564,8 +564,8 @@ export default function Header({
 
                 {!isAdmin && (
                   <Link
-                    href="/booking"
-                    onClick={(e) => handleNavClick(e, "/booking")}
+                    href="/register"
+                    onClick={(e) => handleNavClick(e, "/register")}
                     className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-sm"
                   >
                     Register Now
@@ -737,7 +737,7 @@ export default function Header({
             ) : student ? (
               <>
                 <Link
-                  href="/booking"
+                  href="/register"
                   onClick={() => setDrawerOpen(false)}
                   className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
                 >
@@ -765,10 +765,10 @@ export default function Header({
             ) : (
               <>
                 <Link
-                  href="/booking"
+                  href="/register"
                   onClick={(e) => {
                     setDrawerOpen(false);
-                    handleNavClick(e, "/booking");
+                    handleNavClick(e, "/register");
                   }}
                   className="block w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-center text-sm"
                 >
