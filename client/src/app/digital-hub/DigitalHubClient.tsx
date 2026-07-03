@@ -5421,7 +5421,7 @@ export default function DigitalHubClient({
       {/* Intro Video Modal */}
       {isIntroVideoModalOpen && (manualIntroVideoUrl || selectedTopicIntroVideo) && (
         <div className="fixed inset-0 z-50 flex flex-col bg-black">
-          <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/95 px-4 py-3 sm:px-6">
+          <div className="flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent px-4 py-3 sm:px-6">
             <div>
               <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-300">
                 Intro Video
@@ -5430,33 +5430,144 @@ export default function DigitalHubClient({
                 {selectedTopic?.title}
               </h3>
             </div>
-            <button
-              type="button"
-              onClick={() => {
-                setIsIntroVideoModalOpen(false);
-                setManualIntroVideoUrl(null);
-              }}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-red-600 text-white shadow-lg transition-colors hover:bg-red-700"
-              aria-label="Close intro video"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
-          <div className="flex flex-1 items-center justify-center bg-black">
+          <div
+            className="relative flex flex-1 items-center justify-center bg-black"
+            onClick={() => {
+              const video = introVideoRef.current;
+              if (!video) return;
+              if (video.paused) {
+                video.play();
+              } else {
+                video.pause();
+              }
+            }}
+          >
             <video
               key={manualIntroVideoUrl || selectedTopicIntroVideo}
-              controls
+              ref={introVideoRef}
               controlsList="nodownload noplaybackrate noremoteplayback"
               disablePictureInPicture
               disableRemotePlayback
               autoPlay
               playsInline
               onContextMenu={(event) => event.preventDefault()}
+              onPlay={() => setIsIntroVideoPlaying(true)}
+              onPause={() => setIsIntroVideoPlaying(false)}
+              onLoadedMetadata={(event) =>
+                setIntroVideoDuration(event.currentTarget.duration || 0)
+              }
+              onTimeUpdate={(event) =>
+                setIntroVideoCurrentTime(event.currentTarget.currentTime)
+              }
               className="h-full max-h-full w-full max-w-full object-contain bg-black"
             >
               <source src={manualIntroVideoUrl || selectedTopicIntroVideo} />
               Your browser does not support the video tag.
             </video>
+          </div>
+
+          {/* Zoom-style bottom control bar */}
+          <div
+            className="bg-[#1c1c1e]/95 px-3 pb-3 pt-2 sm:px-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <input
+              type="range"
+              min={0}
+              max={introVideoDuration || 0}
+              step={0.1}
+              value={introVideoCurrentTime}
+              onChange={(event) => {
+                const video = introVideoRef.current;
+                const nextTime = Number(event.target.value);
+                if (video) video.currentTime = nextTime;
+                setIntroVideoCurrentTime(nextTime);
+              }}
+              className="mb-2 h-1 w-full cursor-pointer accent-sky-400"
+              aria-label="Seek video"
+            />
+            <div className="flex items-center justify-between">
+              <span className="w-24 text-xs font-medium text-slate-300 sm:w-28">
+                {formatPlaybackTime(introVideoCurrentTime)} /{" "}
+                {formatPlaybackTime(introVideoDuration)}
+              </span>
+
+              <div className="flex flex-1 items-center justify-center gap-4 sm:gap-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const video = introVideoRef.current;
+                    if (!video) return;
+                    video.muted = !video.muted;
+                    setIsIntroVideoMuted(video.muted);
+                  }}
+                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-slate-200 transition-colors hover:bg-white/10"
+                  aria-label={isIntroVideoMuted ? "Unmute" : "Mute"}
+                >
+                  {isIntroVideoMuted ? (
+                    <VolumeX className="h-5 w-5" />
+                  ) : (
+                    <Volume2 className="h-5 w-5" />
+                  )}
+                  <span className="text-[11px]">
+                    {isIntroVideoMuted ? "Unmute" : "Mute"}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const video = introVideoRef.current;
+                    if (!video) return;
+                    if (video.paused) {
+                      video.play();
+                    } else {
+                      video.pause();
+                    }
+                  }}
+                  className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                  aria-label={isIntroVideoPlaying ? "Pause" : "Play"}
+                >
+                  {isIntroVideoPlaying ? (
+                    <Pause className="h-6 w-6" />
+                  ) : (
+                    <Play className="h-6 w-6" />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const video = introVideoRef.current;
+                    if (!video) return;
+                    if (document.fullscreenElement) {
+                      document.exitFullscreen();
+                    } else {
+                      video.requestFullscreen();
+                    }
+                  }}
+                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-slate-200 transition-colors hover:bg-white/10"
+                  aria-label="Fullscreen"
+                >
+                  <Maximize className="h-5 w-5" />
+                  <span className="text-[11px]">Fullscreen</span>
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsIntroVideoModalOpen(false);
+                  setManualIntroVideoUrl(null);
+                }}
+                className="flex w-24 items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700 sm:w-28"
+                aria-label="Leave"
+              >
+                <PhoneOff className="h-4 w-4" />
+                Leave
+              </button>
+            </div>
           </div>
         </div>
       )}
