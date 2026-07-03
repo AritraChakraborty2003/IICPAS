@@ -179,6 +179,7 @@ import {
   VolumeX,
   Maximize,
   PhoneOff,
+  Users,
 } from "lucide-react";
 
 type ContentKey =
@@ -5563,6 +5564,20 @@ export default function DigitalHubClient({
                 >
                   <Maximize className="h-5 w-5" />
                   <span className="text-[11px]">Fullscreen</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setToastMessage("Cannot see participants now");
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 3000);
+                  }}
+                  className="flex flex-col items-center gap-1 rounded-lg px-3 py-1.5 text-slate-200 transition-colors hover:bg-white/10"
+                  aria-label="Participants"
+                >
+                  <Users className="h-5 w-5" />
+                  <span className="text-[11px]">Participants</span>
                 </button>
               </div>
 
