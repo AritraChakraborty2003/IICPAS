@@ -16,6 +16,24 @@ import {
 
 const API = getApiOrigin();
 
+const calculateEndTime = (timeStr, durationMin) => {
+  if (!timeStr) return "";
+  const [h, m] = timeStr.split(":").map(Number);
+  const date = new Date();
+  date.setHours(h, m + (Number(durationMin) || 0), 0, 0);
+  return date.toTimeString().slice(0, 5);
+};
+
+const calculateDuration = (startTimeStr, endTimeStr) => {
+  if (!startTimeStr || !endTimeStr) return 0;
+  const [sh, sm] = startTimeStr.split(":").map(Number);
+  const [eh, em] = endTimeStr.split(":").map(Number);
+  let diff = (eh * 60 + em) - (sh * 60 + sm);
+  if (diff < 0) diff += 24 * 60;
+  return diff;
+};
+
+
 const EMPTY_FORM = {
   title: "",
   description: "",
@@ -26,6 +44,7 @@ const EMPTY_FORM = {
   date: "",
   time: "",
   durationMinutes: 60,
+  endTime: "",
   meetingLink: "",
   passcode: "",
   recordingUrl: "",
@@ -264,6 +283,7 @@ export default function ClassManagementAdmin() {
       topics: topicIds,
       date: cls.date ? new Date(cls.date).toISOString().slice(0, 10) : "",
       time: cls.time || "",
+      endTime: cls.endTime || calculateEndTime(cls.time || "00:00", cls.durationMinutes || 60),
       durationMinutes: cls.durationMinutes || 60,
       meetingLink: cls.meetingLink || "",
       passcode: cls.passcode || "",
@@ -575,7 +595,7 @@ export default function ClassManagementAdmin() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 <CheckboxGroup
                   label="Courses *"
                   options={courses}
@@ -609,7 +629,7 @@ export default function ClassManagementAdmin() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
                     Date *
@@ -631,9 +651,34 @@ export default function ClassManagementAdmin() {
                   <input
                     type="time"
                     value={form.time}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, time: e.target.value }))
-                    }
+                    onChange={(e) => {
+                      const newTime = e.target.value;
+                      setForm((f) => ({
+                        ...f,
+                        time: newTime,
+                        endTime: calculateEndTime(newTime, f.durationMinutes)
+                      }));
+                    }}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                    required
+                  />
+                </div></div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    End Time *
+                  </label>
+                  <input
+                    type="time"
+                    value={form.endTime || ""}
+                    onChange={(e) => {
+                      const newEndTime = e.target.value;
+                      const newDuration = calculateDuration(form.time, newEndTime);
+                      setForm((f) => ({
+                        ...f,
+                        endTime: newEndTime,
+                        durationMinutes: newDuration,
+                      }));
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                     required
                   />
@@ -646,12 +691,14 @@ export default function ClassManagementAdmin() {
                     type="number"
                     min={1}
                     value={form.durationMinutes}
-                    onChange={(e) =>
+                    onChange={(e) => {
+                      const newDuration = e.target.value;
                       setForm((f) => ({
                         ...f,
-                        durationMinutes: e.target.value,
-                      }))
-                    }
+                        durationMinutes: newDuration,
+                        endTime: calculateEndTime(f.time, newDuration)
+                      }));
+                    }}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                     required
                   />
@@ -672,7 +719,7 @@ export default function ClassManagementAdmin() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
                     Live Meeting Link

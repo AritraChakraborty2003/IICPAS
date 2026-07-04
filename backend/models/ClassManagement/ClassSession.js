@@ -34,6 +34,7 @@ const classSessionSchema = new Schema(
     // Schedule
     date: { type: Date, required: true }, // calendar day of the class
     time: { type: String, required: true }, // "HH:mm" 24h start time
+    endTime: { type: String }, // "HH:mm" 24h end time
     durationMinutes: { type: Number, required: true, default: 60 },
 
     // Computed absolute start/end timestamps (in UTC) for scheduling logic

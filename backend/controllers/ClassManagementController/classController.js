@@ -175,6 +175,7 @@ export const createClass = async (req, res) => {
       recordingUrl = "",
       thumbnail = "",
       price = 0,
+      endTime,
       maxParticipants = 100,
     } = req.body;
 
@@ -210,6 +211,7 @@ export const createClass = async (req, res) => {
       type: "live",
       date,
       time,
+      endTime,
       durationMinutes,
       timezone,
       startAt,
