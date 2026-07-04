@@ -27,6 +27,7 @@ const EMPTY_FORM = {
   time: "",
   durationMinutes: 60,
   meetingLink: "",
+  passcode: "",
   recordingUrl: "",
   price: 0,
   maxParticipants: 100,
@@ -265,6 +266,7 @@ export default function ClassManagementAdmin() {
       time: cls.time || "",
       durationMinutes: cls.durationMinutes || 60,
       meetingLink: cls.meetingLink || "",
+      passcode: cls.passcode || "",
       recordingUrl: cls.recordingUrl || "",
       price: cls.price || 0,
       maxParticipants: cls.maxParticipants || 100,
@@ -670,7 +672,7 @@ export default function ClassManagementAdmin() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
                     Live Meeting Link
@@ -681,6 +683,20 @@ export default function ClassManagementAdmin() {
                     value={form.meetingLink}
                     onChange={(e) =>
                       setForm((f) => ({ ...f, meetingLink: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Passcode
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 123456"
+                    value={form.passcode}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, passcode: e.target.value }))
                     }
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />

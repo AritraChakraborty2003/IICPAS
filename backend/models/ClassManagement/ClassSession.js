@@ -44,6 +44,7 @@ const classSessionSchema = new Schema(
 
     // Live meeting link (used while the class is live)
     meetingLink: { type: String, default: "" },
+    passcode: { type: String, default: "" },
 
     // Recording URL (shown after auto-conversion to recorded)
     recordingUrl: { type: String, default: "" },
