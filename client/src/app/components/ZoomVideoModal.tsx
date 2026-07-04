@@ -15,6 +15,8 @@ import {
   PhoneOff,
   Settings,
   Volume2,
+  Plus,
+  Minus,
 } from "lucide-react";
 
 interface ZoomVideoModalProps {
@@ -37,6 +39,7 @@ function ZoomVideoModal({
   const [isIntroVideoMuted, setIsIntroVideoMuted] = React.useState(false);
   const [introVideoCurrentTime, setIntroVideoCurrentTime] = React.useState(0);
   const [introVideoDuration, setIntroVideoDuration] = React.useState(0);
+  const [volume, setVolume] = React.useState(1);
 
   if (!isOpen || !videoUrl) return null;
 
@@ -199,6 +202,48 @@ function ZoomVideoModal({
               <VideoOff className="h-5 w-5 text-red-500" />
               <span className="text-[11px]">Start Video</span>
             </button>
+            <div className="flex flex-col items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors sm:px-3 hidden sm:flex">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const video = introVideoRef.current;
+                    if (!video) return;
+                    const newVol = Math.max(0, volume - 0.1);
+                    video.volume = newVol;
+                    setVolume(newVol);
+                    if (newVol === 0) {
+                      video.muted = true;
+                      setIsIntroVideoMuted(true);
+                    }
+                  }}
+                  className="hover:text-sky-400 p-0.5 rounded-full hover:bg-white/10"
+                  aria-label="Decrease Volume"
+                >
+                  <Minus className="h-3 w-3" />
+                </button>
+                <Volume2 className="h-4 w-4" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const video = introVideoRef.current;
+                    if (!video) return;
+                    const newVol = Math.min(1, volume + 0.1);
+                    video.volume = newVol;
+                    setVolume(newVol);
+                    if (newVol > 0 && video.muted) {
+                      video.muted = false;
+                      setIsIntroVideoMuted(false);
+                    }
+                  }}
+                  className="hover:text-sky-400 p-0.5 rounded-full hover:bg-white/10"
+                  aria-label="Increase Volume"
+                >
+                  <Plus className="h-3 w-3" />
+                </button>
+              </div>
+              <span className="text-[11px]">Sound</span>
+            </div>
           </div>
 
           {/* Middle group */}
