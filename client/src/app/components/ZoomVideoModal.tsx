@@ -45,6 +45,11 @@ function ZoomVideoModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black">
+      <style>{`
+        #chatbot-floating-button, .chatbot-container {
+          display: none !important;
+        }
+      `}</style>
       <div
         className="absolute inset-0 flex items-center justify-center bg-black"
         onClick={() => {
@@ -204,43 +209,30 @@ function ZoomVideoModal({
             </button>
             <div className="flex flex-col items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors sm:px-3 hidden sm:flex">
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
+                <Volume2 className="h-4 w-4" />
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={isIntroVideoMuted ? 0 : volume}
+                  onChange={(e) => {
                     const video = introVideoRef.current;
                     if (!video) return;
-                    const newVol = Math.max(0, volume - 0.1);
+                    const newVol = parseFloat(e.target.value);
                     video.volume = newVol;
                     setVolume(newVol);
                     if (newVol === 0) {
                       video.muted = true;
                       setIsIntroVideoMuted(true);
-                    }
-                  }}
-                  className="hover:text-sky-400 p-0.5 rounded-full hover:bg-white/10"
-                  aria-label="Decrease Volume"
-                >
-                  <Minus className="h-3 w-3" />
-                </button>
-                <Volume2 className="h-4 w-4" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const video = introVideoRef.current;
-                    if (!video) return;
-                    const newVol = Math.min(1, volume + 0.1);
-                    video.volume = newVol;
-                    setVolume(newVol);
-                    if (newVol > 0 && video.muted) {
+                    } else if (video.muted) {
                       video.muted = false;
                       setIsIntroVideoMuted(false);
                     }
                   }}
-                  className="hover:text-sky-400 p-0.5 rounded-full hover:bg-white/10"
-                  aria-label="Increase Volume"
-                >
-                  <Plus className="h-3 w-3" />
-                </button>
+                  className="w-16 h-1 accent-sky-400 cursor-pointer"
+                  aria-label="Volume Control"
+                />
               </div>
               <span className="text-[11px]">Sound</span>
             </div>
