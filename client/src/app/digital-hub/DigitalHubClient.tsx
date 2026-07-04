@@ -164,6 +164,7 @@ declare global {
 }
 import {
   CheckCircle,
+  AlertCircle,
   Moon,
   Sun,
   ArrowLeft,
@@ -793,6 +794,9 @@ function ZoomVideoModal({
       >
         {/* Top Badge */}
         <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+          <span className="flex items-center gap-1.5 rounded bg-black/60 px-2 py-1 text-xs font-bold tracking-wider text-white shadow-sm backdrop-blur-md">
+            IICPA Workspace
+          </span>
           {isLive ? (
             <span className="flex items-center gap-1.5 rounded bg-red-600/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-md">
               <span className="h-2 w-2 animate-pulse rounded-full bg-white"></span>
@@ -1005,8 +1009,6 @@ export default function DigitalHubClient({
   const [manualIntroVideoUrl, setManualIntroVideoUrl] = useState<string | null>(
     null,
   );
-
-
 
   const [zoomSessionStatus, setZoomSessionStatus] = useState<
     "idle" | "downloading" | "ready" | "error"
@@ -6427,8 +6429,15 @@ export default function DigitalHubClient({
       {/* Toast Notification */}
       {showToast && (
         <div className="fixed top-4 right-4 z-50">
-          <div className="bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
-            <CheckCircle className="w-5 h-5" />
+          <div
+            className={`${toastMessage.toLowerCase().includes("cannot") || toastMessage.toLowerCase().includes("not available") ? "bg-red-600" : "bg-green-600"} text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2`}
+          >
+            {toastMessage.toLowerCase().includes("cannot") ||
+            toastMessage.toLowerCase().includes("not available") ? (
+              <AlertCircle className="w-5 h-5" />
+            ) : (
+              <CheckCircle className="w-5 h-5" />
+            )}
             <span>{toastMessage}</span>
           </div>
         </div>
