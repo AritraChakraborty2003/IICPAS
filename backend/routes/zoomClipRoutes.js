@@ -27,6 +27,7 @@ function publicVideoUrl(req) {
 }
 
 // In-memory job state. Single-process only — fine for this single-clip feature.
+const jobs = {};
 let job = { status: "idle", progress: 0, error: null };
 
 async function findTargetTopic() {
@@ -125,6 +126,105 @@ router.post("/accounting-overview/download", (req, res) => {
     return res.status(202).json(job);
   }
   runDownload(req);
+  res.status(202).json({ status: "downloading", progress: 0, error: null });
+});
+
+function getPublicVideoUrlForFragment(req, fragment) {
+  const base =
+    process.env.API_URL ||
+    (process.env.API_BASE_URL || "").replace(/\/api\/?$/, "") ||
+    `${req.protocol}://${req.get("host")}`;
+  return `${base}/uploads/topic-videos/${fragment}.mp4`;
+}
+
+async function runDynamicDownload(req, fragment) {
+  jobs[fragment] = { status: "downloading", progress: 0, error: null };
+  try {
+    const token = await getZoomAccessToken();
+
+    const { data: listData } = await axios.get("https://api.zoom.us/v2/clips", {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { page_size: 100 },
+    });
+    const clip = (listData.data || []).find((c) =>
+      c.share_link?.includes(fragment)
+    );
+    if (!clip) throw new Error("Clip not found in Zoom account");
+
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+    const outputFile = path.join(UPLOAD_DIR, `${fragment}.mp4`);
+    const tmpFile = `${outputFile}.part`;
+
+    const response = await axios.get(
+      `https://api.zoom.us/v2/clips/${clip.clip_id}/download`,
+      { headers: { Authorization: `Bearer ${token}` }, responseType: "stream" }
+    );
+
+    const totalBytes = clip.file_size || 0;
+    let downloadedBytes = 0;
+
+    await new Promise((resolve, reject) => {
+      const writer = fs.createWriteStream(tmpFile);
+      response.data.on("data", (chunk) => {
+        downloadedBytes += chunk.length;
+        jobs[fragment].progress = totalBytes
+          ? Math.min(99, Math.round((downloadedBytes / totalBytes) * 100))
+          : jobs[fragment].progress;
+      });
+      response.data.pipe(writer);
+      writer.on("finish", resolve);
+      writer.on("error", reject);
+      response.data.on("error", reject);
+    });
+
+    fs.renameSync(tmpFile, outputFile);
+
+    jobs[fragment] = { status: "ready", progress: 100, error: null };
+  } catch (err) {
+    jobs[fragment] = {
+      status: "error",
+      progress: 0,
+      error: err.response?.data?.message || err.message,
+    };
+  }
+}
+
+function extractFragment(link) {
+  if (!link) return null;
+  const match = link.match(/\/share\/([a-zA-Z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+router.get("/dynamic-status", (req, res) => {
+  const link = req.query.link;
+  const fragment = extractFragment(link);
+  if (!fragment) return res.status(400).json({ error: "Invalid link format" });
+
+  const outputFile = path.join(UPLOAD_DIR, `${fragment}.mp4`);
+  const jobState = jobs[fragment] || { status: "idle", progress: 0, error: null };
+  
+  if (fs.existsSync(outputFile) && jobState.status !== "downloading") {
+    return res.json({ status: "ready", progress: 100, url: getPublicVideoUrlForFragment(req, fragment) });
+  }
+  res.json(jobState);
+});
+
+router.post("/dynamic-download", (req, res) => {
+  const { link } = req.body;
+  const fragment = extractFragment(link);
+  if (!fragment) return res.status(400).json({ error: "Invalid link format" });
+
+  const outputFile = path.join(UPLOAD_DIR, `${fragment}.mp4`);
+  const jobState = jobs[fragment] || { status: "idle", progress: 0, error: null };
+
+  if (fs.existsSync(outputFile)) {
+    return res.json({ status: "ready", progress: 100, url: getPublicVideoUrlForFragment(req, fragment) });
+  }
+  if (jobState.status === "downloading") {
+    return res.status(202).json(jobState);
+  }
+  
+  runDynamicDownload(req, fragment);
   res.status(202).json({ status: "downloading", progress: 0, error: null });
 });
 

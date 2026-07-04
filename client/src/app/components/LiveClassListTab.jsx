@@ -48,38 +48,48 @@ export default function LiveClassListTab() {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [activeZoomClass, setActiveZoomClass] = useState(null);
 
-  const handleOpenClass = (cls) => {
+  const handleOpenClass = async (cls) => {
     if (new Date(cls.startAt) > new Date()) {
       toast.error("The live session hasn't begun yet");
-      return;
-    }
-
-    const isDownloaded = localStorage.getItem(`zoom_downloaded_${cls._id}`);
-    if (isDownloaded) {
-      setActiveZoomClass(cls);
       return;
     }
 
     setDownloadingClassId(cls._id);
     setDownloadProgress(0);
 
-    const totalTime = 3000;
-    const intervalTime = 100;
-    const steps = totalTime / intervalTime;
-    let currentStep = 0;
+    const pollStatus = async () => {
+      try {
+        const { data } = await axios.get(
+          `${API}/api/zoom-clips/dynamic-status?link=${encodeURIComponent(cls.meetingLink)}`,
+        );
 
-    const interval = setInterval(() => {
-      currentStep++;
-      const progress = Math.floor((currentStep / steps) * 100);
-      setDownloadProgress(progress);
-
-      if (currentStep >= steps) {
-        clearInterval(interval);
+        if (data.status === "ready") {
+          setDownloadingClassId(null);
+          setActiveZoomClass({ ...cls, meetingLink: data.url });
+        } else if (data.status === "error") {
+          setDownloadingClassId(null);
+          toast.error(
+            "Failed to download video: " + (data.error || "Unknown error"),
+          );
+        } else {
+          setDownloadProgress(data.progress || 0);
+          setTimeout(pollStatus, 1000);
+        }
+      } catch (err) {
         setDownloadingClassId(null);
-        localStorage.setItem(`zoom_downloaded_${cls._id}`, "true");
-        setActiveZoomClass(cls);
+        toast.error("Error checking video status");
       }
-    }, intervalTime);
+    };
+
+    try {
+      await axios.post(`${API}/api/zoom-clips/dynamic-download`, {
+        link: cls.meetingLink,
+      });
+      pollStatus();
+    } catch (err) {
+      setDownloadingClassId(null);
+      toast.error("Error starting video download");
+    }
   };
 
   useEffect(() => {
