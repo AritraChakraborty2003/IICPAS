@@ -6039,7 +6039,7 @@ export default function DigitalHubClient({
                 </div>
 
                 {/* Middle group */}
-                <div className="flex flex-1 items-center justify-center gap-1 overflow-hidden sm:gap-4 md:flex-wrap">
+                <div className="flex flex-1 items-center justify-center gap-1 sm:gap-4 md:flex-wrap">
                   <button
                     type="button"
                     onClick={() => {
