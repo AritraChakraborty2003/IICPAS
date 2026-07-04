@@ -301,3 +301,4 @@ function ZoomVideoModal({
   );
 }
 
+export default ZoomVideoModal;
