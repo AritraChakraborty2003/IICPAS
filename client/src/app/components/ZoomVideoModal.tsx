@@ -17,6 +17,7 @@ import {
   Volume2,
   Plus,
   Minus,
+  MoreHorizontal,
 } from "lucide-react";
 
 interface ZoomVideoModalProps {
@@ -337,5 +338,83 @@ function ZoomVideoModal({
     </div>
   );
 }
+
+function MoreVideoOptionsButton({
+  videoRef,
+}: {
+  videoRef: React.RefObject<HTMLVideoElement>;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [volume, setVolume] = useState(1);
+
+  const handleSpeedChange = (newSpeed: number) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = newSpeed;
+      setSpeed(newSpeed);
+    }
+  };
+
+  const handleVolumeChange = (delta: number) => {
+    if (videoRef.current) {
+      const newVol = Math.max(0, Math.min(1, videoRef.current.volume + delta));
+      videoRef.current.volume = newVol;
+      setVolume(newVol);
+    }
+  };
+
+  return (
+    <div className="relative">
+      {isOpen && (
+        <div className="absolute bottom-full right-0 mb-2 w-48 rounded-xl bg-slate-800 p-2 shadow-xl border border-white/10 text-slate-200 text-sm z-50">
+          <div className="mb-2 border-b border-white/10 pb-2">
+            <div className="mb-1 font-semibold text-xs text-slate-400 text-left">
+              Playback Speed
+            </div>
+            <div className="flex gap-1">
+              {[1, 2, 3].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleSpeedChange(s)}
+                  className={`flex-1 rounded py-1 text-center transition-colors ${speed === s ? "bg-indigo-600 text-white" : "bg-white/5 hover:bg-white/10"}`}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 font-semibold text-xs text-slate-400 text-left">
+              Volume ({(volume * 100).toFixed(0)}%)
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleVolumeChange(-0.1)}
+                className="flex-1 rounded bg-white/5 py-1 hover:bg-white/10"
+              >
+                -
+              </button>
+              <button
+                onClick={() => handleVolumeChange(0.1)}
+                className="flex-1 rounded bg-white/5 py-1 hover:bg-white/10"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+      >
+        <MoreHorizontal className="h-5 w-5" />
+        <span className="text-[11px]">More</span>
+      </button>
+    </div>
+  );
+}
+
 
 export default ZoomVideoModal;
