@@ -270,7 +270,7 @@ function TickOverlay() {
 }
 
 // ─── Root page ──────────────────────────────────────────────────────────────
-export default function EpfReg6Page() {
+export default function EpfReg10Page() {
   const [launched, setLaunched] = useState(false);
   const [step, setStep] = useState(1);
   const [showTick, setShowTick] = useState(false);
