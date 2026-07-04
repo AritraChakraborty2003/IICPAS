@@ -35,8 +35,22 @@ function SimBanner() {
 }
 
 // ─── Dashboard header: company strip + nav bar ──────────────────────────────
-function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => void }) {
-  const navItems = ["Establishment", "Payments", "Dashboards", "User", "Admin", "Online Services", "ABRY"];
+function DashboardHeader({
+  user,
+  onLogout,
+}: {
+  user: string;
+  onLogout: () => void;
+}) {
+  const navItems = [
+    "Establishment",
+    "Payments",
+    "Dashboards",
+    "User",
+    "Admin",
+    "Online Services",
+    "ABRY",
+  ];
   return (
     <header className="border-b border-[#ddd] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
@@ -69,12 +83,23 @@ function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => voi
 
         <div className="text-right text-[11px] text-[#555]">
           <div className="mb-1 flex items-center justify-end gap-2">
-            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A-</span>
-            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A</span>
-            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A+</span>
-            <span className="text-[#888]">employerfeedback[at]epfindia[dot]gov[dot]in</span>
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">
+              A-
+            </span>
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">
+              A
+            </span>
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">
+              A+
+            </span>
+            <span className="text-[#888]">
+              employerfeedback[at]epfindia[dot]gov[dot]in
+            </span>
           </div>
-          <button onClick={onLogout} className="flex items-center justify-end gap-1 text-[#2f80b5] hover:underline">
+          <button
+            onClick={onLogout}
+            className="flex items-center justify-end gap-1 text-[#2f80b5] hover:underline"
+          >
             <LogOut size={13} /> Logout
           </button>
           <div className="mt-1 text-[#888]">Mon 09 Aug 2021 (PV 3.3.30)</div>
@@ -102,13 +127,22 @@ function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => voi
 }
 
 // ─── ECR Upload View ──────────────────────────────────────────
-function EcrUploadView({ step, setStep, onComplete }: { step: number; setStep: (s: number) => void; onComplete: () => void }) {
+function EcrUploadView({
+  step,
+  setStep,
+  onComplete,
+}: {
+  step: number;
+  setStep: (s: number) => void;
+  onComplete: () => void;
+}) {
   return (
     <div className="mx-auto w-[98vw] flex-1 py-6">
       <div className="bg-white border border-[#ddd] shadow-sm text-[13px] text-[#333]">
         {/* Breadcrumbs */}
         <div className="px-4 py-2 border-b border-[#ddd] bg-[#f9f9f9] text-[#2f80b5]">
-          Home / ECR Home Page / Actionable ECR Challans / <span className="text-[#333]">ECR Upload</span>
+          Home / ECR Home Page / Actionable ECR Challans /{" "}
+          <span className="text-[#333]">ECR Upload</span>
         </div>
 
         {/* Download ECR File section */}
@@ -120,13 +154,14 @@ function EcrUploadView({ step, setStep, onComplete }: { step: number; setStep: (
 
         {/* ECR File Upload section */}
         <div>
-          <div 
-            className={`flex items-center gap-1 px-4 py-2.5 font-bold cursor-pointer hover:bg-[#f5f5f5] ${step === 1 ? 'animate-pulse ring-2 ring-inset ring-red-500 z-10 text-[#c0392b]' : ''}`}
+          <div
+            className={`flex items-center gap-1 px-4 py-2.5 font-bold cursor-pointer hover:bg-[#f5f5f5] ${step === 1 ? "animate-pulse ring-2 ring-inset ring-red-500 z-10 text-[#c0392b]" : ""}`}
             onClick={() => step === 1 && setStep(2)}
           >
-            <span className="text-[10px]">{step === 1 ? '▶' : '▼'}</span> ECR File Upload:
+            <span className="text-[10px]">{step === 1 ? "▶" : "▼"}</span> ECR
+            File Upload:
           </div>
-          
+
           {step === 2 && (
             <div className="p-6 bg-white border-t border-[#ddd]">
               {/* Important Note Box */}
@@ -135,57 +170,122 @@ function EcrUploadView({ step, setStep, onComplete }: { step: number; setStep: (
                   <Info size={16} className="mt-0.5" /> IMPORTANT NOTE:
                 </div>
                 <ol className="list-decimal pl-8 space-y-1.5">
-                  <li>Click here to download <span className="inline-flex items-center gap-1 bg-[#5bc0de] text-white px-2 py-0.5 rounded text-[11px]"><FileText size={12}/> ECR Help File</span></li>
-                  <li>Please only use alphabets and numbers in file names. Remove special characters and spaces from the file name.</li>
-                  <li>Max Size of File Upload is 2 Mb. If text file size exceeds 2 Mb, please compress it using winzip etc. Smaller files can also be uploaded in zip format.</li>
-                  <li>Do not upload any other files like jpg, gif, doc, xls, ppt etc bundled inside the zip.</li>
-                  <li>Only text file or zip file containing only one text file can be uploaded (file extension should be in small case).</li>
-                  <li>For bigger ECR files, the system may take some more processing time. After uploading the file, kindly revisit the page after some time.</li>
-                  <li className="font-bold">Gross Wages are mandatory in ECR.</li>
-                  <li className="font-bold uppercase text-[#005580] leading-relaxed">"EMPLOYERS REGISTERED UNDER PMRPY ARE ADVISED TO ENSURE FILING THEIR ECR BY 15TH OF THE MONTH FOLLOWING THE WAGE MONTH TO AVAIL INCENTIVES UNDER THE SCHEME."</li>
+                  <li>
+                    Click here to download{" "}
+                    <span className="inline-flex items-center gap-1 bg-[#5bc0de] text-white px-2 py-0.5 rounded text-[11px]">
+                      <FileText size={12} /> ECR Help File
+                    </span>
+                  </li>
+                  <li>
+                    Please only use alphabets and numbers in file names. Remove
+                    special characters and spaces from the file name.
+                  </li>
+                  <li>
+                    Max Size of File Upload is 2 Mb. If text file size exceeds 2
+                    Mb, please compress it using winzip etc. Smaller files can
+                    also be uploaded in zip format.
+                  </li>
+                  <li>
+                    Do not upload any other files like jpg, gif, doc, xls, ppt
+                    etc bundled inside the zip.
+                  </li>
+                  <li>
+                    Only text file or zip file containing only one text file can
+                    be uploaded (file extension should be in small case).
+                  </li>
+                  <li>
+                    For bigger ECR files, the system may take some more
+                    processing time. After uploading the file, kindly revisit
+                    the page after some time.
+                  </li>
+                  <li className="font-bold">
+                    Gross Wages are mandatory in ECR.
+                  </li>
+                  <li className="font-bold uppercase text-[#005580] leading-relaxed">
+                    "EMPLOYERS REGISTERED UNDER PMRPY ARE ADVISED TO ENSURE
+                    FILING THEIR ECR BY 15TH OF THE MONTH FOLLOWING THE WAGE
+                    MONTH TO AVAIL INCENTIVES UNDER THE SCHEME."
+                  </li>
                 </ol>
               </div>
 
               {/* Form */}
               <div className="max-w-2xl mx-auto space-y-4">
                 <div className="grid grid-cols-[180px_1fr] items-center gap-4">
-                  <div className="text-right font-bold">Wage Month <span className="text-red-500">*</span></div>
+                  <div className="text-right font-bold">
+                    Wage Month <span className="text-red-500">*</span>
+                  </div>
                   <div>
-                    <div 
-                      className={`inline-flex items-center border border-[#ccc] rounded overflow-hidden cursor-pointer ${step === 2 ? 'animate-pulse ring-2 ring-red-500' : ''}`}
+                    <div
+                      className={`inline-flex items-center border border-[#ccc] rounded overflow-hidden cursor-pointer ${step === 2 ? "animate-pulse ring-2 ring-red-500" : ""}`}
                       onClick={onComplete}
                     >
-                      <span className="px-3 py-1.5 text-[#999] bg-white">--------- ----</span>
-                      <span className="px-2 py-1.5 border-l border-[#ccc] bg-[#eee] hover:bg-[#e0e0e0]"><Calendar size={14} className="text-[#333]" /></span>
+                      <span className="px-3 py-1.5 text-[#999] bg-white">
+                        --------- ----
+                      </span>
+                      <span className="px-2 py-1.5 border-l border-[#ccc] bg-[#eee] hover:bg-[#e0e0e0]">
+                        <Calendar size={14} className="text-[#333]" />
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-[180px_1fr] items-center gap-4">
-                  <div className="text-right font-bold">Salary Disbursal Date <span className="text-red-500">*</span></div>
+                  <div className="text-right font-bold">
+                    Salary Disbursal Date{" "}
+                    <span className="text-red-500">*</span>
+                  </div>
                   <div>
-                    <input type="text" placeholder="dd/mm/yyyy" className="border border-[#ccc] rounded px-3 py-1.5 w-[140px] text-[#555] bg-[#eee]" readOnly />
+                    <input
+                      type="text"
+                      placeholder="dd/mm/yyyy"
+                      className="border border-[#ccc] rounded px-3 py-1.5 w-[140px] text-[#555] bg-[#eee]"
+                      readOnly
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-[180px_1fr] items-center gap-4">
-                  <div className="text-right font-bold">Select File <span className="text-red-500">*</span></div>
+                  <div className="text-right font-bold">
+                    Select File <span className="text-red-500">*</span>
+                  </div>
                   <div className="flex gap-2 items-center">
-                    <button className="border border-[#ccc] bg-[#f8f8f8] px-3 py-1 rounded text-[#333]">Choose file</button>
+                    <button className="border border-[#ccc] bg-[#f8f8f8] px-3 py-1 rounded text-[#333]">
+                      Choose file
+                    </button>
                     <span className="text-[#888]">No file chosen</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-[180px_1fr] items-center gap-4">
-                  <div className="text-right font-bold">File Type <span className="text-red-500">*</span></div>
+                  <div className="text-right font-bold">
+                    File Type <span className="text-red-500">*</span>
+                  </div>
                   <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-1"><input type="radio" name="fileType" defaultChecked className="accent-[#333]" /> ECR</label>
-                    <label className="flex items-center gap-1"><input type="radio" name="fileType" className="accent-[#333]" /> Arrear</label>
+                    <label className="flex items-center gap-1">
+                      <input
+                        type="radio"
+                        name="fileType"
+                        defaultChecked
+                        className="accent-[#333]"
+                      />{" "}
+                      ECR
+                    </label>
+                    <label className="flex items-center gap-1">
+                      <input
+                        type="radio"
+                        name="fileType"
+                        className="accent-[#333]"
+                      />{" "}
+                      Arrear
+                    </label>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-[180px_1fr] items-center gap-4">
-                  <div className="text-right font-bold">Contribution Rate % <span className="text-red-500">*</span></div>
+                  <div className="text-right font-bold">
+                    Contribution Rate % <span className="text-red-500">*</span>
+                  </div>
                   <div>
                     <select className="border border-[#ccc] rounded px-3 py-1.5 w-[140px] bg-white outline-none">
                       <option>12</option>
@@ -194,17 +294,28 @@ function EcrUploadView({ step, setStep, onComplete }: { step: number; setStep: (
                 </div>
 
                 <div className="grid grid-cols-[180px_1fr] items-center gap-4">
-                  <div className="text-right font-bold">Remarks <span className="text-red-500">*</span></div>
+                  <div className="text-right font-bold">
+                    Remarks <span className="text-red-500">*</span>
+                  </div>
                   <div>
-                    <input type="text" placeholder="Enter Remarks" className="border border-[#ccc] rounded px-3 py-1.5 w-[250px] bg-[#eee] outline-none" readOnly />
+                    <input
+                      type="text"
+                      placeholder="Enter Remarks"
+                      className="border border-[#ccc] rounded px-3 py-1.5 w-[250px] bg-[#eee] outline-none"
+                      readOnly
+                    />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-[180px_1fr] items-center gap-4 pt-2">
                   <div></div>
                   <div className="flex gap-2">
-                    <button className="bg-[#5bc0de] text-white px-4 py-1.5 rounded border border-[#46b8da] font-medium hover:bg-[#31b0d5]">Upload</button>
-                    <button className="bg-white text-[#333] px-4 py-1.5 rounded border border-[#ccc] hover:bg-[#ebebeb]">Cancel</button>
+                    <button className="bg-[#5bc0de] text-white px-4 py-1.5 rounded border border-[#46b8da] font-medium hover:bg-[#31b0d5]">
+                      Upload
+                    </button>
+                    <button className="bg-white text-[#333] px-4 py-1.5 rounded border border-[#ccc] hover:bg-[#ebebeb]">
+                      Cancel
+                    </button>
                   </div>
                 </div>
               </div>
@@ -291,13 +402,20 @@ export default function EpfReg10Page() {
 
       {/* When running this specific experiment we go straight into the ECR Upload view */}
       <DashboardHeader user={LOGIN_USER} onLogout={handleLogout} />
-      
+
       <main className="flex-1 flex flex-col">
-        <EcrUploadView step={step} setStep={setStep} onComplete={completeExperiment} />
+        <EcrUploadView
+          step={step}
+          setStep={setStep}
+          onComplete={completeExperiment}
+        />
       </main>
 
       <footer className="mt-auto bg-[#1a3a66] py-4 text-center text-[12px] leading-relaxed text-[#dde6f0]">
-        <p>Designed, Developed and Hosted by: Employees&apos; Provident Fund Organisation, India</p>
+        <p>
+          Designed, Developed and Hosted by: Employees&apos; Provident Fund
+          Organisation, India
+        </p>
         <p>Last Updated Mon 09 Aug 2021 (PV 3.3.30)</p>
       </footer>
     </div>
