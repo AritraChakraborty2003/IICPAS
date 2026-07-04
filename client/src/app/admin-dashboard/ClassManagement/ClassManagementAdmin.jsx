@@ -662,7 +662,7 @@ export default function ClassManagementAdmin() {
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                     required
                   />
-                </div></div>
+                </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
                     End Time *
