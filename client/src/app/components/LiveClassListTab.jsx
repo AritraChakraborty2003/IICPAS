@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import toast from "react-hot-toast";
+import ZoomVideoModal from "./ZoomVideoModal";
 
 const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
@@ -42,6 +44,43 @@ export default function LiveClassListTab() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [downloadingClassId, setDownloadingClassId] = useState(null);
+  const [downloadProgress, setDownloadProgress] = useState(0);
+  const [activeZoomClass, setActiveZoomClass] = useState(null);
+
+  const handleOpenClass = (cls) => {
+    if (new Date(cls.startAt) > new Date()) {
+      toast.error("The live session hasn't begun yet");
+      return;
+    }
+
+    const isDownloaded = localStorage.getItem(`zoom_downloaded_${cls._id}`);
+    if (isDownloaded) {
+      setActiveZoomClass(cls);
+      return;
+    }
+
+    setDownloadingClassId(cls._id);
+    setDownloadProgress(0);
+
+    const totalTime = 3000;
+    const intervalTime = 100;
+    const steps = totalTime / intervalTime;
+    let currentStep = 0;
+
+    const interval = setInterval(() => {
+      currentStep++;
+      const progress = Math.floor((currentStep / steps) * 100);
+      setDownloadProgress(progress);
+
+      if (currentStep >= steps) {
+        clearInterval(interval);
+        setDownloadingClassId(null);
+        localStorage.setItem(`zoom_downloaded_${cls._id}`, "true");
+        setActiveZoomClass(cls);
+      }
+    }, intervalTime);
+  };
 
   useEffect(() => {
     const loadClasses = async () => {
@@ -65,11 +104,13 @@ export default function LiveClassListTab() {
         // therefore won't appear here — it moves to the Recorded Class tab.
         const response = await axios.get(
           `${API}/api/classes/for-student/${student._id}?type=live`,
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const data = Array.isArray(response.data) ? response.data : [];
-        setClasses(data.sort((a, b) => new Date(a.startAt) - new Date(b.startAt)));
+        setClasses(
+          data.sort((a, b) => new Date(a.startAt) - new Date(b.startAt)),
+        );
       } catch (err) {
         console.error("Failed to load live classes:", err);
         setError("Failed to load live classes");
@@ -143,8 +184,8 @@ export default function LiveClassListTab() {
             No live classes available right now.
           </p>
           <p className="text-gray-400 text-sm mt-2">
-            Live classes for your enrolled courses will appear here. Once a class
-            ends, it moves to the Recorded Class tab.
+            Live classes for your enrolled courses will appear here. Once a
+            class ends, it moves to the Recorded Class tab.
           </p>
         </div>
       ) : (
@@ -178,12 +219,14 @@ export default function LiveClassListTab() {
                         <p className="text-sm text-gray-700 mt-1">
                           {formatDate(cls.date)}
                           {cls.time ? ` at ${cls.time}` : ""}
-                          {cls.durationMinutes ? ` · ${cls.durationMinutes}m` : ""}
+                          {cls.durationMinutes
+                            ? ` · ${cls.durationMinutes}m`
+                            : ""}
                         </p>
                       </div>
                       <span
                         className={`text-xs px-3 py-1 rounded-full font-semibold ${getStatusBadge(
-                          cls.status
+                          cls.status,
                         )}`}
                       >
                         {labelize(cls.status)}
@@ -215,14 +258,21 @@ export default function LiveClassListTab() {
                     </div>
 
                     {cls.meetingLink ? (
-                      <a
-                        href={cls.meetingLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                      >
-                        Open Class
-                      </a>
+                      downloadingClassId === cls._id ? (
+                        <button
+                          disabled
+                          className="mt-4 inline-flex items-center justify-center rounded-full bg-blue-400 px-4 py-2 text-sm font-medium text-white cursor-not-allowed"
+                        >
+                          Downloading... {downloadProgress}%
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenClass(cls)}
+                          className="mt-4 inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        >
+                          Open Class
+                        </button>
+                      )
                     ) : (
                       <p className="mt-4 text-xs text-gray-400">
                         Meeting link not available yet
@@ -235,6 +285,14 @@ export default function LiveClassListTab() {
           ))}
         </div>
       )}
+
+      <ZoomVideoModal
+        isOpen={!!activeZoomClass}
+        videoUrl={activeZoomClass?.meetingLink || null}
+        isLive={true}
+        onClose={() => setActiveZoomClass(null)}
+        onShowToast={(msg) => toast.error(msg)}
+      />
     </div>
   );
 }
