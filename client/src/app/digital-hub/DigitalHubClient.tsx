@@ -1006,14 +1006,7 @@ export default function DigitalHubClient({
     null,
   );
 
-  useEffect(() => {
-    if (isIntroVideoModalOpen) {
-      setIsIntroVideoPlaying(true);
-      setIsIntroVideoMuted(false);
-      setIntroVideoCurrentTime(0);
-      setIntroVideoDuration(0);
-    }
-  }, [isIntroVideoModalOpen]);
+
 
   const [zoomSessionStatus, setZoomSessionStatus] = useState<
     "idle" | "downloading" | "ready" | "error"
