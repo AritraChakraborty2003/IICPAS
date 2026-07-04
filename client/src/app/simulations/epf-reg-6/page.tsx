@@ -114,7 +114,10 @@ function InstructionsPanel() {
     "In case your account is locked due to repeated use of wrong password, use Unlock account link.",
   ];
   return (
-    <Panel title="Instructions" headerClass="bg-gradient-to-r from-[#d9756d] to-[#c0504d]">
+    <Panel
+      title="Instructions"
+      headerClass="bg-gradient-to-r from-[#d9756d] to-[#c0504d]"
+    >
       <ul className="space-y-3.5 text-[14px] text-[#333]">
         {items.map((text, i) => (
           <li key={i} className="flex gap-2">
@@ -165,7 +168,8 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
       </div>
 
       <div className="mb-3 rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2 text-[11.5px] text-[#2b6cb0]">
-        Use <strong>{LOGIN_USER}</strong> / <strong>{LOGIN_PASS}</strong> to sign in.
+        Use <strong>{LOGIN_USER}</strong> / <strong>{LOGIN_PASS}</strong> to
+        sign in.
       </div>
 
       <div className="space-y-3">
@@ -175,7 +179,9 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
           </span>
           <input
             value={form.username}
-            onChange={(e) => setForm((p) => ({ ...p, username: e.target.value }))}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, username: e.target.value }))
+            }
             placeholder="Username"
             className="h-[42px] flex-1 rounded-r border-l border-[#c0c0c0] bg-white px-3 text-[14px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
           />
@@ -187,7 +193,9 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
           <input
             type={showPwd ? "text" : "password"}
             value={form.password}
-            onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
+            onChange={(e) =>
+              setForm((p) => ({ ...p, password: e.target.value }))
+            }
             placeholder="Enter Password"
             className="h-[42px] flex-1 border-l border-[#c0c0c0] bg-white px-3 text-[14px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
           />
@@ -218,11 +226,17 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[12px] text-[#555]">
-        <span className="cursor-pointer hover:underline" onClick={() => setNotice("Not available in this simulation.")}>
+        <span
+          className="cursor-pointer hover:underline"
+          onClick={() => setNotice("Not available in this simulation.")}
+        >
           Forgot Password
         </span>
         <span className="text-[#bbb]">|</span>
-        <span className="cursor-pointer hover:underline" onClick={() => setNotice("Not available in this simulation.")}>
+        <span
+          className="cursor-pointer hover:underline"
+          onClick={() => setNotice("Not available in this simulation.")}
+        >
           Unlock Account
         </span>
       </div>
@@ -235,7 +249,9 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
           Uncovered Principal Employer Sign In
         </div>
       </div>
-      {notice && <p className="mt-2 text-center text-[11px] text-[#888]">{notice}</p>}
+      {notice && (
+        <p className="mt-2 text-center text-[11px] text-[#888]">{notice}</p>
+      )}
     </Panel>
   );
 }
@@ -243,7 +259,11 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
 // ─── Welcome Employers panel ────────────────────────────────────────────────
 function WelcomeEmployersPanel() {
   return (
-    <Panel title="Welcome Employers !!" headerClass="bg-[#e8954b]" icon={<UserPlus2 size={18} />}>
+    <Panel
+      title="Welcome Employers !!"
+      headerClass="bg-[#e8954b]"
+      icon={<UserPlus2 size={18} />}
+    >
       <div className="flex items-start gap-2 text-[14px] font-bold text-[#c0392b]">
         <ThumbsUp size={18} className="mt-0.5 shrink-0" />
         <span>No last date is declared by EPFO for filing nomination.</span>
@@ -261,12 +281,18 @@ function ImportantLinksPanel() {
     "Employer Registration for Pre-covered Establishments",
   ];
   return (
-    <Panel title="Important Links" headerClass="bg-[#5c7a78]" icon={<Link2 size={18} />}>
+    <Panel
+      title="Important Links"
+      headerClass="bg-[#5c7a78]"
+      icon={<Link2 size={18} />}
+    >
       <ul className="space-y-2.5 text-[13.5px]">
         {links.map((text) => (
           <li key={text} className="flex gap-2">
             <span className="mt-[3px] text-[#e08a3c]">▶</span>
-            <span className="cursor-pointer text-[#2f80b5] hover:underline">{text}</span>
+            <span className="cursor-pointer text-[#2f80b5] hover:underline">
+              {text}
+            </span>
           </li>
         ))}
         <li className="flex items-center gap-2">
@@ -286,15 +312,21 @@ function ImportantLinksPanel() {
 // ─── What's New panel ───────────────────────────────────────────────────────
 function WhatsNewPanel() {
   return (
-    <Panel title="What&apos;s New" headerClass="bg-[#1f4e79]" icon={<NotebookText size={18} />}>
+    <Panel
+      title="What's New"
+      headerClass="bg-[#1f4e79]"
+      icon={<NotebookText size={18} />}
+    >
       <div className="space-y-2.5 text-[12.5px] leading-snug text-[#333]">
         <p>
-          EPFO services are now available on the UMANG (Unified Mobile APP for New
-          Governance). The UMANG APP can be downloaded by giving a missed call
-          9718397183. The APP can also be downloaded from{" "}
-          <span className="cursor-pointer text-[#2f80b5] hover:underline">UMANG</span>{" "}
-          website or from the play/app stores. Erstwhile EPF mobile services are being
-          discontinued.
+          EPFO services are now available on the UMANG (Unified Mobile APP for
+          New Governance). The UMANG APP can be downloaded by giving a missed
+          call 9718397183. The APP can also be downloaded from{" "}
+          <span className="cursor-pointer text-[#2f80b5] hover:underline">
+            UMANG
+          </span>{" "}
+          website or from the play/app stores. Erstwhile EPF mobile services are
+          being discontinued.
         </p>
         <p>
           The ECR format has been revised and it will be UAN based without the
@@ -318,40 +350,43 @@ function Footer() {
   );
 }
 
-// ─── Full-screen success tick overlay (shown briefly after login) ──────────
-function TickOverlay() {
-  return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/45 backdrop-blur-sm">
-      <div
-        className="flex h-[100px] w-[100px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.25),0_0_0_22px_rgba(34,197,94,0.12)]"
-        style={{ animation: "epfTickPop 0.4s ease-out" }}
-      >
-        <CheckCircle size={52} className="text-white" />
-      </div>
-      <p className="text-[18px] font-bold text-white">Login Successful!</p>
-      <style jsx>{`
-        @keyframes epfTickPop {
-          0% {
-            transform: scale(0.4);
-            opacity: 0;
-          }
-          70% {
-            transform: scale(1.08);
-            opacity: 1;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
-
 // ─── Dashboard header: company strip + nav bar ──────────────────────────────
-function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => void }) {
-  const navItems = ["Member", "Establishment", "Payments", "Dashboards", "User", "Admin", "Online Services", "ABRY"];
+function DashboardHeader({
+  user,
+  onLogout,
+  step,
+  setStep,
+}: {
+  user: string;
+  onLogout: () => void;
+  step: number;
+  setStep: (s: number) => void;
+}) {
+  const navItems = [
+    "Establishment",
+    "Payments",
+    "Dashboards",
+    "User",
+    "Admin",
+    "Online Services",
+    "ABRY",
+  ];
+  const memberDropdown = [
+    "MEMBER PROFILE",
+    "REGISTER-INDIVIDUAL",
+    "REGISTER-BULK",
+    "KYC-BULK",
+    "EXIT-BULK",
+    "APPROVALS",
+    "MISSING DETAILS BULK",
+    "APPROVE MISSING DETAILS",
+    "AADHAAR VERIFICATION",
+    "APPROVE KYC PENDING FOR DS",
+    "BASIC DETAILS CHANGE REQUESTS",
+    "APPROVE KYC SEEDED BY MEMBER",
+    "UAN ALLOTMENT FOR EXISTING MEMBER",
+    "INTERNATIONAL WORKER <-> DOMESTIC WORKER CHANGE",
+  ];
   return (
     <header className="border-b border-[#ddd] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
@@ -366,7 +401,7 @@ function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => voi
           />
           <div className="leading-[1.3]">
             <div className="text-[16px] font-bold text-[#1a4f8b]">
-              {COMPANY_NAME.toUpperCase()}, INDIA
+              COMPANY PRIVATE LIMITED, INDIA
             </div>
             <div className="text-[11px] font-bold tracking-wide text-[#c0392b]">
               MINISTRY OF LABOUR &amp; EMPLOYMENT, SIMULATION
@@ -376,30 +411,68 @@ function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => voi
 
         <div className="text-center text-[12.5px] leading-[1.5]">
           <div className="text-[#e8954b]">
-            Welcome: <span className="font-semibold">{user}</span>
+            Welcome: <span className="font-semibold">BGNRB8373627000</span>
           </div>
-          <div className="font-semibold text-[#2f80b5]">{user}</div>
-          <div className="font-semibold text-[#2f80b5]">{COMPANY_NAME}</div>
+          <div className="font-semibold text-[#2f80b5]">BGNRB8373627000</div>
+          <div className="font-semibold text-[#2f80b5]">
+            APMC Marketing Services
+          </div>
         </div>
 
         <div className="text-right text-[11px] text-[#555]">
           <div className="mb-1 flex items-center justify-end gap-2">
-            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A-</span>
-            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A</span>
-            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">A+</span>
-            <span className="text-[#888]">employerfeedback[at]epfindia[dot]gov[dot]in</span>
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">
+              A-
+            </span>
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">
+              A
+            </span>
+            <span className="rounded bg-[#1a4f8b] px-1 text-[10px] font-bold text-white">
+              A+
+            </span>
+            <span className="text-[#888]">
+              employerfeedback[at]epfindia[dot]gov[dot]in
+            </span>
           </div>
-          <button onClick={onLogout} className="flex items-center justify-end gap-1 text-[#2f80b5] hover:underline">
+          <button
+            onClick={onLogout}
+            className="flex items-center justify-end gap-1 text-[#2f80b5] hover:underline"
+          >
             <LogOut size={13} /> Logout
           </button>
           <div className="mt-1 text-[#888]">Mon 09 Aug 2021 (PV 3.3.30)</div>
         </div>
       </div>
 
-      <nav className="flex flex-wrap items-stretch bg-[#1a4f8b] text-white">
+      <nav className="flex flex-wrap items-stretch bg-[#1a4f8b] text-white relative">
         <button className="flex items-center gap-1.5 border-r border-white/15 px-4 py-2.5 text-[13px] font-medium hover:bg-white/10">
           <HomeIcon size={14} /> Home
         </button>
+
+        <div className="relative">
+          <button
+            onClick={() => step === 1 && setStep(2)}
+            className={`flex items-center gap-1 border-r border-white/15 px-4 py-2.5 text-[13px] font-medium hover:bg-white/10 whitespace-nowrap ${step === 1 ? "animate-pulse ring-2 ring-red-500 z-10" : ""}`}
+          >
+            Member <ChevronDown size={12} />
+          </button>
+          {step === 2 && (
+            <div className="absolute left-0 top-full z-50 min-w-[280px] border border-[#ccc] bg-white text-[13px] text-[#333] shadow-lg">
+              {memberDropdown.map((item) => (
+                <div
+                  key={item}
+                  onClick={() => {
+                    if (item === "APPROVALS") setStep(3);
+                  }}
+                  className={`cursor-pointer px-4 py-2 hover:bg-[#f5f5f5] uppercase ${item === "APPROVALS" ? "animate-pulse ring-2 ring-inset ring-red-500 bg-[#337ab7] text-white" : ""}`}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {navItems.map((item) => (
           <button
             key={item}
@@ -458,7 +531,10 @@ function AlertsPanel() {
               key={text}
               className={`flex gap-2 ${isNotification ? "font-semibold text-[#c0392b]" : "text-[#333]"}`}
             >
-              <Bell size={14} className={`mt-0.5 shrink-0 ${isNotification ? "text-[#c0392b]" : "text-[#e8954b]"}`} />
+              <Bell
+                size={14}
+                className={`mt-0.5 shrink-0 ${isNotification ? "text-[#c0392b]" : "text-[#e8954b]"}`}
+              />
               <span>{text}</span>
             </li>
           );
@@ -466,21 +542,35 @@ function AlertsPanel() {
         {noticeLinks.map((text) => (
           <li key={text} className="flex gap-2">
             <FileText size={14} className="mt-0.5 shrink-0 text-[#888]" />
-            <span className="cursor-pointer text-[#2f80b5] hover:underline">{text}</span>
+            <span className="cursor-pointer text-[#2f80b5] hover:underline">
+              {text}
+            </span>
           </li>
         ))}
         <li className="flex items-center gap-2 text-[#333]">
           <FileText size={14} className="shrink-0 text-[#888]" />
-          <span className="cursor-pointer hover:underline">ABRY Process Flow</span>
+          <span className="cursor-pointer hover:underline">
+            ABRY Process Flow
+          </span>
         </li>
       </ul>
 
       <div className="mt-4 space-y-3">
         <div className="flex flex-wrap items-center gap-3 rounded border border-[#f0c7b0] bg-[#fdeee5] px-3 py-2.5 text-[13px]">
-          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">NEW!</span>
-          <span>Do you wish to register at National Career Service (NCS) Portal ?</span>
+          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">
+            NEW!
+          </span>
+          <span>
+            Do you wish to register at National Career Service (NCS) Portal ?
+          </span>
           <label className="flex items-center gap-1.5">
-            <input type="radio" name="ncs" defaultChecked className="accent-[#2f80b5]" /> YES
+            <input
+              type="radio"
+              name="ncs"
+              defaultChecked
+              className="accent-[#2f80b5]"
+            />{" "}
+            YES
           </label>
           <button className="rounded bg-[#2f80b5] px-3 py-1 text-[12px] font-semibold text-white hover:bg-[#256a96]">
             Register
@@ -489,25 +579,36 @@ function AlertsPanel() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded border border-[#f0c7b0] bg-[#fdeee5] px-3 py-2.5 text-[13px]">
-          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">NEW!</span>
+          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">
+            NEW!
+          </span>
           <span>
-            Click <span className="cursor-pointer text-[#2f80b5] hover:underline">here</span> to view PMGKY
-            Reimbursement Benefit Details.
+            Click{" "}
+            <span className="cursor-pointer text-[#2f80b5] hover:underline">
+              here
+            </span>{" "}
+            to view PMGKY Reimbursement Benefit Details.
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2.5 text-[13px]">
-          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">NEW!</span>
+          <span className="rounded bg-[#d9534f] px-1.5 py-[1px] text-[10px] font-bold text-white">
+            NEW!
+          </span>
           <span>
-            Click <span className="cursor-pointer text-[#2f80b5] hover:underline">here</span> to view pendency
-            statistics.
+            Click{" "}
+            <span className="cursor-pointer text-[#2f80b5] hover:underline">
+              here
+            </span>{" "}
+            to view pendency statistics.
           </span>
         </div>
 
         <div className="rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2.5 text-[13px] text-[#1a4f8b]">
           <p className="font-bold">
-            File Monthly ECR in respect of employees who have completed 58 years of age before first week of
-            every month and submit their Pension/PF claim
+            File Monthly ECR in respect of employees who have completed 58 years
+            of age before first week of every month and submit their Pension/PF
+            claim
           </p>
           <p className="mt-1">
             Employees&apos; attaining 58 years of age in the current Month{" "}
@@ -526,7 +627,10 @@ function DashboardWhatsNewPanel() {
     <InfoPanel icon={<NotebookText size={15} />} title="What's New">
       <div className="flex items-center gap-2 text-[13.5px] text-[#333]">
         <FileText size={14} className="shrink-0 text-[#e8954b]" />
-        <span>Please submit the ecr of international worker immediately if he/she is leaving</span>
+        <span>
+          Please submit the ecr of international worker immediately if he/she is
+          leaving
+        </span>
       </div>
     </InfoPanel>
   );
@@ -552,7 +656,9 @@ function EmployerProfilePanel({ estId }: { estId: string }) {
   ];
   return (
     <InfoPanel icon={<UserPlus2 size={15} />} title="Employer Profile">
-      <p className="mb-3 text-center text-[14px] font-bold text-[#1a4f8b]">{COMPANY_NAME}</p>
+      <p className="mb-3 text-center text-[14px] font-bold text-[#1a4f8b]">
+        {COMPANY_NAME}
+      </p>
       <div className="divide-y divide-[#eee] text-[12.5px]">
         {rows.map(([label, value]) => (
           <div key={label} className="grid grid-cols-[auto_1fr] gap-3 py-2">
@@ -571,11 +677,15 @@ function OnlineServicesPanel() {
     <InfoPanel icon={<Info size={15} />} title="Online Services">
       <div className="divide-y divide-[#eee] text-[12.5px]">
         <div className="grid grid-cols-[auto_1fr] gap-3 py-2">
-          <span className="font-semibold text-[#555]">No. Of Pending Transfer Claims</span>
+          <span className="font-semibold text-[#555]">
+            No. Of Pending Transfer Claims
+          </span>
           <span className="text-right text-[#222]">-</span>
         </div>
         <div className="grid grid-cols-[auto_1fr] gap-3 py-2">
-          <span className="font-semibold text-[#555]">Oldest Claim Pending Since</span>
+          <span className="font-semibold text-[#555]">
+            Oldest Claim Pending Since
+          </span>
           <span className="text-right text-[#222]">-</span>
         </div>
       </div>
@@ -583,28 +693,56 @@ function OnlineServicesPanel() {
   );
 }
 
-// ─── Post-login employer Dashboard ──────────────────────────────────────────
-function Dashboard({ user, onLogout }: { user: string; onLogout: () => void }) {
+// ─── Approvals View ──────────────────────────────────────────
+function ApprovalsView({ onComplete }: { onComplete: () => void }) {
   return (
-    <>
-      <DashboardHeader user={user} onLogout={onLogout} />
-      <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
-        <div className="grid gap-5 md:grid-cols-[2fr_1fr]">
-          <div className="flex flex-col gap-5">
-            <AlertsPanel />
-            <DashboardWhatsNewPanel />
-          </div>
-          <div className="flex flex-col gap-5">
-            <EmployerProfilePanel estId={user} />
-            <OnlineServicesPanel />
-          </div>
+    <div className="rounded border border-[#d8d8d8] bg-white shadow-sm h-full min-h-[400px]">
+      <div className="p-4 border-b border-[#eee]">
+        <div
+          className="inline-flex cursor-pointer animate-pulse ring-2 ring-red-500 items-center gap-2 font-bold text-[#c0392b] px-2 py-1"
+          onClick={onComplete}
+        >
+          <span className="text-[12px]">▶</span>{" "}
+          <span className="underline">Pending</span>
         </div>
-      </main>
-      <footer className="mt-auto bg-[#1a3a66] py-4 text-center text-[12px] leading-relaxed text-[#dde6f0]">
-        <p>Designed, Developed and Hosted by: Employees&apos; Provident Fund Organisation, India</p>
-        <p>Last Updated Mon 09 Aug 2021 (PV 3.3.30)</p>
-      </footer>
-    </>
+      </div>
+      <div className="p-4">
+        <table className="w-full border-collapse border border-[#ddd] text-[13px]">
+          <thead>
+            <tr className="bg-[#f9f9f9]">
+              <th className="border border-[#ddd] px-3 py-2 text-left font-semibold text-[#333]">
+                Activity ID
+              </th>
+              <th className="border border-[#ddd] px-3 py-2 text-left font-semibold text-[#333]">
+                Type
+              </th>
+              <th className="border border-[#ddd] px-3 py-2 text-left font-semibold text-[#333]">
+                Records
+              </th>
+              <th className="border border-[#ddd] px-3 py-2 text-left font-semibold text-[#333]">
+                View
+              </th>
+              <th className="border border-[#ddd] px-3 py-2 text-left font-semibold text-[#333]">
+                Approve/Reject
+              </th>
+              <th className="border border-[#ddd] px-3 py-2 text-left font-semibold text-[#333]">
+                Error
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td
+                colSpan={6}
+                className="border border-[#ddd] px-3 py-8 text-center text-[#888]"
+              >
+                No records found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 
@@ -630,23 +768,49 @@ function LaunchOverlay({ onStart }: { onStart: () => void }) {
   );
 }
 
+// ─── Full-screen success tick overlay ──────────
+function TickOverlay() {
+  return (
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/45 backdrop-blur-sm">
+      <div
+        className="flex h-[100px] w-[100px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.25),0_0_0_22px_rgba(34,197,94,0.12)]"
+        style={{ animation: "epfTickPop 0.4s ease-out" }}
+      >
+        <CheckCircle size={52} className="text-white" />
+      </div>
+      <p className="text-[18px] font-bold text-white">Experiment Complete!</p>
+      <style jsx>{`
+        @keyframes epfTickPop {
+          0% {
+            transform: scale(0.4);
+            opacity: 0;
+          }
+          70% {
+            transform: scale(1.08);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 // ─── Root page ──────────────────────────────────────────────────────────────
-export default function EpfReg1Page() {
+export default function EpfReg6Page() {
   const [launched, setLaunched] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
-  const [view, setView] = useState<"portal" | "dashboard">("portal");
+  const [step, setStep] = useState(1);
   const [showTick, setShowTick] = useState(false);
 
-  const handleLoginSuccess = (user: string) => {
-    setLoggedInUser(user);
-    setView("dashboard");
+  const completeExperiment = () => {
     setShowTick(true);
-    setTimeout(() => setShowTick(false), 1400);
   };
 
   const handleLogout = () => {
-    setLoggedInUser(null);
-    setView("portal");
+    // optional logout logic
   };
 
   return (
@@ -655,8 +819,40 @@ export default function EpfReg1Page() {
       {!launched && <LaunchOverlay onStart={() => setLaunched(true)} />}
       {showTick && <TickOverlay />}
 
-      {view === "dashboard" && loggedInUser ? (
-        <Dashboard user={loggedInUser} onLogout={handleLogout} />
+      {launched ? (
+        <>
+          <DashboardHeader
+            user={LOGIN_USER}
+            onLogout={handleLogout}
+            step={step}
+            setStep={setStep}
+          />
+
+          <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
+            {(step === 1 || step === 2) && (
+              <div className="grid gap-5 md:grid-cols-[2fr_1fr]">
+                <div className="flex flex-col gap-5">
+                  <AlertsPanel />
+                  <DashboardWhatsNewPanel />
+                </div>
+                <div className="flex flex-col gap-5">
+                  <EmployerProfilePanel estId={LOGIN_USER} />
+                  <OnlineServicesPanel />
+                </div>
+              </div>
+            )}
+
+            {step === 3 && <ApprovalsView onComplete={completeExperiment} />}
+          </main>
+
+          <footer className="mt-auto bg-[#1a3a66] py-4 text-center text-[12px] leading-relaxed text-[#dde6f0]">
+            <p>
+              Designed, Developed and Hosted by: Employees&apos; Provident Fund
+              Organisation, India
+            </p>
+            <p>Last Updated Mon 09 Aug 2021 (PV 3.3.30)</p>
+          </footer>
+        </>
       ) : (
         <>
           <Header />
@@ -664,7 +860,7 @@ export default function EpfReg1Page() {
             <div className="grid gap-5 md:grid-cols-[2.4fr_1fr_1fr]">
               <G20Banner />
               <InstructionsPanel />
-              <SignInPanel onSuccess={handleLoginSuccess} />
+              <SignInPanel onSuccess={() => {}} />
             </div>
 
             <div className="grid gap-5 md:grid-cols-3">
