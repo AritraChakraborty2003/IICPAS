@@ -791,6 +791,7 @@ export default function DigitalHubClient({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isIntroVideoModalOpen, setIsIntroVideoModalOpen] = useState(false);
+  const [isMockLiveSession, setIsMockLiveSession] = useState(false);
   const [manualIntroVideoUrl, setManualIntroVideoUrl] = useState<string | null>(
     null,
   );
@@ -1637,6 +1638,15 @@ export default function DigitalHubClient({
       if (data.status === "ready") {
         setZoomSessionStatus("ready");
         setManualIntroVideoUrl(data.url);
+
+        const existingTime = localStorage.getItem("mockLiveSessionStartTime");
+        if (!existingTime) {
+          localStorage.setItem(
+            "mockLiveSessionStartTime",
+            Date.now().toString(),
+          );
+        }
+        setIsMockLiveSession(true);
         setIsIntroVideoModalOpen(true);
         return;
       }
@@ -1661,6 +1671,15 @@ export default function DigitalHubClient({
       if (data.status === "ready") {
         setManualIntroVideoUrl(data.url);
         setZoomSessionStatus("ready");
+
+        const existingTime = localStorage.getItem("mockLiveSessionStartTime");
+        if (!existingTime) {
+          localStorage.setItem(
+            "mockLiveSessionStartTime",
+            Date.now().toString(),
+          );
+        }
+        setIsMockLiveSession(true);
         setIsIntroVideoModalOpen(true);
         return;
       }
@@ -5921,6 +5940,12 @@ export default function DigitalHubClient({
             <div
               className="absolute inset-0 flex items-center justify-center bg-black"
               onClick={() => {
+                if (isMockLiveSession) {
+                  setToastMessage("Cannot pause a live session");
+                  setShowToast(true);
+                  setTimeout(() => setShowToast(false), 3000);
+                  return;
+                }
                 const video = introVideoRef.current;
                 if (!video) return;
                 if (video.paused) {
@@ -5941,9 +5966,23 @@ export default function DigitalHubClient({
                 onContextMenu={(event) => event.preventDefault()}
                 onPlay={() => setIsIntroVideoPlaying(true)}
                 onPause={() => setIsIntroVideoPlaying(false)}
-                onLoadedMetadata={(event) =>
-                  setIntroVideoDuration(event.currentTarget.duration || 0)
-                }
+                onLoadedMetadata={(event) => {
+                  setIntroVideoDuration(event.currentTarget.duration || 0);
+                  if (isMockLiveSession) {
+                    const startTime = parseInt(
+                      localStorage.getItem("mockLiveSessionStartTime") ||
+                        Date.now().toString(),
+                      10,
+                    );
+                    const elapsedSeconds = (Date.now() - startTime) / 1000;
+                    if (
+                      elapsedSeconds > 0 &&
+                      elapsedSeconds < event.currentTarget.duration
+                    ) {
+                      event.currentTarget.currentTime = elapsedSeconds;
+                    }
+                  }
+                }}
                 onTimeUpdate={(event) =>
                   setIntroVideoCurrentTime(event.currentTarget.currentTime)
                 }
@@ -5971,13 +6010,15 @@ export default function DigitalHubClient({
                 step={0.1}
                 value={introVideoCurrentTime}
                 onChange={(event) => {
+                  if (isMockLiveSession) return;
                   const video = introVideoRef.current;
                   const nextTime = Number(event.target.value);
                   if (video) video.currentTime = nextTime;
                   setIntroVideoCurrentTime(nextTime);
                 }}
-                className="mb-2 h-1 w-full cursor-pointer accent-sky-400"
+                className={`mb-2 h-1 w-full accent-sky-400 ${isMockLiveSession ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
                 aria-label="Seek video"
+                disabled={isMockLiveSession}
               />
               <div className="flex items-center justify-between">
                 {/* Left group */}
@@ -5985,6 +6026,12 @@ export default function DigitalHubClient({
                   <button
                     type="button"
                     onClick={() => {
+                      if (isMockLiveSession) {
+                        setToastMessage("Cannot pause a live session");
+                        setShowToast(true);
+                        setTimeout(() => setShowToast(false), 3000);
+                        return;
+                      }
                       const video = introVideoRef.current;
                       if (!video) return;
                       if (video.paused) {
@@ -5993,7 +6040,7 @@ export default function DigitalHubClient({
                         video.pause();
                       }
                     }}
-                    className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
+                    className={`flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors ${isMockLiveSession ? "cursor-not-allowed opacity-50" : "hover:bg-white/10"} sm:px-3`}
                   >
                     {isIntroVideoPlaying ? (
                       <Pause className="h-5 w-5" />
@@ -6129,7 +6176,9 @@ export default function DigitalHubClient({
                     <Maximize className="h-5 w-5" />
                     <span className="text-[11px]">Fullscreen</span>
                   </button>
-                  <MoreVideoOptionsButton videoRef={introVideoRef} />
+                  {!isMockLiveSession && (
+                    <MoreVideoOptionsButton videoRef={introVideoRef} />
+                  )}
                 </div>
 
                 {/* Right group */}
@@ -6139,6 +6188,7 @@ export default function DigitalHubClient({
                     onClick={() => {
                       setIsIntroVideoModalOpen(false);
                       setManualIntroVideoUrl(null);
+                      setIsMockLiveSession(false);
                     }}
                     className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-red-500 transition-colors hover:bg-white/10 sm:px-3"
                     aria-label="End"
