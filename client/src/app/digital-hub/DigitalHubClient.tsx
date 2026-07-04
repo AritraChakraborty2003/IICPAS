@@ -1,5 +1,11 @@
 "use client";
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import AccountingExperimentCard from "../components/AccountingExperimentCard";
@@ -346,7 +352,9 @@ const QUIZ_QUESTION_LIMIT = 5;
 const LAST_SELECTION_STORAGE_KEY = "digitalHub:lastSelection";
 const DIGITAL_HUB_TOUR_STORAGE_PREFIX = "digital-hub-client-tour:v1";
 
-const extractCourseRecord = (payload: unknown): Record<string, unknown> | null => {
+const extractCourseRecord = (
+  payload: unknown,
+): Record<string, unknown> | null => {
   if (!payload || typeof payload !== "object") return null;
 
   const candidate = payload as {
@@ -368,7 +376,11 @@ const extractCourseRecord = (payload: unknown): Record<string, unknown> | null =
     return candidate.data.course as Record<string, unknown>;
   }
 
-  if (candidate.data && typeof candidate.data === "object" && !Array.isArray(candidate.data)) {
+  if (
+    candidate.data &&
+    typeof candidate.data === "object" &&
+    !Array.isArray(candidate.data)
+  ) {
     return candidate.data;
   }
 
@@ -401,10 +413,9 @@ const extractCourseList = (payload: unknown): CourseAccessRecord[] => {
   return [];
 };
 
-
 const getRandomQuestions = (
   questions: QuizQuestion[],
-  limit: number = QUIZ_QUESTION_LIMIT
+  limit: number = QUIZ_QUESTION_LIMIT,
 ) => {
   const shuffled = [...questions];
 
@@ -421,41 +432,49 @@ const getRandomQuestions = (
 
 const mergeChapterProgress = (
   chapters: ChapterData[],
-  progressSummaries: ChapterProgressSummary[] = []
+  progressSummaries: ChapterProgressSummary[] = [],
 ) => {
   const progressMap = new Map(
-    progressSummaries.map((chapter) => [String(chapter.chapterId), chapter])
+    progressSummaries.map((chapter) => [String(chapter.chapterId), chapter]),
   );
 
-  return (Array.isArray(chapters) ? [...chapters] : []).map((chapter, index) => {
-    const summary = progressMap.get(String(chapter._id));
-    return {
-      ...chapter,
-      isLocked: typeof summary?.isLocked === "boolean" ? summary.isLocked : false,
-      isCompleted: Boolean(summary?.isCompleted),
-      completion:
-        typeof summary?.completionPercent === "number"
-          ? summary.completionPercent
-          : Number(chapter.completion || 0),
-      completedTopicCount: Number(summary?.completedTopicCount || 0),
-      totalTopicCount:
-        typeof summary?.totalTopicCount === "number"
-          ? summary.totalTopicCount
-          : Array.isArray(chapter.topics)
-          ? chapter.topics.length
-          : 0,
-      completedAssignmentCount: Number(summary?.completedAssignmentCount || 0),
-      totalAssignmentCount: Number(summary?.totalAssignmentCount || 0),
-      completedQuestionSetCount: Number(summary?.completedQuestionSetCount || 0),
-      totalQuestionSetCount: Number(summary?.totalQuestionSetCount || 0),
-      completedTopicIds: summary?.completedTopicIds || [],
-      completedAssignmentIds: summary?.completedAssignmentIds || [],
-      completedQuestionSetIds: summary?.completedQuestionSetIds || [],
-      topicBatchWindows: Array.isArray((summary as any)?.topicBatchWindows)
-        ? (summary as any).topicBatchWindows as ChapterData["topicBatchWindows"]
-        : chapter.topicBatchWindows || [],
-    };
-  });
+  return (Array.isArray(chapters) ? [...chapters] : []).map(
+    (chapter, index) => {
+      const summary = progressMap.get(String(chapter._id));
+      return {
+        ...chapter,
+        isLocked:
+          typeof summary?.isLocked === "boolean" ? summary.isLocked : false,
+        isCompleted: Boolean(summary?.isCompleted),
+        completion:
+          typeof summary?.completionPercent === "number"
+            ? summary.completionPercent
+            : Number(chapter.completion || 0),
+        completedTopicCount: Number(summary?.completedTopicCount || 0),
+        totalTopicCount:
+          typeof summary?.totalTopicCount === "number"
+            ? summary.totalTopicCount
+            : Array.isArray(chapter.topics)
+              ? chapter.topics.length
+              : 0,
+        completedAssignmentCount: Number(
+          summary?.completedAssignmentCount || 0,
+        ),
+        totalAssignmentCount: Number(summary?.totalAssignmentCount || 0),
+        completedQuestionSetCount: Number(
+          summary?.completedQuestionSetCount || 0,
+        ),
+        totalQuestionSetCount: Number(summary?.totalQuestionSetCount || 0),
+        completedTopicIds: summary?.completedTopicIds || [],
+        completedAssignmentIds: summary?.completedAssignmentIds || [],
+        completedQuestionSetIds: summary?.completedQuestionSetIds || [],
+        topicBatchWindows: Array.isArray((summary as any)?.topicBatchWindows)
+          ? ((summary as any)
+              .topicBatchWindows as ChapterData["topicBatchWindows"])
+          : chapter.topicBatchWindows || [],
+      };
+    },
+  );
 };
 
 const getChapterCompletionPercent = (chapter?: ChapterData | null) => {
@@ -485,7 +504,7 @@ const getChapterCompletionPercent = (chapter?: ChapterData | null) => {
 
   return Math.max(
     0,
-    Math.min(100, Math.round((completedItems / totalItems) * 100))
+    Math.min(100, Math.round((completedItems / totalItems) * 100)),
   );
 };
 
@@ -504,7 +523,7 @@ const getPreferredUnlockedChapter = (chapters: ChapterData[]) => {
 const matchesChapterIdentifier = (
   chapter: ChapterData | null | undefined,
   identifier: string,
-  index?: number
+  index?: number,
 ) => {
   if (!chapter || !identifier) return false;
 
@@ -517,21 +536,21 @@ const matchesChapterIdentifier = (
     index !== undefined ? String(index + 1) : null,
   ].filter(Boolean);
 
-  return candidates.some((candidate) => String(candidate) === normalizedIdentifier);
+  return candidates.some(
+    (candidate) => String(candidate) === normalizedIdentifier,
+  );
 };
 
 const findChapterByIdentifier = (
   chapters: ChapterData[],
-  identifier?: string | null
+  identifier?: string | null,
 ) => {
   if (!identifier) return null;
 
   return (
-    chapters.find((chapter) =>
-      matchesChapterIdentifier(chapter, identifier)
-    ) ||
+    chapters.find((chapter) => matchesChapterIdentifier(chapter, identifier)) ||
     chapters.find((chapter, index) =>
-      matchesChapterIdentifier(chapter, identifier, index)
+      matchesChapterIdentifier(chapter, identifier, index),
     ) ||
     null
   );
@@ -556,7 +575,7 @@ const toIdString = (value?: string | { _id?: string } | null) => {
 
 const getCourseEnrollmentAt = (
   bookings: CourseBookingRecord[],
-  courseId?: string | null
+  courseId?: string | null,
 ) => {
   if (!courseId) return null;
 
@@ -566,7 +585,7 @@ const getCourseEnrollmentAt = (
       booking &&
       booking.status !== "cancelled" &&
       booking.itemType === "single_course" &&
-      toIdString(booking.courseId) === normalizedCourseId
+      toIdString(booking.courseId) === normalizedCourseId,
   );
 
   const timestamps = matches
@@ -586,13 +605,17 @@ const hardenVideoElements = (container: HTMLElement | null) => {
   container.querySelectorAll("video").forEach((video) => {
     video.setAttribute("controlsList", "nodownload");
     video.setAttribute("disablePictureInPicture", "");
-    const controlsList = (video as HTMLVideoElement & {
-      controlsList?: DOMTokenList;
-    }).controlsList;
+    const controlsList = (
+      video as HTMLVideoElement & {
+        controlsList?: DOMTokenList;
+      }
+    ).controlsList;
     controlsList?.add("nodownload");
     controlsList?.add("noplaybackrate");
     controlsList?.add("noremoteplayback");
-    (video as HTMLVideoElement & { disableRemotePlayback?: boolean }).disableRemotePlayback = true;
+    (
+      video as HTMLVideoElement & { disableRemotePlayback?: boolean }
+    ).disableRemotePlayback = true;
     video.oncontextmenu = (event) => {
       event.preventDefault();
       return false;
@@ -650,6 +673,83 @@ const DIGITAL_HUB_FONT_STACK = DEFAULT_CONTENT_FONT_FAMILY;
 const normalizeDigitalHubContent = (html: string) =>
   normalizeDigitalHubContentHtml(html, DIGITAL_HUB_FONT_STACK);
 
+function MoreVideoOptionsButton({
+  videoRef,
+}: {
+  videoRef: React.RefObject<HTMLVideoElement>;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [volume, setVolume] = useState(1);
+
+  const handleSpeedChange = (newSpeed: number) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = newSpeed;
+      setSpeed(newSpeed);
+    }
+  };
+
+  const handleVolumeChange = (delta: number) => {
+    if (videoRef.current) {
+      const newVol = Math.max(0, Math.min(1, videoRef.current.volume + delta));
+      videoRef.current.volume = newVol;
+      setVolume(newVol);
+    }
+  };
+
+  return (
+    <div className="relative">
+      {isOpen && (
+        <div className="absolute bottom-full right-0 mb-2 w-48 rounded-xl bg-slate-800 p-2 shadow-xl border border-white/10 text-slate-200 text-sm z-50">
+          <div className="mb-2 border-b border-white/10 pb-2">
+            <div className="mb-1 font-semibold text-xs text-slate-400 text-left">
+              Playback Speed
+            </div>
+            <div className="flex gap-1">
+              {[1, 2, 3].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => handleSpeedChange(s)}
+                  className={`flex-1 rounded py-1 text-center transition-colors ${speed === s ? "bg-indigo-600 text-white" : "bg-white/5 hover:bg-white/10"}`}
+                >
+                  {s}x
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="mb-1 font-semibold text-xs text-slate-400 text-left">
+              Volume ({(volume * 100).toFixed(0)}%)
+            </div>
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleVolumeChange(-0.1)}
+                className="flex-1 rounded bg-white/5 py-1 hover:bg-white/10"
+              >
+                -
+              </button>
+              <button
+                onClick={() => handleVolumeChange(0.1)}
+                className="flex-1 rounded bg-white/5 py-1 hover:bg-white/10"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+      >
+        <MoreHorizontal className="h-5 w-5" />
+        <span className="text-[11px]">More</span>
+      </button>
+    </div>
+  );
+}
+
 export default function DigitalHubClient({
   courseSlugOrId,
   chapterId,
@@ -661,14 +761,14 @@ export default function DigitalHubClient({
     typeof routeParams?.courseSlug === "string"
       ? routeParams.courseSlug
       : Array.isArray(routeParams?.courseSlug)
-      ? routeParams.courseSlug[0] || ""
-      : "";
+        ? routeParams.courseSlug[0] || ""
+        : "";
   const routeChapterId =
     typeof routeParams?.chapterId === "string"
       ? routeParams.chapterId
       : Array.isArray(routeParams?.chapterId)
-      ? routeParams.chapterId[0] || ""
-      : "";
+        ? routeParams.chapterId[0] || ""
+        : "";
   const effectiveCourseSlugOrId = courseSlugOrId || routeCourseSlugOrId;
   const effectiveChapterId = chapterId || routeChapterId;
   const API_BASE = getApiBase();
@@ -681,7 +781,7 @@ export default function DigitalHubClient({
     (
       chapter: ChapterData,
       navigationMode?: "push" | "replace" | "none",
-      preferredTopicId?: string
+      preferredTopicId?: string,
     ) => void
   >(() => {});
 
@@ -691,7 +791,9 @@ export default function DigitalHubClient({
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isIntroVideoModalOpen, setIsIntroVideoModalOpen] = useState(false);
-  const [manualIntroVideoUrl, setManualIntroVideoUrl] = useState<string | null>(null);
+  const [manualIntroVideoUrl, setManualIntroVideoUrl] = useState<string | null>(
+    null,
+  );
   const introVideoRef = useRef<HTMLVideoElement>(null);
   const [isIntroVideoPlaying, setIsIntroVideoPlaying] = useState(true);
   const [isIntroVideoMuted, setIsIntroVideoMuted] = useState(false);
@@ -713,7 +815,7 @@ export default function DigitalHubClient({
   const [zoomSessionProgress, setZoomSessionProgress] = useState(0);
   const [isLiveSessionsModalOpen, setIsLiveSessionsModalOpen] = useState(false);
   const [classModalKind, setClassModalKind] = useState<"live" | "recorded">(
-    "live"
+    "live",
   );
   // Classes scheduled in admin "Class Management" for this course.
   const [classSessions, setClassSessions] = useState<ClassSessionItem[]>([]);
@@ -750,7 +852,8 @@ export default function DigitalHubClient({
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [tourStepIndex, setTourStepIndex] = useState(0);
   const [tourReady, setTourReady] = useState(false);
-  const [tourSidebarWasAutoOpened, setTourSidebarWasAutoOpened] = useState(false);
+  const [tourSidebarWasAutoOpened, setTourSidebarWasAutoOpened] =
+    useState(false);
   const [tourTargetRect, setTourTargetRect] = useState<DOMRect | null>(null);
   const pendingLanguageRef = useRef<string | null>(null);
   const googleTranslateScriptRef = useRef<HTMLScriptElement | null>(null);
@@ -765,7 +868,7 @@ export default function DigitalHubClient({
     // Google Translate checks this cookie while applying the selected target language.
     document.cookie = `googtrans=/en/${languageCode};path=/`;
     const combo = document.querySelector(
-      ".goog-te-combo"
+      ".goog-te-combo",
     ) as HTMLSelectElement | null;
     if (!combo) return false;
 
@@ -791,7 +894,8 @@ export default function DigitalHubClient({
       if (!parsed || typeof parsed !== "object") return null;
       const courseKey = String(parsed.courseKey || "");
       if (courseKey !== String(effectiveCourseSlugOrId)) return null;
-      const chapterId = typeof parsed.chapterId === "string" ? parsed.chapterId : "";
+      const chapterId =
+        typeof parsed.chapterId === "string" ? parsed.chapterId : "";
       const topicId = typeof parsed.topicId === "string" ? parsed.topicId : "";
       return { chapterId, topicId };
     } catch {
@@ -811,13 +915,13 @@ export default function DigitalHubClient({
       try {
         window.localStorage.setItem(
           LAST_SELECTION_STORAGE_KEY,
-          JSON.stringify(payload)
+          JSON.stringify(payload),
         );
       } catch {
         // Ignore write failures.
       }
     },
-    [effectiveCourseSlugOrId]
+    [effectiveCourseSlugOrId],
   );
 
   const resetGoogleTranslateState = useCallback(() => {
@@ -857,14 +961,14 @@ export default function DigitalHubClient({
 
     if (googleTranslateScriptRef.current) {
       googleTranslateScriptRef.current.parentNode?.removeChild(
-        googleTranslateScriptRef.current
+        googleTranslateScriptRef.current,
       );
       googleTranslateScriptRef.current = null;
     }
 
     if (googleTranslateStyleRef.current) {
       googleTranslateStyleRef.current.parentNode?.removeChild(
-        googleTranslateStyleRef.current
+        googleTranslateStyleRef.current,
       );
       googleTranslateStyleRef.current = null;
     }
@@ -876,8 +980,8 @@ export default function DigitalHubClient({
     if (courseIdentifier) {
       router.push(
         `/student-dashboard?tab=courses&courseId=${encodeURIComponent(
-          courseIdentifier
-        )}&view=detailed`
+          courseIdentifier,
+        )}&view=detailed`,
       );
       return;
     }
@@ -892,7 +996,7 @@ export default function DigitalHubClient({
   // New state for dynamic content
   const [courseChapters, setCourseChapters] = useState<ChapterData[]>([]);
   const [selectedChapter, setSelectedChapter] = useState<ChapterData | null>(
-    null
+    null,
   );
   const [topics, setTopics] = useState<TopicData[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<TopicData | null>(null);
@@ -906,14 +1010,14 @@ export default function DigitalHubClient({
   const [showPurchasePopup, setShowPurchasePopup] = useState(false);
   const normalizedTopicContent = useMemo(
     () => normalizeDigitalHubContent(topicContent),
-    [topicContent]
+    [topicContent],
   );
 
   // New state for case studies and assignments
   const [caseStudies, setCaseStudies] = useState<CaseStudy[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedCaseStudy, setSelectedCaseStudy] = useState<CaseStudy | null>(
-    null
+    null,
   );
   const [selectedAssignment, setSelectedAssignment] =
     useState<Assignment | null>(null);
@@ -934,9 +1038,10 @@ export default function DigitalHubClient({
   const [studentId, setStudentId] = useState<string | null>(null);
   const [studentName, setStudentName] = useState("");
   const [studentRegisteredAt, setStudentRegisteredAt] = useState<string | null>(
-    null
+    null,
   );
-  const [digitalHubAccessOverride, setDigitalHubAccessOverride] = useState(false);
+  const [digitalHubAccessOverride, setDigitalHubAccessOverride] =
+    useState(false);
   const [authResolved, setAuthResolved] = useState(false);
   const [studentCourseBookings, setStudentCourseBookings] = useState<
     CourseBookingRecord[]
@@ -948,20 +1053,28 @@ export default function DigitalHubClient({
   >([]);
   const [studentPurchasedCoursesLoaded, setStudentPurchasedCoursesLoaded] =
     useState(false);
-  const [studentPurchasedCoursesLoadFailed, setStudentPurchasedCoursesLoadFailed] =
-    useState(false);
+  const [
+    studentPurchasedCoursesLoadFailed,
+    setStudentPurchasedCoursesLoadFailed,
+  ] = useState(false);
   const [progressMutationKey, setProgressMutationKey] = useState<string | null>(
-    null
+    null,
   );
   const [batchClockTick, setBatchClockTick] = useState(0);
   // Assignment MCQ state: { [questionSetId]: { [questionIndex]: selectedOption } }
-  const [assignmentAnswers, setAssignmentAnswers] = useState<Record<string, Record<number, string>>>({});
+  const [assignmentAnswers, setAssignmentAnswers] = useState<
+    Record<string, Record<number, string>>
+  >({});
   // { [questionSetId]: boolean }
-  const [assignmentSubmitted, setAssignmentSubmitted] = useState<Record<string, boolean>>({});
+  const [assignmentSubmitted, setAssignmentSubmitted] = useState<
+    Record<string, boolean>
+  >({});
   // { [questionSetId]: { correct: number, total: number } }
-  const [assignmentResults, setAssignmentResults] = useState<Record<string, { correct: number; total: number }>>({});
+  const [assignmentResults, setAssignmentResults] = useState<
+    Record<string, { correct: number; total: number }>
+  >({});
   const hasRenderedContent = Boolean(
-    selectedTopic || selectedAssignment || selectedCaseStudy || topicContent
+    selectedTopic || selectedAssignment || selectedCaseStudy || topicContent,
   );
   const isInitialContentLoading = loading && !hasRenderedContent;
   const activeTourStep =
@@ -997,7 +1110,7 @@ export default function DigitalHubClient({
     try {
       window.localStorage.setItem(
         tourStorageKey,
-        JSON.stringify({ seen: true } satisfies TourSeenState)
+        JSON.stringify({ seen: true } satisfies TourSeenState),
       );
     } catch {
       // Ignore write failures.
@@ -1057,7 +1170,7 @@ export default function DigitalHubClient({
         markTourSeen();
       }
     },
-    [markTourSeen, restoreTourSidebarState]
+    [markTourSeen, restoreTourSidebarState],
   );
 
   const openTour = useCallback(() => {
@@ -1084,11 +1197,13 @@ export default function DigitalHubClient({
         overallProgress?: number;
         chapters?: ChapterProgressSummary[];
       },
-      baseChapters: ChapterData[]
+      baseChapters: ChapterData[],
     ) => {
       const mergedChapters = mergeChapterProgress(
         baseChapters,
-        Array.isArray(progressPayload?.chapters) ? progressPayload.chapters : []
+        Array.isArray(progressPayload?.chapters)
+          ? progressPayload.chapters
+          : [],
       );
       setCourseChapters(mergedChapters);
       setProgress(Number(progressPayload?.overallProgress || 0));
@@ -1099,20 +1214,21 @@ export default function DigitalHubClient({
 
         return (
           mergedChapters.find(
-            (chapter) => String(chapter._id) === String(currentSelectedChapter._id)
+            (chapter) =>
+              String(chapter._id) === String(currentSelectedChapter._id),
           ) || currentSelectedChapter
         );
       });
 
       return mergedChapters;
     },
-    []
+    [],
   );
 
   // Derived state and common logic
   const completedTopicIds = useMemo(
     () => selectedChapter?.completedTopicIds || [],
-    [selectedChapter?.completedTopicIds]
+    [selectedChapter?.completedTopicIds],
   );
   const completedAssignmentIds = selectedChapter?.completedAssignmentIds || [];
   const completedQuestionSetIds =
@@ -1123,20 +1239,26 @@ export default function DigitalHubClient({
     return (
       studentPurchasedCourses.find((course) => {
         const primaryCourseId = toIdString(course?.courseId);
-        if (primaryCourseId && String(primaryCourseId) === String(resolvedCourseId)) {
+        if (
+          primaryCourseId &&
+          String(primaryCourseId) === String(resolvedCourseId)
+        ) {
           return true;
         }
 
         const fallbackCourseId = toIdString(course?._id);
-        if (fallbackCourseId && String(fallbackCourseId) === String(resolvedCourseId)) {
+        if (
+          fallbackCourseId &&
+          String(fallbackCourseId) === String(resolvedCourseId)
+        ) {
           return true;
         }
 
         const courseSlug = String(course?.slug || "").trim();
         return Boolean(
           !primaryCourseId &&
-            courseSlug &&
-            String(courseSlug) === String(effectiveCourseSlugOrId)
+          courseSlug &&
+          String(courseSlug) === String(effectiveCourseSlugOrId),
         );
       }) || null
     );
@@ -1154,7 +1276,7 @@ export default function DigitalHubClient({
     const loadClasses = async () => {
       try {
         const res = await fetch(
-          `${API_BASE}/classes/course/${resolvedCourseId}`
+          `${API_BASE}/classes/course/${resolvedCourseId}`,
         );
         if (!res.ok) {
           if (!cancelled) setClassSessions([]);
@@ -1177,7 +1299,7 @@ export default function DigitalHubClient({
 
   const courseBatchWindowState = useMemo(
     () => getBatchWindowState(activePurchasedCourseRecord),
-    [activePurchasedCourseRecord, batchClockTick]
+    [activePurchasedCourseRecord, batchClockTick],
   );
 
   // Class Management classes scoped to the currently selected topic, split by
@@ -1188,7 +1310,7 @@ export default function DigitalHubClient({
 
     const matchesTopic = (cls: ClassSessionItem) =>
       (Array.isArray(cls.topics) ? cls.topics : []).some(
-        (t) => String((t as { _id?: string })?._id || t || "") === topicId
+        (t) => String((t as { _id?: string })?._id || t || "") === topicId,
       );
 
     const forTopic = classSessions.filter(matchesTopic);
@@ -1199,9 +1321,9 @@ export default function DigitalHubClient({
   }, [classSessions, selectedTopic?._id]);
   const shouldFailSafeRestrictAccess = Boolean(
     !isDemo &&
-      studentPurchasedCoursesLoaded &&
-      resolvedCourseIdLoaded &&
-      (studentPurchasedCoursesLoadFailed || !activePurchasedCourseRecord)
+    studentPurchasedCoursesLoaded &&
+    resolvedCourseIdLoaded &&
+    (studentPurchasedCoursesLoadFailed || !activePurchasedCourseRecord),
   );
   // Keep a ref in sync so fetchCourseData can read the latest value without
   // being in the effect dependency array (prevents re-running on every load tick)
@@ -1211,16 +1333,12 @@ export default function DigitalHubClient({
   const hasCourseBatchWindow = courseBatchWindowState.hasBatchWindow;
   const isCourseAccessBlocked = Boolean(
     !hasCourseBatchWindow &&
-      String(activePurchasedCourseRecord?.status || "").toLowerCase() ===
-        "inactive"
+    String(activePurchasedCourseRecord?.status || "").toLowerCase() ===
+      "inactive",
   );
   const hasStudentCourseAccess = Boolean(activePurchasedCourseRecord);
-  const visibleChapters = isDemo
-    ? courseChapters.slice(0, 1)
-    : courseChapters;
-  const visibleTopics = isDemo
-    ? topics.slice(0, 1)
-    : topics;
+  const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
+  const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
   const getChapterHardLockState = useCallback(
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
       if (isDemo) return false;
@@ -1232,18 +1350,18 @@ export default function DigitalHubClient({
       }
       return Boolean(chapter?.isLocked);
     },
-    [isDemo, shouldFailSafeRestrictAccess, digitalHubAccessOverride]
+    [isDemo, shouldFailSafeRestrictAccess, digitalHubAccessOverride],
   );
   const getChapterLockState = useCallback(
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
       return getChapterHardLockState(chapter, chapterIndex);
     },
-    [getChapterHardLockState]
+    [getChapterHardLockState],
   );
   const selectedChapterIndex = useMemo(() => {
     if (!selectedChapter?._id) return -1;
     return visibleChapters.findIndex(
-      (chapter) => String(chapter?._id) === String(selectedChapter._id)
+      (chapter) => String(chapter?._id) === String(selectedChapter._id),
     );
   }, [selectedChapter?._id, visibleChapters]);
   const isSelectedChapterLocked =
@@ -1257,9 +1375,9 @@ export default function DigitalHubClient({
   const firstUnlockedChapterIndex = useMemo(
     () =>
       visibleChapters.findIndex(
-        (chapter, index) => !getChapterLockState(chapter, index)
+        (chapter, index) => !getChapterLockState(chapter, index),
       ),
-    [getChapterLockState, visibleChapters]
+    [getChapterLockState, visibleChapters],
   );
   const shouldPreviewLockTopics =
     !isDemo &&
@@ -1267,63 +1385,72 @@ export default function DigitalHubClient({
     !isSelectedChapterLocked &&
     selectedChapterIndex >= 0 &&
     selectedChapterIndex === firstUnlockedChapterIndex;
-  const isTopicLocked = useCallback((topicIndex: number, topicId?: string) => {
-    if (isDemo) return false;
+  const isTopicLocked = useCallback(
+    (topicIndex: number, topicId?: string) => {
+      if (isDemo) return false;
 
-    // If student has digitalHubAccessOverride, all topics in an open chapter are fully open/unlocked
-    if (digitalHubAccessOverride) {
-      return isSelectedChapterLocked;
-    }
+      // If student has digitalHubAccessOverride, all topics in an open chapter are fully open/unlocked
+      if (digitalHubAccessOverride) {
+        return isSelectedChapterLocked;
+      }
 
-    // First topic of any chapter is always unlocked so the student can start/progress.
-    if (topicIndex === 0) return false;
+      // First topic of any chapter is always unlocked so the student can start/progress.
+      if (topicIndex === 0) return false;
 
-    // If the chapter itself is locked, so are all its topics.
-    if (isSelectedChapterLocked) return true;
+      // If the chapter itself is locked, so are all its topics.
+      if (isSelectedChapterLocked) return true;
 
-    // Sequential lock inside the chapter: topic index > 0 is locked if the previous topic is not completed.
-    if (topicIndex > 0 && visibleTopics.length > 0) {
-      const prevTopic = visibleTopics[topicIndex - 1];
-      if (prevTopic) {
-        const isPrevTopicCompleted = completedTopicIds.includes(prevTopic._id);
-        if (!isPrevTopicCompleted) {
-          return true; // Lock because previous topic is not completed
+      // Sequential lock inside the chapter: topic index > 0 is locked if the previous topic is not completed.
+      if (topicIndex > 0 && visibleTopics.length > 0) {
+        const prevTopic = visibleTopics[topicIndex - 1];
+        if (prevTopic) {
+          const isPrevTopicCompleted = completedTopicIds.includes(
+            prevTopic._id,
+          );
+          if (!isPrevTopicCompleted) {
+            return true; // Lock because previous topic is not completed
+          }
         }
       }
-    }
 
-    // Check individual topic-level batch windows. These allow individually
-    // scheduled topics to unlock at their specific time — useful both in
-    // preview phase (early access) and in active phase (progressive unlock).
-    const granularTopicState = getBatchTopicState(activePurchasedCourseRecord, selectedChapter?._id, topicId);
-    if (granularTopicState.hasBatchWindow) {
-      return granularTopicState.isLocked;
-    }
-
-    // Fallback: check topicBatchWindows from the progress API response,
-    // which is populated server-side and doesn't depend on activePurchasedCourseRecord.
-    if (topicId && Array.isArray(selectedChapter?.topicBatchWindows)) {
-      const serverWindow = selectedChapter.topicBatchWindows.find(
-        (w) => String(w.topicId) === String(topicId)
+      // Check individual topic-level batch windows. These allow individually
+      // scheduled topics to unlock at their specific time — useful both in
+      // preview phase (early access) and in active phase (progressive unlock).
+      const granularTopicState = getBatchTopicState(
+        activePurchasedCourseRecord,
+        selectedChapter?._id,
+        topicId,
       );
-      if (serverWindow?.hasBatchWindow) {
-        return serverWindow.isLocked;
+      if (granularTopicState.hasBatchWindow) {
+        return granularTopicState.isLocked;
       }
-    }
 
-    // Preview-lock: only lock topics after index 0 when in preview mode,
-    // unless the topic has its own explicitly active window (handled above).
-    return shouldPreviewLockTopics && topicIndex > 0;
-  }, [
-    isDemo,
-    isSelectedChapterLocked,
-    activePurchasedCourseRecord,
-    selectedChapter,
-    shouldPreviewLockTopics,
-    visibleTopics,
-    completedTopicIds,
-    digitalHubAccessOverride,
-  ]);
+      // Fallback: check topicBatchWindows from the progress API response,
+      // which is populated server-side and doesn't depend on activePurchasedCourseRecord.
+      if (topicId && Array.isArray(selectedChapter?.topicBatchWindows)) {
+        const serverWindow = selectedChapter.topicBatchWindows.find(
+          (w) => String(w.topicId) === String(topicId),
+        );
+        if (serverWindow?.hasBatchWindow) {
+          return serverWindow.isLocked;
+        }
+      }
+
+      // Preview-lock: only lock topics after index 0 when in preview mode,
+      // unless the topic has its own explicitly active window (handled above).
+      return shouldPreviewLockTopics && topicIndex > 0;
+    },
+    [
+      isDemo,
+      isSelectedChapterLocked,
+      activePurchasedCourseRecord,
+      selectedChapter,
+      shouldPreviewLockTopics,
+      visibleTopics,
+      completedTopicIds,
+      digitalHubAccessOverride,
+    ],
+  );
   const currentTopicIndex = selectedTopic
     ? visibleTopics.findIndex((topic) => topic._id === selectedTopic._id)
     : -1;
@@ -1337,24 +1464,23 @@ export default function DigitalHubClient({
     nextTopic != null
       ? isTopicLocked(
           visibleTopics.findIndex(
-            (topic) => String(topic?._id) === String(nextTopic._id)
+            (topic) => String(topic?._id) === String(nextTopic._id),
           ),
-          nextTopic._id
+          nextTopic._id,
         )
       : false;
 
   const isSelectedTopicCompleted = Boolean(
-    selectedTopic?._id && completedTopicIds.includes(selectedTopic._id)
+    selectedTopic?._id && completedTopicIds.includes(selectedTopic._id),
   );
   const selectedTopicIntroVideo = selectedTopic?.introVideo?.trim() || "";
   const isSelectedAssignmentCompleted = Boolean(
     selectedAssignment?._id &&
-      completedAssignmentIds.includes(selectedAssignment._id)
+    completedAssignmentIds.includes(selectedAssignment._id),
   );
 
   const allTopicsCompleted =
-    topics.length > 0 &&
-    topics.every((t) => completedTopicIds.includes(t._id));
+    topics.length > 0 && topics.every((t) => completedTopicIds.includes(t._id));
 
   useEffect(() => {
     if (process.env.NODE_ENV === "production" || isDemo) return;
@@ -1380,7 +1506,11 @@ export default function DigitalHubClient({
   ]);
 
   const tourCardStyle = useMemo<React.CSSProperties>(() => {
-    if (typeof window === "undefined" || !isDesktopViewport || !tourTargetRect) {
+    if (
+      typeof window === "undefined" ||
+      !isDesktopViewport ||
+      !tourTargetRect
+    ) {
       return {};
     }
 
@@ -1399,9 +1529,9 @@ export default function DigitalHubClient({
       left = Math.min(
         Math.max(
           viewportPadding,
-          tourTargetRect.left + tourTargetRect.width / 2 - cardWidth / 2
+          tourTargetRect.left + tourTargetRect.width / 2 - cardWidth / 2,
         ),
-        viewportWidth - cardWidth - viewportPadding
+        viewportWidth - cardWidth - viewportPadding,
       );
     }
 
@@ -1440,7 +1570,9 @@ export default function DigitalHubClient({
       if (!content) return { pages: [], totalPages: 0 };
 
       // Split content by paragraphs or sections
-      const paragraphs = content.split(/(?=<h[1-6]|<\/p>|<\/div>|<\/section>)/i);
+      const paragraphs = content.split(
+        /(?=<h[1-6]|<\/p>|<\/div>|<\/section>)/i,
+      );
       const pages = [];
       const itemsPerPage = Math.ceil(paragraphs.length / maxPages);
 
@@ -1453,7 +1585,7 @@ export default function DigitalHubClient({
 
       return { pages, totalPages: Math.min(pages.length, maxPages) };
     },
-    []
+    [],
   );
 
   // Load quiz for a specific topic
@@ -1468,7 +1600,9 @@ export default function DigitalHubClient({
         setQuizSubmitted(false);
         setQuizRewardSummary(null);
 
-        const response = await axios.get(`${API_BASE}/quizzes/topic/${topicId}`);
+        const response = await axios.get(
+          `${API_BASE}/quizzes/topic/${topicId}`,
+        );
         console.log("Quiz API response:", response.data);
 
         if (response.data.success && response.data.quiz) {
@@ -1491,13 +1625,13 @@ export default function DigitalHubClient({
         setQuizLoading(false);
       }
     },
-    [API_BASE]
+    [API_BASE],
   );
 
   const pollZoomSessionStatus = useCallback(async () => {
     try {
       const { data } = await axios.get(
-        `${API_BASE}/zoom-clips/accounting-overview/status`
+        `${API_BASE}/zoom-clips/accounting-overview/status`,
       );
       setZoomSessionProgress(data.progress || 0);
       if (data.status === "ready") {
@@ -1522,7 +1656,7 @@ export default function DigitalHubClient({
     if (zoomSessionStatus === "downloading") return;
     try {
       const { data } = await axios.get(
-        `${API_BASE}/zoom-clips/accounting-overview/status`
+        `${API_BASE}/zoom-clips/accounting-overview/status`,
       );
       if (data.status === "ready") {
         setManualIntroVideoUrl(data.url);
@@ -1544,7 +1678,7 @@ export default function DigitalHubClient({
   const handleTopicSelect = useCallback(
     async (topic: TopicData) => {
       const topicIndex = topics.findIndex(
-        (entry) => String(entry?._id) === String(topic?._id)
+        (entry) => String(entry?._id) === String(topic?._id),
       );
       if (!isDemo && topicIndex >= 0 && isTopicLocked(topicIndex, topic._id)) {
         return;
@@ -1564,24 +1698,39 @@ export default function DigitalHubClient({
         try {
           setLoading(true);
           // Try fetching from the main /api/topics/:id endpoint first
-          const topicResponse = await axios.get(`${API_BASE}/topics/${topic._id}`);
+          const topicResponse = await axios.get(
+            `${API_BASE}/topics/${topic._id}`,
+          );
           if (topicResponse.data && topicResponse.data.content) {
             activeTopic = topicResponse.data;
-          } else if (topicResponse.data && topicResponse.data.topic && topicResponse.data.topic.content) {
+          } else if (
+            topicResponse.data &&
+            topicResponse.data.topic &&
+            topicResponse.data.topic.content
+          ) {
             activeTopic = topicResponse.data.topic;
           } else {
             // Fallback to /api/chapters/topics/:id
-            const chapTopicResponse = await axios.get(`${API_BASE}/chapters/topics/${topic._id}`);
+            const chapTopicResponse = await axios.get(
+              `${API_BASE}/chapters/topics/${topic._id}`,
+            );
             if (chapTopicResponse.data && chapTopicResponse.data.topic) {
               activeTopic = chapTopicResponse.data.topic;
-            } else if (chapTopicResponse.data && chapTopicResponse.data.content) {
+            } else if (
+              chapTopicResponse.data &&
+              chapTopicResponse.data.content
+            ) {
               activeTopic = chapTopicResponse.data;
             }
           }
 
           if (activeTopic && activeTopic.content) {
             // Cache the fetched topic details so we don't fetch it again on clicking back
-            setTopics(prev => prev.map(t => t._id === topic._id ? { ...t, ...activeTopic } : t));
+            setTopics((prev) =>
+              prev.map((t) =>
+                t._id === topic._id ? { ...t, ...activeTopic } : t,
+              ),
+            );
           }
         } catch (err) {
           console.error("Error fetching topic content:", err);
@@ -1601,15 +1750,15 @@ export default function DigitalHubClient({
             // For demo mode, split content into pages and limit to 1 page
             const { pages, totalPages } = splitContentIntoPages(
               decodedContent,
-              1
+              1,
             );
             setTotalPages(totalPages);
             setCurrentPage(1);
             setTopicContent(
               normalizeDigitalHubContentHtml(
                 pages[0] || "Content not available",
-                DIGITAL_HUB_FONT_STACK
-              )
+                DIGITAL_HUB_FONT_STACK,
+              ),
             );
             setShowDemoLimit(totalPages > 0);
           } else {
@@ -1617,8 +1766,8 @@ export default function DigitalHubClient({
             setTopicContent(
               normalizeDigitalHubContentHtml(
                 decodedContent,
-                DIGITAL_HUB_FONT_STACK
-              )
+                DIGITAL_HUB_FONT_STACK,
+              ),
             );
             setTotalPages(1);
             setCurrentPage(1);
@@ -1629,8 +1778,8 @@ export default function DigitalHubClient({
           setTopicContent(
             normalizeDigitalHubContentHtml(
               activeTopic.content || "Content not available",
-              DIGITAL_HUB_FONT_STACK
-            )
+              DIGITAL_HUB_FONT_STACK,
+            ),
           );
           setTotalPages(1);
           setCurrentPage(1);
@@ -1657,7 +1806,7 @@ export default function DigitalHubClient({
       splitContentIntoPages,
       storeLastSelection,
       API_BASE,
-    ]
+    ],
   );
 
   // Handle case study selection
@@ -1685,14 +1834,23 @@ export default function DigitalHubClient({
       try {
         const response = await axios.get(
           `${API_BASE}/v1/students/coins/${currentStudentId}`,
-          { withCredentials: true }
+          { withCredentials: true },
         );
         setPoints(response.data?.coinBalance ?? 0);
       } catch {
         setPoints(0);
       }
     },
-    [API_BASE, isDemo, isTopicLocked, scrollContentToTop, selectedChapter?._id, splitContentIntoPages, storeLastSelection, topics]
+    [
+      API_BASE,
+      isDemo,
+      isTopicLocked,
+      scrollContentToTop,
+      selectedChapter?._id,
+      splitContentIntoPages,
+      storeLastSelection,
+      topics,
+    ],
   );
 
   // Ticket submission functions
@@ -1710,7 +1868,7 @@ export default function DigitalHubClient({
 
       if (response.ok) {
         setToastMessage(
-          "Ticket submitted successfully! We'll get back to you soon."
+          "Ticket submitted successfully! We'll get back to you soon.",
         );
         setShowToast(true);
         setIsModalOpen(false);
@@ -1738,7 +1896,7 @@ export default function DigitalHubClient({
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
     setTicketForm((prev) => ({
@@ -1763,14 +1921,14 @@ export default function DigitalHubClient({
       }
       setHamburgerOpen(nextOpen);
     },
-    [activeTourStep.id, isDesktopViewport, isTourOpen]
+    [activeTourStep.id, isDesktopViewport, isTourOpen],
   );
 
   const goToTourStep = useCallback(
     (nextIndex: number) => {
       const boundedIndex = Math.max(
         0,
-        Math.min(nextIndex, DIGITAL_HUB_TOUR_STEPS.length - 1)
+        Math.min(nextIndex, DIGITAL_HUB_TOUR_STEPS.length - 1),
       );
       const nextStep = DIGITAL_HUB_TOUR_STEPS[boundedIndex];
 
@@ -1799,7 +1957,7 @@ export default function DigitalHubClient({
       isDesktopViewport,
       restoreTourSidebarState,
       setHamburgerOpenState,
-    ]
+    ],
   );
 
   const toggleHamburgerMenu = useCallback(() => {
@@ -1816,7 +1974,9 @@ export default function DigitalHubClient({
   const fetchCaseStudies = useCallback(
     async (chapterId: string) => {
       try {
-        const response = await axios.get(`${API_BASE}/case-studies/chapter/${chapterId}`);
+        const response = await axios.get(
+          `${API_BASE}/case-studies/chapter/${chapterId}`,
+        );
         if (response.data.success) {
           setCaseStudies(response.data.data || []);
         }
@@ -1825,14 +1985,16 @@ export default function DigitalHubClient({
         setCaseStudies([]);
       }
     },
-    [API_BASE]
+    [API_BASE],
   );
 
   // Fetch assignments for a chapter
   const fetchAssignments = useCallback(
     async (chapterId: string) => {
       try {
-        const response = await axios.get(`${API_BASE}/assignments/chapter/${chapterId}`);
+        const response = await axios.get(
+          `${API_BASE}/assignments/chapter/${chapterId}`,
+        );
         if (response.data.success) {
           setAssignments(response.data.data || []);
         }
@@ -1841,7 +2003,7 @@ export default function DigitalHubClient({
         setAssignments([]);
       }
     },
-    [API_BASE]
+    [API_BASE],
   );
 
   const buildChapterPath = useCallback(
@@ -1856,27 +2018,26 @@ export default function DigitalHubClient({
 
       return `${basePath}/${encodeURIComponent(targetChapterId)}`;
     },
-    [effectiveCourseSlugOrId, isDemo]
+    [effectiveCourseSlugOrId, isDemo],
   );
-
 
   const selectChapterContent = useCallback(
     (
       chapter: ChapterData,
       navigationMode: "push" | "replace" | "none" = "none",
-      preferredTopicId?: string
+      preferredTopicId?: string,
     ) => {
       const availableTopics = chapter.topics || [];
       const chapterIndex = visibleChapters.findIndex(
-        (entry) => String(entry?._id) === String(chapter?._id)
+        (entry) => String(entry?._id) === String(chapter?._id),
       );
       const isChapterHardLocked = getChapterHardLockState(
         chapter,
-        chapterIndex >= 0 ? chapterIndex : 0
+        chapterIndex >= 0 ? chapterIndex : 0,
       );
       const isChapterAccessLocked = getChapterLockState(
         chapter,
-        chapterIndex >= 0 ? chapterIndex : 0
+        chapterIndex >= 0 ? chapterIndex : 0,
       );
       setIsIntroVideoModalOpen(false);
       setSelectedChapter(chapter);
@@ -1899,8 +2060,8 @@ export default function DigitalHubClient({
           shouldFailSafeRestrictAccessRef.current
             ? "Course access is being verified. Only the first chapter and first topic are available right now."
             : courseBatchWindowState.isBatchPostEndLocked
-            ? "This batch has ended. Course access is locked now."
-            : "Batch access is not started yet. This chapter will unlock when the batch start time begins."
+              ? "This batch has ended. Course access is locked now."
+              : "Batch access is not started yet. This chapter will unlock when the batch start time begins.",
         );
         setTotalPages(1);
         setCurrentPage(1);
@@ -1933,18 +2094,21 @@ export default function DigitalHubClient({
             shouldFailSafeRestrictAccessRef.current ||
             isChapterAccessLocked);
         const completedIds = chapter.completedTopicIds || [];
-        const properTopicFallback = availableTopics.find((topic, index) => {
-          const isCompleted = completedIds.includes(topic._id);
-          const granularTopicState = getBatchTopicState(
-            activePurchasedCourseRecord,
-            chapter._id,
-            topic._id
-          );
-          const isLocked = granularTopicState.hasBatchWindow
-            ? granularTopicState.isLocked
-            : false;
-          return !isCompleted && !isLocked;
-        }) || availableTopics[0] || null;
+        const properTopicFallback =
+          availableTopics.find((topic, index) => {
+            const isCompleted = completedIds.includes(topic._id);
+            const granularTopicState = getBatchTopicState(
+              activePurchasedCourseRecord,
+              chapter._id,
+              topic._id,
+            );
+            const isLocked = granularTopicState.hasBatchWindow
+              ? granularTopicState.isLocked
+              : false;
+            return !isCompleted && !isLocked;
+          }) ||
+          availableTopics[0] ||
+          null;
         const storedTopic = preferredTopicId
           ? shouldLimitToFirstTopic
             ? null
@@ -1981,14 +2145,14 @@ export default function DigitalHubClient({
       splitContentIntoPages,
       visibleChapters,
       activePurchasedCourseRecord,
-    ]
+    ],
   );
 
   const handleChapterSelect = useCallback(
     (chapter: ChapterData) => {
       selectChapterContent(chapter, "push");
     },
-    [selectChapterContent]
+    [selectChapterContent],
   );
 
   useEffect(() => {
@@ -1999,7 +2163,7 @@ export default function DigitalHubClient({
     async (
       itemType: "topic" | "assignment" | "questionSet",
       itemId: string,
-      successMessage: string
+      successMessage: string,
     ) => {
       if (!studentId || !resolvedCourseId || !selectedChapter?._id) {
         setToastMessage("Login is required to save chapter progress.");
@@ -2012,8 +2176,8 @@ export default function DigitalHubClient({
         itemType === "topic"
           ? `topics/${itemId}/complete`
           : itemType === "assignment"
-          ? `assignments/${itemId}/complete`
-          : `question-sets/${itemId}/complete`;
+            ? `assignments/${itemId}/complete`
+            : `question-sets/${itemId}/complete`;
       const mutationKey = `${itemType}:${itemId}`;
 
       try {
@@ -2021,15 +2185,15 @@ export default function DigitalHubClient({
         const response = await axios.post(
           `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}/${progressSegment}`,
           { chapterId: selectedChapter._id },
-          { withCredentials: true }
+          { withCredentials: true },
         );
 
         const mergedChapters = applyProgressSummary(
           response.data,
-          courseChapters
+          courseChapters,
         );
         const refreshedChapter = mergedChapters.find(
-          (chapter) => String(chapter._id) === String(selectedChapter._id)
+          (chapter) => String(chapter._id) === String(selectedChapter._id),
         );
 
         const chapterCompletionMessage =
@@ -2041,29 +2205,32 @@ export default function DigitalHubClient({
           const updatedChapter = refreshedChapter || selectedChapter;
           const updatedTopics = updatedChapter?.topics || [];
           const currentIndex = updatedTopics.findIndex(
-            (topic) => topic._id === itemId
+            (topic) => topic._id === itemId,
           );
           const nextTopicCandidate =
             currentIndex >= 0 && currentIndex < updatedTopics.length - 1
               ? updatedTopics[currentIndex + 1]
               : null;
 
-          const nextTopicIndex =
-            nextTopicCandidate
-              ? updatedTopics.findIndex(
-                  (topic) =>
-                    String(topic?._id) === String(nextTopicCandidate._id)
-                )
-              : -1;
+          const nextTopicIndex = nextTopicCandidate
+            ? updatedTopics.findIndex(
+                (topic) =>
+                  String(topic?._id) === String(nextTopicCandidate._id),
+              )
+            : -1;
 
           if (
             nextTopicCandidate &&
-            (nextTopicIndex < 0 || !isTopicLocked(nextTopicIndex, nextTopicCandidate._id))
+            (nextTopicIndex < 0 ||
+              !isTopicLocked(nextTopicIndex, nextTopicCandidate._id))
           ) {
             handleTopicSelect(nextTopicCandidate);
-          } else if (refreshedChapter?.isCompleted && !selectedChapter.isCompleted) {
+          } else if (
+            refreshedChapter?.isCompleted &&
+            !selectedChapter.isCompleted
+          ) {
             const currentChapterIndex = mergedChapters.findIndex(
-              (chapter) => String(chapter._id) === String(selectedChapter._id)
+              (chapter) => String(chapter._id) === String(selectedChapter._id),
             );
             const nextChapter =
               currentChapterIndex >= 0 &&
@@ -2103,7 +2270,7 @@ export default function DigitalHubClient({
       selectedTopic?._id,
       selectChapterContent,
       studentId,
-    ]
+    ],
   );
 
   // Handle answer selection
@@ -2112,7 +2279,7 @@ export default function DigitalHubClient({
     if (selectedAnswers[questionId] === selectedAnswer) return;
 
     const currentQuestion = quizData?.questions.find(
-      (question) => question._id === questionId
+      (question) => question._id === questionId,
     );
     if (currentQuestion) {
       const isCorrect = selectedAnswer === currentQuestion.answer;
@@ -2134,7 +2301,7 @@ export default function DigitalHubClient({
       if (raw.startsWith("/")) return raw;
       return `${API_ORIGIN}/${raw.replace(/^\/+/, "")}`;
     },
-    [API_ORIGIN]
+    [API_ORIGIN],
   );
 
   const playAnswerFeedbackSound = useCallback(
@@ -2144,25 +2311,27 @@ export default function DigitalHubClient({
           isCorrect
             ? quizSoundSettings.correctAnswerSound
             : quizSoundSettings.wrongAnswerSound,
-          isCorrect ? "/sounds/success.mp3" : "/sounds/error.mp3"
-        )
+          isCorrect ? "/sounds/success.mp3" : "/sounds/error.mp3",
+        ),
       );
       audio.play().catch(() => {
         // Fallback or mute if autoplay blocked
       });
     },
-    [quizSoundSettings, resolveSoundUrl]
+    [quizSoundSettings, resolveSoundUrl],
   );
 
   const playCelebrationSound = useCallback(() => {
     const audio = new Audio(
-      resolveSoundUrl(quizSoundSettings.correctAnswerSound, "/sounds/success.mp3")
+      resolveSoundUrl(
+        quizSoundSettings.correctAnswerSound,
+        "/sounds/success.mp3",
+      ),
     );
     audio.play().catch(() => {
       // Fallback
     });
   }, [quizSoundSettings, resolveSoundUrl]);
-
 
   const handleQuizSubmit = useCallback(async () => {
     if (!quizData || quizSubmitted) return;
@@ -2171,7 +2340,7 @@ export default function DigitalHubClient({
     if (totalQuestions === 0) return;
 
     const unansweredQuestions = quizData.questions.filter(
-      (question) => !selectedAnswers[question._id]
+      (question) => !selectedAnswers[question._id],
     );
     if (unansweredQuestions.length > 0) {
       setToastMessage("Please answer all questions before submitting.");
@@ -2181,7 +2350,7 @@ export default function DigitalHubClient({
     }
 
     const correctAnswers = quizData.questions.filter(
-      (question) => selectedAnswers[question._id] === question.answer
+      (question) => selectedAnswers[question._id] === question.answer,
     ).length;
 
     setQuizSubmitted(true);
@@ -2208,7 +2377,7 @@ export default function DigitalHubClient({
           selectedAnswers,
           totalQuestions,
         },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       const coinsAwarded = Number(response.data?.coinsAwarded || 0);
@@ -2238,7 +2407,7 @@ export default function DigitalHubClient({
         markProgressItemComplete(
           "topic",
           selectedTopic._id,
-          awardedMessage || "Quiz submitted and topic marked as complete."
+          awardedMessage || "Quiz submitted and topic marked as complete.",
         );
       }
     } catch (error) {
@@ -2263,10 +2432,7 @@ export default function DigitalHubClient({
   ]);
 
   // Handle language selection
-  const handleLanguageSelect = (language: {
-    code: string;
-    name: string;
-  }) => {
+  const handleLanguageSelect = (language: { code: string; name: string }) => {
     setSelectedLanguage(language.name);
     setLanguageDropdownOpen(false);
 
@@ -2293,7 +2459,7 @@ export default function DigitalHubClient({
 
       try {
         const response = await axios.get(
-          `${API_BASE}/courses/${encodeURIComponent(effectiveCourseSlugOrId)}`
+          `${API_BASE}/courses/${encodeURIComponent(effectiveCourseSlugOrId)}`,
         );
         const courseRecord = extractCourseRecord(response.data);
         const resolvedId = courseRecord?._id;
@@ -2345,14 +2511,17 @@ export default function DigitalHubClient({
   // Fetch course data using resolved id first, falling back to slug
   useEffect(() => {
     const fetchCourseData = async () => {
-      const chapterCourseIdentifier = resolvedCourseId || effectiveCourseSlugOrId;
+      const chapterCourseIdentifier =
+        resolvedCourseId || effectiveCourseSlugOrId;
 
       if (
         !chapterCourseIdentifier ||
         (!isDemo && !authResolved) ||
         (!isDemo &&
           studentId &&
-          (!studentCourseBookingsLoaded || !studentPurchasedCoursesLoaded || !resolvedCourseIdLoaded))
+          (!studentCourseBookingsLoaded ||
+            !studentPurchasedCoursesLoaded ||
+            !resolvedCourseIdLoaded))
       ) {
         if (!chapterCourseIdentifier || (!isDemo && !authResolved)) {
           setLoading(false);
@@ -2368,27 +2537,30 @@ export default function DigitalHubClient({
         if (!resolvedCourseId && effectiveCourseSlugOrId) {
           console.warn(
             "Using course slug fallback for chapter fetch:",
-            effectiveCourseSlugOrId
+            effectiveCourseSlugOrId,
           );
         }
 
         const [chaptersResponse, progressResponse] = await Promise.all([
           axios.get(
             `${API_BASE}/chapters/course/${encodeURIComponent(
-              chapterCourseIdentifier
-            )}`
+              chapterCourseIdentifier,
+            )}`,
           ),
           !isDemo && studentId && resolvedCourseId
             ? axios
                 .get(
                   `${API_BASE}/v1/students/${studentId}/digital-hub-progress/${resolvedCourseId}`,
-                  { withCredentials: true }
+                  { withCredentials: true },
                 )
                 .catch(() => null)
             : Promise.resolve(null),
         ]);
 
-        if (!chaptersResponse.data.success || chaptersResponse.data.chapters.length === 0) {
+        if (
+          !chaptersResponse.data.success ||
+          chaptersResponse.data.chapters.length === 0
+        ) {
           setCourseChapters([]);
           setSelectedChapter(null);
           setTopics([]);
@@ -2413,11 +2585,11 @@ export default function DigitalHubClient({
         const storedSelection = loadLastSelection();
         const requestedChapter = findChapterByIdentifier(
           mergedChapters,
-          effectiveChapterId
+          effectiveChapterId,
         );
         const storedChapter = findChapterByIdentifier(
           mergedChapters,
-          storedSelection?.chapterId || null
+          storedSelection?.chapterId || null,
         );
         const fallbackChapter = getPreferredUnlockedChapter(mergedChapters);
         const chapterToOpen = shouldFailSafeRestrictAccessRef.current
@@ -2441,7 +2613,7 @@ export default function DigitalHubClient({
         selectChapterContentRef.current(
           chapterToOpen,
           needsRouteReplace ? "replace" : "none",
-          preferredTopicId
+          preferredTopicId,
         );
       } catch (error) {
         console.error("Error fetching course data:", error);
@@ -2589,7 +2761,9 @@ export default function DigitalHubClient({
     const scrollContainer = contentScrollRef.current;
     window.addEventListener("resize", syncPosition);
     window.addEventListener("scroll", syncPosition, true);
-    scrollContainer?.addEventListener("scroll", syncPosition, { passive: true });
+    scrollContainer?.addEventListener("scroll", syncPosition, {
+      passive: true,
+    });
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -2603,11 +2777,13 @@ export default function DigitalHubClient({
     const fetchCoinSettings = async () => {
       try {
         const response = await axios.get(`${API_BASE}/coins/settings`);
-        const configuredCoins = Number(response.data?.settings?.quizCompleteCoins);
+        const configuredCoins = Number(
+          response.data?.settings?.quizCompleteCoins,
+        );
         setQuizCoinsPerCorrect(
           Number.isFinite(configuredCoins) && configuredCoins > 0
             ? configuredCoins
-            : 0
+            : 0,
         );
       } catch {
         setQuizCoinsPerCorrect(0);
@@ -2646,7 +2822,9 @@ export default function DigitalHubClient({
           setStudentId(currentStudentId);
           setStudentName(response.data?.student?.name || "");
           setStudentRegisteredAt(response.data?.student?.createdAt || null);
-          setDigitalHubAccessOverride(Boolean(response.data?.student?.digitalHubAccessOverride));
+          setDigitalHubAccessOverride(
+            Boolean(response.data?.student?.digitalHubAccessOverride),
+          );
           await fetchStudentCoins(currentStudentId);
           return;
         }
@@ -2683,11 +2861,11 @@ export default function DigitalHubClient({
           `${API_BASE}/v1/course-bookings/student`,
           {
             withCredentials: true,
-    }
-  );
+          },
+        );
         if (cancelled) return;
         setStudentCourseBookings(
-          Array.isArray(response.data?.bookings) ? response.data.bookings : []
+          Array.isArray(response.data?.bookings) ? response.data.bookings : [],
         );
       } catch {
         if (!cancelled) {
@@ -2726,7 +2904,7 @@ export default function DigitalHubClient({
           `${API_BASE}/courses/student-courses/${studentId}`,
           {
             withCredentials: true,
-          }
+          },
         );
         if (cancelled) return;
         if (process.env.NODE_ENV !== "production") {
@@ -2738,7 +2916,7 @@ export default function DigitalHubClient({
           });
         }
         setStudentPurchasedCourses(
-          extractCourseList(response.data) as CourseAccessRecord[]
+          extractCourseList(response.data) as CourseAccessRecord[],
         );
         setStudentPurchasedCoursesLoadFailed(false);
       } catch (error) {
@@ -2787,7 +2965,7 @@ export default function DigitalHubClient({
         {
           pageLanguage: "en",
         },
-        "google_translate_element"
+        "google_translate_element",
       );
       const instance =
         window.google.translate.TranslateElement.getInstance?.() ?? null;
@@ -2809,7 +2987,7 @@ export default function DigitalHubClient({
     window.googleTranslateElementInit = initializeGoogleTranslateWidget;
 
     const existingScript = document.querySelector(
-      'script[src*="translate.google.com/translate_a/element.js"]'
+      'script[src*="translate.google.com/translate_a/element.js"]',
     ) as HTMLScriptElement | null;
 
     if (existingScript) {
@@ -3430,7 +3608,7 @@ export default function DigitalHubClient({
     quizData?.questions?.reduce(
       (count, question) =>
         selectedAnswers[question._id] === question.answer ? count + 1 : count,
-      0
+      0,
     ) ?? 0;
   const pendingQuizPoints =
     studentId && !quizSubmitted ? liveCorrectAnswers * quizCoinsPerCorrect : 0;
@@ -3441,7 +3619,9 @@ export default function DigitalHubClient({
   return (
     <div
       className={`h-screen overflow-hidden transition-colors duration-300 ${
-        isDarkMode ? "bg-slate-950 text-slate-100" : "bg-stone-50 text-slate-900"
+        isDarkMode
+          ? "bg-slate-950 text-slate-100"
+          : "bg-stone-50 text-slate-900"
       }`}
     >
       <div
@@ -3596,8 +3776,10 @@ export default function DigitalHubClient({
                 <div className="absolute top-full left-0 w-full bg-white border border-stone-200 rounded-xl shadow-xl z-50 mt-1 max-h-60 overflow-y-auto">
                   {visibleChapters.length > 0 ? (
                     visibleChapters.map((chapter: ChapterData, index) => {
-                      const chapterLocked = !isDemo && getChapterLockState(chapter, index);
-                      const chapterHardLocked = !isDemo && getChapterHardLockState(chapter, index);
+                      const chapterLocked =
+                        !isDemo && getChapterLockState(chapter, index);
+                      const chapterHardLocked =
+                        !isDemo && getChapterHardLockState(chapter, index);
 
                       return (
                         <button
@@ -3621,8 +3803,8 @@ export default function DigitalHubClient({
                                 chapterLocked
                                   ? "bg-stone-300"
                                   : isDarkMode
-                                  ? "bg-emerald-600"
-                                  : "bg-amber-500"
+                                    ? "bg-emerald-600"
+                                    : "bg-amber-500"
                               }`}
                             >
                               {index + 1}
@@ -3825,12 +4007,26 @@ export default function DigitalHubClient({
                         const topicLocked = isTopicLocked(index, topic._id);
                         const topicWindow = topicLocked
                           ? (() => {
-                              const clientState = getBatchTopicState(activePurchasedCourseRecord, selectedChapter?._id, topic._id);
-                              if (clientState.hasBatchWindow && clientState.startsAt) return clientState;
-                              const serverWindow = selectedChapter?.topicBatchWindows?.find(
-                                (w) => String(w.topicId) === String(topic._id)
+                              const clientState = getBatchTopicState(
+                                activePurchasedCourseRecord,
+                                selectedChapter?._id,
+                                topic._id,
                               );
-                              if (serverWindow?.hasBatchWindow && serverWindow.startsAt) return serverWindow;
+                              if (
+                                clientState.hasBatchWindow &&
+                                clientState.startsAt
+                              )
+                                return clientState;
+                              const serverWindow =
+                                selectedChapter?.topicBatchWindows?.find(
+                                  (w) =>
+                                    String(w.topicId) === String(topic._id),
+                                );
+                              if (
+                                serverWindow?.hasBatchWindow &&
+                                serverWindow.startsAt
+                              )
+                                return serverWindow;
                               return null;
                             })()
                           : null;
@@ -3850,18 +4046,20 @@ export default function DigitalHubClient({
                               topicLocked
                                 ? "cursor-not-allowed opacity-60"
                                 : isDarkMode
-                                ? selectedTopic?._id === topic._id
-                                  ? "bg-slate-800 border-slate-600 text-slate-100"
-                                  : "bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800"
-                                : selectedTopic?._id === topic._id
-                                ? "bg-emerald-50 border-emerald-300 text-slate-900"
-                                : "border-stone-200 text-slate-700 hover:bg-emerald-50 hover:text-slate-900"
+                                  ? selectedTopic?._id === topic._id
+                                    ? "bg-slate-800 border-slate-600 text-slate-100"
+                                    : "bg-slate-900 border-slate-700 text-slate-200 hover:bg-slate-800"
+                                  : selectedTopic?._id === topic._id
+                                    ? "bg-emerald-50 border-emerald-300 text-slate-900"
+                                    : "border-stone-200 text-slate-700 hover:bg-emerald-50 hover:text-slate-900"
                             }`}
                           >
                             <div className="flex items-center space-x-3">
                               <div
                                 className={`w-6 h-6 text-white rounded-full flex items-center justify-center text-sm font-medium ${
-                                  topicLocked ? "bg-slate-400" : "bg-emerald-600"
+                                  topicLocked
+                                    ? "bg-slate-400"
+                                    : "bg-emerald-600"
                                 }`}
                               >
                                 {index + 1}
@@ -3871,7 +4069,14 @@ export default function DigitalHubClient({
                                 {topicLocked && topicWindow?.startsAt && (
                                   <div className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
                                     <Calendar className="h-3 w-3 shrink-0" />
-                                    Unlocks {new Date(topicWindow.startsAt).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                                    Unlocks{" "}
+                                    {new Date(
+                                      topicWindow.startsAt,
+                                    ).toLocaleDateString(undefined, {
+                                      month: "short",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    })}
                                   </div>
                                 )}
                               </div>
@@ -3879,7 +4084,7 @@ export default function DigitalHubClient({
                                 <Lock className="h-4 w-4 text-amber-500 shrink-0" />
                               ) : null}
                               {selectedChapter?.completedTopicIds?.includes(
-                                topic._id
+                                topic._id,
                               ) ? (
                                 <CheckCircle className="h-4 w-4 text-emerald-500" />
                               ) : null}
@@ -3897,14 +4102,15 @@ export default function DigitalHubClient({
                         Simulations
                       </h3>
                       {caseStudies.map((caseStudy: CaseStudy, index) => {
-                        const isLocked = !digitalHubAccessOverride && !allTopicsCompleted;
+                        const isLocked =
+                          !digitalHubAccessOverride && !allTopicsCompleted;
                         return (
                           <button
                             key={caseStudy._id}
                             onClick={() => {
                               if (isLocked) {
                                 setToastMessage(
-                                  "Complete all topics to unlock simulations."
+                                  "Complete all topics to unlock simulations.",
                                 );
                                 setShowToast(true);
                                 setTimeout(() => setShowToast(false), 3000);
@@ -3917,8 +4123,8 @@ export default function DigitalHubClient({
                               isLocked
                                 ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
                                 : selectedCaseStudy?._id === caseStudy._id
-                                ? "bg-purple-50 border-purple-300"
-                                : "hover:bg-purple-50 hover:text-slate-900 border-stone-200"
+                                  ? "bg-purple-50 border-purple-300"
+                                  : "hover:bg-purple-50 hover:text-slate-900 border-stone-200"
                             } ${
                               isDarkMode ? "text-slate-100" : "text-slate-700"
                             }`}
@@ -3952,14 +4158,15 @@ export default function DigitalHubClient({
                         Case Studies
                       </h3>
                       {caseStudies.map((caseStudy: CaseStudy, index) => {
-                        const isLocked = !digitalHubAccessOverride && !allTopicsCompleted;
+                        const isLocked =
+                          !digitalHubAccessOverride && !allTopicsCompleted;
                         return (
                           <button
                             key={caseStudy._id}
                             onClick={() => {
                               if (isLocked) {
                                 setToastMessage(
-                                  "Complete all topics to unlock case studies."
+                                  "Complete all topics to unlock case studies.",
                                 );
                                 setShowToast(true);
                                 setTimeout(() => setShowToast(false), 3000);
@@ -3972,8 +4179,8 @@ export default function DigitalHubClient({
                               isLocked
                                 ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
                                 : selectedCaseStudy?._id === caseStudy._id
-                                ? "bg-emerald-50 border-emerald-300"
-                                : "hover:bg-emerald-50 hover:text-slate-900 border-stone-200"
+                                  ? "bg-emerald-50 border-emerald-300"
+                                  : "hover:bg-emerald-50 hover:text-slate-900 border-stone-200"
                             } ${
                               isDarkMode ? "text-slate-100" : "text-slate-700"
                             }`}
@@ -4009,7 +4216,8 @@ export default function DigitalHubClient({
                       {assignments
                         .slice(0, 2)
                         .map((assignment: Assignment, index) => {
-                          const isLocked = !digitalHubAccessOverride && !allTopicsCompleted;
+                          const isLocked =
+                            !digitalHubAccessOverride && !allTopicsCompleted;
 
                           return (
                             <button
@@ -4017,7 +4225,7 @@ export default function DigitalHubClient({
                               onClick={() => {
                                 if (isLocked) {
                                   setToastMessage(
-                                    "Complete all topics to unlock assignments."
+                                    "Complete all topics to unlock assignments.",
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
@@ -4030,8 +4238,8 @@ export default function DigitalHubClient({
                                 isLocked
                                   ? "opacity-60 cursor-not-allowed bg-slate-50 border-stone-100"
                                   : selectedAssignment?._id === assignment._id
-                                  ? "bg-emerald-50 border-emerald-300"
-                                  : "hover:bg-emerald-50 hover:text-slate-900 border-stone-200"
+                                    ? "bg-emerald-50 border-emerald-300"
+                                    : "hover:bg-emerald-50 hover:text-slate-900 border-stone-200"
                               } ${
                                 isDarkMode ? "text-slate-100" : "text-slate-700"
                               }`}
@@ -4052,7 +4260,7 @@ export default function DigitalHubClient({
                                   Assignment {index + 1}
                                 </span>
                                 {selectedChapter?.completedAssignmentIds?.includes(
-                                  assignment._id
+                                  assignment._id,
                                 ) ? (
                                   <CheckCircle className="h-4 w-4 text-emerald-500" />
                                 ) : null}
@@ -4153,14 +4361,16 @@ export default function DigitalHubClient({
                           : "Topic pending"}
                       </span>
                       <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
-                        Chapter topics {selectedChapter?.completedTopicCount || 0}/
+                        Chapter topics{" "}
+                        {selectedChapter?.completedTopicCount || 0}/
                         {selectedChapter?.totalTopicCount || 0}
                       </span>
                       {/* Watch Live Class — classes scheduled in Class Management
                           for this course/chapter/topic */}
                       {topicClassSessions.live.length > 0 &&
                       !(
-                        String(selectedChapter?._id) === "6883d69cdac73382a0aa2b15" &&
+                        String(selectedChapter?._id) ===
+                          "6883d69cdac73382a0aa2b15" &&
                         selectedTopic?.title === "Overview"
                       ) ? (
                         <button
@@ -4179,21 +4389,25 @@ export default function DigitalHubClient({
                           that have finished and converted to recorded */}
                       {topicClassSessions.recorded.length > 0 &&
                       !(
-                        String(selectedChapter?._id) === "6883d69cdac73382a0aa2b15" &&
+                        String(selectedChapter?._id) ===
+                          "6883d69cdac73382a0aa2b15" &&
                         selectedTopic?.title === "Overview"
                       ) ? (
                         <button
                           type="button"
                           onClick={() => {
-                            const sorted = [...topicClassSessions.recorded].sort(
+                            const sorted = [
+                              ...topicClassSessions.recorded,
+                            ].sort(
                               (a, b) =>
                                 new Date(b.date || 0).getTime() -
-                                new Date(a.date || 0).getTime()
+                                new Date(a.date || 0).getTime(),
                             );
                             const latest = sorted[0];
                             const url =
                               latest?.recordingUrl || latest?.meetingLink || "";
-                            if (url) window.open(url, "_blank", "noopener,noreferrer");
+                            if (url)
+                              window.open(url, "_blank", "noopener,noreferrer");
                           }}
                           className="inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-green-700"
                         >
@@ -4201,7 +4415,8 @@ export default function DigitalHubClient({
                           Watch Live Class
                         </button>
                       ) : null}
-                      {String(selectedChapter?._id) === "6883d69cdac73382a0aa2b15" &&
+                      {String(selectedChapter?._id) ===
+                        "6883d69cdac73382a0aa2b15" &&
                       selectedTopic?.title === "Overview" ? (
                         <button
                           type="button"
@@ -4267,10 +4482,10 @@ export default function DigitalHubClient({
                       }}
                     />
 
-                  <TopicLessonsDisplay
-                    topic={selectedTopic}
-                    showLegacyIntroVideo={false}
-                  />
+                    <TopicLessonsDisplay
+                      topic={selectedTopic}
+                      showLegacyIntroVideo={false}
+                    />
 
                     {/* Demo Mode Controls */}
                     {isDemo && (
@@ -4280,27 +4495,27 @@ export default function DigitalHubClient({
                           <div className="flex items-center justify-between mb-4">
                             <button
                               onClick={() => {
-                                  if (currentPage > 1) {
-                                    const { pages } = splitContentIntoPages(
-                                      atob(selectedTopic?.content || ""),
-                                      1
-                                    );
-                                    setCurrentPage(currentPage - 1);
-                                    setTopicContent(
-                                      normalizeDigitalHubContentHtml(
-                                        pages[currentPage - 2] || "",
-                                        DIGITAL_HUB_FONT_STACK
-                                      )
-                                    );
-                                  }
-                                }}
+                                if (currentPage > 1) {
+                                  const { pages } = splitContentIntoPages(
+                                    atob(selectedTopic?.content || ""),
+                                    1,
+                                  );
+                                  setCurrentPage(currentPage - 1);
+                                  setTopicContent(
+                                    normalizeDigitalHubContentHtml(
+                                      pages[currentPage - 2] || "",
+                                      DIGITAL_HUB_FONT_STACK,
+                                    ),
+                                  );
+                                }
+                              }}
                               disabled={currentPage === 1}
                               className={`px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
                                 currentPage === 1
                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                   : isDarkMode
-                                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
-                                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow"
+                                    ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
+                                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow"
                               }`}
                             >
                               ← Previous
@@ -4313,14 +4528,14 @@ export default function DigitalHubClient({
                                   onClick={() => {
                                     const { pages } = splitContentIntoPages(
                                       atob(selectedTopic?.content || ""),
-                                      1
+                                      1,
                                     );
                                     setCurrentPage(i + 1);
                                     setTopicContent(
                                       normalizeDigitalHubContentHtml(
                                         pages[i] || "",
-                                        DIGITAL_HUB_FONT_STACK
-                                      )
+                                        DIGITAL_HUB_FONT_STACK,
+                                      ),
                                     );
                                   }}
                                   className={`w-8 h-8 rounded-full font-medium transition-all duration-300 ${
@@ -4344,14 +4559,14 @@ export default function DigitalHubClient({
                                 } else if (currentPage < totalPages) {
                                   const { pages } = splitContentIntoPages(
                                     atob(selectedTopic?.content || ""),
-                                    1
+                                    1,
                                   );
                                   setCurrentPage(currentPage + 1);
                                   setTopicContent(
                                     normalizeDigitalHubContentHtml(
                                       pages[currentPage] || "",
-                                      DIGITAL_HUB_FONT_STACK
-                                    )
+                                      DIGITAL_HUB_FONT_STACK,
+                                    ),
                                   );
                                 }
                               }}
@@ -4360,15 +4575,14 @@ export default function DigitalHubClient({
                                 !isDemo && currentPage === totalPages
                                   ? "bg-gray-100 text-gray-400 cursor-not-allowed"
                                   : isDarkMode
-                                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
-                                  : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow"
+                                    ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm hover:shadow"
+                                    : "bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow"
                               }`}
                             >
                               {isDemo ? "Purchase Course →" : "Next Topics →"}
                             </button>
                           </div>
                         )}
-
                       </div>
                     )}
 
@@ -4415,20 +4629,20 @@ export default function DigitalHubClient({
                                                 ? "bg-green-100 border-green-500"
                                                 : "bg-red-100 border-red-500"
                                               : hasAnswered && isCorrect
-                                              ? "bg-green-100 border-green-500"
-                                              : "bg-white border-gray-300 hover:border-gray-400"
+                                                ? "bg-green-100 border-green-500"
+                                                : "bg-white border-gray-300 hover:border-gray-400"
                                           }`}
                                           onClick={() => {
                                             handleAnswerSelect(
                                               question._id,
-                                              option
+                                              option,
                                             );
                                           }}
                                         >
                                           <div className="flex items-center justify-between">
                                             <span className="text-gray-800">
                                               {String.fromCharCode(
-                                                65 + optionIndex
+                                                65 + optionIndex,
                                               )}
                                               . {option}
                                             </span>
@@ -4449,11 +4663,11 @@ export default function DigitalHubClient({
                                           </div>
                                         </div>
                                       );
-                                    }
+                                    },
                                   )}
                                 </div>
                               </div>
-                            )
+                            ),
                           )}
                         </div>
                         <div className="mt-6 flex flex-wrap items-center gap-4">
@@ -4464,8 +4678,8 @@ export default function DigitalHubClient({
                               quizSubmitted
                                 ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                                 : isDarkMode
-                                ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                                : "bg-blue-600 text-white hover:bg-blue-700"
+                                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
+                                  : "bg-blue-600 text-white hover:bg-blue-700"
                             }`}
                           >
                             {quizSubmitted ? "Quiz Submitted" : "Submit Quiz"}
@@ -4481,12 +4695,15 @@ export default function DigitalHubClient({
                               )}
                             </div>
                           )}
-                          {!quizSubmitted && studentId && quizCoinsPerCorrect > 0 && (
-                            <div className="text-sm font-medium text-slate-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                              Correct: {liveCorrectAnswers}/{quizData.questions.length} |
-                              Potential +{pendingQuizPoints} points
-                            </div>
-                          )}
+                          {!quizSubmitted &&
+                            studentId &&
+                            quizCoinsPerCorrect > 0 && (
+                              <div className="text-sm font-medium text-slate-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                                Correct: {liveCorrectAnswers}/
+                                {quizData.questions.length} | Potential +
+                                {pendingQuizPoints} points
+                              </div>
+                            )}
                         </div>
                       </div>
                     ) : null}
@@ -4534,7 +4751,7 @@ export default function DigitalHubClient({
                               onClick={() => {
                                 if (quizData && !quizSubmitted) {
                                   setToastMessage(
-                                    "Please complete the quiz before moving to the next topic."
+                                    "Please complete the quiz before moving to the next topic.",
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
@@ -4547,7 +4764,7 @@ export default function DigitalHubClient({
                                   markProgressItemComplete(
                                     "topic",
                                     selectedTopic._id,
-                                    "Topic marked as completed."
+                                    "Topic marked as completed.",
                                   );
                                   return;
                                 }
@@ -4555,7 +4772,7 @@ export default function DigitalHubClient({
                                   setToastMessage(
                                     shouldFailSafeRestrictAccess
                                       ? "Course access is being verified. Later topics are locked for now."
-                                      : "This topic will unlock when the batch start time begins."
+                                      : "This topic will unlock when the batch start time begins.",
                                   );
                                   setShowToast(true);
                                   setTimeout(() => setShowToast(false), 3000);
@@ -4563,15 +4780,13 @@ export default function DigitalHubClient({
                                 }
                                 handleTopicSelect(nextTopic);
                               }}
-                              disabled={Boolean(
-                                quizData && !quizSubmitted
-                              )}
+                              disabled={Boolean(quizData && !quizSubmitted)}
                               className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
                                 quizData && !quizSubmitted
                                   ? "bg-slate-400 cursor-not-allowed"
                                   : isDarkMode
-                                  ? "bg-emerald-600 hover:bg-emerald-700"
-                                  : "bg-blue-600 hover:bg-blue-700"
+                                    ? "bg-emerald-600 hover:bg-emerald-700"
+                                    : "bg-blue-600 hover:bg-blue-700"
                               }`}
                             >
                               <span>Next Topic</span>
@@ -4609,253 +4824,427 @@ export default function DigitalHubClient({
                   <div className="text-lg leading-relaxed bg-white border border-stone-200 rounded-2xl p-8 shadow-sm text-slate-900">
                     {selectedCaseStudy.description && (
                       <div className="mb-6">
-                        <p className="text-slate-700">{selectedCaseStudy.description}</p>
+                        <p className="text-slate-700">
+                          {selectedCaseStudy.description}
+                        </p>
                       </div>
                     )}
 
                     {/* Tasks */}
-                    {selectedCaseStudy.tasks && selectedCaseStudy.tasks.length > 0 && (
-                      <div className="mb-8">
-                        <div className="space-y-4">
-                          {selectedCaseStudy.tasks.map((task, index) => (
-                            <div key={task._id || index} className="p-6 bg-emerald-50 border border-emerald-200 rounded-lg">
-                              <h4 className="text-lg font-semibold text-emerald-800 mb-2">
-                                Task {index + 1}{task.taskName ? `: ${task.taskName}` : ""}
-                              </h4>
-                              <p className="text-emerald-700">{task.instructions}</p>
-                            </div>
-                          ))}
+                    {selectedCaseStudy.tasks &&
+                      selectedCaseStudy.tasks.length > 0 && (
+                        <div className="mb-8">
+                          <div className="space-y-4">
+                            {selectedCaseStudy.tasks.map((task, index) => (
+                              <div
+                                key={task._id || index}
+                                className="p-6 bg-emerald-50 border border-emerald-200 rounded-lg"
+                              >
+                                <h4 className="text-lg font-semibold text-emerald-800 mb-2">
+                                  Task {index + 1}
+                                  {task.taskName ? `: ${task.taskName}` : ""}
+                                </h4>
+                                <p className="text-emerald-700">
+                                  {task.instructions}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* Content */}
-                    {selectedCaseStudy.content && selectedCaseStudy.content.length > 0 && (
-                      <div className="mb-8">
-                        <div className="space-y-4">
-                          {selectedCaseStudy.content.map((content, index) => (
-                            <div key={content._id || index} className="p-6 bg-stone-50 border border-stone-200 rounded-lg">
-                              {content.type === "video" && content.videoUrl && (
-                                <div className="mb-4">
-                                  <video
-                                    controls
-                                    controlsList="nodownload noplaybackrate noremoteplayback"
-                                    disablePictureInPicture
-                                    disableRemotePlayback
-                                    onContextMenu={(e) => e.preventDefault()}
-                                    className="w-full max-w-5xl rounded-lg"
-                                  >
-                                    <source src={content.videoUrl} type="video/mp4" />
-                                  </video>
-                                </div>
-                              )}
-                              {content.type === "text" && content.textContent && (
-                                <div
-                                  className="digital-hub-content text-slate-700 whitespace-pre-wrap"
-                                  style={{ fontFamily: DIGITAL_HUB_FONT_STACK }}
-                                >
-                                  {content.textContent}
-                                </div>
-                              )}
-                              {content.type === "rich" && content.richTextContent && (
-                                <div
-                                  className="digital-hub-content text-slate-700"
-                                  ref={topicContentRef}
-                                  dangerouslySetInnerHTML={{
-                                    __html: normalizeDigitalHubContent(content.richTextContent),
-                                  }}
-                                />
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Simulations */}
-                    {selectedCaseStudy.simulations && selectedCaseStudy.simulations.length > 0 && (
-                      <div className="mb-8">
-                        <h3 className="text-xl font-semibold text-emerald-800 mb-4">
-                          Simulations ({selectedCaseStudy.simulations.length})
-                        </h3>
-                        <div className="space-y-6">
-                          {selectedCaseStudy.simulations.map((simulation: Simulation, index: number) => (
-                            <div key={simulation._id || index} className="bg-stone-50 border border-stone-200 rounded-lg p-6">
-                              <h4 className="text-lg font-semibold text-slate-800 mb-2">
-                                Simulation {index + 1}: {simulation.title}
-                              </h4>
-                              <p className="text-slate-700 mb-4">{simulation.description}</p>
-                              <AccountingExperimentCard
-                                experimentNumber={index + 1}
-                                statement={simulation.statement || simulation.description || ""}
-                                correctEntries={simulation.correctEntries || []}
-                                onComplete={(isCorrect) => {
-                                  console.log(`Simulation ${index + 1} completed:`, isCorrect);
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Question Sets */}
-                    {selectedCaseStudy.questionSets && selectedCaseStudy.questionSets.length > 0 && (
-                      <div className="space-y-6">
-                        {selectedCaseStudy.questionSets.map((questionSet: QuestionSet) => (
-                          <div key={questionSet._id} className="bg-emerald-50 border border-emerald-200 rounded-lg p-6">
-                            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                              <div>
-                                <h3 className="text-lg font-semibold text-emerald-800">{questionSet.name}</h3>
-                                <p className="text-emerald-700 mt-1">{questionSet.description}</p>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3">
-                                <span className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                                  completedQuestionSetIds.includes(questionSet._id)
-                                    ? "bg-emerald-100 text-emerald-700"
-                                    : "bg-amber-100 text-amber-700"
-                                }`}>
-                                  {completedQuestionSetIds.includes(questionSet._id) ? "Completed" : "Pending"}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => markProgressItemComplete("questionSet", questionSet._id, "Question set submitted and marked as completed.")}
-                                  disabled={completedQuestionSetIds.includes(questionSet._id) || progressMutationKey === `questionSet:${questionSet._id}`}
-                                  className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all ${
-                                    completedQuestionSetIds.includes(questionSet._id)
-                                      ? "cursor-not-allowed bg-emerald-300"
-                                      : "bg-emerald-600 hover:bg-emerald-700"
-                                  }`}
-                                >
-                                  {completedQuestionSetIds.includes(questionSet._id)
-                                    ? "Completed"
-                                    : progressMutationKey === `questionSet:${questionSet._id}`
-                                    ? "Saving..."
-                                    : "Submit Question Set"}
-                                </button>
-                              </div>
-                            </div>
-                            <div className="bg-white border border-gray-200 rounded-lg p-6">
-                              <h4 className="text-lg font-semibold text-emerald-800 mb-6">Assessment Questions</h4>
-                              {questionSet.questions && questionSet.questions.length > 0 ? (
-                                <div className="space-y-6">
-                                  {questionSet.questions.map((question, qIndex) => {
-                                    const qsId = questionSet._id;
-                                    const submitted = assignmentSubmitted[qsId];
-                                    const selectedOpt = assignmentAnswers[qsId]?.[qIndex];
-                                    const isCorrect = submitted && selectedOpt === question.correctAnswer;
-                                    const isWrong = submitted && selectedOpt && selectedOpt !== question.correctAnswer;
-                                    return (
-                                      <div key={qIndex} className="mb-8 p-4 bg-gray-50 rounded-lg">
-                                        <h5 className="text-md font-semibold text-gray-800 mb-3">
-                                          {qIndex + 1}. {question.question}
-                                        </h5>
-                                        {question.context && (
-                                          <p className="text-sm text-gray-600 mb-3 italic">{question.context}</p>
-                                        )}
-                                        <div className="space-y-2">
-                                          {question.options && question.options.map((option, oIndex) => {
-                                            const isSelected = selectedOpt === option;
-                                            const isCorrectOption = submitted && option === question.correctAnswer;
-                                            const isWrongSelected = submitted && isSelected && option !== question.correctAnswer;
-                                            return (
-                                              <label key={oIndex} className={`flex items-center space-x-3 cursor-pointer p-2 rounded-lg transition-colors ${
-                                                isCorrectOption
-                                                  ? "bg-emerald-50 border border-emerald-300"
-                                                  : isWrongSelected
-                                                  ? "bg-red-50 border border-red-300"
-                                                  : isSelected
-                                                  ? "bg-emerald-50 border border-emerald-200"
-                                                  : "hover:bg-gray-100 border border-transparent"
-                                              }`}>
-                                                <input
-                                                  type="radio"
-                                                  name={`cs-qs-${qsId}-q-${qIndex}`}
-                                                  value={option}
-                                                  checked={isSelected}
-                                                  disabled={submitted}
-                                                  onChange={() => {
-                                                    playAnswerFeedbackSound(option === question.correctAnswer);
-                                                    setAssignmentAnswers((prev) => ({
-                                                      ...prev,
-                                                      [qsId]: { ...(prev[qsId] || {}), [qIndex]: option },
-                                                    }));
-                                                  }}
-                                                  className="w-4 h-4 accent-emerald-600"
-                                                />
-                                                <span className={`text-gray-700 ${isCorrectOption ? "font-semibold text-emerald-700" : isWrongSelected ? "text-red-600" : ""}`}>
-                                                  {option}
-                                                </span>
-                                                {isCorrectOption && <span className="ml-auto text-emerald-600 text-xs font-medium">✓ Correct</span>}
-                                                {isWrongSelected && <span className="ml-auto text-red-500 text-xs font-medium">✗ Wrong</span>}
-                                              </label>
-                                            );
-                                          })}
-                                        </div>
-                                        {submitted && question.explanation && (
-                                          <div className="mt-3 p-3 bg-stone-50 rounded border-l-4 border-emerald-400">
-                                            <p className="text-sm text-slate-800">
-                                              <strong>Explanation:</strong> {question.explanation}
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                  {!assignmentSubmitted[questionSet._id] ? (
-                                    <button
-                                      onClick={() => {
-                                        const qsId = questionSet._id;
-                                        const answers = assignmentAnswers[qsId] || {};
-                                        const total = questionSet.questions.length;
-                                        const correct = questionSet.questions.filter((q, i) => answers[i] === q.correctAnswer).length;
-                                        if (correct === total) {
-                                          playCelebrationSound();
-                                        } else {
-                                          playWrongAnswerSound();
+                    {selectedCaseStudy.content &&
+                      selectedCaseStudy.content.length > 0 && (
+                        <div className="mb-8">
+                          <div className="space-y-4">
+                            {selectedCaseStudy.content.map((content, index) => (
+                              <div
+                                key={content._id || index}
+                                className="p-6 bg-stone-50 border border-stone-200 rounded-lg"
+                              >
+                                {content.type === "video" &&
+                                  content.videoUrl && (
+                                    <div className="mb-4">
+                                      <video
+                                        controls
+                                        controlsList="nodownload noplaybackrate noremoteplayback"
+                                        disablePictureInPicture
+                                        disableRemotePlayback
+                                        onContextMenu={(e) =>
+                                          e.preventDefault()
                                         }
-                                        setAssignmentResults((prev) => ({ ...prev, [qsId]: { correct, total } }));
-                                        setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: true }));
-                                      }}
-                                      className="mt-4 rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
-                                    >
-                                      Submit Answers
-                                    </button>
-                                  ) : (
-                                    <div className="mt-4 flex items-center gap-4">
-                                      <span className={`text-sm font-semibold ${assignmentResults[questionSet._id]?.correct === assignmentResults[questionSet._id]?.total ? "text-emerald-600" : "text-amber-600"}`}>
-                                        Score: {assignmentResults[questionSet._id]?.correct ?? 0} / {assignmentResults[questionSet._id]?.total ?? 0}
-                                      </span>
-                                      <button
-                                        onClick={() => {
-                                          const qsId = questionSet._id;
-                                          setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: false }));
-                                          setAssignmentAnswers((prev) => ({ ...prev, [qsId]: {} }));
-                                          setAssignmentResults((prev) => { const n = { ...prev }; delete n[qsId]; return n; });
-                                        }}
-                                        className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                        className="w-full max-w-5xl rounded-lg"
                                       >
-                                        Try Again
-                                      </button>
+                                        <source
+                                          src={content.videoUrl}
+                                          type="video/mp4"
+                                        />
+                                      </video>
                                     </div>
                                   )}
-                                </div>
-                              ) : (
-                                <p className="text-slate-500 text-sm">No questions in this set.</p>
-                              )}
-                            </div>
+                                {content.type === "text" &&
+                                  content.textContent && (
+                                    <div
+                                      className="digital-hub-content text-slate-700 whitespace-pre-wrap"
+                                      style={{
+                                        fontFamily: DIGITAL_HUB_FONT_STACK,
+                                      }}
+                                    >
+                                      {content.textContent}
+                                    </div>
+                                  )}
+                                {content.type === "rich" &&
+                                  content.richTextContent && (
+                                    <div
+                                      className="digital-hub-content text-slate-700"
+                                      ref={topicContentRef}
+                                      dangerouslySetInnerHTML={{
+                                        __html: normalizeDigitalHubContent(
+                                          content.richTextContent,
+                                        ),
+                                      }}
+                                    />
+                                  )}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        </div>
+                      )}
+
+                    {/* Simulations */}
+                    {selectedCaseStudy.simulations &&
+                      selectedCaseStudy.simulations.length > 0 && (
+                        <div className="mb-8">
+                          <h3 className="text-xl font-semibold text-emerald-800 mb-4">
+                            Simulations ({selectedCaseStudy.simulations.length})
+                          </h3>
+                          <div className="space-y-6">
+                            {selectedCaseStudy.simulations.map(
+                              (simulation: Simulation, index: number) => (
+                                <div
+                                  key={simulation._id || index}
+                                  className="bg-stone-50 border border-stone-200 rounded-lg p-6"
+                                >
+                                  <h4 className="text-lg font-semibold text-slate-800 mb-2">
+                                    Simulation {index + 1}: {simulation.title}
+                                  </h4>
+                                  <p className="text-slate-700 mb-4">
+                                    {simulation.description}
+                                  </p>
+                                  <AccountingExperimentCard
+                                    experimentNumber={index + 1}
+                                    statement={
+                                      simulation.statement ||
+                                      simulation.description ||
+                                      ""
+                                    }
+                                    correctEntries={
+                                      simulation.correctEntries || []
+                                    }
+                                    onComplete={(isCorrect) => {
+                                      console.log(
+                                        `Simulation ${index + 1} completed:`,
+                                        isCorrect,
+                                      );
+                                    }}
+                                  />
+                                </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Question Sets */}
+                    {selectedCaseStudy.questionSets &&
+                      selectedCaseStudy.questionSets.length > 0 && (
+                        <div className="space-y-6">
+                          {selectedCaseStudy.questionSets.map(
+                            (questionSet: QuestionSet) => (
+                              <div
+                                key={questionSet._id}
+                                className="bg-emerald-50 border border-emerald-200 rounded-lg p-6"
+                              >
+                                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                                  <div>
+                                    <h3 className="text-lg font-semibold text-emerald-800">
+                                      {questionSet.name}
+                                    </h3>
+                                    <p className="text-emerald-700 mt-1">
+                                      {questionSet.description}
+                                    </p>
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-3">
+                                    <span
+                                      className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                                        completedQuestionSetIds.includes(
+                                          questionSet._id,
+                                        )
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : "bg-amber-100 text-amber-700"
+                                      }`}
+                                    >
+                                      {completedQuestionSetIds.includes(
+                                        questionSet._id,
+                                      )
+                                        ? "Completed"
+                                        : "Pending"}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        markProgressItemComplete(
+                                          "questionSet",
+                                          questionSet._id,
+                                          "Question set submitted and marked as completed.",
+                                        )
+                                      }
+                                      disabled={
+                                        completedQuestionSetIds.includes(
+                                          questionSet._id,
+                                        ) ||
+                                        progressMutationKey ===
+                                          `questionSet:${questionSet._id}`
+                                      }
+                                      className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all ${
+                                        completedQuestionSetIds.includes(
+                                          questionSet._id,
+                                        )
+                                          ? "cursor-not-allowed bg-emerald-300"
+                                          : "bg-emerald-600 hover:bg-emerald-700"
+                                      }`}
+                                    >
+                                      {completedQuestionSetIds.includes(
+                                        questionSet._id,
+                                      )
+                                        ? "Completed"
+                                        : progressMutationKey ===
+                                            `questionSet:${questionSet._id}`
+                                          ? "Saving..."
+                                          : "Submit Question Set"}
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                                  <h4 className="text-lg font-semibold text-emerald-800 mb-6">
+                                    Assessment Questions
+                                  </h4>
+                                  {questionSet.questions &&
+                                  questionSet.questions.length > 0 ? (
+                                    <div className="space-y-6">
+                                      {questionSet.questions.map(
+                                        (question, qIndex) => {
+                                          const qsId = questionSet._id;
+                                          const submitted =
+                                            assignmentSubmitted[qsId];
+                                          const selectedOpt =
+                                            assignmentAnswers[qsId]?.[qIndex];
+                                          const isCorrect =
+                                            submitted &&
+                                            selectedOpt ===
+                                              question.correctAnswer;
+                                          const isWrong =
+                                            submitted &&
+                                            selectedOpt &&
+                                            selectedOpt !==
+                                              question.correctAnswer;
+                                          return (
+                                            <div
+                                              key={qIndex}
+                                              className="mb-8 p-4 bg-gray-50 rounded-lg"
+                                            >
+                                              <h5 className="text-md font-semibold text-gray-800 mb-3">
+                                                {qIndex + 1}.{" "}
+                                                {question.question}
+                                              </h5>
+                                              {question.context && (
+                                                <p className="text-sm text-gray-600 mb-3 italic">
+                                                  {question.context}
+                                                </p>
+                                              )}
+                                              <div className="space-y-2">
+                                                {question.options &&
+                                                  question.options.map(
+                                                    (option, oIndex) => {
+                                                      const isSelected =
+                                                        selectedOpt === option;
+                                                      const isCorrectOption =
+                                                        submitted &&
+                                                        option ===
+                                                          question.correctAnswer;
+                                                      const isWrongSelected =
+                                                        submitted &&
+                                                        isSelected &&
+                                                        option !==
+                                                          question.correctAnswer;
+                                                      return (
+                                                        <label
+                                                          key={oIndex}
+                                                          className={`flex items-center space-x-3 cursor-pointer p-2 rounded-lg transition-colors ${
+                                                            isCorrectOption
+                                                              ? "bg-emerald-50 border border-emerald-300"
+                                                              : isWrongSelected
+                                                                ? "bg-red-50 border border-red-300"
+                                                                : isSelected
+                                                                  ? "bg-emerald-50 border border-emerald-200"
+                                                                  : "hover:bg-gray-100 border border-transparent"
+                                                          }`}
+                                                        >
+                                                          <input
+                                                            type="radio"
+                                                            name={`cs-qs-${qsId}-q-${qIndex}`}
+                                                            value={option}
+                                                            checked={isSelected}
+                                                            disabled={submitted}
+                                                            onChange={() => {
+                                                              playAnswerFeedbackSound(
+                                                                option ===
+                                                                  question.correctAnswer,
+                                                              );
+                                                              setAssignmentAnswers(
+                                                                (prev) => ({
+                                                                  ...prev,
+                                                                  [qsId]: {
+                                                                    ...(prev[
+                                                                      qsId
+                                                                    ] || {}),
+                                                                    [qIndex]:
+                                                                      option,
+                                                                  },
+                                                                }),
+                                                              );
+                                                            }}
+                                                            className="w-4 h-4 accent-emerald-600"
+                                                          />
+                                                          <span
+                                                            className={`text-gray-700 ${isCorrectOption ? "font-semibold text-emerald-700" : isWrongSelected ? "text-red-600" : ""}`}
+                                                          >
+                                                            {option}
+                                                          </span>
+                                                          {isCorrectOption && (
+                                                            <span className="ml-auto text-emerald-600 text-xs font-medium">
+                                                              ✓ Correct
+                                                            </span>
+                                                          )}
+                                                          {isWrongSelected && (
+                                                            <span className="ml-auto text-red-500 text-xs font-medium">
+                                                              ✗ Wrong
+                                                            </span>
+                                                          )}
+                                                        </label>
+                                                      );
+                                                    },
+                                                  )}
+                                              </div>
+                                              {submitted &&
+                                                question.explanation && (
+                                                  <div className="mt-3 p-3 bg-stone-50 rounded border-l-4 border-emerald-400">
+                                                    <p className="text-sm text-slate-800">
+                                                      <strong>
+                                                        Explanation:
+                                                      </strong>{" "}
+                                                      {question.explanation}
+                                                    </p>
+                                                  </div>
+                                                )}
+                                            </div>
+                                          );
+                                        },
+                                      )}
+                                      {!assignmentSubmitted[questionSet._id] ? (
+                                        <button
+                                          onClick={() => {
+                                            const qsId = questionSet._id;
+                                            const answers =
+                                              assignmentAnswers[qsId] || {};
+                                            const total =
+                                              questionSet.questions.length;
+                                            const correct =
+                                              questionSet.questions.filter(
+                                                (q, i) =>
+                                                  answers[i] ===
+                                                  q.correctAnswer,
+                                              ).length;
+                                            if (correct === total) {
+                                              playCelebrationSound();
+                                            } else {
+                                              playWrongAnswerSound();
+                                            }
+                                            setAssignmentResults((prev) => ({
+                                              ...prev,
+                                              [qsId]: { correct, total },
+                                            }));
+                                            setAssignmentSubmitted((prev) => ({
+                                              ...prev,
+                                              [qsId]: true,
+                                            }));
+                                          }}
+                                          className="mt-4 rounded-lg bg-emerald-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
+                                        >
+                                          Submit Answers
+                                        </button>
+                                      ) : (
+                                        <div className="mt-4 flex items-center gap-4">
+                                          <span
+                                            className={`text-sm font-semibold ${assignmentResults[questionSet._id]?.correct === assignmentResults[questionSet._id]?.total ? "text-emerald-600" : "text-amber-600"}`}
+                                          >
+                                            Score:{" "}
+                                            {assignmentResults[questionSet._id]
+                                              ?.correct ?? 0}{" "}
+                                            /{" "}
+                                            {assignmentResults[questionSet._id]
+                                              ?.total ?? 0}
+                                          </span>
+                                          <button
+                                            onClick={() => {
+                                              const qsId = questionSet._id;
+                                              setAssignmentSubmitted(
+                                                (prev) => ({
+                                                  ...prev,
+                                                  [qsId]: false,
+                                                }),
+                                              );
+                                              setAssignmentAnswers((prev) => ({
+                                                ...prev,
+                                                [qsId]: {},
+                                              }));
+                                              setAssignmentResults((prev) => {
+                                                const n = { ...prev };
+                                                delete n[qsId];
+                                                return n;
+                                              });
+                                            }}
+                                            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                                          >
+                                            Try Again
+                                          </button>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <p className="text-slate-500 text-sm">
+                                      No questions in this set.
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ),
+                          )}
+                        </div>
+                      )}
 
                     {firstAssignment && (
                       <div className="mt-8 flex justify-end">
                         <button
                           type="button"
-                          onClick={() => handleAssignmentSelect(firstAssignment)}
+                          onClick={() =>
+                            handleAssignmentSelect(firstAssignment)
+                          }
                           className={`inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition-all ${
-                            isDarkMode ? "bg-emerald-600 hover:bg-emerald-700" : "bg-blue-600 hover:bg-blue-700"
+                            isDarkMode
+                              ? "bg-emerald-600 hover:bg-emerald-700"
+                              : "bg-blue-600 hover:bg-blue-700"
                           }`}
                         >
                           <span>Continue</span>
@@ -4889,7 +5278,8 @@ export default function DigitalHubClient({
                           : "Assignment pending"}
                       </span>
                       <span className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-700">
-                        Assignments {selectedChapter?.completedAssignmentCount || 0}/
+                        Assignments{" "}
+                        {selectedChapter?.completedAssignmentCount || 0}/
                         {selectedChapter?.totalAssignmentCount || 0}
                       </span>
                       <button
@@ -4898,7 +5288,7 @@ export default function DigitalHubClient({
                           markProgressItemComplete(
                             "assignment",
                             selectedAssignment._id,
-                            "Assignment marked as completed."
+                            "Assignment marked as completed.",
                           )
                         }
                         disabled={
@@ -4915,9 +5305,9 @@ export default function DigitalHubClient({
                         {isSelectedAssignmentCompleted
                           ? "Completed"
                           : progressMutationKey ===
-                            `assignment:${selectedAssignment._id}`
-                          ? "Saving..."
-                          : "Mark Assignment Complete"}
+                              `assignment:${selectedAssignment._id}`
+                            ? "Saving..."
+                            : "Mark Assignment Complete"}
                       </button>
                     </div>
 
@@ -5000,13 +5390,13 @@ export default function DigitalHubClient({
                                         ref={topicContentRef}
                                         dangerouslySetInnerHTML={{
                                           __html: normalizeDigitalHubContent(
-                                            content.richTextContent
+                                            content.richTextContent,
                                           ),
                                         }}
                                       />
                                     )}
                                 </div>
-                              )
+                              ),
                             )}
                           </div>
                         </div>
@@ -5048,7 +5438,7 @@ export default function DigitalHubClient({
                                     </div>
                                   )}
                                 </div>
-                              )
+                              ),
                             )}
                           </div>
                         </div>
@@ -5076,12 +5466,16 @@ export default function DigitalHubClient({
                                 <div className="flex flex-wrap items-center gap-3">
                                   <span
                                     className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-                                      completedQuestionSetIds.includes(questionSet._id)
+                                      completedQuestionSetIds.includes(
+                                        questionSet._id,
+                                      )
                                         ? "bg-emerald-100 text-emerald-700"
                                         : "bg-amber-100 text-amber-700"
                                     }`}
                                   >
-                                    {completedQuestionSetIds.includes(questionSet._id)
+                                    {completedQuestionSetIds.includes(
+                                      questionSet._id,
+                                    )
                                       ? "Question set completed"
                                       : "Question set pending"}
                                   </span>
@@ -5091,26 +5485,32 @@ export default function DigitalHubClient({
                                       markProgressItemComplete(
                                         "questionSet",
                                         questionSet._id,
-                                        "Question set submitted and marked as completed."
+                                        "Question set submitted and marked as completed.",
                                       )
                                     }
                                     disabled={
-                                      completedQuestionSetIds.includes(questionSet._id) ||
+                                      completedQuestionSetIds.includes(
+                                        questionSet._id,
+                                      ) ||
                                       progressMutationKey ===
                                         `questionSet:${questionSet._id}`
                                     }
                                     className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition-all ${
-                                      completedQuestionSetIds.includes(questionSet._id)
+                                      completedQuestionSetIds.includes(
+                                        questionSet._id,
+                                      )
                                         ? "cursor-not-allowed bg-emerald-300"
                                         : "bg-emerald-600 hover:bg-emerald-700"
                                     }`}
                                   >
-                                    {completedQuestionSetIds.includes(questionSet._id)
+                                    {completedQuestionSetIds.includes(
+                                      questionSet._id,
+                                    )
                                       ? "Completed"
                                       : progressMutationKey ===
-                                        `questionSet:${questionSet._id}`
-                                      ? "Saving..."
-                                      : "Submit Question Set"}
+                                          `questionSet:${questionSet._id}`
+                                        ? "Saving..."
+                                        : "Submit Question Set"}
                                   </button>
                                 </div>
                               </div>
@@ -5127,97 +5527,148 @@ export default function DigitalHubClient({
                                     {questionSet.questions.map(
                                       (question, qIndex) => {
                                         const qsId = questionSet._id;
-                                        const submitted = assignmentSubmitted[qsId];
-                                        const selectedOpt = assignmentAnswers[qsId]?.[qIndex];
-                                        const isCorrect = submitted && selectedOpt === question.correctAnswer;
-                                        const isWrong = submitted && selectedOpt && selectedOpt !== question.correctAnswer;
+                                        const submitted =
+                                          assignmentSubmitted[qsId];
+                                        const selectedOpt =
+                                          assignmentAnswers[qsId]?.[qIndex];
+                                        const isCorrect =
+                                          submitted &&
+                                          selectedOpt ===
+                                            question.correctAnswer;
+                                        const isWrong =
+                                          submitted &&
+                                          selectedOpt &&
+                                          selectedOpt !==
+                                            question.correctAnswer;
                                         return (
-                                        <div
-                                          key={qIndex}
-                                          className="mb-8 p-4 bg-gray-50 rounded-lg"
-                                        >
-                                          <h5 className="text-md font-semibold text-gray-800 mb-3">
-                                            {qIndex + 1}. {question.question}
-                                          </h5>
-                                          {question.context && (
-                                            <p className="text-sm text-gray-600 mb-3 italic">
-                                              {question.context}
-                                            </p>
-                                          )}
-                                          <div className="space-y-2">
-                                            {question.options &&
-                                              question.options.map(
-                                                (option, oIndex) => {
-                                                  const isSelected = selectedOpt === option;
-                                                  const isCorrectOption = submitted && option === question.correctAnswer;
-                                                  const isWrongSelected = submitted && isSelected && option !== question.correctAnswer;
-                                                  return (
-                                                  <label
-                                                    key={oIndex}
-                                                    className={`flex items-center space-x-3 cursor-pointer p-2 rounded-lg transition-colors ${
-                                                      isCorrectOption
-                                                        ? "bg-emerald-50 border border-emerald-300"
-                                                        : isWrongSelected
-                                                        ? "bg-red-50 border border-red-300"
-                                                        : isSelected
-                                                        ? "bg-emerald-50 border border-emerald-200"
-                                                        : "hover:bg-gray-100 border border-transparent"
-                                                    }`}
-                                                  >
-                                                    <input
-                                                      type="radio"
-                                                      name={`qs-${qsId}-q-${qIndex}`}
-                                                      value={option}
-                                                      checked={isSelected}
-                                                      disabled={submitted}
-                                                      onChange={() => {
-                                                        playAnswerFeedbackSound(option === question.correctAnswer);
-                                                        setAssignmentAnswers((prev) => ({
-                                                          ...prev,
-                                                          [qsId]: { ...(prev[qsId] || {}), [qIndex]: option },
-                                                        }));
-                                                      }}
-                                                      className="w-4 h-4 accent-emerald-600"
-                                                    />
-                                                    <span className={`text-gray-700 ${isCorrectOption ? "font-semibold text-emerald-700" : isWrongSelected ? "text-red-600" : ""}`}>
-                                                      {option}
-                                                    </span>
-                                                    {isCorrectOption && <span className="ml-auto text-emerald-600 text-xs font-medium">✓ Correct</span>}
-                                                    {isWrongSelected && <span className="ml-auto text-red-500 text-xs font-medium">✗ Wrong</span>}
-                                                  </label>
-                                                  );
-                                                }
+                                          <div
+                                            key={qIndex}
+                                            className="mb-8 p-4 bg-gray-50 rounded-lg"
+                                          >
+                                            <h5 className="text-md font-semibold text-gray-800 mb-3">
+                                              {qIndex + 1}. {question.question}
+                                            </h5>
+                                            {question.context && (
+                                              <p className="text-sm text-gray-600 mb-3 italic">
+                                                {question.context}
+                                              </p>
+                                            )}
+                                            <div className="space-y-2">
+                                              {question.options &&
+                                                question.options.map(
+                                                  (option, oIndex) => {
+                                                    const isSelected =
+                                                      selectedOpt === option;
+                                                    const isCorrectOption =
+                                                      submitted &&
+                                                      option ===
+                                                        question.correctAnswer;
+                                                    const isWrongSelected =
+                                                      submitted &&
+                                                      isSelected &&
+                                                      option !==
+                                                        question.correctAnswer;
+                                                    return (
+                                                      <label
+                                                        key={oIndex}
+                                                        className={`flex items-center space-x-3 cursor-pointer p-2 rounded-lg transition-colors ${
+                                                          isCorrectOption
+                                                            ? "bg-emerald-50 border border-emerald-300"
+                                                            : isWrongSelected
+                                                              ? "bg-red-50 border border-red-300"
+                                                              : isSelected
+                                                                ? "bg-emerald-50 border border-emerald-200"
+                                                                : "hover:bg-gray-100 border border-transparent"
+                                                        }`}
+                                                      >
+                                                        <input
+                                                          type="radio"
+                                                          name={`qs-${qsId}-q-${qIndex}`}
+                                                          value={option}
+                                                          checked={isSelected}
+                                                          disabled={submitted}
+                                                          onChange={() => {
+                                                            playAnswerFeedbackSound(
+                                                              option ===
+                                                                question.correctAnswer,
+                                                            );
+                                                            setAssignmentAnswers(
+                                                              (prev) => ({
+                                                                ...prev,
+                                                                [qsId]: {
+                                                                  ...(prev[
+                                                                    qsId
+                                                                  ] || {}),
+                                                                  [qIndex]:
+                                                                    option,
+                                                                },
+                                                              }),
+                                                            );
+                                                          }}
+                                                          className="w-4 h-4 accent-emerald-600"
+                                                        />
+                                                        <span
+                                                          className={`text-gray-700 ${isCorrectOption ? "font-semibold text-emerald-700" : isWrongSelected ? "text-red-600" : ""}`}
+                                                        >
+                                                          {option}
+                                                        </span>
+                                                        {isCorrectOption && (
+                                                          <span className="ml-auto text-emerald-600 text-xs font-medium">
+                                                            ✓ Correct
+                                                          </span>
+                                                        )}
+                                                        {isWrongSelected && (
+                                                          <span className="ml-auto text-red-500 text-xs font-medium">
+                                                            ✗ Wrong
+                                                          </span>
+                                                        )}
+                                                      </label>
+                                                    );
+                                                  },
+                                                )}
+                                            </div>
+                                            {submitted &&
+                                              question.explanation && (
+                                                <div className="mt-3 p-3 bg-stone-50 rounded border-l-4 border-emerald-400">
+                                                  <p className="text-sm text-slate-800">
+                                                    <strong>
+                                                      Explanation:
+                                                    </strong>{" "}
+                                                    {question.explanation}
+                                                  </p>
+                                                </div>
                                               )}
                                           </div>
-                                          {submitted && question.explanation && (
-                                            <div className="mt-3 p-3 bg-stone-50 rounded border-l-4 border-emerald-400">
-                                              <p className="text-sm text-slate-800">
-                                                <strong>Explanation:</strong>{" "}
-                                                {question.explanation}
-                                              </p>
-                                            </div>
-                                          )}
-                                        </div>
                                         );
-                                      }
+                                      },
                                     )}
                                     {/* Submit / Result row */}
                                     {!assignmentSubmitted[questionSet._id] ? (
                                       <button
                                         onClick={() => {
                                           const qsId = questionSet._id;
-                                          const answers = assignmentAnswers[qsId] || {};
-                                          const total = questionSet.questions.length;
-                                          const correct = questionSet.questions.filter(
-                                            (q, i) => answers[i] === q.correctAnswer
-                                          ).length;
+                                          const answers =
+                                            assignmentAnswers[qsId] || {};
+                                          const total =
+                                            questionSet.questions.length;
+                                          const correct =
+                                            questionSet.questions.filter(
+                                              (q, i) =>
+                                                answers[i] === q.correctAnswer,
+                                            ).length;
                                           if (correct === total) {
                                             playCelebrationSound();
                                           } else {
                                             playAnswerFeedbackSound(false);
                                           }
-                                          setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: true }));
-                                          setAssignmentResults((prev) => ({ ...prev, [qsId]: { correct, total } }));
+                                          setAssignmentSubmitted((prev) => ({
+                                            ...prev,
+                                            [qsId]: true,
+                                          }));
+                                          setAssignmentResults((prev) => ({
+                                            ...prev,
+                                            [qsId]: { correct, total },
+                                          }));
                                         }}
                                         className="w-full py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors"
                                       >
@@ -5226,14 +5677,29 @@ export default function DigitalHubClient({
                                     ) : (
                                       <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
                                         <p className="text-lg font-bold text-emerald-800">
-                                          Score: {assignmentResults[questionSet._id]?.correct ?? 0} / {assignmentResults[questionSet._id]?.total ?? 0}
+                                          Score:{" "}
+                                          {assignmentResults[questionSet._id]
+                                            ?.correct ?? 0}{" "}
+                                          /{" "}
+                                          {assignmentResults[questionSet._id]
+                                            ?.total ?? 0}
                                         </p>
                                         <button
                                           onClick={() => {
                                             const qsId = questionSet._id;
-                                            setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: false }));
-                                            setAssignmentAnswers((prev) => ({ ...prev, [qsId]: {} }));
-                                            setAssignmentResults((prev) => { const n = { ...prev }; delete n[qsId]; return n; });
+                                            setAssignmentSubmitted((prev) => ({
+                                              ...prev,
+                                              [qsId]: false,
+                                            }));
+                                            setAssignmentAnswers((prev) => ({
+                                              ...prev,
+                                              [qsId]: {},
+                                            }));
+                                            setAssignmentResults((prev) => {
+                                              const n = { ...prev };
+                                              delete n[qsId];
+                                              return n;
+                                            });
                                           }}
                                           className="mt-2 px-4 py-1.5 text-sm text-emerald-700 border border-emerald-400 rounded-lg hover:bg-emerald-100 transition-colors"
                                         >
@@ -5296,7 +5762,7 @@ export default function DigitalHubClient({
                                 )}
                               </div>
                             </div>
-                          )
+                          ),
                         )}
                       </div>
                     ) : (
@@ -5333,8 +5799,8 @@ export default function DigitalHubClient({
               )}
             </div>
           </div>
+        </div>
       </div>
-    </div>
 
       {isTourOpen && (
         <div className="fixed inset-0 z-[70]">
@@ -5358,7 +5824,9 @@ export default function DigitalHubClient({
             aria-modal="true"
             aria-labelledby="digital-hub-tour-title"
             tabIndex={-1}
-            style={isDesktopViewport && tourTargetRect ? tourCardStyle : undefined}
+            style={
+              isDesktopViewport && tourTargetRect ? tourCardStyle : undefined
+            }
             className={`fixed z-[71] overflow-hidden rounded-[24px] border border-blue-100 bg-white shadow-2xl outline-none ${
               isDesktopViewport
                 ? tourTargetRect
@@ -5447,252 +5915,242 @@ export default function DigitalHubClient({
       )}
 
       {/* Intro Video Modal */}
-      {isIntroVideoModalOpen && (manualIntroVideoUrl || selectedTopicIntroVideo) && (
-        <div className="fixed inset-0 z-50 bg-black">
-          <div
-            className="absolute inset-0 flex items-center justify-center bg-black"
-            onClick={() => {
-              const video = introVideoRef.current;
-              if (!video) return;
-              if (video.paused) {
-                video.play();
-              } else {
-                video.pause();
-              }
-            }}
-          >
-            <video
-              key={manualIntroVideoUrl || selectedTopicIntroVideo}
-              ref={introVideoRef}
-              controlsList="nodownload noplaybackrate noremoteplayback"
-              disablePictureInPicture
-              disableRemotePlayback
-              autoPlay
-              playsInline
-              onContextMenu={(event) => event.preventDefault()}
-              onPlay={() => setIsIntroVideoPlaying(true)}
-              onPause={() => setIsIntroVideoPlaying(false)}
-              onLoadedMetadata={(event) =>
-                setIntroVideoDuration(event.currentTarget.duration || 0)
-              }
-              onTimeUpdate={(event) =>
-                setIntroVideoCurrentTime(event.currentTarget.currentTime)
-              }
-              className="h-full max-h-full w-full max-w-full object-contain bg-black"
-            >
-              <source src={manualIntroVideoUrl || selectedTopicIntroVideo} />
-              Your browser does not support the video tag.
-            </video>
-            
-            <div className="absolute bottom-20 left-4 z-10 flex items-center gap-2 rounded bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm sm:bottom-24 sm:left-6 sm:px-3 sm:py-1.5 sm:text-sm">
-              <MicOff className="h-3 w-3 text-red-500 sm:h-4 sm:w-4" />
-              CA POONAM GUPTA IICPA
-            </div>
-          </div>
-
-          {/* Zoom-style bottom control bar */}
-          <div
-            className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pb-6 pt-12 sm:px-6"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <input
-              type="range"
-              min={0}
-              max={introVideoDuration || 0}
-              step={0.1}
-              value={introVideoCurrentTime}
-              onChange={(event) => {
+      {isIntroVideoModalOpen &&
+        (manualIntroVideoUrl || selectedTopicIntroVideo) && (
+          <div className="fixed inset-0 z-50 bg-black">
+            <div
+              className="absolute inset-0 flex items-center justify-center bg-black"
+              onClick={() => {
                 const video = introVideoRef.current;
-                const nextTime = Number(event.target.value);
-                if (video) video.currentTime = nextTime;
-                setIntroVideoCurrentTime(nextTime);
+                if (!video) return;
+                if (video.paused) {
+                  video.play();
+                } else {
+                  video.pause();
+                }
               }}
-              className="mb-2 h-1 w-full cursor-pointer accent-sky-400"
-              aria-label="Seek video"
-            />
-            <div className="flex items-center justify-between">
-              {/* Left group */}
-              <div className="flex items-center gap-1 sm:gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const video = introVideoRef.current;
-                    if (!video) return;
-                    if (video.paused) {
-                      video.play();
-                    } else {
-                      video.pause();
-                    }
-                  }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
-                >
-                  {isIntroVideoPlaying ? (
-                    <Pause className="h-5 w-5" />
-                  ) : (
-                    <Play className="h-5 w-5" />
-                  )}
-                  <span className="text-[11px]">
-                    {isIntroVideoPlaying ? "Pause" : "Play"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const video = introVideoRef.current;
-                    if (!video) return;
-                    video.muted = !video.muted;
-                    setIsIntroVideoMuted(video.muted);
-                  }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
-                  aria-label={isIntroVideoMuted ? "Unmute" : "Mute"}
-                >
-                  {isIntroVideoMuted ? (
-                    <MicOff className="h-5 w-5 text-red-500" />
-                  ) : (
-                    <Mic className="h-5 w-5" />
-                  )}
-                  <span className="text-[11px]">
-                    {isIntroVideoMuted ? "Unmute" : "Mute"}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToastMessage("Camera not available");
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                  }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
-                >
-                  <VideoOff className="h-5 w-5 text-red-500" />
-                  <span className="text-[11px]">Start Video</span>
-                </button>
-              </div>
+            >
+              <video
+                key={manualIntroVideoUrl || selectedTopicIntroVideo}
+                ref={introVideoRef}
+                controlsList="nodownload noplaybackrate noremoteplayback"
+                disablePictureInPicture
+                disableRemotePlayback
+                autoPlay
+                playsInline
+                onContextMenu={(event) => event.preventDefault()}
+                onPlay={() => setIsIntroVideoPlaying(true)}
+                onPause={() => setIsIntroVideoPlaying(false)}
+                onLoadedMetadata={(event) =>
+                  setIntroVideoDuration(event.currentTarget.duration || 0)
+                }
+                onTimeUpdate={(event) =>
+                  setIntroVideoCurrentTime(event.currentTarget.currentTime)
+                }
+                className="h-full max-h-full w-full max-w-full object-contain bg-black"
+              >
+                <source src={manualIntroVideoUrl || selectedTopicIntroVideo} />
+                Your browser does not support the video tag.
+              </video>
 
-              {/* Middle group */}
-              <div className="flex flex-1 items-center justify-center gap-1 overflow-hidden sm:gap-4 md:flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToastMessage("Cannot see participants now");
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                  }}
-                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
-                  aria-label="Participants"
-                >
-                  <Users className="h-5 w-5" />
-                  <span className="text-[11px]">Participants</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToastMessage("Chat not available");
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                  }}
-                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
-                >
-                  <MessageSquare className="h-5 w-5" />
-                  <span className="text-[11px]">Chat</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToastMessage("React not available");
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                  }}
-                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 md:flex sm:px-3"
-                >
-                  <Smile className="h-5 w-5" />
-                  <span className="text-[11px]">React</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToastMessage("Screen share not available");
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                  }}
-                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 lg:flex sm:px-3"
-                >
-                  <Share className="h-5 w-5 text-green-500" />
-                  <span className="text-[11px]">Share</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToastMessage("Host tools not available");
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                  }}
-                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 xl:flex sm:px-3"
-                >
-                  <Shield className="h-5 w-5" />
-                  <span className="text-[11px]">Host tools</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToastMessage("Zoom AI not available");
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                  }}
-                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 2xl:flex sm:px-3"
-                >
-                  <Sparkles className="h-5 w-5 text-indigo-400" />
-                  <span className="text-[11px]">Zoom AI</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const video = introVideoRef.current;
-                    if (!video) return;
-                    if (document.fullscreenElement) {
-                      document.exitFullscreen();
-                    } else {
-                      video.requestFullscreen();
-                    }
-                  }}
-                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
-                >
-                  <Maximize className="h-5 w-5" />
-                  <span className="text-[11px]">Fullscreen</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setToastMessage("More options not available");
-                    setShowToast(true);
-                    setTimeout(() => setShowToast(false), 3000);
-                  }}
-                  className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
-                >
-                  <MoreHorizontal className="h-5 w-5" />
-                  <span className="text-[11px]">More</span>
-                </button>
+              <div className="absolute bottom-20 left-4 z-10 flex items-center gap-2 rounded bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm sm:bottom-24 sm:left-6 sm:px-3 sm:py-1.5 sm:text-sm">
+                <MicOff className="h-3 w-3 text-red-500 sm:h-4 sm:w-4" />
+                CA POONAM GUPTA IICPA
               </div>
+            </div>
 
-              {/* Right group */}
-              <div className="flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsIntroVideoModalOpen(false);
-                    setManualIntroVideoUrl(null);
-                  }}
-                  className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-red-500 transition-colors hover:bg-white/10 sm:px-3"
-                  aria-label="End"
-                >
-                  <PhoneOff className="h-5 w-5 rounded-full border border-red-500 p-0.5" />
-                  <span className="text-[11px] font-medium">End</span>
-                </button>
+            {/* Zoom-style bottom control bar */}
+            <div
+              className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pb-6 pt-12 sm:px-6"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <input
+                type="range"
+                min={0}
+                max={introVideoDuration || 0}
+                step={0.1}
+                value={introVideoCurrentTime}
+                onChange={(event) => {
+                  const video = introVideoRef.current;
+                  const nextTime = Number(event.target.value);
+                  if (video) video.currentTime = nextTime;
+                  setIntroVideoCurrentTime(nextTime);
+                }}
+                className="mb-2 h-1 w-full cursor-pointer accent-sky-400"
+                aria-label="Seek video"
+              />
+              <div className="flex items-center justify-between">
+                {/* Left group */}
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const video = introVideoRef.current;
+                      if (!video) return;
+                      if (video.paused) {
+                        video.play();
+                      } else {
+                        video.pause();
+                      }
+                    }}
+                    className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
+                  >
+                    {isIntroVideoPlaying ? (
+                      <Pause className="h-5 w-5" />
+                    ) : (
+                      <Play className="h-5 w-5" />
+                    )}
+                    <span className="text-[11px]">
+                      {isIntroVideoPlaying ? "Pause" : "Play"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const video = introVideoRef.current;
+                      if (!video) return;
+                      video.muted = !video.muted;
+                      setIsIntroVideoMuted(video.muted);
+                    }}
+                    className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
+                    aria-label={isIntroVideoMuted ? "Unmute" : "Mute"}
+                  >
+                    {isIntroVideoMuted ? (
+                      <MicOff className="h-5 w-5 text-red-500" />
+                    ) : (
+                      <Mic className="h-5 w-5" />
+                    )}
+                    <span className="text-[11px]">
+                      {isIntroVideoMuted ? "Unmute" : "Mute"}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setToastMessage("Camera not available");
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }}
+                    className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
+                  >
+                    <VideoOff className="h-5 w-5 text-red-500" />
+                    <span className="text-[11px]">Start Video</span>
+                  </button>
+                </div>
+
+                {/* Middle group */}
+                <div className="flex flex-1 items-center justify-center gap-1 overflow-hidden sm:gap-4 md:flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setToastMessage("Cannot see participants now");
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }}
+                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+                    aria-label="Participants"
+                  >
+                    <Users className="h-5 w-5" />
+                    <span className="text-[11px]">Participants</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setToastMessage("Chat not available");
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }}
+                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+                  >
+                    <MessageSquare className="h-5 w-5" />
+                    <span className="text-[11px]">Chat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setToastMessage("React not available");
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }}
+                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 md:flex sm:px-3"
+                  >
+                    <Smile className="h-5 w-5" />
+                    <span className="text-[11px]">React</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setToastMessage("Screen share not available");
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }}
+                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 lg:flex sm:px-3"
+                  >
+                    <Share className="h-5 w-5 text-green-500" />
+                    <span className="text-[11px]">Share</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setToastMessage("Host tools not available");
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }}
+                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 xl:flex sm:px-3"
+                  >
+                    <Shield className="h-5 w-5" />
+                    <span className="text-[11px]">Host tools</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setToastMessage("Zoom AI not available");
+                      setShowToast(true);
+                      setTimeout(() => setShowToast(false), 3000);
+                    }}
+                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 2xl:flex sm:px-3"
+                  >
+                    <Sparkles className="h-5 w-5 text-indigo-400" />
+                    <span className="text-[11px]">Zoom AI</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const video = introVideoRef.current;
+                      if (!video) return;
+                      if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                      } else {
+                        video.requestFullscreen();
+                      }
+                    }}
+                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+                  >
+                    <Maximize className="h-5 w-5" />
+                    <span className="text-[11px]">Fullscreen</span>
+                  </button>
+                  <MoreVideoOptionsButton videoRef={introVideoRef} />
+                </div>
+
+                {/* Right group */}
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsIntroVideoModalOpen(false);
+                      setManualIntroVideoUrl(null);
+                    }}
+                    className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-red-500 transition-colors hover:bg-white/10 sm:px-3"
+                    aria-label="End"
+                  >
+                    <PhoneOff className="h-5 w-5 rounded-full border border-red-500 p-0.5" />
+                    <span className="text-[11px] font-medium">End</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* Live Sessions Modal */}
       {isLiveSessionsModalOpen && selectedTopic && (
@@ -5713,9 +6171,8 @@ export default function DigitalHubClient({
               const url = rowIsLive
                 ? cls.meetingLink || ""
                 : cls.recordingUrl || cls.meetingLink || "";
-              const chapterTitles = (Array.isArray(cls.chapters)
-                ? cls.chapters
-                : []
+              const chapterTitles = (
+                Array.isArray(cls.chapters) ? cls.chapters : []
               )
                 .map((c) => (c as { title?: string })?.title)
                 .filter(Boolean)
@@ -6144,7 +6601,7 @@ export default function DigitalHubClient({
           font-size: 0.95rem;
           line-height: 1.65;
         }
-        
+
         .digital-hub-content * {
           font-family: ${DIGITAL_HUB_FONT_STACK} !important;
         }
