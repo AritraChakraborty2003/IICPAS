@@ -923,10 +923,81 @@ function ZoomVideoModal({
                 {isIntroVideoMuted ? "Unmute" : "Mute"}
               </span>
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                onShowToast("Camera not available");
+              }}
+              className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
+            >
+              <VideoOff className="h-5 w-5 text-red-500" />
+              <span className="text-[11px]">Start Video</span>
+            </button>
           </div>
 
           {/* Middle group */}
           <div className="flex flex-1 items-center justify-center gap-1 sm:gap-4 md:flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                onShowToast("Cannot see participants now");
+              }}
+              className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+              aria-label="Participants"
+            >
+              <Users className="h-5 w-5" />
+              <span className="text-[11px]">Participants</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onShowToast("Chat not available");
+              }}
+              className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+            >
+              <MessageSquare className="h-5 w-5" />
+              <span className="text-[11px]">Chat</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onShowToast("React not available");
+              }}
+              className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 md:flex sm:px-3"
+            >
+              <Smile className="h-5 w-5" />
+              <span className="text-[11px]">React</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onShowToast("Screen share not available");
+              }}
+              className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 lg:flex sm:px-3"
+            >
+              <Share className="h-5 w-5 text-green-500" />
+              <span className="text-[11px]">Share</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onShowToast("Host tools not available");
+              }}
+              className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 xl:flex sm:px-3"
+            >
+              <Shield className="h-5 w-5" />
+              <span className="text-[11px]">Host tools</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onShowToast("Zoom AI not available");
+              }}
+              className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 2xl:flex sm:px-3"
+            >
+              <Sparkles className="h-5 w-5 text-indigo-400" />
+              <span className="text-[11px]">Zoom AI</span>
+            </button>
             <button
               type="button"
               onClick={() => {
