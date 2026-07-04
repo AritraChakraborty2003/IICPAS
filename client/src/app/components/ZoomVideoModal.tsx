@@ -181,10 +181,7 @@ function ZoomVideoModal({
             <button
               type="button"
               onClick={() => {
-                const video = introVideoRef.current;
-                if (!video) return;
-                video.muted = !video.muted;
-                setIsIntroVideoMuted(video.muted);
+                setIsIntroVideoMuted((prev) => !prev);
               }}
               className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
               aria-label={isIntroVideoMuted ? "Unmute" : "Mute"}
