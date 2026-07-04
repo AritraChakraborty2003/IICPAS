@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import {
   CheckCircle,
   RotateCcw,
@@ -52,8 +52,18 @@ const MEMBER_MENU_ITEMS = [
 const NAV_ITEMS = ["Establishment", "Payments", "Dashboards", "User", "Admin", "Online Services", "ABRY"];
 
 type BasicDetails = { uan: string; aadhaar: string; name: string; dob: string };
-type PendingMember = { name: string; uan: string };
+type PendingMember = { name: string; uan: string; memberId: string };
 type View = "dashboard" | "memberReg" | "employeeDetails" | "success";
+
+// dd/mm/yyyy -> yyyy-mm-dd (for native <input type="date">)
+function toIsoDate(dmy: string): string {
+  const parts = digitsOnly(dmy);
+  if (parts.length !== 8) return "";
+  const d = parts.slice(0, 2);
+  const m = parts.slice(2, 4);
+  const y = parts.slice(4, 8);
+  return `${y}-${m}-${d}`;
+}
 
 // ─── Top simulation disclaimer ─────────────────────────────────────────────
 function SimBanner() {
@@ -604,7 +614,48 @@ function MemberRegistrationPage({
   );
 }
 
-// ─── Employee Details page: Other information + Salary Details ────────────
+// ─── KYC Details table row config ──────────────────────────────────────────
+type KycRow = {
+  key: string;
+  label: string;
+  required?: boolean;
+  other?: "IFSC" | "EXPIRY DT";
+  selected: boolean;
+  docNumber: string;
+  nameOnDoc: string;
+  otherValue: string;
+};
+
+function makeInitialKycRows(aadhaarNo: string, name: string): KycRow[] {
+  return [
+    { key: "bank", label: "Bank", other: "IFSC", selected: false, docNumber: "", nameOnDoc: "", otherValue: "" },
+    { key: "pan", label: "PAN", selected: false, docNumber: "", nameOnDoc: "", otherValue: "" },
+    {
+      key: "aadhaar",
+      label: "AADHAAR",
+      required: true,
+      selected: true,
+      docNumber: aadhaarNo,
+      nameOnDoc: name,
+      otherValue: "",
+    },
+    { key: "passport", label: "Passport", other: "EXPIRY DT", selected: false, docNumber: "", nameOnDoc: "", otherValue: "" },
+    {
+      key: "driving",
+      label: "Driving License",
+      other: "EXPIRY DT",
+      selected: false,
+      docNumber: "",
+      nameOnDoc: "",
+      otherValue: "",
+    },
+    { key: "election", label: "Election Card", selected: false, docNumber: "", nameOnDoc: "", otherValue: "" },
+    { key: "ration", label: "Ration Card", selected: false, docNumber: "", nameOnDoc: "", otherValue: "" },
+    { key: "npr", label: "National Population Register", selected: false, docNumber: "", nameOnDoc: "", otherValue: "" },
+  ];
+}
+
+// ─── Employee Details page — full Member Registration form + KYC Details ──
 function EmployeeDetailsPage({
   basic,
   onCancel,
@@ -612,47 +663,55 @@ function EmployeeDetailsPage({
 }: {
   basic: BasicDetails;
   onCancel: () => void;
-  onSubmit: () => void;
+  onSubmit: (newMemberId: string) => void;
 }) {
   const [form, setForm] = useState({
+    title: "Mr.",
+    name: basic.name.toUpperCase(),
+    dob: toIsoDate(basic.dob),
+    gender: "Male",
+    nationality: "INDIAN",
     fatherName: "",
-    maritalStatus: "Married",
-    nationality: "Indian",
-    email: "",
+    relation: "Father",
+    maritalStatus: "",
     mobile: "",
-    pan: "",
+    email: "",
+    qualification: "",
     doj: "",
-    qualification: "Graduate",
-    basicWage: "",
-    hra: "",
-    medical: "",
-    travelling: "",
-    special: "",
+    wages: "",
+    internationalWorker: false,
+    differentlyAbled: false,
+    neStates: false,
+    newMemberId: "",
   });
+  const [kycRows, setKycRows] = useState<KycRow[]>(() => makeInitialKycRows(basic.aadhaar, basic.name.toUpperCase()));
   const [error, setError] = useState("");
-  const set = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
-  const total = useMemo(() => {
-    const nums = [form.basicWage, form.hra, form.medical, form.travelling, form.special].map(
-      (v) => Number(v) || 0
-    );
-    return nums.reduce((a, b) => a + b, 0);
-  }, [form.basicWage, form.hra, form.medical, form.travelling, form.special]);
+  const set = <K extends keyof typeof form>(k: K) => (v: (typeof form)[K]) => setForm((p) => ({ ...p, [k]: v }));
+
+  const toggleKyc = (key: string) =>
+    setKycRows((rows) => rows.map((r) => (r.key === key ? { ...r, selected: !r.selected } : r)));
+  const setKycField = (key: string, field: "docNumber" | "nameOnDoc" | "otherValue", value: string) =>
+    setKycRows((rows) => rows.map((r) => (r.key === key ? { ...r, [field]: value } : r)));
 
   const submit = () => {
     if (
       !form.fatherName.trim() ||
-      !form.email.trim() ||
-      !form.mobile.trim() ||
-      !form.pan.trim() ||
+      !form.relation.trim() ||
+      !form.maritalStatus.trim() ||
       !form.doj.trim() ||
-      !form.basicWage.trim()
+      !form.newMemberId.trim()
     ) {
       setError("Please fill all required fields marked with *");
       return;
     }
+    const aadhaarRow = kycRows.find((r) => r.key === "aadhaar");
+    if (!aadhaarRow?.selected || !aadhaarRow.docNumber.trim()) {
+      setError("Aadhaar number or Aadhaar Enrollment Number is mandatory");
+      return;
+    }
     setError("");
-    onSubmit();
+    onSubmit(form.newMemberId.trim());
   };
 
   return (
@@ -662,195 +721,301 @@ function EmployeeDetailsPage({
           Member Registration
         </span>
         <span>/</span>
-        <span>Employee Details</span>
+        <span>Add New Employee</span>
       </div>
 
       <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-[#eee] px-5 py-3">
-          <span className="text-[15px] font-bold text-[#333]">Basic Details (verified)</span>
+          <span className="text-[15px] font-bold text-[#333]">Member Registration</span>
           <Minus size={14} className="text-[#888]" />
         </div>
-        <div className="grid gap-x-8 gap-y-3 px-6 py-5 md:grid-cols-3">
-          <div>
-            <span className="block text-[11.5px] font-semibold text-[#888]">UAN</span>
-            <span className="text-[14px] text-[#333]">{basic.uan}</span>
-          </div>
-          <div>
-            <span className="block text-[11.5px] font-semibold text-[#888]">Aadhaar No</span>
-            <span className="text-[14px] text-[#333]">{basic.aadhaar || "—"}</span>
-          </div>
-          <div>
-            <span className="block text-[11.5px] font-semibold text-[#888]">Date of Birth</span>
-            <span className="text-[14px] text-[#333]">{basic.dob}</span>
-          </div>
-          <div className="md:col-span-3">
-            <span className="block text-[11.5px] font-semibold text-[#888]">Name</span>
-            <span className="text-[14px] font-semibold text-[#1a4f8b]">{basic.name}</span>
-          </div>
-        </div>
-      </div>
 
-      <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#eee] px-5 py-3">
-          <span className="text-[15px] font-bold text-[#333]">Other Information</span>
-          <Minus size={14} className="text-[#888]" />
-        </div>
-        <div className="grid gap-x-8 gap-y-4 px-6 py-5 md:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">
-              Father Name <span className="text-[#e53e3e]">*</span>
-            </label>
-            <input
-              value={form.fatherName}
-              onChange={(e) => set("fatherName")(e.target.value)}
-              placeholder="Enter Father Name"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">Marital Status</label>
-            <select
-              value={form.maritalStatus}
-              onChange={(e) => set("maritalStatus")(e.target.value)}
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            >
-              {["Married", "Unmarried", "Widow(er)", "Divorced"].map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">Nationality</label>
-            <select
-              value={form.nationality}
-              onChange={(e) => set("nationality")(e.target.value)}
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            >
-              {["Indian", "Foreign National"].map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">
-              Email <span className="text-[#e53e3e]">*</span>
-            </label>
-            <input
-              value={form.email}
-              onChange={(e) => set("email")(e.target.value)}
-              placeholder="Enter Email"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">
-              Mobile <span className="text-[#e53e3e]">*</span>
-            </label>
-            <input
-              value={form.mobile}
-              onChange={(e) => set("mobile")(e.target.value)}
-              placeholder="Enter Mobile"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">
-              PAN <span className="text-[#e53e3e]">*</span>
-            </label>
-            <input
-              value={form.pan}
-              onChange={(e) => set("pan")(e.target.value.toUpperCase())}
-              placeholder="Enter PAN"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] uppercase text-[#333] outline-none placeholder:text-[#aaa] placeholder:normal-case focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">
-              Date of Joining <span className="text-[#e53e3e]">*</span>
-            </label>
-            <input
-              value={form.doj}
-              onChange={(e) => set("doj")(e.target.value)}
-              placeholder="dd/mm/yyyy"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">Qualification</label>
-            <select
-              value={form.qualification}
-              onChange={(e) => set("qualification")(e.target.value)}
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            >
-              {["Below Matriculation", "Matriculation", "Higher Secondary", "Graduate", "Post Graduate", "Diploma", "Professional Degree"].map(
-                (o) => (
+        <div className="space-y-4 px-6 py-6">
+          <div className="grid gap-x-8 gap-y-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+                Name ( As on AADHAAR ) <span className="text-[#e53e3e]">*</span>
+              </label>
+              <div className="flex gap-2">
+                <select
+                  value={form.title}
+                  onChange={(e) => set("title")(e.target.value)}
+                  className="h-[38px] w-[80px] shrink-0 rounded border border-[#c0c0c0] bg-white px-2 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+                >
+                  {["Mr.", "Mrs.", "Ms."].map((o) => (
+                    <option key={o}>{o}</option>
+                  ))}
+                </select>
+                <input
+                  value={form.name}
+                  onChange={(e) => set("name")(e.target.value.toUpperCase())}
+                  className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+                Nationality <span className="text-[#e53e3e]">*</span>
+              </label>
+              <select
+                value={form.nationality}
+                onChange={(e) => set("nationality")(e.target.value)}
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              >
+                {["INDIAN", "FOREIGN NATIONAL"].map((o) => (
                   <option key={o}>{o}</option>
-                )
-              )}
-            </select>
-          </div>
-        </div>
-      </div>
+                ))}
+              </select>
+            </div>
 
-      <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#eee] px-5 py-3">
-          <span className="text-[15px] font-bold text-[#333]">Salary Details</span>
-          <Minus size={14} className="text-[#888]" />
-        </div>
-        <div className="grid gap-x-8 gap-y-4 px-6 py-5 md:grid-cols-3">
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">
-              Basic (Monthly Wages) <span className="text-[#e53e3e]">*</span>
-            </label>
-            <input
-              value={form.basicWage}
-              onChange={(e) => set("basicWage")(digitsOnly(e.target.value))}
-              placeholder="e.g. 20000"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">HRA</label>
-            <input
-              value={form.hra}
-              onChange={(e) => set("hra")(digitsOnly(e.target.value))}
-              placeholder="e.g. 10000"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">Medical Allowance</label>
-            <input
-              value={form.medical}
-              onChange={(e) => set("medical")(digitsOnly(e.target.value))}
-              placeholder="e.g. 1250"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">Travelling Allowance</label>
-            <input
-              value={form.travelling}
-              onChange={(e) => set("travelling")(digitsOnly(e.target.value))}
-              placeholder="e.g. 1600"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">Special Allowances</label>
-            <input
-              value={form.special}
-              onChange={(e) => set("special")(digitsOnly(e.target.value))}
-              placeholder="e.g. 17150"
-              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-[13px] font-semibold text-[#333]">Total</label>
-            <div className="flex h-[38px] w-full items-center rounded border border-[#c0c0c0] bg-[#f5f5f5] px-3 text-[13.5px] font-bold text-[#1a4f8b]">
-              Rs. {total.toLocaleString("en-IN")}
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+                Date of Birth ( As on AADHAAR ) <span className="text-[#e53e3e]">*</span>
+              </label>
+              <input
+                type="date"
+                value={form.dob}
+                onChange={(e) => set("dob")(e.target.value)}
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+                Relation <span className="text-[#e53e3e]">*</span>
+              </label>
+              <select
+                value={form.relation}
+                onChange={(e) => set("relation")(e.target.value)}
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              >
+                {["Father", "Husband"].map((o) => (
+                  <option key={o}>{o}</option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+                Gender <span className="text-[#e53e3e]">*</span>
+              </label>
+              <div className="flex h-[38px] items-center gap-5">
+                {["Male", "Female", "Transgender"].map((g) => (
+                  <label key={g} className="flex items-center gap-1.5 text-[13.5px] text-[#333]">
+                    <input
+                      type="radio"
+                      checked={form.gender === g}
+                      onChange={() => set("gender")(g)}
+                      className="accent-[#2f80b5]"
+                    />
+                    {g}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+                Father&apos;s/Husband&apos;s Name <span className="text-[#e53e3e]">*</span>
+              </label>
+              <input
+                value={form.fatherName}
+                onChange={(e) => set("fatherName")(e.target.value.toUpperCase())}
+                placeholder="Enter Name"
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] placeholder:normal-case focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+                Marital Status <span className="text-[#e53e3e]">*</span>
+              </label>
+              <select
+                value={form.maritalStatus}
+                onChange={(e) => set("maritalStatus")(e.target.value)}
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              >
+                <option value="">Select</option>
+                {["MARRIED", "UNMARRIED", "WIDOW(ER)", "DIVORCED"].map((o) => (
+                  <option key={o}>{o}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">Email Id</label>
+              <input
+                value={form.email}
+                onChange={(e) => set("email")(e.target.value)}
+                placeholder="Enter Email"
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">Mobile</label>
+              <input
+                value={form.mobile}
+                onChange={(e) => set("mobile")(digitsOnly(e.target.value))}
+                placeholder="Enter Mobile"
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">Qualification</label>
+              <select
+                value={form.qualification}
+                onChange={(e) => set("qualification")(e.target.value)}
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              >
+                <option value="">Select</option>
+                {["BELOW MATRICULATION", "MATRICULATION", "HIGHER SECONDARY", "GRADUATE", "POST GRADUATE", "DIPLOMA", "PROFESSIONAL DEGREE"].map(
+                  (o) => (
+                    <option key={o}>{o}</option>
+                  )
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+                Date of Joining <span className="text-[#e53e3e]">*</span>
+              </label>
+              <input
+                type="date"
+                value={form.doj}
+                onChange={(e) => set("doj")(e.target.value)}
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-[13px] font-semibold text-[#333]">Monthly wages as on Joining</label>
+              <input
+                value={form.wages}
+                onChange={(e) => set("wages")(digitsOnly(e.target.value))}
+                placeholder="Enter Wages"
+                className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+              />
             </div>
           </div>
+
+          <div className="space-y-2 pt-1">
+            <label className="flex items-center gap-2 text-[13.5px] text-[#333]">
+              <input
+                type="checkbox"
+                checked={form.internationalWorker}
+                onChange={(e) => set("internationalWorker")(e.target.checked)}
+                className="h-4 w-4 accent-[#2f80b5]"
+              />
+              International Worker
+            </label>
+            <label className="flex items-center gap-2 text-[13.5px] text-[#333]">
+              <input
+                type="checkbox"
+                checked={form.differentlyAbled}
+                onChange={(e) => set("differentlyAbled")(e.target.checked)}
+                className="h-4 w-4 accent-[#2f80b5]"
+              />
+              Differently Abled
+            </label>
+            <label className="flex items-center gap-2 text-[13.5px] text-[#333]">
+              <input
+                type="checkbox"
+                checked={form.neStates}
+                onChange={(e) => set("neStates")(e.target.checked)}
+                className="h-4 w-4 accent-[#2f80b5]"
+              />
+              Member is from Assam, Meghalaya, Nagaland, Nepal &amp; Bhutan
+            </label>
+          </div>
+
+          <div className="max-w-[360px]">
+            <label className="mb-1 block text-[13px] font-semibold text-[#333]">
+              New Member Id <span className="text-[#e53e3e]">*</span>
+            </label>
+            <input
+              value={form.newMemberId}
+              onChange={(e) => set("newMemberId")(e.target.value)}
+              placeholder="Enter New Member Id"
+              className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#eee] px-5 py-3">
+          <span className="text-[15px] font-bold text-[#333]">KYC Details</span>
+          <Minus size={14} className="text-[#888]" />
+        </div>
+
+        <div className="overflow-x-auto px-6 py-5">
+          <table className="w-full min-w-[760px] text-[13px]">
+            <thead className="bg-[#f7f7f7] text-[#555]">
+              <tr>
+                <th className="border-b border-[#eee] px-3 py-2 text-left font-semibold">Select</th>
+                <th className="border-b border-[#eee] px-3 py-2 text-left font-semibold">Document Type</th>
+                <th className="border-b border-[#eee] px-3 py-2 text-left font-semibold">Document Number</th>
+                <th className="border-b border-[#eee] px-3 py-2 text-left font-semibold">Name as per Document</th>
+                <th className="border-b border-[#eee] px-3 py-2 text-left font-semibold">Other</th>
+              </tr>
+            </thead>
+            <tbody>
+              {kycRows.map((row) => (
+                <tr key={row.key}>
+                  <td className="border-b border-[#f2f2f2] px-3 py-2">
+                    <input
+                      type="checkbox"
+                      checked={row.selected}
+                      onChange={() => toggleKyc(row.key)}
+                      className="h-4 w-4 accent-[#2f80b5]"
+                    />
+                  </td>
+                  <td className="border-b border-[#f2f2f2] px-3 py-2 font-semibold text-[#333]">
+                    {row.required && <span className="text-[#e53e3e]">*</span>} {row.label}
+                  </td>
+                  <td className="border-b border-[#f2f2f2] px-3 py-2">
+                    <input
+                      value={row.docNumber}
+                      onChange={(e) => setKycField(row.key, "docNumber", e.target.value)}
+                      disabled={!row.selected}
+                      placeholder="DOCUMENT NUMBER"
+                      className="h-[34px] w-full rounded border border-[#c0c0c0] bg-white px-2.5 text-[12.5px] uppercase text-[#333] outline-none placeholder:text-[#aaa] placeholder:normal-case disabled:bg-[#f5f5f5] disabled:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+                    />
+                  </td>
+                  <td className="border-b border-[#f2f2f2] px-3 py-2">
+                    <input
+                      value={row.nameOnDoc}
+                      onChange={(e) => setKycField(row.key, "nameOnDoc", e.target.value)}
+                      disabled={!row.selected}
+                      placeholder="NAME AS PER DOCUMENT"
+                      className="h-[34px] w-full rounded border border-[#c0c0c0] bg-white px-2.5 text-[12.5px] uppercase text-[#333] outline-none placeholder:text-[#aaa] placeholder:normal-case disabled:bg-[#f5f5f5] disabled:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+                    />
+                  </td>
+                  <td className="border-b border-[#f2f2f2] px-3 py-2">
+                    {row.other ? (
+                      <input
+                        value={row.otherValue}
+                        onChange={(e) => setKycField(row.key, "otherValue", e.target.value)}
+                        disabled={!row.selected}
+                        placeholder={row.other}
+                        className="h-[34px] w-full rounded border border-[#c0c0c0] bg-white px-2.5 text-[12.5px] text-[#333] outline-none placeholder:text-[#aaa] disabled:bg-[#f5f5f5] disabled:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+                      />
+                    ) : (
+                      <span className="text-[#ccc]">—</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mx-6 mb-5 rounded border border-[#cfe8b0] bg-[#f2f9e6] px-4 py-3 text-[12.5px] leading-relaxed text-[#7a8f2f]">
+          <p>
+            <Info size={13} className="mr-1 inline-block shrink-0 align-text-top" /> Aadhaar number and Aadhaar
+            information provided here will be used for doing authentication of the member using the tools provided by
+            the UIDAI.
+          </p>
+          <p className="mt-1">Please correct your details against Aadhaar or against UAN wherever it is incorrect.</p>
+          <p className="mt-1">Aadhaar number or Aadhaar Enrollment Number is mandatory</p>
         </div>
 
         {error && <p className="px-6 pb-2 text-[12px] text-[#e53e3e]">{error}</p>}
@@ -858,9 +1023,9 @@ function EmployeeDetailsPage({
         <div className="flex gap-3 px-6 pb-6">
           <button
             onClick={submit}
-            className="rounded bg-[#5cb85c] px-6 py-2 text-[13.5px] font-bold text-white hover:bg-[#4ca64c]"
+            className="rounded bg-[#2f80b5] px-8 py-2 text-[13.5px] font-bold text-white hover:bg-[#256a96]"
           >
-            Register Member
+            Save
           </button>
           <button
             onClick={onCancel}
@@ -875,14 +1040,22 @@ function EmployeeDetailsPage({
 }
 
 // ─── Success page ────────────────────────────────────────────────────────────
-function SuccessPage({ basic, onBackToHome }: { basic: BasicDetails; onBackToHome: () => void }) {
+function SuccessPage({
+  basic,
+  memberId,
+  onBackToHome,
+}: {
+  basic: BasicDetails;
+  memberId: string;
+  onBackToHome: () => void;
+}) {
   return (
     <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-4 py-6">
       <div className="flex items-start gap-3 rounded bg-[#e3f3e1] px-4 py-3 text-[14px] text-[#1a7a3a]">
         <CheckCircle size={18} className="mt-0.5 shrink-0" />
         <span>
-          <strong>{basic.name}</strong> (UAN {basic.uan}) has been added successfully and submitted for approval
-          under Member Registration.
+          <strong>{basic.name}</strong> (UAN {basic.uan}, Member Id {memberId}) has been added successfully and
+          submitted for approval under Member Registration.
         </span>
       </div>
 
@@ -904,6 +1077,7 @@ export default function EpfReg4Page() {
   const [toast, setToast] = useState("");
   const [tick, setTick] = useState("");
   const [basic, setBasic] = useState<BasicDetails | null>(null);
+  const [memberId, setMemberId] = useState("");
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
 
   const showToast = (text: string) => {
@@ -935,10 +1109,11 @@ export default function EpfReg4Page() {
     setView("employeeDetails");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (newMemberId: string) => {
     if (basic) {
-      setPendingMembers((prev) => [...prev, { name: basic.name, uan: basic.uan }]);
+      setPendingMembers((prev) => [...prev, { name: basic.name, uan: basic.uan, memberId: newMemberId }]);
     }
+    setMemberId(newMemberId);
     setTick("Member Registered!");
     setTimeout(() => setTick(""), 1400);
     setView("success");
@@ -1011,7 +1186,7 @@ export default function EpfReg4Page() {
             onNavClick={handleNavClick}
             onLogout={handleLogout}
           />
-          <SuccessPage basic={basic} onBackToHome={() => setView("dashboard")} />
+          <SuccessPage basic={basic} memberId={memberId} onBackToHome={() => setView("dashboard")} />
           <footer className="mt-auto bg-[#1a3a66] py-4 text-center text-[12px] leading-relaxed text-[#dde6f0]">
             <p>Designed, Developed and Hosted by: Employees&apos; Provident Fund Organisation, India</p>
           </footer>
