@@ -750,6 +750,216 @@ function MoreVideoOptionsButton({
   );
 }
 
+interface ZoomVideoModalProps {
+  isOpen: boolean;
+  videoUrl: string | null;
+  isLive: boolean;
+  onClose: () => void;
+  onShowToast: (msg: string) => void;
+}
+
+function ZoomVideoModal({
+  isOpen,
+  videoUrl,
+  isLive,
+  onClose,
+  onShowToast,
+}: ZoomVideoModalProps) {
+  const introVideoRef = React.useRef<HTMLVideoElement>(null);
+  const [isIntroVideoPlaying, setIsIntroVideoPlaying] = React.useState(true);
+  const [isIntroVideoMuted, setIsIntroVideoMuted] = React.useState(false);
+  const [introVideoCurrentTime, setIntroVideoCurrentTime] = React.useState(0);
+  const [introVideoDuration, setIntroVideoDuration] = React.useState(0);
+
+  if (!isOpen || !videoUrl) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black">
+      <div
+        className="absolute inset-0 flex items-center justify-center bg-black"
+        onClick={() => {
+          if (isLive) {
+            onShowToast("Cannot pause a live session");
+            return;
+          }
+          const video = introVideoRef.current;
+          if (!video) return;
+          if (video.paused) {
+            video.play();
+          } else {
+            video.pause();
+          }
+        }}
+      >
+        {/* Top Badge */}
+        <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+          {isLive ? (
+            <span className="flex items-center gap-1.5 rounded bg-red-600/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-md">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-white"></span>
+              LIVE
+            </span>
+          ) : (
+            <span className="flex items-center gap-1.5 rounded bg-emerald-600/90 px-2 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-sm backdrop-blur-md">
+              RECORDED
+            </span>
+          )}
+        </div>
+
+        <video
+          key={videoUrl}
+          ref={introVideoRef}
+          controlsList="nodownload noplaybackrate noremoteplayback"
+          disablePictureInPicture
+          disableRemotePlayback
+          autoPlay
+          playsInline
+          onContextMenu={(event) => event.preventDefault()}
+          onPlay={() => setIsIntroVideoPlaying(true)}
+          onPause={() => setIsIntroVideoPlaying(false)}
+          onLoadedMetadata={(event) => {
+            setIntroVideoDuration(event.currentTarget.duration || 0);
+            if (isLive) {
+              const startTime = parseInt(
+                localStorage.getItem("mockLiveSessionStartTime") ||
+                  Date.now().toString(),
+                10,
+              );
+              const elapsedSeconds = (Date.now() - startTime) / 1000;
+              if (
+                elapsedSeconds > 0 &&
+                elapsedSeconds < event.currentTarget.duration
+              ) {
+                event.currentTarget.currentTime = elapsedSeconds;
+              }
+            }
+          }}
+          onTimeUpdate={(event) =>
+            setIntroVideoCurrentTime(event.currentTarget.currentTime)
+          }
+          className="h-full max-h-full w-full max-w-full object-contain bg-black"
+        >
+          <source src={videoUrl} />
+          Your browser does not support the video tag.
+        </video>
+
+        <div className="absolute bottom-20 left-4 z-10 flex items-center gap-2 rounded bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm sm:bottom-24 sm:left-6 sm:px-3 sm:py-1.5 sm:text-sm">
+          <MicOff className="h-3 w-3 text-red-500 sm:h-4 sm:w-4" />
+          CA POONAM GUPTA IICPA
+        </div>
+      </div>
+
+      {/* Zoom-style bottom control bar */}
+      <div
+        className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pb-6 pt-12 sm:px-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <input
+          type="range"
+          min={0}
+          max={introVideoDuration || 0}
+          step={0.1}
+          value={introVideoCurrentTime}
+          onChange={(event) => {
+            if (isLive) return;
+            const video = introVideoRef.current;
+            const nextTime = Number(event.target.value);
+            if (video) video.currentTime = nextTime;
+            setIntroVideoCurrentTime(nextTime);
+          }}
+          className={`mb-2 h-1 w-full accent-sky-400 ${isLive ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+          aria-label="Seek video"
+          disabled={isLive}
+        />
+        <div className="flex items-center justify-between">
+          {/* Left group */}
+          <div className="flex items-center gap-1 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (isLive) {
+                  onShowToast("Cannot pause a live session");
+                  return;
+                }
+                const video = introVideoRef.current;
+                if (!video) return;
+                if (video.paused) {
+                  video.play();
+                } else {
+                  video.pause();
+                }
+              }}
+              className={`flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors ${isLive ? "cursor-not-allowed opacity-50" : "hover:bg-white/10"} sm:px-3`}
+            >
+              {isIntroVideoPlaying ? (
+                <Pause className="h-5 w-5" />
+              ) : (
+                <Play className="h-5 w-5" />
+              )}
+              <span className="text-[11px]">
+                {isIntroVideoPlaying ? "Pause" : "Play"}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const video = introVideoRef.current;
+                if (!video) return;
+                video.muted = !video.muted;
+                setIsIntroVideoMuted(video.muted);
+              }}
+              className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
+              aria-label={isIntroVideoMuted ? "Unmute" : "Mute"}
+            >
+              {isIntroVideoMuted ? (
+                <MicOff className="h-5 w-5 text-red-500" />
+              ) : (
+                <Mic className="h-5 w-5" />
+              )}
+              <span className="text-[11px]">
+                {isIntroVideoMuted ? "Unmute" : "Mute"}
+              </span>
+            </button>
+          </div>
+
+          {/* Middle group */}
+          <div className="flex flex-1 items-center justify-center gap-1 sm:gap-4 md:flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                const video = introVideoRef.current;
+                if (!video) return;
+                if (document.fullscreenElement) {
+                  document.exitFullscreen();
+                } else {
+                  video.requestFullscreen();
+                }
+              }}
+              className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
+            >
+              <Maximize className="h-5 w-5" />
+              <span className="text-[11px]">Fullscreen</span>
+            </button>
+            {!isLive && <MoreVideoOptionsButton videoRef={introVideoRef} />}
+          </div>
+
+          {/* Right group */}
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-red-500 transition-colors hover:bg-white/10 sm:px-3"
+              aria-label="End"
+            >
+              <PhoneOff className="h-5 w-5 rounded-full border border-red-500 p-0.5" />
+              <span className="text-[11px] font-medium">End</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DigitalHubClient({
   courseSlugOrId,
   chapterId,
@@ -795,11 +1005,6 @@ export default function DigitalHubClient({
   const [manualIntroVideoUrl, setManualIntroVideoUrl] = useState<string | null>(
     null,
   );
-  const introVideoRef = useRef<HTMLVideoElement>(null);
-  const [isIntroVideoPlaying, setIsIntroVideoPlaying] = useState(true);
-  const [isIntroVideoMuted, setIsIntroVideoMuted] = useState(false);
-  const [introVideoCurrentTime, setIntroVideoCurrentTime] = useState(0);
-  const [introVideoDuration, setIntroVideoDuration] = useState(0);
 
   useEffect(() => {
     if (isIntroVideoModalOpen) {
@@ -1646,7 +1851,7 @@ export default function DigitalHubClient({
             Date.now().toString(),
           );
         }
-        setIsMockLiveSession(true);
+        setIsMockLiveSession(false);
         setIsIntroVideoModalOpen(true);
         return;
       }
@@ -1679,7 +1884,7 @@ export default function DigitalHubClient({
             Date.now().toString(),
           );
         }
-        setIsMockLiveSession(true);
+        setIsMockLiveSession(false);
         setIsIntroVideoModalOpen(true);
         return;
       }
@@ -5934,273 +6139,21 @@ export default function DigitalHubClient({
       )}
 
       {/* Intro Video Modal */}
-      {isIntroVideoModalOpen &&
-        (manualIntroVideoUrl || selectedTopicIntroVideo) && (
-          <div className="fixed inset-0 z-50 bg-black">
-            <div
-              className="absolute inset-0 flex items-center justify-center bg-black"
-              onClick={() => {
-                if (isMockLiveSession) {
-                  setToastMessage("Cannot pause a live session");
-                  setShowToast(true);
-                  setTimeout(() => setShowToast(false), 3000);
-                  return;
-                }
-                const video = introVideoRef.current;
-                if (!video) return;
-                if (video.paused) {
-                  video.play();
-                } else {
-                  video.pause();
-                }
-              }}
-            >
-              <video
-                key={manualIntroVideoUrl || selectedTopicIntroVideo}
-                ref={introVideoRef}
-                controlsList="nodownload noplaybackrate noremoteplayback"
-                disablePictureInPicture
-                disableRemotePlayback
-                autoPlay
-                playsInline
-                onContextMenu={(event) => event.preventDefault()}
-                onPlay={() => setIsIntroVideoPlaying(true)}
-                onPause={() => setIsIntroVideoPlaying(false)}
-                onLoadedMetadata={(event) => {
-                  setIntroVideoDuration(event.currentTarget.duration || 0);
-                  if (isMockLiveSession) {
-                    const startTime = parseInt(
-                      localStorage.getItem("mockLiveSessionStartTime") ||
-                        Date.now().toString(),
-                      10,
-                    );
-                    const elapsedSeconds = (Date.now() - startTime) / 1000;
-                    if (
-                      elapsedSeconds > 0 &&
-                      elapsedSeconds < event.currentTarget.duration
-                    ) {
-                      event.currentTarget.currentTime = elapsedSeconds;
-                    }
-                  }
-                }}
-                onTimeUpdate={(event) =>
-                  setIntroVideoCurrentTime(event.currentTarget.currentTime)
-                }
-                className="h-full max-h-full w-full max-w-full object-contain bg-black"
-              >
-                <source src={manualIntroVideoUrl || selectedTopicIntroVideo} />
-                Your browser does not support the video tag.
-              </video>
-
-              <div className="absolute bottom-20 left-4 z-10 flex items-center gap-2 rounded bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm sm:bottom-24 sm:left-6 sm:px-3 sm:py-1.5 sm:text-sm">
-                <MicOff className="h-3 w-3 text-red-500 sm:h-4 sm:w-4" />
-                CA POONAM GUPTA IICPA
-              </div>
-            </div>
-
-            {/* Zoom-style bottom control bar */}
-            <div
-              className="absolute bottom-0 left-0 right-0 z-10 bg-gradient-to-t from-black/80 to-transparent px-3 pb-6 pt-12 sm:px-6"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <input
-                type="range"
-                min={0}
-                max={introVideoDuration || 0}
-                step={0.1}
-                value={introVideoCurrentTime}
-                onChange={(event) => {
-                  if (isMockLiveSession) return;
-                  const video = introVideoRef.current;
-                  const nextTime = Number(event.target.value);
-                  if (video) video.currentTime = nextTime;
-                  setIntroVideoCurrentTime(nextTime);
-                }}
-                className={`mb-2 h-1 w-full accent-sky-400 ${isMockLiveSession ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-                aria-label="Seek video"
-                disabled={isMockLiveSession}
-              />
-              <div className="flex items-center justify-between">
-                {/* Left group */}
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isMockLiveSession) {
-                        setToastMessage("Cannot pause a live session");
-                        setShowToast(true);
-                        setTimeout(() => setShowToast(false), 3000);
-                        return;
-                      }
-                      const video = introVideoRef.current;
-                      if (!video) return;
-                      if (video.paused) {
-                        video.play();
-                      } else {
-                        video.pause();
-                      }
-                    }}
-                    className={`flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors ${isMockLiveSession ? "cursor-not-allowed opacity-50" : "hover:bg-white/10"} sm:px-3`}
-                  >
-                    {isIntroVideoPlaying ? (
-                      <Pause className="h-5 w-5" />
-                    ) : (
-                      <Play className="h-5 w-5" />
-                    )}
-                    <span className="text-[11px]">
-                      {isIntroVideoPlaying ? "Pause" : "Play"}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const video = introVideoRef.current;
-                      if (!video) return;
-                      video.muted = !video.muted;
-                      setIsIntroVideoMuted(video.muted);
-                    }}
-                    className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
-                    aria-label={isIntroVideoMuted ? "Unmute" : "Mute"}
-                  >
-                    {isIntroVideoMuted ? (
-                      <MicOff className="h-5 w-5 text-red-500" />
-                    ) : (
-                      <Mic className="h-5 w-5" />
-                    )}
-                    <span className="text-[11px]">
-                      {isIntroVideoMuted ? "Unmute" : "Mute"}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setToastMessage("Camera not available");
-                      setShowToast(true);
-                      setTimeout(() => setShowToast(false), 3000);
-                    }}
-                    className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:px-3"
-                  >
-                    <VideoOff className="h-5 w-5 text-red-500" />
-                    <span className="text-[11px]">Start Video</span>
-                  </button>
-                </div>
-
-                {/* Middle group */}
-                <div className="flex flex-1 items-center justify-center gap-1 sm:gap-4 md:flex-wrap">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setToastMessage("Cannot see participants now");
-                      setShowToast(true);
-                      setTimeout(() => setShowToast(false), 3000);
-                    }}
-                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
-                    aria-label="Participants"
-                  >
-                    <Users className="h-5 w-5" />
-                    <span className="text-[11px]">Participants</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setToastMessage("Chat not available");
-                      setShowToast(true);
-                      setTimeout(() => setShowToast(false), 3000);
-                    }}
-                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
-                  >
-                    <MessageSquare className="h-5 w-5" />
-                    <span className="text-[11px]">Chat</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setToastMessage("React not available");
-                      setShowToast(true);
-                      setTimeout(() => setShowToast(false), 3000);
-                    }}
-                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 md:flex sm:px-3"
-                  >
-                    <Smile className="h-5 w-5" />
-                    <span className="text-[11px]">React</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setToastMessage("Screen share not available");
-                      setShowToast(true);
-                      setTimeout(() => setShowToast(false), 3000);
-                    }}
-                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 lg:flex sm:px-3"
-                  >
-                    <Share className="h-5 w-5 text-green-500" />
-                    <span className="text-[11px]">Share</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setToastMessage("Host tools not available");
-                      setShowToast(true);
-                      setTimeout(() => setShowToast(false), 3000);
-                    }}
-                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 xl:flex sm:px-3"
-                  >
-                    <Shield className="h-5 w-5" />
-                    <span className="text-[11px]">Host tools</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setToastMessage("Zoom AI not available");
-                      setShowToast(true);
-                      setTimeout(() => setShowToast(false), 3000);
-                    }}
-                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 2xl:flex sm:px-3"
-                  >
-                    <Sparkles className="h-5 w-5 text-indigo-400" />
-                    <span className="text-[11px]">Zoom AI</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const video = introVideoRef.current;
-                      if (!video) return;
-                      if (document.fullscreenElement) {
-                        document.exitFullscreen();
-                      } else {
-                        video.requestFullscreen();
-                      }
-                    }}
-                    className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"
-                  >
-                    <Maximize className="h-5 w-5" />
-                    <span className="text-[11px]">Fullscreen</span>
-                  </button>
-                  {!isMockLiveSession && (
-                    <MoreVideoOptionsButton videoRef={introVideoRef} />
-                  )}
-                </div>
-
-                {/* Right group */}
-                <div className="flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsIntroVideoModalOpen(false);
-                      setManualIntroVideoUrl(null);
-                      setIsMockLiveSession(false);
-                    }}
-                    className="flex flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-red-500 transition-colors hover:bg-white/10 sm:px-3"
-                    aria-label="End"
-                  >
-                    <PhoneOff className="h-5 w-5 rounded-full border border-red-500 p-0.5" />
-                    <span className="text-[11px] font-medium">End</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+      <ZoomVideoModal
+        isOpen={isIntroVideoModalOpen}
+        videoUrl={manualIntroVideoUrl || selectedTopicIntroVideo}
+        isLive={isMockLiveSession}
+        onClose={() => {
+          setIsIntroVideoModalOpen(false);
+          setManualIntroVideoUrl(null);
+          setIsMockLiveSession(false);
+        }}
+        onShowToast={(msg) => {
+          setToastMessage(msg);
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3000);
+        }}
+      />
 
       {/* Live Sessions Modal */}
       {isLiveSessionsModalOpen && selectedTopic && (
