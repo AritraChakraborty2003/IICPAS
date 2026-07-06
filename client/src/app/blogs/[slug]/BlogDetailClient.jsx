@@ -2,7 +2,7 @@
 
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { Calendar, Clock, User, Tag, ArrowLeft, Share2, Download } from "lucide-react";
+import { Calendar, Clock, User, Tag, ArrowLeft, Share2, Download, Phone } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useMemo } from "react";
@@ -454,6 +454,80 @@ export default function BlogDetailClient({ blog, allBlogs }) {
                   ))}
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="mt-12 max-w-[960px] mx-auto">
+            <div className="relative bg-[#0B1B3A] rounded-[20px] px-6 py-11 sm:px-10 text-center overflow-hidden shadow-[0_26px_54px_-24px_rgba(11,27,58,0.45)]">
+              <div className="absolute top-0 left-0 right-0 h-[5px] bg-gradient-to-r from-[#1CB854] to-[#7BB6EE]" />
+
+              <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.14em] text-[#1CB854] bg-[#1CB854]/15 border border-[#1CB854]/40 px-3.5 py-1.5 rounded-full mb-4">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#1CB854]" />
+                Admissions Open
+              </span>
+
+              <h2 className="font-bold text-2xl sm:text-3xl text-white leading-tight mb-4">
+                Ready to Start Your <span className="text-[#7BB6EE]">Career</span> With{" "}
+                <span className="text-[#1CB854]">IICPA</span>?
+              </h2>
+
+              <p className="text-sm sm:text-base leading-relaxed text-[#B9C3D6] max-w-xl mx-auto mb-7">
+                Learn practical Accounting, GST, Income Tax, Tally Prime, Excel, SAP, Power BI,
+                QuickBooks, and job-oriented finance skills through live practical training by
+                industry experts.
+              </p>
+
+              <div className="flex items-center justify-center gap-3.5 flex-wrap">
+                <a
+                  href="tel:+919593330999"
+                  className="inline-flex items-center gap-2 font-semibold text-sm px-6 py-3 rounded-full bg-[#1CB854] text-white shadow-[0_10px_22px_-8px_rgba(28,184,84,0.55)] hover:bg-[#149A46] transition"
+                >
+                  <Phone className="w-4 h-4" />
+                  +91 95933 30999
+                </a>
+                <Link
+                  href="/courses"
+                  className="inline-flex items-center gap-2 font-semibold text-sm px-6 py-3 rounded-full text-white border-[1.5px] border-white/35 hover:bg-white/10 transition"
+                >
+                  Explore Courses
+                </Link>
+              </div>
+
+              <p className="mt-5 font-mono text-xs text-[#8C99B3]">
+                Trained &amp; led by <b className="text-white font-semibold">CA Poonam Gupta</b> &amp;{" "}
+                <b className="text-white font-semibold">Adv Lokesh Gupta</b>
+              </p>
+            </div>
+
+            <div className="text-center pt-8 mt-8 border-t border-slate-200">
+              <p className="font-semibold text-base text-[#0B1B3A] mb-4">
+                © {new Date().getFullYear()} <span className="text-[#149A46]">IICPA Institute</span>
+                <span className="text-slate-300 mx-2.5">|</span>
+                Best Accounting &amp; Finance Training Institute in India
+              </p>
+
+              <p className="font-mono text-sm font-semibold mb-4 flex flex-wrap items-center justify-center gap-x-2">
+                <span className="text-[#1B2F55]">9593330999</span>
+                <span className="text-slate-300">|</span>
+                <a href="mailto:iicpaconnect@gmail.com" className="text-[#149A46] hover:underline">
+                  iicpaconnect@gmail.com
+                </a>
+                <span className="text-slate-300">|</span>
+                <a
+                  href="https://www.iicpa.in"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#7BB6EE] font-medium hover:text-[#0B1B3A]"
+                >
+                  www.iicpa.in
+                </a>
+              </p>
+
+              <p className="italic text-[13px] leading-relaxed text-slate-500 max-w-[560px] mx-auto">
+                This blog is published for educational and informational purposes only. For
+                personalized career guidance, course counselling, or admission assistance, please
+                contact IICPA Institute.
+              </p>
             </div>
           </div>
         </div>
