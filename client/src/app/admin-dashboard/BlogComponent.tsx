@@ -294,7 +294,7 @@ export default function BlogComponent() {
   const handleToggleStatus = async (id: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === "active" ? "inactive" : "active";
-      await axios.put(`${API_BASE}/blogs/${id}`, { status: newStatus });
+      await axios.patch(`${API_BASE}/blogs/${id}`, { status: newStatus });
       fetchBlogs();
       showSuccess("Status Updated!", `Blog is now ${newStatus}.`);
     } catch (error) {
@@ -318,7 +318,7 @@ export default function BlogComponent() {
       formData.append("videoUrl", form.videoUrl);
 
       if (mode === "edit" && selectedBlog) {
-        await axios.put(`${API_BASE}/blogs/${selectedBlog._id}`, formData);
+        await axios.patch(`${API_BASE}/blogs/${selectedBlog._id}`, formData);
         showSuccess("Updated!", "Blog updated successfully.");
       } else {
         await axios.post(`${API_BASE}/blogs`, formData);
@@ -329,7 +329,10 @@ export default function BlogComponent() {
       fetchBlogs();
     } catch (error) {
       console.error("Error saving blog:", error);
-      showError("Error!", "Failed to save blog.");
+      const message =
+        (axios.isAxiosError(error) && error.response?.data?.error) ||
+        "Failed to save blog.";
+      showError("Error!", message);
     } finally {
       setFormLoading(false);
     }

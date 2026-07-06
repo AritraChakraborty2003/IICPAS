@@ -67,7 +67,7 @@ export const getBlog = async (req, res) => {
   }
 };
 
-// UPDATE BLOG (TEXT FIELDS ONLY)
+// UPDATE BLOG
 export const updateBlog = async (req, res) => {
   try {
     const { title, author, content, status, videoUrl } = req.body;
@@ -78,6 +78,7 @@ export const updateBlog = async (req, res) => {
     if (content) blog.content = content;
     if (typeof status !== "undefined") blog.status = status;
     if (typeof videoUrl !== "undefined") blog.videoUrl = videoUrl;
+    if (req.file) blog.imageUrl = req.file.path.replace(/\\/g, "/");
     await blog.save();
     res.json(blog);
   } catch (err) {

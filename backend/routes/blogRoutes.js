@@ -29,7 +29,7 @@ router.post("/", upload.single("image"), createBlog);
 router.post("/no-image", express.json(), createBlogNoImage); // For n8n (JSON payload without image)
 router.get("/", getBlogs);
 router.get("/:id", getBlog);
-router.patch("/:id", express.json(), updateBlog); // Changed from PUT to PATCH (JSON only)
+router.patch("/:id", upload.single("image"), updateBlog);
 router.delete("/:id", deleteBlog);
 
 // Toggle status route
