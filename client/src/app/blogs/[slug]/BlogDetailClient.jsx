@@ -371,7 +371,7 @@ export default function BlogDetailClient({ blog, allBlogs }) {
                       +91 95933 30999
                     </a>
                     <Link
-                      href="/courses"
+                      href="/course"
                       className="inline-flex items-center gap-2 font-semibold text-sm px-6 py-3 rounded-full text-white border-[1.5px] border-white/35 hover:bg-white/10 transition"
                     >
                       Explore Courses
