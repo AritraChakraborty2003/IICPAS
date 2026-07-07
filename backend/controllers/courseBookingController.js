@@ -149,42 +149,61 @@ const objectIdEquals = (left, right) => {
 
 const syncStudentEnrollmentFromBooking = async (booking) => {
   if (!booking) return;
-  if (booking.itemType !== "single_course") return;
-  if (!booking.courseId) return;
 
   const isFullyPaid =
     String(booking.status) === "fully_paid" ||
     Number(booking.remainingAmount || 0) <= 0;
   if (!isFullyPaid) return;
 
-  const student = await Student.findById(booking.studentId).select(
-    "course enrolledRecordedSessions enrolledLiveSessions"
-  );
+  const student = await Student.findById(booking.studentId);
   if (!student) return;
 
   let changed = false;
-  if (!student.course.some((id) => objectIdEquals(id, booking.courseId))) {
-    student.course.push(booking.courseId);
-    changed = true;
-  }
 
-  if (booking.sessionType === "live") {
-    if (
-      !student.enrolledLiveSessions.some((id) =>
-        objectIdEquals(id, booking.courseId)
-      )
-    ) {
-      student.enrolledLiveSessions.push(booking.courseId);
+  const enrollInCourse = (courseId, sessionType) => {
+    if (!student.course.some((id) => objectIdEquals(id, courseId))) {
+      student.course.push(courseId);
       changed = true;
     }
-  } else {
-    if (
-      !student.enrolledRecordedSessions.some((id) =>
-        objectIdEquals(id, booking.courseId)
-      )
-    ) {
-      student.enrolledRecordedSessions.push(booking.courseId);
-      changed = true;
+
+    if (sessionType === "live") {
+      if (!student.enrolledLiveSessions.some((id) => objectIdEquals(id, courseId))) {
+        student.enrolledLiveSessions.push(courseId);
+        changed = true;
+      }
+      if (!student.liveClassAccessEnabled) {
+        student.liveClassAccessEnabled = true;
+        changed = true;
+      }
+    } else {
+      if (!student.enrolledRecordedSessions.some((id) => objectIdEquals(id, courseId))) {
+        student.enrolledRecordedSessions.push(courseId);
+        changed = true;
+      }
+      if (student.enrolledLiveSessions.length === 0 && student.liveClassAccessEnabled !== false) {
+        student.liveClassAccessEnabled = false;
+        changed = true;
+      }
+    }
+
+    if (student.cart) {
+      const oldCartLength = student.cart.length;
+      student.cart = student.cart.filter(
+        (item) => !(objectIdEquals(item.courseId, courseId) && item.sessionType === sessionType)
+      );
+      if (student.cart.length !== oldCartLength) changed = true;
+    }
+  };
+
+  if (booking.itemType === "single_course" && booking.courseId) {
+    enrollInCourse(booking.courseId, booking.sessionType || "recorded");
+  } else if (booking.itemType === "group_package" && booking.groupPackageId) {
+    const groupPackage = await GroupPricing.findById(booking.groupPackageId);
+    if (groupPackage && groupPackage.courseIds) {
+      for (const courseId of groupPackage.courseIds) {
+        enrollInCourse(courseId, "recorded");
+        enrollInCourse(courseId, "live");
+      }
     }
   }
 
