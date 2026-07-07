@@ -21,14 +21,14 @@ import {
   Home as HomeIcon,
 } from "lucide-react";
 
-const LOGIN_USER = "APHYD1577313000";
-const LOGIN_PASS = "Epfo@123";
+const LOGIN_USER = "BGNRB8373627000";
+const LOGIN_PASS = "Fin@123";
 
-const COMPANY_NAME = "IICPA Training Pvt Ltd";
+const COMPANY_NAME = "APMC Marketing Services";
 const COMPANY_LIN = "9778613527";
 const COMPANY_PAN = "BGRPA6026U";
 const COMPANY_ADDRESS =
-  "#258/1, 1st Floor, Demo Business Park, MG Road, Bengaluru, Karnataka 560001";
+  "#258/1, 1st Floor, Near, 31E, Bus Stop Rd, 2nd Block, Thyagaraja Nagar, Bengaluru, Karnataka 560028";
 
 // ─── Top simulation disclaimer ─────────────────────────────────────────────
 function SimBanner() {
@@ -540,7 +540,6 @@ function EmployerProfilePanel({ estId }: { estId: string }) {
     ["PAN", COMPANY_PAN],
     ["PF", "Un-Exempted"],
     ["Pension", "Un-Exempted"],
-    ["EDLI", "Un-Exempted"],
     [
       "National Industrial Classification Code (NIC)",
       <span key="nic" className="cursor-pointer text-[#2f80b5] hover:underline">
@@ -552,14 +551,29 @@ function EmployerProfilePanel({ estId }: { estId: string }) {
   ];
   return (
     <InfoPanel icon={<UserPlus2 size={15} />} title="Employer Profile">
-      <p className="mb-3 text-center text-[14px] font-bold text-[#1a4f8b]">{COMPANY_NAME}</p>
-      <div className="divide-y divide-[#eee] text-[12.5px]">
-        {rows.map(([label, value]) => (
-          <div key={label} className="grid grid-cols-[auto_1fr] gap-3 py-2">
-            <span className="font-semibold text-[#555]">{label}</span>
-            <span className="text-right text-[#222]">{value}</span>
-          </div>
-        ))}
+      <div className="w-full overflow-hidden text-[12.5px]">
+        <table className="w-full border-collapse border border-[#eee]">
+          <tbody>
+            <tr>
+              <td
+                colSpan={2}
+                className="border border-[#eee] bg-white px-3 py-2 text-center text-[#333]"
+              >
+                {COMPANY_NAME}
+              </td>
+            </tr>
+            {rows.map(([label, value]) => (
+              <tr key={label}>
+                <td className="w-[45%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
+                  {label}
+                </td>
+                <td className="border border-[#eee] px-3 py-2 text-left text-[#333]">
+                  {value}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </InfoPanel>
   );
@@ -569,15 +583,27 @@ function EmployerProfilePanel({ estId }: { estId: string }) {
 function OnlineServicesPanel() {
   return (
     <InfoPanel icon={<Info size={15} />} title="Online Services">
-      <div className="divide-y divide-[#eee] text-[12.5px]">
-        <div className="grid grid-cols-[auto_1fr] gap-3 py-2">
-          <span className="font-semibold text-[#555]">No. Of Pending Transfer Claims</span>
-          <span className="text-right text-[#222]">-</span>
-        </div>
-        <div className="grid grid-cols-[auto_1fr] gap-3 py-2">
-          <span className="font-semibold text-[#555]">Oldest Claim Pending Since</span>
-          <span className="text-right text-[#222]">-</span>
-        </div>
+      <div className="w-full overflow-hidden text-[12.5px]">
+        <table className="w-full border-collapse border border-[#eee]">
+          <tbody>
+            <tr>
+              <td className="w-[60%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
+                No. Of Pending Transfer Claims
+              </td>
+              <td className="border border-[#eee] px-3 py-2 text-center text-[#333]">
+                -
+              </td>
+            </tr>
+            <tr>
+              <td className="w-[60%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
+                Oldest Claim Pending Since
+              </td>
+              <td className="border border-[#eee] px-3 py-2 text-center text-[#333]">
+                -
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </InfoPanel>
   );
