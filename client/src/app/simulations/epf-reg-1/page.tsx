@@ -615,7 +615,7 @@ function Dashboard({ user, onLogout }: { user: string; onLogout: () => void }) {
     <>
       <DashboardHeader user={user} onLogout={onLogout} />
       <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
-        <div className="grid gap-5 md:grid-cols-[2fr_1fr]">
+        <div className="grid gap-5 md:grid-cols-[1.5fr_1fr]">
           <div className="flex flex-col gap-5">
             <AlertsPanel />
             <DashboardWhatsNewPanel />
