@@ -15,8 +15,8 @@ const sanitizePercent = (value, fallback = 0) => {
 
 export default function BookingSettingsTab() {
   const [form, setForm] = useState({
-    singleCourseBookingPercent: 10,
-    groupPackageBookingPercent: 5,
+    singleCourseBookingPercent: 100,
+    groupPackageBookingPercent: 100,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,11 +32,11 @@ export default function BookingSettingsTab() {
         setForm({
           singleCourseBookingPercent: sanitizePercent(
             settings.singleCourseBookingPercent,
-            10
+            100
           ),
           groupPackageBookingPercent: sanitizePercent(
             settings.groupPackageBookingPercent,
-            5
+            100
           ),
         });
       } catch (error) {

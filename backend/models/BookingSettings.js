@@ -7,14 +7,14 @@ const bookingSettingsSchema = new mongoose.Schema(
       required: true,
       min: 0,
       max: 100,
-      default: 10,
+      default: 100,
     },
     groupPackageBookingPercent: {
       type: Number,
       required: true,
       min: 0,
       max: 100,
-      default: 5,
+      default: 100,
     },
   },
   { timestamps: true }

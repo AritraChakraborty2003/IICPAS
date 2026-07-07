@@ -469,7 +469,7 @@ export const createCourseBookingOrder = async (req, res) => {
       }
       baseAmount = getSingleCourseBaseAmount(course, sessionType);
       itemTitle = course.title || "Course";
-      bookingPercent = Number(settings.singleCourseBookingPercent || 10);
+      bookingPercent = Number(settings.singleCourseBookingPercent || 100);
     } else {
       if (!groupPackageId || !mongoose.Types.ObjectId.isValid(groupPackageId)) {
         return res.status(400).json({
@@ -488,7 +488,7 @@ export const createCourseBookingOrder = async (req, res) => {
       }
       baseAmount = getGroupPackageBaseAmount(groupPackage);
       itemTitle = groupPackage.groupName || groupPackage.level || "Group Package";
-      bookingPercent = Number(settings.groupPackageBookingPercent || 5);
+      bookingPercent = Number(settings.groupPackageBookingPercent || 100);
       sessionType = null;
     }
 
