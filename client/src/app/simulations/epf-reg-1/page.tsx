@@ -24,7 +24,7 @@ import {
 const LOGIN_USER = "APHYD1577313000";
 const LOGIN_PASS = "Epfo@123";
 
-const COMPANY_NAME = "APMC Marketing Services";
+const COMPANY_NAME = "IICPA PRIVATE LIMITED";
 const COMPANY_LIN = "9778613527";
 const COMPANY_PAN = "BGRPA6026U";
 const COMPANY_ADDRESS =

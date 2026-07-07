@@ -24,7 +24,7 @@ import {
 const LOGIN_USER = "APHYD1577313000";
 const LOGIN_PASS = "Epfo@123";
 
-const COMPANY_NAME = "IICPA Training Pvt Ltd";
+const COMPANY_NAME = "IICPA PRIVATE LIMITED";
 const COMPANY_LIN = "9778613527";
 const COMPANY_PAN = "BGRPA6026U";
 const COMPANY_ADDRESS =
@@ -401,7 +401,7 @@ function DashboardHeader({
           />
           <div className="leading-[1.3]">
             <div className="text-[16px] font-bold text-[#1a4f8b]">
-              COMPANY PRIVATE LIMITED, INDIA
+              IICPA PRIVATE LIMITED, INDIA
             </div>
             <div className="text-[11px] font-bold tracking-wide text-[#c0392b]">
               MINISTRY OF LABOUR &amp; EMPLOYMENT, SIMULATION
@@ -411,11 +411,11 @@ function DashboardHeader({
 
         <div className="text-center text-[12.5px] leading-[1.5]">
           <div className="text-[#e8954b]">
-            Welcome: <span className="font-semibold">BGNRB8373627000</span>
+            Welcome: <span className="font-semibold">{user}</span>
           </div>
-          <div className="font-semibold text-[#2f80b5]">BGNRB8373627000</div>
+          <div className="font-semibold text-[#2f80b5]">{user}</div>
           <div className="font-semibold text-[#2f80b5]">
-            APMC Marketing Services
+            {COMPANY_NAME}
           </div>
         </div>
 
