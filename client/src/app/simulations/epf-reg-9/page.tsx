@@ -320,18 +320,20 @@ function Collapsible({
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(!!defaultOpen);
+  const borderColor = highlight && open ? "border-[#f0a8a8]" : "border-[#d8d8d8]";
+  
   return (
-    <div className={`rounded border bg-white shadow-sm ${highlight && open ? "border-[#e53e3e]" : "border-[#d8d8d8]"}`}>
+    <div className={`rounded border bg-white ${borderColor}`}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center gap-2 border-b border-[#eee] px-5 py-3 text-left"
+        className={`flex w-full items-center gap-2 border-b px-5 py-3 text-left bg-[#fcfcfc] hover:bg-[#f5f5f5] ${borderColor}`}
       >
         {open ? (
           <ChevronUp size={14} className="text-[#555]" />
         ) : (
           <ChevronDown size={14} className="text-[#555]" />
         )}
-        <span className="text-[14px] font-semibold text-[#333]">{title}</span>
+        <span className="text-[13.5px] font-bold text-[#333]">{title}</span>
       </button>
       {open && <div className="px-6 py-5">{children}</div>}
     </div>
@@ -742,6 +744,7 @@ export default function EpfReg9Page() {
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f0f0f0]" onClick={() => paymentsOpen && setPaymentsOpen(false)}>
+      <div className="fixed bottom-0 right-0 top-[41px] w-[5px] bg-[#16c60c] z-[100]"></div>
       <SimBanner />
       {!launched && <LaunchOverlay onStart={() => setLaunched(true)} />}
       {toast && <Toast text={toast} onClose={() => setToast("")} />}

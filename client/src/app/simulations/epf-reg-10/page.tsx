@@ -22,8 +22,8 @@ import {
   Calendar,
 } from "lucide-react";
 
-const LOGIN_USER = "BGNRB8373627000";
-const COMPANY_NAME = "APMC Marketing Services";
+const LOGIN_USER = "APHYD1577313000";
+const COMPANY_NAME = "IICPA PRIVATE LIMITED";
 
 // ─── Top simulation disclaimer ─────────────────────────────────────────────
 function SimBanner() {
@@ -65,7 +65,7 @@ function DashboardHeader({
           />
           <div className="leading-[1.3]">
             <div className="text-[16px] font-bold text-[#1a4f8b]">
-              COMPANY PRIVATE LIMITED, INDIA
+              IICPA PRIVATE LIMITED, INDIA
             </div>
             <div className="text-[11px] font-bold tracking-wide text-[#c0392b]">
               MINISTRY OF LABOUR &amp; EMPLOYMENT, SIMULATION
