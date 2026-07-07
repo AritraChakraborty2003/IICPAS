@@ -21,8 +21,8 @@ import {
   Home as HomeIcon,
 } from "lucide-react";
 
-const LOGIN_USER = "BGNRB8373627000";
-const LOGIN_PASS = "Fin@123";
+const LOGIN_USER = "APHYD1577313000";
+const LOGIN_PASS = "Epfo@123";
 
 const COMPANY_NAME = "APMC Marketing Services";
 const COMPANY_LIN = "9778613527";
@@ -368,8 +368,8 @@ function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => voi
             <div className="text-[16px] font-bold text-[#1a4f8b]">
               {COMPANY_NAME.toUpperCase()}, INDIA
             </div>
-            <div className="text-[11px] font-bold tracking-wide text-[#c0392b]">
-              MINISTRY OF LABOUR &amp; EMPLOYMENT, SIMULATION
+            <div className="text-[11px] font-bold tracking-wide text-[#555]">
+              Ministry of Labour &amp; Employment, Simulation
             </div>
           </div>
         </div>
@@ -562,8 +562,8 @@ function EmployerProfilePanel({ estId }: { estId: string }) {
                 {COMPANY_NAME}
               </td>
             </tr>
-            {rows.map(([label, value]) => (
-              <tr key={label}>
+            {rows.map(([label, value], i) => (
+              <tr key={label} className={i % 2 === 0 ? "bg-white" : "bg-[#f9f9f9]"}>
                 <td className="w-[45%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
                   {label}
                 </td>
@@ -586,7 +586,7 @@ function OnlineServicesPanel() {
       <div className="w-full overflow-hidden text-[12.5px]">
         <table className="w-full border-collapse border border-[#eee]">
           <tbody>
-            <tr>
+            <tr className="bg-white">
               <td className="w-[60%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
                 No. Of Pending Transfer Claims
               </td>
@@ -594,7 +594,7 @@ function OnlineServicesPanel() {
                 -
               </td>
             </tr>
-            <tr>
+            <tr className="bg-[#f9f9f9]">
               <td className="w-[60%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
                 Oldest Claim Pending Since
               </td>
