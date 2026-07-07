@@ -15,9 +15,9 @@ import {
   Download,
 } from "lucide-react";
 
-const COMPANY_NAME = "COMPANY PRIVATE LIMITED";
-const EST_ID = "BGNRB8373627000";
-const EMPLOYER_PROFILE_NAME = "APMC Marketing Services";
+const COMPANY_NAME = "IICPA PRIVATE LIMITED";
+const EST_ID = "APHYD1577313000";
+const EMPLOYER_PROFILE_NAME = "IICPA PRIVATE LIMITED";
 
 const NAV_ITEMS = ["Member", "Establishment", "Dashboards", "User", "Admin", "Online Services", "ABRY"];
 const PAYMENTS_MENU_ITEMS = ["ECR UPLOAD", "PAID CHALLAN LIST", "TRRN STATUS", "VIEW/PRINT CHALLAN", "GENERATE CHALLAN"];

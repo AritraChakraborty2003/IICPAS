@@ -17,11 +17,11 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
-const COMPANY_NAME = "COMPANY PRIVATE LIMITED";
-const EST_ID = "BGNRB8373627000";
+const COMPANY_NAME = "IICPA PRIVATE LIMITED";
+const EST_ID = "APHYD1577313000";
 const COMPANY_LIN = "9778613527";
 const COMPANY_PAN = "BGRPA6026U";
-const EMPLOYER_PROFILE_NAME = "APMC Marketing Services";
+const EMPLOYER_PROFILE_NAME = "IICPA PRIVATE LIMITED";
 
 // Experiment 2 answer key — Mr. Keerthan Kumar
 const TARGET_UAN = "101799815726";
@@ -339,29 +339,14 @@ function EmployerProfilePanel() {
   ];
   return (
     <InfoPanel icon={<UserPlus2 size={15} />} title="Employer Profile">
-      <div className="w-full overflow-hidden text-[12.5px]">
-        <table className="w-full border-collapse border border-[#eee]">
-          <tbody>
-            <tr>
-              <td
-                colSpan={2}
-                className="border border-[#eee] bg-white px-3 py-2 text-center text-[#333]"
-              >
-                {EMPLOYER_PROFILE_NAME}
-              </td>
-            </tr>
-            {rows.map(([label, value], i) => (
-              <tr key={label} className={i % 2 === 0 ? "bg-white" : "bg-[#f9f9f9]"}>
-                <td className="w-[45%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
-                  {label}
-                </td>
-                <td className="border border-[#eee] px-3 py-2 text-left text-[#333]">
-                  {value}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <p className="mb-3 text-center text-[14px] font-bold text-[#1a4f8b]">{EMPLOYER_PROFILE_NAME}</p>
+      <div className="divide-y divide-[#eee] text-[12.5px]">
+        {rows.map(([label, value]) => (
+          <div key={label} className="grid grid-cols-[auto_1fr] gap-3 py-2">
+            <span className="font-semibold text-[#555]">{label}</span>
+            <span className="text-right text-[#222]">{value}</span>
+          </div>
+        ))}
       </div>
     </InfoPanel>
   );
@@ -370,27 +355,15 @@ function EmployerProfilePanel() {
 function OnlineServicesPanel() {
   return (
     <InfoPanel icon={<Info size={15} />} title="Online Services">
-      <div className="w-full overflow-hidden text-[12.5px]">
-        <table className="w-full border-collapse border border-[#eee]">
-          <tbody>
-            <tr className="bg-white">
-              <td className="w-[60%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
-                No. Of Pending Transfer Claims
-              </td>
-              <td className="border border-[#eee] px-3 py-2 text-center text-[#333]">
-                -
-              </td>
-            </tr>
-            <tr className="bg-[#f9f9f9]">
-              <td className="w-[60%] border border-[#eee] px-3 py-2 font-semibold text-[#555]">
-                Oldest Claim Pending Since
-              </td>
-              <td className="border border-[#eee] px-3 py-2 text-center text-[#333]">
-                -
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="divide-y divide-[#eee] text-[12.5px]">
+        <div className="grid grid-cols-[auto_1fr] gap-3 py-2">
+          <span className="font-semibold text-[#555]">No. Of Pending Transfer Claims</span>
+          <span className="text-right text-[#222]">-</span>
+        </div>
+        <div className="grid grid-cols-[auto_1fr] gap-3 py-2">
+          <span className="font-semibold text-[#555]">Oldest Claim Pending Since</span>
+          <span className="text-right text-[#222]">-</span>
+        </div>
       </div>
     </InfoPanel>
   );
