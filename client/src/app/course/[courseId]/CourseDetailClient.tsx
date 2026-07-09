@@ -955,6 +955,13 @@ export default function CourseDetailClient({
                         : "No Discount"}
                     </div>
                   </div>
+                  <button
+                    onClick={generateBrochurePDF}
+                    className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors duration-200 text-sm font-bold"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Brochure
+                  </button>
                 </div>
 
                 {/* Course Stats */}
