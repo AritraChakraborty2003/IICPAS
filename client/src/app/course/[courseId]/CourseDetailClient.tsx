@@ -212,6 +212,16 @@ export default function CourseDetailClient({
 
   const generateBrochurePDF = async () => {
     try {
+      // A manually uploaded brochure file takes precedence over the page builder
+      try {
+        const manualRes = await axios.get(`${API_BASE}/api/brochures/manual/course/${course._id || courseId}`);
+        const manual = manualRes.data?.data;
+        if (manual?.fileUrl) {
+          window.open(manual.fileUrl, "_blank", "noopener,noreferrer");
+          return;
+        }
+      } catch { /* no manual brochure — fall back to generated PDF */ }
+
       const res = await axios.get(`${API_BASE}/api/brochures/course/${course._id || courseId}`);
       const brochure = res.data?.data;
       if (!brochure) { alert("No brochure available for this course yet."); return; }

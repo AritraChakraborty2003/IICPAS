@@ -6,6 +6,10 @@ import {
   getBrochureByCourse,
   saveBrochure,
   deleteBrochure,
+  getAllManualBrochures,
+  getManualBrochureByCourse,
+  uploadManualBrochure,
+  deleteManualBrochure,
 } from "../controllers/brochureController.js";
 
 const router = express.Router();
@@ -29,6 +33,35 @@ const uploadBrochureImage = multer({
     else cb(new Error("Only image files are allowed"), false);
   },
   limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+// ── Manually uploaded brochure documents (PDF / DOC / DOCX) ──
+const brochureFileDir = "uploads/brochure-files";
+if (!fs.existsSync(brochureFileDir)) {
+  fs.mkdirSync(brochureFileDir, { recursive: true });
+}
+
+const MANUAL_BROCHURE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB, same cap as other document uploads
+
+const brochureFileStorage = multer.diskStorage({
+  destination: (_, __, cb) => cb(null, brochureFileDir),
+  filename: (_, file, cb) =>
+    cb(null, Date.now() + "-" + file.originalname.replace(/\s+/g, "_")),
+});
+
+const allowedBrochureMimes = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+const uploadBrochureFile = multer({
+  storage: brochureFileStorage,
+  fileFilter: (_, file, cb) => {
+    if (allowedBrochureMimes.includes(file.mimetype)) cb(null, true);
+    else cb(new Error("Only PDF, DOC, or DOCX files are allowed"), false);
+  },
+  limits: { fileSize: MANUAL_BROCHURE_MAX_BYTES },
 });
 
 // Image upload for brochure backgrounds / overlays
@@ -99,6 +132,23 @@ router.get("/image-proxy", (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// Manual brochure upload — wraps multer to surface size/type errors as clean 400s
+router.post("/manual", (req, res) => {
+  uploadBrochureFile.single("file")(req, res, (err) => {
+    if (err) {
+      const msg =
+        err.code === "LIMIT_FILE_SIZE"
+          ? "File too large. Maximum size is 10 MB."
+          : err.message;
+      return res.status(400).json({ success: false, error: msg });
+    }
+    uploadManualBrochure(req, res);
+  });
+});
+router.get("/manual", getAllManualBrochures);
+router.get("/manual/course/:courseId", getManualBrochureByCourse);
+router.delete("/manual/:id", deleteManualBrochure);
 
 router.get("/", getAllBrochures);
 router.get("/course/:courseId", getBrochureByCourse);

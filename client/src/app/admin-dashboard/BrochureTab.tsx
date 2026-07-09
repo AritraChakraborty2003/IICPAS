@@ -77,6 +77,36 @@ interface Brochure {
   pages: BrochurePage[];
   updatedAt: string;
 }
+interface GroupCourse {
+  _id: string;
+  groupName: string;
+}
+interface ManualBrochure {
+  _id: string;
+  courseId: string;
+  courseType: "Course" | "GroupPricing";
+  courseName: string;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  updatedAt: string;
+}
+
+// Matches the multer limit on POST /brochures/manual
+const MANUAL_BROCHURE_MAX_MB = 10;
+const MANUAL_BROCHURE_MAX_BYTES = MANUAL_BROCHURE_MAX_MB * 1024 * 1024;
+const MANUAL_BROCHURE_MIMES = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+
+const formatFileSize = (bytes: number) => {
+  if (!bytes) return "—";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
 
@@ -774,9 +804,22 @@ export default function BrochureTab() {
   const [chapterFrom, setChapterFrom] = useState(1);
   const [chapterTo, setChapterTo] = useState(1);
 
+  // Manual Upload tab state
+  const [activeTab, setActiveTab] = useState<"builder" | "manual">("builder");
+  const [groupCourses, setGroupCourses] = useState<GroupCourse[]>([]);
+  const [manualBrochures, setManualBrochures] = useState<ManualBrochure[]>([]);
+  const [manualModalOpen, setManualModalOpen] = useState(false);
+  const [manualCourseKey, setManualCourseKey] = useState("");
+  const [manualFile, setManualFile] = useState<File | null>(null);
+  const [manualUploading, setManualUploading] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
+  const manualFileInputRef = useRef<HTMLInputElement>(null);
+
   useEffect(() => {
     fetchCourses();
     fetchBrochures();
+    fetchGroupCourses();
+    fetchManualBrochures();
   }, []);
 
   const fetchCourses = async () => {
@@ -792,6 +835,92 @@ export default function BrochureTab() {
       const res = await axios.get(`${API_BASE}/brochures`);
       setBrochures(res.data?.data ?? []);
     } catch { /* ignore */ }
+  };
+
+  const fetchGroupCourses = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/group-pricing`);
+      const data = res.data?.data ?? res.data;
+      setGroupCourses(Array.isArray(data) ? data : []);
+    } catch { /* ignore */ }
+  };
+
+  const fetchManualBrochures = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/brochures/manual`);
+      setManualBrochures(res.data?.data ?? []);
+    } catch { /* ignore */ }
+  };
+
+  const openManualModal = (preselectKey?: string) => {
+    setManualCourseKey(preselectKey ?? "");
+    setManualFile(null);
+    setManualError(null);
+    setManualModalOpen(true);
+  };
+
+  const handleManualFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setManualError(null);
+    if (!file) { setManualFile(null); return; }
+    if (!MANUAL_BROCHURE_MIMES.includes(file.type)) {
+      setManualError("Only PDF, DOC, or DOCX files are allowed.");
+      setManualFile(null);
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MANUAL_BROCHURE_MAX_BYTES) {
+      setManualError(`File too large (${formatFileSize(file.size)}). Maximum size is ${MANUAL_BROCHURE_MAX_MB} MB.`);
+      setManualFile(null);
+      e.target.value = "";
+      return;
+    }
+    setManualFile(file);
+  };
+
+  const handleManualUpload = async () => {
+    if (!manualCourseKey || !manualFile) return;
+    const [kind, id] = manualCourseKey.split(":");
+    const isGroup = kind === "group";
+    const courseName = isGroup
+      ? groupCourses.find((g) => g._id === id)?.groupName
+      : courses.find((c) => c._id === id)?.title;
+    if (!courseName) return;
+
+    setManualUploading(true);
+    setManualError(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", manualFile);
+      formData.append("courseId", id);
+      formData.append("courseName", courseName);
+      formData.append("courseType", isGroup ? "GroupPricing" : "Course");
+      await axios.post(`${API_BASE}/brochures/manual`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      setManualModalOpen(false);
+      setMessage({ type: "success", text: `Brochure uploaded for "${courseName}" successfully!` });
+      fetchManualBrochures();
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { error?: string } }; message?: string };
+      const msg =
+        axiosErr?.response?.status === 413
+          ? `File too large. Maximum size is ${MANUAL_BROCHURE_MAX_MB} MB.`
+          : axiosErr?.response?.data?.error || axiosErr?.message || "Upload failed.";
+      setManualError(msg);
+    } finally {
+      setManualUploading(false);
+    }
+  };
+
+  const handleManualDelete = async (b: ManualBrochure) => {
+    if (!confirm(`Delete the uploaded brochure for "${b.courseName}"?`)) return;
+    try {
+      await axios.delete(`${API_BASE}/brochures/manual/${b._id}`);
+      setManualBrochures((prev) => prev.filter((m) => m._id !== b._id));
+    } catch {
+      setMessage({ type: "error", text: "Failed to delete brochure." });
+    }
   };
 
   // Compress image to stay under ~900 KB before uploading (handles nginx 1MB limit)
@@ -1016,6 +1145,27 @@ export default function BrochureTab() {
         </div>
       )}
 
+      {/* ── Tabs ── */}
+      <div className="flex gap-1 border-b border-gray-200">
+        {([
+          { key: "builder" as const, label: "Brochure Builder" },
+          { key: "manual" as const, label: "Manual Upload" },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-5 py-2.5 text-sm font-medium rounded-t-lg border-b-2 -mb-px transition ${
+              activeTab === tab.key
+                ? "border-blue-600 text-blue-600 bg-white"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === "builder" && (<>
       {/* ── Course selector + editor in one block ── */}
       <div className="bg-white rounded-xl shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center gap-4">
@@ -1208,6 +1358,174 @@ export default function BrochureTab() {
           </div>
         )}
       </div>
+      </>)}
+
+      {activeTab === "manual" && (
+        <div className="bg-white rounded-xl shadow p-6 space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-700">Manually Uploaded Brochures</h3>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Upload a ready-made brochure document (PDF, DOC, DOCX · max {MANUAL_BROCHURE_MAX_MB} MB) for a single course or a group course.
+              </p>
+            </div>
+            <button
+              onClick={() => openManualModal()}
+              className="flex items-center gap-1.5 px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Brochure
+            </button>
+          </div>
+
+          {manualBrochures.length === 0 ? (
+            <div className="py-14 text-center text-gray-400 text-sm border border-dashed border-gray-200 rounded-lg">
+              No brochures uploaded yet. Click "Add Brochure" to upload one for a course.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b text-left text-gray-500">
+                    <th className="pb-2 pr-4">Course</th>
+                    <th className="pb-2 pr-4">Type</th>
+                    <th className="pb-2 pr-4">File</th>
+                    <th className="pb-2 pr-4">Size</th>
+                    <th className="pb-2 pr-4">Last Updated</th>
+                    <th className="pb-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {manualBrochures.map((b) => (
+                    <tr key={b._id} className="border-b last:border-0 hover:bg-gray-50">
+                      <td className="py-3 pr-4 font-medium text-gray-800">{b.courseName}</td>
+                      <td className="py-3 pr-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${b.courseType === "GroupPricing" ? "bg-purple-100 text-purple-700" : "bg-sky-100 text-sky-700"}`}>
+                          {b.courseType === "GroupPricing" ? "Group Course" : "Single Course"}
+                        </span>
+                      </td>
+                      <td className="py-3 pr-4 text-gray-600 max-w-[220px] truncate" title={b.fileName}>{b.fileName}</td>
+                      <td className="py-3 pr-4 text-gray-600">{formatFileSize(b.fileSize)}</td>
+                      <td className="py-3 pr-4 text-gray-500">{new Date(b.updatedAt).toLocaleDateString()}</td>
+                      <td className="py-3 flex gap-2 flex-wrap">
+                        <a
+                          href={b.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded text-xs font-medium hover:bg-emerald-200 transition"
+                        >
+                          View
+                        </a>
+                        <button
+                          onClick={() => openManualModal(`${b.courseType === "GroupPricing" ? "group" : "course"}:${b.courseId}`)}
+                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium hover:bg-blue-200 transition"
+                        >
+                          Replace
+                        </button>
+                        <button
+                          onClick={() => handleManualDelete(b)}
+                          className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs font-medium hover:bg-red-200 transition"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Manual Upload Modal ── */}
+      {manualModalOpen && (() => {
+        const withBrochure = new Set(manualBrochures.map((b) => `${b.courseType === "GroupPricing" ? "group" : "course"}:${b.courseId}`));
+        const replacing = manualCourseKey && withBrochure.has(manualCourseKey);
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-gray-800">Upload Brochure</h3>
+                <button onClick={() => setManualModalOpen(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-gray-500 font-medium">Course</label>
+                <select
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={manualCourseKey}
+                  onChange={(e) => { setManualCourseKey(e.target.value); setManualError(null); }}
+                >
+                  <option value="">-- Select a course --</option>
+                  {courses.length > 0 && (
+                    <optgroup label="Single Courses">
+                      {courses.map((c) => (
+                        <option key={c._id} value={`course:${c._id}`}>
+                          {c.title}{withBrochure.has(`course:${c._id}`) ? " (has brochure)" : ""}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {groupCourses.length > 0 && (
+                    <optgroup label="Group Courses">
+                      {groupCourses.map((g) => (
+                        <option key={g._id} value={`group:${g._id}`}>
+                          {g.groupName}{withBrochure.has(`group:${g._id}`) ? " (has brochure)" : ""}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                {replacing && (
+                  <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-1.5">
+                    This course already has an uploaded brochure — uploading a new file will replace it.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs text-gray-500 font-medium">Brochure Document</label>
+                <input
+                  ref={manualFileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleManualFileChange}
+                  className="w-full text-sm text-gray-600 file:mr-3 file:px-4 file:py-2 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:text-xs file:font-medium hover:file:bg-blue-100 file:cursor-pointer border border-gray-300 rounded-lg cursor-pointer"
+                />
+                <p className="text-[11px] text-gray-400">PDF, DOC, or DOCX · Maximum {MANUAL_BROCHURE_MAX_MB} MB</p>
+                {manualFile && (
+                  <p className="text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 truncate">
+                    {manualFile.name} · {formatFileSize(manualFile.size)}
+                  </p>
+                )}
+              </div>
+
+              {manualError && (
+                <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{manualError}</p>
+              )}
+
+              <div className="flex justify-end gap-3 pt-1">
+                <button
+                  onClick={() => setManualModalOpen(false)}
+                  className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleManualUpload}
+                  disabled={!manualCourseKey || !manualFile || manualUploading}
+                  className="px-5 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition font-medium"
+                >
+                  {manualUploading ? "Uploading..." : replacing ? "Replace Brochure" : "Upload Brochure"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Load Chapters & Topics Modal ── */}
       {chapterModal && selectedCourse && (() => {
