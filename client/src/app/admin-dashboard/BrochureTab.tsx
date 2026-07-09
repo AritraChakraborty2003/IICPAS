@@ -94,7 +94,7 @@ interface ManualBrochure {
 }
 
 // Matches the multer limit on POST /brochures/manual
-const MANUAL_BROCHURE_MAX_MB = 10;
+const MANUAL_BROCHURE_MAX_MB = 100;
 const MANUAL_BROCHURE_MAX_BYTES = MANUAL_BROCHURE_MAX_MB * 1024 * 1024;
 const MANUAL_BROCHURE_MIMES = [
   "application/pdf",

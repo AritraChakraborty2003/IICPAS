@@ -41,7 +41,7 @@ if (!fs.existsSync(brochureFileDir)) {
   fs.mkdirSync(brochureFileDir, { recursive: true });
 }
 
-const MANUAL_BROCHURE_MAX_BYTES = 10 * 1024 * 1024; // 10 MB, same cap as other document uploads
+const MANUAL_BROCHURE_MAX_BYTES = 100 * 1024 * 1024; // 100 MB — nginx client_max_body_size (120m) must stay above this
 
 const brochureFileStorage = multer.diskStorage({
   destination: (_, __, cb) => cb(null, brochureFileDir),
@@ -139,7 +139,7 @@ router.post("/manual", (req, res) => {
     if (err) {
       const msg =
         err.code === "LIMIT_FILE_SIZE"
-          ? "File too large. Maximum size is 10 MB."
+          ? "File too large. Maximum size is 100 MB."
           : err.message;
       return res.status(400).json({ success: false, error: msg });
     }
