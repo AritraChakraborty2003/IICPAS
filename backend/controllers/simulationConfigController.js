@@ -47,6 +47,7 @@ const serializeConfig = (config) => ({
   slug: config.slug,
   name: config.name,
   credentialFields: toCredentialFields(config),
+  bannerText: config.bannerText || "",
   requireCredentialValidation: config.requireCredentialValidation,
   isActive: config.isActive,
   createdAt: config.createdAt,
@@ -68,6 +69,7 @@ export const getConfigBySlug = async (req, res) => {
       slug: config.slug,
       name: config.name,
       credentialFields: toCredentialFields(config),
+      bannerText: config.bannerText || "",
       requireCredentialValidation: config.requireCredentialValidation,
       isActive: config.isActive,
     });
@@ -94,8 +96,14 @@ export const getAllConfigs = async (req, res) => {
 // Admin — register a new simulation
 export const createConfig = async (req, res) => {
   try {
-    const { slug, name, credentialFields, requireCredentialValidation, isActive } =
-      req.body;
+    const {
+      slug,
+      name,
+      credentialFields,
+      bannerText,
+      requireCredentialValidation,
+      isActive,
+    } = req.body;
     if (!slug || !name) {
       return res.status(400).json({ message: "slug and name are required" });
     }
@@ -112,6 +120,7 @@ export const createConfig = async (req, res) => {
       slug,
       name,
       ...(sanitizedFields ? { credentialFields: sanitizedFields } : {}),
+      ...(bannerText !== undefined ? { bannerText: String(bannerText) } : {}),
       ...(requireCredentialValidation !== undefined
         ? { requireCredentialValidation }
         : {}),
@@ -127,12 +136,13 @@ export const createConfig = async (req, res) => {
 // Admin — update credential fields/settings
 export const updateConfig = async (req, res) => {
   try {
-    const { name, credentialFields, requireCredentialValidation, isActive } =
+    const { name, credentialFields, bannerText, requireCredentialValidation, isActive } =
       req.body;
     const update = {};
     if (name !== undefined) update.name = name;
     const sanitizedFields = sanitizeCredentialFields(credentialFields);
     if (sanitizedFields !== null) update.credentialFields = sanitizedFields;
+    if (bannerText !== undefined) update.bannerText = String(bannerText);
     if (requireCredentialValidation !== undefined)
       update.requireCredentialValidation = requireCredentialValidation;
     if (isActive !== undefined) update.isActive = isActive;

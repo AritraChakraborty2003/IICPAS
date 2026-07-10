@@ -23,6 +23,12 @@ const SimulationConfigSchema = new mongoose.Schema(
         value: { type: String, default: "" },
       },
     ],
+    // Optional custom text for the credentials banner. When empty, the banner
+    // shows an auto-generated sentence built from credentialFields.
+    bannerText: {
+      type: String,
+      default: "",
+    },
     // Legacy shape kept for records created before credentialFields existed
     credentials: {
       username: { type: String, default: "" },

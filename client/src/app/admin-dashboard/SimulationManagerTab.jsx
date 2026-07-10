@@ -38,6 +38,7 @@ const SimulationManagerTab = () => {
       { label: "Username", value: "" },
       { label: "Password", value: "" },
     ],
+    bannerText: "",
     requireCredentialValidation: true,
     isActive: true,
   });
@@ -70,6 +71,7 @@ const SimulationManagerTab = () => {
         { label: "Username", value: "" },
         { label: "Password", value: "" },
       ],
+      bannerText: "",
       requireCredentialValidation: true,
       isActive: true,
     });
@@ -92,6 +94,7 @@ const SimulationManagerTab = () => {
             value: field.value || "",
           }))
         : [emptyField()],
+      bannerText: config.bannerText || "",
       requireCredentialValidation: config.requireCredentialValidation !== false,
       isActive: config.isActive !== false,
     });
@@ -125,6 +128,7 @@ const SimulationManagerTab = () => {
     const payload = {
       name: formData.name,
       credentialFields: formData.fields.filter((field) => field.label.trim()),
+      bannerText: formData.bannerText.trim(),
       requireCredentialValidation: formData.requireCredentialValidation,
       isActive: formData.isActive,
     };
@@ -471,6 +475,24 @@ const SimulationManagerTab = () => {
                     </div>
                   )}
                 </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-600">
+                  Banner Text (optional)
+                </label>
+                <textarea
+                  value={formData.bannerText}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      bannerText: e.target.value,
+                    }))
+                  }
+                  rows={2}
+                  placeholder='Custom text shown in the banner above the simulation. Leave empty to auto-generate from the credential fields, e.g. "To perform this experiment, use IICPA as username and IICPA@123 as password to login."'
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                />
               </div>
 
               <div className="flex items-center justify-between">
