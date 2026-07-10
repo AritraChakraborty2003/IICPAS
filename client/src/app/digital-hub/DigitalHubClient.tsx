@@ -677,6 +677,11 @@ const normalizeDigitalHubContent = (html: string) =>
 
 type SimulationCredFields = { label: string; value: string }[];
 
+type SimulationCredBannerConfig = {
+  fields: SimulationCredFields;
+  bannerText: string;
+};
+
 // /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1
 const simulationSlugFromHref = (href: string): string => {
   try {
@@ -708,7 +713,7 @@ const extractSimulationSlugs = (html: string): string[] => {
 // can never wipe it.
 const injectSimulationCredBanners = (
   html: string,
-  configs: Record<string, SimulationCredFields>,
+  configs: Record<string, SimulationCredBannerConfig>,
 ): string => {
   if (!html || typeof window === "undefined") return html;
   if (!Object.keys(configs).length) return html;
@@ -720,8 +725,10 @@ const injectSimulationCredBanners = (
     .querySelectorAll<HTMLAnchorElement>('a[href*="/simulations/"]')
     .forEach((anchor) => {
       const slug = simulationSlugFromHref(anchor.getAttribute("href") || "");
-      const fields = configs[slug];
-      if (!fields?.length) return;
+      const config = configs[slug];
+      if (!config) return;
+      const { fields, bannerText } = config;
+      if (!fields.length && !bannerText) return;
 
       const card =
         anchor.closest("[data-simulation-card='true']") ||
@@ -742,26 +749,32 @@ const injectSimulationCredBanners = (
         "display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;margin:1rem 0 0.25rem;padding:10px 16px;border:1px solid #7dd3fc;border-radius:12px;background:#e0f2fe;color:#075985;font-size:13px;line-height:1.5;text-align:center;",
       );
 
-      const prefix = doc.createElement("span");
-      prefix.textContent = "To perform this experiment, use ";
-      banner.appendChild(prefix);
-      fields.forEach((field, index) => {
-        if (index > 0) {
-          const joiner = doc.createElement("span");
-          joiner.textContent = " and ";
-          banner.appendChild(joiner);
-        }
-        const valueEl = doc.createElement("strong");
-        valueEl.setAttribute("style", "color:#0c4a6e;");
-        valueEl.textContent = field.value;
-        banner.appendChild(valueEl);
-        const labelEl = doc.createElement("span");
-        labelEl.textContent = ` as ${field.label.toLowerCase()}`;
-        banner.appendChild(labelEl);
-      });
-      const suffix = doc.createElement("span");
-      suffix.textContent = " to login.";
-      banner.appendChild(suffix);
+      if (bannerText) {
+        const custom = doc.createElement("span");
+        custom.textContent = bannerText;
+        banner.appendChild(custom);
+      } else {
+        const prefix = doc.createElement("span");
+        prefix.textContent = "To perform this experiment, use ";
+        banner.appendChild(prefix);
+        fields.forEach((field, index) => {
+          if (index > 0) {
+            const joiner = doc.createElement("span");
+            joiner.textContent = " and ";
+            banner.appendChild(joiner);
+          }
+          const valueEl = doc.createElement("strong");
+          valueEl.setAttribute("style", "color:#0c4a6e;");
+          valueEl.textContent = field.value;
+          banner.appendChild(valueEl);
+          const labelEl = doc.createElement("span");
+          labelEl.textContent = ` as ${field.label.toLowerCase()}`;
+          banner.appendChild(labelEl);
+        });
+        const suffix = doc.createElement("span");
+        suffix.textContent = " to login.";
+        banner.appendChild(suffix);
+      }
 
       card.insertAdjacentElement("beforebegin", banner);
       changed = true;
@@ -1021,7 +1034,7 @@ export default function DigitalHubClient({
     [topicContent],
   );
   const [simulationCredConfigs, setSimulationCredConfigs] = useState<
-    Record<string, SimulationCredFields>
+    Record<string, SimulationCredBannerConfig>
   >({});
   const topicContentWithCredBanners = useMemo(
     () => injectSimulationCredBanners(normalizedTopicContent, simulationCredConfigs),
@@ -1221,21 +1234,28 @@ export default function DigitalHubClient({
           .then(
             (config: {
               credentialFields?: { label?: string; value?: string }[];
+              bannerText?: string;
               isActive?: boolean;
-            } | null): [string, SimulationCredFields] | null => {
+            } | null): [string, SimulationCredBannerConfig] | null => {
               const fields = (config?.credentialFields || []).filter(
                 (field): field is { label: string; value: string } =>
                   Boolean(field?.label && field?.value),
               );
-              if (!fields.length || config?.isActive === false) return null;
-              return [slug, fields];
+              const bannerText = String(config?.bannerText || "").trim();
+              if (
+                (!fields.length && !bannerText) ||
+                config?.isActive === false
+              ) {
+                return null;
+              }
+              return [slug, { fields, bannerText }];
             },
           )
           .catch(() => null),
       ),
     ).then((entries) => {
       if (cancelled) return;
-      const next: Record<string, SimulationCredFields> = {};
+      const next: Record<string, SimulationCredBannerConfig> = {};
       entries.forEach((entry) => {
         if (entry) next[entry[0]] = entry[1];
       });
