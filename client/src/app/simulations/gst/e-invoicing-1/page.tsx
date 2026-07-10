@@ -23,8 +23,10 @@ type View = "home" | "dashboard";
 
 const SIMULATION_SLUG = "gst-e-invoicing-1";
 
+type CredentialField = { label: string; value: string };
+
 type SimConfig = {
-  credentials: { username: string; password: string };
+  credentialFields: CredentialField[];
   requireCredentialValidation: boolean;
 };
 
@@ -54,9 +56,14 @@ export default function GSTEInvoicing1Page() {
     fetch(`${getApiBase()}/simulation-configs/public/${SIMULATION_SLUG}`)
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
-        if (data?.credentials?.username && data?.credentials?.password) {
+        const fields: CredentialField[] = Array.isArray(data?.credentialFields)
+          ? data.credentialFields.filter(
+              (field: CredentialField) => field?.label && field?.value
+            )
+          : [];
+        if (fields.length && data?.isActive !== false) {
           setSimConfig({
-            credentials: data.credentials,
+            credentialFields: fields,
             requireCredentialValidation:
               data.requireCredentialValidation !== false,
           });
@@ -145,18 +152,21 @@ export default function GSTEInvoicing1Page() {
   };
 
   const handleLogin = () => {
-    const creds = simConfig?.credentials;
-    if (
-      simConfig?.requireCredentialValidation &&
-      creds?.username &&
-      creds?.password
-    ) {
+    if (simConfig?.requireCredentialValidation) {
+      const fields = simConfig.credentialFields;
+      // Map the configured fields onto the two form inputs: the first
+      // password-like field validates the password input, the first
+      // non-password field validates the username input.
+      const passwordField = fields.find((field) => /pass/i.test(field.label));
+      const usernameField = fields.find(
+        (field) => !/pass|captcha/i.test(field.label)
+      );
       const isValid =
-        loginData.username.trim() === creds.username &&
-        loginData.password === creds.password;
+        (!usernameField || loginData.username.trim() === usernameField.value) &&
+        (!passwordField || loginData.password === passwordField.value);
       if (!isValid) {
         setLoginError(
-          "Invalid username or password. Please use the credentials shown above."
+          "Invalid credentials. Please use the credentials shown above."
         );
         return;
       }
@@ -198,20 +208,21 @@ export default function GSTEInvoicing1Page() {
             </div>
 
             <div className="mt-3 space-y-2.5">
-              {simConfig?.credentials.username &&
-                simConfig?.credentials.password && (
-                  <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
-                    Use{" "}
-                    <span className="font-medium text-slate-700">
-                      {simConfig.credentials.username}
-                    </span>{" "}
-                    as username and{" "}
-                    <span className="font-medium text-slate-700">
-                      {simConfig.credentials.password}
-                    </span>{" "}
-                    as password to login
-                  </div>
-                )}
+              {simConfig && simConfig.credentialFields.length > 0 && (
+                <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
+                  Use{" "}
+                  {simConfig.credentialFields.map((field, index) => (
+                    <React.Fragment key={index}>
+                      {index > 0 && " and "}
+                      <span className="font-medium text-slate-700">
+                        {field.value}
+                      </span>{" "}
+                      as {field.label.toLowerCase()}
+                    </React.Fragment>
+                  ))}{" "}
+                  to login
+                </div>
+              )}
 
               <div>
                 <label className="mb-1 block text-[14px] font-normal text-slate-600">

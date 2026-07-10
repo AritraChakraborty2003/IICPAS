@@ -11,6 +11,7 @@ import {
   FaEyeSlash,
   FaKey,
   FaSync,
+  FaTimes,
 } from "react-icons/fa";
 
 const API_BASE = getApiBase();
@@ -21,18 +22,22 @@ const authHeaders = () => ({
   },
 });
 
+const emptyField = () => ({ label: "", value: "" });
+
 const SimulationManagerTab = () => {
   const [configs, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingConfig, setEditingConfig] = useState(null);
-  const [visiblePasswords, setVisiblePasswords] = useState({});
+  const [visibleValues, setVisibleValues] = useState({});
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     slug: "",
     name: "",
-    username: "",
-    password: "",
+    fields: [
+      { label: "Username", value: "" },
+      { label: "Password", value: "" },
+    ],
     requireCredentialValidation: true,
     isActive: true,
   });
@@ -61,8 +66,10 @@ const SimulationManagerTab = () => {
     setFormData({
       slug: "",
       name: "",
-      username: "",
-      password: "",
+      fields: [
+        { label: "Username", value: "" },
+        { label: "Password", value: "" },
+      ],
       requireCredentialValidation: true,
       isActive: true,
     });
@@ -79,12 +86,36 @@ const SimulationManagerTab = () => {
     setFormData({
       slug: config.slug,
       name: config.name,
-      username: config.credentials?.username || "",
-      password: config.credentials?.password || "",
+      fields: config.credentialFields?.length
+        ? config.credentialFields.map((field) => ({
+            label: field.label || "",
+            value: field.value || "",
+          }))
+        : [emptyField()],
       requireCredentialValidation: config.requireCredentialValidation !== false,
       isActive: config.isActive !== false,
     });
     setShowForm(true);
+  };
+
+  const updateField = (index, key, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      fields: prev.fields.map((field, i) =>
+        i === index ? { ...field, [key]: value } : field
+      ),
+    }));
+  };
+
+  const addField = () => {
+    setFormData((prev) => ({ ...prev, fields: [...prev.fields, emptyField()] }));
+  };
+
+  const removeField = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      fields: prev.fields.filter((_, i) => i !== index),
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -93,10 +124,7 @@ const SimulationManagerTab = () => {
 
     const payload = {
       name: formData.name,
-      credentials: {
-        username: formData.username,
-        password: formData.password,
-      },
+      credentialFields: formData.fields.filter((field) => field.label.trim()),
       requireCredentialValidation: formData.requireCredentialValidation,
       isActive: formData.isActive,
     };
@@ -137,7 +165,7 @@ const SimulationManagerTab = () => {
   const handleDelete = async (config) => {
     const result = await Swal.fire({
       title: "Delete simulation?",
-      text: `This will remove the configuration for "${config.name}". The simulation page will fall back to its default credentials.`,
+      text: `This will remove the configuration for "${config.name}". Its credentials banner will disappear from the simulation.`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -172,8 +200,8 @@ const SimulationManagerTab = () => {
     }
   };
 
-  const togglePasswordVisibility = (id) => {
-    setVisiblePasswords((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleValueVisibility = (id) => {
+    setVisibleValues((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -184,9 +212,9 @@ const SimulationManagerTab = () => {
             Simulation Manager
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage the login credentials shown on each simulation page. Changes
-            apply immediately — students see the updated credentials in the
-            login banner.
+            Manage the login credentials shown for each simulation. Each
+            simulation can have its own set of fields (username, password,
+            establishment ID, UAN, ...). Changes apply immediately.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -222,10 +250,7 @@ const SimulationManagerTab = () => {
                   Simulation
                 </th>
                 <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                  Username
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-gray-600">
-                  Password
+                  Credentials
                 </th>
                 <th className="px-4 py-3 text-center font-semibold text-gray-600">
                   Validate Credentials
@@ -241,40 +266,52 @@ const SimulationManagerTab = () => {
             <tbody className="divide-y divide-gray-100">
               {configs.map((config) => (
                 <tr key={config._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 align-top">
                     <div className="font-medium text-gray-800">
                       {config.name}
                     </div>
                     <div className="text-xs text-gray-400">{config.slug}</div>
                   </td>
-                  <td className="px-4 py-3 font-mono text-gray-700">
-                    {config.credentials?.username}
-                  </td>
                   <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-gray-700">
-                        {visiblePasswords[config._id]
-                          ? config.credentials?.password
-                          : "••••••••"}
+                    {config.credentialFields?.length ? (
+                      <div className="flex items-start gap-3">
+                        <div className="space-y-1">
+                          {config.credentialFields.map((field, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <span className="text-gray-500">
+                                {field.label}:
+                              </span>
+                              <span className="font-mono text-gray-700">
+                                {visibleValues[config._id]
+                                  ? field.value
+                                  : "••••••••"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <button
+                          onClick={() => toggleValueVisibility(config._id)}
+                          className="mt-0.5 text-gray-400 hover:text-gray-600"
+                          title={
+                            visibleValues[config._id]
+                              ? "Hide values"
+                              : "Show values"
+                          }
+                        >
+                          {visibleValues[config._id] ? (
+                            <FaEyeSlash />
+                          ) : (
+                            <FaEye />
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-xs italic text-gray-400">
+                        No credentials set — banner hidden
                       </span>
-                      <button
-                        onClick={() => togglePasswordVisibility(config._id)}
-                        className="text-gray-400 hover:text-gray-600"
-                        title={
-                          visiblePasswords[config._id]
-                            ? "Hide password"
-                            : "Show password"
-                        }
-                      >
-                        {visiblePasswords[config._id] ? (
-                          <FaEyeSlash />
-                        ) : (
-                          <FaEye />
-                        )}
-                      </button>
-                    </div>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-4 py-3 text-center align-top">
                     <button
                       onClick={() =>
                         handleToggle(config, "requireCredentialValidation")
@@ -299,7 +336,7 @@ const SimulationManagerTab = () => {
                       />
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-center">
+                  <td className="px-4 py-3 text-center align-top">
                     <button
                       onClick={() => handleToggle(config, "isActive")}
                       className={`inline-flex h-6 w-11 items-center rounded-full transition-colors ${
@@ -314,7 +351,7 @@ const SimulationManagerTab = () => {
                       />
                     </button>
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right align-top">
                     <div className="flex items-center justify-end gap-3">
                       <button
                         onClick={() => openEditForm(config)}
@@ -341,7 +378,7 @@ const SimulationManagerTab = () => {
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl bg-white p-6 shadow-2xl">
             <div className="mb-4 flex items-center gap-2">
               <FaKey className="text-blue-600" />
               <h2 className="text-lg font-semibold text-gray-800">
@@ -380,38 +417,62 @@ const SimulationManagerTab = () => {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
+
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-600">
-                  Login Username
-                </label>
-                <input
-                  value={formData.username}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      username: e.target.value,
-                    }))
-                  }
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-600">
+                    Credential Fields
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addField}
+                    className="flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    <FaPlus className="text-[10px]" /> Add Field
+                  </button>
+                </div>
+                <p className="mb-2 text-xs text-gray-400">
+                  Add whatever this simulation needs — e.g. Username, Password,
+                  Establishment ID, UAN, GSTIN.
+                </p>
+                <div className="space-y-2">
+                  {formData.fields.map((field, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <input
+                        value={field.label}
+                        onChange={(e) =>
+                          updateField(index, "label", e.target.value)
+                        }
+                        placeholder="Label (e.g. Username)"
+                        className="w-2/5 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      />
+                      <input
+                        value={field.value}
+                        onChange={(e) =>
+                          updateField(index, "value", e.target.value)
+                        }
+                        placeholder="Value"
+                        className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeField(index)}
+                        className="p-1 text-gray-400 hover:text-red-500"
+                        title="Remove field"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
+                  ))}
+                  {formData.fields.length === 0 && (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-3 py-2 text-xs text-gray-400">
+                      No fields — the credentials banner will be hidden for this
+                      simulation.
+                    </div>
+                  )}
+                </div>
               </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-600">
-                  Login Password
-                </label>
-                <input
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      password: e.target.value,
-                    }))
-                  }
-                  required
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
+
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 text-sm text-gray-600">
                   <input

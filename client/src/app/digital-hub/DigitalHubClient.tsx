@@ -1143,15 +1143,17 @@ export default function DigitalHubClient({
         .then((res) => (res.ok ? res.json() : null))
         .then(
           (config: {
-            credentials?: { username?: string; password?: string };
+            credentialFields?: { label?: string; value?: string }[];
             isActive?: boolean;
           } | null) => {
+            const fields = (config?.credentialFields || []).filter(
+              (field) => field?.label && field?.value,
+            );
             if (
               cancelled ||
               !card.isConnected ||
-              !config?.credentials?.username ||
-              !config?.credentials?.password ||
-              config.isActive === false
+              !fields.length ||
+              config?.isActive === false
             ) {
               return;
             }
@@ -1164,16 +1166,23 @@ export default function DigitalHubClient({
 
             const prefix = document.createElement("span");
             prefix.textContent = "To perform this experiment, use ";
-            const userEl = document.createElement("strong");
-            userEl.textContent = config.credentials.username;
-            const middle = document.createElement("span");
-            middle.textContent = " as username and ";
-            const passEl = document.createElement("strong");
-            passEl.textContent = config.credentials.password;
+            banner.appendChild(prefix);
+            fields.forEach((field, index) => {
+              if (index > 0) {
+                const joiner = document.createElement("span");
+                joiner.textContent = " and ";
+                banner.appendChild(joiner);
+              }
+              const valueEl = document.createElement("strong");
+              valueEl.textContent = field.value as string;
+              banner.appendChild(valueEl);
+              const labelEl = document.createElement("span");
+              labelEl.textContent = ` as ${(field.label as string).toLowerCase()}`;
+              banner.appendChild(labelEl);
+            });
             const suffix = document.createElement("span");
-            suffix.textContent = " as password to login.";
-
-            banner.append(prefix, userEl, middle, passEl, suffix);
+            suffix.textContent = " to login.";
+            banner.appendChild(suffix);
             card.appendChild(banner);
           },
         )

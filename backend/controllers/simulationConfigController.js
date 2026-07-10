@@ -1,6 +1,6 @@
 import SimulationConfig from "../models/SimulationConfig.js";
 
-// Known simulations that self-seed with default credentials on first read.
+// Known simulations that self-seed on first read.
 // Add new slugs here (or via the admin "Add Simulation" form).
 const KNOWN_SIMULATIONS = {
   "gst-e-invoicing-1": { name: "GST e-Invoicing 1" },
@@ -16,6 +16,43 @@ const ensureKnownSimulation = async (slug) => {
   );
 };
 
+const sanitizeCredentialFields = (fields) => {
+  if (!Array.isArray(fields)) return null;
+  return fields
+    .map((field) => ({
+      label: String(field?.label || "").trim(),
+      value: String(field?.value ?? ""),
+    }))
+    .filter((field) => field.label);
+};
+
+// Normalize a config's credential fields, converting the legacy
+// { username, password } shape when the field list is empty.
+const toCredentialFields = (config) => {
+  if (config.credentialFields?.length) {
+    return config.credentialFields.map((field) => ({
+      label: field.label,
+      value: field.value,
+    }));
+  }
+  const legacy = config.credentials || {};
+  const fields = [];
+  if (legacy.username) fields.push({ label: "Username", value: legacy.username });
+  if (legacy.password) fields.push({ label: "Password", value: legacy.password });
+  return fields;
+};
+
+const serializeConfig = (config) => ({
+  _id: config._id,
+  slug: config.slug,
+  name: config.name,
+  credentialFields: toCredentialFields(config),
+  requireCredentialValidation: config.requireCredentialValidation,
+  isActive: config.isActive,
+  createdAt: config.createdAt,
+  updatedAt: config.updatedAt,
+});
+
 // Public — used by the student-facing simulation pages
 export const getConfigBySlug = async (req, res) => {
   try {
@@ -30,7 +67,7 @@ export const getConfigBySlug = async (req, res) => {
     res.json({
       slug: config.slug,
       name: config.name,
-      credentials: config.credentials,
+      credentialFields: toCredentialFields(config),
       requireCredentialValidation: config.requireCredentialValidation,
       isActive: config.isActive,
     });
@@ -47,7 +84,7 @@ export const getAllConfigs = async (req, res) => {
       Object.keys(KNOWN_SIMULATIONS).map((slug) => ensureKnownSimulation(slug))
     );
     const configs = await SimulationConfig.find().sort({ slug: 1 });
-    res.json(configs);
+    res.json(configs.map(serializeConfig));
   } catch (error) {
     console.error("Error fetching simulation configs:", error);
     res.status(500).json({ message: "Failed to fetch simulation configs" });
@@ -57,7 +94,7 @@ export const getAllConfigs = async (req, res) => {
 // Admin — register a new simulation
 export const createConfig = async (req, res) => {
   try {
-    const { slug, name, credentials, requireCredentialValidation, isActive } =
+    const { slug, name, credentialFields, requireCredentialValidation, isActive } =
       req.body;
     if (!slug || !name) {
       return res.status(400).json({ message: "slug and name are required" });
@@ -70,33 +107,32 @@ export const createConfig = async (req, res) => {
         .status(409)
         .json({ message: "A simulation with this slug already exists" });
     }
+    const sanitizedFields = sanitizeCredentialFields(credentialFields);
     const config = await SimulationConfig.create({
       slug,
       name,
-      ...(credentials ? { credentials } : {}),
+      ...(sanitizedFields ? { credentialFields: sanitizedFields } : {}),
       ...(requireCredentialValidation !== undefined
         ? { requireCredentialValidation }
         : {}),
       ...(isActive !== undefined ? { isActive } : {}),
     });
-    res.status(201).json(config);
+    res.status(201).json(serializeConfig(config));
   } catch (error) {
     console.error("Error creating simulation config:", error);
     res.status(500).json({ message: "Failed to create simulation config" });
   }
 };
 
-// Admin — update credentials/settings
+// Admin — update credential fields/settings
 export const updateConfig = async (req, res) => {
   try {
-    const { name, credentials, requireCredentialValidation, isActive } =
+    const { name, credentialFields, requireCredentialValidation, isActive } =
       req.body;
     const update = {};
     if (name !== undefined) update.name = name;
-    if (credentials?.username !== undefined)
-      update["credentials.username"] = credentials.username;
-    if (credentials?.password !== undefined)
-      update["credentials.password"] = credentials.password;
+    const sanitizedFields = sanitizeCredentialFields(credentialFields);
+    if (sanitizedFields !== null) update.credentialFields = sanitizedFields;
     if (requireCredentialValidation !== undefined)
       update.requireCredentialValidation = requireCredentialValidation;
     if (isActive !== undefined) update.isActive = isActive;
@@ -109,7 +145,7 @@ export const updateConfig = async (req, res) => {
     if (!config) {
       return res.status(404).json({ message: "Simulation not found" });
     }
-    res.json(config);
+    res.json(serializeConfig(config));
   } catch (error) {
     console.error("Error updating simulation config:", error);
     res.status(500).json({ message: "Failed to update simulation config" });

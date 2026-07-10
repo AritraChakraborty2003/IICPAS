@@ -13,6 +13,17 @@ const SimulationConfigSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    // Flexible per-simulation credential fields, e.g.
+    // [{ label: "Username", value: "AIR" }, { label: "Password", value: "..." }]
+    // or [{ label: "Establishment ID", value: "APHYD..." }]
+    credentialFields: [
+      {
+        _id: false,
+        label: { type: String, required: true, trim: true },
+        value: { type: String, default: "" },
+      },
+    ],
+    // Legacy shape kept for records created before credentialFields existed
     credentials: {
       username: { type: String, default: "" },
       password: { type: String, default: "" },
