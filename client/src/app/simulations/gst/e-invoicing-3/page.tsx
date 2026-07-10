@@ -132,7 +132,7 @@ export default function GSTEInvoicing3Page() {
     setView("print");
     setIsInvoiceMenuOpen(true);
     setCancelBasis("");
-    setAckNumber("146872643383543");
+    setAckNumber("");
     setShowPrintDetails(false);
     setShowPrintSuccess(false);
     window.requestAnimationFrame(() => {
@@ -162,7 +162,7 @@ export default function GSTEInvoicing3Page() {
   const handleRetryPrint = () => {
     setShowPrintSuccess(false);
     setShowPrintDetails(false);
-    setAckNumber("146872643383543");
+    setAckNumber("");
     setCancelBasis("");
   };
 
