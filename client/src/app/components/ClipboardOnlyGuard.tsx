@@ -31,6 +31,11 @@ function isTextEditableTarget(target: EventTarget | null) {
     return false;
   }
 
+  // Fields marked with data-allow-typing opt out of the paste-only guard
+  if (editableRoot.closest('[data-allow-typing="true"]')) {
+    return false;
+  }
+
   if (editableRoot instanceof HTMLInputElement) {
     return ![
       "button",

@@ -1193,6 +1193,7 @@ export default function GSTEInvoiceReplica({
                                     </label>
                                     <textarea
                                       name="cancelRemarks"
+                                      data-allow-typing="true"
                                       value={cancelRemarks}
                                       onInput={(e) =>
                                         setCancelRemarks(
