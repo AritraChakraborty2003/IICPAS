@@ -24,7 +24,7 @@ export default function GSTEInvoicing3Page() {
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
   const [isInvoiceMenuOpen, setIsInvoiceMenuOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [cancelBasis, setCancelBasis] = useState<"ack" | "irn">("ack");
+  const [cancelBasis, setCancelBasis] = useState<"ack" | "irn" | "">("");
   const [ackNumber, setAckNumber] = useState("");
   const [showPrintDetails, setShowPrintDetails] = useState(false);
   const [showPrintSuccess, setShowPrintSuccess] = useState(false);
@@ -104,7 +104,7 @@ export default function GSTEInvoicing3Page() {
     setLoginData((prev) => ({ ...prev, captcha: "" }));
     setView("dashboard");
     setIsInvoiceMenuOpen(false);
-    setCancelBasis("ack");
+    setCancelBasis("");
     setAckNumber("");
     setShowPrintDetails(false);
     setShowPrintSuccess(false);
@@ -131,7 +131,7 @@ export default function GSTEInvoicing3Page() {
   const openPrintScreen = () => {
     setView("print");
     setIsInvoiceMenuOpen(true);
-    setCancelBasis("ack");
+    setCancelBasis("");
     setAckNumber("146872643383543");
     setShowPrintDetails(false);
     setShowPrintSuccess(false);
@@ -163,7 +163,7 @@ export default function GSTEInvoicing3Page() {
     setShowPrintSuccess(false);
     setShowPrintDetails(false);
     setAckNumber("146872643383543");
-    setCancelBasis("ack");
+    setCancelBasis("");
   };
 
   const renderPrintScreen = () => (
@@ -274,6 +274,7 @@ export default function GSTEInvoicing3Page() {
               </label>
             </div>
 
+            {cancelBasis !== "" && (
             <div className="mt-14 flex flex-wrap items-center justify-center gap-3 px-4 pb-8">
               <label className="text-[14px] font-semibold text-slate-700">
                 {cancelBasis === "ack" ? "Enter Ack. No. :" : "Enter IRN No. :"}
@@ -299,6 +300,7 @@ export default function GSTEInvoicing3Page() {
                 Exit
               </button>
             </div>
+            )}
 
             <div className="relative mx-auto mt-4 w-full max-w-[1700px] px-2">
               {showPrintSuccess && (
