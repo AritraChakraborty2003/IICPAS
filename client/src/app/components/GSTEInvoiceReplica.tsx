@@ -152,8 +152,8 @@ export default function GSTEInvoiceReplica({
     password: "IICPA@123",
     captcha: "",
   });
-  const [cancelBasis, setCancelBasis] = useState<"ack" | "irn">("ack");
-  const [cancelIdentifier, setCancelIdentifier] = useState("146872643383543");
+  const [cancelBasis, setCancelBasis] = useState<"ack" | "irn" | "">("");
+  const [cancelIdentifier, setCancelIdentifier] = useState("");
   const [cancelReason, setCancelReason] = useState("Others");
   const [cancelRemarks, setCancelRemarks] = useState("");
   const [showCancelDetails, setShowCancelDetails] = useState(false);
@@ -174,11 +174,16 @@ export default function GSTEInvoiceReplica({
 
   const goToCancelFlow = () => {
     setScreen("cancel");
+    setCancelBasis("");
+    setCancelIdentifier("");
     setShowCancelDetails(false);
     setShowCancelSuccess(false);
   };
 
   const handleCancelGo = () => {
+    if (!cancelIdentifier.trim() && cancelBasis === "ack") {
+      setCancelIdentifier("146872643383543");
+    }
     setShowCancelDetails(true);
     setShowCancelSuccess(false);
   };
@@ -940,49 +945,48 @@ export default function GSTEInvoiceReplica({
                           checked={cancelBasis === "ack"}
                           onChange={() => {
                             setCancelBasis("ack");
-                            setCancelIdentifier("146872643383543");
+                            setCancelIdentifier("");
                           }}
                           className="h-3.5 w-3.5"
                         />
                         <span>Ack No.</span>
                       </label>
-                      <label className="flex items-center gap-1.5">
+                      <label className="flex items-center gap-1.5 opacity-50 cursor-not-allowed">
                         <input
                           type="radio"
                           name="cancelBasis"
                           checked={cancelBasis === "irn"}
-                          onChange={() => {
-                            setCancelBasis("irn");
-                            setCancelIdentifier("uncWIpXGNqaGmHkd5U3v4fYXl6OW6s7kJAjOcHe6Inj6wo6rQZHfOEnEIPP1jAY");
-                          }}
-                          className="h-3.5 w-3.5"
+                          disabled
+                          className="h-3.5 w-3.5 cursor-not-allowed"
                         />
                         <span>IRN</span>
                       </label>
                     </div>
 
-                    <div className="mt-5 flex items-center justify-center gap-3 px-4">
-                      <label className="text-[12px] font-bold text-slate-700 lg:text-[13px]">
-                        {cancelBasis === "ack" ? "Enter Ack. No. :" : "Enter IRN :"}
-                      </label>
-                      <input
-                        value={cancelIdentifier}
-                        onChange={(e) => setCancelIdentifier(e.target.value)}
-                        className="w-full max-w-[320px] rounded border border-slate-400 px-3 py-1 text-[12px] text-slate-800 outline-none focus:border-blue-500 lg:text-[13px]"
-                      />
-                      <button
-                        onClick={handleCancelGo}
-                        className="rounded bg-[#1e66a0] px-4 py-1 text-[12px] font-semibold text-white hover:bg-[#1a5585]"
-                      >
-                        Go
-                      </button>
-                      <button
-                        onClick={() => setScreen("dashboard")}
-                        className="rounded bg-[#ec1e18] px-4 py-1 text-[12px] font-semibold text-white hover:bg-[#d01a15]"
-                      >
-                        Exit
-                      </button>
-                    </div>
+                    {cancelBasis === "ack" && (
+                      <div className="mt-5 flex items-center justify-center gap-3 px-4">
+                        <label className="text-[12px] font-bold text-slate-700 lg:text-[13px]">
+                          Enter Ack. No. :
+                        </label>
+                        <input
+                          value={cancelIdentifier}
+                          onChange={(e) => setCancelIdentifier(e.target.value)}
+                          className="w-full max-w-[320px] rounded border border-slate-400 px-3 py-1 text-[12px] text-slate-800 outline-none focus:border-blue-500 lg:text-[13px]"
+                        />
+                        <button
+                          onClick={handleCancelGo}
+                          className="rounded bg-[#1e66a0] px-4 py-1 text-[12px] font-semibold text-white hover:bg-[#1a5585]"
+                        >
+                          Go
+                        </button>
+                        <button
+                          onClick={() => setScreen("dashboard")}
+                          className="rounded bg-[#ec1e18] px-4 py-1 text-[12px] font-semibold text-white hover:bg-[#d01a15]"
+                        >
+                          Exit
+                        </button>
+                      </div>
+                    )}
 
                     {showCancelDetails && (
                       <div className="relative mx-auto mt-8 max-w-[1200px] border border-slate-200 bg-white p-0">
