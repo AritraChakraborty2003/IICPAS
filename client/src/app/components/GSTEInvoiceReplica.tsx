@@ -29,6 +29,14 @@ import {
   Users,
   KeyRound,
   CheckCircle2,
+  Home,
+  Scale,
+  HelpCircle,
+  Search,
+  Phone,
+  UserCheck,
+  BarChart2,
+  LogIn,
 } from "lucide-react";
 import ExperimentLaunchScreen from "./ExperimentLaunchScreen";
 import ClipboardOnlyGuard from "./ClipboardOnlyGuard";
@@ -82,6 +90,69 @@ interface GSTEInvoiceReplicaProps {
   highlightPrintMenu?: boolean;
   bulkUploadRoute?: string;
 }
+
+const navTabs = [
+  {
+    label: "Home",
+    icon: Home,
+    suboptions: [],
+  },
+  {
+    label: "Laws",
+    icon: Scale,
+    suboptions: [
+      { label: "Rules" },
+      { label: "Notifications", badge: "NEW" },
+    ],
+  },
+  {
+    label: "Help",
+    icon: HelpCircle,
+    suboptions: [
+      { label: "User Manuals", hasArrow: true },
+      { label: "Videos" },
+      { label: "FAQs", hasArrow: true },
+      { label: "Documents", hasArrow: true },
+      { label: "Presentations", hasArrow: true },
+      { label: "Tools", hasArrow: true },
+      { label: "Downloads", hasArrow: true },
+      { label: "Resolution for Common Errors" },
+    ],
+  },
+  {
+    label: "Search",
+    icon: Search,
+    suboptions: [
+      { label: "Tax Payer / GSTIN" },
+      { label: "e-Invoice Status of Taxpayer" },
+      { label: "Verify Signed Invoice" },
+      { label: "Products & Services" },
+      { label: "Master Codes" },
+      { label: "GST Suvidha Providers / ERPs" },
+      { label: "Pincode" },
+      { label: "Pin to Pin Distance" },
+      { label: "GSTINs generating IRN", subText: "Updated!" },
+    ],
+  },
+  {
+    label: "Contact Us",
+    icon: Phone,
+    suboptions: [],
+  },
+  {
+    label: "Registration",
+    icon: UserCheck,
+    suboptions: [
+      { label: "Portal Login" },
+      { label: "e-Invoice Enablement" },
+    ],
+  },
+  {
+    label: "Statistics",
+    icon: BarChart2,
+    suboptions: [],
+  },
+];
 
 export default function GSTEInvoiceReplica({
   initialScreen = "home",
@@ -288,25 +359,59 @@ export default function GSTEInvoiceReplica({
             </div>
 
             <div className="flex flex-wrap items-stretch border-b border-slate-200 bg-white/85">
-              {["Home", "Laws", "Help", "Search", "Contact Us", "Registration", "Statistics"].map(
-                (tab, index) => (
-                  <button
-                    key={tab}
-                    className={`min-w-[140px] flex-1 border-r border-slate-200 px-6 py-5 text-sm font-medium transition-colors ${
-                      index === 0
-                        ? "bg-[#cfe2ff] text-white"
-                        : "bg-white/90 text-slate-400 hover:bg-slate-50"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ),
-              )}
+              {navTabs.map((tab, index) => {
+                const TabIcon = tab.icon;
+                return (
+                  <div key={tab.label} className="relative group min-w-[140px] flex-1 border-r border-slate-200 flex">
+                    <button
+                      className={`w-full h-full flex items-center justify-center gap-1.5 px-3 py-5 text-[13px] lg:text-[14px] font-semibold transition-colors ${
+                        index === 0
+                          ? "bg-[#cfe2ff] text-[#1b66a0]"
+                          : "bg-white/90 text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+                      }`}
+                    >
+                      {TabIcon && <TabIcon size={14} className={index === 0 ? "text-[#1b66a0]" : "text-slate-500 group-hover:text-blue-500"} />}
+                      <span>{tab.label}</span>
+                      {tab.suboptions.length > 0 && (
+                        <ChevronDown size={12} className="text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
+                      )}
+                    </button>
+                    {tab.suboptions.length > 0 && (
+                      <div className="absolute left-0 top-full hidden group-hover:block w-[240px] bg-white border border-slate-200 shadow-xl z-[9999] text-left py-1 rounded-b-md">
+                        {tab.suboptions.map((sub, sIdx) => (
+                          <div
+                            key={sIdx}
+                            className="px-4 py-2.5 hover:bg-blue-50 text-[13px] font-semibold text-slate-700 hover:text-blue-600 cursor-pointer border-b border-slate-100 last:border-0 flex flex-col justify-center transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span>{sub.label}</span>
+                              {sub.badge && (
+                                <span className="bg-blue-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase animate-pulse">
+                                  {sub.badge}
+                                </span>
+                              )}
+                              {sub.hasArrow && (
+                                <span className="text-[10px] text-slate-400">▶</span>
+                              )}
+                            </div>
+                            {sub.subText && (
+                              <span className="text-[10px] text-red-500 font-bold mt-0.5">
+                                {sub.subText}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="min-w-[140px] border border-red-200 bg-white/90 px-6 py-5 text-sm font-medium text-slate-400 hover:bg-red-50"
+                className="min-w-[140px] border-l border-slate-200 bg-slate-50 px-6 py-5 text-sm font-semibold text-slate-700 hover:bg-slate-100 transition-colors flex items-center justify-center gap-1.5"
               >
-                LOGIN
+                <LogIn size={14} className="text-slate-500" />
+                <span>LOGIN</span>
               </button>
             </div>
 
