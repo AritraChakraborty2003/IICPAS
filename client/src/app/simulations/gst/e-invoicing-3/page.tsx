@@ -674,25 +674,59 @@ export default function GSTEInvoicing3Page() {
         <div className="mx-auto w-full max-w-[1780px] px-0">
           <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
             <div className="flex min-h-[48px] w-full flex-wrap items-stretch bg-white">
-              {["Home", "Laws", "Help", "Search", "Contact Us", "Registration", "Statistics"].map(
-                (tab, index) => (
-                  <button
-                    key={tab}
-                    className={`min-w-[140px] flex-1 border-r border-slate-200 px-6 py-4 text-[16px] font-medium transition-colors ${
-                      index === 0
-                        ? "bg-[#69aee8] text-white"
-                        : "bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ),
-              )}
+              {navTabs.map((tab, index) => {
+                const TabIcon = tab.icon;
+                return (
+                  <div key={tab.label} className="relative group min-w-[140px] flex-1 border-r border-slate-200 flex">
+                    <button
+                      className={`w-full h-full flex items-center justify-center gap-1.5 px-3 py-4 text-[13px] lg:text-[14px] font-semibold transition-colors ${
+                        index === 0
+                          ? "bg-[#69aee8] text-white"
+                          : "bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+                      }`}
+                    >
+                      {TabIcon && <TabIcon size={14} className={index === 0 ? "text-white" : "text-slate-500 group-hover:text-blue-500"} />}
+                      <span>{tab.label}</span>
+                      {tab.suboptions.length > 0 && (
+                        <ChevronDown size={12} className="text-slate-400 group-hover:rotate-180 transition-transform duration-200" />
+                      )}
+                    </button>
+                    {tab.suboptions.length > 0 && (
+                      <div className="absolute left-0 top-full hidden group-hover:block w-[240px] bg-white border border-slate-200 shadow-xl z-[9999] text-left py-1 rounded-b-md">
+                        {tab.suboptions.map((sub, sIdx) => (
+                          <div
+                            key={sIdx}
+                            className="px-4 py-2.5 hover:bg-blue-50 text-[13px] font-semibold text-slate-700 hover:text-blue-600 cursor-pointer border-b border-slate-100 last:border-0 flex flex-col justify-center transition-colors"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span>{sub.label}</span>
+                              {sub.badge && (
+                                <span className="bg-blue-600 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded uppercase animate-pulse">
+                                  {sub.badge}
+                                </span>
+                              )}
+                              {sub.hasArrow && (
+                                <span className="text-[10px] text-slate-400">▶</span>
+                              )}
+                            </div>
+                            {sub.subText && (
+                              <span className="text-[10px] text-red-500 font-bold mt-0.5">
+                                {sub.subText}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="min-w-[140px] border-l border-slate-200 bg-slate-100 px-6 py-4 text-[16px] font-medium text-slate-600 hover:bg-slate-200"
+                className="min-w-[140px] border-l border-slate-200 bg-slate-100 px-6 py-4 text-[14px] lg:text-[15px] font-semibold text-slate-700 hover:bg-slate-200 transition-colors flex items-center justify-center gap-1.5"
               >
-                LOGIN
+                <LogIn size={14} className="text-slate-500" />
+                <span>LOGIN</span>
               </button>
             </div>
           </div>
