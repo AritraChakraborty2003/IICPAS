@@ -13,11 +13,82 @@ import {
   Truck,
   Users,
   KeyRound,
+  Home,
+  Scale,
+  HelpCircle,
+  Search,
+  Phone,
+  UserCheck,
+  BarChart2,
+  LogIn,
 } from "lucide-react";
 import GSTBannerCarousel from "../../../components/GSTBannerCarousel";
 import { SIDEBAR_SUB_OPTIONS } from "../../../components/simulationSidebarSubOptions";
 
 type View = "home" | "dashboard" | "print";
+
+const navTabs = [
+  {
+    label: "Home",
+    icon: Home,
+    suboptions: [],
+  },
+  {
+    label: "Laws",
+    icon: Scale,
+    suboptions: [
+      { label: "Rules" },
+      { label: "Notifications", badge: "NEW" },
+    ],
+  },
+  {
+    label: "Help",
+    icon: HelpCircle,
+    suboptions: [
+      { label: "User Manuals", hasArrow: true },
+      { label: "Videos" },
+      { label: "FAQs", hasArrow: true },
+      { label: "Documents", hasArrow: true },
+      { label: "Presentations", hasArrow: true },
+      { label: "Tools", hasArrow: true },
+      { label: "Downloads", hasArrow: true },
+      { label: "Resolution for Common Errors" },
+    ],
+  },
+  {
+    label: "Search",
+    icon: Search,
+    suboptions: [
+      { label: "Tax Payer / GSTIN" },
+      { label: "e-Invoice Status of Taxpayer" },
+      { label: "Verify Signed Invoice" },
+      { label: "Products & Services" },
+      { label: "Master Codes" },
+      { label: "GST Suvidha Providers / ERPs" },
+      { label: "Pincode" },
+      { label: "Pin to Pin Distance" },
+      { label: "GSTINs generating IRN", subText: "Updated!" },
+    ],
+  },
+  {
+    label: "Contact Us",
+    icon: Phone,
+    suboptions: [],
+  },
+  {
+    label: "Registration",
+    icon: UserCheck,
+    suboptions: [
+      { label: "Portal Login" },
+      { label: "e-Invoice Enablement" },
+    ],
+  },
+  {
+    label: "Statistics",
+    icon: BarChart2,
+    suboptions: [],
+  },
+];
 
 export default function GSTEInvoicing3Page() {
   const [view, setView] = useState<View>("dashboard");
