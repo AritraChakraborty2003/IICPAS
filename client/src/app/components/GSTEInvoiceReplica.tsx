@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import ExperimentLaunchScreen from "./ExperimentLaunchScreen";
 import ClipboardOnlyGuard from "./ClipboardOnlyGuard";
+import { SIDEBAR_SUB_OPTIONS } from "./simulationSidebarSubOptions";
 import GSTSimulation from "./GSTSimulation";
 
 type Screen = "home" | "dashboard" | "invoice" | "cancel";
@@ -101,6 +102,7 @@ export default function GSTEInvoiceReplica({
   const router = useRouter();
   const [screen, setScreen] = useState<Screen>(initialScreen);
   const [isInvoiceMenuOpen, setIsInvoiceMenuOpen] = useState(initialInvoiceMenuOpen);
+  const [openSidebarMenu, setOpenSidebarMenu] = useState<string | null>(null);
   const sidebarMenuItems = [
     { label: "MIS Reports", Icon: Menu },
     { label: "User Management", Icon: Users },
@@ -699,20 +701,46 @@ export default function GSTEInvoiceReplica({
                   )}
                 </div>
 
-                {sidebarMenuItems.map(({ label, Icon }, index) => (
-                  <button
-                    key={label}
-                    className="flex w-full items-center justify-between border-b border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon size={15} className="text-slate-600" />
-                      <span>{label}</span>
+                {sidebarMenuItems.map(({ label, Icon }) => {
+                  const subOptions = SIDEBAR_SUB_OPTIONS[label] || [];
+                  const isOpen = openSidebarMenu === label;
+                  return (
+                    <div key={label}>
+                      <button
+                        onClick={() =>
+                          setOpenSidebarMenu(isOpen ? null : label)
+                        }
+                        className="flex w-full items-center justify-between border-b border-white/60 bg-[#d7def0] px-4 py-3 text-left text-[12px] font-medium text-slate-700 hover:bg-[#e8edf8]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon size={15} className="text-slate-600" />
+                          <span>{label}</span>
+                        </div>
+                        {subOptions.length ? (
+                          <ChevronDown
+                            size={14}
+                            className={`text-slate-500 transition-transform ${
+                              isOpen ? "rotate-180" : ""
+                            }`}
+                          />
+                        ) : null}
+                      </button>
+                      {isOpen && subOptions.length > 0 && (
+                        <div className="border-b border-white/60 bg-[#e8edf8]">
+                          {subOptions.map((option) => (
+                            <button
+                              key={option}
+                              className="flex w-full items-center gap-2 px-4 py-2 pl-10 text-left text-[12px] text-slate-600 hover:bg-[#dde5f5] hover:text-slate-900"
+                            >
+                              <span className="h-1 w-1 flex-shrink-0 rounded-full bg-slate-400" />
+                              <span>{option}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                    {index < sidebarMenuItems.length - 1 ? (
-                      <ChevronDown size={14} className="text-slate-500" />
-                    ) : null}
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </aside>
 
