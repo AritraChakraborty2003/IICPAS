@@ -23,9 +23,9 @@ type View = "home" | "dashboard";
 
 const SIMULATION_SLUG = "gst-e-invoicing-1";
 
-const DEFAULT_CONFIG = {
-  credentials: { username: "AIR", password: "IICPA@123" },
-  requireCredentialValidation: true,
+type SimConfig = {
+  credentials: { username: string; password: string };
+  requireCredentialValidation: boolean;
 };
 
 export default function GSTEInvoicing1Page() {
@@ -33,7 +33,7 @@ export default function GSTEInvoicing1Page() {
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [simConfig, setSimConfig] = useState(DEFAULT_CONFIG);
+  const [simConfig, setSimConfig] = useState<SimConfig | null>(null);
   const [loginError, setLoginError] = useState("");
   const [loginData, setLoginData] = useState({
     username: "",
@@ -63,7 +63,7 @@ export default function GSTEInvoicing1Page() {
         }
       })
       .catch(() => {
-        // Keep DEFAULT_CONFIG if the config API is unreachable
+        // No config available — the credentials banner stays hidden
       });
   }, []);
 
@@ -145,10 +145,15 @@ export default function GSTEInvoicing1Page() {
   };
 
   const handleLogin = () => {
-    if (simConfig.requireCredentialValidation) {
+    const creds = simConfig?.credentials;
+    if (
+      simConfig?.requireCredentialValidation &&
+      creds?.username &&
+      creds?.password
+    ) {
       const isValid =
-        loginData.username.trim() === simConfig.credentials.username &&
-        loginData.password === simConfig.credentials.password;
+        loginData.username.trim() === creds.username &&
+        loginData.password === creds.password;
       if (!isValid) {
         setLoginError(
           "Invalid username or password. Please use the credentials shown above."
@@ -193,17 +198,20 @@ export default function GSTEInvoicing1Page() {
             </div>
 
             <div className="mt-3 space-y-2.5">
-              <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
-                Use{" "}
-                <span className="font-medium text-slate-700">
-                  {simConfig.credentials.username}
-                </span>{" "}
-                as username and{" "}
-                <span className="font-medium text-slate-700">
-                  {simConfig.credentials.password}
-                </span>{" "}
-                as password to login
-              </div>
+              {simConfig?.credentials.username &&
+                simConfig?.credentials.password && (
+                  <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
+                    Use{" "}
+                    <span className="font-medium text-slate-700">
+                      {simConfig.credentials.username}
+                    </span>{" "}
+                    as username and{" "}
+                    <span className="font-medium text-slate-700">
+                      {simConfig.credentials.password}
+                    </span>{" "}
+                    as password to login
+                  </div>
+                )}
 
               <div>
                 <label className="mb-1 block text-[14px] font-normal text-slate-600">

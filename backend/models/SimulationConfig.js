@@ -14,8 +14,8 @@ const SimulationConfigSchema = new mongoose.Schema(
       required: true,
     },
     credentials: {
-      username: { type: String, default: "AIR" },
-      password: { type: String, default: "IICPA@123" },
+      username: { type: String, default: "" },
+      password: { type: String, default: "" },
     },
     // When false, the simulation login accepts any input
     requireCredentialValidation: {
