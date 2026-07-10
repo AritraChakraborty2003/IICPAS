@@ -17,6 +17,7 @@ import {
   KeyRound,
 } from "lucide-react";
 import GSTBannerCarousel from "../../../components/GSTBannerCarousel";
+import { SIDEBAR_SUB_OPTIONS } from "../../../components/simulationSidebarSubOptions";
 import { getApiBase } from "@/lib/apiBase";
 
 type View = "home" | "dashboard";
@@ -35,6 +36,7 @@ export default function GSTEInvoicing1Page() {
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [openSidebarMenu, setOpenSidebarMenu] = useState<string | null>(null);
   const [simConfig, setSimConfig] = useState<SimConfig | null>(null);
   const [loginError, setLoginError] = useState("");
   const [loginData, setLoginData] = useState({
