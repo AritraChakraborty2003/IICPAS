@@ -406,8 +406,8 @@ export default function GSTEInvoicing1Page() {
 
       <main className="flex-1 bg-white pt-[110px]">
         <div className="mx-auto w-full max-w-[1780px] px-0">
-          <div className="overflow-hidden rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
-            <div className="flex min-h-[48px] w-full flex-wrap items-stretch bg-white">
+          <div className="rounded-sm border border-slate-200 bg-white shadow-[0_2px_8px_rgba(15,23,42,0.12)]">
+            <div className="flex min-h-[48px] w-full flex-wrap items-stretch bg-white rounded-sm">
               {navTabs.map((tab, index) => {
                 const TabIcon = tab.icon;
                 return (

@@ -317,8 +317,8 @@ export default function GSTEInvoiceReplica({
             <div>Password: IICPA@123</div>
           </div>
 
-          <div className="mt-3 overflow-hidden rounded-2xl border border-white/80 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-            <div className="relative bg-[#2a6890] px-6 py-6 text-white">
+          <div className="mt-3 rounded-2xl border border-white/80 bg-white/70 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+            <div className="relative bg-[#2a6890] px-6 py-6 text-white rounded-t-2xl">
               <div className="absolute inset-0 bg-white/18" />
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
