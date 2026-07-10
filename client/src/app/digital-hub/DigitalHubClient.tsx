@@ -753,6 +753,14 @@ export default function DigitalHubClient({
   } | null>(null);
   const contentScrollRef = useRef<HTMLDivElement | null>(null);
   const topicContentRef = useRef<HTMLDivElement | null>(null);
+
+  type SimulationCredBanner = {
+    slug: string;
+    fields: { label: string; value: string }[];
+  };
+  const [simulationCredBanners, setSimulationCredBanners] = useState<
+    SimulationCredBanner[]
+  >([]);
   const headerBrandRef = useRef<HTMLDivElement | null>(null);
   const progressPointsRef = useRef<HTMLDivElement | null>(null);
   const languageDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -1104,30 +1112,25 @@ export default function DigitalHubClient({
     hardenVideoElements(topicContentRef.current);
   }, [topicContent, selectedTopic?._id, selectedAssignment?._id]);
 
-  // Attach the admin-configured login credentials banner to embedded
-  // simulation cards. Cards are matched by their link URL rather than the
-  // data-simulation-card attribute, because saved topic HTML may have been
-  // stripped of custom data attributes by the editor. The slug is derived
-  // from the URL path, e.g. /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1.
+  // Detect embedded simulations in the rendered topic content (matched by
+  // their link URL, since saved topic HTML may have been stripped of custom
+  // data attributes by the editor) and load their admin-configured login
+  // credentials. The slug is derived from the URL path, e.g.
+  // /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1. The credentials are
+  // shown as a full-width banner at the top of the content area.
   useEffect(() => {
+    setSimulationCredBanners([]);
     const root = topicContentRef.current;
     if (!root) return;
     const anchors = root.querySelectorAll<HTMLAnchorElement>(
       'a[href*="/simulations/"]',
     );
     if (!anchors.length) return;
-    let cancelled = false;
 
+    const slugs: string[] = [];
     anchors.forEach((anchor) => {
-      const card =
-        (anchor.closest("[data-simulation-card='true']") as HTMLElement | null) ||
-        (anchor.closest(".topic-simulation-card") as HTMLElement | null) ||
-        anchor.parentElement;
-      if (!card) return;
-
       const href = anchor.getAttribute("href") || "";
       if (!href) return;
-
       let pathname = "";
       try {
         pathname = new URL(href, window.location.origin).pathname;
@@ -1141,62 +1144,37 @@ export default function DigitalHubClient({
         .split("/")
         .join("-")
         .toLowerCase();
-      if (!slug) return;
+      if (slug && !slugs.includes(slug)) slugs.push(slug);
+    });
+    if (!slugs.length) return;
 
-      fetch(`${API_BASE}/simulation-configs/public/${slug}`)
-        .then((res) => (res.ok ? res.json() : null))
-        .then(
-          (config: {
-            credentialFields?: { label?: string; value?: string }[];
-            isActive?: boolean;
-          } | null) => {
-            const fields = (config?.credentialFields || []).filter(
-              (field) => field?.label && field?.value,
-            );
-            if (
-              cancelled ||
-              !card.isConnected ||
-              !fields.length ||
-              config?.isActive === false
-            ) {
-              return;
-            }
-            if (card.querySelector("[data-simulation-creds-banner]")) return;
-
-            const banner = document.createElement("div");
-            banner.setAttribute("data-simulation-creds-banner", "true");
-            banner.style.cssText =
-              "display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;padding:10px 16px;background:linear-gradient(90deg,#1e40af 0%,#1d4ed8 100%);color:#ffffff;font-size:13px;line-height:1.5;text-align:center;";
-
-            const prefix = document.createElement("span");
-            prefix.textContent = "To perform this experiment, use ";
-            banner.appendChild(prefix);
-            fields.forEach((field, index) => {
-              if (index > 0) {
-                const joiner = document.createElement("span");
-                joiner.textContent = " and ";
-                banner.appendChild(joiner);
-              }
-              const valueEl = document.createElement("strong");
-              valueEl.textContent = field.value as string;
-              banner.appendChild(valueEl);
-              const labelEl = document.createElement("span");
-              labelEl.textContent = ` as ${(field.label as string).toLowerCase()}`;
-              banner.appendChild(labelEl);
-            });
-            const suffix = document.createElement("span");
-            suffix.textContent = " to login.";
-            banner.appendChild(suffix);
-            if (card === anchor.parentElement) {
-              anchor.insertAdjacentElement("afterend", banner);
-            } else {
-              card.appendChild(banner);
-            }
-          },
-        )
-        .catch(() => {
-          // No config for this simulation — leave the card unchanged
-        });
+    let cancelled = false;
+    Promise.all(
+      slugs.map((slug) =>
+        fetch(`${API_BASE}/simulation-configs/public/${slug}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then(
+            (config: {
+              credentialFields?: { label?: string; value?: string }[];
+              isActive?: boolean;
+            } | null) => {
+              const fields = (config?.credentialFields || []).filter(
+                (field): field is { label: string; value: string } =>
+                  Boolean(field?.label && field?.value),
+              );
+              if (!fields.length || config?.isActive === false) return null;
+              return { slug, fields };
+            },
+          )
+          .catch(() => null),
+      ),
+    ).then((results) => {
+      if (cancelled) return;
+      setSimulationCredBanners(
+        results.filter(
+          (banner): banner is SimulationCredBanner => banner !== null,
+        ),
+      );
     });
 
     return () => {
@@ -4497,6 +4475,29 @@ export default function DigitalHubClient({
                           Get Full Access
                         </button>
                       </div>
+                    </div>
+                  )}
+
+                  {simulationCredBanners.length > 0 && (
+                    <div className="mb-4 w-full overflow-hidden rounded-2xl shadow-sm">
+                      {simulationCredBanners.map((banner) => (
+                        <div
+                          key={banner.slug}
+                          className="flex w-full flex-wrap items-center justify-center gap-1 bg-gradient-to-r from-blue-800 to-blue-600 px-4 py-3 text-center text-sm font-medium text-white"
+                        >
+                          <span>To perform this experiment, use</span>
+                          {banner.fields.map((field, index) => (
+                            <span key={index}>
+                              {index > 0 ? "and " : ""}
+                              <strong className="font-bold">
+                                {field.value}
+                              </strong>{" "}
+                              as {field.label.toLowerCase()}
+                            </span>
+                          ))}
+                          <span>to login.</span>
+                        </div>
+                      ))}
                     </div>
                   )}
 

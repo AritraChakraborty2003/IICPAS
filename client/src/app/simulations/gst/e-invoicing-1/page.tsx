@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   ChevronDown,
@@ -166,7 +166,7 @@ export default function GSTEInvoicing1Page() {
         (!passwordField || loginData.password === passwordField.value);
       if (!isValid) {
         setLoginError(
-          "Invalid credentials. Please use the credentials shown above."
+          "Invalid credentials. Please use the credentials provided for this experiment."
         );
         return;
       }
@@ -208,22 +208,6 @@ export default function GSTEInvoicing1Page() {
             </div>
 
             <div className="mt-3 space-y-2.5">
-              {simConfig && simConfig.credentialFields.length > 0 && (
-                <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
-                  Use{" "}
-                  {simConfig.credentialFields.map((field, index) => (
-                    <React.Fragment key={index}>
-                      {index > 0 && " and "}
-                      <span className="font-medium text-slate-700">
-                        {field.value}
-                      </span>{" "}
-                      as {field.label.toLowerCase()}
-                    </React.Fragment>
-                  ))}{" "}
-                  to login
-                </div>
-              )}
-
               <div>
                 <label className="mb-1 block text-[14px] font-normal text-slate-600">
                   User name
