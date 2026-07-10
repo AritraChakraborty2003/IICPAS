@@ -33,6 +33,7 @@ import { useRouter } from "next/navigation";
 import "react-modern-drawer/dist/index.css";
 import TopicsManager from "./Topic/TopicsManager";
 import GuidesTab from "./GuidesTab";
+import SimulationManagerTab from "./SimulationManagerTab";
 import KitsTab from "./KitsTab";
 import CenterLocationTab from "./CenterLocationTab";
 import CenterLocationSectionTab from "./CenterLocationSectionTab";
@@ -274,6 +275,11 @@ const NAVIGATION_GROUPS = [
       },
       { id: "topics", label: "Training Topics", icon: <FaBook /> },
       { id: "guides", label: "Guides & Resources", icon: <FaFileAlt /> },
+      {
+        id: "simulation-manager",
+        label: "Simulation Manager",
+        icon: <FaLayerGroup />,
+      },
       { id: "kits", label: "Kit Stock", icon: <FaBoxes /> },
       {
         id: "course-ratings",
@@ -936,6 +942,8 @@ function AdminDashboardContent() {
           <TopicsManager />
         ) : activeTab === "guides" ? (
           <GuidesTab />
+        ) : activeTab === "simulation-manager" ? (
+          <SimulationManagerTab />
         ) : activeTab === "kits" ? (
           <KitsTab />
         ) : activeTab === "audit" ? (

@@ -17,17 +17,27 @@ import {
   KeyRound,
 } from "lucide-react";
 import GSTBannerCarousel from "../../../components/GSTBannerCarousel";
+import { getApiBase } from "@/lib/apiBase";
 
 type View = "home" | "dashboard";
+
+const SIMULATION_SLUG = "gst-e-invoicing-1";
+
+const DEFAULT_CONFIG = {
+  credentials: { username: "AIR", password: "IICPA@123" },
+  requireCredentialValidation: true,
+};
 
 export default function GSTEInvoicing1Page() {
   const [view, setView] = useState<View>("home");
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [simConfig, setSimConfig] = useState(DEFAULT_CONFIG);
+  const [loginError, setLoginError] = useState("");
   const [loginData, setLoginData] = useState({
-    username: "AIR",
-    password: "IICPA@123",
+    username: "",
+    password: "",
     captcha: "",
   });
   const launchTimerRef = useRef<number | null>(null);
@@ -38,6 +48,23 @@ export default function GSTEInvoicing1Page() {
         window.clearTimeout(launchTimerRef.current);
       }
     };
+  }, []);
+
+  useEffect(() => {
+    fetch(`${getApiBase()}/simulation-configs/public/${SIMULATION_SLUG}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then((data) => {
+        if (data?.credentials?.username && data?.credentials?.password) {
+          setSimConfig({
+            credentials: data.credentials,
+            requireCredentialValidation:
+              data.requireCredentialValidation !== false,
+          });
+        }
+      })
+      .catch(() => {
+        // Keep DEFAULT_CONFIG if the config API is unreachable
+      });
   }, []);
 
   const marqueeItems = [
@@ -98,7 +125,8 @@ export default function GSTEInvoicing1Page() {
 
   const startAgain = () => {
     setShowLoginModal(false);
-    setLoginData((prev) => ({ ...prev, captcha: "" }));
+    setLoginError("");
+    setLoginData({ username: "", password: "", captcha: "" });
     setView("home");
   };
 
@@ -117,6 +145,18 @@ export default function GSTEInvoicing1Page() {
   };
 
   const handleLogin = () => {
+    if (simConfig.requireCredentialValidation) {
+      const isValid =
+        loginData.username.trim() === simConfig.credentials.username &&
+        loginData.password === simConfig.credentials.password;
+      if (!isValid) {
+        setLoginError(
+          "Invalid username or password. Please use the credentials shown above."
+        );
+        return;
+      }
+    }
+    setLoginError("");
     setShowLoginModal(false);
     setView("dashboard");
   };
@@ -154,8 +194,14 @@ export default function GSTEInvoicing1Page() {
 
             <div className="mt-3 space-y-2.5">
               <div className="rounded-[4px] border border-slate-300/70 bg-white/45 px-2 py-1 text-[11px] leading-4 text-slate-500">
-                Use <span className="font-medium text-slate-700">AIR</span> as
-                username and <span className="font-medium text-slate-700">IICPA@123</span>{" "}
+                Use{" "}
+                <span className="font-medium text-slate-700">
+                  {simConfig.credentials.username}
+                </span>{" "}
+                as username and{" "}
+                <span className="font-medium text-slate-700">
+                  {simConfig.credentials.password}
+                </span>{" "}
                 as password to login
               </div>
 
@@ -165,9 +211,13 @@ export default function GSTEInvoicing1Page() {
                 </label>
                 <input
                   value={loginData.username}
-                  onChange={(e) =>
-                    setLoginData((prev) => ({ ...prev, username: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setLoginError("");
+                    setLoginData((prev) => ({
+                      ...prev,
+                      username: e.target.value,
+                    }));
+                  }}
                   className="h-[34px] w-full rounded-[4px] border border-slate-300/80 bg-white px-2 text-[13px] text-slate-900 shadow-[inset_0_1px_1px_rgba(15,23,42,0.04)] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
@@ -179,9 +229,13 @@ export default function GSTEInvoicing1Page() {
                 <input
                   type="password"
                   value={loginData.password}
-                  onChange={(e) =>
-                    setLoginData((prev) => ({ ...prev, password: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setLoginError("");
+                    setLoginData((prev) => ({
+                      ...prev,
+                      password: e.target.value,
+                    }));
+                  }}
                   className="h-[34px] w-full rounded-[4px] border border-slate-300/80 bg-white px-2 text-[13px] text-slate-900 shadow-[inset_0_1px_1px_rgba(15,23,42,0.04)] outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
@@ -208,6 +262,12 @@ export default function GSTEInvoicing1Page() {
                   placeholder="Enter Above Captcha"
                 />
               </div>
+
+              {loginError && (
+                <div className="rounded-[4px] border border-red-300 bg-red-50 px-2 py-1.5 text-[12px] text-red-600">
+                  {loginError}
+                </div>
+              )}
 
               <button
                 onClick={handleLogin}

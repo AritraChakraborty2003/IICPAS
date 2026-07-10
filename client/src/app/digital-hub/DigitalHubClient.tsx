@@ -1104,6 +1104,89 @@ export default function DigitalHubClient({
     hardenVideoElements(topicContentRef.current);
   }, [topicContent, selectedTopic?._id, selectedAssignment?._id]);
 
+  // Attach the admin-configured login credentials banner to embedded
+  // simulation cards ([data-simulation-card] blocks inserted via the topic
+  // editor). The slug is derived from the simulation URL path, e.g.
+  // /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1.
+  useEffect(() => {
+    const root = topicContentRef.current;
+    if (!root) return;
+    const cards = root.querySelectorAll<HTMLElement>(
+      "[data-simulation-card='true']",
+    );
+    if (!cards.length) return;
+    let cancelled = false;
+
+    cards.forEach((card) => {
+      const link = card.querySelector<HTMLAnchorElement>(
+        "a.topic-simulation-link",
+      );
+      const href = link?.getAttribute("href") || "";
+      if (!href) return;
+
+      let pathname = "";
+      try {
+        pathname = new URL(href, window.location.origin).pathname;
+      } catch {
+        return;
+      }
+      const match = pathname.match(/\/simulations\/(.+)/);
+      if (!match) return;
+      const slug = match[1]
+        .replace(/\/+$/, "")
+        .split("/")
+        .join("-")
+        .toLowerCase();
+      if (!slug) return;
+
+      fetch(`${API_BASE}/simulation-configs/public/${slug}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then(
+          (config: {
+            credentials?: { username?: string; password?: string };
+            isActive?: boolean;
+          } | null) => {
+            if (
+              cancelled ||
+              !card.isConnected ||
+              !config?.credentials?.username ||
+              !config?.credentials?.password ||
+              config.isActive === false
+            ) {
+              return;
+            }
+            if (card.querySelector("[data-simulation-creds-banner]")) return;
+
+            const banner = document.createElement("div");
+            banner.setAttribute("data-simulation-creds-banner", "true");
+            banner.style.cssText =
+              "display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px;padding:10px 16px;background:linear-gradient(90deg,#1e40af 0%,#1d4ed8 100%);color:#ffffff;font-size:13px;line-height:1.5;text-align:center;";
+
+            const prefix = document.createElement("span");
+            prefix.textContent = "To perform this experiment, use ";
+            const userEl = document.createElement("strong");
+            userEl.textContent = config.credentials.username;
+            const middle = document.createElement("span");
+            middle.textContent = " as username and ";
+            const passEl = document.createElement("strong");
+            passEl.textContent = config.credentials.password;
+            const suffix = document.createElement("span");
+            suffix.textContent = " as password to login.";
+
+            banner.append(prefix, userEl, middle, passEl, suffix);
+            card.appendChild(banner);
+          },
+        )
+        .catch(() => {
+          // No config for this simulation — leave the card unchanged
+        });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [topicContent, selectedTopic?._id, selectedAssignment?._id, API_BASE]);
+
   const applyProgressSummary = useCallback(
     (
       progressPayload: {
