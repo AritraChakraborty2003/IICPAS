@@ -1105,23 +1105,27 @@ export default function DigitalHubClient({
   }, [topicContent, selectedTopic?._id, selectedAssignment?._id]);
 
   // Attach the admin-configured login credentials banner to embedded
-  // simulation cards ([data-simulation-card] blocks inserted via the topic
-  // editor). The slug is derived from the simulation URL path, e.g.
-  // /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1.
+  // simulation cards. Cards are matched by their link URL rather than the
+  // data-simulation-card attribute, because saved topic HTML may have been
+  // stripped of custom data attributes by the editor. The slug is derived
+  // from the URL path, e.g. /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1.
   useEffect(() => {
     const root = topicContentRef.current;
     if (!root) return;
-    const cards = root.querySelectorAll<HTMLElement>(
-      "[data-simulation-card='true']",
+    const anchors = root.querySelectorAll<HTMLAnchorElement>(
+      'a[href*="/simulations/"]',
     );
-    if (!cards.length) return;
+    if (!anchors.length) return;
     let cancelled = false;
 
-    cards.forEach((card) => {
-      const link = card.querySelector<HTMLAnchorElement>(
-        "a.topic-simulation-link",
-      );
-      const href = link?.getAttribute("href") || "";
+    anchors.forEach((anchor) => {
+      const card =
+        (anchor.closest("[data-simulation-card='true']") as HTMLElement | null) ||
+        (anchor.closest(".topic-simulation-card") as HTMLElement | null) ||
+        anchor.parentElement;
+      if (!card) return;
+
+      const href = anchor.getAttribute("href") || "";
       if (!href) return;
 
       let pathname = "";
@@ -1183,7 +1187,11 @@ export default function DigitalHubClient({
             const suffix = document.createElement("span");
             suffix.textContent = " to login.";
             banner.appendChild(suffix);
-            card.appendChild(banner);
+            if (card === anchor.parentElement) {
+              anchor.insertAdjacentElement("afterend", banner);
+            } else {
+              card.appendChild(banner);
+            }
           },
         )
         .catch(() => {
