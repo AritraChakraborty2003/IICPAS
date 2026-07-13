@@ -1068,15 +1068,6 @@ function CheckoutContent() {
                     <p className="text-sm text-gray-600 mb-3">
                       Select a student coupon and apply it at checkout.
                     </p>
-                    {referralConfig.referralPromoCode ? (
-                      <p className="mb-3 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
-                        Referral code available:{" "}
-                        <span className="font-semibold">
-                          {referralConfig.referralPromoCode}
-                        </span>
-                      </p>
-                    ) : null}
-
                     <div className="space-y-2 mb-4 max-h-56 overflow-y-auto pr-1">
                       {couponsLoading ? (
                         <p className="text-sm text-gray-500">Loading coupons...</p>
