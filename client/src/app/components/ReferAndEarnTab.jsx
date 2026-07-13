@@ -87,7 +87,6 @@ export default function ReferAndEarnTab({ student }) {
   const [loading, setLoading] = useState(true);
   const [copyState, setCopyState] = useState("");
   const [sharing, setSharing] = useState(false);
-  const adminPromoCode = summary.referralPromoCode || "";
 
   useEffect(() => {
     if (!student?._id) return undefined;
@@ -267,30 +266,7 @@ export default function ReferAndEarnTab({ student }) {
               Coins are credited when a new student signs up using your referral code.
             </p>
 
-            <div className="mt-6 rounded-3xl border border-white/10 bg-slate-950/25 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blue-100/70">
-                Admin Referral Promo Code
-              </p>
-              <p className="mt-3 break-all text-2xl font-black tracking-[0.35em] text-white">
-                {adminPromoCode || "--------"}
-              </p>
-              <button
-                type="button"
-                onClick={() => handleCopy(adminPromoCode, "promo-code")}
-                className="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
-              >
-                {copyState === "promo-code" ? (
-                  <FaCheckCircle className="text-blue-300" />
-                ) : (
-                  <FaCopy />
-                )}
-                <span>
-                  {copyState === "promo-code" ? "Copied Promo Code" : "Copy Promo Code"}
-                </span>
-              </button>
-            </div>
-
-            <div className="mt-4 rounded-2xl border border-white/15 bg-white/5 p-3">
+            <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-3">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100/75">
                 Referral Benefit (One-Time Use)
               </p>
