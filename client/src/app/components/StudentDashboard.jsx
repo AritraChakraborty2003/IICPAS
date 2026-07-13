@@ -24,7 +24,6 @@ import {
   FaChevronLeft,
   FaChevronRight,
   FaFileAlt,
-  FaGift,
 } from "react-icons/fa";
 import toast from "react-hot-toast";
 
