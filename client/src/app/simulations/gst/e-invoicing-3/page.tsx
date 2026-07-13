@@ -27,7 +27,21 @@ import { SIDEBAR_SUB_OPTIONS } from "../../../components/simulationSidebarSubOpt
 
 type View = "home" | "dashboard" | "print";
 
-const navTabs = [
+type NavSuboption = {
+  label: string;
+  badge?: string;
+  subText?: string;
+  hasArrow?: boolean;
+  children?: { label: string; subText?: string }[];
+};
+
+type NavTab = {
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  suboptions: NavSuboption[];
+};
+
+const navTabs: NavTab[] = [
   {
     label: "Home",
     icon: Home,
@@ -45,13 +59,52 @@ const navTabs = [
     label: "Help",
     icon: HelpCircle,
     suboptions: [
-      { label: "User Manuals", hasArrow: true },
+      {
+        label: "User Manuals",
+        hasArrow: true,
+        children: [
+          { label: "Web System" },
+          { label: "Bulk Generation System" },
+        ],
+      },
       { label: "Videos" },
-      { label: "FAQs", hasArrow: true },
-      { label: "Documents", hasArrow: true },
+      {
+        label: "FAQs",
+        hasArrow: true,
+        subText: "Updated!",
+        children: [
+          { label: "Legal / Procedure" },
+          { label: "Technology / Portal / APIs", subText: "Updated!" },
+        ],
+      },
+      {
+        label: "Documents",
+        hasArrow: true,
+        children: [
+          { label: "e-Invoice" },
+          { label: "API Sandbox tool" },
+          { label: "QR Code" },
+          { label: "e-Com Operator" },
+          { label: "e-invoicing – Detailed Overview" },
+        ],
+      },
       { label: "Presentations", hasArrow: true },
-      { label: "Tools", hasArrow: true },
-      { label: "Downloads", hasArrow: true },
+      {
+        label: "Tools",
+        hasArrow: true,
+        children: [
+          { label: "Bulk Generation Tools" },
+          { label: "Verify QR Code App" },
+        ],
+      },
+      {
+        label: "Downloads",
+        hasArrow: true,
+        children: [
+          { label: "Sample Signed e-Invoice Json" },
+          { label: "Public keys", subText: "Updated!" },
+        ],
+      },
       { label: "Resolution for Common Errors" },
     ],
   },
@@ -696,7 +749,7 @@ export default function GSTEInvoicing3Page() {
                         {tab.suboptions.map((sub, sIdx) => (
                           <div
                             key={sIdx}
-                            className="px-4 py-2.5 hover:bg-blue-50 text-[13px] font-semibold text-slate-700 hover:text-blue-600 cursor-pointer border-b border-slate-100 last:border-0 flex flex-col justify-center transition-colors"
+                            className="relative group/sub px-4 py-2.5 hover:bg-blue-50 text-[13px] font-semibold text-slate-700 hover:text-blue-600 cursor-pointer border-b border-slate-100 last:border-0 flex flex-col justify-center transition-colors"
                           >
                             <div className="flex items-center justify-between">
                               <span>{sub.label}</span>
@@ -713,6 +766,23 @@ export default function GSTEInvoicing3Page() {
                               <span className="text-[10px] text-red-500 font-bold mt-0.5">
                                 {sub.subText}
                               </span>
+                            )}
+                            {sub.children && sub.children.length > 0 && (
+                              <div className="absolute left-full top-0 hidden group-hover/sub:block w-[240px] bg-white border border-slate-200 shadow-xl z-[9999] py-1 rounded-md">
+                                {sub.children.map((child, cIdx) => (
+                                  <div
+                                    key={cIdx}
+                                    className="px-4 py-2.5 hover:bg-blue-50 text-[13px] font-semibold text-slate-700 hover:text-blue-600 cursor-pointer border-b border-slate-100 last:border-0 transition-colors"
+                                  >
+                                    <span>{child.label}</span>
+                                    {child.subText && (
+                                      <span className="block text-[10px] text-red-500 font-bold mt-0.5">
+                                        {child.subText}
+                                      </span>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         ))}
