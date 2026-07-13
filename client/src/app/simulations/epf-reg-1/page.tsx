@@ -16,10 +16,10 @@ import {
   Bell,
   FileText,
   Info,
-  ChevronDown,
   LogOut,
   Home as HomeIcon,
 } from "lucide-react";
+import { EpfoNavItem } from "../../components/EpfoNavMenus";
 
 const LOGIN_USER = "APHYD1577313000";
 const LOGIN_PASS = "Epfo@123";
@@ -351,6 +351,7 @@ function TickOverlay() {
 
 // ─── Dashboard header: company strip + nav bar ──────────────────────────────
 function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => void }) {
+  const [openNavMenu, setOpenNavMenu] = useState<string | null>(null);
   const navItems = ["Member", "Establishment", "Payments", "Dashboards", "User", "Admin", "Online Services", "ABRY"];
   return (
     <header className="border-b border-[#ddd] bg-white">
@@ -401,12 +402,12 @@ function DashboardHeader({ user, onLogout }: { user: string; onLogout: () => voi
           <HomeIcon size={14} /> Home
         </button>
         {navItems.map((item) => (
-          <button
+          <EpfoNavItem
             key={item}
-            className="flex items-center gap-1 border-r border-white/15 px-4 py-2.5 text-[13px] font-medium hover:bg-white/10 whitespace-nowrap"
-          >
-            {item} <ChevronDown size={12} />
-          </button>
+            label={item}
+            open={openNavMenu === item}
+            onToggle={setOpenNavMenu}
+          />
         ))}
       </nav>
     </header>

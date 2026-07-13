@@ -20,6 +20,7 @@ import {
   LogOut,
   Home as HomeIcon,
 } from "lucide-react";
+import { EpfoNavItem } from "../../components/EpfoNavMenus";
 
 const LOGIN_USER = "APHYD1577313000";
 const LOGIN_PASS = "Epfo@123";
@@ -362,6 +363,7 @@ function DashboardHeader({
   step: number;
   setStep: (s: number) => void;
 }) {
+  const [openNavMenu, setOpenNavMenu] = useState<string | null>(null);
   const navItems = [
     "Establishment",
     "Payments",
@@ -474,12 +476,12 @@ function DashboardHeader({
         </div>
 
         {navItems.map((item) => (
-          <button
+          <EpfoNavItem
             key={item}
-            className="flex items-center gap-1 border-r border-white/15 px-4 py-2.5 text-[13px] font-medium hover:bg-white/10 whitespace-nowrap"
-          >
-            {item} <ChevronDown size={12} />
-          </button>
+            label={item}
+            open={openNavMenu === item}
+            onToggle={setOpenNavMenu}
+          />
         ))}
       </nav>
     </header>

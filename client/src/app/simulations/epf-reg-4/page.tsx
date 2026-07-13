@@ -16,6 +16,7 @@ import {
   X,
   ArrowLeft,
 } from "lucide-react";
+import { EpfoNavItem } from "../../components/EpfoNavMenus";
 
 const COMPANY_NAME = "IICPA PRIVATE LIMITED";
 const EST_ID = "APHYD1577313000";
@@ -153,6 +154,7 @@ function DashboardHeader({
   onNavClick: (item: string) => void;
   onLogout: () => void;
 }) {
+  const [openNavMenu, setOpenNavMenu] = useState<string | null>(null);
   return (
     <header className="relative border-b border-[#ddd] bg-white">
       <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-3">
@@ -233,13 +235,12 @@ function DashboardHeader({
         </div>
 
         {NAV_ITEMS.map((item) => (
-          <button
+          <EpfoNavItem
             key={item}
-            onClick={() => onNavClick(item)}
-            className="flex items-center gap-1 whitespace-nowrap border-r border-white/15 px-4 py-2.5 text-[13px] font-medium hover:bg-white/10"
-          >
-            {item} <ChevronDown size={12} />
-          </button>
+            label={item}
+            open={openNavMenu === item}
+            onToggle={setOpenNavMenu}
+          />
         ))}
       </nav>
     </header>
