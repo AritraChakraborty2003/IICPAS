@@ -130,7 +130,6 @@ function StudentDashboardContent() {
     { id: "testimonial", icon: <FaQuoteLeft />, label: "Testimonial" },
     { id: "my-payments", icon: <FaWallet />, label: "My Payments" },
     { id: "bookings", icon: <FaFileAlt />, label: "Bookings" },
-    { id: "refer-earn", icon: <FaGift />, label: "Refer & Earn" },
     { id: "support", icon: <FaHeadset />, label: "Support" },
     {
       id: "certificates",
@@ -160,7 +159,6 @@ function StudentDashboardContent() {
         "testimonial",
         "my-payments",
         "bookings",
-        "refer-earn",
         "support",
         "certificates",
         "profile",
