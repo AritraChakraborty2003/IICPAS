@@ -180,17 +180,6 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
         </div>
       </div>
 
-      <div className="mb-3 rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2 text-[11.5px] text-[#2b6cb0]">
-        {simConfig?.bannerText ? (
-          simConfig.bannerText
-        ) : (
-          <>
-            Use <strong>{loginUser}</strong> / <strong>{loginPass}</strong> to
-            sign in.
-          </>
-        )}
-      </div>
-
       <div className="space-y-3">
         <div className="flex items-center rounded border border-[#c0c0c0] bg-white">
           <span className="flex h-[42px] w-[40px] shrink-0 items-center justify-center text-[#888]">
