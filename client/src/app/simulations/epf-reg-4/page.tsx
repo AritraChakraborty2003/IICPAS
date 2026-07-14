@@ -438,8 +438,6 @@ function MemberRegistrationPage({
   const targetUan = digitsOnly(findFieldValue(simConfig, /uan/i)) || TARGET_UAN;
   const targetName = findFieldValue(simConfig, /name/i) || TARGET_NAME;
   const targetDob = findFieldValue(simConfig, /birth|dob/i) || TARGET_DOB;
-  const targetAadhaar =
-    findFieldValue(simConfig, /aadhaa?r|adhar/i) || "3535 6767 8888";
   const validateCreds = simConfig ? simConfig.requireCredentialValidation : true;
 
   const set = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
@@ -488,19 +486,6 @@ function MemberRegistrationPage({
         </div>
 
         <div className="space-y-4 px-6 py-6">
-          <div className="rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2 text-[11.5px] text-[#2b6cb0]">
-            {simConfig?.bannerText ? (
-              simConfig.bannerText
-            ) : (
-              <>
-                For this simulation, use UAN <strong>{targetUan}</strong>, Name{" "}
-                <strong>{targetName}</strong>, Date of Birth{" "}
-                <strong>{targetDob}</strong> (Aadhaar{" "}
-                <strong>{targetAadhaar}</strong>) to verify.
-              </>
-            )}
-          </div>
-
           <div>
             <span className="mb-2 block text-[14px] font-semibold text-[#333] underline">Previous Employment/UAN</span>
             <div className="flex gap-6">
