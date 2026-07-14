@@ -4,6 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 
 import OptimizedJoditEditor, { OptimizedJoditEditorHandle } from "./OptimizedJoditEditor";
+import TopicSimulationsManager, {
+  TopicSimEntry,
+  topicSimEntriesFromSaved,
+  syncTopicSimulations,
+} from "./TopicSimulationsManager";
 import { getApiBase } from "../../lib/apiBase";
 
 const STATIC_CDN_BASE =
@@ -102,9 +107,10 @@ export default function AssignmentBuilder({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [content, setContent] = useState<Content[]>([]);
   const [simulations, setSimulations] = useState<Simulation[]>([]);
+  const [topicSimulations, setTopicSimulations] = useState<TopicSimEntry[]>([]);
   const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "tasks" | "content" | "simulations" | "questionSets"
+    "tasks" | "content" | "simulations" | "topicSimulations" | "questionSets"
   >("content");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -166,6 +172,7 @@ export default function AssignmentBuilder({
       setTasks(data.tasks || []);
       setContent(data.content || []);
       setSimulations(data.simulations || []);
+      setTopicSimulations(topicSimEntriesFromSaved(data.topicSimulations));
       const mappedQuestionSets = (data.questionSets || []).map((qs: any) => ({
         id: qs._id || qs.id || Date.now().toString(),
         name: qs.name || "",
@@ -489,6 +496,11 @@ export default function AssignmentBuilder({
         }
       }
 
+      // Create/update credential overrides for linked portal simulations
+      const topicSimulationsPayload = await syncTopicSimulations(
+        topicSimulations
+      );
+
       // Prepare assignment data
       const assignmentData = {
         title: title.trim(),
@@ -506,6 +518,7 @@ export default function AssignmentBuilder({
           richTextContent: item.richTextContent,
           order: index,
         })),
+        topicSimulations: topicSimulationsPayload,
         simulations: simulations.map((sim, index) => ({
           type: sim.type,
           title: (sim.title || "").trim(),
@@ -668,6 +681,16 @@ export default function AssignmentBuilder({
               }`}
             >
               Simulations ({simulations.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("topicSimulations")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "topicSimulations"
+                  ? "border-purple-500 text-purple-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Topic Simulations ({topicSimulations.length})
             </button>
             <button
               onClick={() => setActiveTab("questionSets")}
@@ -1322,6 +1345,14 @@ export default function AssignmentBuilder({
                 )}
               </div>
             </div>
+          )}
+
+          {/* Topic Simulations Tab */}
+          {activeTab === "topicSimulations" && (
+            <TopicSimulationsManager
+              entries={topicSimulations}
+              onChange={setTopicSimulations}
+            />
           )}
 
           {/* Question Sets Tab */}

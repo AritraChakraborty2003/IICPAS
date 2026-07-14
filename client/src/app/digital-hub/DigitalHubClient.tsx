@@ -99,6 +99,7 @@ interface CaseStudy {
   tasks: Task[];
   content: Content[];
   simulations: Simulation[];
+  topicSimulations?: TopicSimulationLink[];
   questionSets: QuestionSet[];
   createdAt: string;
   updatedAt: string;
@@ -114,6 +115,7 @@ interface Assignment {
   tasks: Task[];
   content: Content[];
   simulations: Simulation[];
+  topicSimulations?: TopicSimulationLink[];
   questionSets: QuestionSet[];
   createdAt: string;
   updatedAt: string;
@@ -795,6 +797,108 @@ const injectSimulationCredBanners = (
 
   return changed ? doc.body.innerHTML : html;
 };
+
+interface TopicSimulationLink {
+  url: string;
+  title?: string;
+}
+
+// Portal simulation linked from a case study / assignment "Topic Simulations"
+// tab. Shows the admin-configured credentials banner (per-insert override via
+// ?simCfg=<id> first, slug config second) above an open-in-new-tab card.
+function TopicSimulationCard({
+  url,
+  title,
+  index,
+}: TopicSimulationLink & { index: number }) {
+  const [banner, setBanner] =
+    useState<SimulationCredBannerConfig | null>(null);
+
+  useEffect(() => {
+    const ref = simulationRefFromHref(url);
+    if (!ref) return;
+    let cancelled = false;
+
+    const parse = (config: {
+      credentialFields?: { label?: string; value?: string }[];
+      bannerText?: string;
+      isActive?: boolean;
+    } | null): SimulationCredBannerConfig | null => {
+      const fields = (config?.credentialFields || []).filter(
+        (field): field is { label: string; value: string } =>
+          Boolean(field?.label && field?.value),
+      );
+      const bannerText = String(config?.bannerText || "").trim();
+      if ((!fields.length && !bannerText) || config?.isActive === false) {
+        return null;
+      }
+      return { fields, bannerText };
+    };
+
+    const fetchConfig = (endpoint: string) =>
+      fetch(endpoint)
+        .then((res) => (res.ok ? res.json() : null))
+        .then(parse)
+        .catch(() => null);
+
+    const load = ref.overrideId
+      ? fetchConfig(
+          `${getApiBase()}/simulation-configs/public/override/${ref.overrideId}`,
+        ).then(
+          (config) =>
+            config ||
+            fetchConfig(`${getApiBase()}/simulation-configs/public/${ref.slug}`),
+        )
+      : fetchConfig(`${getApiBase()}/simulation-configs/public/${ref.slug}`);
+
+    load.then((config) => {
+      if (!cancelled && config) setBanner(config);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  return (
+    <div>
+      {banner && (
+        <div className="mb-2 flex flex-wrap items-center justify-center gap-1 rounded-xl border border-sky-300 bg-sky-100 px-4 py-2.5 text-center text-[13px] leading-relaxed text-sky-900">
+          {banner.bannerText ? (
+            <span>{banner.bannerText}</span>
+          ) : (
+            <span>
+              To perform this experiment, use{" "}
+              {banner.fields.map((field, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && " and "}
+                  <strong className="text-sky-950">{field.value}</strong> as{" "}
+                  {field.label.toLowerCase()}
+                </React.Fragment>
+              ))}{" "}
+              to login.
+            </span>
+          )}
+        </div>
+      )}
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-6 transition hover:border-blue-400 hover:bg-blue-100"
+      >
+        <div>
+          <h4 className="text-lg font-semibold text-blue-900">
+            {title || `Simulation ${index + 1}`}
+          </h4>
+          <p className="mt-1 break-all text-sm text-blue-700/80">{url}</p>
+        </div>
+        <span className="ml-4 shrink-0 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white">
+          Open Simulation
+        </span>
+      </a>
+    </div>
+  );
+}
 
 
 export default function DigitalHubClient({
@@ -5082,6 +5186,29 @@ export default function DigitalHubClient({
                         </div>
                       )}
 
+                    {/* Topic Simulations (portal simulation links) */}
+                    {selectedCaseStudy.topicSimulations &&
+                      selectedCaseStudy.topicSimulations.length > 0 && (
+                        <div className="mb-8">
+                          <h3 className="text-xl font-semibold text-emerald-800 mb-4">
+                            Practice Simulations (
+                            {selectedCaseStudy.topicSimulations.length})
+                          </h3>
+                          <div className="space-y-4">
+                            {selectedCaseStudy.topicSimulations.map(
+                              (sim, index) => (
+                                <TopicSimulationCard
+                                  key={`${sim.url}-${index}`}
+                                  url={sim.url}
+                                  title={sim.title}
+                                  index={index}
+                                />
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                     {/* Question Sets */}
                     {selectedCaseStudy.questionSets &&
                       selectedCaseStudy.questionSets.length > 0 && (
@@ -5564,6 +5691,29 @@ export default function DigitalHubClient({
                                     </div>
                                   )}
                                 </div>
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Topic Simulations (portal simulation links) */}
+                    {selectedAssignment.topicSimulations &&
+                      selectedAssignment.topicSimulations.length > 0 && (
+                        <div className="mb-8">
+                          <h3 className="text-xl font-semibold text-emerald-800 mb-4">
+                            Practice Simulations (
+                            {selectedAssignment.topicSimulations.length})
+                          </h3>
+                          <div className="space-y-4">
+                            {selectedAssignment.topicSimulations.map(
+                              (sim, index) => (
+                                <TopicSimulationCard
+                                  key={`${sim.url}-${index}`}
+                                  url={sim.url}
+                                  title={sim.title}
+                                  index={index}
+                                />
                               ),
                             )}
                           </div>

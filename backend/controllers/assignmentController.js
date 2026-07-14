@@ -10,6 +10,7 @@ export const createAssignment = async (req, res) => {
       tasks,
       content,
       simulations,
+      topicSimulations,
       questionSets,
     } = req.body;
 
@@ -20,6 +21,7 @@ export const createAssignment = async (req, res) => {
       tasks: tasks || [],
       content: content || [],
       simulations: simulations || [],
+      topicSimulations: topicSimulations || [],
       questionSets: (questionSets || []).map((qs) => {
         const rawQuestions = typeof qs.questions === "string" ? JSON.parse(qs.questions) : (qs.questions || []);
         return {
@@ -192,7 +194,7 @@ export const getAssignment = async (req, res) => {
 // Update assignment
 export const updateAssignment = async (req, res) => {
   try {
-    const { title, description, chapterId, tasks, content, simulations, questionSets } = req.body;
+    const { title, description, chapterId, tasks, content, simulations, topicSimulations, questionSets } = req.body;
 
     const assignment = await Assignment.findById(req.params.id);
     if (!assignment) {
@@ -205,6 +207,7 @@ export const updateAssignment = async (req, res) => {
     if (tasks !== undefined) assignment.tasks = tasks;
     if (content !== undefined) assignment.content = content;
     if (simulations !== undefined) assignment.simulations = simulations;
+    if (topicSimulations !== undefined) assignment.topicSimulations = topicSimulations;
     if (questionSets !== undefined) {
       const parsedSets = typeof questionSets === "string" ? JSON.parse(questionSets) : questionSets;
       assignment.questionSets = parsedSets.map((qs) => {

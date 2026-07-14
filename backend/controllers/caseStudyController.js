@@ -10,6 +10,7 @@ export const createCaseStudy = async (req, res) => {
       tasks,
       content,
       simulations,
+      topicSimulations,
       questionSets,
     } = req.body;
 
@@ -20,6 +21,7 @@ export const createCaseStudy = async (req, res) => {
       tasks: tasks || [],
       content: content || [],
       simulations: simulations || [],
+      topicSimulations: topicSimulations || [],
       questionSets: questionSets || [],
     });
 

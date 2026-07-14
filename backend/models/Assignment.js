@@ -140,6 +140,15 @@ const assignmentSchema = new mongoose.Schema({
   tasks: [taskSchema],
   content: [contentSchema],
   simulations: [simulationSchema],
+  // Links to portal simulation pages (/simulations/...). The URL carries
+  // ?simCfg=<id> when per-insert credentials are attached.
+  topicSimulations: [
+    {
+      _id: false,
+      url: { type: String, required: true },
+      title: { type: String, default: "" },
+    },
+  ],
   questionSets: [questionSetSchema],
   createdAt: {
     type: Date,

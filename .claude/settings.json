@@ -21,7 +21,8 @@
       "Bash(node drive-epf9.js \"http://localhost:3000/simulations/epf-reg-9?simCfg=6a560ea7a4d8d3331dd63a77\")",
       "Bash(curl -s -o /dev/null --max-time 2 http://localhost:8080/api/simulation-configs/public/epf-reg-10)",
       "Bash(curl -sf -o /dev/null --max-time 5 http://localhost:3000/simulations/epf-reg-10)",
-      "Bash(node drive-epf10.js \"http://localhost:3000/simulations/epf-reg-10?simCfg=6a56186af18f8bbf30d4e921\")"
+      "Bash(node drive-epf10.js \"http://localhost:3000/simulations/epf-reg-10?simCfg=6a56186af18f8bbf30d4e921\")",
+      "Bash(node -e \"Promise.all\\([import\\('./models/CaseStudy.js'\\),import\\('./models/Assignment.js'\\),import\\('./controllers/caseStudyController.js'\\),import\\('./controllers/assignmentController.js'\\)]\\).then\\(\\(\\)=>console.log\\('backend OK'\\)\\).catch\\(e=>{console.error\\(e\\);process.exit\\(1\\)}\\)\")"
     ]
   }
 }
