@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   User,
   Lock,
@@ -21,9 +21,24 @@ import {
   Calendar,
 } from "lucide-react";
 import { EpfoNavItem } from "../../components/EpfoNavMenus";
+import {
+  useSimulationConfig,
+  findFieldValue,
+} from "@/lib/useSimulationConfig";
 
+const SIMULATION_SLUG = "epf-reg-10";
 const LOGIN_USER = "APHYD1577313000";
 const COMPANY_NAME = "IICPA PRIVATE LIMITED";
+
+// "2021-08" (month input) -> "August 2021"
+const fmtMonth = (v: string) => {
+  if (!v) return "";
+  const date = new Date(`${v}-01T00:00:00`);
+  if (Number.isNaN(date.getTime())) return v;
+  return date.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+};
+
+const digitsOnly = (v: string) => v.replace(/\D/g, "");
 
 // ─── Top simulation disclaimer ─────────────────────────────────────────────
 function SimBanner() {
@@ -134,6 +149,67 @@ function EcrUploadView({
   setStep: (s: number) => void;
   onComplete: () => void;
 }) {
+  const [wageMonth, setWageMonth] = useState("");
+  const [salaryDate, setSalaryDate] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [fileType, setFileType] = useState<"ECR" | "Arrear">("ECR");
+  const [contrRate, setContrRate] = useState("12");
+  const [remarks, setRemarks] = useState("");
+  const [error, setError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Admin-configured values (per-insert override or Simulation Manager).
+  // When set, the form only accepts the configured wage month / salary date.
+  const simConfig = useSimulationConfig(SIMULATION_SLUG);
+  const targetWageMonth = findFieldValue(simConfig, /wage|month/i);
+  const targetSalaryDate = findFieldValue(simConfig, /salary|disburs/i);
+  const validateCreds = simConfig ? simConfig.requireCredentialValidation : true;
+  const normMonth = (value: string) =>
+    value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+  const upload = () => {
+    if (!wageMonth || !salaryDate || !fileName || !remarks.trim()) {
+      setError("Please fill all required fields marked with *");
+      return;
+    }
+    if (
+      validateCreds &&
+      targetWageMonth &&
+      normMonth(wageMonth) !== normMonth(targetWageMonth) &&
+      normMonth(fmtMonth(wageMonth)) !== normMonth(targetWageMonth)
+    ) {
+      setError(
+        `Wage Month does not match — for this simulation use ${targetWageMonth}`
+      );
+      return;
+    }
+    if (
+      validateCreds &&
+      targetSalaryDate &&
+      digitsOnly(salaryDate) !== digitsOnly(targetSalaryDate) &&
+      digitsOnly(salaryDate.split("-").reverse().join("/")) !==
+        digitsOnly(targetSalaryDate)
+    ) {
+      setError(
+        `Salary Disbursal Date does not match — for this simulation use ${targetSalaryDate}`
+      );
+      return;
+    }
+    setError("");
+    onComplete();
+  };
+
+  const cancel = () => {
+    setWageMonth("");
+    setSalaryDate("");
+    setFileName("");
+    setFileType("ECR");
+    setContrRate("12");
+    setRemarks("");
+    setError("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   return (
     <div className="mx-auto w-[98vw] flex-1 py-6">
       <div className="bg-white border border-[#ddd] shadow-sm text-[13px] text-[#333]">
@@ -214,17 +290,12 @@ function EcrUploadView({
                     Wage Month <span className="text-red-500">*</span>
                   </div>
                   <div>
-                    <div
-                      className={`inline-flex items-center border border-[#ccc] rounded overflow-hidden cursor-pointer ${step === 2 ? "animate-pulse ring-2 ring-red-500" : ""}`}
-                      onClick={onComplete}
-                    >
-                      <span className="px-3 py-1.5 text-[#999] bg-white">
-                        --------- ----
-                      </span>
-                      <span className="px-2 py-1.5 border-l border-[#ccc] bg-[#eee] hover:bg-[#e0e0e0]">
-                        <Calendar size={14} className="text-[#333]" />
-                      </span>
-                    </div>
+                    <input
+                      type="month"
+                      value={wageMonth}
+                      onChange={(e) => setWageMonth(e.target.value)}
+                      className="border border-[#ccc] rounded px-3 py-1.5 w-[180px] bg-white text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+                    />
                   </div>
                 </div>
 
@@ -235,10 +306,10 @@ function EcrUploadView({
                   </div>
                   <div>
                     <input
-                      type="text"
-                      placeholder="dd/mm/yyyy"
-                      className="border border-[#ccc] rounded px-3 py-1.5 w-[140px] text-[#555] bg-[#eee]"
-                      readOnly
+                      type="date"
+                      value={salaryDate}
+                      onChange={(e) => setSalaryDate(e.target.value)}
+                      className="border border-[#ccc] rounded px-3 py-1.5 w-[180px] bg-white text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
                     />
                   </div>
                 </div>
@@ -248,10 +319,25 @@ function EcrUploadView({
                     Select File <span className="text-red-500">*</span>
                   </div>
                   <div className="flex gap-2 items-center">
-                    <button className="border border-[#ccc] bg-[#f8f8f8] px-3 py-1 rounded text-[#333]">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".txt,.zip,.xls,.xlsx"
+                      className="hidden"
+                      onChange={(e) =>
+                        setFileName(e.target.files?.[0]?.name || "")
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border border-[#ccc] bg-[#f8f8f8] px-3 py-1 rounded text-[#333] hover:bg-[#ebebeb]"
+                    >
                       Choose file
                     </button>
-                    <span className="text-[#888]">No file chosen</span>
+                    <span className={fileName ? "text-[#333]" : "text-[#888]"}>
+                      {fileName || "No file chosen"}
+                    </span>
                   </div>
                 </div>
 
@@ -264,7 +350,8 @@ function EcrUploadView({
                       <input
                         type="radio"
                         name="fileType"
-                        defaultChecked
+                        checked={fileType === "ECR"}
+                        onChange={() => setFileType("ECR")}
                         className="accent-[#333]"
                       />{" "}
                       ECR
@@ -273,6 +360,8 @@ function EcrUploadView({
                       <input
                         type="radio"
                         name="fileType"
+                        checked={fileType === "Arrear"}
+                        onChange={() => setFileType("Arrear")}
                         className="accent-[#333]"
                       />{" "}
                       Arrear
@@ -285,8 +374,13 @@ function EcrUploadView({
                     Contribution Rate % <span className="text-red-500">*</span>
                   </div>
                   <div>
-                    <select className="border border-[#ccc] rounded px-3 py-1.5 w-[140px] bg-white outline-none">
+                    <select
+                      value={contrRate}
+                      onChange={(e) => setContrRate(e.target.value)}
+                      className="border border-[#ccc] rounded px-3 py-1.5 w-[140px] bg-white outline-none"
+                    >
                       <option>12</option>
+                      <option>10</option>
                     </select>
                   </div>
                 </div>
@@ -299,19 +393,33 @@ function EcrUploadView({
                     <input
                       type="text"
                       placeholder="Enter Remarks"
-                      className="border border-[#ccc] rounded px-3 py-1.5 w-[250px] bg-[#eee] outline-none"
-                      readOnly
+                      value={remarks}
+                      onChange={(e) => setRemarks(e.target.value)}
+                      className="border border-[#ccc] rounded px-3 py-1.5 w-[250px] bg-white text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
                     />
                   </div>
                 </div>
 
+                {error && (
+                  <div className="grid grid-cols-[180px_1fr] items-center gap-4">
+                    <div></div>
+                    <p className="text-[12.5px] text-[#e53e3e]">{error}</p>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-[180px_1fr] items-center gap-4 pt-2">
                   <div></div>
                   <div className="flex gap-2">
-                    <button className="bg-[#5bc0de] text-white px-4 py-1.5 rounded border border-[#46b8da] font-medium hover:bg-[#31b0d5]">
+                    <button
+                      onClick={upload}
+                      className="bg-[#5bc0de] text-white px-4 py-1.5 rounded border border-[#46b8da] font-medium hover:bg-[#31b0d5]"
+                    >
                       Upload
                     </button>
-                    <button className="bg-white text-[#333] px-4 py-1.5 rounded border border-[#ccc] hover:bg-[#ebebeb]">
+                    <button
+                      onClick={cancel}
+                      className="bg-white text-[#333] px-4 py-1.5 rounded border border-[#ccc] hover:bg-[#ebebeb]"
+                    >
                       Cancel
                     </button>
                   </div>
