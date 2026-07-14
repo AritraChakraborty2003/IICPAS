@@ -1085,6 +1085,8 @@ export default function EpfReg4Page() {
   const [launched, setLaunched] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [memberOpen, setMemberOpen] = useState(false);
+  // Bumped after a successful verify to remount a fresh verify form
+  const [regFormKey, setRegFormKey] = useState(0);
   const [toast, setToast] = useState("");
   const [tick, setTick] = useState("");
   const [basic, setBasic] = useState<BasicDetails | null>(null);
@@ -1113,11 +1115,15 @@ export default function EpfReg4Page() {
     }
   };
 
+  // The experiment ends at a successful verify: show the tick, then load a
+  // fresh verify form so the student can retry (no employee-details step).
   const handleVerified = (details: BasicDetails) => {
     setBasic(details);
     setTick("Details Verified!");
-    setTimeout(() => setTick(""), 1200);
-    setView("employeeDetails");
+    setTimeout(() => {
+      setTick("");
+      setRegFormKey((k) => k + 1);
+    }, 1400);
   };
 
   const handleSubmit = (newMemberId: string) => {
@@ -1162,6 +1168,7 @@ export default function EpfReg4Page() {
             onLogout={handleLogout}
           />
           <MemberRegistrationPage
+            key={regFormKey}
             pendingMembers={pendingMembers}
             onVerified={handleVerified}
             onCancel={() => setView("dashboard")}
