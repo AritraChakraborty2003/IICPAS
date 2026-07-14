@@ -147,6 +147,7 @@ const assignmentSchema = new mongoose.Schema({
       _id: false,
       url: { type: String, required: true },
       title: { type: String, default: "" },
+      imageUrl: { type: String, default: "" },
     },
   ],
   questionSets: [questionSetSchema],

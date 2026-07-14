@@ -1,7 +1,10 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { getApiBase } from "@/lib/apiBase";
+
+const STATIC_CDN_BASE =
+  process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
 
 // Editor for portal simulation links (/simulations/...) attached to a case
 // study or assignment, each with optional per-insert credentials that take
@@ -12,6 +15,7 @@ export interface TopicSimEntry {
   id: string;
   title: string;
   url: string;
+  imageUrl: string;
   credFields: { label: string; value: string }[];
   bannerText: string;
   validate: boolean;
@@ -22,6 +26,7 @@ export interface TopicSimEntry {
 export interface SavedTopicSimulation {
   url: string;
   title?: string;
+  imageUrl?: string;
 }
 
 const adminAuthHeaders = () => ({
@@ -54,6 +59,7 @@ export const topicSimEntriesFromSaved = (
     id: `tsim-${Date.now()}-${index}`,
     title: item.title || "",
     url: item.url || "",
+    imageUrl: item.imageUrl || "",
     credFields: [],
     bannerText: "",
     validate: true,
@@ -117,6 +123,7 @@ export const syncTopicSimulations = async (
         ? `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}simCfg=${overrideId}`
         : baseUrl,
       title: entry.title.trim(),
+      imageUrl: entry.imageUrl.trim(),
     });
   }
 
@@ -181,6 +188,7 @@ export default function TopicSimulationsManager({
         id: `tsim-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         title: "",
         url: "",
+        imageUrl: "",
         credFields: [
           { label: "Username", value: "" },
           { label: "Password", value: "" },
