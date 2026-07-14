@@ -6,7 +6,8 @@
       "Bash(node drive.js \"http://localhost:3457/simulations/epf-reg-1?simCfg=6a5607e8ca4f3c42d2a1a6c3\" override.png)",
       "Bash(timeout 90 bash -c 'until curl -sf -o /dev/null http://localhost:3000/simulations/epf-reg-1; do sleep 1; done')",
       "Bash(node drive.js \"http://localhost:3000/simulations/epf-reg-1?simCfg=6a5607e8ca4f3c42d2a1a6c3\" override.png)",
-      "Bash(node drive.js \"http://localhost:3000/simulations/epf-reg-1\" fallback.png)"
+      "Bash(node drive.js \"http://localhost:3000/simulations/epf-reg-1\" fallback.png)",
+      "Bash(node -e ' *)"
     ]
   }
 }
