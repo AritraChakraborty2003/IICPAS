@@ -167,8 +167,15 @@ function MemberSignInPanel({ onSuccess }: { onSuccess: (uan: string) => void }) 
       </div>
 
       <div className="mb-3 rounded border border-[#bee3da] bg-[#eaf7f4] px-3 py-2 text-[11.5px] text-[#157a72]">
-        Use <strong>{loginUan}</strong> / <strong>{loginPass}</strong>, captcha{" "}
-        <strong className="font-mono">{CAPTCHA_CODE}</strong> to sign in.
+        {simConfig?.bannerText ? (
+          simConfig.bannerText
+        ) : (
+          <>
+            Use <strong>{loginUan}</strong> / <strong>{loginPass}</strong>,
+            captcha <strong className="font-mono">{CAPTCHA_CODE}</strong> to
+            sign in.
+          </>
+        )}
       </div>
 
       <div className="space-y-3">
