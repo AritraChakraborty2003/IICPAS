@@ -326,6 +326,49 @@ export default function TopicSimulationsManager({
                 </div>
               </div>
 
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-600">
+                  Simulation image (optional — card background, like topic
+                  simulations)
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    value={entry.imageUrl}
+                    onChange={(e) =>
+                      update(entry.id, { imageUrl: e.target.value })
+                    }
+                    placeholder="https://cdn.iicpa.in/... or upload a file"
+                    className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  />
+                  <label className="cursor-pointer whitespace-nowrap rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50">
+                    {uploadingImageFor === entry.id
+                      ? "Uploading..."
+                      : "Upload Image"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      disabled={uploadingImageFor !== null}
+                      onChange={(e) => {
+                        handleImageUpload(entry.id, e.target.files?.[0]);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+                {entry.imageUrl.trim() && (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={entry.imageUrl}
+                    alt="Simulation card background preview"
+                    className="mt-2 h-24 w-full max-w-sm rounded-lg border border-gray-200 object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                )}
+              </div>
+
               <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-3">
                 <div className="mb-1 flex items-center justify-between">
                   <span className="text-sm font-semibold text-gray-700">

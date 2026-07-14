@@ -801,12 +801,13 @@ const injectSimulationCredBanners = (
 interface TopicSimulationLink {
   url: string;
   title?: string;
+  imageUrl?: string;
 }
 
 // Portal simulation linked from a case study / assignment "Topic Simulations"
 // tab. Shows the admin-configured credentials banner (per-insert override via
 // ?simCfg=<id> first, slug config second) above an open-in-new-tab card.
-function TopicSimulationCard({ url, title }: TopicSimulationLink) {
+function TopicSimulationCard({ url, title, imageUrl }: TopicSimulationLink) {
   const [banner, setBanner] =
     useState<SimulationCredBannerConfig | null>(null);
 
@@ -886,13 +887,23 @@ function TopicSimulationCard({ url, title }: TopicSimulationLink) {
           rel="noopener noreferrer"
           className="relative block min-h-[300px] text-inherit no-underline"
         >
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%), linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.55) 100%)",
-            }}
-          />
+          {imageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={imageUrl}
+              alt="Simulation background"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+              style={{ filter: "saturate(1.05)" }}
+            />
+          ) : (
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%), linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.55) 100%)",
+              }}
+            />
+          )}
           <div
             className="absolute inset-0"
             style={{
@@ -5218,6 +5229,7 @@ export default function DigitalHubClient({
                                   key={`${sim.url}-${index}`}
                                   url={sim.url}
                                   title={sim.title}
+                                  imageUrl={sim.imageUrl}
                                 />
                               ),
                             )}
@@ -5728,6 +5740,7 @@ export default function DigitalHubClient({
                                   key={`${sim.url}-${index}`}
                                   url={sim.url}
                                   title={sim.title}
+                                  imageUrl={sim.imageUrl}
                                 />
                               ),
                             )}
