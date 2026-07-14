@@ -21,7 +21,13 @@ import {
   Home as HomeIcon,
 } from "lucide-react";
 import { EpfoNavItem } from "../../components/EpfoNavMenus";
+import {
+  useSimulationConfig,
+  findFieldValue,
+  findUsernameValue,
+} from "@/lib/useSimulationConfig";
 
+const SIMULATION_SLUG = "epf-reg-6";
 const LOGIN_USER = "APHYD1577313000";
 const LOGIN_PASS = "Epfo@123";
 
@@ -138,13 +144,23 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+  // Admin-configured credentials (per-insert override or Simulation Manager)
+  // replace the hardcoded defaults when available.
+  const simConfig = useSimulationConfig(SIMULATION_SLUG);
+  const loginUser = findUsernameValue(simConfig) || LOGIN_USER;
+  const loginPass = findFieldValue(simConfig, /pass/i) || LOGIN_PASS;
+  const validateCreds = simConfig ? simConfig.requireCredentialValidation : true;
+
   const submit = () => {
     if (!form.username.trim() || !form.password.trim()) {
       setError("Username and Password are required");
       return;
     }
-    if (form.username !== LOGIN_USER || form.password !== LOGIN_PASS) {
-      setError(`Invalid credentials — use ${LOGIN_USER} / ${LOGIN_PASS}`);
+    if (
+      validateCreds &&
+      (form.username !== loginUser || form.password !== loginPass)
+    ) {
+      setError(`Invalid credentials — use ${loginUser} / ${loginPass}`);
       return;
     }
     setError("");
@@ -169,7 +185,7 @@ function SignInPanel({ onSuccess }: { onSuccess: (user: string) => void }) {
       </div>
 
       <div className="mb-3 rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2 text-[11.5px] text-[#2b6cb0]">
-        Use <strong>{LOGIN_USER}</strong> / <strong>{LOGIN_PASS}</strong> to
+        Use <strong>{loginUser}</strong> / <strong>{loginPass}</strong> to
         sign in.
       </div>
 
