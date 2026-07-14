@@ -11,7 +11,9 @@
       "Bash(curl -s -o /dev/null --max-time 2 http://localhost:8080/api/simulation-configs/public/epf-reg-1)",
       "Bash(curl -sf -o /dev/null --max-time 5 http://localhost:3000/admin-dashboard)",
       "Bash(npm start *)",
-      "Bash(curl -s -o /dev/null -w \"admin-dashboard recompiled: %{http_code}\\\\n\" --max-time 120 http://localhost:3000/admin-dashboard)"
+      "Bash(curl -s -o /dev/null -w \"admin-dashboard recompiled: %{http_code}\\\\n\" --max-time 120 http://localhost:3000/admin-dashboard)",
+      "Bash(npx next *)",
+      "Bash(npx eslint *)"
     ]
   }
 }

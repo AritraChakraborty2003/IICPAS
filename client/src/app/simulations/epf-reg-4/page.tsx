@@ -17,7 +17,12 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { EpfoNavItem } from "../../components/EpfoNavMenus";
+import {
+  useSimulationConfig,
+  findFieldValue,
+} from "@/lib/useSimulationConfig";
 
+const SIMULATION_SLUG = "epf-reg-4";
 const COMPANY_NAME = "IICPA PRIVATE LIMITED";
 const EST_ID = "APHYD1577313000";
 const COMPANY_LIN = "9778613527";
@@ -427,6 +432,16 @@ function MemberRegistrationPage({
   const [form, setForm] = useState({ uan: "", aadhaar: "", name: "", dob: "" });
   const [error, setError] = useState("");
 
+  // Admin-configured values (per-insert override or Simulation Manager)
+  // replace the hardcoded answer key when available.
+  const simConfig = useSimulationConfig(SIMULATION_SLUG);
+  const targetUan = digitsOnly(findFieldValue(simConfig, /uan/i)) || TARGET_UAN;
+  const targetName = findFieldValue(simConfig, /name/i) || TARGET_NAME;
+  const targetDob = findFieldValue(simConfig, /birth|dob/i) || TARGET_DOB;
+  const targetAadhaar =
+    findFieldValue(simConfig, /aadhaa?r|adhar/i) || "3535 6767 8888";
+  const validateCreds = simConfig ? simConfig.requireCredentialValidation : true;
+
   const set = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const verify = () => {
@@ -434,17 +449,19 @@ function MemberRegistrationPage({
       setError("UAN, Name and Date of Birth are required");
       return;
     }
-    if (digitsOnly(form.uan) !== TARGET_UAN) {
-      setError(`UAN not found. For this simulation use UAN ${TARGET_UAN}`);
-      return;
-    }
-    if (norm(form.name) !== norm(TARGET_NAME)) {
-      setError(`Name does not match EPFO records for this UAN — expected "${TARGET_NAME}"`);
-      return;
-    }
-    if (digitsOnly(form.dob) !== digitsOnly(TARGET_DOB)) {
-      setError(`Date of Birth does not match EPFO records — expected ${TARGET_DOB}`);
-      return;
+    if (validateCreds) {
+      if (digitsOnly(form.uan) !== targetUan) {
+        setError(`UAN not found. For this simulation use UAN ${targetUan}`);
+        return;
+      }
+      if (norm(form.name) !== norm(targetName)) {
+        setError(`Name does not match EPFO records for this UAN — expected "${targetName}"`);
+        return;
+      }
+      if (digitsOnly(form.dob) !== digitsOnly(targetDob)) {
+        setError(`Date of Birth does not match EPFO records — expected ${targetDob}`);
+        return;
+      }
     }
     setError("");
     onVerified({ uan: form.uan.trim(), aadhaar: form.aadhaar.trim(), name: form.name.trim(), dob: form.dob.trim() });
@@ -472,8 +489,16 @@ function MemberRegistrationPage({
 
         <div className="space-y-4 px-6 py-6">
           <div className="rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2 text-[11.5px] text-[#2b6cb0]">
-            For this simulation, use UAN <strong>{TARGET_UAN}</strong>, Name <strong>{TARGET_NAME}</strong>, Date of
-            Birth <strong>{TARGET_DOB}</strong> (Aadhaar <strong>3535 6767 8888</strong>) to verify.
+            {simConfig?.bannerText ? (
+              simConfig.bannerText
+            ) : (
+              <>
+                For this simulation, use UAN <strong>{targetUan}</strong>, Name{" "}
+                <strong>{targetName}</strong>, Date of Birth{" "}
+                <strong>{targetDob}</strong> (Aadhaar{" "}
+                <strong>{targetAadhaar}</strong>) to verify.
+              </>
+            )}
           </div>
 
           <div>
