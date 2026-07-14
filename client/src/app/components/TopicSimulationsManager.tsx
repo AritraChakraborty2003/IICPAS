@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { getApiBase } from "@/lib/apiBase";
 
@@ -137,6 +137,42 @@ export default function TopicSimulationsManager({
   entries: TopicSimEntry[];
   onChange: (entries: TopicSimEntry[]) => void;
 }) {
+  const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(
+    null
+  );
+
+  const handleImageUpload = async (entryId: string, file?: File | null) => {
+    if (!file || uploadingImageFor) return;
+    try {
+      setUploadingImageFor(entryId);
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await axios.post(
+        `${STATIC_CDN_BASE}/upload/image`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      const url: string =
+        res.data?.data?.cdnUrl || res.data?.cdnUrl || res.data?.imageUrl || "";
+      if (url) {
+        onChange(
+          entries.map((item) =>
+            item.id === entryId ? { ...item, imageUrl: url } : item
+          )
+        );
+      } else {
+        alert("Image upload did not return a URL");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } }; message?: string };
+      alert(
+        "Image upload failed: " + (error?.response?.data?.error || error?.message)
+      );
+    } finally {
+      setUploadingImageFor(null);
+    }
+  };
+
   // Prefill credential fields for saved entries that carry an override id
   useEffect(() => {
     entries.forEach((entry) => {
