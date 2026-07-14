@@ -2978,6 +2978,26 @@ export default function AddOrEditTopicForm({
                     size="small"
                     fullWidth
                   />
+                  {simulationLinkUrl.trim() && (
+                    <TextField
+                      label="Slug (auto-generated from the URL)"
+                      value={
+                        simulationSlugFromUrl(
+                          normalizeUrl(simulationLinkUrl)
+                        ) || "— not a /simulations/... URL —"
+                      }
+                      size="small"
+                      fullWidth
+                      InputProps={{ readOnly: true }}
+                      sx={{
+                        "& .MuiInputBase-input": {
+                          color: "#64748b",
+                          fontFamily: "monospace",
+                          fontSize: 13,
+                        },
+                      }}
+                    />
+                  )}
 
                   <Box
                     sx={{
@@ -3181,6 +3201,16 @@ export default function AddOrEditTopicForm({
                           >
                             {item.url}
                           </Link>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              display: "block",
+                              color: "#94a3b8",
+                              fontFamily: "monospace",
+                            }}
+                          >
+                            Slug: {simulationSlugFromUrl(item.url) || "—"}
+                          </Typography>
                         </Box>
                         <Stack direction="row" spacing={1}>
                           <Button
@@ -3275,6 +3305,22 @@ export default function AddOrEditTopicForm({
                               {savingSimUrl ? "Saving..." : "Save"}
                             </Button>
                           </Stack>
+                          {editSimUrlValue.trim() && (
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                display: "block",
+                                mt: 0.75,
+                                color: "#94a3b8",
+                                fontFamily: "monospace",
+                              }}
+                            >
+                              Slug:{" "}
+                              {simulationSlugFromUrl(
+                                normalizeUrl(editSimUrlValue)
+                              ) || "— not a /simulations/... URL —"}
+                            </Typography>
+                          )}
                         </Box>
                       )}
 
