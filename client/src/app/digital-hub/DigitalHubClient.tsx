@@ -806,11 +806,7 @@ interface TopicSimulationLink {
 // Portal simulation linked from a case study / assignment "Topic Simulations"
 // tab. Shows the admin-configured credentials banner (per-insert override via
 // ?simCfg=<id> first, slug config second) above an open-in-new-tab card.
-function TopicSimulationCard({
-  url,
-  title,
-  index,
-}: TopicSimulationLink & { index: number }) {
+function TopicSimulationCard({ url, title }: TopicSimulationLink) {
   const [banner, setBanner] =
     useState<SimulationCredBannerConfig | null>(null);
 
@@ -880,22 +876,43 @@ function TopicSimulationCard({
           )}
         </div>
       )}
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 p-6 transition hover:border-blue-400 hover:bg-blue-100"
+      <div
+        className="overflow-hidden rounded-[18px] border border-blue-300 bg-blue-100"
+        style={{ boxShadow: "0 14px 34px rgba(0,0,0,0.16)" }}
       >
-        <div>
-          <h4 className="text-lg font-semibold text-blue-900">
-            {title || `Simulation ${index + 1}`}
-          </h4>
-          <p className="mt-1 break-all text-sm text-blue-700/80">{url}</p>
-        </div>
-        <span className="ml-4 shrink-0 rounded-full bg-blue-600 px-5 py-2 text-sm font-semibold text-white">
-          Open Simulation
-        </span>
-      </a>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="relative block min-h-[300px] text-inherit no-underline"
+        >
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%), linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.55) 100%)",
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.26), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.18), transparent 26%), linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.58) 100%)",
+            }}
+          />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div
+              className="inline-flex min-w-[240px] items-center justify-center rounded-full border border-blue-600/15 bg-white/95 px-7 py-4 text-[0.95rem] font-extrabold uppercase tracking-[0.1em] text-blue-700"
+              style={{ boxShadow: "0 12px 28px rgba(0,0,0,0.22)" }}
+            >
+              {title || "Experiment"}
+            </div>
+          </div>
+          <div className="absolute bottom-4 left-4 right-4 break-words text-center text-[0.82rem] leading-relaxed text-white/95">
+            {url}
+          </div>
+        </a>
+      </div>
     </div>
   );
 }
@@ -5201,7 +5218,6 @@ export default function DigitalHubClient({
                                   key={`${sim.url}-${index}`}
                                   url={sim.url}
                                   title={sim.title}
-                                  index={index}
                                 />
                               ),
                             )}
@@ -5712,7 +5728,6 @@ export default function DigitalHubClient({
                                   key={`${sim.url}-${index}`}
                                   url={sim.url}
                                   title={sim.title}
-                                  index={index}
                                 />
                               ),
                             )}
