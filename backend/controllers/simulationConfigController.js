@@ -226,9 +226,10 @@ export const createOverride = async (req, res) => {
 // Admin — edit the credentials of an already-inserted simulation
 export const updateOverride = async (req, res) => {
   try {
-    const { name, credentialFields, bannerText, requireCredentialValidation, isActive } =
+    const { slug, name, credentialFields, bannerText, requireCredentialValidation, isActive } =
       req.body;
     const update = {};
+    if (slug) update.slug = String(slug).toLowerCase().trim();
     if (name !== undefined) update.name = name;
     const sanitizedFields = sanitizeCredentialFields(credentialFields);
     if (sanitizedFields !== null) update.credentialFields = sanitizedFields;

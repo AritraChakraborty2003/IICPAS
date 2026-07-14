@@ -226,6 +226,10 @@ export default function AddOrEditTopicForm({
   const [editCredBanner, setEditCredBanner] = useState("");
   const [editCredValidate, setEditCredValidate] = useState(true);
   const [savingSimCreds, setSavingSimCreds] = useState(false);
+  // URL/slug editor for an already-inserted simulation card
+  const [editingSimUrl, setEditingSimUrl] = useState(null); // cardId | null
+  const [editSimUrlValue, setEditSimUrlValue] = useState("");
+  const [savingSimUrl, setSavingSimUrl] = useState(false);
   const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -1000,6 +1004,204 @@ export default function AddOrEditTopicForm({
     } catch (error) {
       console.error("Failed to remove simulation card:", error);
       Swal.fire("Error", "Could not remove the simulation block.", "error");
+    }
+  };
+
+  // Rewrite the anchor href of one inserted simulation card in the content
+  const updateSimulationCardUrl = (simulationId, newUrl) => {
+    if (!simulationId || !content) return;
+    try {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(content, "text/html");
+      const anchor = doc.querySelector(
+        `[data-simulation-card='true'][data-simulation-id='${CSS.escape(
+          simulationId
+        )}'] a`
+      );
+      if (!anchor) return;
+      anchor.setAttribute("href", newUrl);
+      const updatedHtml = doc.body.innerHTML;
+      setContent(updatedHtml);
+      if (editor.current && typeof editor.current.value !== "undefined") {
+        editor.current.value = updatedHtml;
+      }
+    } catch (error) {
+      console.error("Failed to update simulation card URL:", error);
+    }
+  };
+
+  const openSimCredEditor = async (item) => {
+    const overrideId = item.url.match(/[?&]simCfg=([^&]+)/)?.[1] || "";
+    setEditCredFields([
+      { label: "Username", value: "" },
+      { label: "Password", value: "" },
+    ]);
+    setEditCredBanner("");
+    setEditCredValidate(true);
+    setEditingSimCreds({ cardId: item.id, overrideId });
+
+    if (overrideId) {
+      try {
+        const response = await axios.get(
+          `${API_BASE}/simulation-configs/public/override/${overrideId}`
+        );
+        const data = response.data || {};
+        setEditCredFields(
+          data.credentialFields?.length
+            ? data.credentialFields.map((field) => ({
+                label: field.label || "",
+                value: field.value || "",
+              }))
+            : [{ label: "", value: "" }]
+        );
+        setEditCredBanner(data.bannerText || "");
+        setEditCredValidate(data.requireCredentialValidation !== false);
+      } catch (error) {
+        console.error("Failed to load simulation credentials:", error);
+      }
+    }
+  };
+
+  const saveSimCredEditor = async (item) => {
+    if (savingSimCreds || !editingSimCreds) return;
+    const credFields = editCredFields.filter(
+      (field) => field.label.trim() && field.value.trim()
+    );
+    const credBanner = editCredBanner.trim();
+    if (!credFields.length && !credBanner) {
+      Swal.fire(
+        "Validation",
+        "Add at least one credential field (or banner text), or use Remove Credentials instead.",
+        "warning"
+      );
+      return;
+    }
+
+    try {
+      setSavingSimCreds(true);
+      if (editingSimCreds.overrideId) {
+        await axios.put(
+          `${API_BASE}/simulation-configs/overrides/${editingSimCreds.overrideId}`,
+          {
+            credentialFields: credFields,
+            bannerText: credBanner,
+            requireCredentialValidation: editCredValidate,
+          },
+          adminAuthHeaders()
+        );
+      } else {
+        const baseUrl = item.url.replace(/[?&]simCfg=[^&]+/, "");
+        const slug = simulationSlugFromUrl(baseUrl);
+        if (!slug) {
+          Swal.fire(
+            "Validation",
+            "Credentials can only be attached to /simulations/... URLs.",
+            "warning"
+          );
+          return;
+        }
+        const response = await axios.post(
+          `${API_BASE}/simulation-configs/overrides`,
+          {
+            slug,
+            name: slug,
+            credentialFields: credFields,
+            bannerText: credBanner,
+            requireCredentialValidation: editCredValidate,
+          },
+          adminAuthHeaders()
+        );
+        const overrideId = response.data?._id;
+        if (overrideId) {
+          updateSimulationCardUrl(
+            item.id,
+            `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}simCfg=${overrideId}`
+          );
+        }
+      }
+      setEditingSimCreds(null);
+      Swal.fire("Saved", "Simulation credentials updated.", "success");
+    } catch (error) {
+      console.error("Failed to save simulation credentials:", error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message ||
+          "Could not save the simulation credentials.",
+        "error"
+      );
+    } finally {
+      setSavingSimCreds(false);
+    }
+  };
+
+  // Change the URL (and therefore the slug) of an inserted simulation card.
+  // Keeps the attached credentials: the override follows to the new slug.
+  const saveSimUrlEdit = async (item) => {
+    if (savingSimUrl) return;
+    const normalizedUrl = normalizeUrl(editSimUrlValue).replace(
+      /[?&]simCfg=[^&]+/,
+      ""
+    );
+    if (!normalizedUrl) {
+      Swal.fire("Validation", "Please enter a simulation page URL.", "warning");
+      return;
+    }
+
+    const overrideId = item.url.match(/[?&]simCfg=([^&]+)/)?.[1] || "";
+    let finalUrl = normalizedUrl;
+
+    try {
+      setSavingSimUrl(true);
+      if (overrideId) {
+        const slug = simulationSlugFromUrl(normalizedUrl);
+        if (!slug) {
+          Swal.fire(
+            "Validation",
+            "This card has credentials attached, so the URL must stay a /simulations/... URL.",
+            "warning"
+          );
+          return;
+        }
+        await axios.put(
+          `${API_BASE}/simulation-configs/overrides/${overrideId}`,
+          { slug, name: slug },
+          adminAuthHeaders()
+        );
+        finalUrl += `${finalUrl.includes("?") ? "&" : "?"}simCfg=${overrideId}`;
+      }
+      updateSimulationCardUrl(item.id, finalUrl);
+      setEditingSimUrl(null);
+      Swal.fire("Updated", "Simulation URL updated.", "success");
+    } catch (error) {
+      console.error("Failed to update simulation URL:", error);
+      Swal.fire(
+        "Error",
+        error.response?.data?.message || "Could not update the simulation URL.",
+        "error"
+      );
+    } finally {
+      setSavingSimUrl(false);
+    }
+  };
+
+  const removeSimCredsFromCard = async (item) => {
+    const overrideId = item.url.match(/[?&]simCfg=([^&]+)/)?.[1];
+    if (!overrideId) return;
+    try {
+      setSavingSimCreds(true);
+      await axios
+        .delete(
+          `${API_BASE}/simulation-configs/overrides/${overrideId}`,
+          adminAuthHeaders()
+        )
+        .catch((error) =>
+          console.error("Failed to delete simulation override:", error)
+        );
+      updateSimulationCardUrl(item.id, item.url.replace(/[?&]simCfg=[^&]+/, ""));
+      setEditingSimCreds(null);
+      Swal.fire("Removed", "Simulation credentials removed.", "success");
+    } finally {
+      setSavingSimCreds(false);
     }
   };
 
@@ -2930,14 +3132,18 @@ export default function AddOrEditTopicForm({
                       <Box
                         key={`${item.id || item.url || index}`}
                         sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 2,
                           p: 1.5,
                           borderRadius: 2,
                           border: "1px solid #c7ddff",
                           background: "#f8fbff",
+                        }}
+                      >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 2,
                         }}
                       >
                         <Box sx={{ minWidth: 0 }}>
@@ -2962,27 +3168,257 @@ export default function AddOrEditTopicForm({
                               </Box>
                             )}
                           </Typography>
-                          <Typography
+                          <Link
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             variant="caption"
-                            color="text.secondary"
                             sx={{
                               wordBreak: "break-all",
                               display: "block",
                             }}
+                            title="Open this simulation in a new tab"
                           >
                             {item.url}
-                          </Typography>
+                          </Link>
                         </Box>
-                        <Button
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          onClick={() =>
-                            removeSimulationCardFromContent(item.id)
-                          }
+                        <Stack direction="row" spacing={1}>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                              if (editingSimUrl === item.id) {
+                                setEditingSimUrl(null);
+                              } else {
+                                setEditSimUrlValue(
+                                  item.url.replace(/[?&]simCfg=[^&]+/, "")
+                                );
+                                setEditingSimUrl(item.id);
+                                setEditingSimCreds(null);
+                              }
+                            }}
+                          >
+                            {editingSimUrl === item.id ? "Close" : "Edit URL"}
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() =>
+                              editingSimCreds?.cardId === item.id
+                                ? setEditingSimCreds(null)
+                                : (setEditingSimUrl(null),
+                                  openSimCredEditor(item))
+                            }
+                          >
+                            {editingSimCreds?.cardId === item.id
+                              ? "Close"
+                              : item.hasCustomCreds
+                              ? "Edit Credentials"
+                              : "Add Credentials"}
+                          </Button>
+                          <Button
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            onClick={() =>
+                              removeSimulationCardFromContent(item.id)
+                            }
+                          >
+                            Delete
+                          </Button>
+                        </Stack>
+                      </Box>
+
+                      {editingSimUrl === item.id && (
+                        <Box
+                          sx={{
+                            mt: 1.5,
+                            p: 1.5,
+                            borderRadius: 2,
+                            border: "1px dashed #bfdbfe",
+                            background: "#ffffff",
+                          }}
                         >
-                          Delete
-                        </Button>
+                          <Typography
+                            variant="body2"
+                            sx={{ fontWeight: 600, mb: 1 }}
+                          >
+                            Change simulation URL
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ display: "block", mb: 1 }}
+                          >
+                            Attached credentials follow the new URL — the
+                            override&apos;s slug is updated to match.
+                          </Typography>
+                          <Stack direction="row" spacing={1}>
+                            <TextField
+                              label="Simulation URL"
+                              value={editSimUrlValue}
+                              onChange={(e) =>
+                                setEditSimUrlValue(e.target.value)
+                              }
+                              placeholder="/simulations/epf-reg-1"
+                              size="small"
+                              fullWidth
+                            />
+                            <Button
+                              size="small"
+                              variant="contained"
+                              disabled={
+                                savingSimUrl || !editSimUrlValue.trim()
+                              }
+                              onClick={() => saveSimUrlEdit(item)}
+                            >
+                              {savingSimUrl ? "Saving..." : "Save"}
+                            </Button>
+                          </Stack>
+                        </Box>
+                      )}
+
+                      {editingSimCreds?.cardId === item.id && (
+                        <Box
+                          sx={{
+                            mt: 1.5,
+                            p: 1.5,
+                            borderRadius: 2,
+                            border: "1px dashed #bfdbfe",
+                            background: "#ffffff",
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              mb: 1,
+                            }}
+                          >
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              Credentials for this simulation
+                            </Typography>
+                            <Button
+                              size="small"
+                              startIcon={<Add fontSize="small" />}
+                              onClick={() =>
+                                setEditCredFields((prev) => [
+                                  ...prev,
+                                  { label: "", value: "" },
+                                ])
+                              }
+                            >
+                              Add Field
+                            </Button>
+                          </Box>
+                          <Stack spacing={1}>
+                            {editCredFields.map((field, fieldIndex) => (
+                              <Stack
+                                key={fieldIndex}
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                              >
+                                <TextField
+                                  label="Label"
+                                  value={field.label}
+                                  onChange={(e) =>
+                                    setEditCredFields((prev) =>
+                                      prev.map((f, i) =>
+                                        i === fieldIndex
+                                          ? { ...f, label: e.target.value }
+                                          : f
+                                      )
+                                    )
+                                  }
+                                  placeholder="e.g. Username"
+                                  size="small"
+                                  sx={{ width: "40%" }}
+                                />
+                                <TextField
+                                  label="Value"
+                                  value={field.value}
+                                  onChange={(e) =>
+                                    setEditCredFields((prev) =>
+                                      prev.map((f, i) =>
+                                        i === fieldIndex
+                                          ? { ...f, value: e.target.value }
+                                          : f
+                                      )
+                                    )
+                                  }
+                                  size="small"
+                                  sx={{ flex: 1 }}
+                                />
+                                <IconButton
+                                  size="small"
+                                  onClick={() =>
+                                    setEditCredFields((prev) =>
+                                      prev.filter((_, i) => i !== fieldIndex)
+                                    )
+                                  }
+                                >
+                                  <Close fontSize="small" />
+                                </IconButton>
+                              </Stack>
+                            ))}
+                            <TextField
+                              label="Banner text (optional)"
+                              value={editCredBanner}
+                              onChange={(e) => setEditCredBanner(e.target.value)}
+                              placeholder="Leave empty to auto-generate from the fields"
+                              size="small"
+                              fullWidth
+                              multiline
+                              rows={2}
+                            />
+                            <label
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 8,
+                                fontSize: 13,
+                                color: "#475569",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={editCredValidate}
+                                onChange={(e) =>
+                                  setEditCredValidate(e.target.checked)
+                                }
+                              />
+                              Validate these credentials on the simulation login
+                            </label>
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              justifyContent="flex-end"
+                            >
+                              {item.hasCustomCreds && (
+                                <Button
+                                  size="small"
+                                  color="error"
+                                  disabled={savingSimCreds}
+                                  onClick={() => removeSimCredsFromCard(item)}
+                                >
+                                  Remove Credentials
+                                </Button>
+                              )}
+                              <Button
+                                size="small"
+                                variant="contained"
+                                disabled={savingSimCreds}
+                                onClick={() => saveSimCredEditor(item)}
+                              >
+                                {savingSimCreds ? "Saving..." : "Save"}
+                              </Button>
+                            </Stack>
+                          </Stack>
+                        </Box>
+                      )}
                       </Box>
                     ))}
                   </Stack>
