@@ -15,7 +15,12 @@ import {
   Download,
 } from "lucide-react";
 import { EpfoNavItem } from "../../components/EpfoNavMenus";
+import {
+  useSimulationConfig,
+  findFieldValue,
+} from "@/lib/useSimulationConfig";
 
+const SIMULATION_SLUG = "epf-reg-9";
 const COMPANY_NAME = "IICPA PRIVATE LIMITED";
 const EST_ID = "APHYD1577313000";
 const EMPLOYER_PROFILE_NAME = "IICPA PRIVATE LIMITED";
@@ -420,6 +425,20 @@ function EcrUploadPage({
 
   const [tick, setTick] = useState("");
 
+  // Admin-configured wage month (per-insert override or Simulation Manager).
+  // When set, the ECR forms only accept that month.
+  const simConfig = useSimulationConfig(SIMULATION_SLUG);
+  const targetWageMonth = findFieldValue(simConfig, /wage|month/i);
+  const validateCreds = simConfig ? simConfig.requireCredentialValidation : true;
+  // Accept "2021-08" (month input format) as well as "August 2021"
+  const normMonth = (value: string) =>
+    value.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const wageMonthMatches = (input: string) =>
+    !validateCreds ||
+    !targetWageMonth ||
+    normMonth(input) === normMonth(targetWageMonth) ||
+    normMonth(fmtMonth(input)) === normMonth(targetWageMonth);
+
   const resetDownload = () => {
     setDlWageMonth("");
     setDlFileType("ECR");
@@ -429,6 +448,12 @@ function EcrUploadPage({
   const download = () => {
     if (!dlWageMonth) {
       setDlError("Please select Wage Month");
+      return;
+    }
+    if (!wageMonthMatches(dlWageMonth)) {
+      setDlError(
+        `Wage Month does not match — for this simulation use ${targetWageMonth}`
+      );
       return;
     }
     setDlError("");
@@ -456,6 +481,12 @@ function EcrUploadPage({
   const upload = () => {
     if (!upWageMonth || !upSalaryDate || !upFileName || !upFileType || !upRemarks.trim()) {
       setUpError("Please fill all required fields marked with *");
+      return;
+    }
+    if (!wageMonthMatches(upWageMonth)) {
+      setUpError(
+        `Wage Month does not match — for this simulation use ${targetWageMonth}`
+      );
       return;
     }
     setUpError("");
@@ -508,6 +539,19 @@ function EcrUploadPage({
         <span>/</span>
         <span className="font-semibold text-[#333]">ECR Upload</span>
       </div>
+
+      {(simConfig?.bannerText || targetWageMonth) && (
+        <div className="rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2 text-[11.5px] text-[#2b6cb0]">
+          {simConfig?.bannerText ? (
+            simConfig.bannerText
+          ) : (
+            <>
+              For this simulation, use Wage Month{" "}
+              <strong>{targetWageMonth}</strong>.
+            </>
+          )}
+        </div>
+      )}
 
       <Collapsible title="Download ECR File:" defaultOpen highlight>
         <div className="flex flex-wrap items-end gap-4">
