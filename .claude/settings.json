@@ -18,7 +18,10 @@
       "Bash(curl -sf -o /dev/null --max-time 5 http://localhost:3000/simulations/epf-reg-4)",
       "Bash(node drive-epf4.js \"http://localhost:3000/simulations/epf-reg-4?simCfg=6a560de685da5354dd8e255a\")",
       "Bash(curl -s -o /dev/null -w \"admin-dashboard: %{http_code}\\\\n\" --max-time 120 http://localhost:3000/admin-dashboard)",
-      "Bash(node drive-epf9.js \"http://localhost:3000/simulations/epf-reg-9?simCfg=6a560ea7a4d8d3331dd63a77\")"
+      "Bash(node drive-epf9.js \"http://localhost:3000/simulations/epf-reg-9?simCfg=6a560ea7a4d8d3331dd63a77\")",
+      "Bash(curl -s -o /dev/null --max-time 2 http://localhost:8080/api/simulation-configs/public/epf-reg-10)",
+      "Bash(curl -sf -o /dev/null --max-time 5 http://localhost:3000/simulations/epf-reg-10)",
+      "Bash(node drive-epf10.js \"http://localhost:3000/simulations/epf-reg-10?simCfg=6a56186af18f8bbf30d4e921\")"
     ]
   }
 }
