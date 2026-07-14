@@ -540,19 +540,6 @@ function EcrUploadPage({
         <span className="font-semibold text-[#333]">ECR Upload</span>
       </div>
 
-      {(simConfig?.bannerText || targetWageMonth) && (
-        <div className="rounded border border-[#bee3f8] bg-[#ebf8ff] px-3 py-2 text-[11.5px] text-[#2b6cb0]">
-          {simConfig?.bannerText ? (
-            simConfig.bannerText
-          ) : (
-            <>
-              For this simulation, use Wage Month{" "}
-              <strong>{targetWageMonth}</strong>.
-            </>
-          )}
-        </div>
-      )}
-
       <Collapsible title="Download ECR File:" defaultOpen highlight>
         <div className="flex flex-wrap items-end gap-4">
           <div>
