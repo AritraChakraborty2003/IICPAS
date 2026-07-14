@@ -857,7 +857,7 @@ function TopicSimulationCard({ url, title, imageUrl }: TopicSimulationLink) {
   }, [url]);
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-4xl">
       {banner && (
         <div className="mb-2 flex flex-wrap items-center justify-center gap-1 rounded-xl border border-sky-300 bg-sky-100 px-4 py-2.5 text-center text-[13px] leading-relaxed text-sky-900">
           {banner.bannerText ? (
@@ -885,19 +885,21 @@ function TopicSimulationCard({ url, title, imageUrl }: TopicSimulationLink) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="relative block min-h-[300px] text-inherit no-underline"
+          className="relative block text-inherit no-underline"
         >
           {imageUrl ? (
+            /* The image sets the card size: full width, natural aspect
+               ratio, capped so very tall screenshots don't take over */
             /* eslint-disable-next-line @next/next/no-img-element */
             <img
               src={imageUrl}
               alt="Simulation background"
-              className="absolute inset-0 h-full w-full object-cover object-center"
+              className="block h-auto max-h-[560px] min-h-[240px] w-full object-cover object-top"
               style={{ filter: "saturate(1.05)" }}
             />
           ) : (
             <div
-              className="absolute inset-0"
+              className="min-h-[300px] w-full"
               style={{
                 background:
                   "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%), linear-gradient(180deg, rgba(15, 23, 42, 0.35) 0%, rgba(29, 78, 216, 0.55) 100%)",
