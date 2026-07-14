@@ -223,6 +223,35 @@ export const createOverride = async (req, res) => {
   }
 };
 
+// Admin — edit the credentials of an already-inserted simulation
+export const updateOverride = async (req, res) => {
+  try {
+    const { name, credentialFields, bannerText, requireCredentialValidation, isActive } =
+      req.body;
+    const update = {};
+    if (name !== undefined) update.name = name;
+    const sanitizedFields = sanitizeCredentialFields(credentialFields);
+    if (sanitizedFields !== null) update.credentialFields = sanitizedFields;
+    if (bannerText !== undefined) update.bannerText = String(bannerText);
+    if (requireCredentialValidation !== undefined)
+      update.requireCredentialValidation = requireCredentialValidation;
+    if (isActive !== undefined) update.isActive = isActive;
+
+    const override = await SimulationOverride.findByIdAndUpdate(
+      req.params.id,
+      { $set: update },
+      { new: true, runValidators: true }
+    );
+    if (!override) {
+      return res.status(404).json({ message: "Simulation override not found" });
+    }
+    res.json({ _id: override._id, slug: override.slug });
+  } catch (error) {
+    console.error("Error updating simulation override:", error);
+    res.status(500).json({ message: "Failed to update simulation override" });
+  }
+};
+
 // Admin — remove an override (when its simulation card is deleted)
 export const deleteOverride = async (req, res) => {
   try {

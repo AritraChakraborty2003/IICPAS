@@ -219,6 +219,13 @@ export default function AddOrEditTopicForm({
   const [simulationCredBanner, setSimulationCredBanner] = useState("");
   const [simulationCredValidate, setSimulationCredValidate] = useState(true);
   const [creatingSimulation, setCreatingSimulation] = useState(false);
+  // Credentials editor for an already-inserted simulation card:
+  // { cardId, overrideId } while open, null when closed.
+  const [editingSimCreds, setEditingSimCreds] = useState(null);
+  const [editCredFields, setEditCredFields] = useState([]);
+  const [editCredBanner, setEditCredBanner] = useState("");
+  const [editCredValidate, setEditCredValidate] = useState(true);
+  const [savingSimCreds, setSavingSimCreds] = useState(false);
   const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);

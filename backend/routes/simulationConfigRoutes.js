@@ -7,6 +7,7 @@ import {
   deleteConfig,
   getOverrideById,
   createOverride,
+  updateOverride,
   deleteOverride,
 } from "../controllers/simulationConfigController.js";
 import { requireAuth } from "../middleware/requireAuth.js";
@@ -28,6 +29,7 @@ router.delete("/:id", requireAuth, isAdmin, deleteConfig);
 
 // Admin — per-insert overrides created from the course editor
 router.post("/overrides", requireAuth, isAdmin, createOverride);
+router.put("/overrides/:id", requireAuth, isAdmin, updateOverride);
 router.delete("/overrides/:id", requireAuth, isAdmin, deleteOverride);
 
 export default router;
