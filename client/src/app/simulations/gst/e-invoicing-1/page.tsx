@@ -26,18 +26,11 @@ import {
 } from "lucide-react";
 import GSTBannerCarousel from "../../../components/GSTBannerCarousel";
 import { SIDEBAR_SUB_OPTIONS } from "../../../components/simulationSidebarSubOptions";
-import { getApiBase } from "@/lib/apiBase";
+import { useSimulationConfig } from "@/lib/useSimulationConfig";
 
 type View = "home" | "dashboard";
 
 const SIMULATION_SLUG = "gst-e-invoicing-1";
-
-type CredentialField = { label: string; value: string };
-
-type SimConfig = {
-  credentialFields: CredentialField[];
-  requireCredentialValidation: boolean;
-};
 
 type NavSuboption = {
   label: string;
@@ -161,7 +154,9 @@ export default function GSTEInvoicing1Page() {
   const [isStartingExperiment, setIsStartingExperiment] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [openSidebarMenu, setOpenSidebarMenu] = useState<string | null>(null);
-  const [simConfig, setSimConfig] = useState<SimConfig | null>(null);
+  // Per-insert override (?simCfg=<id>) takes precedence over the
+  // Simulation Manager config for this slug.
+  const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const [loginError, setLoginError] = useState("");
   const [loginData, setLoginData] = useState({
     username: "",
@@ -176,28 +171,6 @@ export default function GSTEInvoicing1Page() {
         window.clearTimeout(launchTimerRef.current);
       }
     };
-  }, []);
-
-  useEffect(() => {
-    fetch(`${getApiBase()}/simulation-configs/public/${SIMULATION_SLUG}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => {
-        const fields: CredentialField[] = Array.isArray(data?.credentialFields)
-          ? data.credentialFields.filter(
-              (field: CredentialField) => field?.label && field?.value
-            )
-          : [];
-        if (fields.length && data?.isActive !== false) {
-          setSimConfig({
-            credentialFields: fields,
-            requireCredentialValidation:
-              data.requireCredentialValidation !== false,
-          });
-        }
-      })
-      .catch(() => {
-        // No config available — the credentials banner stays hidden
-      });
   }, []);
 
   const marqueeItems = [

@@ -19,7 +19,13 @@ import {
   Play,
   Phone,
 } from "lucide-react";
+import {
+  useSimulationConfig,
+  findFieldValue,
+  findUsernameValue,
+} from "@/lib/useSimulationConfig";
 
+const SIMULATION_SLUG = "epf-reg-2";
 const LOGIN_UAN = "100400800693";
 const LOGIN_PASS = "Member@123";
 const CAPTCHA_CODE = "P237M";
@@ -115,13 +121,23 @@ function MemberSignInPanel({ onSuccess }: { onSuccess: (uan: string) => void }) 
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
+  // Admin-configured credentials (per-insert override or Simulation Manager)
+  // replace the hardcoded defaults when available.
+  const simConfig = useSimulationConfig(SIMULATION_SLUG);
+  const loginUan = findUsernameValue(simConfig) || LOGIN_UAN;
+  const loginPass = findFieldValue(simConfig, /pass/i) || LOGIN_PASS;
+  const validateCreds = simConfig ? simConfig.requireCredentialValidation : true;
+
   const submit = () => {
     if (!form.uan.trim() || !form.password.trim() || !form.captcha.trim()) {
       setError("UAN, Password and Captcha are required");
       return;
     }
-    if (form.uan !== LOGIN_UAN || form.password !== LOGIN_PASS) {
-      setError(`Invalid credentials — use ${LOGIN_UAN} / ${LOGIN_PASS}`);
+    if (
+      validateCreds &&
+      (form.uan !== loginUan || form.password !== loginPass)
+    ) {
+      setError(`Invalid credentials — use ${loginUan} / ${loginPass}`);
       return;
     }
     if (form.captcha !== CAPTCHA_CODE) {
@@ -151,7 +167,7 @@ function MemberSignInPanel({ onSuccess }: { onSuccess: (uan: string) => void }) 
       </div>
 
       <div className="mb-3 rounded border border-[#bee3da] bg-[#eaf7f4] px-3 py-2 text-[11.5px] text-[#157a72]">
-        Use <strong>{LOGIN_UAN}</strong> / <strong>{LOGIN_PASS}</strong>, captcha{" "}
+        Use <strong>{loginUan}</strong> / <strong>{loginPass}</strong>, captcha{" "}
         <strong className="font-mono">{CAPTCHA_CODE}</strong> to sign in.
       </div>
 

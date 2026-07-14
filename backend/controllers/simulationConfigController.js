@@ -1,4 +1,5 @@
 import SimulationConfig from "../models/SimulationConfig.js";
+import SimulationOverride from "../models/SimulationOverride.js";
 
 // Known simulations that self-seed on first read.
 // Add new slugs here (or via the admin "Add Simulation" form).
@@ -159,6 +160,80 @@ export const updateConfig = async (req, res) => {
   } catch (error) {
     console.error("Error updating simulation config:", error);
     res.status(500).json({ message: "Failed to update simulation config" });
+  }
+};
+
+// ── Per-insert overrides (created from the course editor's Quick Inserts) ──
+// An override is referenced from the inserted simulation URL via ?simCfg=<id>
+// and takes precedence over the slug-level SimulationConfig.
+
+// Public — used by simulation pages and the digital hub when the
+// simulation URL carries ?simCfg=<id>
+export const getOverrideById = async (req, res) => {
+  try {
+    const override = await SimulationOverride.findById(req.params.id);
+    if (!override) {
+      return res.status(404).json({ message: "Simulation override not found" });
+    }
+    res.json({
+      _id: override._id,
+      slug: override.slug,
+      name: override.name,
+      credentialFields: (override.credentialFields || []).map((field) => ({
+        label: field.label,
+        value: field.value,
+      })),
+      bannerText: override.bannerText || "",
+      requireCredentialValidation: override.requireCredentialValidation,
+      isActive: override.isActive,
+    });
+  } catch (error) {
+    console.error("Error fetching simulation override:", error);
+    res.status(500).json({ message: "Failed to fetch simulation override" });
+  }
+};
+
+// Admin — create an override for one inserted simulation
+export const createOverride = async (req, res) => {
+  try {
+    const { slug, name, credentialFields, bannerText, requireCredentialValidation } =
+      req.body;
+    if (!slug) {
+      return res.status(400).json({ message: "slug is required" });
+    }
+    const sanitizedFields = sanitizeCredentialFields(credentialFields) || [];
+    if (!sanitizedFields.length && !String(bannerText || "").trim()) {
+      return res
+        .status(400)
+        .json({ message: "At least one credential field or banner text is required" });
+    }
+    const override = await SimulationOverride.create({
+      slug,
+      name: name || slug,
+      credentialFields: sanitizedFields,
+      bannerText: String(bannerText || ""),
+      ...(requireCredentialValidation !== undefined
+        ? { requireCredentialValidation }
+        : {}),
+    });
+    res.status(201).json({ _id: override._id, slug: override.slug });
+  } catch (error) {
+    console.error("Error creating simulation override:", error);
+    res.status(500).json({ message: "Failed to create simulation override" });
+  }
+};
+
+// Admin — remove an override (when its simulation card is deleted)
+export const deleteOverride = async (req, res) => {
+  try {
+    const override = await SimulationOverride.findByIdAndDelete(req.params.id);
+    if (!override) {
+      return res.status(404).json({ message: "Simulation override not found" });
+    }
+    res.json({ message: "Simulation override deleted" });
+  } catch (error) {
+    console.error("Error deleting simulation override:", error);
+    res.status(500).json({ message: "Failed to delete simulation override" });
   }
 };
 

@@ -212,6 +212,13 @@ export default function AddOrEditTopicForm({
   const [videoLinks, setVideoLinks] = useState([]);
   const [imageLinks, setImageLinks] = useState([]);
   const [simulationLinkUrl, setSimulationLinkUrl] = useState("");
+  // Optional per-insert credentials. When filled, an override record is
+  // created and referenced from the inserted URL via ?simCfg=<id>; it takes
+  // precedence over the slug config from the Simulation Manager tab.
+  const [simulationCredFields, setSimulationCredFields] = useState([]);
+  const [simulationCredBanner, setSimulationCredBanner] = useState("");
+  const [simulationCredValidate, setSimulationCredValidate] = useState(true);
+  const [creatingSimulation, setCreatingSimulation] = useState(false);
   const [bannerImageUrl, setBannerImageUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -836,11 +843,79 @@ export default function AddOrEditTopicForm({
     `;
   };
 
-  const insertSimulationLink = (url, label = "") => {
-    const normalizedUrl = normalizeUrl(url);
+  // /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1 (must match the
+  // slug derivation used by the digital hub and the Simulation Manager)
+  const simulationSlugFromUrl = (url) => {
+    try {
+      const pathname = new URL(url, window.location.origin).pathname;
+      const match = pathname.match(/\/simulations\/(.+)/);
+      if (!match) return "";
+      return match[1].replace(/\/+$/, "").split("/").join("-").toLowerCase();
+    } catch {
+      return "";
+    }
+  };
+
+  const adminAuthHeaders = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("adminToken")}`,
+    },
+  });
+
+  const insertSimulationLink = async (url, label = "") => {
+    let normalizedUrl = normalizeUrl(url);
     if (!normalizedUrl) {
       Swal.fire("Validation", "Please enter a simulation page URL.", "warning");
       return;
+    }
+    if (creatingSimulation) return;
+
+    const credFields = simulationCredFields.filter(
+      (field) => field.label.trim() && field.value.trim()
+    );
+    const credBanner = simulationCredBanner.trim();
+
+    if (credFields.length || credBanner) {
+      const slug = simulationSlugFromUrl(normalizedUrl);
+      if (!slug) {
+        Swal.fire(
+          "Validation",
+          "Credentials can only be attached to /simulations/... URLs.",
+          "warning"
+        );
+        return;
+      }
+      try {
+        setCreatingSimulation(true);
+        const response = await axios.post(
+          `${API_BASE}/simulation-configs/overrides`,
+          {
+            slug,
+            name: slug,
+            credentialFields: credFields,
+            bannerText: credBanner,
+            requireCredentialValidation: simulationCredValidate,
+          },
+          adminAuthHeaders()
+        );
+        const overrideId = response.data?._id;
+        if (overrideId) {
+          normalizedUrl += `${
+            normalizedUrl.includes("?") ? "&" : "?"
+          }simCfg=${overrideId}`;
+        }
+      } catch (error) {
+        console.error("Failed to save simulation credentials:", error);
+        Swal.fire(
+          "Error",
+          error.response?.data?.message ||
+            "Could not save the simulation credentials.",
+          "error"
+        );
+        setCreatingSimulation(false);
+        return;
+      }
+      setCreatingSimulation(false);
     }
 
     const simulationId = generateSimulationId();
@@ -849,6 +924,9 @@ export default function AddOrEditTopicForm({
       "Simulation Inserted!",
       "Simulation card has been inserted into the editor."
     );
+    setSimulationCredFields([]);
+    setSimulationCredBanner("");
+    setSimulationCredValidate(true);
   };
 
   const extractSimulationCards = (htmlContent) => {
@@ -858,11 +936,15 @@ export default function AddOrEditTopicForm({
       const parser = new DOMParser();
       const doc = parser.parseFromString(htmlContent, "text/html");
       return Array.from(doc.querySelectorAll("[data-simulation-card='true']")).map(
-        (card) => ({
-          id: card.getAttribute("data-simulation-id") || "",
-          label: "Simulation",
-          url: card.querySelector("a")?.getAttribute("href") || "",
-        })
+        (card) => {
+          const url = card.querySelector("a")?.getAttribute("href") || "";
+          return {
+            id: card.getAttribute("data-simulation-id") || "",
+            label: "Simulation",
+            url,
+            hasCustomCreds: /[?&]simCfg=/.test(url),
+          };
+        }
       );
     } catch (error) {
       console.error("Failed to extract simulation cards:", error);
@@ -885,6 +967,20 @@ export default function AddOrEditTopicForm({
       if (!target) {
         Swal.fire("Not Found", "That simulation block was not found.", "info");
         return;
+      }
+
+      // Best-effort cleanup of the per-insert credential override, if any
+      const href = target.querySelector("a")?.getAttribute("href") || "";
+      const overrideId = href.match(/[?&]simCfg=([^&]+)/)?.[1];
+      if (overrideId) {
+        axios
+          .delete(
+            `${API_BASE}/simulation-configs/overrides/${overrideId}`,
+            adminAuthHeaders()
+          )
+          .catch((error) =>
+            console.error("Failed to delete simulation override:", error)
+          );
       }
 
       target.remove();
@@ -2673,15 +2769,145 @@ export default function AddOrEditTopicForm({
                     size="small"
                     fullWidth
                   />
+
+                  <Box
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      border: "1px dashed #bfdbfe",
+                      background: "#f8fbff",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Credentials for this simulation (optional)
+                      </Typography>
+                      <Button
+                        size="small"
+                        startIcon={<Add fontSize="small" />}
+                        onClick={() =>
+                          setSimulationCredFields((prev) => [
+                            ...prev,
+                            { label: "", value: "" },
+                          ])
+                        }
+                      >
+                        Add Field
+                      </Button>
+                    </Box>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ display: "block", mb: 1 }}
+                    >
+                      Apply only to this insert and take precedence over the
+                      Simulation Manager credentials for the same simulation.
+                    </Typography>
+                    <Stack spacing={1}>
+                      {simulationCredFields.map((field, index) => (
+                        <Stack
+                          key={index}
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                        >
+                          <TextField
+                            label="Label"
+                            value={field.label}
+                            onChange={(e) =>
+                              setSimulationCredFields((prev) =>
+                                prev.map((item, i) =>
+                                  i === index
+                                    ? { ...item, label: e.target.value }
+                                    : item
+                                )
+                              )
+                            }
+                            placeholder="e.g. Username"
+                            size="small"
+                            sx={{ width: "40%" }}
+                          />
+                          <TextField
+                            label="Value"
+                            value={field.value}
+                            onChange={(e) =>
+                              setSimulationCredFields((prev) =>
+                                prev.map((item, i) =>
+                                  i === index
+                                    ? { ...item, value: e.target.value }
+                                    : item
+                                )
+                              )
+                            }
+                            size="small"
+                            sx={{ flex: 1 }}
+                          />
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              setSimulationCredFields((prev) =>
+                                prev.filter((_, i) => i !== index)
+                              )
+                            }
+                          >
+                            <Close fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                      ))}
+                    </Stack>
+                    {simulationCredFields.length > 0 && (
+                      <Stack spacing={1} sx={{ mt: 1 }}>
+                        <TextField
+                          label="Banner text (optional)"
+                          value={simulationCredBanner}
+                          onChange={(e) =>
+                            setSimulationCredBanner(e.target.value)
+                          }
+                          placeholder="Leave empty to auto-generate from the fields"
+                          size="small"
+                          fullWidth
+                          multiline
+                          rows={2}
+                        />
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            fontSize: 13,
+                            color: "#475569",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={simulationCredValidate}
+                            onChange={(e) =>
+                              setSimulationCredValidate(e.target.checked)
+                            }
+                          />
+                          Validate these credentials on the simulation login
+                        </label>
+                      </Stack>
+                    )}
+                  </Box>
+
                   <Box>
                     <Button
                       variant="contained"
                       onClick={() =>
                         insertSimulationLink(simulationLinkUrl)
                       }
-                      disabled={!simulationLinkUrl.trim()}
+                      disabled={!simulationLinkUrl.trim() || creatingSimulation}
                     >
-                      Create Simulation
+                      {creatingSimulation ? "Creating..." : "Create Simulation"}
                     </Button>
                   </Box>
                 </Stack>
@@ -2710,6 +2936,24 @@ export default function AddOrEditTopicForm({
                         <Box sx={{ minWidth: 0 }}>
                           <Typography fontWeight={700} fontSize={14} noWrap>
                             {item.label}
+                            {item.hasCustomCreds && (
+                              <Box
+                                component="span"
+                                sx={{
+                                  ml: 1,
+                                  px: 1,
+                                  py: 0.25,
+                                  borderRadius: 1,
+                                  fontSize: 11,
+                                  fontWeight: 600,
+                                  color: "#1d4ed8",
+                                  background: "#dbeafe",
+                                  verticalAlign: "middle",
+                                }}
+                              >
+                                Custom credentials
+                              </Box>
+                            )}
                           </Typography>
                           <Typography
                             variant="caption"

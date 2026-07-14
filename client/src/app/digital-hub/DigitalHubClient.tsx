@@ -682,29 +682,42 @@ type SimulationCredBannerConfig = {
   bannerText: string;
 };
 
-// /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1
-const simulationSlugFromHref = (href: string): string => {
+type SimulationRef = {
+  // Cache key: slug alone, or slug::overrideId when the insert carries
+  // per-course credentials (?simCfg=<id>) that take precedence.
+  key: string;
+  slug: string;
+  overrideId: string;
+};
+
+// /simulations/gst/e-invoicing-1 -> gst-e-invoicing-1 (+ optional ?simCfg=<id>)
+const simulationRefFromHref = (href: string): SimulationRef | null => {
   try {
-    const pathname = new URL(href, window.location.origin).pathname;
-    const match = pathname.match(/\/simulations\/(.+)/);
-    if (!match) return "";
-    return match[1].replace(/\/+$/, "").split("/").join("-").toLowerCase();
+    const url = new URL(href, window.location.origin);
+    const match = url.pathname.match(/\/simulations\/(.+)/);
+    if (!match) return null;
+    const slug = match[1].replace(/\/+$/, "").split("/").join("-").toLowerCase();
+    if (!slug) return null;
+    const overrideId = url.searchParams.get("simCfg")?.trim() || "";
+    return { key: overrideId ? `${slug}::${overrideId}` : slug, slug, overrideId };
   } catch {
-    return "";
+    return null;
   }
 };
 
-const extractSimulationSlugs = (html: string): string[] => {
+const extractSimulationRefs = (html: string): SimulationRef[] => {
   if (!html || typeof window === "undefined") return [];
   const doc = new DOMParser().parseFromString(html, "text/html");
-  const slugs: string[] = [];
+  const refs: SimulationRef[] = [];
   doc
     .querySelectorAll<HTMLAnchorElement>('a[href*="/simulations/"]')
     .forEach((anchor) => {
-      const slug = simulationSlugFromHref(anchor.getAttribute("href") || "");
-      if (slug && !slugs.includes(slug)) slugs.push(slug);
+      const ref = simulationRefFromHref(anchor.getAttribute("href") || "");
+      if (ref && !refs.some((existing) => existing.key === ref.key)) {
+        refs.push(ref);
+      }
     });
-  return slugs;
+  return refs;
 };
 
 // Insert a light blue credentials banner into the content HTML just above
@@ -724,8 +737,8 @@ const injectSimulationCredBanners = (
   doc
     .querySelectorAll<HTMLAnchorElement>('a[href*="/simulations/"]')
     .forEach((anchor) => {
-      const slug = simulationSlugFromHref(anchor.getAttribute("href") || "");
-      const config = configs[slug];
+      const ref = simulationRefFromHref(anchor.getAttribute("href") || "");
+      const config = ref ? configs[ref.key] : undefined;
       if (!config) return;
       const { fields, bannerText } = config;
       if (!fields.length && !bannerText) return;
@@ -1223,35 +1236,52 @@ export default function DigitalHubClient({
   // in the topic content. The banners themselves are inserted into the content
   // HTML string via injectSimulationCredBanners before rendering.
   useEffect(() => {
-    const slugs = extractSimulationSlugs(normalizedTopicContent);
-    if (!slugs.length) return;
+    const refs = extractSimulationRefs(normalizedTopicContent);
+    if (!refs.length) return;
     let cancelled = false;
 
+    const parseBannerConfig = (
+      config: {
+        credentialFields?: { label?: string; value?: string }[];
+        bannerText?: string;
+        isActive?: boolean;
+      } | null,
+    ): SimulationCredBannerConfig | null => {
+      const fields = (config?.credentialFields || []).filter(
+        (field): field is { label: string; value: string } =>
+          Boolean(field?.label && field?.value),
+      );
+      const bannerText = String(config?.bannerText || "").trim();
+      if ((!fields.length && !bannerText) || config?.isActive === false) {
+        return null;
+      }
+      return { fields, bannerText };
+    };
+
+    const fetchConfig = (url: string) =>
+      fetch(url)
+        .then((res) => (res.ok ? res.json() : null))
+        .then(parseBannerConfig)
+        .catch(() => null);
+
     Promise.all(
-      slugs.map((slug) =>
-        fetch(`${API_BASE}/simulation-configs/public/${slug}`)
-          .then((res) => (res.ok ? res.json() : null))
-          .then(
-            (config: {
-              credentialFields?: { label?: string; value?: string }[];
-              bannerText?: string;
-              isActive?: boolean;
-            } | null): [string, SimulationCredBannerConfig] | null => {
-              const fields = (config?.credentialFields || []).filter(
-                (field): field is { label: string; value: string } =>
-                  Boolean(field?.label && field?.value),
-              );
-              const bannerText = String(config?.bannerText || "").trim();
-              if (
-                (!fields.length && !bannerText) ||
-                config?.isActive === false
-              ) {
-                return null;
-              }
-              return [slug, { fields, bannerText }];
-            },
-          )
-          .catch(() => null),
+      refs.map(
+        (ref): Promise<[string, SimulationCredBannerConfig] | null> => {
+          // A per-insert override takes precedence; fall back to the
+          // slug-level Simulation Manager config when it yields nothing.
+          const load = ref.overrideId
+            ? fetchConfig(
+                `${API_BASE}/simulation-configs/public/override/${ref.overrideId}`,
+              ).then(
+                (config) =>
+                  config ||
+                  fetchConfig(
+                    `${API_BASE}/simulation-configs/public/${ref.slug}`,
+                  ),
+              )
+            : fetchConfig(`${API_BASE}/simulation-configs/public/${ref.slug}`);
+          return load.then((config) => (config ? [ref.key, config] : null));
+        },
       ),
     ).then((entries) => {
       if (cancelled) return;
