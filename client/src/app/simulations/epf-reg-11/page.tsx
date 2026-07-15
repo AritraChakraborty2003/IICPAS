@@ -9,6 +9,7 @@ import {
   Home as HomeIcon,
   Download,
 } from "lucide-react";
+import { jsPDF } from "jspdf";
 import { EpfoNavItem } from "../../components/EpfoNavMenus";
 import {
   useSimulationConfig,
@@ -657,7 +658,114 @@ function EcrSummaryView({
   const totalNetPayable =
     netEdli + netEpfAdmin + netEpfInspection + netEdliAdmin + netEdliInspection;
 
+  // EPFO-style combined challan receipt, downloaded on Generate Challan.
+  const downloadChallan = () => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const pageW = 210;
+    const left = 18;
+    const right = pageW - 18;
+    let y = 20;
+
+    const centerText = (text: string, size: number, bold = false) => {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(size);
+      doc.text(text, pageW / 2, y, { align: "center" });
+      y += size * 0.55;
+    };
+
+    const row = (label: string, value: string, bold = false) => {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      doc.setFontSize(10.5);
+      doc.text(label, left + 2, y);
+      doc.text(value, right - 2, y, { align: "right" });
+      y += 7;
+      doc.setDrawColor(200);
+      doc.line(left, y - 4.8, right, y - 4.8);
+    };
+
+    centerText("EMPLOYEES' PROVIDENT FUND ORGANISATION", 14, true);
+    centerText("COMBINED CHALLAN OF A/C NO. 01, 02, 10, 21 & 22", 11, true);
+    centerText("(SIMULATION — FOR EDUCATIONAL PURPOSES ONLY)", 9);
+    y += 4;
+
+    doc.setDrawColor(120);
+    doc.rect(left, y, right - left, 30);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.text(`TRRN : ${ecr.trrn}`, left + 3, y + 6);
+    doc.text(
+      `Challan Generated On : ${new Date().toLocaleDateString("en-IN")}`,
+      right - 3,
+      y + 6,
+      { align: "right" }
+    );
+    doc.text(`Establishment Id : ${LOGIN_USER}`, left + 3, y + 13);
+    doc.text(`Establishment Name : ${COMPANY_NAME}`, left + 3, y + 20);
+    doc.text(`Wage Month : ${ecr.wageMonth}`, right - 3, y + 13, {
+      align: "right",
+    });
+    doc.text(`Contribution Rate : ${ecr.contrRate}%`, right - 3, y + 20, {
+      align: "right",
+    });
+    doc.text(`Return Month : ${ecr.wageMonth}`, left + 3, y + 27);
+    doc.text(`ECR File Type : ${ecr.fileType}`, right - 3, y + 27, {
+      align: "right",
+    });
+    y += 38;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Account-wise Payment Details (Rs.)", left, y);
+    y += 7;
+
+    row(
+      "A/C No. 01 - EPF Contribution (EE + ER Share)",
+      fmtAmount(figures.epfEeShare + figures.epfErShare)
+    );
+    row(
+      "A/C No. 02 - EPF Admin / Inspection Charges",
+      fmtAmount(netEpfAdmin + netEpfInspection)
+    );
+    row("A/C No. 10 - EPS Contribution", fmtAmount(figures.epsContribution));
+    row("A/C No. 21 - EDLI Contribution", fmtAmount(netEdli));
+    row(
+      "A/C No. 22 - EDLI Admin / Inspection Charges",
+      fmtAmount(netEdliAdmin + netEdliInspection)
+    );
+    row("Total Refund of Advance (A/C 1)", fmtAmount(figures.refundOfAdvance));
+    row(
+      "Total Contribution Remitted (as per ECR)",
+      fmtAmount(figures.totalRemitted)
+    );
+    row("GRAND TOTAL (Net Payable)", fmtAmount(totalNetPayable), true);
+    y += 6;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Employer Details", left, y);
+    y += 7;
+    row("Total Number of Employees in the Month", totalEmployees || "0");
+    row("Number of Excluded Employees", excludedEmployees || "0");
+    row(
+      "Gross Wages of the Excluded Employees (Rs.)",
+      excludedGrossWages || "0"
+    );
+
+    y += 10;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.text(
+      "Designed, Developed and Hosted by: Employees' Provident Fund Organisation, India (Simulation)",
+      pageW / 2,
+      y,
+      { align: "center" }
+    );
+
+    doc.save(`ECR_Challan_${ecr.trrn}.pdf`);
+  };
+
   const generate = () => {
+    downloadChallan();
     onGenerate();
   };
 
