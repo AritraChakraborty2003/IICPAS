@@ -593,7 +593,15 @@ function DashboardMain({ portal }: { portal: PortalData }) {
 }
 
 // ─── Active Member dashboard: search + list all active employees ───────────
-function ActiveMemberPage({ portal, onBack }: { portal: PortalData; onBack: () => void }) {
+function ActiveMemberPage({
+  portal,
+  onVerified,
+  onBack,
+}: {
+  portal: PortalData;
+  onVerified: () => void;
+  onBack: () => void;
+}) {
   const [form, setForm] = useState({
     uan: "",
     name: "",
@@ -608,6 +616,10 @@ function ActiveMemberPage({ portal, onBack }: { portal: PortalData; onBack: () =
   const [error, setError] = useState("");
 
   const set = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  // The experiment's answer key: the admin-configured target employee
+  // (course-editor row-1 fields override the first roster member).
+  const target = portal.members[0];
 
   const search = () => {
     const uan = digitsOnly(form.uan);
@@ -628,6 +640,17 @@ function ActiveMemberPage({ portal, onBack }: { portal: PortalData; onBack: () =
     setError(matched.length === 0 ? "No active member found for the given criteria" : "");
     setResults(matched);
     setDetailsOpen(true);
+
+    // Success tick only when the student searched with the target employee's
+    // UAN, Name and Email exactly as set by the admin in the course editor.
+    if (
+      target &&
+      uan === target.uan &&
+      name === target.name.trim().toLowerCase() &&
+      email === target.email.trim().toLowerCase()
+    ) {
+      onVerified();
+    }
   };
 
   const showAll = () => {
@@ -668,12 +691,17 @@ function ActiveMemberPage({ portal, onBack }: { portal: PortalData; onBack: () =
         <span>Active Member</span>
       </div>
 
-      {portal.bannerText && (
-        <div className="flex items-start gap-2 rounded border border-[#bee3f8] bg-[#ebf8ff] px-4 py-2.5 text-[13px] text-[#1a4f8b]">
-          <Info size={15} className="mt-0.5 shrink-0" />
+      <div className="flex items-start gap-2 rounded border border-[#bee3f8] bg-[#ebf8ff] px-4 py-2.5 text-[13px] text-[#1a4f8b]">
+        <Info size={15} className="mt-0.5 shrink-0" />
+        {portal.bannerText ? (
           <span>{portal.bannerText}</span>
-        </div>
-      )}
+        ) : (
+          <span>
+            Search with UAN <strong>{target?.uan}</strong>, Name <strong>{target?.name}</strong> and
+            Email <strong>{target?.email}</strong> to complete the experiment.
+          </span>
+        )}
+      </div>
 
       <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
         <div className="divide-y divide-[#eee]">
@@ -859,11 +887,16 @@ export default function EpfReg3Page() {
     if (item === "ACTIVE MEMBER") {
       setPageKey((k) => k + 1);
       setView("activeMember");
-      setTick("Active Member Dashboard");
-      setTimeout(() => setTick(""), 1200);
     } else {
       showToast("Not available in this simulation.");
     }
+  };
+
+  // The experiment succeeds when the student searches with the target
+  // employee's UAN, Name and Email (as configured by the admin).
+  const handleVerified = () => {
+    setTick("Member Verified!");
+    setTimeout(() => setTick(""), 1400);
   };
 
   const handleNavClick = (item: string) => {
@@ -900,7 +933,12 @@ export default function EpfReg3Page() {
 
       {view === "dashboard" && <DashboardMain portal={portal} />}
       {view === "activeMember" && (
-        <ActiveMemberPage key={pageKey} portal={portal} onBack={() => setView("dashboard")} />
+        <ActiveMemberPage
+          key={pageKey}
+          portal={portal}
+          onVerified={handleVerified}
+          onBack={() => setView("dashboard")}
+        />
       )}
 
       <footer className="mt-auto bg-[#1a3a66] py-4 text-center text-[12px] leading-relaxed text-[#dde6f0]">
