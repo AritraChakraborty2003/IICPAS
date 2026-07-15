@@ -691,17 +691,12 @@ function ActiveMemberPage({
         <span>Active Member</span>
       </div>
 
-      <div className="flex items-start gap-2 rounded border border-[#bee3f8] bg-[#ebf8ff] px-4 py-2.5 text-[13px] text-[#1a4f8b]">
-        <Info size={15} className="mt-0.5 shrink-0" />
-        {portal.bannerText ? (
+      {portal.bannerText && (
+        <div className="flex items-start gap-2 rounded border border-[#bee3f8] bg-[#ebf8ff] px-4 py-2.5 text-[13px] text-[#1a4f8b]">
+          <Info size={15} className="mt-0.5 shrink-0" />
           <span>{portal.bannerText}</span>
-        ) : (
-          <span>
-            Search with UAN <strong>{target?.uan}</strong>, Name <strong>{target?.name}</strong> and
-            Email <strong>{target?.email}</strong> to complete the experiment.
-          </span>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
         <div className="divide-y divide-[#eee]">
