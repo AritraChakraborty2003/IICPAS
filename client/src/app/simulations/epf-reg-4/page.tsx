@@ -422,10 +422,12 @@ function Dashboard({
 function MemberRegistrationPage({
   pendingMembers,
   onVerified,
+  onRegistered,
   onCancel,
 }: {
   pendingMembers: PendingMember[];
   onVerified: (details: BasicDetails) => void;
+  onRegistered: (name: string, memberId: string) => void;
   onCancel: () => void;
 }) {
   const [hasUan, setHasUan] = useState<"yes" | "no">("yes");
@@ -576,6 +578,13 @@ function MemberRegistrationPage({
                 </button>
               </div>
             </>
+          )}
+
+          {hasUan === "no" && (
+            <NewEmployeeForm
+              basic={{ uan: "", aadhaar: "", name: "", dob: "" }}
+              onSubmit={(memberId, name) => onRegistered(name, memberId)}
+            />
           )}
         </div>
       </div>
