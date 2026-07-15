@@ -707,6 +707,8 @@ function NewEmployeeForm({
 
   const submit = () => {
     if (
+      !form.name.trim() ||
+      !form.dob.trim() ||
       !form.fatherName.trim() ||
       !form.relation.trim() ||
       !form.maritalStatus.trim() ||
@@ -722,26 +724,11 @@ function NewEmployeeForm({
       return;
     }
     setError("");
-    onSubmit(form.newMemberId.trim());
+    onSubmit(form.newMemberId.trim(), form.name.trim());
   };
 
   return (
-    <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-4 py-6">
-      <div className="flex items-center gap-2 text-[13px] text-[#555]">
-        <span className="cursor-pointer text-[#2f80b5] hover:underline" onClick={onCancel}>
-          Member Registration
-        </span>
-        <span>/</span>
-        <span>Add New Employee</span>
-      </div>
-
-      <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-[#eee] px-5 py-3">
-          <span className="text-[15px] font-bold text-[#333]">Member Registration</span>
-          <Minus size={14} className="text-[#888]" />
-        </div>
-
-        <div className="space-y-4 px-6 py-6">
+    <div className="space-y-4">
           <div className="grid gap-x-8 gap-y-4 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-[13px] font-semibold text-[#333]">
