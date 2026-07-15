@@ -8,6 +8,10 @@ declare module "lucide-react" {
   export const CheckCircle: React.ComponentType<any>;
   export const ChevronDown: React.ComponentType<any>;
   export const ChevronUp: React.ComponentType<any>;
+  export const ChevronRight: React.ComponentType<any>;
+  export const Info: React.ComponentType<any>;
+  export const NotebookText: React.ComponentType<any>;
+  export const UserPlus2: React.ComponentType<any>;
   export const BookOpen: React.ComponentType<any>;
   export const Award: React.ComponentType<any>;
   export const Calendar: React.ComponentType<any>;

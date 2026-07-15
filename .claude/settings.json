@@ -32,7 +32,16 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/simulations/epf-reg-11 --max-time 60)",
       "Bash(curl -s --max-time 15 \"https://api.iicpa.in/api/v1/simulation-configs/public/epf-reg-10\")",
       "Bash(curl -s --max-time 15 \"https://api.iicpa.in/api/simulation-configs/public/epf-reg-10\")",
-      "Bash(curl -s --max-time 15 \"https://api.iicpa.in/api/simulation-configs/public/epf-reg-11\")"
+      "Bash(curl -s --max-time 15 \"https://api.iicpa.in/api/simulation-configs/public/epf-reg-11\")",
+      "Bash(grep -v \"^$\")",
+      "Bash(lsof -iTCP:3000 -sTCP:LISTEN -n -P)",
+      "Bash(curl -s -o /private/tmp/claude-501/-Users-aritrachakraborty-Desktop-Projects-IICPAS/b5b09682-8893-49d6-816a-7df21fc0e48b/scratchpad/epf3.html -w \"%{http_code}\\\\n\" http://localhost:3777/simulations/epf-reg-3)",
+      "Bash(lsof -tiTCP:3777 -sTCP:LISTEN)",
+      "Bash(xargs kill)",
+      "Bash(grep -rln \"simulation-configs\\\\|simCfg\" src --include=\"*.tsx\" --include=\"*.ts\" | grep -v \".next\"; echo \"---server---\"; grep -rln \"simulation-config\" ../server 2>/dev/null | grep -v node_modules | head)",
+      "Read(//Users/aritrachakraborty/Desktop/Projects/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3777/simulations/epf-reg-3)",
+      "Bash(curl -s http://localhost:3777/simulations/epf-reg-3)"
     ]
   }
 }
