@@ -645,7 +645,6 @@ function EcrSummaryView({
   const [totalEmployees, setTotalEmployees] = useState("");
   const [excludedEmployees, setExcludedEmployees] = useState("");
   const [excludedGrossWages, setExcludedGrossWages] = useState("");
-  const [error, setError] = useState("");
 
   const num = (v: string) => {
     const n = Number(v.replace(/[^0-9.]/g, ""));
@@ -663,19 +662,6 @@ function EcrSummaryView({
     netEdli + netEpfAdmin + netEpfInspection + netEdliAdmin + netEdliInspection;
 
   const generate = () => {
-    if (
-      !edliContribution.trim() ||
-      !epfInspection.trim() ||
-      !edliAdmin.trim() ||
-      !edliInspection.trim() ||
-      !totalEmployees.trim() ||
-      !excludedEmployees.trim() ||
-      !excludedGrossWages.trim()
-    ) {
-      setError("Please fill all required fields marked with *");
-      return;
-    }
-    setError("");
     onGenerate();
   };
 
@@ -1033,12 +1019,6 @@ function EcrSummaryView({
             </tbody>
           </table>
         </div>
-
-        {error && (
-          <p className="mt-4 text-center text-[12.5px] text-[#e53e3e]">
-            {error}
-          </p>
-        )}
 
         {/* Actions */}
         <div className="my-6 flex items-center justify-center gap-3">
