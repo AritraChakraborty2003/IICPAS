@@ -25,7 +25,7 @@ import {
   findUsernameValue,
 } from "@/lib/useSimulationConfig";
 
-const SIMULATION_SLUG = "epf-reg-2";
+const SIMULATION_SLUG = "epf-reg-12";
 const LOGIN_UAN = "100400800693";
 const LOGIN_PASS = "Member@123";
 const CAPTCHA_CODE = "P237M";

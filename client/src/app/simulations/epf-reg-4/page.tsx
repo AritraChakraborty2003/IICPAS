@@ -666,15 +666,15 @@ function makeInitialKycRows(aadhaarNo: string, name: string): KycRow[] {
   ];
 }
 
-// ─── Employee Details page — full Member Registration form + KYC Details ──
-function EmployeeDetailsPage({
+// ─── Reusable full Member Registration form + KYC Details ─────────────────
+function NewEmployeeForm({
   basic,
   onCancel,
   onSubmit,
 }: {
   basic: BasicDetails;
-  onCancel: () => void;
-  onSubmit: (newMemberId: string) => void;
+  onCancel?: () => void;
+  onSubmit: (newMemberId: string, name: string) => void;
 }) {
   const [form, setForm] = useState({
     title: "Mr.",

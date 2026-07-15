@@ -26,7 +26,8 @@
       "Bash(node -e \"Promise.all\\([import\\('./models/CaseStudy.js'\\),import\\('./models/Assignment.js'\\)]\\).then\\(\\(\\)=>console.log\\('models OK'\\)\\)\")",
       "Bash(curl -s -o /dev/null --max-time 5 http://localhost:3000)",
       "Bash(curl -s -o /dev/null -w \"admin-dashboard %{http_code}\\\\n\" --max-time 180 http://localhost:3000/admin-dashboard)",
-      "Bash(curl -s -o /dev/null -w \"digital-hub %{http_code}\\\\n\" --max-time 180 http://localhost:3000/digital-hub)"
+      "Bash(curl -s -o /dev/null -w \"digital-hub %{http_code}\\\\n\" --max-time 180 http://localhost:3000/digital-hub)",
+      "Bash(git -C /Users/aritrachakraborty/Desktop/Projects/IICPAS status --short)"
     ]
   }
 }
