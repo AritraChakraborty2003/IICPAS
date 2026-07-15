@@ -1156,6 +1156,18 @@ export default function EpfReg4Page() {
     }, 1400);
   };
 
+  // "No previous UAN" flow: saving the full form allots a fresh UAN, adds the
+  // member to the pending-approval list and reloads a clean registration form.
+  const handleRegistered = (name: string, newMemberId: string) => {
+    const allottedUan = String(Math.floor(100000000000 + Math.random() * 899999999999));
+    setPendingMembers((prev) => [...prev, { name, uan: allottedUan, memberId: newMemberId }]);
+    setTick("Member Registered!");
+    setTimeout(() => {
+      setTick("");
+      setRegFormKey((k) => k + 1);
+    }, 1400);
+  };
+
   const handleSubmit = (newMemberId: string) => {
     if (basic) {
       setPendingMembers((prev) => [...prev, { name: basic.name, uan: basic.uan, memberId: newMemberId }]);
@@ -1201,6 +1213,7 @@ export default function EpfReg4Page() {
             key={regFormKey}
             pendingMembers={pendingMembers}
             onVerified={handleVerified}
+            onRegistered={handleRegistered}
             onCancel={() => setView("dashboard")}
           />
           <footer className="mt-auto bg-[#1a3a66] py-4 text-center text-[12px] leading-relaxed text-[#dde6f0]">
