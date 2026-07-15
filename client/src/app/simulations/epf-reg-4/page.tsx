@@ -1023,12 +1023,47 @@ function NewEmployeeForm({
           >
             Save
           </button>
-          <button
-            onClick={onCancel}
-            className="flex items-center gap-1.5 rounded bg-[#d98a86] px-6 py-2 text-[13.5px] font-bold text-white hover:bg-[#c97470]"
-          >
-            <ArrowLeft size={14} /> Cancel
-          </button>
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="flex items-center gap-1.5 rounded bg-[#d98a86] px-6 py-2 text-[13.5px] font-bold text-white hover:bg-[#c97470]"
+            >
+              <ArrowLeft size={14} /> Cancel
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Employee Details page — full Member Registration form + KYC Details ──
+function EmployeeDetailsPage({
+  basic,
+  onCancel,
+  onSubmit,
+}: {
+  basic: BasicDetails;
+  onCancel: () => void;
+  onSubmit: (newMemberId: string) => void;
+}) {
+  return (
+    <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-4 py-6">
+      <div className="flex items-center gap-2 text-[13px] text-[#555]">
+        <span className="cursor-pointer text-[#2f80b5] hover:underline" onClick={onCancel}>
+          Member Registration
+        </span>
+        <span>/</span>
+        <span>Add New Employee</span>
+      </div>
+
+      <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-[#eee] px-5 py-3">
+          <span className="text-[15px] font-bold text-[#333]">Member Registration</span>
+          <Minus size={14} className="text-[#888]" />
+        </div>
+        <div className="px-6 py-6">
+          <NewEmployeeForm basic={basic} onCancel={onCancel} onSubmit={(newMemberId) => onSubmit(newMemberId)} />
         </div>
       </div>
     </main>
