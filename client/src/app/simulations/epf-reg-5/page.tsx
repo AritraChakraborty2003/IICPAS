@@ -165,7 +165,7 @@ const normalizeDate = (v: string): string => {
 };
 
 // Establishment-level labels (never treated as employee fields)
-const COMPANY_LABEL = /company|establishment|est\.?\s*id|\blin\b/i;
+const COMPANY_LABEL = /company|establishment|est\.?\s*id|\blin\b|welcome/i;
 // Course-editor default credential labels — ignored (this sim has no login)
 const CRED_LABEL = /user|pass|captcha|otp/i;
 // "Employee 2 ..." / "Member 3 ..." prefix selecting which roster row a field targets
@@ -215,6 +215,7 @@ const EMPTY_MEMBER: ExitedMember = {
 
 type PortalData = {
   companyName: string;
+  welcomeName: string;
   estId: string;
   lin: string;
   pan: string;
@@ -230,6 +231,7 @@ type PortalData = {
 function buildPortalData(config: SimulationCredConfig | null): PortalData {
   const base: PortalData = {
     companyName: COMPANY_NAME,
+    welcomeName: COMPANY_NAME,
     estId: EST_ID,
     lin: COMPANY_LIN,
     pan: COMPANY_PAN,
@@ -263,8 +265,11 @@ function buildPortalData(config: SimulationCredConfig | null): PortalData {
     })).filter((m) => m.uan || m.name);
   }
 
+  const companyName =
+    findFieldValue(config, /company\s*name|^company$/i) || base.companyName;
   return {
-    companyName: findFieldValue(config, /company\s*name|^company$/i) || base.companyName,
+    companyName,
+    welcomeName: findFieldValue(config, /welcome/i) || companyName,
     estId,
     lin: findFieldValue(config, /\blin\b/i) || base.lin,
     pan: findFieldValue(config, /company\s*pan/i) || base.pan,
@@ -352,6 +357,7 @@ function Toast({ text, onClose }: { text: string; onClose: () => void }) {
 // ─── Dashboard header: company strip + nav bar with Dashboards dropdown ────
 function DashboardHeader({
   companyName,
+  welcomeName,
   estId,
   dashboardsOpen,
   onToggleDashboards,
@@ -360,6 +366,7 @@ function DashboardHeader({
   onLogout,
 }: {
   companyName: string;
+  welcomeName: string;
   estId: string;
   dashboardsOpen: boolean;
   onToggleDashboards: () => void;
@@ -390,7 +397,7 @@ function DashboardHeader({
 
         <div className="text-center text-[12.5px] leading-[1.5]">
           <div className="text-[#e8954b]">
-            Welcome: <span className="font-semibold">{estId}</span>
+            Welcome: <span className="font-semibold">{welcomeName}</span>
           </div>
           <div className="font-semibold text-[#2f80b5]">{estId}</div>
         </div>
@@ -931,6 +938,7 @@ export default function EpfReg5Page() {
 
       <DashboardHeader
         companyName={portal.companyName}
+        welcomeName={portal.welcomeName}
         estId={portal.estId}
         dashboardsOpen={dashboardsOpen}
         onToggleDashboards={() => setDashboardsOpen((v) => !v)}
