@@ -23,7 +23,7 @@ import {
   type SimulationCredConfig,
 } from "@/lib/useSimulationConfig";
 
-const SIMULATION_SLUG = "epf-reg-3";
+const SIMULATION_SLUG = "epf-reg-5";
 const COMPANY_NAME = "IICPA PRIVATE LIMITED";
 const EST_ID = "APHYD1577313000";
 const COMPANY_LIN = "9778613527";
@@ -43,13 +43,14 @@ const DASHBOARD_MENU_ITEMS = [
 const NAV_BEFORE = ["Member", "Establishment", "Payments"];
 const NAV_AFTER = ["User", "Admin", "Online Services", "ABRY"];
 
-type ActiveMember = {
+type ExitedMember = {
   uan: string;
   memberId: string;
   name: string;
   gender: string;
   dob: string;
   doj: string;
+  dateOfExit: string;
   fatherName: string;
   relation: string;
   maritalStatus: string;
@@ -61,88 +62,93 @@ type ActiveMember = {
   nomination: string;
 };
 
-const ACTIVE_MEMBERS: ActiveMember[] = [
+const EXITED_MEMBERS: ExitedMember[] = [
   {
-    uan: "100420952022",
-    memberId: "APHYD15773130000000101",
-    name: "ABDUL BASHEER",
+    uan: "100512345678",
+    memberId: "APHYD15773130000000201",
+    name: "VIKRAM SINGH",
     gender: "Male",
-    dob: "1993-08-12",
-    doj: "2023-02-25",
-    fatherName: "BASHEER ABBAS",
+    dob: "1988-03-21",
+    doj: "2021-04-05",
+    dateOfExit: "2024-11-30",
+    fatherName: "RANJIT SINGH",
     relation: "Father",
     maritalStatus: "MARRIED",
-    mobile: "9876512347",
-    email: "basheerabdul123@gmail.com",
-    aadhaar: "362436243624",
+    mobile: "9876500011",
+    email: "vikramsingh88@gmail.com",
+    aadhaar: "456745674567",
     pan: "NOT AVAILABLE",
     bankAcc: "NOT AVAILABLE",
     nomination: "NO",
   },
   {
-    uan: "101406142945",
-    memberId: "APHYD15773130000000102",
-    name: "KUMAR VARMA",
-    gender: "Male",
-    dob: "1974-06-15",
-    doj: "2023-01-02",
-    fatherName: "GOPAL VARMA",
-    relation: "Father",
-    maritalStatus: "MARRIED",
-    mobile: "9876512345",
-    email: "kumarvarma74@gmail.com",
-    aadhaar: "672867286728",
-    pan: "NOT AVAILABLE",
-    bankAcc: "NOT AVAILABLE",
-    nomination: "NO",
-  },
-  {
-    uan: "101571260257",
-    memberId: "APHYD15773130000000103",
-    name: "ROHAN RONALD",
-    gender: "Male",
-    dob: "1995-02-01",
-    doj: "2023-02-25",
-    fatherName: "JACOB RONALD",
-    relation: "Father",
-    maritalStatus: "MARRIED",
-    mobile: "9876512346",
-    email: "rohanronald35@gmail.com",
-    aadhaar: "903390339033",
-    pan: "NOT AVAILABLE",
-    bankAcc: "NOT AVAILABLE",
-    nomination: "NO",
-  },
-  {
-    uan: "101999827383",
-    memberId: "APHYD15773130000000104",
-    name: "RIYA VERMA",
+    uan: "100698765432",
+    memberId: "APHYD15773130000000202",
+    name: "MEENA KUMARI",
     gender: "Female",
-    dob: "1997-05-14",
-    doj: "2023-06-01",
-    fatherName: "RAJESH VERMA",
+    dob: "1992-09-10",
+    doj: "2022-01-17",
+    dateOfExit: "2025-02-28",
+    fatherName: "MOHAN LAL",
     relation: "Father",
-    maritalStatus: "UNMARRIED",
-    mobile: "9876512348",
-    email: "riyaverma1997@gmail.com",
-    aadhaar: "745874587458",
+    maritalStatus: "MARRIED",
+    mobile: "9876500012",
+    email: "meenakumari92@gmail.com",
+    aadhaar: "567856785678",
     pan: "NOT AVAILABLE",
     bankAcc: "NOT AVAILABLE",
     nomination: "NO",
   },
   {
-    uan: "746243276036",
-    memberId: "APHYD15773130000000105",
-    name: "AKASH SHARMA",
+    uan: "101287654321",
+    memberId: "APHYD15773130000000203",
+    name: "JOHN DCOSTA",
     gender: "Male",
-    dob: "1994-01-02",
-    doj: "2024-01-10",
-    fatherName: "PRATHAP SHARMA",
+    dob: "1990-12-05",
+    doj: "2021-08-02",
+    dateOfExit: "2025-05-15",
+    fatherName: "PETER DCOSTA",
+    relation: "Father",
+    maritalStatus: "MARRIED",
+    mobile: "9876500013",
+    email: "johndcosta90@gmail.com",
+    aadhaar: "678967896789",
+    pan: "NOT AVAILABLE",
+    bankAcc: "NOT AVAILABLE",
+    nomination: "NO",
+  },
+  {
+    uan: "101876543210",
+    memberId: "APHYD15773130000000204",
+    name: "PRIYA NAIR",
+    gender: "Female",
+    dob: "1996-07-22",
+    doj: "2023-03-01",
+    dateOfExit: "2025-06-20",
+    fatherName: "SURESH NAIR",
     relation: "Father",
     maritalStatus: "UNMARRIED",
-    mobile: "9900009898",
-    email: "akshash20202@gmail.com",
-    aadhaar: "656578783333",
+    mobile: "9876500014",
+    email: "priyanair96@gmail.com",
+    aadhaar: "789078907890",
+    pan: "NOT AVAILABLE",
+    bankAcc: "NOT AVAILABLE",
+    nomination: "NO",
+  },
+  {
+    uan: "101765432109",
+    memberId: "APHYD15773130000000205",
+    name: "RAHUL MEHTA",
+    gender: "Male",
+    dob: "1991-11-11",
+    doj: "2022-06-13",
+    dateOfExit: "2025-04-10",
+    fatherName: "ANIL MEHTA",
+    relation: "Father",
+    maritalStatus: "MARRIED",
+    mobile: "9876500015",
+    email: "rahulmehta91@gmail.com",
+    aadhaar: "890189018901",
     pan: "NOT AVAILABLE",
     bankAcc: "NOT AVAILABLE",
     nomination: "NO",
@@ -165,9 +171,9 @@ const CRED_LABEL = /user|pass|captcha|otp/i;
 // "Employee 2 ..." / "Member 3 ..." prefix selecting which roster row a field targets
 const GROUP_PREFIX = /(?:employee|emp|member|row)\s*#?\s*(\d+)/i;
 
-// Map a configured field label to the ActiveMember property it overrides.
+// Map a configured field label to the ExitedMember property it overrides.
 // Specific labels are matched before the generic "name".
-const employeeKeyForLabel = (label: string): keyof ActiveMember | null => {
+const employeeKeyForLabel = (label: string): keyof ExitedMember | null => {
   const l = label.toLowerCase();
   if (/uan/.test(l)) return "uan";
   if (/member\s*id/.test(l)) return "memberId";
@@ -176,6 +182,7 @@ const employeeKeyForLabel = (label: string): keyof ActiveMember | null => {
   if (/marital/.test(l)) return "maritalStatus";
   if (/gender/.test(l)) return "gender";
   if (/birth|dob/.test(l)) return "dob";
+  if (/exit|doe/.test(l)) return "dateOfExit";
   if (/join|doj/.test(l)) return "doj";
   if (/mobile|phone/.test(l)) return "mobile";
   if (/email/.test(l)) return "email";
@@ -187,13 +194,14 @@ const employeeKeyForLabel = (label: string): keyof ActiveMember | null => {
   return null;
 };
 
-const EMPTY_MEMBER: ActiveMember = {
+const EMPTY_MEMBER: ExitedMember = {
   uan: "",
   memberId: "",
   name: "",
   gender: "Male",
   dob: "",
   doj: "",
+  dateOfExit: "",
   fatherName: "",
   relation: "Father",
   maritalStatus: "",
@@ -211,14 +219,14 @@ type PortalData = {
   lin: string;
   pan: string;
   bannerText: string;
-  members: ActiveMember[];
+  members: ExitedMember[];
 };
 
 // Merge the admin/course-editor config (Simulation Manager slug config or the
 // per-insert ?simCfg override) onto the hardcoded defaults. Establishment
 // fields use labels like "Company Name" / "Est Id" / "LIN"; employee fields
-// use "UAN" / "Name" / "Email" ... (row 1) or "Employee 2 Name", "Employee 2
-// UAN" ... to override or append other roster rows.
+// use "UAN" / "Name" / "Email" / "Date of Exit" ... (row 1) or "Employee 2
+// Name", "Employee 2 UAN" ... to override or append other roster rows.
 function buildPortalData(config: SimulationCredConfig | null): PortalData {
   const base: PortalData = {
     companyName: COMPANY_NAME,
@@ -226,14 +234,14 @@ function buildPortalData(config: SimulationCredConfig | null): PortalData {
     lin: COMPANY_LIN,
     pan: COMPANY_PAN,
     bannerText: "",
-    members: ACTIVE_MEMBERS,
+    members: EXITED_MEMBERS,
   };
   if (!config) return base;
 
   const estId =
     findFieldValue(config, /est(ablishment)?\.?\s*id/i).replace(/\s/g, "").toUpperCase() ||
     base.estId;
-  const overrides = new Map<number, Partial<ActiveMember>>();
+  const overrides = new Map<number, Partial<ExitedMember>>();
 
   for (const { label, value } of config.credentialFields) {
     const v = value.trim();
@@ -242,7 +250,7 @@ function buildPortalData(config: SimulationCredConfig | null): PortalData {
     const idx = group ? Math.max(parseInt(group[1], 10) - 1, 0) : 0;
     const key = employeeKeyForLabel(label.replace(GROUP_PREFIX, " "));
     if (!key) continue;
-    const val = key === "dob" || key === "doj" ? normalizeDate(v) : v;
+    const val = key === "dob" || key === "doj" || key === "dateOfExit" ? normalizeDate(v) : v;
     overrides.set(idx, { ...(overrides.get(idx) || {}), [key]: val });
   }
 
@@ -265,7 +273,7 @@ function buildPortalData(config: SimulationCredConfig | null): PortalData {
   };
 }
 
-type View = "dashboard" | "activeMember";
+type View = "dashboard" | "exitedMember";
 
 // ─── Top simulation disclaimer ─────────────────────────────────────────────
 function SimBanner() {
@@ -304,13 +312,13 @@ function TickOverlay({ label }: { label: string }) {
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4 bg-black/45 backdrop-blur-sm">
       <div
         className="flex h-[100px] w-[100px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.25),0_0_0_22px_rgba(34,197,94,0.12)]"
-        style={{ animation: "epfTickPop3 0.4s ease-out" }}
+        style={{ animation: "epfTickPop5 0.4s ease-out" }}
       >
         <CheckCircle size={52} className="text-white" />
       </div>
       <p className="text-[18px] font-bold text-white">{label}</p>
       <style jsx>{`
-        @keyframes epfTickPop3 {
+        @keyframes epfTickPop5 {
           0% {
             transform: scale(0.4);
             opacity: 0;
@@ -426,7 +434,7 @@ function DashboardHeader({
           {dashboardsOpen && (
             <div className="absolute left-0 top-full z-40 w-[300px] rounded-b border border-t-0 border-[#ccc] bg-white py-1 text-left shadow-lg">
               {DASHBOARD_MENU_ITEMS.map((item) => {
-                const isTarget = item === "ACTIVE MEMBER";
+                const isTarget = item === "EXITED MEMBER";
                 return (
                   <button
                     key={item}
@@ -592,8 +600,8 @@ function DashboardMain({ portal }: { portal: PortalData }) {
   );
 }
 
-// ─── Active Member dashboard: search + list all active employees ───────────
-function ActiveMemberPage({
+// ─── Exited Member dashboard: search + list all exited employees ───────────
+function ExitedMemberPage({
   portal,
   onVerified,
   onBack,
@@ -611,7 +619,7 @@ function ActiveMemberPage({
     y58From: "",
     y58Till: "",
   });
-  const [results, setResults] = useState<ActiveMember[] | null>(null);
+  const [results, setResults] = useState<ExitedMember[] | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(true);
   const [error, setError] = useState("");
 
@@ -637,7 +645,7 @@ function ActiveMemberPage({
       if (form.dojTill && m.doj > form.dojTill) return false;
       return true;
     });
-    setError(matched.length === 0 ? "No active member found for the given criteria" : "");
+    setError(matched.length === 0 ? "No exited member found for the given criteria" : "");
     setResults(matched);
     setDetailsOpen(true);
 
@@ -657,7 +665,7 @@ function ActiveMemberPage({
     setError("");
     setResults(portal.members);
     setDetailsOpen(true);
-    onVerified("Active Members Listed!");
+    onVerified("Exited Members Listed!");
   };
 
   // Member ID prefix segments derived from the (possibly admin-configured)
@@ -689,7 +697,7 @@ function ActiveMemberPage({
         <span>/</span>
         <span>Dashboards</span>
         <span>/</span>
-        <span>Active Member</span>
+        <span>Exited Member</span>
       </div>
 
       {portal.bannerText && (
@@ -758,7 +766,7 @@ function ActiveMemberPage({
             onClick={showAll}
             className="rounded bg-[#1a4f8b] px-6 py-2 text-[13.5px] font-bold text-white hover:bg-[#153f70]"
           >
-            Show All Employee
+            Show Member exited in Last 3 months
           </button>
           <button
             onClick={cancel}
@@ -774,12 +782,12 @@ function ActiveMemberPage({
           onClick={() => setDetailsOpen((v) => !v)}
           className="flex w-full items-center gap-1.5 border-b border-[#eee] px-5 py-3 text-left text-[14.5px] font-bold text-[#333]"
         >
-          {detailsOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />} Active Member Details
+          {detailsOpen ? <ChevronDown size={15} /> : <ChevronRight size={15} />} Exited Member Details
         </button>
 
         {detailsOpen && (
           <div className="overflow-x-auto px-5 py-4">
-            <table className="w-full min-w-[1280px] text-[12.5px]">
+            <table className="w-full min-w-[1360px] text-[12.5px]">
               <thead className="bg-[#f7f7f7] text-[#1a4f8b]">
                 <tr>
                   {[
@@ -790,6 +798,7 @@ function ActiveMemberPage({
                     "Gender",
                     "Date of Birth",
                     "Date of Joining",
+                    "Date of Exit",
                     "Father's / Husband's Name",
                     "Relation",
                     "Marital Status",
@@ -809,14 +818,15 @@ function ActiveMemberPage({
               <tbody>
                 {results === null && (
                   <tr>
-                    <td colSpan={16} className="px-3 py-6 text-center text-[#888]">
-                      Use <strong>Search</strong> or <strong>Show All Employee</strong> to view active members.
+                    <td colSpan={17} className="px-3 py-6 text-center text-[#888]">
+                      Use <strong>Search</strong> or <strong>Show Member exited in Last 3 months</strong> to view
+                      exited members.
                     </td>
                   </tr>
                 )}
                 {results !== null && results.length === 0 && (
                   <tr>
-                    <td colSpan={16} className="px-3 py-6 text-center text-[#888]">
+                    <td colSpan={17} className="px-3 py-6 text-center text-[#888]">
                       No records found.
                     </td>
                   </tr>
@@ -830,6 +840,7 @@ function ActiveMemberPage({
                     <td className="border-b border-[#f2f2f2] px-3 py-2 text-[#333]">{m.gender}</td>
                     <td className="border-b border-[#f2f2f2] px-3 py-2 text-[#333]">{m.dob}</td>
                     <td className="border-b border-[#f2f2f2] px-3 py-2 text-[#333]">{m.doj}</td>
+                    <td className="border-b border-[#f2f2f2] px-3 py-2 text-[#333]">{m.dateOfExit}</td>
                     <td className="border-b border-[#f2f2f2] px-3 py-2 text-[#333]">{m.fatherName}</td>
                     <td className="border-b border-[#f2f2f2] px-3 py-2 text-[#333]">{m.relation}</td>
                     <td className="border-b border-[#f2f2f2] px-3 py-2 text-[#333]">{m.maritalStatus}</td>
@@ -858,13 +869,13 @@ function ActiveMemberPage({
 }
 
 // ─── Root page ──────────────────────────────────────────────────────────────
-export default function EpfReg3Page() {
+export default function EpfReg5Page() {
   const [launched, setLaunched] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [dashboardsOpen, setDashboardsOpen] = useState(false);
   const [toast, setToast] = useState("");
   const [tick, setTick] = useState("");
-  // Bumped when re-entering the Active Member page so it loads a clean form
+  // Bumped when re-entering the Exited Member page so it loads a clean form
   const [pageKey, setPageKey] = useState(0);
 
   // Admin-configured values (per-insert ?simCfg override from the course
@@ -880,9 +891,9 @@ export default function EpfReg3Page() {
 
   const handleDashboardItemClick = (item: string) => {
     setDashboardsOpen(false);
-    if (item === "ACTIVE MEMBER") {
+    if (item === "EXITED MEMBER") {
       setPageKey((k) => k + 1);
-      setView("activeMember");
+      setView("exitedMember");
     } else {
       showToast("Not available in this simulation.");
     }
@@ -929,8 +940,8 @@ export default function EpfReg3Page() {
       />
 
       {view === "dashboard" && <DashboardMain portal={portal} />}
-      {view === "activeMember" && (
-        <ActiveMemberPage
+      {view === "exitedMember" && (
+        <ExitedMemberPage
           key={pageKey}
           portal={portal}
           onVerified={handleVerified}

@@ -41,7 +41,9 @@
       "Bash(grep -rln \"simulation-configs\\\\|simCfg\" src --include=\"*.tsx\" --include=\"*.ts\" | grep -v \".next\"; echo \"---server---\"; grep -rln \"simulation-config\" ../server 2>/dev/null | grep -v node_modules | head)",
       "Read(//Users/aritrachakraborty/Desktop/Projects/**)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3777/simulations/epf-reg-3)",
-      "Bash(curl -s http://localhost:3777/simulations/epf-reg-3)"
+      "Bash(curl -s http://localhost:3777/simulations/epf-reg-3)",
+      "Bash(curl -s -o /dev/null -w \"epf-reg-5: %{http_code}\\\\n\" http://localhost:3777/simulations/epf-reg-5)",
+      "Bash(curl -s http://localhost:3777/simulations/epf-reg-5)"
     ]
   }
 }
