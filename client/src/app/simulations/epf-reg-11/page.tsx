@@ -559,13 +559,14 @@ function EcrUploadView({
                       </td>
                       <td className="border border-[#ddd] px-2 py-2">N/A</td>
                       <td className="border border-[#ddd] px-2 py-2">
-                        <div className="flex flex-col items-start gap-1.5">
+                        <div className="flex items-center gap-1.5 whitespace-nowrap">
                           <button
                             onClick={onPrepareChallan}
                             className={`bg-[#5bc0de] text-white px-3 py-1 rounded border border-[#46b8da] font-medium hover:bg-[#31b0d5] whitespace-nowrap ${step === 3 ? "animate-pulse ring-2 ring-red-500" : ""}`}
                           >
                             Prepare Challan
                           </button>
+                          <span className="text-[#888]">|</span>
                           <button className="bg-[#f0ad4e] text-white px-3 py-1 rounded border border-[#eea236] font-medium hover:bg-[#ec971f]">
                             Cancel
                           </button>
@@ -608,12 +609,7 @@ function EcrUploadView({
                   </thead>
                   <tbody>
                     <tr>
-                      <td
-                        colSpan={10}
-                        className="border border-[#ddd] px-2 py-3 text-center text-[#888]"
-                      >
-                        No records found
-                      </td>
+                      <td colSpan={10} className="px-2 py-6"></td>
                     </tr>
                   </tbody>
                 </table>
