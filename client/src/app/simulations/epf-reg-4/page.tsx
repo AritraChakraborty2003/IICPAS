@@ -747,7 +747,8 @@ function NewEmployeeForm({
                 <input
                   value={form.name}
                   onChange={(e) => set("name")(e.target.value.toUpperCase())}
-                  className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
+                  placeholder="ENTER FULL NAME"
+                  className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
                 />
               </div>
             </div>
