@@ -935,8 +935,6 @@ function NewEmployeeForm({
               className="h-[38px] w-full rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none placeholder:text-[#aaa] focus:border-[#2f80b5] focus:ring-1 focus:ring-[#2f80b5]"
             />
           </div>
-        </div>
-      </div>
 
       <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-[#eee] px-5 py-3">
