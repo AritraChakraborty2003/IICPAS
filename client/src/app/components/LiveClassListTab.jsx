@@ -300,6 +300,7 @@ export default function LiveClassListTab() {
         isOpen={!!activeZoomClass}
         videoUrl={activeZoomClass?.meetingLink || null}
         isLive={true}
+        liveStartTime={activeZoomClass?.startAt || null}
         onClose={() => setActiveZoomClass(null)}
         onShowToast={(msg) => toast.error(msg)}
       />

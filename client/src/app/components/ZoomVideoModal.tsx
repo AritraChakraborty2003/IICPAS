@@ -24,6 +24,9 @@ interface ZoomVideoModalProps {
   isOpen: boolean;
   videoUrl: string | null;
   isLive: boolean;
+  // When the live class actually started (ISO string or epoch ms). Playback
+  // joins at the elapsed offset so late joiners don't watch from the top.
+  liveStartTime?: string | number | null;
   onClose: () => void;
   onShowToast: (msg: string) => void;
 }
@@ -32,6 +35,7 @@ function ZoomVideoModal({
   isOpen,
   videoUrl,
   isLive,
+  liveStartTime,
   onClose,
   onShowToast,
 }: ZoomVideoModalProps) {
@@ -98,17 +102,25 @@ function ZoomVideoModal({
           onLoadedMetadata={(event) => {
             setIntroVideoDuration(event.currentTarget.duration || 0);
             if (isLive) {
-              const startTime = parseInt(
-                localStorage.getItem("mockLiveSessionStartTime") ||
-                  Date.now().toString(),
-                10,
-              );
+              const fromProp = liveStartTime
+                ? new Date(liveStartTime).getTime()
+                : NaN;
+              const startTime = !Number.isNaN(fromProp)
+                ? fromProp
+                : parseInt(
+                    localStorage.getItem("mockLiveSessionStartTime") ||
+                      Date.now().toString(),
+                    10,
+                  );
+              const duration = event.currentTarget.duration || 0;
               const elapsedSeconds = (Date.now() - startTime) / 1000;
-              if (
-                elapsedSeconds > 0 &&
-                elapsedSeconds < event.currentTarget.duration
-              ) {
-                event.currentTarget.currentTime = elapsedSeconds;
+              if (elapsedSeconds > 0 && duration > 0) {
+                // Late joiners land at the live position; if the class has
+                // outrun the file, keep a few seconds before the end.
+                event.currentTarget.currentTime = Math.min(
+                  elapsedSeconds,
+                  Math.max(duration - 5, 0),
+                );
               }
             }
           }}
