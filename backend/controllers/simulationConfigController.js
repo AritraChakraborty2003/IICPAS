@@ -2,9 +2,40 @@ import SimulationConfig from "../models/SimulationConfig.js";
 import SimulationOverride from "../models/SimulationOverride.js";
 
 // Known simulations that self-seed on first read.
-// Add new slugs here (or via the admin "Add Simulation" form).
+// Add new slugs here (or via the admin "Add Simulation" form). Optional
+// credentialFields become the editable defaults shown in the Simulation
+// Manager; admins can change any value without touching code.
 const KNOWN_SIMULATIONS = {
   "gst-e-invoicing-1": { name: "GST e-Invoicing 1" },
+  "epf-reg-7": {
+    name: "EPF Reg 7 — Member Profile / Mark Exit",
+    bannerText:
+      "To perform this experiment, open Member → Member Profile, search UAN 101999827383, open the Mark Exit tab, select an Exit Reason, enter Exit Date (EPF) and Exit Date (EPS), then click Save.",
+    credentialFields: [
+      { label: "Company Name", value: "IICPA PRIVATE LIMITED" },
+      { label: "Welcome Name", value: "IICPA PRIVATE LIMITED" },
+      { label: "Est Id", value: "APHYD1577313000" },
+      { label: "LIN", value: "9778613527" },
+      { label: "Company PAN", value: "BGRPA6026U" },
+      { label: "UAN", value: "101999827383" },
+      { label: "Name", value: "RIYA VERMA" },
+      { label: "Member Id", value: "101999" },
+      { label: "Badge Id", value: "91519494838" },
+      { label: "Date of Birth", value: "22/12/1997" },
+      { label: "Date of Joining", value: "01/01/2024" },
+      { label: "Gender", value: "Female" },
+      { label: "Marital Status", value: "Married" },
+      { label: "Father's/Husband's Name", value: "RAJ VERMA" },
+      { label: "Relation", value: "-" },
+      { label: "Mobile", value: "9937373939" },
+      { label: "Email", value: "riyaverma1@gmail.com" },
+      { label: "International Worker", value: "No" },
+      { label: "Qualification", value: "-" },
+      { label: "Monthly EPF Wages", value: "19000" },
+      { label: "Differently Abled", value: "NO" },
+      { label: "Nomination", value: "Not Filed" },
+    ],
+  },
 };
 
 const ensureKnownSimulation = async (slug) => {
@@ -12,7 +43,16 @@ const ensureKnownSimulation = async (slug) => {
   if (!known) return null;
   return SimulationConfig.findOneAndUpdate(
     { slug },
-    { $setOnInsert: { slug, name: known.name } },
+    {
+      $setOnInsert: {
+        slug,
+        name: known.name,
+        ...(known.bannerText ? { bannerText: known.bannerText } : {}),
+        ...(known.credentialFields
+          ? { credentialFields: known.credentialFields }
+          : {}),
+      },
+    },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
 };
