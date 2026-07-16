@@ -988,11 +988,13 @@ export default function DigitalHubClient({
   );
   // Classes scheduled in admin "Class Management" for this course.
   const [classSessions, setClassSessions] = useState<ClassSessionItem[]>([]);
-  // "Watch Recorded" download-in-progress state (class id + percent)
+  // Class-video download-in-progress state (class id + percent)
   const [recordedClassDownloadId, setRecordedClassDownloadId] = useState<
     string | null
   >(null);
   const [recordedClassProgress, setRecordedClassProgress] = useState(0);
+  // startAt of the live class playing in the modal (joins at elapsed offset)
+  const [liveClassStartAt, setLiveClassStartAt] = useState<string | null>(null);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [ticketForm, setTicketForm] = useState({
