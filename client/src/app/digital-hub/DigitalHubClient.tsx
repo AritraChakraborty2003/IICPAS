@@ -1950,13 +1950,14 @@ export default function DigitalHubClient({
     }
   }, [API_BASE, zoomSessionStatus, pollZoomSessionStatus]);
 
-  // "Watch Recorded" in the classes modal: pull the Zoom recording through the
-  // zoom-clips service and play it in the in-app player instead of sending the
-  // student to zoom.us.
-  const handleWatchRecordedClass = useCallback(
-    async (classId: string, link: string) => {
+  // "Watch Recorded" / "Join Live Class" in the classes modal: pull the Zoom
+  // video through the zoom-clips service and play it in the in-app player
+  // instead of sending the student to zoom.us. Live classes play in live mode
+  // (no seeking) joined at the elapsed offset from the class's startAt.
+  const handlePlayClassInModal = useCallback(
+    async (cls: ClassSessionItem, link: string, live: boolean) => {
       if (recordedClassDownloadId) return;
-      setRecordedClassDownloadId(classId);
+      setRecordedClassDownloadId(cls._id);
       setRecordedClassProgress(0);
 
       const showError = (msg: string) => {
@@ -1973,19 +1974,20 @@ export default function DigitalHubClient({
           if (data.status === "ready") {
             setRecordedClassDownloadId(null);
             setManualIntroVideoUrl(data.url);
-            setIsMockLiveSession(false);
+            setIsMockLiveSession(live);
+            setLiveClassStartAt(live ? cls.startAt || null : null);
             setIsLiveSessionsModalOpen(false);
             setIsIntroVideoModalOpen(true);
           } else if (data.status === "error") {
             setRecordedClassDownloadId(null);
-            showError("Cannot prepare the recording right now. Please try again.");
+            showError("Cannot prepare the class video right now. Please try again.");
           } else {
             setRecordedClassProgress(data.progress || 0);
             setTimeout(poll, 1000);
           }
         } catch {
           setRecordedClassDownloadId(null);
-          showError("Cannot check the recording status. Please try again.");
+          showError("Cannot check the class video status. Please try again.");
         }
       };
 
@@ -1994,7 +1996,7 @@ export default function DigitalHubClient({
         poll();
       } catch {
         setRecordedClassDownloadId(null);
-        showError("Cannot prepare the recording right now. Please try again.");
+        showError("Cannot prepare the class video right now. Please try again.");
       }
     },
     [API_BASE, recordedClassDownloadId],
