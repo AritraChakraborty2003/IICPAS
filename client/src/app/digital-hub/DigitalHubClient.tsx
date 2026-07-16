@@ -4736,13 +4736,18 @@ export default function DigitalHubClient({
                             const latest = sorted[0];
                             const url =
                               latest?.recordingUrl || latest?.meetingLink || "";
-                            if (url)
-                              window.open(url, "_blank", "noopener,noreferrer");
+                            // Plays in the in-app player instead of opening
+                            // the raw zoom.us link
+                            if (latest && url)
+                              handlePlayClassInModal(latest, url, false);
                           }}
-                          className="inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-green-700"
+                          disabled={!!recordedClassDownloadId}
+                          className="inline-flex items-center gap-2 rounded-full bg-green-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-80"
                         >
                           <Video className="h-4 w-4" />
-                          Watch Live Class
+                          {recordedClassDownloadId
+                            ? `Preparing… ${recordedClassProgress}%`
+                            : "Watch Live Class"}
                         </button>
                       ) : null}
                       {String(selectedChapter?._id) ===
