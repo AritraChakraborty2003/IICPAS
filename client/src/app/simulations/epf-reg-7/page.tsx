@@ -711,13 +711,6 @@ function MemberProfilePage({
         <span>Member Profile</span>
       </div>
 
-      {portal.bannerText && (
-        <div className="flex items-start gap-2 rounded border border-[#bee3f8] bg-[#ebf8ff] px-4 py-2.5 text-[13px] text-[#1a4f8b]">
-          <Info size={15} className="mt-0.5 shrink-0" />
-          <span>{portal.bannerText}</span>
-        </div>
-      )}
-
       <div className="rounded border border-[#d8d8d8] bg-white shadow-sm">
         <div className="px-5 pt-4">
           <h3 className="border-b-2 border-[#e8954b] pb-2 text-[15px] font-bold text-[#2f80b5]">Search</h3>
