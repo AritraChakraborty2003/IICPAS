@@ -988,6 +988,11 @@ export default function DigitalHubClient({
   );
   // Classes scheduled in admin "Class Management" for this course.
   const [classSessions, setClassSessions] = useState<ClassSessionItem[]>([]);
+  // "Watch Recorded" download-in-progress state (class id + percent)
+  const [recordedClassDownloadId, setRecordedClassDownloadId] = useState<
+    string | null
+  >(null);
+  const [recordedClassProgress, setRecordedClassProgress] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [ticketForm, setTicketForm] = useState({
@@ -1944,6 +1949,56 @@ export default function DigitalHubClient({
       setZoomSessionStatus("error");
     }
   }, [API_BASE, zoomSessionStatus, pollZoomSessionStatus]);
+
+  // "Watch Recorded" in the classes modal: pull the Zoom recording through the
+  // zoom-clips service and play it in the in-app player instead of sending the
+  // student to zoom.us.
+  const handleWatchRecordedClass = useCallback(
+    async (classId: string, link: string) => {
+      if (recordedClassDownloadId) return;
+      setRecordedClassDownloadId(classId);
+      setRecordedClassProgress(0);
+
+      const showError = (msg: string) => {
+        setToastMessage(msg);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 3000);
+      };
+
+      const poll = async () => {
+        try {
+          const { data } = await axios.get(
+            `${API_BASE}/zoom-clips/dynamic-status?link=${encodeURIComponent(link)}`,
+          );
+          if (data.status === "ready") {
+            setRecordedClassDownloadId(null);
+            setManualIntroVideoUrl(data.url);
+            setIsMockLiveSession(false);
+            setIsLiveSessionsModalOpen(false);
+            setIsIntroVideoModalOpen(true);
+          } else if (data.status === "error") {
+            setRecordedClassDownloadId(null);
+            showError("Cannot prepare the recording right now. Please try again.");
+          } else {
+            setRecordedClassProgress(data.progress || 0);
+            setTimeout(poll, 1000);
+          }
+        } catch {
+          setRecordedClassDownloadId(null);
+          showError("Cannot check the recording status. Please try again.");
+        }
+      };
+
+      try {
+        await axios.post(`${API_BASE}/zoom-clips/dynamic-download`, { link });
+        poll();
+      } catch {
+        setRecordedClassDownloadId(null);
+        showError("Cannot prepare the recording right now. Please try again.");
+      }
+    },
+    [API_BASE, recordedClassDownloadId],
+  );
 
   // Handle topic selection
   const handleTopicSelect = useCallback(
@@ -6319,20 +6374,32 @@ export default function DigitalHubClient({
                     <div className="flex shrink-0 items-center gap-2">
                       <button
                         type="button"
-                        onClick={() =>
-                          window.open(url, "_blank", "noopener,noreferrer")
+                        onClick={() => {
+                          if (rowIsLive) {
+                            window.open(url, "_blank", "noopener,noreferrer");
+                          } else {
+                            // Recorded classes play in the in-app Zoom-style
+                            // player — never expose the raw zoom.us link.
+                            handleWatchRecordedClass(cls._id, url);
+                          }
+                        }}
+                        disabled={
+                          !url || recordedClassDownloadId === cls._id
                         }
-                        disabled={!url}
                         className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition shadow-sm ${
-                          url
-                            ? rowIsLive
+                          !url || recordedClassDownloadId === cls._id
+                            ? "cursor-not-allowed bg-slate-300"
+                            : rowIsLive
                               ? "bg-emerald-600 hover:bg-emerald-700 hover:shadow-md"
                               : "bg-blue-600 hover:bg-blue-700 hover:shadow-md"
-                            : "cursor-not-allowed bg-slate-300"
                         }`}
                       >
                         <ExternalLink className="h-4 w-4" />
-                        {rowIsLive ? "Join Live Class" : "Watch Recorded"}
+                        {rowIsLive
+                          ? "Join Live Class"
+                          : recordedClassDownloadId === cls._id
+                            ? `Preparing… ${recordedClassProgress}%`
+                            : "Watch Recorded"}
                       </button>
                     </div>
                   </div>
