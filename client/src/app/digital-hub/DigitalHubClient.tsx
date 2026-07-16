@@ -6300,10 +6300,12 @@ export default function DigitalHubClient({
         isOpen={isIntroVideoModalOpen}
         videoUrl={manualIntroVideoUrl || selectedTopicIntroVideo}
         isLive={isMockLiveSession}
+        liveStartTime={liveClassStartAt}
         onClose={() => {
           setIsIntroVideoModalOpen(false);
           setManualIntroVideoUrl(null);
           setIsMockLiveSession(false);
+          setLiveClassStartAt(null);
         }}
         onShowToast={(msg) => {
           setToastMessage(msg);
