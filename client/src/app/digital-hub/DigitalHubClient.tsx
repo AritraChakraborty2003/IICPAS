@@ -6378,15 +6378,12 @@ export default function DigitalHubClient({
                     <div className="flex shrink-0 items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => {
-                          if (rowIsLive) {
-                            window.open(url, "_blank", "noopener,noreferrer");
-                          } else {
-                            // Recorded classes play in the in-app Zoom-style
-                            // player — never expose the raw zoom.us link.
-                            handleWatchRecordedClass(cls._id, url);
-                          }
-                        }}
+                        onClick={() =>
+                          // Both live and recorded classes play in the in-app
+                          // Zoom-style player — never expose the raw zoom.us
+                          // link. Live playback joins at the elapsed offset.
+                          handlePlayClassInModal(cls, url, rowIsLive)
+                        }
                         disabled={
                           !url || recordedClassDownloadId === cls._id
                         }
@@ -6399,10 +6396,12 @@ export default function DigitalHubClient({
                         }`}
                       >
                         <ExternalLink className="h-4 w-4" />
-                        {rowIsLive
-                          ? "Join Live Class"
-                          : recordedClassDownloadId === cls._id
-                            ? `Preparing… ${recordedClassProgress}%`
+                        {recordedClassDownloadId === cls._id
+                          ? rowIsLive
+                            ? `Joining… ${recordedClassProgress}%`
+                            : `Preparing… ${recordedClassProgress}%`
+                          : rowIsLive
+                            ? "Join Live Class"
                             : "Watch Recorded"}
                       </button>
                     </div>
