@@ -351,7 +351,7 @@ function ZoomVideoModal({
 function MoreVideoOptionsButton({
   videoRef,
 }: {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [speed, setSpeed] = useState(1);
