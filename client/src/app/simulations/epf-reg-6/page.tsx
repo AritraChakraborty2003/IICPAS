@@ -723,7 +723,8 @@ function ApprovalsView({ onComplete }: { onComplete: () => void }) {
   // hidden until the strip is expanded.
   const [open, setOpen] = useState(false);
   const toggle = () => {
-    if (!open) onComplete();
+    // Let the student see the expanded table for a moment before the tick
+    if (!open) setTimeout(onComplete, 2000);
     setOpen(!open);
   };
   return (
