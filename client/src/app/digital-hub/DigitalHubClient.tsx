@@ -282,6 +282,7 @@ interface ClassSessionItem {
   title: string;
   type: "live" | "recorded";
   status?: string;
+  startAt?: string;
   date?: string;
   time?: string;
   durationMinutes?: number;
@@ -1556,8 +1557,18 @@ export default function DigitalHubClient({
       );
 
     const forTopic = classSessions.filter(matchesTopic);
+    // Only the latest scheduled live class is surfaced; older live entries
+    // for the same topic stay hidden until they resolve to recorded.
+    const live = forTopic
+      .filter((c) => c.type === "live")
+      .sort(
+        (a, b) =>
+          new Date(b.startAt || b.date || 0).getTime() -
+          new Date(a.startAt || a.date || 0).getTime(),
+      )
+      .slice(0, 1);
     return {
-      live: forTopic.filter((c) => c.type === "live"),
+      live,
       recorded: forTopic.filter((c) => c.type === "recorded"),
     };
   }, [classSessions, selectedTopic?._id]);
