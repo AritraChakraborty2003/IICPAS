@@ -34,6 +34,15 @@ const TARGET_UAN = "101799815726";
 const TARGET_AADHAAR = "353567678888";
 const TARGET_NAME = "Keerthan Kumar";
 const TARGET_DOB = "22/02/1988";
+// Details "fetched from the UAN record" that prefill the registration form
+// shown after a successful Verify
+const TARGET_FATHER = "NARAYAN SWAMY";
+const TARGET_MARITAL = "MARRIED";
+const TARGET_MOBILE = "9900008797";
+const TARGET_EMAIL = "keerthan292@gmail.com";
+const TARGET_QUALIFICATION = "GRADUATE";
+const TARGET_DOJ = "2024-01-20";
+const TARGET_MEMBER_ID = "0000000201";
 
 const digitsOnly = (v: string) => v.replace(/\D/g, "");
 const norm = (v: string) => v.trim().toLowerCase();
@@ -427,12 +436,15 @@ function MemberRegistrationPage({
 }: {
   pendingMembers: PendingMember[];
   onVerified: (details: BasicDetails) => void;
-  onRegistered: (name: string, memberId: string) => void;
+  onRegistered: (name: string, memberId: string, uan?: string) => void;
   onCancel: () => void;
 }) {
   const [hasUan, setHasUan] = useState<"yes" | "no">("yes");
   const [form, setForm] = useState({ uan: "", aadhaar: "", name: "", dob: "" });
   const [error, setError] = useState("");
+  // Set after a successful Verify: the full registration form opens below,
+  // prefilled with the member's details "fetched from the UAN record".
+  const [verified, setVerified] = useState<BasicDetails | null>(null);
 
   // Admin-configured values (per-insert override or Simulation Manager)
   // replace the hardcoded answer key when available.
@@ -440,7 +452,20 @@ function MemberRegistrationPage({
   const targetUan = digitsOnly(findFieldValue(simConfig, /uan/i)) || TARGET_UAN;
   const targetName = findFieldValue(simConfig, /name/i) || TARGET_NAME;
   const targetDob = findFieldValue(simConfig, /birth|dob/i) || TARGET_DOB;
+  const targetAadhaar =
+    digitsOnly(findFieldValue(simConfig, /aadhaar|aadhar/i)) || TARGET_AADHAAR;
   const validateCreds = simConfig ? simConfig.requireCredentialValidation : true;
+
+  const cfgDoj = findFieldValue(simConfig, /join|doj/i);
+  const prefill: EmployeePrefill = {
+    fatherName: findFieldValue(simConfig, /father|husband/i) || TARGET_FATHER,
+    maritalStatus: findFieldValue(simConfig, /marital/i) || TARGET_MARITAL,
+    mobile: digitsOnly(findFieldValue(simConfig, /mobile|phone/i)) || TARGET_MOBILE,
+    email: findFieldValue(simConfig, /email/i) || TARGET_EMAIL,
+    qualification: findFieldValue(simConfig, /qualification/i) || TARGET_QUALIFICATION,
+    doj: (cfgDoj && toIsoDate(cfgDoj)) || TARGET_DOJ,
+    newMemberId: findFieldValue(simConfig, /member\s*id/i) || TARGET_MEMBER_ID,
+  };
 
   const set = (k: keyof typeof form) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -464,11 +489,19 @@ function MemberRegistrationPage({
       }
     }
     setError("");
-    onVerified({ uan: form.uan.trim(), aadhaar: form.aadhaar.trim(), name: form.name.trim(), dob: form.dob.trim() });
+    const details: BasicDetails = {
+      uan: form.uan.trim(),
+      aadhaar: form.aadhaar.trim() || targetAadhaar,
+      name: form.name.trim(),
+      dob: form.dob.trim(),
+    };
+    setVerified(details);
+    onVerified(details);
   };
 
   const reset = () => {
     setForm({ uan: "", aadhaar: "", name: "", dob: "" });
+    setVerified(null);
     setError("");
   };
 
@@ -577,6 +610,19 @@ function MemberRegistrationPage({
                   <RotateCcw size={14} /> Cancel
                 </button>
               </div>
+
+              {verified && (
+                <div className="border-t border-[#eee] pt-5">
+                  <NewEmployeeForm
+                    key={verified.uan}
+                    basic={verified}
+                    prefill={prefill}
+                    onSubmit={(memberId, name) =>
+                      onRegistered(name, memberId, verified.uan)
+                    }
+                  />
+                </div>
+              )}
             </>
           )}
 
@@ -676,12 +722,26 @@ function makeInitialKycRows(aadhaarNo: string, name: string): KycRow[] {
 }
 
 // ─── Reusable full Member Registration form + KYC Details ─────────────────
+type EmployeePrefill = Partial<{
+  fatherName: string;
+  maritalStatus: string;
+  mobile: string;
+  email: string;
+  qualification: string;
+  doj: string;
+  wages: string;
+  newMemberId: string;
+}>;
+
 function NewEmployeeForm({
   basic,
+  prefill,
   onCancel,
   onSubmit,
 }: {
   basic: BasicDetails;
+  // Details "fetched from EPFO records" after a UAN verify — prefill the form
+  prefill?: EmployeePrefill;
   onCancel?: () => void;
   onSubmit: (newMemberId: string, name: string) => void;
 }) {
@@ -703,6 +763,7 @@ function NewEmployeeForm({
     differentlyAbled: false,
     neStates: false,
     newMemberId: "",
+    ...prefill,
   });
   const [kycRows, setKycRows] = useState<KycRow[]>(() => makeInitialKycRows(basic.aadhaar, basic.name.toUpperCase()));
   const [error, setError] = useState("");
@@ -1145,21 +1206,18 @@ export default function EpfReg4Page() {
     }
   };
 
-  // The experiment ends at a successful verify: show the tick, then load a
-  // fresh verify form so the student can retry (no employee-details step).
+  // A successful verify opens the prefilled registration form inline below
+  // the verify card (like the real portal) — the experiment completes at Save.
   const handleVerified = (details: BasicDetails) => {
     setBasic(details);
-    setTick("Details Verified!");
-    setTimeout(() => {
-      setTick("");
-      setRegFormKey((k) => k + 1);
-    }, 1400);
   };
 
-  // "No previous UAN" flow: saving the full form allots a fresh UAN, adds the
-  // member to the pending-approval list and reloads a clean registration form.
-  const handleRegistered = (name: string, newMemberId: string) => {
-    const allottedUan = String(Math.floor(100000000000 + Math.random() * 899999999999));
+  // Saving the full form adds the member to the pending-approval list and
+  // reloads a clean registration form. The verified flow passes the member's
+  // existing UAN; the "no previous UAN" flow allots a fresh one.
+  const handleRegistered = (name: string, newMemberId: string, uan?: string) => {
+    const allottedUan =
+      uan || String(Math.floor(100000000000 + Math.random() * 899999999999));
     setPendingMembers((prev) => [...prev, { name, uan: allottedUan, memberId: newMemberId }]);
     setTick("Member Registered!");
     setTimeout(() => {
