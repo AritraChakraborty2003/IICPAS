@@ -719,17 +719,25 @@ function OnlineServicesPanel() {
 
 // ─── Approvals View ──────────────────────────────────────────
 function ApprovalsView({ onComplete }: { onComplete: () => void }) {
+  // The Pending strip works like the real portal's accordion: the table stays
+  // hidden until the strip is expanded.
+  const [open, setOpen] = useState(false);
+  const toggle = () => {
+    if (!open) onComplete();
+    setOpen(!open);
+  };
   return (
     <div className="rounded border border-[#d8d8d8] bg-white shadow-sm h-full min-h-[400px]">
       <div className="p-4 border-b border-[#eee]">
         <div
-          className="inline-flex cursor-pointer animate-pulse ring-2 ring-red-500 items-center gap-2 font-bold text-[#c0392b] px-2 py-1"
-          onClick={onComplete}
+          className="flex w-full cursor-pointer items-center gap-2 bg-[#e9e9e9] px-3 py-2 font-bold text-[#c0392b] hover:bg-[#e0e0e0]"
+          onClick={toggle}
         >
-          <span className="text-[12px]">▶</span>{" "}
+          <span className="text-[12px]">{open ? "▼" : "▶"}</span>{" "}
           <span className="underline">Pending</span>
         </div>
       </div>
+      {open && (
       <div className="p-4">
         <table className="w-full border-collapse border border-[#ddd] text-[13px]">
           <thead>
@@ -766,6 +774,7 @@ function ApprovalsView({ onComplete }: { onComplete: () => void }) {
           </tbody>
         </table>
       </div>
+      )}
     </div>
   );
 }
