@@ -7,6 +7,26 @@ import SimulationOverride from "../models/SimulationOverride.js";
 // Manager; admins can change any value without touching code.
 const KNOWN_SIMULATIONS = {
   "gst-e-invoicing-1": { name: "GST e-Invoicing 1" },
+  // NOTE: keep "Name" before "Father's/Husband's Name" — the client picks the
+  // first label matching /name/i as the member's name.
+  "epf-reg-4": {
+    name: "EPF Reg 4 — Member Registration (Previous UAN)",
+    bannerText:
+      "To perform this experiment, open Member → Register-Individual, choose Yes for Previous Employment/UAN, enter UAN 101799815726, Name Keerthan Kumar and Date of Birth 22/02/1988, click Verify, then Save the prefilled registration form.",
+    credentialFields: [
+      { label: "UAN", value: "101799815726" },
+      { label: "Name", value: "Keerthan Kumar" },
+      { label: "Date of Birth", value: "22/02/1988" },
+      { label: "AADHAAR", value: "353567678888" },
+      { label: "Father's/Husband's Name", value: "NARAYAN SWAMY" },
+      { label: "Marital Status", value: "MARRIED" },
+      { label: "Mobile", value: "9900008797" },
+      { label: "Email", value: "keerthan292@gmail.com" },
+      { label: "Qualification", value: "GRADUATE" },
+      { label: "Date of Joining", value: "20/01/2024" },
+      { label: "Member Id", value: "0000000201" },
+    ],
+  },
   "epf-reg-7": {
     name: "EPF Reg 7 — Member Profile / Mark Exit",
     bannerText:
