@@ -24,6 +24,9 @@ const classSessionSchema = new Schema(
     chapters: [{ type: Schema.Types.ObjectId, ref: "Chapter" }],
     topics: [{ type: Schema.Types.ObjectId, ref: "Topic" }],
 
+    // Optional batch this class is scheduled for
+    batch: { type: Schema.Types.ObjectId, ref: "BatchManager", default: null },
+
     // Class type: starts as "live", auto-converts to "recorded" when finished
     type: {
       type: String,

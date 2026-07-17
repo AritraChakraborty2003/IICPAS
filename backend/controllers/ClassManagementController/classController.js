@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import ClassSession from "../../models/ClassManagement/ClassSession.js";
 import Course from "../../models/Content/Course.js";
 import Student from "../../models/Students.js";
+import BatchManager from "../../models/BatchManager.js";
 import {
   computeClassWindow,
   deriveLiveStatus,
@@ -11,6 +12,7 @@ const POPULATE = [
   { path: "courses", select: "title category slug image" },
   { path: "chapters", select: "title" },
   { path: "topics", select: "title" },
+  { path: "batch", select: "code mode size assignedCount" },
 ];
 
 // Normalize a value into a clean array of ids (drops empties/duplicates)
@@ -166,6 +168,7 @@ export const createClass = async (req, res) => {
       course, // legacy single-value support
       chapters: chaptersInput,
       topics: topicsInput,
+      batch: batchInput,
       date,
       time,
       durationMinutes = 60,
@@ -194,6 +197,11 @@ export const createClass = async (req, res) => {
       return res.status(400).json({ message: "One or more courses not found" });
     }
 
+    const batch = toIdArray(batchInput)[0] || null;
+    if (batch && !(await BatchManager.exists({ _id: batch }))) {
+      return res.status(400).json({ message: "Batch not found" });
+    }
+
     const { startAt, endAt } = computeClassWindow(
       date,
       time,
@@ -208,6 +216,7 @@ export const createClass = async (req, res) => {
       courses,
       chapters,
       topics,
+      batch,
       type: "live",
       date,
       time,
@@ -270,6 +279,13 @@ export const updateClass = async (req, res) => {
     }
     if (req.body.topics !== undefined) {
       cls.topics = toIdArray(req.body.topics);
+    }
+    if (req.body.batch !== undefined) {
+      const batch = toIdArray(req.body.batch)[0] || null;
+      if (batch && !(await BatchManager.exists({ _id: batch }))) {
+        return res.status(400).json({ message: "Batch not found" });
+      }
+      cls.batch = batch;
     }
 
     // Recompute the schedule window if any timing input changed

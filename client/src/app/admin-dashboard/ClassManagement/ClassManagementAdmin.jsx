@@ -41,6 +41,7 @@ const EMPTY_FORM = {
   courses: [],
   chapters: [],
   topics: [],
+  batch: "",
   date: "",
   time: "",
   durationMinutes: 60,
@@ -124,6 +125,7 @@ const CheckboxGroup = ({ label, options, selected, onToggle, disabled, emptyText
 export default function ClassManagementAdmin() {
   const [classes, setClasses] = useState([]);
   const [courses, setCourses] = useState([]);
+  const [batches, setBatches] = useState([]);
   const [chapters, setChapters] = useState([]); // combined pool for selected courses
   const [topics, setTopics] = useState([]); // combined pool for selected chapters
 
@@ -170,6 +172,19 @@ export default function ClassManagementAdmin() {
       setCourses(list);
     } catch (err) {
       console.error("Failed to fetch courses:", err);
+    }
+  }, [authHeaders]);
+
+  const fetchBatches = useCallback(async () => {
+    try {
+      const res = await fetch(`${API}/api/batch-manager`, {
+        headers: authHeaders(),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setBatches(Array.isArray(data?.batches) ? data.batches : []);
+    } catch (err) {
+      console.error("Failed to fetch batches:", err);
     }
   }, [authHeaders]);
 
@@ -250,7 +265,8 @@ export default function ClassManagementAdmin() {
   useEffect(() => {
     fetchClasses();
     fetchCourses();
-  }, [fetchClasses, fetchCourses]);
+    fetchBatches();
+  }, [fetchClasses, fetchCourses, fetchBatches]);
 
   const filteredClasses = useMemo(() => {
     if (filterType === "all") return classes;
@@ -281,6 +297,7 @@ export default function ClassManagementAdmin() {
       courses: courseIds,
       chapters: chapterIds,
       topics: topicIds,
+      batch: idOf(cls.batch),
       date: cls.date ? new Date(cls.date).toISOString().slice(0, 10) : "",
       time: cls.time || "",
       endTime: cls.endTime || calculateEndTime(cls.time || "00:00", cls.durationMinutes || 60),
@@ -344,6 +361,7 @@ export default function ClassManagementAdmin() {
       setError("");
       const payload = {
         ...form,
+        batch: form.batch || null,
         durationMinutes: Number(form.durationMinutes) || 60,
         price: 0,
         maxParticipants: Number(form.maxParticipants) || 100,
@@ -502,6 +520,11 @@ export default function ClassManagementAdmin() {
                       <div className="text-xs text-gray-500">
                         {cls.instructor}
                       </div>
+                    )}
+                    {cls.batch?.code && (
+                      <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                        {cls.batch.code}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
@@ -705,18 +728,41 @@ export default function ClassManagementAdmin() {
                 </div>
               </div>
 
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Instructor
-                </label>
-                <input
-                  type="text"
-                  value={form.instructor}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, instructor: e.target.value }))
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Instructor
+                  </label>
+                  <input
+                    type="text"
+                    value={form.instructor}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, instructor: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Batch
+                  </label>
+                  <select
+                    value={form.batch}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, batch: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="">No batch</option>
+                    {batches.map((b) => (
+                      <option key={idOf(b)} value={idOf(b)}>
+                        {b.code || "Untitled batch"}
+                        {b.mode ? ` · ${b.mode}` : ""}
+                        {b.size ? ` (${b.assignedCount || 0}/${b.size})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
