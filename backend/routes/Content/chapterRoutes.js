@@ -3,6 +3,7 @@ import Chapter from "../../models/Content/Chapter.js";
 import Topic from "../../models/Content/Topic.js";
 import Course from "../../models/Content/Course.js";
 import { POPULATE_TOPICS_WITH_LESSONS, TOPIC_LESSON_POPULATE } from "../../utils/topicPopulation.js";
+import { requireBearerToken } from "../../middleware/requireBearerToken.js";
 
 const router = express.Router();
 
@@ -235,7 +236,7 @@ router.post("/by-course/:courseId", async (req, res) => {
 });
 
 // Update a chapter
-router.put("/:chapterId", async (req, res) => {
+router.put("/:chapterId", requireBearerToken, async (req, res) => {
   try {
     const { chapterId } = req.params;
     const { 
@@ -279,7 +280,7 @@ router.put("/:chapterId", async (req, res) => {
 });
 
 // Delete a chapter
-router.delete("/:chapterId", async (req, res) => {
+router.delete("/:chapterId", requireBearerToken, async (req, res) => {
   try {
     const { chapterId } = req.params;
 

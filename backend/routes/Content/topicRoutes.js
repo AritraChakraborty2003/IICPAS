@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as topicController from "../../controllers/content/topicControllers.js";
 import uploadWordDocument from "../../middleware/wordDocumentUpload.js";
+import { requireBearerToken } from "../../middleware/requireBearerToken.js";
 
 const router = Router();
 
@@ -26,7 +27,7 @@ router.post("/ai-webhook", topicController.receiveAiContent);
 router.get("/ai-content", topicController.getAiContent);
 
 router.get("/:id", topicController.getTopic);
-router.put("/:id", topicController.updateTopic);
-router.delete("/:id", topicController.deleteTopic);
+router.put("/:id", requireBearerToken, topicController.updateTopic);
+router.delete("/:id", requireBearerToken, topicController.deleteTopic);
 
 export default router;
