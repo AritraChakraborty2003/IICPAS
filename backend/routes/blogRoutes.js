@@ -10,7 +10,7 @@ import {
   createBlogNoImage,
   updateBlogImage,
 } from "../controllers/blogControllers.js";
-import { requireBearerToken } from "../middleware/requireBearerToken.js";
+import { requireAuth } from "../middleware/requireAuth.js";
 
 const router = express.Router();
 
@@ -30,11 +30,11 @@ router.post("/", upload.single("image"), createBlog);
 router.post("/no-image", express.json(), createBlogNoImage); // For n8n (JSON payload without image)
 router.get("/", getBlogs);
 router.get("/:id", getBlog);
-router.patch("/:id", requireBearerToken, upload.single("image"), updateBlog);
-router.delete("/:id", requireBearerToken, deleteBlog);
+router.patch("/:id", requireAuth, upload.single("image"), updateBlog);
+router.delete("/:id", requireAuth, deleteBlog);
 
 // Toggle status route
-router.patch("/:id/toggle-status", requireBearerToken, toggleBlogStatus);
-router.patch("/:id/image", requireBearerToken, upload.single("image"), updateBlogImage); // Dedicated endpoint for image update
+router.patch("/:id/toggle-status", requireAuth, toggleBlogStatus);
+router.patch("/:id/image", requireAuth, upload.single("image"), updateBlogImage); // Dedicated endpoint for image update
 
 export default router;
