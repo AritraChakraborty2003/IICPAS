@@ -169,16 +169,21 @@ export default function CaseStudyBuilder({
       setTasks(
         (data.tasks || []).map((t: any) => ({
           ...t,
-          id: t._id || t.id || Date.now().toString() + Math.random(),
+          id: t._id || t.id || `${Date.now()}-${Math.random()}`,
         }))
       );
       setContent(
         (data.content || []).map((c: any) => ({
           ...c,
-          id: c._id || c.id || Date.now().toString() + Math.random(),
+          id: c._id || c.id || `${Date.now()}-${Math.random()}`,
         }))
       );
-      setSimulations(data.simulations || []);
+      setSimulations(
+        (data.simulations || []).map((s: any) => ({
+          ...s,
+          id: s._id || s.id || `${Date.now()}-${Math.random()}`,
+        }))
+      );
       setTopicSimulations(topicSimEntriesFromSaved(data.topicSimulations));
       const mappedQuestionSets = (data.questionSets || []).map((qs: any) => ({
         id: qs._id || qs.id || Date.now().toString(),
