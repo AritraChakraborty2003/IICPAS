@@ -41,6 +41,7 @@ import courseLevelsRoutes from "./routes/courseLevelsRoutes.js";
 import groupPricingRoutes from "./routes/groupPricingRoutes.js";
 import specialOfferRoutes from "./routes/specialOfferRoutes.js";
 import couponRoutes from "./routes/couponRoutes.js";
+import courseDisplaySettingsRoutes from "./routes/courseDisplaySettingsRoutes.js";
 
 //Extra Routes
 import metaTagRoutes from "./routes/metatagsRoute.js";
@@ -196,7 +197,9 @@ app.use("/api/topics", topicRoutes);
 app.use("/api/quizzes", quizRoutes);
 app.use("/api/revision-tests", revisionTestRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/special-offers", specialOfferRoutes);
 app.use("/api/coupons", couponRoutes);
+app.use("/api/course-display-settings", courseDisplaySettingsRoutes);
 
 // Assignment and Case Study Routes
 import assignmentRoutes from "./routes/assignmentRoutes.js";
