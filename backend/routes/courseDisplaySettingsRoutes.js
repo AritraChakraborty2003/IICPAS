@@ -1,6 +1,5 @@
 import express from "express";
 import CourseDisplaySettings from "../models/CourseDisplaySettings.js";
-import { isSuperAdmin } from "../middleware/isSuperAdmin.js"; // wait, let's just use regular admin check or whatever the standard is. I will not use middleware for now, just a direct route, or I'll check other files to see the middleware.
 
 const router = express.Router();
 
