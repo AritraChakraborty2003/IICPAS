@@ -36,5 +36,6 @@ router.delete("/:id", requireAuth, deleteBlog);
 // Toggle status route
 router.patch("/:id/toggle-status", requireAuth, toggleBlogStatus);
 router.patch("/:id/image", requireAuth, upload.single("image"), updateBlogImage); // Dedicated endpoint for image update
+router.patch("/:id/no-image", express.json(), updateBlog); // For n8n (JSON payload without image, bypassing auth)
 
 export default router;
