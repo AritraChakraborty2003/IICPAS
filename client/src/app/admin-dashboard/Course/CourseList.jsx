@@ -10,6 +10,8 @@ import {
   Chip,
   IconButton,
   Tooltip,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -127,6 +129,7 @@ const CourseList = forwardRef(
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
     const [activeId, setActiveId] = useState(null);
+    const [showIndividualCourses, setShowIndividualCourses] = useState(true);
     const { hasPermission } = useAuth();
 
     const sensors = useSensors(
@@ -145,7 +148,40 @@ const CourseList = forwardRef(
       }
     };
 
-    useEffect(() => { fetchCourses(); }, []);
+    const fetchDisplaySettings = async () => {
+      try {
+        const response = await axios.get(`${API_BASE}/course-display-settings`);
+        setShowIndividualCourses(response.data.showIndividualCourses);
+      } catch (error) {
+        console.error("Failed to fetch display settings", error);
+      }
+    };
+
+    useEffect(() => { 
+      fetchCourses();
+      fetchDisplaySettings();
+    }, []);
+
+    const handleToggleIndividualCourses = async (event) => {
+      const isChecked = event.target.checked;
+      setShowIndividualCourses(isChecked);
+      try {
+        await axios.put(`${API_BASE}/course-display-settings`, {
+          showIndividualCourses: isChecked
+        });
+        MySwal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'Settings updated successfully',
+          showConfirmButton: false,
+          timer: 3000
+        });
+      } catch (error) {
+        setShowIndividualCourses(!isChecked);
+        MySwal.fire("Error!", "Failed to update setting", "error");
+      }
+    };
 
     React.useImperativeHandle(ref, () => ({ fetchCourses }));
 
@@ -182,7 +218,20 @@ const CourseList = forwardRef(
             <Typography variant="h5" fontWeight={700} sx={{ color: "#1a237e" }}>Courses</Typography>
             {saving && <Typography variant="caption" sx={{ color: "#1976d2" }}>Saving order...</Typography>}
           </Stack>
-          <Stack direction="row" spacing={2}>
+          <Stack direction="row" spacing={2} alignItems="center">
+            {hasPermission("course", "add") && (
+              <FormControlLabel
+                control={
+                  <Checkbox 
+                    checked={showIndividualCourses} 
+                    onChange={handleToggleIndividualCourses} 
+                    color="primary" 
+                  />
+                }
+                label={<Typography sx={{ fontWeight: 600, color: "#1976d2", fontSize: "0.9rem" }}>Show Individual Courses in Course Page</Typography>}
+                sx={{ mr: 2 }}
+              />
+            )}
             {hasPermission("course", "add") && (
               <Button variant="outlined" onClick={onManageLevels} sx={{ borderColor: "#1976d2", color: "#1976d2", borderRadius: "8px", px: 3, py: 1, fontWeight: 600, textTransform: "none" }}>
                 Manage Levels

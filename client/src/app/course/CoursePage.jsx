@@ -163,6 +163,7 @@ export default function CoursePage() {
   });
   const [contactSubmitting, setContactSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("group"); // 'group' or 'individual'
+  const [showIndividualCourses, setShowIndividualCourses] = useState(true);
 
   const API_BASE = getApiBase();
   const API_ORIGIN = getApiOrigin();
@@ -179,11 +180,13 @@ export default function CoursePage() {
           categoriesResponse,
           groupPricingResponse,
           blogsResponse,
+          displaySettingsResponse,
         ] = await Promise.allSettled([
           axios.get(`${API_BASE}/courses`),
           axios.get(`${API_BASE}/categories`),
           axios.get(`${API_BASE}/group-pricing`),
           axios.get(`${API_BASE}/blogs`),
+          axios.get(`${API_BASE}/course-display-settings`),
         ]);
 
         // Update courses if API call succeeded
@@ -224,6 +227,16 @@ export default function CoursePage() {
             (blog) => !blog?.status || blog.status === "active"
           );
           setBlogs(activeBlogs);
+        }
+
+        // Update display settings if API call succeeded
+        if (displaySettingsResponse.status === "fulfilled") {
+          if (displaySettingsResponse.value.data && displaySettingsResponse.value.data.showIndividualCourses !== undefined) {
+             setShowIndividualCourses(displaySettingsResponse.value.data.showIndividualCourses);
+             if (!displaySettingsResponse.value.data.showIndividualCourses) {
+               setActiveTab("group");
+             }
+          }
         }
       } catch (error) {
         console.error("API calls failed:", error);
@@ -548,16 +561,18 @@ export default function CoursePage() {
               >
                 Group Package Courses
               </button>
-              <button
-                className={`py-3 px-6 text-sm sm:text-base font-semibold transition-colors duration-200 border-b-2 flex-1 sm:flex-none text-center ${
-                  activeTab === "individual"
-                    ? "border-green-600 text-green-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
-                onClick={() => setActiveTab("individual")}
-              >
-                Individual Courses
-              </button>
+              {showIndividualCourses && (
+                <button
+                  className={`py-3 px-6 text-sm sm:text-base font-semibold transition-colors duration-200 border-b-2 flex-1 sm:flex-none text-center ${
+                    activeTab === "individual"
+                      ? "border-green-600 text-green-600"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                  onClick={() => setActiveTab("individual")}
+                >
+                  Individual Courses
+                </button>
+              )}
             </div>
 
             {/* Unified Display: Show all courses together in a single grid */}
