@@ -146,7 +146,9 @@ export default function GroupCourseCard({
           {groupPricing.duration && (
             <div className="flex items-center gap-1">
               <span>📅</span>
-              <span className="font-medium">{groupPricing.duration}</span>
+              <span className="font-medium">
+                {groupPricing.duration.split('(')[0].trim()}
+              </span>
             </div>
           )}
         </div>

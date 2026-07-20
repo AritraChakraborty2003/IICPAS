@@ -720,7 +720,7 @@ export default function CoursePage() {
                         <span className="inline-flex items-center gap-1.5">
                           <span>⏱️</span>
                           <span className="font-semibold text-gray-800">
-                            {getCourseHours(course)} Hrs{getCourseWeeks(course) ? ` (${getCourseWeeks(course)} weeks)` : ""}
+                            {getCourseHours(course)} Hrs
                           </span>
                         </span>
                         <span className="inline-flex items-center gap-1.5">
