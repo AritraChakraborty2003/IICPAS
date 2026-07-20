@@ -166,8 +166,18 @@ export default function CaseStudyBuilder({
     const applyData = (data: any) => {
       setTitle(data.title || "");
       setDescription(data.description || "");
-      setTasks(data.tasks || []);
-      setContent(data.content || []);
+      setTasks(
+        (data.tasks || []).map((t: any) => ({
+          ...t,
+          id: t._id || t.id || Date.now().toString() + Math.random(),
+        }))
+      );
+      setContent(
+        (data.content || []).map((c: any) => ({
+          ...c,
+          id: c._id || c.id || Date.now().toString() + Math.random(),
+        }))
+      );
       setSimulations(data.simulations || []);
       setTopicSimulations(topicSimEntriesFromSaved(data.topicSimulations));
       const mappedQuestionSets = (data.questionSets || []).map((qs: any) => ({
@@ -201,7 +211,7 @@ export default function CaseStudyBuilder({
 
   const addTask = () => {
     const newTask: Task = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random(),
       taskName: "",
       instructions: "",
     };
@@ -220,7 +230,7 @@ export default function CaseStudyBuilder({
 
   const addContent = () => {
     const newContent: Content = {
-      id: Date.now().toString(),
+      id: Date.now().toString() + Math.random(),
       type: "rich", // Default to rich text for better editing
       richTextContent: "",
     };

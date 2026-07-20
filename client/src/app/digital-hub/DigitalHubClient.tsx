@@ -5165,15 +5165,26 @@ export default function DigitalHubClient({
                       </div>
                     )}
 
-                    {/* Tasks */}
-                    {selectedCaseStudy.tasks &&
-                      selectedCaseStudy.tasks.length > 0 && (
-                        <div className="mb-8">
-                          <div className="space-y-4">
-                            {selectedCaseStudy.tasks.map((task, index) => (
+                    {/* Tasks & Content, interleaved: Task 1, Content 1, Task 2, Content 2, ... */}
+                    {(() => {
+                      const tasks = selectedCaseStudy.tasks || [];
+                      const contents = selectedCaseStudy.content || [];
+                      const pairCount = Math.max(
+                        tasks.length,
+                        contents.length,
+                      );
+                      if (pairCount === 0) return null;
+
+                      const rows = [];
+                      for (let index = 0; index < pairCount; index++) {
+                        const task = tasks[index];
+                        const content = contents[index];
+                        rows.push(
+                          <div key={`pair-${index}`} className="mb-8">
+                            {task && (
                               <div
-                                key={task._id || index}
-                                className="p-6 bg-emerald-50 border border-emerald-200 rounded-lg"
+                                key={task._id || `task-${index}`}
+                                className="p-6 mb-4 bg-emerald-50 border border-emerald-200 rounded-lg"
                               >
                                 <h4 className="text-lg font-semibold text-emerald-800 mb-2">
                                   Task {index + 1}
@@ -5183,19 +5194,10 @@ export default function DigitalHubClient({
                                   {task.instructions}
                                 </p>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                    {/* Content */}
-                    {selectedCaseStudy.content &&
-                      selectedCaseStudy.content.length > 0 && (
-                        <div className="mb-8">
-                          <div className="space-y-4">
-                            {selectedCaseStudy.content.map((content, index) => (
+                            )}
+                            {content && (
                               <div
-                                key={content._id || index}
+                                key={content._id || `content-${index}`}
                                 className="p-6 bg-stone-50 border border-stone-200 rounded-lg"
                               >
                                 {content.type === "video" &&
@@ -5242,10 +5244,12 @@ export default function DigitalHubClient({
                                     />
                                   )}
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                            )}
+                          </div>,
+                        );
+                      }
+                      return rows;
+                    })()}
 
                     {/* Simulations */}
                     {selectedCaseStudy.simulations &&
