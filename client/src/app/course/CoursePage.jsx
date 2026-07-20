@@ -162,6 +162,7 @@ export default function CoursePage() {
     message: "",
   });
   const [contactSubmitting, setContactSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("group"); // 'group' or 'individual'
 
   const API_BASE = getApiBase();
   const API_ORIGIN = getApiOrigin();
@@ -535,6 +536,30 @@ export default function CoursePage() {
 
           {/* Course Cards */}
           <main className="w-full lg:w-3/4 xl:w-4/5">
+            {/* Tabs */}
+            <div className="flex flex-wrap border-b border-gray-200 mb-6 w-full">
+              <button
+                className={`py-3 px-6 text-sm sm:text-base font-semibold transition-colors duration-200 border-b-2 flex-1 sm:flex-none text-center ${
+                  activeTab === "group"
+                    ? "border-green-600 text-green-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+                onClick={() => setActiveTab("group")}
+              >
+                Group Package Courses
+              </button>
+              <button
+                className={`py-3 px-6 text-sm sm:text-base font-semibold transition-colors duration-200 border-b-2 flex-1 sm:flex-none text-center ${
+                  activeTab === "individual"
+                    ? "border-green-600 text-green-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700"
+                }`}
+                onClick={() => setActiveTab("individual")}
+              >
+                Individual Courses
+              </button>
+            </div>
+
             {/* Unified Display: Show all courses together in a single grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6 auto-rows-max">
               {showCourseSkeleton &&
@@ -557,7 +582,7 @@ export default function CoursePage() {
                 ))}
 
               {/* Individual Course Cards */}
-              {!showCourseSkeleton &&
+              {!showCourseSkeleton && activeTab === "individual" &&
                 filteredCourses.map((course, index) => {
                 const courseImageSrc = normalizeCourseImageSrc(
                   course.image,
@@ -751,16 +776,8 @@ export default function CoursePage() {
               })}
 
               {/* Course Packages Section */}
-              {!showCourseSkeleton && filteredGroupPricing.length > 0 && (
+              {!showCourseSkeleton && activeTab === "group" && filteredGroupPricing.length > 0 && (
                 <>
-                  <div className="col-span-full mb-6">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                      Course Packages
-                    </h2>
-                    <p className="text-gray-600">
-                      Complete course bundles with special pricing
-                    </p>
-                  </div>
                   {filteredGroupPricing.map((group, index) => (
                     <GroupCourseCard
                       key={group._id || `group-${index}`}
@@ -773,13 +790,23 @@ export default function CoursePage() {
               )}
 
               {/* No courses found message */}
-              {!showCourseSkeleton &&
-                filteredCourses.length === 0 &&
+              {!showCourseSkeleton && activeTab === "individual" &&
+                filteredCourses.length === 0 && (
+                  <div className="col-span-full text-gray-500 text-center py-12">
+                    <div className="text-4xl mb-4">📚</div>
+                    <h3 className="text-xl font-semibold mb-2">
+                      No individual courses found
+                    </h3>
+                    <p>Try adjusting your search or filter criteria.</p>
+                  </div>
+                )}
+                
+              {!showCourseSkeleton && activeTab === "group" &&
                 filteredGroupPricing.length === 0 && (
                   <div className="col-span-full text-gray-500 text-center py-12">
                     <div className="text-4xl mb-4">📚</div>
                     <h3 className="text-xl font-semibold mb-2">
-                      No courses found
+                      No group packages found
                     </h3>
                     <p>Try adjusting your search or filter criteria.</p>
                   </div>
