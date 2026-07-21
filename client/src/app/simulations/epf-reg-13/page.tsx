@@ -417,7 +417,17 @@ function LaunchOverlay({ onStart }: { onStart: () => void }) {
 }
 
 // ─── Login Second Factor Authentication (OTP + Captcha) ───────────────────
-function SecondFactorPage({ onCancel, onSuccess }: { onCancel: () => void; onSuccess: () => void }) {
+function SecondFactorPage({
+  otpExpected,
+  validateCreds,
+  onCancel,
+  onSuccess,
+}: {
+  otpExpected: string;
+  validateCreds: boolean;
+  onCancel: () => void;
+  onSuccess: () => void;
+}) {
   const [otp, setOtp] = useState("");
   const [captcha, setCaptcha] = useState("");
   const [otpError, setOtpError] = useState("");
@@ -438,8 +448,8 @@ function SecondFactorPage({ onCancel, onSuccess }: { onCancel: () => void; onSuc
       setCaptchaError("");
     }
     if (hasError) return;
-    if (otp !== DUMMY_OTP) {
-      setOtpError(`Invalid OTP — use ${DUMMY_OTP} for this simulation`);
+    if (validateCreds && otpExpected && otp !== otpExpected) {
+      setOtpError("Invalid OTP. Please use the OTP provided for this experiment.");
       return;
     }
     onSuccess();
@@ -592,6 +602,16 @@ export default function EpfReg13Page() {
   const [launched, setLaunched] = useState(false);
   const [view, setView] = useState<View>("portal");
 
+  // Admin-configured credentials (Simulation Manager slug "epf-reg-13", or
+  // the course editor's per-insert "Add/Edit Creds") drive the whole flow —
+  // there is no hardcoded UAN / password / OTP fallback.
+  const simConfig = useSimulationConfig(SIMULATION_SLUG);
+  const loginUan = findUsernameValue(simConfig);
+  const loginPass = findFieldValue(simConfig, /pass/i);
+  const otpExpected = findFieldValue(simConfig, /otp/i);
+  const bannerText = simConfig?.bannerText || "";
+  const validateCreds = simConfig?.requireCredentialValidation ?? true;
+
   const handleLoginSuccess = () => {
     setView("otp");
   };
@@ -611,13 +631,26 @@ export default function EpfReg13Page() {
 
       <Header />
 
-      {view === "otp" && <SecondFactorPage onCancel={handleReset} onSuccess={handleOtpSuccess} />}
+      {view === "otp" && (
+        <SecondFactorPage
+          otpExpected={otpExpected}
+          validateCreds={validateCreds}
+          onCancel={handleReset}
+          onSuccess={handleOtpSuccess}
+        />
+      )}
       {view === "success" && <SuccessPage onRetry={handleReset} />}
       {view === "portal" && (
         <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
           <div className="grid gap-5 md:grid-cols-[2.4fr_1fr]">
             <G20Banner />
-            <MemberSignInPanel onSuccess={handleLoginSuccess} />
+            <MemberSignInPanel
+              loginUan={loginUan}
+              loginPass={loginPass}
+              validateCreds={validateCreds}
+              bannerText={bannerText}
+              onSuccess={handleLoginSuccess}
+            />
           </div>
 
           <div className="grid gap-5 md:grid-cols-3">
