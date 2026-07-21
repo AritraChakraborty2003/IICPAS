@@ -83,6 +83,9 @@ export default function GSTEWayBillReplica({
   const [selectedMode, setSelectedMode] = useState("Road");
   const [selectedVehicleType, setSelectedVehicleType] = useState("Regular");
   const [vehicleNo, setVehicleNo] = useState("MH12AB1234");
+  const [distanceKm, setDistanceKm] = useState("");
+  const [transporterDocNo, setTransporterDocNo] = useState("");
+  const [vehicleDetailsError, setVehicleDetailsError] = useState("");
   const [showVehiclePreview, setShowVehiclePreview] = useState(false);
   const [isExperiment4Submitted, setIsExperiment4Submitted] = useState(false);
   const [itemProductName, setItemProductName] = useState("");
@@ -120,6 +123,14 @@ export default function GSTEWayBillReplica({
     if (unit) setItemUnit(unit);
     if (taxableValue) setItemTaxableValue(taxableValue);
     if (gstRate) setItemGstRate(gstRate);
+
+    const vehicleNumber = findFieldValue(experiment4Config, /vehicle/i);
+    const distance = findFieldValue(experiment4Config, /distance|km/i);
+    const docNo = findFieldValue(experiment4Config, /doc/i);
+
+    if (vehicleNumber) setVehicleNo(vehicleNumber);
+    if (distance) setDistanceKm(distance);
+    if (docNo) setTransporterDocNo(docNo);
   }, [experiment4Config]);
 
   useEffect(() => {
@@ -167,10 +178,34 @@ export default function GSTEWayBillReplica({
 
   const handleRetryVehiclePreview = () => {
     setVehicleNo("");
+    setDistanceKm("");
+    setTransporterDocNo("");
+    setVehicleDetailsError("");
     setShowVehiclePreview(false);
   };
 
   const handleSubmitVehiclePreview = () => {
+    if (experiment4Config?.requireCredentialValidation) {
+      const expectedVehicleNo = findFieldValue(experiment4Config, /vehicle/i);
+      const expectedDistance = findFieldValue(experiment4Config, /distance|km/i);
+      const expectedDocNo = findFieldValue(experiment4Config, /doc/i);
+      const onlyDigits = (value: string) => value.replace(/[^0-9.]/g, "");
+
+      const isValid =
+        (!expectedVehicleNo ||
+          vehicleNo.trim().toUpperCase() === expectedVehicleNo.trim().toUpperCase()) &&
+        (!expectedDistance || onlyDigits(distanceKm) === onlyDigits(expectedDistance)) &&
+        (!expectedDocNo ||
+          transporterDocNo.trim().toUpperCase() === expectedDocNo.trim().toUpperCase());
+
+      if (!isValid) {
+        setVehicleDetailsError(
+          "Invalid details. Please use the values provided for this experiment."
+        );
+        return;
+      }
+    }
+    setVehicleDetailsError("");
     setShowVehiclePreview(true);
   };
 
@@ -184,6 +219,9 @@ export default function GSTEWayBillReplica({
     setSelectedMode("Road");
     setSelectedVehicleType("Regular");
     setVehicleNo("MH12AB1234");
+    setDistanceKm("");
+    setTransporterDocNo("");
+    setVehicleDetailsError("");
     setShowVehiclePreview(false);
     setShowLaunchScreen(true);
   };
@@ -380,6 +418,11 @@ export default function GSTEWayBillReplica({
                 </span>
                 <input
                   type="text"
+                  value={distanceKm}
+                  onChange={(e) => {
+                    setVehicleDetailsError("");
+                    setDistanceKm(e.target.value);
+                  }}
                   className="h-10 rounded border border-slate-300 px-3 text-[14px] outline-none"
                 />
               </label>
@@ -430,7 +473,10 @@ export default function GSTEWayBillReplica({
                   <input
                     type="text"
                     value={vehicleNo}
-                    onChange={(e) => setVehicleNo(e.target.value)}
+                    onChange={(e) => {
+                      setVehicleDetailsError("");
+                      setVehicleNo(e.target.value);
+                    }}
                     className="h-11 w-full max-w-[165px] rounded border-2 border-red-500 px-3 text-[14px] outline-none"
                   />
                 </label>
@@ -440,6 +486,11 @@ export default function GSTEWayBillReplica({
                     <span className="whitespace-nowrap">Transporter Doc. No. & Date</span>
                     <input
                       type="text"
+                      value={transporterDocNo}
+                      onChange={(e) => {
+                        setVehicleDetailsError("");
+                        setTransporterDocNo(e.target.value);
+                      }}
                       className="h-11 min-w-0 flex-1 rounded border border-slate-300 px-3 text-[14px] outline-none"
                     />
                   </label>
@@ -453,6 +504,13 @@ export default function GSTEWayBillReplica({
             </div>
 
             <div className="px-3 py-6">
+              {vehicleDetailsError && (
+                <div className="mb-3 flex justify-center">
+                  <div className="max-w-[1120px] rounded-sm border border-red-300 bg-red-50 px-4 py-2 text-center text-[13px] text-red-600">
+                    {vehicleDetailsError}
+                  </div>
+                </div>
+              )}
               <div className="flex flex-wrap items-center justify-center gap-2">
                 <button
                   type="button"
