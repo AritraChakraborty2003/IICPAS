@@ -16,6 +16,7 @@ import {
   Video,
 } from "lucide-react";
 import GSTBannerCarousel from "./GSTBannerCarousel";
+import { getSimCfgIdFromLocation } from "@/lib/useSimulationConfig";
 
 type Screen = "home" | "generate" | "search" | "print" | "dashboard" | "experiment4";
 
@@ -898,7 +899,12 @@ export default function GSTEWayBillReplica({
             ))}
             <button
               type="button"
-              onClick={() => router.push(`${loginRoute}?returnTo=${encodeURIComponent(baseRoute)}`)}
+              onClick={() => {
+                const simCfgId = getSimCfgIdFromLocation();
+                const query = new URLSearchParams({ returnTo: baseRoute });
+                if (simCfgId) query.set("simCfg", simCfgId);
+                router.push(`${loginRoute}?${query.toString()}`);
+              }}
               className="ml-auto inline-flex shrink-0 items-center gap-1.5 border border-red-500 px-2 py-1 text-[15px] font-medium text-[#395789] transition-colors duration-200 hover:text-[#173f73]"
             >
               Login

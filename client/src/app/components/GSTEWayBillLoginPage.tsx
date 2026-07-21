@@ -2,16 +2,57 @@
 
 import React, { useState } from "react";
 import { CheckCircle2, Eye, LockKeyhole, RotateCcw, UserRound } from "lucide-react";
+import {
+  findFieldValue,
+  findUsernameValue,
+  useSimulationConfig,
+} from "@/lib/useSimulationConfig";
 
-export default function GSTEWayBillLoginPage() {
+type GSTEWayBillLoginPageProps = {
+  returnTo?: string;
+};
+
+// /simulations/gst/e-way-bill-1 -> gst-e-way-bill-1 (must match the slug
+// derivation used by the course editor and the Simulation Manager).
+const slugFromRoute = (route: string): string => {
+  const match = route.match(/\/simulations\/(.+)/);
+  if (!match) return "";
+  return match[1].replace(/\/+$/, "").split("/").join("-").toLowerCase();
+};
+
+export default function GSTEWayBillLoginPage({
+  returnTo = "/simulations/gst/e-way-bill-1",
+}: GSTEWayBillLoginPageProps) {
   const expectedCaptcha = "P2R7M";
+  const simConfig = useSimulationConfig(slugFromRoute(returnTo));
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [captchaValue, setCaptchaValue] = useState("");
+  const [loginError, setLoginError] = useState("");
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   const handleLogin = () => {
-    if (captchaValue.trim().toUpperCase() === expectedCaptcha) {
-      setShowSuccessOverlay(true);
+    if (captchaValue.trim().toUpperCase() !== expectedCaptcha) {
+      setLoginError("Incorrect captcha. Please try again.");
+      return;
     }
+
+    if (simConfig?.requireCredentialValidation) {
+      const expectedUsername = findUsernameValue(simConfig);
+      const expectedPassword = findFieldValue(simConfig, /pass/i);
+      const isValid =
+        (!expectedUsername || username.trim() === expectedUsername) &&
+        (!expectedPassword || password === expectedPassword);
+      if (!isValid) {
+        setLoginError(
+          "Invalid credentials. Please use the credentials provided for this experiment."
+        );
+        return;
+      }
+    }
+
+    setLoginError("");
+    setShowSuccessOverlay(true);
   };
 
   const handleRetry = () => {
@@ -49,19 +90,17 @@ export default function GSTEWayBillLoginPage() {
           </div>
 
           <div className="space-y-4 px-5 py-5">
-            <div className="rounded-md border border-slate-300 bg-slate-50 px-4 py-2 text-[12px] leading-5 text-slate-600">
-              <div className="font-semibold text-slate-700">Login details</div>
-              <div>User name: AIR</div>
-              <div>Password: ABC@123</div>
-            </div>
-
             <div className="flex items-stretch overflow-hidden rounded-sm border border-slate-300 bg-white">
               <div className="flex w-11 items-center justify-center bg-[#2f6fa8] text-white">
                 <UserRound size={18} />
               </div>
               <input
                 className="min-w-0 flex-1 bg-white px-3 py-2.5 text-[14px] text-slate-700 outline-none placeholder:text-slate-400"
-                defaultValue="AIR"
+                value={username}
+                onChange={(e) => {
+                  setLoginError("");
+                  setUsername(e.target.value);
+                }}
                 placeholder="Username"
               />
             </div>
@@ -73,7 +112,11 @@ export default function GSTEWayBillLoginPage() {
               <input
                 type="password"
                 className="min-w-0 flex-1 bg-white px-3 py-2.5 text-[14px] text-slate-700 outline-none placeholder:text-slate-400"
-                defaultValue="ABC@123"
+                value={password}
+                onChange={(e) => {
+                  setLoginError("");
+                  setPassword(e.target.value);
+                }}
                 placeholder="Password"
               />
             </div>
@@ -97,10 +140,19 @@ export default function GSTEWayBillLoginPage() {
               </div>
               <input
                 value={captchaValue}
-                onChange={(e) => setCaptchaValue(e.target.value)}
+                onChange={(e) => {
+                  setLoginError("");
+                  setCaptchaValue(e.target.value);
+                }}
                 className="min-w-0 flex-1 bg-[#efefef] px-3 py-2.5 text-[14px] text-slate-700 outline-none"
               />
             </div>
+
+            {loginError && (
+              <div className="rounded-sm border border-red-300 bg-red-50 px-3 py-2 text-[12px] text-red-600">
+                {loginError}
+              </div>
+            )}
 
             <div className="pt-2">
               <button
