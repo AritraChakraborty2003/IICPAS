@@ -110,22 +110,22 @@ const getTodayDate = (): string => {
 // admin Simulation Manager / course editor "Add/Edit Creds" for slug
 // "gst-e-way-bill-6") — every other field is fixed scenario data.
 const FIXED_BILL_DETAILS = {
-  billFromName: "Shivam Cements Private Limited",
-  billFromGstin: "07GDLCF7228G1YK",
-  dispatchAddress: "#39 Second Floor, Connaught Cir, Opposite",
-  dispatchPlace: "Delhi",
-  dispatchPincode: "110001",
-  billToName: "Prestige Steel Company",
-  shipToAddress: "#14, 2nd Floor, Off Veera Desai Rd, near Balaji TeleFilms",
+  billFromName: "Anand Steel Traders Private Limited",
+  billFromGstin: "07AABCA1234F1Z2",
+  dispatchAddress: "Plot No. 45, Udyog Vihar Phase 2",
+  dispatchPlace: "Gurugram",
+  dispatchPincode: "122016",
+  billToName: "Sunrise Enterprises",
+  shipToAddress: "Building No. 7, MIDC Industrial Estate",
   shipToPlace: "Mumbai",
-  shipToPincode: "400053",
+  shipToPincode: "400072",
 };
 
 function buildBillDetailsExperiment(config: ReturnType<typeof useSimulationConfig>) {
   return {
     ...FIXED_BILL_DETAILS,
-    documentNo: findFieldValue(config, /document no|doc no/i) || "SH23/10282",
-    billToGstinExpected: findFieldValue(config, /bill to gstin|recipient gstin/i) || "27MNHFP2782H1YZ",
+    documentNo: findFieldValue(config, /document no|doc no/i) || "AT24/5567",
+    billToGstinExpected: findFieldValue(config, /bill to gstin|recipient gstin/i) || "27AAAPL1234C1ZV",
     requireCredentialValidation: config?.requireCredentialValidation ?? true,
   };
 }

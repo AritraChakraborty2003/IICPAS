@@ -11,13 +11,27 @@ import {
   Play
 } from "lucide-react";
 
+type Step = "dashboard_overlay" | "dashboard_active" | "reason_for_challan";
+
 export default function GSTComputation3Simulation() {
+  const [currentStep, setCurrentStep] = useState<Step>("dashboard_overlay");
   const [selectedReason, setSelectedReason] = useState<string>("other");
   const [showLedgerTable, setShowLedgerTable] = useState<boolean>(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState<boolean>(false);
   const [isServicesMenuOpen, setIsServicesMenuOpen] = useState(false);
   const [isPaymentsDropdownOpen, setIsPaymentsDropdownOpen] = useState(false);
-  const [isExperimentStarted, setIsExperimentStarted] = useState<boolean>(false);
+
+  const handleCreateChallanNav = () => {
+    setCurrentStep("reason_for_challan");
+    setIsPaymentsDropdownOpen(false);
+    setIsServicesMenuOpen(false);
+  };
+
+  const handleGoToDashboard = () => {
+    setCurrentStep("dashboard_active");
+    setShowLedgerTable(false);
+    setShowSuccessOverlay(false);
+  };
 
   const handleViewLedgerBalance = () => {
     setShowLedgerTable(true);
@@ -36,10 +50,10 @@ export default function GSTComputation3Simulation() {
     <div className="min-h-screen bg-white text-[#333333] font-sans antialiased flex flex-col select-none relative">
       
       {/* START EXPERIMENT OVERLAY */}
-      {!isExperimentStarted && (
+      {currentStep === "dashboard_overlay" && (
         <div className="absolute inset-0 bg-white/30 backdrop-blur-[1.5px] z-40 flex items-center justify-center">
           <button
-            onClick={() => setIsExperimentStarted(true)}
+            onClick={() => setCurrentStep("dashboard_active")}
             className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white px-8 py-3.5 rounded font-bold uppercase tracking-wider text-sm shadow-md hover:scale-105 transition-all flex items-center gap-2 cursor-pointer z-50"
           >
             <Play fill="white" size={13} />
@@ -137,43 +151,20 @@ export default function GSTComputation3Simulation() {
             {/* GST Main Navigation Menu */}
             <div className="bg-[#1e3b6a] px-4 text-xs font-bold flex flex-wrap items-center justify-between relative shadow-md">
               <div className="flex flex-wrap items-center">
-                <button className="px-4 py-3 hover:bg-[#152a4e] transition-colors border-r border-white/5 uppercase tracking-wide">
+                <button
+                  onClick={handleGoToDashboard}
+                  className="px-4 py-3 hover:bg-[#152a4e] transition-colors border-r border-white/5 uppercase tracking-wide cursor-pointer"
+                >
                   Dashboard
                 </button>
-                <div className="relative">
-                  <button
-                    onClick={() => setIsServicesMenuOpen(!isServicesMenuOpen)}
-                    className={`px-4 py-3 hover:bg-[#152a4e] transition-colors border-r border-white/5 flex items-center gap-1 uppercase tracking-wide cursor-pointer ${
-                      isServicesMenuOpen ? "bg-[#152a4e]" : ""
-                    }`}
-                  >
-                    Services <ChevronDown size={12} />
-                  </button>
-                  {isServicesMenuOpen && (
-                    <div className="absolute left-0 top-full bg-white text-slate-800 border border-slate-200 shadow-xl z-30 w-48 py-1 rounded-b font-semibold text-[11px] animate-fadeIn">
-                      <div className="relative">
-                        <button
-                          onClick={() => setIsPaymentsDropdownOpen(!isPaymentsDropdownOpen)}
-                          className="w-full px-4 py-2 hover:bg-slate-100 flex items-center justify-between text-left font-bold cursor-pointer"
-                        >
-                          Payments <ChevronDown size={11} className="-rotate-90" />
-                        </button>
-                        {isPaymentsDropdownOpen && (
-                          <div className="absolute left-full top-0 bg-white border border-slate-200 shadow-xl w-48 py-1 rounded font-semibold text-[11px]">
-                            <button className="w-full px-4 py-2 hover:bg-slate-100 text-left font-bold text-[#0a2558]">
-                              Create Challan
-                            </button>
-                            <button className="w-full px-4 py-2 hover:bg-slate-100 text-left font-bold text-slate-600">
-                              Challan History
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      <button className="w-full px-4 py-2 hover:bg-slate-100 text-left">User Services</button>
-                      <button className="w-full px-4 py-2 hover:bg-slate-100 text-left">Refunds</button>
-                    </div>
-                  )}
-                </div>
+                <button
+                  onClick={() => setIsServicesMenuOpen(!isServicesMenuOpen)}
+                  className={`px-4 py-3 hover:bg-[#152a4e] transition-colors border-r border-white/5 flex items-center gap-1 uppercase tracking-wide cursor-pointer ${
+                    isServicesMenuOpen ? "bg-[#152a4e]" : ""
+                  }`}
+                >
+                  Services <ChevronDown size={12} />
+                </button>
                 <button className="px-4 py-3 hover:bg-[#152a4e] transition-colors border-r border-white/5 uppercase tracking-wide">
                   GST Law
                 </button>
@@ -190,24 +181,81 @@ export default function GSTComputation3Simulation() {
                   e-Invoice
                 </button>
               </div>
-              
+
               <div className="py-2.5 px-2 flex items-center gap-1.5 text-slate-300">
                 <Bell size={12} className="cursor-pointer hover:text-white" />
               </div>
             </div>
+
+            {/* Services Sub-Navigation Menu Bar */}
+            {isServicesMenuOpen && (
+              <div className="relative z-[9999] flex select-none items-center gap-6 border-b border-[#cbd5e1] bg-[#f1f3f7] px-5 py-2 text-[11px] font-bold text-[#0a2558]">
+                <span className="cursor-pointer hover:text-blue-700">Registration</span>
+                <span className="cursor-pointer hover:text-blue-700">Ledgers</span>
+                <span className="cursor-pointer hover:text-blue-700">Returns</span>
+
+                <div className="relative">
+                  <button
+                    onClick={() => setIsPaymentsDropdownOpen(!isPaymentsDropdownOpen)}
+                    className="flex cursor-pointer items-center gap-1 border-2 border-red-500 bg-white px-2.5 py-0.5 font-bold text-[#0a2558] hover:bg-slate-50"
+                  >
+                    Payments
+                  </button>
+
+                  {isPaymentsDropdownOpen && (
+                    <div className="absolute left-0 top-full z-[99999] mt-2 grid grid-cols-2 gap-x-12 gap-y-3 border-y border-slate-300 bg-white p-5 text-[11px] font-bold shadow-lg">
+                      <div className="flex flex-col gap-3 text-left">
+                        <button
+                          onClick={handleCreateChallanNav}
+                          className="w-fit cursor-pointer border-2 border-red-500 bg-white px-3 py-1.5 text-left font-bold text-blue-900 hover:bg-slate-50"
+                        >
+                          Create Challan
+                        </button>
+                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                          Challan History
+                        </button>
+                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                          Instalment Calendar
+                        </button>
+                      </div>
+                      <div className="flex flex-col justify-start gap-3 pt-1.5 text-left">
+                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                          Saved Challans
+                        </button>
+                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                          Application for Deferred Payment/Payment in Instalments
+                        </button>
+                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                          Grievance against Payment(GST PMT-07)
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <span className="cursor-pointer hover:text-blue-700">User Services</span>
+                <span className="cursor-pointer hover:text-blue-700">Refunds</span>
+                <span className="cursor-pointer hover:text-blue-700">e-Way Bill System</span>
+                <span className="cursor-pointer hover:text-blue-700">Track Application Status</span>
+              </div>
+            )}
           </div>
 
           {/* Breadcrumbs and Language strip */}
           <div className="bg-[#cbd5e1]/40 border-b border-[#cbd5e1]/60 px-5 py-2 select-none shrink-0">
             <div className="flex items-center justify-between text-[10.5px] font-bold text-slate-600">
               <div className="flex items-center gap-1.5">
-                <span className="hover:underline cursor-pointer text-[#0f3a9a]">Dashboard</span>
-                <span className="text-[#94a3b8] font-normal">&gt;</span>
-                <span className="hover:underline cursor-pointer text-[#0f3a9a]">Payment</span>
-                <span className="text-[#94a3b8] font-normal">&gt;</span>
-                <span className="text-[#475569]">Reason for challan</span>
+                <span className="hover:underline cursor-pointer text-[#0f3a9a]" onClick={handleGoToDashboard}>Dashboard</span>
+                {currentStep === "reason_for_challan" && (
+                  <>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="hover:underline cursor-pointer text-[#0f3a9a]">Payment</span>
+                    <span className="text-[#94a3b8] font-normal">&gt;</span>
+                    <span className="text-[#475569]">Reason for challan</span>
+                  </>
+                )}
               </div>
-              
+
               <div className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 cursor-pointer font-bold">
                 <Globe size={12} className="text-slate-500" />
                 <span>English</span>
@@ -217,8 +265,62 @@ export default function GSTComputation3Simulation() {
 
           {/* Main Body Area */}
           <div className="w-full flex-1 bg-white p-5 flex flex-col justify-between">
+            {currentStep !== "reason_for_challan" ? (
+              <div className="flex flex-1 flex-col w-full text-[11px]">
+                <h2 className="text-[15px] font-medium text-[#1e3a8a] text-center w-full">
+                  Welcome IICPA Private Limited to GST Common Portal
+                </h2>
+
+                <p className="font-bold text-[#333] text-[11px] text-center mt-3 mb-5">
+                  Return filing preference (Apr-Jun 2026) : Monthly (
+                  <span className="text-[#1e3a8a] cursor-pointer hover:underline font-normal">Change</span>)
+                </p>
+
+                <h3 className="text-[13px] font-bold text-[#333] text-center mb-3">
+                  Returns Calendar (Last 5 return periods)
+                </h3>
+
+                <div className="border border-[#1e3b6a] max-w-[700px] w-full mb-6 mx-auto">
+                  <table className="w-full text-center border-collapse text-[11px] font-bold table-fixed">
+                    <tbody>
+                      <tr className="border-b border-white h-[70px]">
+                        <td className="bg-[#1e3b6a] text-white border-r border-white w-[110px] px-2 align-middle">GSTR-1 / IFF</td>
+                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Feb - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Mar - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Apr - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">May - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                        <td className="bg-amber-500 text-white px-2 align-middle">Jun - 2026<br /><span className="font-normal text-[10px]">To be Filed</span></td>
+                      </tr>
+                      <tr className="h-[70px]">
+                        <td className="bg-[#1e3b6a] text-white border-r border-white px-2 align-middle">GSTR-3B</td>
+                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Feb - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Mar - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Apr - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">May - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                        <td className="bg-amber-500 text-white px-2 align-middle">Jun - 2026<br /><span className="font-normal text-[10px]">To be Filed</span></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="flex flex-wrap justify-center gap-2 mb-6">
+                  <button className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[190px]">
+                    RETURN DASHBOARD <span className="text-white text-xs">&gt;</span>
+                  </button>
+                  <button
+                    onClick={handleCreateChallanNav}
+                    className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[190px]"
+                  >
+                    CREATE CHALLAN <span className="text-white text-xs">&gt;</span>
+                  </button>
+                  <button className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[230px]">
+                    VIEW NOTICE(S) AND ORDER(S) <span className="text-white text-xs">&gt;</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
             <div className="space-y-6 flex-1 w-full text-[11px] relative">
-              
+
               {/* Reason For Challan Box */}
               <div className="bg-white border border-[#cbd5e1] rounded-none p-5 w-full shadow-none min-h-[340px] flex flex-col justify-between">
                 <div>
@@ -344,6 +446,7 @@ export default function GSTComputation3Simulation() {
               </div>
 
             </div>
+            )}
 
             {/* Inner Portal Footer */}
             <div className="bg-[#0b1a30] px-5 py-3 border-t border-white/5 text-white/70 text-[10px] font-medium w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6 shrink-0 font-sans">
