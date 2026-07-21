@@ -829,12 +829,15 @@ export default function GSTEWayBillReplica({
   const renderBillDetailsScreen = () => (
     <div className="min-h-screen bg-[#f4f7fb] pb-8 text-slate-900">
       <main className="px-4 py-4">
-        <div className="mx-auto max-w-[1100px]">
+        <div className="w-full">
           <div className="mb-4 rounded-md border border-sky-100 bg-[#0f3a5f] px-4 py-3 text-white shadow-sm">
             <h4 className="text-[12px] font-extrabold uppercase tracking-wide text-sky-300">
               Experiment 6:
             </h4>
-            <p className="mt-1 text-[13px] font-semibold leading-relaxed">{billDetails.description}</p>
+            <p className="mt-1 text-[13px] font-semibold leading-relaxed">
+              {billDetails.description ||
+                'Set this experiment\'s instructions and credentials in the admin Simulation Manager (slug "gst-e-way-bill-6"), or via "Add/Edit Creds" on the course editor\'s simulation link.'}
+            </p>
           </div>
 
           <div className="overflow-hidden rounded-[8px] border border-[#d8d8df] bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
