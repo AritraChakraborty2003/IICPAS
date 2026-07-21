@@ -21,12 +21,14 @@ import {
   findUsernameValue,
 } from "@/lib/useSimulationConfig";
 
+// UAN, Password, OTP and the instructions banner all come from the admin
+// Simulation Manager (or the course editor's per-insert "Add/Edit Creds")
+// for slug "epf-reg-13" — nothing is hardcoded here. Only the simulated
+// captcha image/code and the masked mobile-number digits shown in the
+// success message are fixed UI mechanics, not experiment content.
 const SIMULATION_SLUG = "epf-reg-13";
-const LOGIN_UAN = "201973667382";
-const LOGIN_PASS = "Fin@123";
 const CAPTCHA_CODE = "P237M";
 const MOBILE_LAST4 = "1316";
-const DUMMY_OTP = "777888";
 
 // ─── Top simulation disclaimer ─────────────────────────────────────────────
 function SimBanner() {
