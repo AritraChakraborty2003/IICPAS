@@ -473,56 +473,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Custom thin scrollbar that matches page design */
-html {
-  scrollbar-width: thin; /* Firefox - thin scrollbar */
-  scrollbar-color: #3cd664 #f1f5f9; /* Firefox - thumb color and track color */
-}
-
-/* Webkit browsers (Chrome, Safari, Edge) */
-html::-webkit-scrollbar {
-  width: 6px; /* Thin scrollbar width */
-}
-
-html::-webkit-scrollbar-track {
-  background: #f1f5f9; /* Light gray track */
-  border-radius: 3px;
-}
-
-html::-webkit-scrollbar-thumb {
-  background: #3cd664; /* Green thumb matching your brand color */
-  border-radius: 3px;
-  transition: all 0.3s ease;
-}
-
-html::-webkit-scrollbar-thumb:hover {
-  background: #22c55e; /* Darker green on hover */
-}
-
-body {
-  scrollbar-width: thin; /* Firefox - thin scrollbar */
-  scrollbar-color: #3cd664 #f1f5f9; /* Firefox - thumb color and track color */
-}
-
-body::-webkit-scrollbar {
-  width: 6px; /* Thin scrollbar width */
-}
-
-body::-webkit-scrollbar-track {
-  background: #f1f5f9; /* Light gray track */
-  border-radius: 3px;
-}
-
-body::-webkit-scrollbar-thumb {
-  background: #3cd664; /* Green thumb matching your brand color */
-  border-radius: 3px;
-  transition: all 0.3s ease;
-}
-
-body::-webkit-scrollbar-thumb:hover {
-  background: #22c55e; /* Darker green on hover */
-}
-
 /* Dynamic scrollbar colors based on scroll position */
 .scrollbar-light {
   scrollbar-color: #3cd664 #f1f5f9; /* Light theme */
