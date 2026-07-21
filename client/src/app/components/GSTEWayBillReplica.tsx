@@ -496,28 +496,48 @@ export default function GSTEWayBillReplica({
     </div>
   );
 
+  const experiment4ItemFields: {
+    key: string;
+    value: string;
+    onChange: (value: string) => void;
+    type: "text" | "select";
+    disabled?: boolean;
+  }[] = [
+    { key: "Product Name", value: itemProductName, onChange: setItemProductName, type: "text" },
+    { key: "Description", value: itemDescription, onChange: setItemDescription, type: "text" },
+    { key: "HSN", value: itemHsn, onChange: setItemHsn, type: "text" },
+    { key: "Quantity", value: itemQuantity, onChange: setItemQuantity, type: "text" },
+    { key: "Unit", value: itemUnit, onChange: setItemUnit, type: "text" },
+    { key: "Value/Taxable Value (Rs.)", value: itemTaxableValue, onChange: setItemTaxableValue, type: "text" },
+    { key: "CGST+ SGST Rate(%)", value: itemGstRate, onChange: setItemGstRate, type: "select" },
+  ];
+
+  const experiment4TotalFields: {
+    key: string;
+    value: string;
+    onChange: (value: string) => void;
+  }[] = [
+    { key: "Total Tax'ble Amount", value: totalTaxableAmount, onChange: setTotalTaxableAmount },
+    { key: "CGST Amount", value: cgstAmount, onChange: setCgstAmount },
+    { key: "SGST Amount", value: sgstAmount, onChange: setSgstAmount },
+    { key: "IGST Amount", value: igstAmount, onChange: setIgstAmount },
+    { key: "CESS Advol Amount", value: cessAdvolAmount, onChange: setCessAdvolAmount },
+    { key: "CESS Non Advol Amount", value: cessNonAdvolAmount, onChange: setCessNonAdvolAmount },
+    { key: "Other Amount(+/-)", value: otherAmount, onChange: setOtherAmount },
+    { key: "Total Inv. Amount", value: totalInvAmount, onChange: setTotalInvAmount },
+  ];
+
   const renderExperiment4Screen = () => (
     <div className="min-h-screen bg-[#f4f7fb] pb-8 text-slate-900">
       <main className="px-4 py-4">
         <div className="rounded-[12px] border border-[#d8ecf6] bg-[#dff3fb] p-4 shadow-[0_1px_6px_rgba(15,23,42,0.06)]">
-          <div className="rounded-[8px] border border-[#d8d8df] bg-[#dff3fb] p-4 shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
-            <div className="border-l-4 border-[#53a8c8] bg-[#dff3fb] px-4 py-3 text-[15px] leading-6 text-slate-700">
-              <div className="text-[18px] font-bold text-slate-800">Experiment 4:</div>
-              <div>Update item details: Product: Steel Bar (12MM) HSN: 720690</div>
-              <div>Quantity: 10,000 KG, Price per KG: Rs.50</div>
-              <div>Rate of GST 18%</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-[12px] border border-[#d8ecf6] bg-[#dff3fb] p-4 shadow-[0_1px_6px_rgba(15,23,42,0.06)]">
           <div className="overflow-hidden rounded-[8px] border border-[#d8d8df] bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
             <div className="bg-[#a58ad6] px-4 py-3 text-[16px] font-semibold text-slate-800">
               Item Details
             </div>
 
             <div className="overflow-x-auto">
-              <div className="min-w-[1460px] p-3">
+              <div className="min-w-[900px] p-3">
                 <div className="grid grid-cols-[1.25fr_1.15fr_1fr_1fr_1fr_1.2fr_1fr] border border-slate-200 text-[12px]">
                   {["Product Name", "Description", "HSN", "Quantity", "Unit", "Value/Taxable Value (Rs.)", "CGST+ SGST Rate(%)"].map(
                     (label, index) => (
@@ -529,64 +549,64 @@ export default function GSTEWayBillReplica({
                       </div>
                     ),
                   )}
-                  {["Name", "Description", "HSN", "Quantity", "Unit", "", "-Select-"].map((value, index) => (
-                    <div
-                      key={`${value}-${index}`}
-                      className="border-t border-r border-slate-200 px-2 py-2 last:border-r-0"
-                    >
+                  {experiment4ItemFields.map((field) =>
+                    field.type === "select" ? (
                       <div
-                        className={`h-10 rounded border px-3 text-[13px] leading-10 ${
-                          index === 2 || index === 5 || index === 6
-                            ? "border-slate-200 bg-slate-100 text-slate-500"
-                            : "border-slate-300 bg-white text-slate-700"
-                        }`}
+                        key={field.key}
+                        className="border-t border-r border-slate-200 px-2 py-2 last:border-r-0"
                       >
-                        {value || " "}
+                        <select
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          className="h-10 w-full rounded border border-slate-300 bg-white px-2 text-[13px] text-slate-700 outline-none"
+                        >
+                          <option value="">-Select-</option>
+                          {gstRateOptions.map((rate) => (
+                            <option key={rate} value={rate}>
+                              {rate}%
+                            </option>
+                          ))}
+                        </select>
                       </div>
-                    </div>
-                  ))}
+                    ) : (
+                      <div
+                        key={field.key}
+                        className="border-t border-r border-slate-200 px-2 py-2 last:border-r-0"
+                      >
+                        <input
+                          type="text"
+                          value={field.value}
+                          onChange={(e) => field.onChange(e.target.value)}
+                          placeholder={field.key}
+                          className="h-10 w-full rounded border border-slate-300 bg-white px-3 text-[13px] text-slate-700 outline-none focus:border-[#5e56b6]"
+                        />
+                      </div>
+                    ),
+                  )}
                 </div>
 
                 <div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_1fr_1fr_1fr] border-x border-b border-slate-200 text-[12px]">
-                  {[
-                    "Total Tax'ble Amount",
-                    "CGST Amount",
-                    "SGST Amount",
-                    "IGST Amount",
-                    "CESS Advol Amount",
-                    "CESS Non Advol Amount",
-                    "Other Amount(+/-)",
-                    "Total Inv. Amount",
-                  ].map((label) => (
-                    <div key={label} className="border-r border-slate-200 px-3 py-2 last:border-r-0">
+                  {experiment4TotalFields.map((field) => (
+                    <div key={field.key} className="border-r border-slate-200 px-3 py-2 last:border-r-0">
                       <span className="inline-flex items-center gap-1">
-                        <span>{label}</span>
+                        <span>{field.key}</span>
                         <CheckCircle2 size={11} className="text-green-500" />
                       </span>
                     </div>
                   ))}
-                  {["500000", "", "", "", "", "", "", ""].map((value, index) => (
+                  {experiment4TotalFields.map((field) => (
                     <div
-                      key={`${value}-${index}`}
+                      key={field.key}
                       className="border-t border-r border-slate-200 px-2 py-2 last:border-r-0"
                     >
-                      <div
-                        className={`h-10 rounded border px-3 text-[13px] leading-10 ${
-                          index === 0
-                            ? "border-slate-200 bg-slate-100 text-slate-500"
-                            : "border-slate-300 bg-white text-slate-700"
-                        }`}
-                      >
-                        {value || " "}
-                      </div>
+                      <input
+                        type="text"
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="h-10 w-full rounded border border-slate-300 bg-white px-3 text-[13px] text-slate-700 outline-none focus:border-[#5e56b6]"
+                      />
                     </div>
                   ))}
-                </div>
-
-                <div className="border-x border-b border-slate-200 bg-white px-3 py-2">
-                  <div className="h-3 rounded-full bg-slate-200">
-                    <div className="h-full w-[78%] rounded-full bg-slate-400" />
-                  </div>
                 </div>
               </div>
             </div>
