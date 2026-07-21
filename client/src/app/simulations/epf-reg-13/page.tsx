@@ -113,18 +113,23 @@ function G20Banner() {
 }
 
 // ─── Member Sign In panel (floating avatar, no title bar) ──────────────────
-function MemberSignInPanel({ onSuccess }: { onSuccess: () => void }) {
+function MemberSignInPanel({
+  loginUan,
+  loginPass,
+  validateCreds,
+  bannerText,
+  onSuccess,
+}: {
+  loginUan: string;
+  loginPass: string;
+  validateCreds: boolean;
+  bannerText: string;
+  onSuccess: () => void;
+}) {
   const [form, setForm] = useState({ uan: "", password: "", captcha: "" });
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-
-  // Admin-configured credentials (per-insert override or Simulation Manager)
-  // replace the hardcoded defaults when available.
-  const simConfig = useSimulationConfig(SIMULATION_SLUG);
-  const loginUan = findUsernameValue(simConfig) || LOGIN_UAN;
-  const loginPass = findFieldValue(simConfig, /pass/i) || LOGIN_PASS;
-  const validateCreds = simConfig ? simConfig.requireCredentialValidation : true;
 
   const submit = () => {
     if (!form.uan.trim() || !form.password.trim() || !form.captcha.trim()) {
@@ -133,9 +138,9 @@ function MemberSignInPanel({ onSuccess }: { onSuccess: () => void }) {
     }
     if (
       validateCreds &&
-      (form.uan !== loginUan || form.password !== loginPass)
+      ((loginUan && form.uan !== loginUan) || (loginPass && form.password !== loginPass))
     ) {
-      setError(`Invalid credentials — use ${loginUan} / ${loginPass}`);
+      setError("Invalid credentials. Please use the UAN and password provided for this experiment.");
       return;
     }
     if (form.captcha !== CAPTCHA_CODE) {
@@ -164,18 +169,11 @@ function MemberSignInPanel({ onSuccess }: { onSuccess: () => void }) {
         />
       </div>
 
-      <div className="mb-3 rounded border border-[#bee3da] bg-[#eaf7f4] px-3 py-2 text-[11.5px] text-[#157a72]">
-        {simConfig?.bannerText ? (
-          simConfig.bannerText
-        ) : (
-          <>
-            Login using UAN: <strong>{loginUan}</strong> &amp; new password{" "}
-            <strong>{loginPass}</strong>
-            <br />
-            Aadhar OTP is : <strong className="font-mono">{DUMMY_OTP}</strong>
-          </>
-        )}
-      </div>
+      {bannerText && (
+        <div className="mb-3 rounded border border-[#bee3da] bg-[#eaf7f4] px-3 py-2 text-[11.5px] text-[#157a72]">
+          {bannerText}
+        </div>
+      )}
 
       <div className="space-y-3">
         <div className="grid grid-cols-[90px_1fr] items-center gap-2">
