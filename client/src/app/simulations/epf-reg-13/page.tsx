@@ -344,7 +344,7 @@ function BenefitsPanel() {
   );
 }
 
-// ─── Important Links panel (Activate UAN highlighted) ───────────────────────
+// ─── Important Links panel ──────────────────────────────────────────────────
 function ImportantLinksPanel() {
   const links = [
     "Track Application Status for Pension on Higher Wages",
@@ -360,11 +360,7 @@ function ImportantLinksPanel() {
         {links.map((text) => (
           <li key={text} className="flex gap-2">
             <ThumbsUp size={13} className="mt-0.5 shrink-0 text-[#e08a3c]" />
-            <span
-              className={`cursor-pointer font-semibold text-[#157a72] hover:underline ${
-                text === "Activate UAN" ? "rounded border-2 border-red-500 px-1" : ""
-              }`}
-            >
+            <span className="cursor-pointer font-semibold text-[#157a72] hover:underline">
               {text}
             </span>
           </li>
