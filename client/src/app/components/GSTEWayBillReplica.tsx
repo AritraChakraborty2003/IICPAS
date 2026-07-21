@@ -323,6 +323,32 @@ export default function GSTEWayBillReplica({
     setIsExperiment4Submitted(false);
   };
 
+  const billToState = stateFromGstin(billToGstinInput);
+
+  const handleSubmitBillDetails = () => {
+    if (!billToGstinInput.trim()) {
+      setBillDetailsError("Please enter the recipient's GSTIN in the Bill To section.");
+      return;
+    }
+
+    if (
+      billDetails.requireCredentialValidation &&
+      billToGstinInput.trim().toUpperCase() !== billDetails.billToGstinExpected.trim().toUpperCase()
+    ) {
+      setBillDetailsError("Invalid GSTIN. Please use the GSTIN provided for this experiment.");
+      return;
+    }
+
+    setBillDetailsError("");
+    setShowBillDetailsOverlay(true);
+  };
+
+  const handleRetryBillDetails = () => {
+    setBillToGstinInput("");
+    setBillDetailsError("");
+    setShowBillDetailsOverlay(false);
+  };
+
   const renderVehiclePreview = () => (
     <div className="rounded-[12px] border border-[#d8ecf6] bg-white p-4 shadow-[0_1px_6px_rgba(15,23,42,0.06)]">
       <div className="mx-auto w-full max-w-[560px] overflow-hidden rounded-[8px] border border-slate-300 bg-white shadow-[0_1px_6px_rgba(15,23,42,0.08)]">
@@ -791,6 +817,194 @@ export default function GSTEWayBillReplica({
     </div>
   );
 
+  const renderReadOnlyField = (label: string, value: string) => (
+    <label className="grid gap-1 text-[13px] text-slate-700">
+      <span>
+        {label} <span className="text-red-500">*</span>
+      </span>
+      <input
+        type="text"
+        value={value}
+        disabled
+        className="h-10 rounded border border-slate-300 bg-slate-100 px-3 text-[13px] text-slate-700 outline-none"
+      />
+    </label>
+  );
+
+  const renderBillDetailsScreen = () => (
+    <div className="min-h-screen bg-[#f4f7fb] pb-8 text-slate-900">
+      <main className="px-4 py-4">
+        <div className="mx-auto max-w-[1100px]">
+          <div className="mb-4 rounded-md border border-sky-100 bg-[#0f3a5f] px-4 py-3 text-white shadow-sm">
+            <h4 className="text-[12px] font-extrabold uppercase tracking-wide text-sky-300">
+              Experiment:
+            </h4>
+            <p className="mt-1 text-[13px] font-semibold leading-relaxed">{billDetails.description}</p>
+          </div>
+
+          <div className="overflow-hidden rounded-[8px] border border-[#d8d8df] bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
+            <div className="bg-[#a58ad6] px-4 py-2.5 text-[15px] font-semibold text-slate-800">
+              Transaction Details
+            </div>
+
+            <div className="grid gap-4 border-b border-slate-200 px-4 py-4 lg:grid-cols-4">
+              <div className="text-[13px] text-slate-700">
+                <span className="mb-1 block font-medium">
+                  Supply Type <span className="text-red-500">*</span>
+                </span>
+                <div className="flex gap-4">
+                  {(["Outward", "Inward"] as const).map((option) => (
+                    <label key={option} className="inline-flex items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name="supplyType"
+                        checked={supplyType === option}
+                        onChange={() => setSupplyType(option)}
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      <span>{option}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="text-[13px] text-slate-700 lg:col-span-2">
+                <span className="mb-1 block font-medium">
+                  Sub Type <span className="text-red-500">*</span>
+                </span>
+                <div className="flex flex-wrap gap-x-4 gap-y-2">
+                  {["Supply", "Export", "Job Work", "SKD/CKD/Lots", "Recipient Not Known", "For Own Use", "Others"].map(
+                    (option) => (
+                      <label key={option} className="inline-flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="subType"
+                          checked={subType === option}
+                          onChange={() => setSubType(option)}
+                          className="h-4 w-4 accent-blue-600"
+                        />
+                        <span>{option}</span>
+                      </label>
+                    ),
+                  )}
+                </div>
+              </div>
+
+              <label className="grid gap-1 text-[13px] text-slate-700">
+                <span>
+                  Document No <span className="text-red-500">*</span>
+                </span>
+                <input
+                  type="text"
+                  value={billDetails.documentNo}
+                  disabled
+                  className="h-10 rounded border border-slate-300 bg-slate-100 px-3 text-[13px] outline-none"
+                />
+              </label>
+            </div>
+
+            <div className="grid gap-4 border-b border-slate-200 px-4 py-4 lg:grid-cols-2">
+              <div className="rounded border border-slate-200">
+                <div className="border-b border-slate-200 bg-slate-50 px-3 py-1.5 text-[13px] font-semibold text-slate-700">
+                  Bill From
+                </div>
+                <div className="grid gap-3 p-3">
+                  {renderReadOnlyField("Name", billDetails.billFromName)}
+                  {renderReadOnlyField("GSTIN", billDetails.billFromGstin)}
+                  {renderReadOnlyField("State", stateFromGstin(billDetails.billFromGstin))}
+                </div>
+              </div>
+
+              <div className="rounded border border-slate-200">
+                <div className="border-b border-slate-200 bg-slate-50 px-3 py-1.5 text-[13px] font-semibold text-slate-700">
+                  Dispatch From
+                </div>
+                <div className="grid gap-3 p-3">
+                  {renderReadOnlyField("Address", billDetails.dispatchAddress)}
+                  {renderReadOnlyField("Place", billDetails.dispatchPlace)}
+                  {renderReadOnlyField("Pincode", billDetails.dispatchPincode)}
+                </div>
+              </div>
+
+              <div className="rounded border border-slate-200">
+                <div className="border-b border-slate-200 bg-slate-50 px-3 py-1.5 text-[13px] font-semibold text-slate-700">
+                  Bill To
+                </div>
+                <div className="grid gap-3 p-3">
+                  {renderReadOnlyField("Name", billDetails.billToName)}
+                  <label className="grid gap-1 text-[13px] text-slate-700">
+                    <span>
+                      GSTIN <span className="text-red-500">*</span>
+                    </span>
+                    <input
+                      type="text"
+                      value={billToGstinInput}
+                      onChange={(e) => {
+                        setBillDetailsError("");
+                        setBillToGstinInput(e.target.value.toUpperCase());
+                      }}
+                      placeholder="Enter recipient GSTIN"
+                      className="h-10 rounded border-2 border-red-500 px-3 text-[13px] uppercase outline-none focus:border-blue-500"
+                    />
+                  </label>
+                  {renderReadOnlyField("State", billToState)}
+                </div>
+              </div>
+
+              <div className="rounded border border-slate-200">
+                <div className="border-b border-slate-200 bg-slate-50 px-3 py-1.5 text-[13px] font-semibold text-slate-700">
+                  Ship To
+                </div>
+                <div className="grid gap-3 p-3">
+                  {renderReadOnlyField("Address", billDetails.shipToAddress)}
+                  {renderReadOnlyField("Place", billDetails.shipToPlace)}
+                  {renderReadOnlyField("Pincode", billDetails.shipToPincode)}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-4 py-6">
+              {billDetailsError && (
+                <div className="mb-3 flex justify-center">
+                  <div className="max-w-[720px] rounded-sm border border-red-300 bg-red-50 px-4 py-2 text-center text-[13px] text-red-600">
+                    {billDetailsError}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={handleSubmitBillDetails}
+                  className="min-w-[160px] rounded-sm bg-[#1244b8] px-6 py-2.5 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-[#0f3a9a]"
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {showBillDetailsOverlay && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 backdrop-blur-[2px]">
+          <div className="flex flex-col items-center">
+            <div className="flex h-40 w-40 items-center justify-center rounded-full bg-[#47c65a] shadow-[0_22px_60px_rgba(71,198,90,0.35)]">
+              <CheckCircle2 className="text-white" size={108} strokeWidth={2.2} />
+            </div>
+            <button
+              type="button"
+              onClick={handleRetryBillDetails}
+              className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#e1141a] px-6 py-3 text-[16px] font-semibold text-white shadow-[0_8px_20px_rgba(225,20,26,0.28)] transition-colors hover:bg-[#c90f15]"
+            >
+              <RotateCcw size={14} />
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const renderGenerateScreen = () =>
     generateLayout === "portal" ? (
       <div className="min-h-screen bg-[#eef1f5] text-slate-900">
@@ -1249,7 +1463,9 @@ export default function GSTEWayBillReplica({
         ? renderGenerateScreen()
         : screen === "experiment4"
           ? renderExperiment4Screen()
-          : renderHomeScreen()}
+          : screen === "billDetails"
+            ? renderBillDetailsScreen()
+            : renderHomeScreen()}
 
       {showLaunchScreen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-[#07111f]/22 px-4 text-white backdrop-blur-[2px]">
