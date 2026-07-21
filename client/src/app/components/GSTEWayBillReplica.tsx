@@ -327,6 +327,7 @@ export default function GSTEWayBillReplica({
 
     if (
       billDetails.requireCredentialValidation &&
+      billDetails.billToGstinExpected &&
       billToGstinInput.trim().toUpperCase() !== billDetails.billToGstinExpected.trim().toUpperCase()
     ) {
       setBillDetailsError("Invalid GSTIN. Please use the GSTIN provided for this experiment.");
