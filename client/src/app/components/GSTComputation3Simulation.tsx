@@ -8,7 +8,8 @@ import {
   ChevronDown,
   User,
   Bell,
-  Play
+  Play,
+  Info
 } from "lucide-react";
 
 type Step = "dashboard_overlay" | "dashboard_active" | "reason_for_challan";
@@ -83,35 +84,6 @@ export default function GSTComputation3Simulation() {
 
       {/* Simulation Container */}
       <div className="w-full flex-1 flex flex-col">
-        
-        {/* Top Data Strip */}
-        <div className="bg-[#f8fafc] px-6 py-3 border-b border-[#e2e8f0] flex items-center justify-between text-xs font-bold text-slate-700 select-none shrink-0">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-extrabold text-[#0a2558]">GST Computation</span>
-            <div className="flex items-center gap-2 bg-slate-200 rounded-full px-3 py-1 font-semibold text-[11px] text-slate-600">
-              <span className="w-20 bg-slate-300 h-2 rounded-full overflow-hidden relative block">
-                <span className="absolute left-0 top-0 bottom-0 bg-blue-600 rounded-full" style={{ width: "87%" }}></span>
-              </span>
-              <span>87%</span>
-            </div>
-            
-            <div className="flex items-center gap-1.5 text-slate-500 font-medium">
-              <span>Language</span>
-              <select className="border border-slate-300 rounded px-1.5 py-0.5 bg-white text-slate-700 outline-none text-[11px]">
-                <option>English</option>
-              </select>
-            </div>
-          </div>
-          
-          <div className="text-sm font-extrabold text-[#0a2558]">
-            Challan Creation
-          </div>
-          
-          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-800 rounded px-2.5 py-1 text-[11px] font-black">
-            <span className="w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center text-white text-[9px]">★</span>
-            <span>1880</span>
-          </div>
-        </div>
 
         {/* GST Portal Container */}
         <div className="flex-1 w-full bg-[#f1f5f9] flex flex-col">
@@ -267,55 +239,118 @@ export default function GSTComputation3Simulation() {
           <div className="w-full flex-1 bg-white p-5 flex flex-col justify-between">
             {currentStep !== "reason_for_challan" ? (
               <div className="flex flex-1 flex-col w-full text-[11px]">
-                <h2 className="text-[15px] font-medium text-[#1e3a8a] text-center w-full">
-                  Welcome IICPA Private Limited to GST Common Portal
-                </h2>
-
-                <p className="font-bold text-[#333] text-[11px] text-center mt-3 mb-5">
-                  Return filing preference (Apr-Jun 2026) : Monthly (
-                  <span className="text-[#1e3a8a] cursor-pointer hover:underline font-normal">Change</span>)
-                </p>
-
-                <h3 className="text-[13px] font-bold text-[#333] text-center mb-3">
-                  Returns Calendar (Last 5 return periods)
-                </h3>
-
-                <div className="border border-[#1e3b6a] max-w-[700px] w-full mb-6 mx-auto">
-                  <table className="w-full text-center border-collapse text-[11px] font-bold table-fixed">
-                    <tbody>
-                      <tr className="border-b border-white h-[70px]">
-                        <td className="bg-[#1e3b6a] text-white border-r border-white w-[110px] px-2 align-middle">GSTR-1 / IFF</td>
-                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Feb - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
-                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Mar - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
-                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Apr - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
-                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">May - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
-                        <td className="bg-amber-500 text-white px-2 align-middle">Jun - 2026<br /><span className="font-normal text-[10px]">To be Filed</span></td>
-                      </tr>
-                      <tr className="h-[70px]">
-                        <td className="bg-[#1e3b6a] text-white border-r border-white px-2 align-middle">GSTR-3B</td>
-                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Feb - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
-                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Mar - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
-                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Apr - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
-                        <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">May - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
-                        <td className="bg-amber-500 text-white px-2 align-middle">Jun - 2026<br /><span className="font-normal text-[10px]">To be Filed</span></td>
-                      </tr>
-                    </tbody>
-                  </table>
+                {/* Top Info Bar (Last logged in & IP) */}
+                <div className="flex items-center justify-between px-1 py-2 text-[11px] text-[#333] w-full">
+                  <span>Last logged in on <strong>19/05/2026 08:26</strong></span>
+                  <span>Currently logged in from IP: <strong>223.233.68.198</strong></span>
                 </div>
 
-                <div className="flex flex-wrap justify-center gap-2 mb-6">
-                  <button className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[190px]">
-                    RETURN DASHBOARD <span className="text-white text-xs">&gt;</span>
-                  </button>
-                  <button
-                    onClick={handleCreateChallanNav}
-                    className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[190px]"
-                  >
-                    CREATE CHALLAN <span className="text-white text-xs">&gt;</span>
-                  </button>
-                  <button className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[230px]">
-                    VIEW NOTICE(S) AND ORDER(S) <span className="text-white text-xs">&gt;</span>
-                  </button>
+                {/* Dashboard Flex Layout */}
+                <div className="flex flex-col lg:flex-row gap-6 mt-4 pb-4 mx-auto w-full max-w-[1200px]">
+
+                  {/* Left Panel */}
+                  <div className="flex-1 flex flex-col items-center">
+                    <h2 className="text-[15px] font-medium text-[#1e3a8a] text-center w-full">
+                      Welcome IICPA Private Limited to GST Common Portal
+                    </h2>
+
+                    <p className="font-bold text-[#333] text-[11px] text-center mt-3 mb-5">
+                      Return filing preference (Apr-Jun 2026) : Monthly (
+                      <span className="text-[#1e3a8a] cursor-pointer hover:underline font-normal">Change</span>)
+                    </p>
+
+                    <h3 className="text-[13px] font-bold text-[#333] text-center mb-3">
+                      Returns Calendar (Last 5 return periods)
+                    </h3>
+
+                    <div className="border border-[#1e3b6a] max-w-[700px] w-full mb-6">
+                      <table className="w-full text-center border-collapse text-[11px] font-bold table-fixed">
+                        <tbody>
+                          <tr className="border-b border-white h-[70px]">
+                            <td className="bg-[#1e3b6a] text-white border-r border-white w-[110px] px-2 align-middle">GSTR-1 / IFF</td>
+                            <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Feb - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                            <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Mar - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                            <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Apr - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                            <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">May - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                            <td className="bg-amber-500 text-white px-2 align-middle">Jun - 2026<br /><span className="font-normal text-[10px]">To be Filed</span></td>
+                          </tr>
+                          <tr className="h-[70px]">
+                            <td className="bg-[#1e3b6a] text-white border-r border-white px-2 align-middle">GSTR-3B</td>
+                            <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Feb - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                            <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Mar - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                            <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">Apr - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                            <td className="bg-[#34b484] text-white border-r border-white px-2 align-middle">May - 2026<br /><span className="font-normal text-[10px]">Filed</span></td>
+                            <td className="bg-amber-500 text-white px-2 align-middle">Jun - 2026<br /><span className="font-normal text-[10px]">To be Filed</span></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Navigation Note */}
+                    <div className="border border-[#777] py-1.5 px-6 text-[11px] text-slate-800 bg-white italic text-center w-full max-w-[500px] mb-6">
+                      You can navigate to your chosen page through navigation panel given below
+                    </div>
+
+                    {/* Warning Alert Box */}
+                    <div className="border border-[#777] p-3.5 bg-white text-[11px] text-slate-800 flex items-start gap-2 max-w-[650px] font-bold italic mb-6 shadow-sm">
+                      <p className="leading-relaxed text-left w-full relative pl-1 pr-4">
+                        A facility is provided to you to Geocode the existing business addresses
+                        saved in GST system. Kindly click on Continue to update the Geocoded
+                        Addresses. Please note that the existing addresses appearing in the GST
+                        system/Registration Certificate will not be impacted.
+                        <span className="text-[#1e3a8a] font-bold ml-1 hover:underline cursor-pointer not-italic inline-flex items-center">
+                          Continue
+                          <span className="flex items-center justify-center border border-[#1e3a8a] rounded-full w-3 h-3 ml-1">
+                            <Info size={9} className="text-[#1e3a8a]" />
+                          </span>
+                        </span>
+                      </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap justify-center gap-2">
+                      <button className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[190px]">
+                        RETURN DASHBOARD <span className="text-white text-xs">&gt;</span>
+                      </button>
+                      <button
+                        onClick={handleCreateChallanNav}
+                        className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[190px]"
+                      >
+                        CREATE CHALLAN <span className="text-white text-xs">&gt;</span>
+                      </button>
+                      <button className="px-5 py-2.5 bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white text-[11px] font-bold transition-colors cursor-pointer flex items-center justify-between gap-3 min-w-[230px]">
+                        VIEW NOTICE(S) AND ORDER(S) <span className="text-white text-xs">&gt;</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Right Side Widgets Panel */}
+                  <div className="w-full lg:w-[300px] flex flex-col gap-6 text-[13px] bg-white shrink-0 mt-4 lg:mt-0">
+                    <div className="flex flex-col gap-1.5">
+                      <h4 className="font-extrabold text-[#333] text-[13px] leading-snug">IICPA PRIVATE LIMITED</h4>
+                      <p className="font-extrabold text-[#333] text-[13px] mt-2 mb-2">07GDLCF7228G1YK</p>
+                      <hr className="border-slate-300 w-full mb-1" />
+                      <button className="text-left text-[#1e3a8a] hover:underline flex items-center gap-1 cursor-pointer w-fit text-[13px]">
+                        View Profile
+                        <div className="bg-[#1e3a8a] rounded-full w-[14px] h-[14px] flex items-center justify-center ml-0.5">
+                          <span className="text-white text-[9px] leading-none font-bold">&gt;</span>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div className="mt-2">
+                      <h4 className="font-medium text-[#1e3a8a] text-[15px] text-center mb-5">Quick Links</h4>
+                      <div className="flex flex-col gap-3.5 text-[#1e3a8a] text-[13px]">
+                        <span className="hover:underline cursor-pointer">Check Cash Balance</span>
+                        <span className="hover:underline cursor-pointer">Liability ledger</span>
+                        <span className="hover:underline cursor-pointer">Credit ledger</span>
+                        <span className="hover:underline cursor-pointer leading-tight">Electronic Credit Reversal and Re-<br />claimed Statement</span>
+                        <span className="hover:underline cursor-pointer leading-tight">Negative Liability Statement -<br />Regular Taxpayers</span>
+                        <span className="hover:underline cursor-pointer">RCM Liability/ITC Statement</span>
+                        <span className="hover:underline cursor-pointer">Application for Unbarring Returns</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
