@@ -647,18 +647,13 @@ export default function GSTComputationSimulation() {
                       onClick={() => {
                         setShowLedgerTable(!showLedgerTable);
                         setLedgerViewed(true);
+                        setShowLedgerOverlay(true);
                       }}
                       className={`relative bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white px-4 py-2 font-bold text-[10px] rounded-none shadow-none transition-colors uppercase cursor-pointer ${
                         ledgerViewed ? "border-2 border-emerald-500" : "border-2 border-red-500"
                       }`}
                     >
                       VIEW LEDGER BALANCE ▼
-                      {ledgerViewed && (
-                        <FaCheckCircle
-                          className="absolute -top-2 -right-2 text-emerald-500 bg-white rounded-full shadow-md"
-                          size={18}
-                        />
-                      )}
                     </button>
                     <button
                       onClick={handleProceedFromReason}
