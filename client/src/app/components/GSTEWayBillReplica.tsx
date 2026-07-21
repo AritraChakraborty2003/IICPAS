@@ -16,7 +16,11 @@ import {
   Video,
 } from "lucide-react";
 import GSTBannerCarousel from "./GSTBannerCarousel";
-import { getSimCfgIdFromLocation } from "@/lib/useSimulationConfig";
+import {
+  findFieldValue,
+  getSimCfgIdFromLocation,
+  useSimulationConfig,
+} from "@/lib/useSimulationConfig";
 
 type Screen = "home" | "generate" | "search" | "print" | "dashboard" | "experiment4";
 
@@ -52,6 +56,15 @@ const updates = [
 
 const generateModes = ["Road", "Rail", "Air", "Ship or Ship Cum Road/Rail"];
 const vehicleTypes = ["Regular", "Over Dimensional Cargo"];
+const gstRateOptions = ["0", "0.25", "3", "5", "12", "18", "28"];
+
+// /simulations/gst/e-way-bill-4 -> gst-e-way-bill-4 (must match the slug
+// derivation used by the course editor's Topic Simulations creds list).
+const slugFromRoute = (route: string): string => {
+  const match = route.match(/\/simulations\/(.+)/);
+  if (!match) return "";
+  return match[1].replace(/\/+$/, "").split("/").join("-").toLowerCase();
+};
 
 export default function GSTEWayBillReplica({
   initialScreen = "home",
@@ -72,7 +85,42 @@ export default function GSTEWayBillReplica({
   const [vehicleNo, setVehicleNo] = useState("MH12AB1234");
   const [showVehiclePreview, setShowVehiclePreview] = useState(false);
   const [isExperiment4Submitted, setIsExperiment4Submitted] = useState(false);
+  const [itemProductName, setItemProductName] = useState("");
+  const [itemDescription, setItemDescription] = useState("");
+  const [itemHsn, setItemHsn] = useState("");
+  const [itemQuantity, setItemQuantity] = useState("");
+  const [itemUnit, setItemUnit] = useState("");
+  const [itemTaxableValue, setItemTaxableValue] = useState("");
+  const [itemGstRate, setItemGstRate] = useState("");
+  const [totalTaxableAmount, setTotalTaxableAmount] = useState("");
+  const [cgstAmount, setCgstAmount] = useState("");
+  const [sgstAmount, setSgstAmount] = useState("");
+  const [igstAmount, setIgstAmount] = useState("");
+  const [cessAdvolAmount, setCessAdvolAmount] = useState("");
+  const [cessNonAdvolAmount, setCessNonAdvolAmount] = useState("");
+  const [otherAmount, setOtherAmount] = useState("");
+  const [totalInvAmount, setTotalInvAmount] = useState("");
   const launchTimerRef = useRef<number | null>(null);
+  const experiment4Config = useSimulationConfig(slugFromRoute(baseRoute));
+
+  useEffect(() => {
+    if (!experiment4Config) return;
+    const productName = findFieldValue(experiment4Config, /product/i);
+    const description = findFieldValue(experiment4Config, /description/i);
+    const hsn = findFieldValue(experiment4Config, /hsn/i);
+    const quantity = findFieldValue(experiment4Config, /qty|quantity/i);
+    const unit = findFieldValue(experiment4Config, /unit/i);
+    const taxableValue = findFieldValue(experiment4Config, /value|price/i);
+    const gstRate = findFieldValue(experiment4Config, /gst|tax rate/i);
+
+    if (productName) setItemProductName(productName);
+    if (description) setItemDescription(description);
+    if (hsn) setItemHsn(hsn);
+    if (quantity) setItemQuantity(quantity);
+    if (unit) setItemUnit(unit);
+    if (taxableValue) setItemTaxableValue(taxableValue);
+    if (gstRate) setItemGstRate(gstRate);
+  }, [experiment4Config]);
 
   useEffect(() => {
     return () => {
