@@ -98,6 +98,14 @@ const GST_STATE_CODES: Record<string, string> = {
 const stateFromGstin = (gstin: string): string =>
   GST_STATE_CODES[gstin.trim().slice(0, 2)] || "";
 
+const getTodayDate = (): string => {
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2, "0");
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const yyyy = today.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+};
+
 // Default demo scenario for the Bill From/To e-Way Bill generation
 // experiment. The admin Simulation Manager can override every value below
 // via credential fields (matched by label) plus a custom Banner Text.
@@ -175,6 +183,8 @@ export default function GSTEWayBillReplica({
   const [totalInvAmount, setTotalInvAmount] = useState("");
   const [supplyType, setSupplyType] = useState<"Outward" | "Inward">("Outward");
   const [subType, setSubType] = useState("Supply");
+  const [documentType, setDocumentType] = useState("");
+  const [transactionType, setTransactionType] = useState("Regular");
   const [billToGstinInput, setBillToGstinInput] = useState("");
   const [billDetailsError, setBillDetailsError] = useState("");
   const [showBillDetailsOverlay, setShowBillDetailsOverlay] = useState(false);
@@ -847,7 +857,7 @@ export default function GSTEWayBillReplica({
               Transaction Details
             </div>
 
-            <div className="grid gap-4 border-b border-slate-200 px-4 py-4 lg:grid-cols-4">
+            <div className="grid gap-4 border-b border-slate-200 px-4 py-4 lg:grid-cols-[1fr_2fr]">
               <div className="text-[13px] text-slate-700">
                 <span className="mb-1 block font-medium">
                   Supply Type <span className="text-red-500">*</span>
@@ -868,27 +878,53 @@ export default function GSTEWayBillReplica({
                 </div>
               </div>
 
-              <div className="text-[13px] text-slate-700 lg:col-span-2">
+              <div className="text-[13px] text-slate-700">
                 <span className="mb-1 block font-medium">
                   Sub Type <span className="text-red-500">*</span>
                 </span>
                 <div className="flex flex-wrap gap-x-4 gap-y-2">
-                  {["Supply", "Export", "Job Work", "SKD/CKD/Lots", "Recipient Not Known", "For Own Use", "Others"].map(
-                    (option) => (
-                      <label key={option} className="inline-flex items-center gap-1.5">
-                        <input
-                          type="radio"
-                          name="subType"
-                          checked={subType === option}
-                          onChange={() => setSubType(option)}
-                          className="h-4 w-4 accent-blue-600"
-                        />
-                        <span>{option}</span>
-                      </label>
-                    ),
-                  )}
+                  {[
+                    "Supply",
+                    "Export",
+                    "Job Work",
+                    "SKD/CKD/Lots",
+                    "Recipient Not Known",
+                    "For Own Use",
+                    "Exhibition or Fairs",
+                    "Line Sales",
+                    "Others",
+                  ].map((option) => (
+                    <label key={option} className="inline-flex items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name="subType"
+                        checked={subType === option}
+                        onChange={() => setSubType(option)}
+                        className="h-4 w-4 accent-blue-600"
+                      />
+                      <span>{option}</span>
+                    </label>
+                  ))}
                 </div>
               </div>
+            </div>
+
+            <div className="grid gap-4 border-b border-slate-200 px-4 py-4 lg:grid-cols-4">
+              <label className="grid gap-1 text-[13px] text-slate-700">
+                <span>
+                  Document Type <span className="text-red-500">*</span>
+                </span>
+                <select
+                  value={documentType}
+                  onChange={(e) => setDocumentType(e.target.value)}
+                  className="h-10 rounded border border-slate-300 bg-white px-3 text-[13px] outline-none"
+                >
+                  <option value="">Select</option>
+                  <option value="Tax Invoice">Tax Invoice</option>
+                  <option value="Bill of Supply">Bill of Supply</option>
+                  <option value="Delivery Challan">Delivery Challan</option>
+                </select>
+              </label>
 
               <label className="grid gap-1 text-[13px] text-slate-700">
                 <span>
@@ -900,6 +936,31 @@ export default function GSTEWayBillReplica({
                   disabled
                   className="h-10 rounded border border-slate-300 bg-slate-100 px-3 text-[13px] outline-none"
                 />
+              </label>
+
+              <label className="grid gap-1 text-[13px] text-slate-700">
+                <span>
+                  Document Date <span className="text-red-500">*</span>
+                </span>
+                <input
+                  type="text"
+                  value={getTodayDate()}
+                  disabled
+                  className="h-10 rounded border border-slate-300 bg-slate-100 px-3 text-[13px] outline-none"
+                />
+              </label>
+
+              <label className="grid gap-1 text-[13px] text-slate-700">
+                <span>
+                  Transaction Type <span className="text-red-500">*</span>
+                </span>
+                <select
+                  value={transactionType}
+                  onChange={(e) => setTransactionType(e.target.value)}
+                  className="h-10 rounded border border-slate-300 bg-white px-3 text-[13px] outline-none"
+                >
+                  <option value="Regular">Regular</option>
+                </select>
               </label>
             </div>
 
