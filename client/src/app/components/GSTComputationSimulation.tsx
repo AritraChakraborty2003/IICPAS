@@ -16,6 +16,7 @@ import {
   Globe,
   FlaskConical
 } from "lucide-react";
+import { FaCheckCircle } from "react-icons/fa";
 
 type Step = "dashboard_overlay" | "dashboard_active" | "reason_for_challan" | "create_challan" | "receipt";
 
@@ -647,9 +648,10 @@ export default function GSTComputationSimulation() {
                     >
                       VIEW LEDGER BALANCE ▼
                       {ledgerViewed && (
-                        <span className="absolute -top-2.5 -right-2.5 h-5 w-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md">
-                          <CheckCircle2 size={14} strokeWidth={3} />
-                        </span>
+                        <FaCheckCircle
+                          className="absolute -top-2 -right-2 text-emerald-500 bg-white rounded-full shadow-md"
+                          size={18}
+                        />
                       )}
                     </button>
                     <button
