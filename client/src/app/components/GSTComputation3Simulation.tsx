@@ -166,49 +166,47 @@ export default function GSTComputation3Simulation() {
                 <span className="cursor-pointer hover:text-blue-700">Ledgers</span>
                 <span className="cursor-pointer hover:text-blue-700">Returns</span>
 
-                <div className="relative">
-                  <button
-                    onClick={() => setIsPaymentsDropdownOpen(!isPaymentsDropdownOpen)}
-                    className="flex cursor-pointer items-center gap-1 border-2 border-red-500 bg-white px-2.5 py-0.5 font-bold text-[#0a2558] hover:bg-slate-50"
-                  >
-                    Payments
-                  </button>
-
-                  {isPaymentsDropdownOpen && (
-                    <div className="absolute left-0 top-full z-[99999] mt-2 grid grid-cols-2 gap-x-12 gap-y-3 border-y border-slate-300 bg-white p-5 text-[11px] font-bold shadow-lg">
-                      <div className="flex flex-col gap-3 text-left">
-                        <button
-                          onClick={handleCreateChallanNav}
-                          className="w-fit cursor-pointer border-2 border-red-500 bg-white px-3 py-1.5 text-left font-bold text-blue-900 hover:bg-slate-50"
-                        >
-                          Create Challan
-                        </button>
-                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
-                          Challan History
-                        </button>
-                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
-                          Instalment Calendar
-                        </button>
-                      </div>
-                      <div className="flex flex-col justify-start gap-3 pt-1.5 text-left">
-                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
-                          Saved Challans
-                        </button>
-                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
-                          Application for Deferred Payment/Payment in Instalments
-                        </button>
-                        <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
-                          Grievance against Payment(GST PMT-07)
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <button
+                  onClick={() => setIsPaymentsDropdownOpen(!isPaymentsDropdownOpen)}
+                  className="flex cursor-pointer items-center gap-1 border-2 border-red-500 bg-white px-2.5 py-0.5 font-bold text-[#0a2558] hover:bg-slate-50"
+                >
+                  Payments
+                </button>
 
                 <span className="cursor-pointer hover:text-blue-700">User Services</span>
                 <span className="cursor-pointer hover:text-blue-700">Refunds</span>
                 <span className="cursor-pointer hover:text-blue-700">e-Way Bill System</span>
                 <span className="cursor-pointer hover:text-blue-700">Track Application Status</span>
+
+                {isPaymentsDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-full z-[99999] mt-2 w-full grid grid-cols-2 gap-x-12 gap-y-3 border-y border-slate-300 bg-white p-5 pl-[220px] pr-24 text-[11px] font-bold shadow-lg">
+                    <div className="flex flex-col gap-3 text-left">
+                      <button
+                        onClick={handleCreateChallanNav}
+                        className="w-fit cursor-pointer border-2 border-red-500 bg-white px-3 py-1.5 text-left font-bold text-blue-900 hover:bg-slate-50"
+                      >
+                        Create Challan
+                      </button>
+                      <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                        Challan History
+                      </button>
+                      <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                        Instalment Calendar
+                      </button>
+                    </div>
+                    <div className="flex flex-col justify-start gap-3 pt-1.5 text-left">
+                      <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                        Saved Challans
+                      </button>
+                      <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                        Application for Deferred Payment/Payment in Instalments
+                      </button>
+                      <button className="w-fit cursor-not-allowed text-left text-blue-900 opacity-80" disabled>
+                        Grievance against Payment(GST PMT-07)
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
