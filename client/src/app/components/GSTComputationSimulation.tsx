@@ -16,7 +16,6 @@ import {
   Globe,
   FlaskConical
 } from "lucide-react";
-import { FaCheckCircle } from "react-icons/fa";
 
 type Step = "dashboard_overlay" | "dashboard_active" | "reason_for_challan" | "create_challan" | "receipt";
 
@@ -68,6 +67,7 @@ export default function GSTComputationSimulation() {
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [showLedgerTable, setShowLedgerTable] = useState(false);
   const [ledgerViewed, setLedgerViewed] = useState(false);
+  const [showLedgerOverlay, setShowLedgerOverlay] = useState(false);
 
   // Form values
   const [cgst, setCgst] = useState<TaxRow>({ head: "CGST (0005)", tax: 0, interest: 0, penalty: 0, fees: 0, other: 0 });
