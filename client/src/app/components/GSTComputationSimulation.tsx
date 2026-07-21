@@ -230,6 +230,23 @@ export default function GSTComputationSimulation() {
 
   return (
     <div className="min-h-screen bg-white text-[#333333] font-sans antialiased flex flex-col justify-between">
+      {showLedgerOverlay && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 backdrop-blur-[2px]">
+          <div className="flex flex-col items-center">
+            <div className="flex h-40 w-40 items-center justify-center rounded-full bg-[#47c65a] shadow-[0_22px_60px_rgba(71,198,90,0.35)]">
+              <CheckCircle2 className="text-white" size={108} strokeWidth={2.2} />
+            </div>
+            <button
+              type="button"
+              onClick={handleLedgerRetry}
+              className="mt-4 inline-flex items-center gap-2 rounded-md bg-[#e1141a] px-6 py-3 text-[16px] font-semibold text-white shadow-[0_8px_20px_rgba(225,20,26,0.28)] transition-colors hover:bg-[#c90f15]"
+            >
+              <RotateCcw size={14} />
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
       {/* Main GST Portal Container (Full-width, no outer spacing or borders) */}
       <div className="w-full flex-1 flex flex-col justify-between bg-white">
           
