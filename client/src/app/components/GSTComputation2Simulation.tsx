@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   CheckCircle2,
   RotateCcw,
@@ -20,6 +20,11 @@ import {
   Moon
 } from "lucide-react";
 import Link from "next/link";
+import {
+  useSimulationConfig,
+  findFieldValue,
+  type SimulationCredConfig,
+} from "@/lib/useSimulationConfig";
 
 type Step = "reason_for_challan_overlay" | "reason_for_challan" | "create_challan" | "payment_selection" | "receipt";
 
@@ -30,6 +35,37 @@ interface TaxRow {
   penalty: number;
   fees: number;
   other: number;
+}
+
+// /simulations/gst/gst-computation-2 -> gst-gst-computation-2 (matches the
+// slug derivation used by the course editor's Quick Inserts and the admin
+// Simulation Manager, so credentials/banner text set there apply here).
+const SIMULATION_SLUG = "gst-gst-computation-2";
+
+const DEFAULT_EXPERIMENT = {
+  description:
+    "Generate Challan and make payment for the month of November with following Tax Components:",
+  cgst: 35300,
+  sgst: 35300,
+  igst: 22900,
+};
+
+const parseAmount = (value: string): number | null => {
+  const parsed = parseInt(value.replace(/[^\d]/g, ""), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+};
+
+// Merge the admin/course-editor config (Simulation Manager slug config or the
+// per-insert ?simCfg override) onto the hardcoded defaults. The banner
+// instructions come from "Banner Text"; the tax amounts come from
+// credential fields labeled "CGST" / "SGST" / "IGST".
+function buildExperimentBanner(config: SimulationCredConfig | null) {
+  return {
+    description: config?.bannerText || DEFAULT_EXPERIMENT.description,
+    cgst: parseAmount(findFieldValue(config, /cgst/i)) ?? DEFAULT_EXPERIMENT.cgst,
+    sgst: parseAmount(findFieldValue(config, /sgst/i)) ?? DEFAULT_EXPERIMENT.sgst,
+    igst: parseAmount(findFieldValue(config, /igst/i)) ?? DEFAULT_EXPERIMENT.igst,
+  };
 }
 
 export default function GSTComputation2Simulation() {
@@ -43,6 +79,12 @@ export default function GSTComputation2Simulation() {
   const [isPaymentsDropdownOpen, setIsPaymentsDropdownOpen] = useState(false);
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [showLedgerTable, setShowLedgerTable] = useState(false);
+
+  // Admin-configured values (per-insert ?simCfg override from the course
+  // editor, or the slug config from the Simulation Manager) replace the
+  // hardcoded experiment instructions/amounts when available.
+  const simConfig = useSimulationConfig(SIMULATION_SLUG);
+  const experiment = useMemo(() => buildExperimentBanner(simConfig), [simConfig]);
 
   // Payment Selection States
   const [selectedBank, setSelectedBank] = useState<string>("");
@@ -106,9 +148,15 @@ export default function GSTComputation2Simulation() {
   };
 
   const handleGenerateChallan = () => {
-    // Expected values validation: CGST = 35300, SGST = 35300, IGST = 22900
-    if (igst.tax !== 22900 || cgst.tax !== 35300 || sgst.tax !== 35300) {
-      setErrorMessage("Incorrect liability entries! Please input: IGST Tax = 22,900, CGST Tax = 35,300, SGST Tax = 35,300.");
+    // Expected values validation against the admin-configured (or default) amounts
+    if (igst.tax !== experiment.igst || cgst.tax !== experiment.cgst || sgst.tax !== experiment.sgst) {
+      setErrorMessage(
+        `Incorrect liability entries! Please input: IGST Tax = ${experiment.igst.toLocaleString(
+          "en-IN"
+        )}, CGST Tax = ${experiment.cgst.toLocaleString("en-IN")}, SGST Tax = ${experiment.sgst.toLocaleString(
+          "en-IN"
+        )}.`
+      );
       return;
     }
     
@@ -230,21 +278,19 @@ export default function GSTComputation2Simulation() {
           
           <div className="bg-[#f0f9ff] border border-sky-100 rounded-md p-4 space-y-2">
             <h4 className="font-extrabold text-[#0369a1] text-[12px]">Experiment 2:</h4>
-            <p className="font-bold text-slate-700">
-              Generate Challan and make payment for the month of November with following Tax Components:
-            </p>
+            <p className="font-bold text-slate-700">{experiment.description}</p>
             <div className="grid grid-cols-3 gap-4 font-black text-[#0369a1] text-xs pt-1">
               <div className="bg-sky-50 border border-sky-200/50 p-2 rounded text-center">
                 <span className="text-[10px] text-slate-500 font-bold block mb-0.5">CGST</span>
-                <span>Rs 35,300</span>
+                <span>Rs {experiment.cgst.toLocaleString("en-IN")}</span>
               </div>
               <div className="bg-sky-50 border border-sky-200/50 p-2 rounded text-center">
                 <span className="text-[10px] text-slate-500 font-bold block mb-0.5">SGST</span>
-                <span>Rs 35,300</span>
+                <span>Rs {experiment.sgst.toLocaleString("en-IN")}</span>
               </div>
               <div className="bg-sky-50 border border-sky-200/50 p-2 rounded text-center">
                 <span className="text-[10px] text-slate-500 font-bold block mb-0.5">IGST</span>
-                <span>Rs 22,900</span>
+                <span>Rs {experiment.igst.toLocaleString("en-IN")}</span>
               </div>
             </div>
           </div>
