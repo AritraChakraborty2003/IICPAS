@@ -66,6 +66,7 @@ export default function GSTComputationSimulation() {
   }, []);
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [showLedgerTable, setShowLedgerTable] = useState(false);
+  const [ledgerViewed, setLedgerViewed] = useState(false);
 
   // Form values
   const [cgst, setCgst] = useState<TaxRow>({ head: "CGST (0005)", tax: 0, interest: 0, penalty: 0, fees: 0, other: 0 });
@@ -108,12 +109,11 @@ export default function GSTComputationSimulation() {
     setCurrentStep("reason_for_challan");
     setSelectedReason("");
     setShowLedgerTable(false);
+    setLedgerViewed(false);
   };
 
   const handleProceedFromReason = () => {
-    if (selectedReason) {
-      setCurrentStep("create_challan");
-    }
+    // Proceed is intentionally disabled for this experiment.
   };
 
   const handleCancel = () => {
@@ -121,6 +121,7 @@ export default function GSTComputationSimulation() {
     setErrorMessage("");
     setSelectedReason("");
     setShowLedgerTable(false);
+    setLedgerViewed(false);
   };
 
   const handleGenerateChallan = () => {
@@ -636,19 +637,25 @@ export default function GSTComputationSimulation() {
                   {/* Bottom Actions Row */}
                   <div className="flex items-center justify-between pt-4">
                     <button
-                      onClick={() => setShowLedgerTable(!showLedgerTable)}
-                      className="bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white px-4 py-2 font-bold text-[10px] rounded-none shadow-none transition-colors uppercase border-2 border-red-500 cursor-pointer"
+                      onClick={() => {
+                        setShowLedgerTable(!showLedgerTable);
+                        setLedgerViewed(true);
+                      }}
+                      className={`relative bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white px-4 py-2 font-bold text-[10px] rounded-none shadow-none transition-colors uppercase cursor-pointer ${
+                        ledgerViewed ? "border-2 border-emerald-500" : "border-2 border-red-500"
+                      }`}
                     >
                       VIEW LEDGER BALANCE ▼
+                      {ledgerViewed && (
+                        <span className="absolute -top-2.5 -right-2.5 h-5 w-5 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-md">
+                          <CheckCircle2 size={14} strokeWidth={3} />
+                        </span>
+                      )}
                     </button>
                     <button
                       onClick={handleProceedFromReason}
-                      disabled={!selectedReason}
-                      className={`px-8 py-2 font-bold text-[10px] transition-colors rounded-none shadow-none uppercase ${
-                        selectedReason
-                          ? "bg-[#2c4f7c] hover:bg-[#1e3b6a] text-white cursor-pointer"
-                          : "bg-[#cbd5e1] text-slate-400 cursor-not-allowed opacity-60"
-                      }`}
+                      disabled
+                      className="px-8 py-2 font-bold text-[10px] transition-colors rounded-none shadow-none uppercase bg-[#cbd5e1] text-slate-400 cursor-not-allowed opacity-60"
                     >
                       Proceed
                     </button>
