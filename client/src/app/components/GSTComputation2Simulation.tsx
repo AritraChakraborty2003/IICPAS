@@ -275,25 +275,6 @@ export default function GSTComputation2Simulation() {
             <span>•</span>
             <p>You can also make another payment by clicking the <span className="font-extrabold text-slate-800">MAKE ANOTHER PAYMENT</span> button</p>
           </div>
-          
-          <div className="bg-[#f0f9ff] border border-sky-100 rounded-md p-4 space-y-2">
-            <h4 className="font-extrabold text-[#0369a1] text-[12px]">Experiment 2:</h4>
-            <p className="font-bold text-slate-700">{experiment.description}</p>
-            <div className="grid grid-cols-3 gap-4 font-black text-[#0369a1] text-xs pt-1">
-              <div className="bg-sky-50 border border-sky-200/50 p-2 rounded text-center">
-                <span className="text-[10px] text-slate-500 font-bold block mb-0.5">CGST</span>
-                <span>Rs {experiment.cgst.toLocaleString("en-IN")}</span>
-              </div>
-              <div className="bg-sky-50 border border-sky-200/50 p-2 rounded text-center">
-                <span className="text-[10px] text-slate-500 font-bold block mb-0.5">SGST</span>
-                <span>Rs {experiment.sgst.toLocaleString("en-IN")}</span>
-              </div>
-              <div className="bg-sky-50 border border-sky-200/50 p-2 rounded text-center">
-                <span className="text-[10px] text-slate-500 font-bold block mb-0.5">IGST</span>
-                <span>Rs {experiment.igst.toLocaleString("en-IN")}</span>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Main GST Portal Container (Full-width inside the max-w-5xl wrapper) */}
