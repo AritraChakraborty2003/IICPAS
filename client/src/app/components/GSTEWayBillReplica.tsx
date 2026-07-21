@@ -837,7 +837,7 @@ export default function GSTEWayBillReplica({
         <div className="mx-auto max-w-[1100px]">
           <div className="mb-4 rounded-md border border-sky-100 bg-[#0f3a5f] px-4 py-3 text-white shadow-sm">
             <h4 className="text-[12px] font-extrabold uppercase tracking-wide text-sky-300">
-              Experiment:
+              Experiment 6:
             </h4>
             <p className="mt-1 text-[13px] font-semibold leading-relaxed">{billDetails.description}</p>
           </div>
