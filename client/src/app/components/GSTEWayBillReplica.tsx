@@ -106,40 +106,24 @@ const getTodayDate = (): string => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
-// Default demo scenario for the Bill From/To e-Way Bill generation
-// experiment. The admin Simulation Manager can override every value below
-// via credential fields (matched by label) plus a custom Banner Text.
-const DEFAULT_BILL_DETAILS = {
-  description:
-    'Generate E-way bill for the Tax Invoice No. SH23/10282 dated today, raised against "Prestige Steel Company" having GSTIN 27MNHFP2782H1YZ (Registered office: Mumbai).',
-  documentNo: "SH23/10282",
-  billFromName: "Shivam Cements Private Limited",
-  billFromGstin: "07GDLCF7228G1YK",
-  dispatchAddress: "#39 Second Floor, Connaught Cir, Opposite",
-  dispatchPlace: "Delhi",
-  dispatchPincode: "110001",
-  billToName: "Prestige Steel Company",
-  billToGstinExpected: "27MNHFP2782H1YZ",
-  shipToAddress: "#14, 2nd Floor, Off Veera Desai Rd, near Balaji TeleFilms",
-  shipToPlace: "Mumbai",
-  shipToPincode: "400053",
-};
-
+// Every value below comes from the admin Simulation Manager (or the course
+// editor's per-insert credentials) for slug "gst-e-way-bill-6" — nothing is
+// hardcoded here. See the credential field labels this matches in the
+// findFieldValue calls below.
 function buildBillDetailsExperiment(config: ReturnType<typeof useSimulationConfig>) {
   return {
-    description: config?.bannerText || DEFAULT_BILL_DETAILS.description,
-    documentNo: findFieldValue(config, /document no|doc no/i) || DEFAULT_BILL_DETAILS.documentNo,
-    billFromName: findFieldValue(config, /bill from name|supplier name/i) || DEFAULT_BILL_DETAILS.billFromName,
-    billFromGstin: findFieldValue(config, /bill from gstin|supplier gstin/i) || DEFAULT_BILL_DETAILS.billFromGstin,
-    dispatchAddress: findFieldValue(config, /dispatch.*address/i) || DEFAULT_BILL_DETAILS.dispatchAddress,
-    dispatchPlace: findFieldValue(config, /dispatch.*place/i) || DEFAULT_BILL_DETAILS.dispatchPlace,
-    dispatchPincode: findFieldValue(config, /dispatch.*pincode/i) || DEFAULT_BILL_DETAILS.dispatchPincode,
-    billToName: findFieldValue(config, /bill to name|recipient name/i) || DEFAULT_BILL_DETAILS.billToName,
-    billToGstinExpected:
-      findFieldValue(config, /bill to gstin|recipient gstin/i) || DEFAULT_BILL_DETAILS.billToGstinExpected,
-    shipToAddress: findFieldValue(config, /ship to.*address/i) || DEFAULT_BILL_DETAILS.shipToAddress,
-    shipToPlace: findFieldValue(config, /ship to.*place|ship to.*city/i) || DEFAULT_BILL_DETAILS.shipToPlace,
-    shipToPincode: findFieldValue(config, /ship to.*pincode/i) || DEFAULT_BILL_DETAILS.shipToPincode,
+    description: config?.bannerText || "",
+    documentNo: findFieldValue(config, /document no|doc no/i),
+    billFromName: findFieldValue(config, /bill from name|supplier name/i),
+    billFromGstin: findFieldValue(config, /bill from gstin|supplier gstin/i),
+    dispatchAddress: findFieldValue(config, /dispatch.*address/i),
+    dispatchPlace: findFieldValue(config, /dispatch.*place/i),
+    dispatchPincode: findFieldValue(config, /dispatch.*pincode/i),
+    billToName: findFieldValue(config, /bill to name|recipient name/i),
+    billToGstinExpected: findFieldValue(config, /bill to gstin|recipient gstin/i),
+    shipToAddress: findFieldValue(config, /ship to.*address/i),
+    shipToPlace: findFieldValue(config, /ship to.*place|ship to.*city/i),
+    shipToPincode: findFieldValue(config, /ship to.*pincode/i),
     requireCredentialValidation: config?.requireCredentialValidation ?? true,
   };
 }
