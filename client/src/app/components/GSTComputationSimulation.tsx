@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   CheckCircle2,
   RotateCcw,
@@ -37,6 +37,33 @@ export default function GSTComputationSimulation() {
   const [hoveredCalendarCell, setHoveredCalendarCell] = useState<string | null>(null);
   const [isServicesMenuOpen, setIsServicesMenuOpen] = useState(false);
   const [isPaymentsDropdownOpen, setIsPaymentsDropdownOpen] = useState(false);
+  const paymentsCloseTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openPaymentsDropdown = () => {
+    if (paymentsCloseTimeoutRef.current) {
+      clearTimeout(paymentsCloseTimeoutRef.current);
+      paymentsCloseTimeoutRef.current = null;
+    }
+    setIsPaymentsDropdownOpen(true);
+  };
+
+  const scheduleClosePaymentsDropdown = () => {
+    if (paymentsCloseTimeoutRef.current) {
+      clearTimeout(paymentsCloseTimeoutRef.current);
+    }
+    paymentsCloseTimeoutRef.current = setTimeout(() => {
+      setIsPaymentsDropdownOpen(false);
+      paymentsCloseTimeoutRef.current = null;
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (paymentsCloseTimeoutRef.current) {
+        clearTimeout(paymentsCloseTimeoutRef.current);
+      }
+    };
+  }, []);
   const [selectedReason, setSelectedReason] = useState<string>("");
   const [showLedgerTable, setShowLedgerTable] = useState(false);
 
@@ -270,8 +297,8 @@ export default function GSTComputationSimulation() {
               
               {/* Payments Sub-Menu Item with Hover/Click Dropdown */}
               <div
-                onMouseEnter={() => setIsPaymentsDropdownOpen(true)}
-                onMouseLeave={() => setIsPaymentsDropdownOpen(false)}
+                onMouseEnter={openPaymentsDropdown}
+                onMouseLeave={scheduleClosePaymentsDropdown}
               >
                 <button
                   onClick={() => setIsPaymentsDropdownOpen(!isPaymentsDropdownOpen)}
@@ -279,9 +306,13 @@ export default function GSTComputationSimulation() {
                 >
                   Payments
                 </button>
-                
+
                 {isPaymentsDropdownOpen && (
-                  <div className="absolute left-0 right-0 w-full mt-2 bg-white border-y border-slate-300 shadow-lg p-5 pl-[220px] pr-24 z-[99999] text-[11px] grid grid-cols-2 gap-x-12 gap-y-3 font-bold select-none">
+                  <div
+                    onMouseEnter={openPaymentsDropdown}
+                    onMouseLeave={scheduleClosePaymentsDropdown}
+                    className="absolute left-0 right-0 w-full mt-2 bg-white border-y border-slate-300 shadow-lg p-5 pl-[220px] pr-24 z-[99999] text-[11px] grid grid-cols-2 gap-x-12 gap-y-3 font-bold select-none"
+                  >
                     {/* Left Column */}
                     <div className="flex flex-col gap-3 text-left">
                       <button
