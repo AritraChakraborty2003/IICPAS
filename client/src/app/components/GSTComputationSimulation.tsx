@@ -111,6 +111,7 @@ export default function GSTComputationSimulation() {
     setSelectedReason("");
     setShowLedgerTable(false);
     setLedgerViewed(false);
+    setShowLedgerOverlay(false);
   };
 
   const handleProceedFromReason = () => {
@@ -123,6 +124,11 @@ export default function GSTComputationSimulation() {
     setSelectedReason("");
     setShowLedgerTable(false);
     setLedgerViewed(false);
+    setShowLedgerOverlay(false);
+  };
+
+  const handleLedgerRetry = () => {
+    setShowLedgerOverlay(false);
   };
 
   const handleGenerateChallan = () => {
