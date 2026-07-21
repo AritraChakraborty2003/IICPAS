@@ -106,24 +106,26 @@ const getTodayDate = (): string => {
   return `${dd}/${mm}/${yyyy}`;
 };
 
-// Every value below comes from the admin Simulation Manager (or the course
-// editor's per-insert credentials) for slug "gst-e-way-bill-6" — nothing is
-// hardcoded here. See the credential field labels this matches in the
-// findFieldValue calls below.
+// Only Document No and Bill To GSTIN are configurable per-course (via the
+// admin Simulation Manager / course editor "Add/Edit Creds" for slug
+// "gst-e-way-bill-6") — every other field is fixed scenario data.
+const FIXED_BILL_DETAILS = {
+  billFromName: "Shivam Cements Private Limited",
+  billFromGstin: "07GDLCF7228G1YK",
+  dispatchAddress: "#39 Second Floor, Connaught Cir, Opposite",
+  dispatchPlace: "Delhi",
+  dispatchPincode: "110001",
+  billToName: "Prestige Steel Company",
+  shipToAddress: "#14, 2nd Floor, Off Veera Desai Rd, near Balaji TeleFilms",
+  shipToPlace: "Mumbai",
+  shipToPincode: "400053",
+};
+
 function buildBillDetailsExperiment(config: ReturnType<typeof useSimulationConfig>) {
   return {
-    description: config?.bannerText || "",
-    documentNo: findFieldValue(config, /document no|doc no/i),
-    billFromName: findFieldValue(config, /bill from name|supplier name/i),
-    billFromGstin: findFieldValue(config, /bill from gstin|supplier gstin/i),
-    dispatchAddress: findFieldValue(config, /dispatch.*address/i),
-    dispatchPlace: findFieldValue(config, /dispatch.*place/i),
-    dispatchPincode: findFieldValue(config, /dispatch.*pincode/i),
-    billToName: findFieldValue(config, /bill to name|recipient name/i),
-    billToGstinExpected: findFieldValue(config, /bill to gstin|recipient gstin/i),
-    shipToAddress: findFieldValue(config, /ship to.*address/i),
-    shipToPlace: findFieldValue(config, /ship to.*place|ship to.*city/i),
-    shipToPincode: findFieldValue(config, /ship to.*pincode/i),
+    ...FIXED_BILL_DETAILS,
+    documentNo: findFieldValue(config, /document no|doc no/i) || "SH23/10282",
+    billToGstinExpected: findFieldValue(config, /bill to gstin|recipient gstin/i) || "27MNHFP2782H1YZ",
     requireCredentialValidation: config?.requireCredentialValidation ?? true,
   };
 }
@@ -830,16 +832,6 @@ export default function GSTEWayBillReplica({
     <div className="min-h-screen bg-[#f4f7fb] pb-8 text-slate-900">
       <main className="px-4 py-4">
         <div className="w-full">
-          <div className="mb-4 rounded-md border border-sky-100 bg-[#0f3a5f] px-4 py-3 text-white shadow-sm">
-            <h4 className="text-[12px] font-extrabold uppercase tracking-wide text-sky-300">
-              Experiment 6:
-            </h4>
-            <p className="mt-1 text-[13px] font-semibold leading-relaxed">
-              {billDetails.description ||
-                'Set this experiment\'s instructions and credentials in the admin Simulation Manager (slug "gst-e-way-bill-6"), or via "Add/Edit Creds" on the course editor\'s simulation link.'}
-            </p>
-          </div>
-
           <div className="overflow-hidden rounded-[8px] border border-[#d8d8df] bg-white shadow-[0_1px_4px_rgba(15,23,42,0.04)]">
             <div className="bg-[#a58ad6] px-4 py-2.5 text-[15px] font-semibold text-slate-800">
               Transaction Details
