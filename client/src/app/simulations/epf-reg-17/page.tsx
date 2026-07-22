@@ -13,6 +13,7 @@ import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 // UAN, Password and the member Name all come from the admin Simulation
 // Manager (or the course editor's per-insert "Add/Edit Creds") for slug

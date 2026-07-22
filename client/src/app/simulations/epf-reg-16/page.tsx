@@ -13,6 +13,7 @@ import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 // UAN, Password and the member Name all come from the admin Simulation
 // Manager (or the course editor's per-insert "Add/Edit Creds") for slug
@@ -475,11 +476,13 @@ export default function EpfReg16Page() {
   const validateCreds = simConfig?.requireCredentialValidation ?? true;
   // No hardcoded fallback text — the banner only shows if an admin sets one.
   const bannerText = simConfig?.bannerText || "";
+  const notifyGroupComplete = useSimGroupComplete();
 
   const handleLoginSuccess = () => {
     setShowTick(true);
     setTimeout(() => setShowTick(false), 1400);
     setView("loggedIn");
+    notifyGroupComplete();
   };
 
   return (
