@@ -78,7 +78,13 @@ const updates = [
   },
 ];
 
-export default function GSTEWayBillDashboard() {
+interface GSTEWayBillDashboardProps {
+  onComplete?: () => void;
+}
+
+export default function GSTEWayBillDashboard({
+  onComplete,
+}: GSTEWayBillDashboardProps = {}) {
   const primaryMenu = leftMenu.slice(1, 11);
   const secondaryMenu = leftMenu.slice(11);
   const [showLaunchScreen, setShowLaunchScreen] = useState(true);
@@ -120,6 +126,7 @@ export default function GSTEWayBillDashboard() {
                 onClick={() => {
                   if (index === 0) {
                     setShowGenerateOverlay(true);
+                    onComplete?.();
                   }
                 }}
                 className={`block w-full px-4 py-3 text-left text-[12px] font-medium text-white transition-colors hover:bg-[#243647] ${
