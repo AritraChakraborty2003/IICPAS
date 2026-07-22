@@ -826,6 +826,7 @@ export default function EpfReg15Page() {
   const validateCreds = simConfig?.requireCredentialValidation ?? true;
   // No hardcoded fallback text — the banner only shows if an admin sets one.
   const bannerText = simConfig?.bannerText || "";
+  const notifyGroupComplete = useSimGroupComplete();
 
   const handleKycSubmit = (draft: KycDraft) => {
     setKycDraft(draft);
@@ -836,6 +837,7 @@ export default function EpfReg15Page() {
     setShowTick(true);
     setTimeout(() => setShowTick(false), 1400);
     setView("success");
+    notifyGroupComplete();
   };
 
   const handleReset = () => {
