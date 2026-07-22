@@ -946,14 +946,16 @@ function TopicSimulationCard({ url, title, imageUrl }: TopicSimulationLink) {
 function GroupSimulationCard({
   href,
   slotCount,
+  bgImageUrl,
   onOpen,
 }: {
   href: string;
   slotCount: number;
+  bgImageUrl?: string;
   onOpen: (href: string) => void;
 }) {
   return (
-    <div className="mx-auto w-full max-w-4xl">
+    <div className="mx-auto w-full max-w-6xl">
       <div
         className="overflow-hidden rounded-[18px] border border-emerald-300 bg-emerald-100"
         style={{ boxShadow: "0 14px 34px rgba(0,0,0,0.16)" }}
@@ -963,13 +965,23 @@ function GroupSimulationCard({
           onClick={() => onOpen(href)}
           className="relative block w-full text-left text-inherit no-underline"
         >
-          <div
-            className="min-h-[220px] w-full"
-            style={{
-              background:
-                "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%), linear-gradient(180deg, rgba(6,95,70,0.35) 0%, rgba(16,185,129,0.55) 100%)",
-            }}
-          />
+          {bgImageUrl ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={bgImageUrl}
+              alt="Guided simulation background"
+              className="block h-auto max-h-[560px] min-h-[220px] w-full object-cover object-top"
+              style={{ filter: "saturate(1.05)" }}
+            />
+          ) : (
+            <div
+              className="min-h-[220px] w-full"
+              style={{
+                background:
+                  "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%), linear-gradient(180deg, rgba(6,95,70,0.35) 0%, rgba(16,185,129,0.55) 100%)",
+              }}
+            />
+          )}
           <div
             className="absolute inset-0"
             style={{
@@ -5395,6 +5407,7 @@ export default function DigitalHubClient({
                                   key={`${group.name}-${groupIndex}`}
                                   href={`/simulations/group/${selectedCaseStudy._id}/${groupIndex}`}
                                   slotCount={group.slots.length}
+                                  bgImageUrl={group.bgImageUrl}
                                   onOpen={(href) => router.push(href)}
                                 />
                               ),
@@ -5929,6 +5942,7 @@ export default function DigitalHubClient({
                                   key={`${group.name}-${groupIndex}`}
                                   href={`/simulations/group/${selectedAssignment._id}/${groupIndex}`}
                                   slotCount={group.slots.length}
+                                  bgImageUrl={group.bgImageUrl}
                                   onOpen={(href) => router.push(href)}
                                 />
                               ),
