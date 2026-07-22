@@ -117,6 +117,21 @@ const questionSetSchema = new mongoose.Schema({
   },
 });
 
+const simulationGroupSlotSchema = new mongoose.Schema({
+  _id: false,
+  url: { type: String, required: true },
+  title: { type: String, default: "" },
+  imageUrl: { type: String, default: "" },
+  overrideId: { type: String, default: "" },
+  order: { type: Number, default: 0 },
+});
+
+const simulationGroupSchema = new mongoose.Schema({
+  name: { type: String, default: "" },
+  order: { type: Number, default: 0 },
+  slots: [simulationGroupSlotSchema],
+});
+
 const caseStudySchema = new mongoose.Schema({
   title: {
     type: String,
@@ -150,6 +165,10 @@ const caseStudySchema = new mongoose.Schema({
       imageUrl: { type: String, default: "" },
     },
   ],
+  // Ordered groups of existing /simulations/... pages that auto-advance
+  // one after another for the student (each slot has its own credential
+  // override, same ?simCfg= mechanism as topicSimulations).
+  simulationGroups: [simulationGroupSchema],
   questionSets: [questionSetSchema],
   createdAt: {
     type: Date,

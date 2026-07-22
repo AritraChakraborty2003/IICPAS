@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { getApiBase } from "@/lib/apiBase";
+import SimulationCredFieldsEditor from "./SimulationCredFieldsEditor";
 
 const STATIC_CDN_BASE =
   process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
@@ -369,101 +370,14 @@ export default function TopicSimulationsManager({
                 )}
               </div>
 
-              <div className="rounded-lg border border-dashed border-blue-200 bg-blue-50/40 p-3">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="text-sm font-semibold text-gray-700">
-                    Credentials for this simulation (optional)
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      update(entry.id, {
-                        credFields: [
-                          ...entry.credFields,
-                          { label: "", value: "" },
-                        ],
-                      })
-                    }
-                    className="text-xs font-medium text-blue-600 hover:text-blue-800"
-                  >
-                    + Add Field
-                  </button>
-                </div>
-                {entry.overrideId && !entry.credsLoaded ? (
-                  <p className="py-2 text-xs text-gray-400">
-                    Loading saved credentials...
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {entry.credFields.map((field, fieldIndex) => (
-                      <div key={fieldIndex} className="flex items-center gap-2">
-                        <input
-                          value={field.label}
-                          onChange={(e) =>
-                            update(entry.id, {
-                              credFields: entry.credFields.map((item, i) =>
-                                i === fieldIndex
-                                  ? { ...item, label: e.target.value }
-                                  : item
-                              ),
-                            })
-                          }
-                          placeholder="Label (e.g. Username)"
-                          className="w-2/5 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                        />
-                        <input
-                          value={field.value}
-                          onChange={(e) =>
-                            update(entry.id, {
-                              credFields: entry.credFields.map((item, i) =>
-                                i === fieldIndex
-                                  ? { ...item, value: e.target.value }
-                                  : item
-                              ),
-                            })
-                          }
-                          placeholder="Value"
-                          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                        />
-                        <button
-                          type="button"
-                          onClick={() =>
-                            update(entry.id, {
-                              credFields: entry.credFields.filter(
-                                (_, i) => i !== fieldIndex
-                              ),
-                            })
-                          }
-                          className="px-1 text-gray-400 hover:text-red-500"
-                          title="Remove field"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-                    <textarea
-                      value={entry.bannerText}
-                      onChange={(e) =>
-                        update(entry.id, { bannerText: e.target.value })
-                      }
-                      rows={2}
-                      placeholder="Banner text (optional) — leave empty to auto-generate from the fields"
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                    />
-                    <label className="flex items-center gap-2 text-sm text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={entry.validate}
-                        onChange={(e) =>
-                          update(entry.id, { validate: e.target.checked })
-                        }
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      Validate these credentials on the simulation
-                    </label>
-                  </div>
-                )}
-              </div>
+              <SimulationCredFieldsEditor
+                credFields={entry.credFields}
+                bannerText={entry.bannerText}
+                validate={entry.validate}
+                overrideId={entry.overrideId}
+                credsLoaded={entry.credsLoaded}
+                onPatch={(patch) => update(entry.id, patch)}
+              />
             </div>
           );
         })
