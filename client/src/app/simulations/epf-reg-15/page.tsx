@@ -17,6 +17,7 @@ import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 // UAN, Name, Date of Birth, Bank Account Number, IFSC, PAN and the Aadhaar
 // OTP all come from the admin Simulation Manager (or the course editor's
