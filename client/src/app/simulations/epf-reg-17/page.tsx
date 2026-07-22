@@ -559,7 +559,7 @@ function ContributionChart() {
 
 // ─── Passbook tab: Select Member Id → overview → chart → yearly ledger ────
 function PassbookView({ onDownload }: { onDownload: () => void }) {
-  const [memberId, setMemberId] = useState("");
+  const [memberId, setMemberId] = useState(MEMBER_ID);
 
   return (
     <div className="flex flex-col gap-4 p-5">
