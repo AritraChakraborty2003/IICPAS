@@ -100,6 +100,7 @@ interface CaseStudy {
   content: Content[];
   simulations: Simulation[];
   topicSimulations?: TopicSimulationLink[];
+  simulationGroups?: SimulationGroupLink[];
   questionSets: QuestionSet[];
   createdAt: string;
   updatedAt: string;
@@ -116,6 +117,7 @@ interface Assignment {
   content: Content[];
   simulations: Simulation[];
   topicSimulations?: TopicSimulationLink[];
+  simulationGroups?: SimulationGroupLink[];
   questionSets: QuestionSet[];
   createdAt: string;
   updatedAt: string;
@@ -805,6 +807,11 @@ interface TopicSimulationLink {
   imageUrl?: string;
 }
 
+interface SimulationGroupLink {
+  name: string;
+  slots: TopicSimulationLink[];
+}
+
 // Portal simulation linked from a case study / assignment "Topic Simulations"
 // tab. Shows the admin-configured credentials banner (per-insert override via
 // ?simCfg=<id> first, slug config second) above an open-in-new-tab card.
@@ -931,6 +938,62 @@ function TopicSimulationCard({ url, title, imageUrl }: TopicSimulationLink) {
   );
 }
 
+// A "Group Simulations" entry — an ordered sequence of simulations that
+// auto-advance for the student, one after another, once started. Unlike
+// TopicSimulationCard this opens in the SAME tab (not target="_blank"),
+// since it navigates to the in-app Group Player route.
+function GroupSimulationCard({
+  href,
+  name,
+  slotCount,
+  onOpen,
+}: {
+  href: string;
+  name: string;
+  slotCount: number;
+  onOpen: (href: string) => void;
+}) {
+  return (
+    <div className="mx-auto w-full max-w-4xl">
+      <div
+        className="overflow-hidden rounded-[18px] border border-emerald-300 bg-emerald-100"
+        style={{ boxShadow: "0 14px 34px rgba(0,0,0,0.16)" }}
+      >
+        <button
+          type="button"
+          onClick={() => onOpen(href)}
+          className="relative block w-full text-left text-inherit no-underline"
+        >
+          <div
+            className="min-h-[220px] w-full"
+            style={{
+              background:
+                "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.34), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.22), transparent 26%), linear-gradient(180deg, rgba(6,95,70,0.35) 0%, rgba(16,185,129,0.55) 100%)",
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(circle at 18% 26%, rgba(255,255,255,0.26), transparent 22%), radial-gradient(circle at 80% 72%, rgba(255,255,255,0.18), transparent 26%), linear-gradient(180deg, rgba(6,95,70,0.35) 0%, rgba(16,185,129,0.58) 100%)",
+            }}
+          />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
+            <div
+              className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-full border border-emerald-600/15 bg-white/95 px-7 py-4 text-[0.95rem] font-extrabold uppercase tracking-[0.1em] text-emerald-700"
+              style={{ boxShadow: "0 12px 28px rgba(0,0,0,0.22)" }}
+            >
+              ▶ {name || "Simulation Group"}
+            </div>
+            <p className="text-[0.82rem] font-semibold text-white/95">
+              {slotCount} simulations — plays automatically, one after another
+            </p>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function DigitalHubClient({
   courseSlugOrId,
@@ -5318,6 +5381,30 @@ export default function DigitalHubClient({
                         </div>
                       )}
 
+                    {/* Group Simulations (auto-advancing sequences) */}
+                    {selectedCaseStudy.simulationGroups &&
+                      selectedCaseStudy.simulationGroups.length > 0 && (
+                        <div className="mb-8">
+                          <h3 className="text-xl font-semibold text-emerald-800 mb-4">
+                            Guided Simulation Groups (
+                            {selectedCaseStudy.simulationGroups.length})
+                          </h3>
+                          <div className="space-y-4">
+                            {selectedCaseStudy.simulationGroups.map(
+                              (group, groupIndex) => (
+                                <GroupSimulationCard
+                                  key={`${group.name}-${groupIndex}`}
+                                  href={`/simulations/group/${selectedCaseStudy._id}/${groupIndex}`}
+                                  name={group.name}
+                                  slotCount={group.slots.length}
+                                  onOpen={(href) => router.push(href)}
+                                />
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
+
                     {/* Question Sets */}
                     {selectedCaseStudy.questionSets &&
                       selectedCaseStudy.questionSets.length > 0 && (
@@ -5822,6 +5909,30 @@ export default function DigitalHubClient({
                                   url={sim.url}
                                   title={sim.title}
                                   imageUrl={sim.imageUrl}
+                                />
+                              ),
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                    {/* Group Simulations (auto-advancing sequences) */}
+                    {selectedAssignment.simulationGroups &&
+                      selectedAssignment.simulationGroups.length > 0 && (
+                        <div className="mb-8">
+                          <h3 className="text-xl font-semibold text-emerald-800 mb-4">
+                            Guided Simulation Groups (
+                            {selectedAssignment.simulationGroups.length})
+                          </h3>
+                          <div className="space-y-4">
+                            {selectedAssignment.simulationGroups.map(
+                              (group, groupIndex) => (
+                                <GroupSimulationCard
+                                  key={`${group.name}-${groupIndex}`}
+                                  href={`/simulations/group/${selectedAssignment._id}/${groupIndex}`}
+                                  name={group.name}
+                                  slotCount={group.slots.length}
+                                  onOpen={(href) => router.push(href)}
                                 />
                               ),
                             )}
