@@ -736,7 +736,7 @@ type View = "login" | "loggedIn";
 export default function EpfReg17Page() {
   const [launched, setLaunched] = useState(false);
   const [view, setView] = useState<View>("loggedIn");
-  const [tab, setTab] = useState<Tab>("passbook");
+  const [tab, setTab] = useState<Tab>("home");
   const [tickMessage, setTickMessage] = useState("");
 
   // Admin-configured experiment values (Simulation Manager slug
