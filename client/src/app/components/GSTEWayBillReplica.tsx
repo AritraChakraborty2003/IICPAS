@@ -33,6 +33,10 @@ type GSTEWayBillReplicaProps = {
   loginRoute?: string;
   launchTitle?: string;
   initialShowLaunchScreen?: boolean;
+  // Fired when the student finishes this experiment's task — only the
+  // "generate", "experiment4" and "billDetails" screen variants have a
+  // clean terminal state today; "home"/"search" don't invoke it.
+  onComplete?: () => void;
 };
 
 const updates = [
@@ -139,6 +143,7 @@ export default function GSTEWayBillReplica({
   loginRoute = "/simulations/gst/e-way-bill-login",
   launchTitle = "GST E-Way Bill Simulation",
   initialShowLaunchScreen = true,
+  onComplete,
 }: GSTEWayBillReplicaProps) {
   const router = useRouter();
   const screen = initialScreen;
