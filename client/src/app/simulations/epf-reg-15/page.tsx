@@ -128,36 +128,37 @@ function NavBar({ onKycClick, onHomeClick }: { onKycClick: () => void; onHomeCli
           Home
         </span>
         {(Object.keys(MENU_ITEMS) as MenuKey[]).map((menu) => (
-          <span
-            key={menu}
-            className="flex cursor-pointer items-center gap-1"
-            onClick={() => setOpenMenu((v) => (v === menu ? null : menu))}
-          >
-            {MENU_LABELS[menu]} <ChevronDown size={13} />
-          </span>
+          <div key={menu} className="relative">
+            <span
+              className="flex cursor-pointer items-center gap-1"
+              onClick={() => setOpenMenu((v) => (v === menu ? null : menu))}
+            >
+              {MENU_LABELS[menu]} <ChevronDown size={13} />
+            </span>
+
+            {openMenu === menu && (
+              <div className="absolute left-0 top-full z-20 mt-2.5 w-[280px] rounded-b border border-t-0 border-[#c0c0c0] bg-white shadow-md">
+                {MENU_ITEMS[menu].map((item) => {
+                  const isKyc = menu === "manage" && item === "KYC";
+                  return (
+                    <div
+                      key={item}
+                      onClick={() => selectItem(menu, item)}
+                      className={
+                        isKyc
+                          ? "cursor-pointer px-4 py-2.5 text-[12.5px] font-bold text-[#157a72] hover:bg-[#eaf7f4]"
+                          : "cursor-pointer px-4 py-2.5 text-[12.5px] font-semibold text-[#555] hover:bg-[#f3f3f3]"
+                      }
+                    >
+                      {item}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         ))}
       </div>
-
-      {openMenu && (
-        <div className="absolute left-6 top-full z-20 w-[280px] rounded-b border border-t-0 border-[#c0c0c0] bg-white shadow-md">
-          {MENU_ITEMS[openMenu].map((item) => {
-            const isKyc = openMenu === "manage" && item === "KYC";
-            return (
-              <div
-                key={item}
-                onClick={() => selectItem(openMenu, item)}
-                className={
-                  isKyc
-                    ? "cursor-pointer px-4 py-2.5 text-[12.5px] font-bold text-[#157a72] hover:bg-[#eaf7f4]"
-                    : "cursor-pointer px-4 py-2.5 text-[12.5px] font-semibold text-[#555] hover:bg-[#f3f3f3]"
-                }
-              >
-                {item}
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {notice && (
         <div className="absolute right-6 top-full z-20 mt-2 rounded border border-[#e8d3a3] bg-[#fdf6e3] px-3 py-2 text-[12px] font-semibold text-[#8a4b16] shadow-md">

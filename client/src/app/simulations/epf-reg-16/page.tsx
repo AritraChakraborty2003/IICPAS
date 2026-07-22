@@ -355,18 +355,20 @@ function LoggedInNav({ name }: { name: string }) {
             {tab}
           </span>
         ))}
-        <span
-          className="flex cursor-pointer items-center gap-1 px-4 py-3 hover:bg-white/10"
-          onClick={() => setCalcOpen((v) => !v)}
-        >
-          Calculators <ChevronDown size={13} />
-        </span>
-        {calcOpen && (
-          <div className="absolute left-[420px] top-full z-20 w-[200px] rounded-b border border-t-0 border-[#c0c0c0] bg-white text-[12.5px] font-semibold text-[#333] shadow-md">
-            <div className="cursor-pointer px-4 py-2.5 hover:bg-[#f3f3f3]">Pension Calculator</div>
-            <div className="cursor-pointer px-4 py-2.5 hover:bg-[#f3f3f3]">Contribution Calculator</div>
-          </div>
-        )}
+        <div className="relative">
+          <span
+            className="flex cursor-pointer items-center gap-1 px-4 py-3 hover:bg-white/10"
+            onClick={() => setCalcOpen((v) => !v)}
+          >
+            Calculators <ChevronDown size={13} />
+          </span>
+          {calcOpen && (
+            <div className="absolute left-0 top-full z-20 w-[200px] rounded-b border border-t-0 border-[#c0c0c0] bg-white text-[12.5px] font-semibold text-[#333] shadow-md">
+              <div className="cursor-pointer px-4 py-2.5 hover:bg-[#f3f3f3]">Pension Calculator</div>
+              <div className="cursor-pointer px-4 py-2.5 hover:bg-[#f3f3f3]">Contribution Calculator</div>
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-3 py-3">
         <span>{name}</span>
@@ -491,7 +493,7 @@ export default function EpfReg16Page() {
       <WarningMarquee />
 
       {view === "login" && (
-        <main className="mx-auto grid w-[98vw] flex-1 gap-5 py-6 lg:grid-cols-[1fr_360px]">
+        <main className="mx-auto grid w-[98vw] flex-1 gap-5 py-6 lg:grid-cols-[1fr_1fr]">
           <SignInCard
             uanValue={uanValue}
             passwordValue={passwordValue}
