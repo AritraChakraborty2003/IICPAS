@@ -455,7 +455,10 @@ export default function GSTChallanHistorySimulation({
       <div className="bg-[#1e293b] px-6 py-4 flex items-center justify-between border-t border-slate-800 w-full select-none shrink-0">
         <span className="text-[11px] text-slate-400 font-semibold italic">GST Computation Simulation #4</span>
         <button
-          onClick={() => setIsCompleted(true)}
+          onClick={() => {
+            setIsCompleted(true);
+            onComplete?.();
+          }}
           className="bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-[12px] uppercase px-8 py-2.5 shadow-md tracking-wider cursor-pointer transition-transform active:scale-95"
         >
           Next
