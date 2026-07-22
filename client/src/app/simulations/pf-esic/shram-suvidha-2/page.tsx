@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { CheckCircle, ChevronDown, ChevronUp, Menu, Bell, User, Calendar } from "lucide-react";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 // ─── Launch Overlay ────────────────────────────────────────────────────────────
 function LaunchOverlay({ onStart }: { onStart: () => void }) {
