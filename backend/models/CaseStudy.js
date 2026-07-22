@@ -129,6 +129,7 @@ const simulationGroupSlotSchema = new mongoose.Schema({
 const simulationGroupSchema = new mongoose.Schema({
   name: { type: String, default: "" },
   order: { type: Number, default: 0 },
+  bgImageUrl: { type: String, default: "" },
   slots: [simulationGroupSlotSchema],
 });
 

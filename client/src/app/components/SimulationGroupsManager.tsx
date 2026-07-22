@@ -1,10 +1,13 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { getApiBase } from "@/lib/apiBase";
 import SimulationCredFieldsEditor from "./SimulationCredFieldsEditor";
 import { simulationSlugFromUrl } from "./TopicSimulationsManager";
 import type { TopicSimEntry } from "./TopicSimulationsManager";
+
+const STATIC_CDN_BASE =
+  process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
 
 // Editor for "Group Simulations" — an ordered sequence of existing
 // /simulations/... pages (each with its own credential override, same
@@ -14,6 +17,7 @@ import type { TopicSimEntry } from "./TopicSimulationsManager";
 export interface SimGroupEntry {
   id: string;
   name: string;
+  bgImageUrl: string;
   slots: TopicSimEntry[];
 }
 
@@ -25,6 +29,7 @@ export interface SavedSimulationGroupSlot {
 
 export interface SavedSimulationGroup {
   name: string;
+  bgImageUrl?: string;
   slots: SavedSimulationGroupSlot[];
 }
 
@@ -60,6 +65,7 @@ export const simGroupsFromSaved = (
   (saved || []).map((group, groupIndex) => ({
     id: `sgroup-${Date.now()}-${groupIndex}`,
     name: group.name || "",
+    bgImageUrl: group.bgImageUrl || "",
     slots: (group.slots || []).map((slot, slotIndex) => ({
       id: `gsim-slot-${Date.now()}-${groupIndex}-${slotIndex}`,
       title: slot.title || "",
@@ -135,7 +141,11 @@ export const syncSimulationGroups = async (
       });
     }
 
-    result.push({ name: group.name.trim(), slots });
+    result.push({
+      name: group.name.trim(),
+      bgImageUrl: group.bgImageUrl.trim(),
+      slots,
+    });
   }
 
   return result;
@@ -148,6 +158,38 @@ export default function SimulationGroupsManager({
   groups: SimGroupEntry[];
   onChange: (groups: SimGroupEntry[]) => void;
 }) {
+  const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(
+    null
+  );
+
+  const handleGroupImageUpload = async (groupId: string, file?: File | null) => {
+    if (!file || uploadingImageFor) return;
+    try {
+      setUploadingImageFor(groupId);
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await axios.post(
+        `${STATIC_CDN_BASE}/upload/image`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+      const url: string =
+        res.data?.data?.cdnUrl || res.data?.cdnUrl || res.data?.imageUrl || "";
+      if (url) {
+        updateGroup(groupId, { bgImageUrl: url });
+      } else {
+        alert("Image upload did not return a URL");
+      }
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { error?: string } }; message?: string };
+      alert(
+        "Image upload failed: " + (error?.response?.data?.error || error?.message)
+      );
+    } finally {
+      setUploadingImageFor(null);
+    }
+  };
+
   // Prefill credential fields for saved slots that carry an override id
   useEffect(() => {
     groups.forEach((group) => {
@@ -211,6 +253,7 @@ export default function SimulationGroupsManager({
       {
         id: `sgroup-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         name: `Group ${groups.length + 1}`,
+        bgImageUrl: "",
         slots: [newSlot()],
       },
     ]);
