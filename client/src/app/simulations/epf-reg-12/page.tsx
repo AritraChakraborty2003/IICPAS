@@ -20,6 +20,7 @@ import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 // UAN, Aadhaar, Name, Date of Birth, Mobile and the Authorisation PIN/OTP all
 // come from the admin Simulation Manager (or the course editor's per-insert
@@ -918,6 +919,7 @@ export default function EpfReg12Page() {
   const mobileValue = findFieldValue(simConfig, /mobile/i) || DEFAULT_MOBILE;
   const otpValue = findFieldValue(simConfig, /otp|pin/i) || DEFAULT_OTP;
   const validateCreds = simConfig?.requireCredentialValidation ?? true;
+  const notifyGroupComplete = useSimGroupComplete();
 
   const handleActivateSubmit = (submitted: ActivateDetails) => {
     setDetails(submitted);
@@ -928,6 +930,7 @@ export default function EpfReg12Page() {
     setShowTick(true);
     setTimeout(() => setShowTick(false), 1400);
     setView("success");
+    notifyGroupComplete();
   };
 
   const handleReset = () => {
