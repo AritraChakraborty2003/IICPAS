@@ -41,12 +41,19 @@ export default function SimulationGroupPlayerPage() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch(`${getApiBase()}/case-studies/${caseStudyId}`)
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
+
+    const fetchJson = (endpoint: string) =>
+      fetch(endpoint).then((res) => (res.ok ? res.json() : Promise.reject()));
+
+    // The group player is linked from both case studies and assignments
+    // under the same /simulations/group/:id/:groupIndex route, so try
+    // case-studies first and fall back to assignments.
+    fetchJson(`${getApiBase()}/case-studies/${caseStudyId}`)
+      .catch(() => fetchJson(`${getApiBase()}/assignments/${caseStudyId}`))
       .then((data) => {
         if (cancelled) return;
-        const caseStudy = data?.data || data;
-        const groups: SimulationGroup[] = caseStudy?.simulationGroups || [];
+        const parent = data?.data || data;
+        const groups: SimulationGroup[] = parent?.simulationGroups || [];
         const found = groups[groupIndex];
         if (!found || !found.slots?.length) {
           setLoadState("error");
