@@ -544,6 +544,12 @@ export default function ShramSuvidha2Page() {
   const [launched, setLaunched] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mainView, setMainView] = useState<"edit" | "welcome" | "success">("edit");
+  const notifyGroupComplete = useSimGroupComplete();
+
+  const handleEditSuccess = () => {
+    setMainView("success");
+    notifyGroupComplete();
+  };
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f4f6fb]">
