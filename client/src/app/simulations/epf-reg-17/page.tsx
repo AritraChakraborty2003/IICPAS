@@ -370,14 +370,14 @@ function LoggedInNav({
 }) {
   const [calcOpen, setCalcOpen] = useState(false);
   return (
-    <nav className="relative flex items-center justify-between bg-[#163b71] px-6 text-[13.5px] font-semibold text-white">
+    <nav className="relative flex items-center justify-between bg-[#2952c9] px-6 text-[13.5px] font-semibold text-white">
       <div className="flex items-stretch">
         {TAB_LABELS.map(({ key, label }) => (
           <span
             key={label}
             onClick={() => key && onSelectTab(key)}
             className={`cursor-pointer px-4 py-3 ${
-              key && key === activeTab ? "bg-[#0f2a54]" : "hover:bg-white/10"
+              key && key === activeTab ? "bg-[#152a63]" : "hover:bg-white/10"
             }`}
           >
             {label}
@@ -399,7 +399,7 @@ function LoggedInNav({
         </div>
       </div>
       <div className="flex items-center gap-3 py-3">
-        <span>{name}</span>
+        <span className="uppercase">{name}</span>
         <span className="cursor-pointer text-white/80 hover:underline">Logout</span>
       </div>
     </nav>
