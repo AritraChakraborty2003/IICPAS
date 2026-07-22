@@ -28,7 +28,13 @@ interface TaxRow {
   other: number;
 }
 
-export default function GSTComputationSimulation() {
+interface GSTComputationSimulationProps {
+  onComplete?: () => void;
+}
+
+export default function GSTComputationSimulation({
+  onComplete,
+}: GSTComputationSimulationProps = {}) {
   const [currentStep, setCurrentStep] = useState<Step>("dashboard_overlay");
   const [progress, setProgress] = useState(87);
   const [paymentMode, setPaymentMode] = useState<"E-Payment" | "OTC" | "NEFT">("E-Payment");
@@ -153,6 +159,7 @@ export default function GSTComputationSimulation() {
     setCpin(generatedCpin);
     setErrorMessage("");
     setCurrentStep("receipt");
+    onComplete?.();
   };
 
   const handleReset = () => {

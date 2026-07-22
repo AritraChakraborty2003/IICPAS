@@ -68,7 +68,13 @@ function buildExperimentBanner(config: SimulationCredConfig | null) {
   };
 }
 
-export default function GSTComputation2Simulation() {
+interface GSTComputation2SimulationProps {
+  onComplete?: () => void;
+}
+
+export default function GSTComputation2Simulation({
+  onComplete,
+}: GSTComputation2SimulationProps = {}) {
   const [currentStep, setCurrentStep] = useState<Step>("reason_for_challan_overlay");
   const [progress, setProgress] = useState(87);
   const [paymentMode, setPaymentMode] = useState<"E-Payment" | "OTC" | "NEFT">("E-Payment");
@@ -188,6 +194,7 @@ export default function GSTComputation2Simulation() {
     }
     setPaymentSelectionErrorMessage("");
     setCurrentStep("receipt");
+    onComplete?.();
   };
 
   const handleReset = () => {

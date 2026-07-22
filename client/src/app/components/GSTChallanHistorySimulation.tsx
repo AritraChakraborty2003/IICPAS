@@ -27,7 +27,13 @@ interface ChallanRecord {
   depositStatus: string;
 }
 
-export default function GSTChallanHistorySimulation() {
+interface GSTChallanHistorySimulationProps {
+  onComplete?: () => void;
+}
+
+export default function GSTChallanHistorySimulation({
+  onComplete,
+}: GSTChallanHistorySimulationProps = {}) {
   const [isStarted, setIsStarted] = useState(false);
   const [isServicesMenuOpen, setIsServicesMenuOpen] = useState(false);
   const [isPaymentsDropdownOpen, setIsPaymentsDropdownOpen] = useState(false);

@@ -14,7 +14,13 @@ import {
 
 type Step = "dashboard_overlay" | "dashboard_active" | "reason_for_challan";
 
-export default function GSTComputation3Simulation() {
+interface GSTComputation3SimulationProps {
+  onComplete?: () => void;
+}
+
+export default function GSTComputation3Simulation({
+  onComplete,
+}: GSTComputation3SimulationProps = {}) {
   const [currentStep, setCurrentStep] = useState<Step>("dashboard_overlay");
   const [selectedReason, setSelectedReason] = useState<string>("other");
   const [showLedgerTable, setShowLedgerTable] = useState<boolean>(false);
@@ -39,6 +45,7 @@ export default function GSTComputation3Simulation() {
     // Show success overlay after a short delay so user sees table open first
     setTimeout(() => {
       setShowSuccessOverlay(true);
+      onComplete?.();
     }, 850);
   };
 
