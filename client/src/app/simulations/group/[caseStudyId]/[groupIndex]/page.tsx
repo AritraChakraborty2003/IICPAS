@@ -45,7 +45,8 @@ export default function SimulationGroupPlayerPage() {
       .then((res) => (res.ok ? res.json() : Promise.reject()))
       .then((data) => {
         if (cancelled) return;
-        const groups: SimulationGroup[] = data?.simulationGroups || [];
+        const caseStudy = data?.data || data;
+        const groups: SimulationGroup[] = caseStudy?.simulationGroups || [];
         const found = groups[groupIndex];
         if (!found || !found.slots?.length) {
           setLoadState("error");
