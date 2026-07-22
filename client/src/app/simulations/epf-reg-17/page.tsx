@@ -750,6 +750,7 @@ export default function EpfReg17Page() {
   const validateCreds = simConfig?.requireCredentialValidation ?? true;
   // No hardcoded fallback text — the banner only shows if an admin sets one.
   const bannerText = simConfig?.bannerText || "";
+  const notifyGroupComplete = useSimGroupComplete();
 
   const flashTick = (message: string) => {
     setTickMessage(message);
@@ -764,6 +765,7 @@ export default function EpfReg17Page() {
 
   const handleDownload = () => {
     flashTick("Download Complete!");
+    notifyGroupComplete();
   };
 
   return (
