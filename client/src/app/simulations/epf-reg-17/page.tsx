@@ -485,6 +485,241 @@ function MemberDashboard({ name }: { name: string }) {
   );
 }
 
+// ─── 12-year stacked contribution bar chart (only the current year has
+// any data — matches the real passbook, where older years show empty) ──────
+function ContributionChart() {
+  const chartHeight = 220;
+  const scale = (value: number) => (value / CHART_MAX) * chartHeight;
+  const gridValues = [0, 500, 1000, 1500, 2000, 2500];
+
+  return (
+    <div className="rounded border border-[#d8d8d8] p-4">
+      <div className="mb-4 text-center text-[13px] font-semibold text-[#555]">
+        Contribution Summary in last 12 years
+      </div>
+      <div className="flex gap-3">
+        <div className="flex flex-col justify-between text-[11px] text-[#888]" style={{ height: chartHeight }}>
+          {[...gridValues].reverse().map((v) => (
+            <span key={v}>{v.toLocaleString()}</span>
+          ))}
+        </div>
+        <div
+          className="relative flex flex-1 items-end justify-between border-l border-b border-[#ddd]"
+          style={{ height: chartHeight }}
+        >
+          {gridValues.map((v) => (
+            <div
+              key={v}
+              className="absolute left-0 right-0 border-t border-dashed border-[#eee]"
+              style={{ bottom: scale(v) }}
+            />
+          ))}
+          {CHART_YEARS.map((year, i) => {
+            const isCurrent = i === CHART_YEARS.length - 1;
+            return (
+              <div key={year} className="z-10 flex flex-1 flex-col items-center justify-end gap-1">
+                {isCurrent && (
+                  <div className="flex w-[26px] flex-col-reverse">
+                    <div
+                      className="w-full bg-[#d94f70]"
+                      style={{ height: scale(EMPLOYEE_SHARE) }}
+                      title={`Employee Cont. ${EMPLOYEE_SHARE}`}
+                    />
+                    <div
+                      className="w-full bg-[#1a1a6e]"
+                      style={{ height: scale(EMPLOYER_SHARE) }}
+                      title={`Employer Cont. ${EMPLOYER_SHARE}`}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="mt-2 flex justify-between pl-[38px] text-[10.5px] text-[#888]">
+        {CHART_YEARS.map((year) => (
+          <span key={year}>{year}</span>
+        ))}
+      </div>
+      <div className="mt-4 flex justify-center gap-5 text-[12px] text-[#555]">
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-[#d94f70]" /> Employee Cont.
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-[#1a1a6e]" /> Employer Cont.
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-sm bg-[#b8860b]" /> Interest Earned
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Passbook tab: Select Member Id → overview → chart → yearly ledger ────
+function PassbookView({ onDownload }: { onDownload: () => void }) {
+  const [memberId, setMemberId] = useState("");
+
+  return (
+    <div className="flex flex-col gap-4 p-5">
+      <div className="rounded border border-[#d8d8d8] bg-white p-4">
+        <div className="flex items-center justify-end gap-3">
+          <label className="text-[13.5px] font-semibold text-[#333]">Select Member Id</label>
+          <select
+            value={memberId}
+            onChange={(e) => setMemberId(e.target.value)}
+            className="h-[38px] w-[280px] rounded border border-[#c0c0c0] bg-white px-3 text-[13.5px] text-[#333] outline-none focus:border-[#157a72] focus:ring-1 focus:ring-[#157a72]"
+          >
+            <option value="">-- Select --</option>
+            <option value={MEMBER_ID}>{MEMBER_ID}</option>
+          </select>
+        </div>
+      </div>
+
+      {memberId && (
+        <>
+          <div className="rounded border border-[#d8d8d8] bg-white p-4">
+            <div className="mb-3 text-[14px] font-bold text-[#7a1f1a]">
+              Passbook Overview [ {memberId} ]
+            </div>
+            <div className="grid grid-cols-7 gap-2 rounded bg-[#eef0fb] p-3 text-center text-[12.5px]">
+              {[
+                ["Total Balance", TOTAL_BALANCE],
+                ["Adjustments (Balance)", 0],
+                ["Employee Contribution", EMPLOYEE_SHARE],
+                ["Employer Contribution", EMPLOYER_SHARE],
+                ["Interest Earned", 0],
+                ["Transfer-Ins/VDR", 0],
+                ["Total PF Withdrawal", 0],
+              ].map(([label, value]) => (
+                <div key={label as string}>
+                  <div className="font-semibold text-[#333]">{label}</div>
+                  <div className="mt-1 text-[15px] font-bold text-[#1a1a1a]">{value}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[12.5px] text-[#555]">
+              Last Contribution made by for the month of Feb-2024
+            </p>
+          </div>
+
+          <ContributionChart />
+
+          <div className="rounded border border-[#d8d8d8] bg-white">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eee] p-4">
+              <div className="flex items-center gap-3">
+                <span className="rounded bg-[#3f3f9e] px-3 py-1.5 text-[13px] font-bold text-white">2023</span>
+                <span className="text-[13px] text-[#333]">
+                  Passbook for Member Id&nbsp;: <span className="font-bold text-[#c0392b]">[ {memberId} ]</span>
+                </span>
+              </div>
+              <div className="flex gap-2">
+                <button className="rounded border border-[#1a6fa8] px-4 py-1.5 text-[12.5px] font-semibold text-[#1a6fa8] hover:bg-[#eaf3fb]">
+                  View Taxable Data
+                </button>
+                <button
+                  onClick={onDownload}
+                  className="rounded bg-[#1a6fa8] px-4 py-1.5 text-[12.5px] font-semibold text-white hover:bg-[#155d8e]"
+                >
+                  Download as PDF
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[900px] text-left text-[12px]">
+                <thead>
+                  <tr className="border-b border-[#eee] bg-[#f7f7f7] text-[#555]">
+                    {[
+                      "Wage Month",
+                      "Transaction Date",
+                      "Transaction Type",
+                      "Particulars",
+                      "EPF Wages",
+                      "EPS Wages",
+                      "Employee Share (12%)",
+                      "Employer Share (3.67%)",
+                      "Pension Share (8.33%)",
+                    ].map((h) => (
+                      <th key={h} className="px-3 py-2 font-semibold">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-b border-[#f3f3f3] bg-[#fdf6e3] font-semibold text-[#7a5a10]">
+                    <td colSpan={6} className="px-3 py-2">
+                      OB Int. Updated upto 31/03/2023
+                    </td>
+                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2">0</td>
+                  </tr>
+                  <tr className="border-b border-[#f3f3f3]">
+                    <td className="px-3 py-2">Jan-2024</td>
+                    <td className="px-3 py-2">14-02-2024</td>
+                    <td className="px-3 py-2">CR</td>
+                    <td className="px-3 py-2">Cont. For Due-Month 022024</td>
+                    <td className="px-3 py-2">15,000</td>
+                    <td className="px-3 py-2">15,000</td>
+                    <td className="px-3 py-2">{EMPLOYEE_SHARE.toLocaleString()}</td>
+                    <td className="px-3 py-2">{EMPLOYER_SHARE.toLocaleString()}</td>
+                    <td className="px-3 py-2">{PENSION_SHARE.toLocaleString()}</td>
+                  </tr>
+                  <tr className="border-b border-[#f3f3f3] font-semibold">
+                    <td colSpan={6} className="px-3 py-2">
+                      Total Contributions for the year [ 2023 ]
+                    </td>
+                    <td className="px-3 py-2">{EMPLOYEE_SHARE.toLocaleString()}</td>
+                    <td className="px-3 py-2">{EMPLOYER_SHARE.toLocaleString()}</td>
+                    <td className="px-3 py-2">{PENSION_SHARE.toLocaleString()}</td>
+                  </tr>
+                  <tr className="border-b border-[#f3f3f3]">
+                    <td colSpan={6} className="px-3 py-2">
+                      Total Transfer-Ins/VDRs for the year [ 2023 ]
+                    </td>
+                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2">0</td>
+                  </tr>
+                  <tr className="border-b border-[#f3f3f3] text-[#c0392b]">
+                    <td colSpan={6} className="px-3 py-2 font-semibold">
+                      Total Withdrawals for the year [ 2023 ]
+                    </td>
+                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2">0</td>
+                  </tr>
+                  <tr className="border-b border-[#f3f3f3]">
+                    <td colSpan={9} className="px-3 py-2">
+                      Interest details N/A
+                    </td>
+                  </tr>
+                  <tr className="bg-[#eef4e6] font-bold text-[#3a6b1f]">
+                    <td colSpan={6} className="px-3 py-2">
+                      Closing Balance as on 31/03/2024
+                    </td>
+                    <td className="px-3 py-2">{EMPLOYEE_SHARE.toLocaleString()}</td>
+                    <td className="px-3 py-2">{EMPLOYER_SHARE.toLocaleString()}</td>
+                    <td className="px-3 py-2">{PENSION_SHARE.toLocaleString()}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <p className="border-t border-[#eee] p-3 text-[11.5px] italic text-[#c0392b]">
+              Disclaimer - Information shown above is based on available data on central server. This information
+              may not be use for legal purpose.
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 type View = "login" | "loggedIn";
 
 // ─── Root page ──────────────────────────────────────────────────────────────
