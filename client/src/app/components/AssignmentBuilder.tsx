@@ -9,6 +9,11 @@ import TopicSimulationsManager, {
   topicSimEntriesFromSaved,
   syncTopicSimulations,
 } from "./TopicSimulationsManager";
+import SimulationGroupsManager, {
+  SimGroupEntry,
+  simGroupsFromSaved,
+  syncSimulationGroups,
+} from "./SimulationGroupsManager";
 import { getApiBase } from "../../lib/apiBase";
 
 const STATIC_CDN_BASE =
@@ -108,9 +113,15 @@ export default function AssignmentBuilder({
   const [content, setContent] = useState<Content[]>([]);
   const [simulations, setSimulations] = useState<Simulation[]>([]);
   const [topicSimulations, setTopicSimulations] = useState<TopicSimEntry[]>([]);
+  const [simulationGroups, setSimulationGroups] = useState<SimGroupEntry[]>([]);
   const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "tasks" | "content" | "simulations" | "topicSimulations" | "questionSets"
+    | "tasks"
+    | "content"
+    | "simulations"
+    | "topicSimulations"
+    | "simulationGroups"
+    | "questionSets"
   >("content");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -173,6 +184,7 @@ export default function AssignmentBuilder({
       setContent(data.content || []);
       setSimulations(data.simulations || []);
       setTopicSimulations(topicSimEntriesFromSaved(data.topicSimulations));
+      setSimulationGroups(simGroupsFromSaved(data.simulationGroups));
       const mappedQuestionSets = (data.questionSets || []).map((qs: any) => ({
         id: qs._id || qs.id || Date.now().toString(),
         name: qs.name || "",

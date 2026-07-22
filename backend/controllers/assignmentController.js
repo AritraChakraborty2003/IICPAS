@@ -194,7 +194,7 @@ export const getAssignment = async (req, res) => {
 // Update assignment
 export const updateAssignment = async (req, res) => {
   try {
-    const { title, description, chapterId, tasks, content, simulations, topicSimulations, questionSets } = req.body;
+    const { title, description, chapterId, tasks, content, simulations, topicSimulations, simulationGroups, questionSets } = req.body;
 
     const assignment = await Assignment.findById(req.params.id);
     if (!assignment) {
@@ -208,6 +208,7 @@ export const updateAssignment = async (req, res) => {
     if (content !== undefined) assignment.content = content;
     if (simulations !== undefined) assignment.simulations = simulations;
     if (topicSimulations !== undefined) assignment.topicSimulations = topicSimulations;
+    if (simulationGroups !== undefined) assignment.simulationGroups = simulationGroups;
     if (questionSets !== undefined) {
       const parsedSets = typeof questionSets === "string" ? JSON.parse(questionSets) : questionSets;
       assignment.questionSets = parsedSets.map((qs) => {
