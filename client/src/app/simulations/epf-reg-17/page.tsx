@@ -627,9 +627,29 @@ function PassbookView({ onDownload }: { onDownload: () => void }) {
               </div>
             </div>
 
+            <div className="px-4 pt-3 text-[13px] text-[#333]">
+              Passbook for Member Id&nbsp;: <span className="font-bold text-[#c0392b]">[ {memberId} ]</span>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full min-w-[900px] text-left text-[12px]">
-                <thead>
+                <tbody>
+                  <tr className="border-b border-[#eee] bg-white font-semibold text-[#333]">
+                    <th colSpan={6} className="px-3 py-2 text-left">
+                      Particulars
+                    </th>
+                    <th className="px-3 py-2 text-left">Employee Share</th>
+                    <th className="px-3 py-2 text-left">Employer Share</th>
+                    <th className="px-3 py-2 text-left">Pension Share</th>
+                  </tr>
+                  <tr className="border-b border-[#f3f3f3] bg-[#fdf6e3] font-semibold text-[#7a5a10]">
+                    <td colSpan={6} className="px-3 py-2">
+                      OB Int. Updated upto 31/03/2023
+                    </td>
+                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2">0</td>
+                  </tr>
                   <tr className="border-b border-[#eee] bg-[#f7f7f7] text-[#555]">
                     {[
                       "Wage Month",
@@ -647,16 +667,6 @@ function PassbookView({ onDownload }: { onDownload: () => void }) {
                       </th>
                     ))}
                   </tr>
-                </thead>
-                <tbody>
-                  <tr className="border-b border-[#f3f3f3] bg-[#fdf6e3] font-semibold text-[#7a5a10]">
-                    <td colSpan={6} className="px-3 py-2">
-                      OB Int. Updated upto 31/03/2023
-                    </td>
-                    <td className="px-3 py-2">0</td>
-                    <td className="px-3 py-2">0</td>
-                    <td className="px-3 py-2">0</td>
-                  </tr>
                   <tr className="border-b border-[#f3f3f3]">
                     <td className="px-3 py-2">Jan-2024</td>
                     <td className="px-3 py-2">14-02-2024</td>
@@ -668,15 +678,15 @@ function PassbookView({ onDownload }: { onDownload: () => void }) {
                     <td className="px-3 py-2">{EMPLOYER_SHARE.toLocaleString()}</td>
                     <td className="px-3 py-2">{PENSION_SHARE.toLocaleString()}</td>
                   </tr>
-                  <tr className="border-b border-[#f3f3f3] font-semibold">
+                  <tr className="border-b border-[#f3f3f3] font-semibold text-[#222]">
                     <td colSpan={6} className="px-3 py-2">
                       Total Contributions for the year [ 2023 ]
                     </td>
                     <td className="px-3 py-2">{EMPLOYEE_SHARE.toLocaleString()}</td>
-                    <td className="px-3 py-2">{EMPLOYER_SHARE.toLocaleString()}</td>
-                    <td className="px-3 py-2">{PENSION_SHARE.toLocaleString()}</td>
+                    <td className="px-3 py-2">{EMPLOYER_SHARE}</td>
+                    <td className="px-3 py-2">{PENSION_SHARE}</td>
                   </tr>
-                  <tr className="border-b border-[#f3f3f3]">
+                  <tr className="border-b border-[#f3f3f3] text-[#333]">
                     <td colSpan={6} className="px-3 py-2">
                       Total Transfer-Ins/VDRs for the year [ 2023 ]
                     </td>
@@ -684,20 +694,20 @@ function PassbookView({ onDownload }: { onDownload: () => void }) {
                     <td className="px-3 py-2">0</td>
                     <td className="px-3 py-2">0</td>
                   </tr>
-                  <tr className="border-b border-[#f3f3f3] text-[#c0392b]">
-                    <td colSpan={6} className="px-3 py-2 font-semibold">
+                  <tr className="border-b border-[#f3f3f3] text-[#333]">
+                    <td colSpan={6} className="px-3 py-2">
                       Total Withdrawals for the year [ 2023 ]
                     </td>
-                    <td className="px-3 py-2">0</td>
-                    <td className="px-3 py-2">0</td>
-                    <td className="px-3 py-2">0</td>
+                    <td className="px-3 py-2 font-semibold text-[#c0392b]">0</td>
+                    <td className="px-3 py-2 font-semibold text-[#c0392b]">0</td>
+                    <td className="px-3 py-2 font-semibold text-[#c0392b]">0</td>
                   </tr>
                   <tr className="border-b border-[#f3f3f3]">
                     <td colSpan={9} className="px-3 py-2">
                       Interest details N/A
                     </td>
                   </tr>
-                  <tr className="bg-[#eef4e6] font-bold text-[#3a6b1f]">
+                  <tr className="bg-[#fdf6e3] font-bold text-[#3a6b1f]">
                     <td colSpan={6} className="px-3 py-2">
                       Closing Balance as on 31/03/2024
                     </td>
