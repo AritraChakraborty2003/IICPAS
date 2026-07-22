@@ -726,7 +726,8 @@ type View = "login" | "loggedIn";
 export default function EpfReg17Page() {
   const [launched, setLaunched] = useState(false);
   const [view, setView] = useState<View>("login");
-  const [showTick, setShowTick] = useState(false);
+  const [tab, setTab] = useState<Tab>("home");
+  const [tickMessage, setTickMessage] = useState("");
 
   // Admin-configured experiment values (Simulation Manager slug
   // "epf-reg-17", or the course editor's per-insert "Add/Edit Creds")
@@ -739,17 +740,26 @@ export default function EpfReg17Page() {
   // No hardcoded fallback text — the banner only shows if an admin sets one.
   const bannerText = simConfig?.bannerText || "";
 
+  const flashTick = (message: string) => {
+    setTickMessage(message);
+    setTimeout(() => setTickMessage(""), 1400);
+  };
+
   const handleLoginSuccess = () => {
-    setShowTick(true);
-    setTimeout(() => setShowTick(false), 1400);
+    flashTick("Login Successful!");
     setView("loggedIn");
+    setTab("home");
+  };
+
+  const handleDownload = () => {
+    flashTick("Download Complete!");
   };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f0f0f0]">
       <SimBanner />
       {!launched && <LaunchOverlay onStart={() => setLaunched(true)} />}
-      {showTick && <TickOverlay />}
+      {tickMessage && <TickOverlay message={tickMessage} />}
 
       <UtilityStrip />
       <Header />
@@ -770,9 +780,10 @@ export default function EpfReg17Page() {
 
       {view === "loggedIn" && (
         <>
-          <LoggedInNav name={nameValue} />
+          <LoggedInNav name={nameValue} activeTab={tab} onSelectTab={setTab} />
           <main className="mx-auto w-[98vw] flex-1">
-            <MemberDashboard name={nameValue} />
+            {tab === "home" && <MemberDashboard name={nameValue} />}
+            {tab === "passbook" && <PassbookView onDownload={handleDownload} />}
           </main>
         </>
       )}
