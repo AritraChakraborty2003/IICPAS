@@ -809,6 +809,7 @@ interface TopicSimulationLink {
 
 interface SimulationGroupLink {
   name: string;
+  bgImageUrl?: string;
   slots: TopicSimulationLink[];
 }
 

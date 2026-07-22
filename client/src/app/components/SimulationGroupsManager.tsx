@@ -364,6 +364,49 @@ export default function SimulationGroupsManager({
               </button>
             </div>
 
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-600">
+                Background image (optional — shown behind the group's card on
+                the digital hub)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  value={group.bgImageUrl}
+                  onChange={(e) =>
+                    updateGroup(group.id, { bgImageUrl: e.target.value })
+                  }
+                  placeholder="https://cdn.iicpa.in/... or upload a file"
+                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                />
+                <label className="cursor-pointer whitespace-nowrap rounded-lg border border-blue-300 bg-white px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50">
+                  {uploadingImageFor === group.id
+                    ? "Uploading..."
+                    : "Upload Image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    disabled={uploadingImageFor !== null}
+                    onChange={(e) => {
+                      handleGroupImageUpload(group.id, e.target.files?.[0]);
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              {group.bgImageUrl.trim() && (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={group.bgImageUrl}
+                  alt="Group card background preview"
+                  className="mt-2 h-24 w-full max-w-sm rounded-lg border border-gray-200 object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+              )}
+            </div>
+
             <div className="space-y-3">
               {group.slots.map((slot, slotIndex) => {
                 const slug = simulationSlugFromUrl(slot.url.trim());
