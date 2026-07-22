@@ -2,6 +2,7 @@
 
 import React from "react";
 import GSTEWayBillLoginPage from "@/app/components/GSTEWayBillLoginPage";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 type EWayBillLoginPageProps = {
   searchParams?: {
@@ -14,6 +15,7 @@ export default function EWayBillLoginPage({ searchParams }: EWayBillLoginPagePro
     typeof searchParams?.returnTo === "string" && searchParams.returnTo.length > 0
       ? searchParams.returnTo
       : "/simulations/gst/e-way-bill-1";
+  const notifyGroupComplete = useSimGroupComplete();
 
-  return <GSTEWayBillLoginPage returnTo={returnTo} />;
+  return <GSTEWayBillLoginPage returnTo={returnTo} onComplete={notifyGroupComplete} />;
 }

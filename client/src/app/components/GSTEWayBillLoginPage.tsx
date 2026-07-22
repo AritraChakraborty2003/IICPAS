@@ -55,6 +55,7 @@ export default function GSTEWayBillLoginPage({
 
     setLoginError("");
     setShowSuccessOverlay(true);
+    onComplete?.();
   };
 
   const handleRetry = () => {

@@ -13,7 +13,13 @@ import { CheckCircle2, RotateCcw } from "lucide-react";
 
 type Step = "select_period" | "view_returns" | "gstr1a_dashboard";
 
-export default function GSTR1A1Simulation() {
+interface GSTR1A1SimulationProps {
+  onComplete?: () => void;
+}
+
+export default function GSTR1A1Simulation({
+  onComplete,
+}: GSTR1A1SimulationProps = {}) {
   const [currentStep, setCurrentStep] = useState<Step>("select_period");
   const [financialYear, setFinancialYear] = useState("2024-25");
   const [quarter, setQuarter] = useState("Quarter 1 (Apr - Jun)");
@@ -26,6 +32,7 @@ export default function GSTR1A1Simulation() {
     if (currentStep === "gstr1a_dashboard") {
       const timer = setTimeout(() => {
         setShowSuccessOverlay(true);
+        onComplete?.();
       }, 850);
       return () => clearTimeout(timer);
     } else {
