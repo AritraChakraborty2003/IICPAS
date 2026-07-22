@@ -2,8 +2,10 @@
 
 import React from "react";
 import GSTEWayBillReplica from "@/app/components/GSTEWayBillReplica";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 export default function EWayBill6Page() {
+  const notifyGroupComplete = useSimGroupComplete();
   return (
     <GSTEWayBillReplica
       initialScreen="billDetails"
@@ -12,6 +14,7 @@ export default function EWayBill6Page() {
       portalTitle="e-Way Bill Portal"
       companyName="Shivam Cements Private Limited"
       initialShowLaunchScreen={true}
+      onComplete={notifyGroupComplete}
     />
   );
 }
