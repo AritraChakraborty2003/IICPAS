@@ -20,6 +20,7 @@ import {
   findFieldValue,
   findUsernameValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 // UAN, Password, OTP and the instructions banner all come from the admin
 // Simulation Manager (or the course editor's per-insert "Add/Edit Creds")
@@ -607,6 +608,7 @@ export default function EpfReg13Page() {
   const otpExpected = findFieldValue(simConfig, /otp/i);
   const bannerText = simConfig?.bannerText || "";
   const validateCreds = simConfig?.requireCredentialValidation ?? true;
+  const notifyGroupComplete = useSimGroupComplete();
 
   const handleLoginSuccess = () => {
     setView("otp");
@@ -614,6 +616,7 @@ export default function EpfReg13Page() {
 
   const handleOtpSuccess = () => {
     setView("success");
+    notifyGroupComplete();
   };
 
   const handleReset = () => {

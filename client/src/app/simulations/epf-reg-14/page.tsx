@@ -23,6 +23,7 @@ import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 // UAN, the temporary first-login password (sent by SMS after UAN
 // activation), the new password to set and the Aadhaar OTP all come from
@@ -778,6 +779,7 @@ export default function EpfReg14Page() {
   const validateCreds = simConfig?.requireCredentialValidation ?? true;
   // No hardcoded fallback text — the banner only shows if an admin sets one.
   const bannerText = simConfig?.bannerText || "";
+  const notifyGroupComplete = useSimGroupComplete();
 
   const flashTick = (message: string) => {
     setTickMessage(message);
@@ -792,6 +794,7 @@ export default function EpfReg14Page() {
   const handleOtpSuccess = () => {
     flashTick("Password Changed Successfully!");
     setView("success");
+    notifyGroupComplete();
   };
 
   const handleSignOut = () => {
