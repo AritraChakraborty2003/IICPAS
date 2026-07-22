@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { CheckCircle, RefreshCw, Eye, EyeOff } from "lucide-react";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 type View = "signup" | "login" | "loggedIn";
 
@@ -413,6 +414,12 @@ function LoginSuccess() {
 export default function ShramSuvidha1Page() {
   const [launched, setLaunched] = useState(false);
   const [view, setView] = useState<View>("login");
+  const notifyGroupComplete = useSimGroupComplete();
+
+  const handleLoginSuccess = () => {
+    setView("loggedIn");
+    notifyGroupComplete();
+  };
 
   return (
     <PageBg>
@@ -422,7 +429,7 @@ export default function ShramSuvidha1Page() {
       <TopNav onSignInClick={() => setView("login")} onSignUpClick={() => setView("signup")} />
       <main className="flex flex-1 flex-col px-4 pb-10">
         {view === "signup"   && <SignUpPage  onSuccess={() => setView("login")}    onLoginClick={() => setView("login")} />}
-        {view === "login"    && <LoginPage   onSuccess={() => setView("loggedIn")} onSignUpClick={() => setView("signup")} />}
+        {view === "login"    && <LoginPage   onSuccess={handleLoginSuccess} onSignUpClick={() => setView("signup")} />}
         {view === "loggedIn" && <LoginSuccess />}
       </main>
       <footer className="mt-auto border-t border-[#bbb] bg-white py-3 text-center text-[11px] text-[#888]">
