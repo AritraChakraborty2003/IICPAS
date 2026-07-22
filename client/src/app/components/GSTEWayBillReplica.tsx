@@ -345,6 +345,7 @@ export default function GSTEWayBillReplica({
 
     setBillDetailsError("");
     setShowBillDetailsOverlay(true);
+    onComplete?.();
   };
 
   const handleRetryBillDetails = () => {
