@@ -24,6 +24,7 @@ import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 const SIMULATION_SLUG = "epf-reg-10";
 const LOGIN_USER = "APHYD1577313000";
@@ -490,9 +491,11 @@ export default function EpfReg10Page() {
   const [launched, setLaunched] = useState(false);
   const [step, setStep] = useState(1);
   const [showTick, setShowTick] = useState(false);
+  const notifyGroupComplete = useSimGroupComplete();
 
   const completeExperiment = () => {
     setShowTick(true);
+    notifyGroupComplete();
   };
 
   const handleLogout = () => {

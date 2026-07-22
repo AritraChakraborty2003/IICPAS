@@ -19,6 +19,7 @@ import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 const SIMULATION_SLUG = "epf-reg-9";
 const COMPANY_NAME = "IICPA PRIVATE LIMITED";
@@ -731,6 +732,7 @@ export default function EpfReg9Page() {
   const [toast, setToast] = useState("");
   const [inProcess, setInProcess] = useState<EcrRecord[]>([]);
   const [recent, setRecent] = useState<EcrRecord[]>([]);
+  const notifyGroupComplete = useSimGroupComplete();
 
   const showToast = (text: string) => {
     setToast(text);
@@ -756,6 +758,7 @@ export default function EpfReg9Page() {
 
   const handleUploaded = (rec: EcrRecord) => {
     setInProcess((prev) => [...prev, rec]);
+    notifyGroupComplete();
     setTimeout(() => {
       setInProcess((prev) => prev.filter((r) => r.sNo !== rec.sNo));
       setRecent((prev) => [...prev, { ...rec, status: "Approved" }]);

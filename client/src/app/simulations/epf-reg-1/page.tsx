@@ -20,6 +20,7 @@ import {
   Home as HomeIcon,
 } from "lucide-react";
 import { EpfoNavItem } from "../../components/EpfoNavMenus";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 import {
   useSimulationConfig,
   findFieldValue,
@@ -675,12 +676,14 @@ export default function EpfReg1Page() {
   const [loggedInUser, setLoggedInUser] = useState<string | null>(null);
   const [view, setView] = useState<"portal" | "dashboard">("portal");
   const [showTick, setShowTick] = useState(false);
+  const notifyGroupComplete = useSimGroupComplete();
 
   const handleLoginSuccess = (user: string) => {
     setLoggedInUser(user);
     setView("dashboard");
     setShowTick(true);
     setTimeout(() => setShowTick(false), 1400);
+    notifyGroupComplete();
   };
 
   const handleLogout = () => {

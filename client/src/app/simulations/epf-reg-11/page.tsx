@@ -16,6 +16,7 @@ import {
   findFieldValue,
   SimulationCredConfig,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 const SIMULATION_SLUG = "epf-reg-11";
 const LOGIN_USER = "APHYD1577313000";
@@ -1209,6 +1210,12 @@ export default function EpfReg11Page() {
 
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const figures = getSummaryFigures(simConfig);
+  const notifyGroupComplete = useSimGroupComplete();
+
+  const handleGenerate = () => {
+    setShowTick(true);
+    notifyGroupComplete();
+  };
 
   const handleUploaded = (ecr: UploadedEcr) => {
     setUploadedEcr(ecr);
@@ -1251,7 +1258,7 @@ export default function EpfReg11Page() {
           <EcrSummaryView
             ecr={uploadedEcr}
             figures={figures}
-            onGenerate={() => setShowTick(true)}
+            onGenerate={handleGenerate}
             onCancel={backToUpload}
           />
         )}

@@ -21,6 +21,7 @@ import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 const SIMULATION_SLUG = "epf-reg-4";
 const COMPANY_NAME = "IICPA PRIVATE LIMITED";
@@ -1183,6 +1184,7 @@ export default function EpfReg4Page() {
   const [basic, setBasic] = useState<BasicDetails | null>(null);
   const [memberId, setMemberId] = useState("");
   const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([]);
+  const notifyGroupComplete = useSimGroupComplete();
 
   const showToast = (text: string) => {
     setToast(text);
@@ -1234,6 +1236,7 @@ export default function EpfReg4Page() {
     setTick("Member Registered!");
     setTimeout(() => setTick(""), 1400);
     setView("success");
+    notifyGroupComplete();
   };
 
   const handleLogout = () => {

@@ -22,6 +22,7 @@ import {
   findFieldValue,
   type SimulationCredConfig,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 const SIMULATION_SLUG = "epf-reg-3";
 const COMPANY_NAME = "IICPA PRIVATE LIMITED";
@@ -879,6 +880,7 @@ export default function EpfReg3Page() {
   // hardcoded company/employee defaults when available.
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const portal = useMemo(() => buildPortalData(simConfig), [simConfig]);
+  const notifyGroupComplete = useSimGroupComplete();
 
   const showToast = (text: string) => {
     setToast(text);
@@ -901,6 +903,7 @@ export default function EpfReg3Page() {
   const handleVerified = (label: string) => {
     setTick(label);
     setTimeout(() => setTick(""), 1400);
+    notifyGroupComplete();
   };
 
   const handleNavClick = (item: string) => {

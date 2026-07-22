@@ -24,6 +24,7 @@ import {
   findFieldValue,
   findUsernameValue,
 } from "@/lib/useSimulationConfig";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 const SIMULATION_SLUG = "epf-reg-12";
 const LOGIN_UAN = "100400800693";
@@ -728,6 +729,7 @@ export default function EpfReg2Page() {
   const [loggedInUan, setLoggedInUan] = useState<string | null>(null);
   const [showTick, setShowTick] = useState(false);
   const [view, setView] = useState<View>("portal");
+  const notifyGroupComplete = useSimGroupComplete();
 
   const handleLoginSuccess = (uan: string) => {
     setLoggedInUan(uan);
@@ -740,6 +742,7 @@ export default function EpfReg2Page() {
     setView("success");
     setShowTick(true);
     setTimeout(() => setShowTick(false), 1400);
+    notifyGroupComplete();
   };
 
   const handleSignOut = () => {
