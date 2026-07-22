@@ -945,17 +945,107 @@ function TopicSimulationCard({ url, title, imageUrl }: TopicSimulationLink) {
 // since it navigates to the in-app Group Player route.
 function GroupSimulationCard({
   href,
-  slotCount,
+  slots,
   bgImageUrl,
   onOpen,
 }: {
   href: string;
-  slotCount: number;
+  slots: TopicSimulationLink[];
   bgImageUrl?: string;
   onOpen: (href: string) => void;
 }) {
+  const slotCount = slots.length;
+  const [stepBanners, setStepBanners] = useState<
+    Array<{ title: string; banner: SimulationCredBannerConfig } | null>
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const parse = (config: {
+      credentialFields?: { label?: string; value?: string }[];
+      bannerText?: string;
+      isActive?: boolean;
+    } | null): SimulationCredBannerConfig | null => {
+      const fields = (config?.credentialFields || []).filter(
+        (field): field is { label: string; value: string } =>
+          Boolean(field?.label && field?.value),
+      );
+      const bannerText = String(config?.bannerText || "").trim();
+      if ((!fields.length && !bannerText) || config?.isActive === false) {
+        return null;
+      }
+      return { fields, bannerText };
+    };
+
+    const fetchConfig = (endpoint: string) =>
+      fetch(endpoint)
+        .then((res) => (res.ok ? res.json() : null))
+        .then(parse)
+        .catch(() => null);
+
+    Promise.all(
+      slots.map((slot) => {
+        const ref = simulationRefFromHref(slot.url);
+        if (!ref) return Promise.resolve(null);
+        const load = ref.overrideId
+          ? fetchConfig(
+              `${getApiBase()}/simulation-configs/public/override/${ref.overrideId}`,
+            ).then(
+              (config) =>
+                config ||
+                fetchConfig(`${getApiBase()}/simulation-configs/public/${ref.slug}`),
+            )
+          : fetchConfig(`${getApiBase()}/simulation-configs/public/${ref.slug}`);
+        return load.then((banner) =>
+          banner ? { title: slot.title || "", banner } : null,
+        );
+      }),
+    ).then((results) => {
+      if (!cancelled) setStepBanners(results);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slots.map((s) => s.url).join("|")]);
+
+  const activeBanners = stepBanners.filter(
+    (entry): entry is { title: string; banner: SimulationCredBannerConfig } =>
+      Boolean(entry),
+  );
+
   return (
     <div className="mx-auto w-full max-w-6xl">
+      {activeBanners.length > 0 && (
+        <div className="mb-2 flex flex-wrap items-center justify-center gap-x-1 gap-y-1 rounded-xl border border-sky-300 bg-sky-100 px-4 py-2.5 text-center text-[13px] leading-relaxed text-sky-900">
+          {activeBanners.map((entry, i) => (
+            <span key={i} className="mx-1">
+              {activeBanners.length > 1 && (
+                <strong className="text-sky-950">
+                  {entry.title || `Step ${i + 1}`}:{" "}
+                </strong>
+              )}
+              {entry.banner.bannerText ? (
+                <span>{entry.banner.bannerText}</span>
+              ) : (
+                <span>
+                  use{" "}
+                  {entry.banner.fields.map((field, fi) => (
+                    <React.Fragment key={fi}>
+                      {fi > 0 && " and "}
+                      <strong className="text-sky-950">{field.value}</strong>{" "}
+                      as {field.label.toLowerCase()}
+                    </React.Fragment>
+                  ))}{" "}
+                  to login.
+                </span>
+              )}
+            </span>
+          ))}
+        </div>
+      )}
       <div
         className="overflow-hidden rounded-[18px] border border-emerald-300 bg-emerald-100"
         style={{ boxShadow: "0 14px 34px rgba(0,0,0,0.16)" }}
@@ -5406,7 +5496,7 @@ export default function DigitalHubClient({
                                 <GroupSimulationCard
                                   key={`${group.name}-${groupIndex}`}
                                   href={`/simulations/group/${selectedCaseStudy._id}/${groupIndex}`}
-                                  slotCount={group.slots.length}
+                                  slots={group.slots}
                                   bgImageUrl={group.bgImageUrl}
                                   onOpen={(href) => router.push(href)}
                                 />
@@ -5941,7 +6031,7 @@ export default function DigitalHubClient({
                                 <GroupSimulationCard
                                   key={`${group.name}-${groupIndex}`}
                                   href={`/simulations/group/${selectedAssignment._id}/${groupIndex}`}
-                                  slotCount={group.slots.length}
+                                  slots={group.slots}
                                   bgImageUrl={group.bgImageUrl}
                                   onOpen={(href) => router.push(href)}
                                 />
