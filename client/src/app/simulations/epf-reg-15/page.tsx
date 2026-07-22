@@ -77,52 +77,91 @@ function Header({ uan, name }: { uan: string; name: string }) {
   );
 }
 
-// ─── Top navigation bar with a working "Manage &gt; KYC" dropdown ──────────
-function NavBar({ onKycClick }: { onKycClick: () => void }) {
-  const [manageOpen, setManageOpen] = useState(false);
-  const items = ["BASIC DETAILS", "CONTACT DETAILS", "KYC", "E-NOMINATION", "MARK EXIT"];
+// ─── Top navigation bar — every menu opens its real dropdown; only
+// "Manage &gt; KYC" actually navigates (everything else in this experiment
+// is decorative, matching the real EPFO member portal's menu contents) ────
+type MenuKey = "view" | "manage" | "account" | "online";
+
+const MENU_ITEMS: Record<MenuKey, string[]> = {
+  view: ["PROFILE", "SERVICE HISTORY", "UAN CARD", "PASSBOOK"],
+  manage: ["CHANGE PASSWORD", "BASIC DETAILS", "CONTACT DETAILS", "KYC", "E-NOMINATION", "MARK EXIT"],
+  account: ["MANAGE MOBILE NUMBER", "MANAGE EMAIL ID", "TDS DETAILS"],
+  online: [
+    "CLAIM (FORM-31,19,10C&10D)",
+    "ONE MEMBER - ONE EPF ACCOUNT (TRANSFER REQUEST)",
+    "TRACK CLAIM STATUS",
+    "DOWNLOAD ANNEXURE K",
+  ],
+};
+
+const MENU_LABELS: Record<MenuKey, string> = {
+  view: "View",
+  manage: "Manage",
+  account: "Account",
+  online: "Online Services",
+};
+
+function NavBar({ onKycClick, onHomeClick }: { onKycClick: () => void; onHomeClick: () => void }) {
+  const [openMenu, setOpenMenu] = useState<MenuKey | null>(null);
+  const [notice, setNotice] = useState("");
+
+  const selectItem = (menu: MenuKey, item: string) => {
+    setOpenMenu(null);
+    if (menu === "manage" && item === "KYC") {
+      onKycClick();
+      return;
+    }
+    setNotice(`"${item}" is not available in this simulation.`);
+    setTimeout(() => setNotice(""), 2500);
+  };
 
   return (
     <nav className="relative bg-[#157a72] px-6 text-[13.5px] font-semibold text-white">
       <div className="flex items-center gap-6 py-2.5">
-        <span className="cursor-pointer">Home</span>
-        <span className="flex cursor-pointer items-center gap-1">
-          View <ChevronDown size={13} />
-        </span>
         <span
-          className="flex cursor-pointer items-center gap-1"
-          onClick={() => setManageOpen((v) => !v)}
+          className="cursor-pointer"
+          onClick={() => {
+            setOpenMenu(null);
+            onHomeClick();
+          }}
         >
-          Manage <ChevronDown size={13} />
+          Home
         </span>
-        <span className="flex cursor-pointer items-center gap-1">
-          Account <ChevronDown size={13} />
-        </span>
-        <span className="flex cursor-pointer items-center gap-1">
-          Online Services <ChevronDown size={13} />
-        </span>
+        {(Object.keys(MENU_ITEMS) as MenuKey[]).map((menu) => (
+          <span
+            key={menu}
+            className="flex cursor-pointer items-center gap-1"
+            onClick={() => setOpenMenu((v) => (v === menu ? null : menu))}
+          >
+            {MENU_LABELS[menu]} <ChevronDown size={13} />
+          </span>
+        ))}
       </div>
 
-      {manageOpen && (
-        <div className="absolute left-[132px] top-full z-20 w-[190px] rounded-b border border-t-0 border-[#c0c0c0] bg-white shadow-md">
-          {items.map((item) => (
-            <div
-              key={item}
-              onClick={() => {
-                if (item === "KYC") {
-                  onKycClick();
-                  setManageOpen(false);
+      {openMenu && (
+        <div className="absolute left-6 top-full z-20 w-[280px] rounded-b border border-t-0 border-[#c0c0c0] bg-white shadow-md">
+          {MENU_ITEMS[openMenu].map((item) => {
+            const isKyc = openMenu === "manage" && item === "KYC";
+            return (
+              <div
+                key={item}
+                onClick={() => selectItem(openMenu, item)}
+                className={
+                  isKyc
+                    ? "cursor-pointer px-4 py-2.5 text-[12.5px] font-bold text-[#157a72] hover:bg-[#eaf7f4]"
+                    : "cursor-pointer px-4 py-2.5 text-[12.5px] font-semibold text-[#555] hover:bg-[#f3f3f3]"
                 }
-              }}
-              className={
-                item === "KYC"
-                  ? "cursor-pointer px-4 py-2.5 text-[12.5px] font-bold text-[#157a72] hover:bg-[#eaf7f4]"
-                  : "cursor-not-allowed px-4 py-2.5 text-[12.5px] font-semibold text-[#999]"
-              }
-            >
-              {item}
-            </div>
-          ))}
+              >
+                {item}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {notice && (
+        <div className="absolute right-6 top-full z-20 mt-2 rounded border border-[#e8d3a3] bg-[#fdf6e3] px-3 py-2 text-[12px] font-semibold text-[#8a4b16] shadow-md">
+          {notice}
         </div>
       )}
     </nav>
@@ -137,11 +176,11 @@ function PortalHome({ uan, name, dob }: { uan: string; name: string; dob: string
   });
 
   return (
-    <main className="mx-auto flex w-[98vw] max-w-[1300px] flex-1 flex-col gap-5 py-6">
+    <main className="mx-auto flex w-[98vw] flex-1 flex-col gap-5 py-6">
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
         <div className="rounded border border-[#d8d8d8] bg-white p-8 shadow-sm">
-          <div className="grid grid-cols-2 gap-8 text-center">
-            <div className="flex flex-col items-center gap-2">
+          <div className="flex items-center justify-between gap-6">
+            <div className="flex flex-col items-center gap-2 text-center">
               <div className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-[#eaf7f4] text-[#157a72]">
                 <FileText size={26} />
               </div>
@@ -150,7 +189,10 @@ function PortalHome({ uan, name, dob }: { uan: string; name: string; dob: string
                 More Info &rarr;
               </span>
             </div>
-            <div className="flex flex-col items-center gap-2">
+
+            <div className="flex h-[70px] w-[160px] shrink-0 items-center justify-center rounded border border-[#e2e2e2] bg-[#fafafa]" />
+
+            <div className="flex flex-col items-center gap-2 text-center">
               <div className="flex h-[54px] w-[54px] items-center justify-center rounded-full bg-[#eaf7f4] text-[#157a72]">
                 <Settings size={26} />
               </div>
@@ -806,7 +848,7 @@ export default function EpfReg15Page() {
       {showTick && <TickOverlay />}
 
       <Header uan={uanValue} name={nameValue} />
-      <NavBar onKycClick={() => setView("kyc")} />
+      <NavBar onKycClick={() => setView("kyc")} onHomeClick={() => setView("portal")} />
 
       {view === "portal" && <PortalHome uan={uanValue} name={nameValue} dob={dobValue} />}
       {view === "kyc" && (
