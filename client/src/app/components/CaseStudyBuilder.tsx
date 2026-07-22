@@ -8,6 +8,11 @@ import TopicSimulationsManager, {
   topicSimEntriesFromSaved,
   syncTopicSimulations,
 } from "./TopicSimulationsManager";
+import SimulationGroupsManager, {
+  SimGroupEntry,
+  simGroupsFromSaved,
+  syncSimulationGroups,
+} from "./SimulationGroupsManager";
 import { getApiBase } from "../../lib/apiBase";
 
 const STATIC_CDN_BASE =
@@ -105,9 +110,15 @@ export default function CaseStudyBuilder({
   const [content, setContent] = useState<Content[]>([]);
   const [simulations, setSimulations] = useState<Simulation[]>([]);
   const [topicSimulations, setTopicSimulations] = useState<TopicSimEntry[]>([]);
+  const [simulationGroups, setSimulationGroups] = useState<SimGroupEntry[]>([]);
   const [questionSets, setQuestionSets] = useState<QuestionSet[]>([]);
   const [activeTab, setActiveTab] = useState<
-    "tasks" | "content" | "simulations" | "topicSimulations" | "questionSets"
+    | "tasks"
+    | "content"
+    | "simulations"
+    | "topicSimulations"
+    | "simulationGroups"
+    | "questionSets"
   >("tasks");
   const [isSaving, setIsSaving] = useState(false);
 
@@ -185,6 +196,7 @@ export default function CaseStudyBuilder({
         }))
       );
       setTopicSimulations(topicSimEntriesFromSaved(data.topicSimulations));
+      setSimulationGroups(simGroupsFromSaved(data.simulationGroups));
       const mappedQuestionSets = (data.questionSets || []).map((qs: any) => ({
         id: qs._id || qs.id || Date.now().toString(),
         name: qs.name || "",
@@ -494,6 +506,9 @@ export default function CaseStudyBuilder({
       const topicSimulationsPayload = await syncTopicSimulations(
         topicSimulations
       );
+      const simulationGroupsPayload = await syncSimulationGroups(
+        simulationGroups
+      );
 
       // Prepare case study data
       const caseStudyData = {
@@ -513,6 +528,7 @@ export default function CaseStudyBuilder({
           order: index,
         })),
         topicSimulations: topicSimulationsPayload,
+        simulationGroups: simulationGroupsPayload,
         simulations: simulations.map((sim, index) => ({
           type: sim.type,
           title: sim.title.trim(),
@@ -677,6 +693,16 @@ export default function CaseStudyBuilder({
               }`}
             >
               Topic Simulations ({topicSimulations.length})
+            </button>
+            <button
+              onClick={() => setActiveTab("simulationGroups")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "simulationGroups"
+                  ? "border-green-500 text-green-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Group Simulations ({simulationGroups.length})
             </button>
             <button
               onClick={() => setActiveTab("questionSets")}
@@ -1329,6 +1355,13 @@ export default function CaseStudyBuilder({
             <TopicSimulationsManager
               entries={topicSimulations}
               onChange={setTopicSimulations}
+            />
+          )}
+
+          {activeTab === "simulationGroups" && (
+            <SimulationGroupsManager
+              groups={simulationGroups}
+              onChange={setSimulationGroups}
             />
           )}
 
