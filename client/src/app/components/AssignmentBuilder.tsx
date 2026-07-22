@@ -709,6 +709,16 @@ export default function AssignmentBuilder({
               Topic Simulations ({topicSimulations.length})
             </button>
             <button
+              onClick={() => setActiveTab("simulationGroups")}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === "simulationGroups"
+                  ? "border-purple-500 text-purple-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+              }`}
+            >
+              Group Simulations ({simulationGroups.length})
+            </button>
+            <button
               onClick={() => setActiveTab("questionSets")}
               className={`py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === "questionSets"
@@ -1368,6 +1378,13 @@ export default function AssignmentBuilder({
             <TopicSimulationsManager
               entries={topicSimulations}
               onChange={setTopicSimulations}
+            />
+          )}
+
+          {activeTab === "simulationGroups" && (
+            <SimulationGroupsManager
+              groups={simulationGroups}
+              onChange={setSimulationGroups}
             />
           )}
 
