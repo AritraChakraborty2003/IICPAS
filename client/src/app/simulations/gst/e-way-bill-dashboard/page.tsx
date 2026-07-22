@@ -2,7 +2,9 @@
 
 import React from "react";
 import GSTEWayBillDashboard from "@/app/components/GSTEWayBillDashboard";
+import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
 export default function EWayBillDashboardPage() {
-  return <GSTEWayBillDashboard />;
+  const notifyGroupComplete = useSimGroupComplete();
+  return <GSTEWayBillDashboard onComplete={notifyGroupComplete} />;
 }
