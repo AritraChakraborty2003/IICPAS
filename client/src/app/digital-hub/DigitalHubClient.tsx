@@ -944,12 +944,10 @@ function TopicSimulationCard({ url, title, imageUrl }: TopicSimulationLink) {
 // since it navigates to the in-app Group Player route.
 function GroupSimulationCard({
   href,
-  name,
   slotCount,
   onOpen,
 }: {
   href: string;
-  name: string;
   slotCount: number;
   onOpen: (href: string) => void;
 }) {
@@ -983,7 +981,7 @@ function GroupSimulationCard({
               className="inline-flex min-w-[240px] items-center justify-center gap-2 rounded-full border border-emerald-600/15 bg-white/95 px-7 py-4 text-[0.95rem] font-extrabold uppercase tracking-[0.1em] text-emerald-700"
               style={{ boxShadow: "0 12px 28px rgba(0,0,0,0.22)" }}
             >
-              ▶ {name || "Simulation Group"}
+              ▶ Complete Guided Simulation
             </div>
             <p className="text-[0.82rem] font-semibold text-white/95">
               {slotCount} simulations — plays automatically, one after another
@@ -5395,7 +5393,6 @@ export default function DigitalHubClient({
                                 <GroupSimulationCard
                                   key={`${group.name}-${groupIndex}`}
                                   href={`/simulations/group/${selectedCaseStudy._id}/${groupIndex}`}
-                                  name={group.name}
                                   slotCount={group.slots.length}
                                   onOpen={(href) => router.push(href)}
                                 />
@@ -5930,7 +5927,6 @@ export default function DigitalHubClient({
                                 <GroupSimulationCard
                                   key={`${group.name}-${groupIndex}`}
                                   href={`/simulations/group/${selectedAssignment._id}/${groupIndex}`}
-                                  name={group.name}
                                   slotCount={group.slots.length}
                                   onOpen={(href) => router.push(href)}
                                 />
