@@ -297,6 +297,7 @@ export default function GSTEWayBillReplica({
     }
     setVehicleDetailsError("");
     setShowVehiclePreview(true);
+    onComplete?.();
   };
 
   const handleReturnToLaunch = () => {
@@ -318,6 +319,7 @@ export default function GSTEWayBillReplica({
 
   const handleSubmitExperiment4 = () => {
     setIsExperiment4Submitted(true);
+    onComplete?.();
   };
 
   const handleRetryExperiment4 = () => {
