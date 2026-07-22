@@ -512,6 +512,9 @@ export default function AssignmentBuilder({
       const topicSimulationsPayload = await syncTopicSimulations(
         topicSimulations
       );
+      const simulationGroupsPayload = await syncSimulationGroups(
+        simulationGroups
+      );
 
       // Prepare assignment data
       const assignmentData = {
@@ -531,6 +534,7 @@ export default function AssignmentBuilder({
           order: index,
         })),
         topicSimulations: topicSimulationsPayload,
+        simulationGroups: simulationGroupsPayload,
         simulations: simulations.map((sim, index) => ({
           type: sim.type,
           title: (sim.title || "").trim(),
