@@ -10,6 +10,7 @@ import {
 
 type GSTEWayBillLoginPageProps = {
   returnTo?: string;
+  onComplete?: () => void;
 };
 
 // /simulations/gst/e-way-bill-1 -> gst-e-way-bill-1 (must match the slug
@@ -22,6 +23,7 @@ const slugFromRoute = (route: string): string => {
 
 export default function GSTEWayBillLoginPage({
   returnTo = "/simulations/gst/e-way-bill-1",
+  onComplete,
 }: GSTEWayBillLoginPageProps) {
   const expectedCaptcha = "P2R7M";
   const simConfig = useSimulationConfig(slugFromRoute(returnTo));
