@@ -565,7 +565,7 @@ export default function ShramSuvidha2Page() {
         <div className="flex flex-1 overflow-hidden">
           <div className="flex flex-1 flex-col overflow-hidden">
             {mainView === "welcome" && <WelcomePage onEditClick={() => setMainView("edit")} />}
-            {mainView === "edit"    && <EditUserForm onSuccess={() => setMainView("success")} />}
+            {mainView === "edit"    && <EditUserForm onSuccess={handleEditSuccess} />}
             {mainView === "success" && <UpdateSuccess />}
           </div>
           <div className="w-[4px] shrink-0 bg-[#2ecc71]" />
