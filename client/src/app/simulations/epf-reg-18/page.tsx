@@ -369,7 +369,7 @@ export default function EpfReg18Page() {
       <TopStrip />
       <Header />
 
-      <main className="mx-auto flex w-full max-w-[1300px] flex-1 flex-wrap items-start justify-between gap-8 px-6 py-10">
+      <main className="mx-auto flex w-full max-w-[1300px] flex-1 flex-wrap items-start justify-center gap-16 px-6 py-10">
         <PortalInfoColumn />
         <EmployerLoginPanel
           loginUser={loginUser}
