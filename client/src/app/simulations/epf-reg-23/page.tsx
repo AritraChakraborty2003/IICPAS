@@ -1,12 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle, RotateCcw, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
-import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 import {
   DEFAULT_CODE,
   DEFAULT_ESTABLISHMENT,
@@ -196,187 +195,10 @@ function ResultsTable({ code }: { code: string }) {
   );
 }
 
-// ─── Step 3: e-Pehchan Card counterfoil for the selected employee ─────────
-function CounterfoilCard({
-  employee,
-  code,
-  onDownload,
-}: {
-  employee: Employee;
-  code: string;
-  onDownload: () => void;
-}) {
-  const fieldRow = (label: string, value: string) => (
-    <div className="border-b border-[#e0ddc8] px-3 py-1.5">
-      <span className="font-semibold text-[#7a1f1a]">{label}:</span> <span>{value}</span>
-    </div>
-  );
-  return (
-    <div className="mt-5 overflow-hidden rounded-[6px] border border-[#e0ddc8] bg-white">
-      <div className="border-b border-[#e0ddc8] bg-[#fdfaf0] px-4 py-2 text-center">
-        <div className="text-[15px] font-bold text-[#0b2e57]">EMPLOYEES&apos; STATE INSURANCE CORPORATION</div>
-        <div className="text-[13.5px] font-bold text-[#333]">e-Pehchan Card</div>
-      </div>
-
-      <div className="border-b border-[#e0ddc8] bg-[#fdfaf0] px-4 py-3 text-center text-[13px] text-[#333]">
-        <div>
-          <span className="font-semibold">Insured Person :</span> {employee.name}
-        </div>
-        <div>
-          <span className="font-semibold">Insurance No. :</span> {employee.insuranceNo}
-        </div>
-        <div>
-          <span className="font-semibold">Date of Registration :</span> {employee.dateOfRegistration}
-        </div>
-      </div>
-
-      <div className="border-b border-[#e0ddc8] bg-[#f5f2e2] px-4 py-1.5 text-center text-[12.5px] font-bold text-[#7a1f1a]">
-        YOUR REGISTRATION DETAILS
-      </div>
-      <div className="grid grid-cols-1 text-[12.5px] text-[#333] sm:grid-cols-2">
-        {fieldRow("Employee Name", employee.name)}
-        {fieldRow("Date of Birth", employee.dob)}
-        {fieldRow("Marital Status", employee.maritalStatus)}
-        {fieldRow("Gender", employee.gender)}
-        {fieldRow("Present Address", employee.address)}
-        {fieldRow("Dispensary / IMP for IP", employee.dispensary)}
-        {fieldRow("Employer's Code No.", code)}
-        {fieldRow("Name of Employer", DEFAULT_ESTABLISHMENT)}
-        {fieldRow("Address of Employer", EMPLOYER_ADDRESS)}
-        {fieldRow("Mobile No.", employee.mobile)}
-      </div>
-
-      <div className="border-y border-[#e0ddc8] bg-[#f5f2e2] px-4 py-1.5 text-center text-[12.5px] font-bold text-[#7a1f1a]">
-        Family Details
-      </div>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[12px]">
-          <thead>
-            <tr className="bg-[#fdfaf0] text-left text-[#7a1f1a]">
-              <th className="border border-[#e0ddc8] px-2 py-1.5 font-semibold">Name</th>
-              <th className="border border-[#e0ddc8] px-2 py-1.5 font-semibold">Relationship</th>
-              <th className="border border-[#e0ddc8] px-2 py-1.5 font-semibold">Date of Birth</th>
-              <th className="border border-[#e0ddc8] px-2 py-1.5 font-semibold">Residing with IP</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="border border-[#e0ddc8] px-2 py-1.5 text-[#999]">-</td>
-              <td className="border border-[#e0ddc8] px-2 py-1.5 text-[#999]">-</td>
-              <td className="border border-[#e0ddc8] px-2 py-1.5 text-[#999]">-</td>
-              <td className="border border-[#e0ddc8] px-2 py-1.5 text-[#999]">-</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div className="border-b border-[#e0ddc8] bg-[#fdfaf0] px-4 py-2 text-[11.5px] text-[#555]">
-        Documents Uploaded: none
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 px-4 py-4 sm:grid-cols-2">
-        <div>
-          <div className="mb-1 text-[12px] font-semibold text-[#7a1f1a]">
-            Signature / LTI of Registered Employee / IP
-          </div>
-          <div className="h-[60px] rounded border border-[#c0c0c0] bg-white" />
-        </div>
-        <div>
-          <div className="mb-1 text-[12px] font-semibold text-[#7a1f1a]">
-            Affix Family Photograph Here (Attested and Stamped by Employer / ESIC Official)
-          </div>
-          <div className="h-[60px] rounded border border-[#c0c0c0] bg-white" />
-        </div>
-      </div>
-
-      <div className="border-t border-[#e0ddc8] bg-[#fdfaf0] px-4 py-3 text-[11.5px] leading-relaxed text-[#555]">
-        <div className="font-semibold text-[#7a1f1a]">NOTE:</div>
-        <div>1. Please keep this printout for future reference along with your Photo ID Card for claims and medical benefits.</div>
-        <div>2. This copy should be retained with you until the Pehchan Card is received.</div>
-        <div>3. Employer to please affix employee and family photo here and attest with official stamp.</div>
-      </div>
-
-      <div className="flex justify-center gap-2.5 border-t border-[#e0ddc8] bg-[#fdfaf0] px-4 py-3">
-        <button
-          type="button"
-          onClick={onDownload}
-          className="flex items-center gap-1.5 rounded border border-[#155d8e] bg-[#1a6fa8] px-5 py-1.5 text-[13px] font-bold text-white hover:bg-[#155d8e]"
-        >
-          <Download size={14} /> Download/Print
-        </button>
-        <button
-          type="button"
-          className="rounded border border-[#c0c0c0] bg-[#efe9d5] px-5 py-1.5 text-[13px] font-bold text-[#555] hover:bg-[#e5dfc8]"
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Footer ─────────────────────────────────────────────────────────────────
-function Footer() {
-  return (
-    <footer className="mt-auto">
-      <div className="border-t border-[#e0e0e0] bg-[#f5f5f5] px-6 py-1.5 text-right text-[11.5px] text-[#666]">
-        Last Updated : 28/10/2020
-      </div>
-      <div className="bg-[#4a2545] px-6 py-3 text-[12px] text-[#f0e0e6]">
-        <div className="mx-auto flex w-full max-w-[1300px] flex-wrap items-center justify-between gap-2">
-          <span>
-            <strong>© Copyright ESIC 2026.</strong> All Rights Reserved
-          </span>
-          <span>Site maintained by : ESIC. | Visitors Count: 373193805</span>
-        </div>
-      </div>
-    </footer>
-  );
-}
-
-// ─── Success overlay: green tick + red Retry, floating above the portal ───
-function SuccessOverlay({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div className="fixed inset-0 z-[110] flex items-start justify-center overflow-y-auto bg-[#07111f]/45 px-4 pt-24 backdrop-blur-[3px] sm:pt-32">
-      <div className="flex flex-col items-center gap-4 rounded-[16px] bg-white/95 px-10 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
-        <div
-          className="flex h-[92px] w-[92px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.25),0_0_0_22px_rgba(34,197,94,0.12)]"
-          style={{ animation: "epfReg23TickPop 0.15s ease-out" }}
-        >
-          <CheckCircle size={48} className="text-white" />
-        </div>
-        <p className="text-center text-[15px] font-semibold text-[#0b2e57]">
-          e-Pehchan Card Downloaded Successfully
-        </p>
-        <button
-          onClick={onRetry}
-          className="flex items-center gap-1.5 rounded-full bg-[#e1141a] px-6 py-2.5 text-[14px] font-bold text-white shadow-[0_8px_20px_rgba(225,20,26,0.28)] hover:bg-[#c90f15]"
-        >
-          <RotateCcw size={15} /> Retry
-        </button>
-      </div>
-      <style jsx>{`
-        @keyframes epfReg23TickPop {
-          0% {
-            transform: scale(0.85);
-            opacity: 0;
-          }
-          100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
-
 // ─── Root page ──────────────────────────────────────────────────────────────
 export default function EpfReg23Page() {
   const [launched, setLaunched] = useState(false);
-  const [view, setView] = useState<"search" | "results" | "card">("search");
-  const [selectedIdx, setSelectedIdx] = useState(0);
-  const [downloaded, setDownloaded] = useState(false);
+  const [view, setView] = useState<"search" | "results">("search");
 
   // Admin-configured Employer's Code Number (Simulation Manager slug
   // "epf-reg-23", or the course editor's per-insert "Add/Edit Creds")
@@ -385,41 +207,11 @@ export default function EpfReg23Page() {
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const code = findFieldValue(simConfig, /code|lin|user/i) || DEFAULT_CODE;
   const bannerText = simConfig?.bannerText || "";
-  const notifyGroupComplete = useSimGroupComplete();
-
-  const selectedEmployee = EMPLOYEES[selectedIdx];
-
-  const handleDownload = () => {
-    const emp = selectedEmployee;
-    const blob = new Blob(
-      [
-        `EMPLOYEES' STATE INSURANCE CORPORATION\ne-Pehchan Card\n\nInsured Person: ${emp.name}\nInsurance No.: ${emp.insuranceNo}\nDate of Registration: ${emp.dateOfRegistration}\nEmployer's Code No.: ${code}\nEmployer: ${DEFAULT_ESTABLISHMENT}\n`,
-      ],
-      { type: "text/plain" }
-    );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `e-Pehchan-Card_${emp.insuranceNo}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-
-    setDownloaded(true);
-    notifyGroupComplete();
-  };
-
-  const handleRetry = () => {
-    setDownloaded(false);
-    setView("search");
-  };
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f4f6f8]">
       <SimBanner />
       {!launched && <LaunchOverlay onStart={() => setLaunched(true)} />}
-      {downloaded && <SuccessOverlay onRetry={handleRetry} />}
 
       <TopStrip />
       <Header />
@@ -428,19 +220,7 @@ export default function EpfReg23Page() {
       <main className="mx-auto w-full max-w-[1300px] flex-1 px-6 py-8">
         <SearchPanel code={code} onView={() => setView("results")} />
 
-        {view !== "search" && (
-          <ResultsTable
-            code={code}
-            onViewCounterfoil={(i) => {
-              setSelectedIdx(i);
-              setView("card");
-            }}
-          />
-        )}
-
-        {view === "card" && (
-          <CounterfoilCard employee={selectedEmployee} code={code} onDownload={handleDownload} />
-        )}
+        {view !== "search" && <ResultsTable code={code} />}
       </main>
 
       <Footer />
