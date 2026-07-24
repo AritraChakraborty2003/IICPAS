@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { CheckCircle, RotateCcw, Download, ChevronRight, Upload } from "lucide-react";
+import { CheckCircle, RotateCcw, ChevronRight, Upload } from "lucide-react";
 import {
   useSimulationConfig,
   findFieldValue,
@@ -230,18 +230,10 @@ function InstructionBanner({ bannerText }: { bannerText: string }) {
   );
 }
 
-// ─── Reference contribution table + downloadable template ─────────────────
-function ContributionSummary({ onDownloadTemplate }: { onDownloadTemplate: () => void }) {
+// ─── Reference contribution table ──────────────────────────────────────────
+function ContributionSummary() {
   return (
     <div className="mb-6">
-      <button
-        type="button"
-        onClick={onDownloadTemplate}
-        className="mb-4 flex items-center gap-2 rounded bg-[#1a56db] px-4 py-2.5 text-[13.5px] font-bold text-white hover:bg-[#1745ad]"
-      >
-        <Download size={16} /> Click here to download the template of ESI contribution details
-      </button>
-
       <div className="overflow-x-auto rounded-[6px] border border-[#e0ddc8]">
         <table className="w-full min-w-[900px] border-collapse text-[12.5px]">
           <thead>
@@ -719,22 +711,6 @@ export default function EpfReg25Page() {
   const bannerText = simConfig?.bannerText || "";
   const notifyGroupComplete = useSimGroupComplete();
 
-  const handleDownloadTemplate = () => {
-    const header = "Type,Employee Name,Insurance Number,Working Days,Yearly CTC,Monthly Gross,Basic,HRA,Other Allowances,ESI Employee,ESI Employer\n";
-    const body = CONTRIBUTIONS.map(
-      (r) => `${r.type},${r.name},${r.insuranceNo},${r.workingDays},${r.yearlyCTC},${r.monthlyGross},${r.basic},${r.hra},${r.other},${r.esiEmployee},${r.esiEmployer}`
-    ).join("\n");
-    const blob = new Blob([header + body], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ESI_Contribution_Template.csv";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  };
-
   const handleRowChange = (i: number, field: keyof WageRow, value: string) => {
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
   };
@@ -763,7 +739,7 @@ export default function EpfReg25Page() {
       <InstructionBanner bannerText={bannerText} />
 
       <main className="mx-auto w-full max-w-[1300px] flex-1 px-6 py-8">
-        <ContributionSummary onDownloadTemplate={handleDownloadTemplate} />
+        <ContributionSummary />
 
         {view === "summary" && (
           <DashboardMenu code={code} onFileContributions={() => setView("form")} />
