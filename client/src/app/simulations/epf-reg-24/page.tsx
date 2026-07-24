@@ -479,14 +479,20 @@ export default function EpfReg24Page() {
       <Header />
       <CredsBanner fields={simConfig?.credentialFields || []} />
 
-      <main className="mx-auto flex w-full max-w-[1300px] flex-1 flex-wrap items-start justify-center gap-16 px-6 py-10">
-        <PortalInfoColumn />
-        <EmployerLoginPanel
-          loginUser={loginUser}
-          loginPass={loginPass}
-          validateCreds={validateCreds}
-          onSuccess={handleLoginSuccess}
-        />
+      <main className="flex-1 px-6 py-10">
+        {loggedIn ? (
+          <DashboardMenu code={loginUser || "—"} />
+        ) : (
+          <div className="mx-auto flex w-full max-w-[1300px] flex-wrap items-start justify-center gap-16">
+            <PortalInfoColumn />
+            <EmployerLoginPanel
+              loginUser={loginUser}
+              loginPass={loginPass}
+              validateCreds={validateCreds}
+              onSuccess={handleLoginSuccess}
+            />
+          </div>
+        )}
       </main>
 
       <Footer />
