@@ -56,6 +56,16 @@ const KNOWN_SIMULATIONS = {
       { label: "Nomination", value: "Not Filed" },
     ],
   },
+  "epf-reg-18": {
+    name: "EPF Reg 18 — ESIC Employer Login",
+    bannerText:
+      "Login to ESI portal in Simulation Experiment below using the given login credentials:\nFirm Name: Aprilia EV Motors LLP\nUser ID: 63000728280002700\nPassword: Fin@123",
+    credentialFields: [
+      { label: "Firm Name", value: "Aprilia EV Motors LLP" },
+      { label: "User ID", value: "63000728280002700" },
+      { label: "Password", value: "Fin@123" },
+    ],
+  },
 };
 
 const ensureKnownSimulation = async (slug) => {
