@@ -1,12 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { CheckCircle, RotateCcw, Download, ChevronRight } from "lucide-react";
+import { CheckCircle, RotateCcw, ChevronRight } from "lucide-react";
 import {
   useSimulationConfig,
   findFieldValue,
 } from "@/lib/useSimulationConfig";
 import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
+import {
+  DEFAULT_CODE,
+  DEFAULT_ESTABLISHMENT,
+  EMPLOYEES,
+  SimBanner,
+  TopStrip,
+  Header,
+  Footer,
+} from "./_shared";
 
 // Employer's Code Number and Establishment name come from the admin
 // Simulation Manager (or the course editor's per-insert "Add/Edit Creds")
@@ -17,88 +26,6 @@ import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 // is fixed demo data — there is no list-type credential field to source it
 // from. The instructional banner only appears if an admin sets bannerText.
 const SIMULATION_SLUG = "epf-reg-23";
-const DEFAULT_CODE = "63000728280002700";
-const DEFAULT_ESTABLISHMENT = "Aprilia EV Motors LLP";
-const EMPLOYER_ADDRESS = "258/1, 1st Floor, Near 31E, Bus Stop Rd, 2nd Block, Thyagaraj Nagar";
-
-type Employee = {
-  name: string;
-  insuranceNo: string;
-  gender: "Male" | "Female";
-  dob: string;
-  maritalStatus: string;
-  dateOfRegistration: string;
-  address: string;
-  dispensary: string;
-  mobile: string;
-};
-
-const EMPLOYEES: Employee[] = [
-  {
-    name: "Lohith yadav",
-    insuranceNo: "5347437544",
-    gender: "Male",
-    dob: "11/07/1992",
-    maritalStatus: "Married",
-    dateOfRegistration: "01/11/2023",
-    address: "#22, 15th Cross Rd, 1st Block, Govindaraj Garden, RT Nagar, Bengaluru, Karnataka 560032",
-    dispensary: "R.T.Nagar, KA (ESIS Disp.)",
-    mobile: "9900008797",
-  },
-  {
-    name: "Ananya gupta",
-    insuranceNo: "545168350",
-    gender: "Female",
-    dob: "22/03/1996",
-    maritalStatus: "Single",
-    dateOfRegistration: "30/10/2024",
-    address: "#14, 4th Main, Jayanagar 3rd Block, Bengaluru, Karnataka 560011",
-    dispensary: "Jayanagar, KA (ESIS Disp.)",
-    mobile: "9900008798",
-  },
-  {
-    name: "Aarav Sharma",
-    insuranceNo: "6304234211",
-    gender: "Male",
-    dob: "15/05/1994",
-    maritalStatus: "Married",
-    dateOfRegistration: "12/02/2024",
-    address: "#7, MG Road, Indiranagar, Bengaluru, Karnataka 560038",
-    dispensary: "Indiranagar, KA (ESIS Disp.)",
-    mobile: "9900008799",
-  },
-  {
-    name: "Rohit Chatterjee",
-    insuranceNo: "6730423113",
-    gender: "Male",
-    dob: "08/09/1990",
-    maritalStatus: "Married",
-    dateOfRegistration: "05/06/2024",
-    address: "#31, Whitefield Main Road, Bengaluru, Karnataka 560066",
-    dispensary: "Whitefield, KA (ESIS Disp.)",
-    mobile: "9900008800",
-  },
-  {
-    name: "Rahul Kedia",
-    insuranceNo: "8752566013",
-    gender: "Male",
-    dob: "30/12/1993",
-    maritalStatus: "Single",
-    dateOfRegistration: "30/10/2024",
-    address: "#9, Koramangala 5th Block, Bengaluru, Karnataka 560095",
-    dispensary: "Koramangala, KA (ESIS Disp.)",
-    mobile: "9900008801",
-  },
-];
-
-// ─── Top simulation disclaimer ─────────────────────────────────────────────
-function SimBanner() {
-  return (
-    <div className="sticky top-0 z-50 bg-[#ec1e18] px-4 py-2.5 text-center text-[14px] font-medium leading-tight text-white sm:text-[16px]">
-      This is a Simulation. Use For Educational Purposes ONLY.
-    </div>
-  );
-}
 
 // ─── Launch overlay (blurred portal behind, button centred on top) ─────────
 function LaunchOverlay({ onStart }: { onStart: () => void }) {
@@ -119,77 +46,6 @@ function LaunchOverlay({ onStart }: { onStart: () => void }) {
         {starting ? "LOADING..." : "START EXPERIMENT"}
       </button>
     </div>
-  );
-}
-
-// ─── Top nav: tricolour strip + accessibility row ──────────────────────────
-function TopStrip() {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#e0e0e0] bg-[#f5f5f5] px-5 py-[4px] text-[11px]">
-      <div className="flex items-center gap-2 font-medium text-[#333]">
-        <div className="flex h-[15px] w-[22px] flex-col overflow-hidden rounded-[1px]">
-          <div className="flex-1 bg-[#FF9933]" />
-          <div className="flex-1 bg-white" />
-          <div className="flex-1 bg-[#138808]" />
-        </div>
-        <span>भारत सरकार</span>
-        <span className="text-[#aaa]">/</span>
-        <span>Government of India</span>
-      </div>
-      <div className="flex items-center gap-2 text-[#1a6fa8]">
-        <span className="font-bold">A+</span>
-        <span>A</span>
-        <span>A-</span>
-        <span className="text-[#bbb]">|</span>
-        <span className="cursor-pointer">Select Language ▾</span>
-      </div>
-    </div>
-  );
-}
-
-// ─── Header: bilingual ESIC branding, ESIC crest + national emblem ────────
-function Header() {
-  return (
-    <header className="border-b border-[#ddd] bg-white">
-      <div className="mx-auto flex w-full max-w-[1300px] flex-wrap items-center justify-between gap-4 px-6 py-4">
-        <div className="flex items-center gap-3">
-          <img
-            src="/images/simulations/esic-logo.png"
-            alt="ESIC Emblem"
-            className="h-[50px] w-[50px] shrink-0 object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-          <div className="leading-[1.35]">
-            <div className="text-[15px] font-bold text-[#333]">कर्मचारी राज्य बीमा निगम</div>
-            <div className="text-[19px] font-bold text-[#0b2e57]">
-              Employees&apos; State Insurance Corporation
-            </div>
-            <div className="text-[11.5px] italic text-[#888]">
-              (Ministry of Labour and Employment, Government of India)
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-right leading-[1.35]">
-            <div className="text-[13px] font-bold text-[#333]">श्रम एवं रोजगार मंत्रालय</div>
-            <div className="text-[13.5px] font-semibold text-[#333]">
-              Ministry of Labour &amp; Employment
-            </div>
-          </div>
-          <img
-            src="/images/simulations/satyamev-jayate.jpg"
-            alt="Ministry of Labour and Employment Emblem"
-            className="h-[50px] w-[50px] shrink-0 object-contain"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </div>
-      </div>
-    </header>
   );
 }
 
