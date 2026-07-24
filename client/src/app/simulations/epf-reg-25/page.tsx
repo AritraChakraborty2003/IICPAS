@@ -569,17 +569,19 @@ function WageEntryTable({
   );
 }
 
-// ─── Payment History summary panel, shown after Save ───────────────────────
+// ─── Payment History summary modal, shown after Save ───────────────────────
 function PaymentHistoryPanel({
   rows,
   verified,
   onToggleVerified,
   onSubmit,
+  onClose,
 }: {
   rows: WageRow[];
   verified: boolean;
   onToggleVerified: (v: boolean) => void;
   onSubmit: () => void;
+  onClose: () => void;
 }) {
   const totalIP = rows.reduce((s, r) => s + (Number(r.ipContribution) || 0), 0);
   const totalEmployer = Math.round(totalIP * 4.33);
@@ -587,49 +589,61 @@ function PaymentHistoryPanel({
   const grandTotal = totalIP + totalEmployer;
 
   return (
-    <div className="mt-4 w-full max-w-[360px] overflow-hidden rounded-[6px] border border-[#7a1f1a]">
-      <div className="bg-[#7a1f1a] px-3 py-1.5 text-[13px] font-bold text-white">Payment History</div>
-      <div className="divide-y divide-[#e0ddc8] bg-[#fdfaf0] text-[12.5px] text-[#333]">
-        <div className="flex items-center justify-between px-3 py-1.5">
-          <span>Total IP Contribution(Rs.)</span>
-          <span className="font-semibold">{totalIP}</span>
+    <div
+      className="fixed inset-0 z-[105] flex items-center justify-center bg-[#07111f]/45 px-4 backdrop-blur-[2px]"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-[400px] overflow-hidden rounded-[8px] border border-[#7a1f1a] shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+      >
+        <div className="bg-[#7a1f1a] px-3 py-1.5 text-[13px] font-bold text-white">Payment History</div>
+        <div className="divide-y divide-[#e0ddc8] bg-[#fdfaf0] text-[12.5px] text-[#333]">
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <span>Total IP Contribution(Rs.)</span>
+            <span className="font-semibold">{totalIP}</span>
+          </div>
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <span>Total Employer Contribution(Rs.)</span>
+            <span className="font-semibold">{totalEmployer}</span>
+          </div>
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <span>Grand Total( Employee &amp; Employer Contribution)(Rs.)</span>
+            <span className="font-semibold">{grandTotal}</span>
+          </div>
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <span>Total Central Government Contribution(Rs.)</span>
+            <span className="font-semibold">0</span>
+          </div>
+          <div className="flex items-center justify-between px-3 py-1.5">
+            <span>Total Wages(Rs.)</span>
+            <span className="font-semibold">{totalWages}</span>
+          </div>
+          <div className="px-3 py-1.5 font-semibold text-[#1a56db]">
+            Contribution once submitted cannot be altered or deleted
+          </div>
+          <label className="flex items-center gap-2 px-3 py-2">
+            <input type="checkbox" checked={verified} onChange={(e) => onToggleVerified(e.target.checked)} />
+            Data Verified
+          </label>
         </div>
-        <div className="flex items-center justify-between px-3 py-1.5">
-          <span>Total Employer Contribution(Rs.)</span>
-          <span className="font-semibold">{totalEmployer}</span>
+        <div className="flex gap-2 border-t border-[#e0ddc8] bg-[#fdfaf0] px-3 py-2">
+          <button
+            type="button"
+            disabled={!verified}
+            onClick={onSubmit}
+            className="rounded border border-[#c0c0c0] bg-[#efe9d5] px-4 py-1 text-[12.5px] font-bold text-[#555] hover:bg-[#e5dfc8] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Submit
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded border border-[#c0c0c0] bg-[#efe9d5] px-4 py-1 text-[12.5px] font-bold text-[#555] hover:bg-[#e5dfc8]"
+          >
+            Close
+          </button>
         </div>
-        <div className="flex items-center justify-between px-3 py-1.5">
-          <span>Grand Total( Employee &amp; Employer Contribution)(Rs.)</span>
-          <span className="font-semibold">{grandTotal}</span>
-        </div>
-        <div className="flex items-center justify-between px-3 py-1.5">
-          <span>Total Central Government Contribution(Rs.)</span>
-          <span className="font-semibold">0</span>
-        </div>
-        <div className="flex items-center justify-between px-3 py-1.5">
-          <span>Total Wages(Rs.)</span>
-          <span className="font-semibold">{totalWages}</span>
-        </div>
-        <div className="px-3 py-1.5 font-semibold text-[#1a56db]">
-          Contribution once submitted cannot be altered or deleted
-        </div>
-        <label className="flex items-center gap-2 px-3 py-2">
-          <input type="checkbox" checked={verified} onChange={(e) => onToggleVerified(e.target.checked)} />
-          Data Verified
-        </label>
-      </div>
-      <div className="flex gap-2 border-t border-[#e0ddc8] bg-[#fdfaf0] px-3 py-2">
-        <button
-          type="button"
-          disabled={!verified}
-          onClick={onSubmit}
-          className="rounded border border-[#c0c0c0] bg-[#efe9d5] px-4 py-1 text-[12.5px] font-bold text-[#555] hover:bg-[#e5dfc8] disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          Submit
-        </button>
-        <button type="button" className="rounded border border-[#c0c0c0] bg-[#efe9d5] px-4 py-1 text-[12.5px] font-bold text-[#555] hover:bg-[#e5dfc8]">
-          Close
-        </button>
       </div>
     </div>
   );
@@ -764,6 +778,7 @@ export default function EpfReg25Page() {
                 verified={verified}
                 onToggleVerified={setVerified}
                 onSubmit={handleFinalSubmit}
+                onClose={() => setShowPaymentHistory(false)}
               />
             )}
           </>
