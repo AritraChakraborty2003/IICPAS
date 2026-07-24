@@ -138,13 +138,7 @@ function SearchPanel({ code, onView }: { code: string; onView: () => void }) {
 }
 
 // ─── Step 2: registered employee results, one "View Counter Foil" per row ─
-function ResultsTable({
-  code,
-  onViewCounterfoil,
-}: {
-  code: string;
-  onViewCounterfoil: (index: number) => void;
-}) {
+function ResultsTable({ code }: { code: string }) {
   return (
     <div className="mt-5 overflow-hidden rounded-[6px] border border-[#e0ddc8]">
       <div className="border-b border-[#e0ddc8] bg-[#f5f2e2] px-4 py-2 text-[13px] font-bold text-[#7a1f1a]">
@@ -164,7 +158,7 @@ function ResultsTable({
             </tr>
           </thead>
           <tbody className="bg-white">
-            {EMPLOYEES.map((emp, i) => (
+            {EMPLOYEES.map((emp) => (
               <tr key={emp.insuranceNo}>
                 <td className="border border-[#e0ddc8] px-3 py-2">{code}</td>
                 <td className="border border-[#e0ddc8] px-3 py-2">{DEFAULT_ESTABLISHMENT}</td>
@@ -173,13 +167,14 @@ function ResultsTable({
                 <td className="border border-[#e0ddc8] px-3 py-2">{emp.gender}</td>
                 <td className="border border-[#e0ddc8] px-3 py-2">{emp.dateOfRegistration}</td>
                 <td className="border border-[#e0ddc8] px-3 py-2">
-                  <button
-                    type="button"
-                    onClick={() => onViewCounterfoil(i)}
+                  <a
+                    href={`/simulations/epf-reg-23/counterfoil/${emp.insuranceNo}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex items-center gap-1 font-bold text-[#1a56db] underline hover:text-[#1a6fa8]"
                   >
                     View Counter Foil <ChevronRight size={13} />
-                  </button>
+                  </a>
                 </td>
               </tr>
             ))}
