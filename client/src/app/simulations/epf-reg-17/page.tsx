@@ -291,7 +291,7 @@ function Footer() {
         <span className="text-[#bbb]">|</span>
         <span className="cursor-pointer hover:underline">EPFO Grivance Portal</span>
       </span>
-      <span className="italic text-[#888]">Designed, Developed and Hosted @ Fincurious</span>
+      <span className="italic text-[#888]">Designed, Developed and Hosted @ IICPA</span>
     </footer>
   );
 }
