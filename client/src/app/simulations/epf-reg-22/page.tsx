@@ -360,7 +360,7 @@ function SuccessOverlay({ onRetry }: { onRetry: () => void }) {
       <div className="flex flex-col items-center gap-4 rounded-[16px] bg-white/95 px-10 py-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
         <div
           className="flex h-[92px] w-[92px] items-center justify-center rounded-full bg-green-500 shadow-[0_0_0_10px_rgba(34,197,94,0.25),0_0_0_22px_rgba(34,197,94,0.12)]"
-          style={{ animation: "epfReg22TickPop 0.4s ease-out" }}
+          style={{ animation: "epfReg22TickPop 0.15s ease-out" }}
         >
           <CheckCircle size={48} className="text-white" />
         </div>
@@ -377,12 +377,8 @@ function SuccessOverlay({ onRetry }: { onRetry: () => void }) {
       <style jsx>{`
         @keyframes epfReg22TickPop {
           0% {
-            transform: scale(0.4);
+            transform: scale(0.85);
             opacity: 0;
-          }
-          70% {
-            transform: scale(1.08);
-            opacity: 1;
           }
           100% {
             transform: scale(1);
