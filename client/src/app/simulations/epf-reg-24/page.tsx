@@ -300,6 +300,95 @@ function PortalInfoColumn() {
   );
 }
 
+const EMPLOYER_LINKS = [
+  "Update Employer Details",
+  "Create Subunit Registration",
+  "Accident Report (Form 12)",
+  "Accident Report Print / PDF Form",
+  "Wage Contributory Record",
+  "Reply For Abstention Verification",
+  "View Subunit Details",
+  "Change Password",
+  "Help for Monthly contribution and Challan (Updated)",
+  "Help File for Contractor/Principal Employer Mapping and Contribution",
+  "User Manual for Mobile/Bank update",
+  "Consolidated MC/Edit MC Help File",
+  "Online Payment Help File",
+  "DEPLOY SECURITY CERTIFICATE",
+  "Employer and Employee Registration through Portal",
+];
+
+const EMPLOYEE_LINKS = [
+  "Enroll Employee with previously allotted ESI Number",
+  "Register/Enroll New Employee",
+  "Update Particulars of Insured Person",
+  "Update Mobile Number of Insured Person",
+  "Bulk Upload of Mobile Number",
+  "Bulk Upload of Account Number",
+  "Upload Bank Account related Document of Insured Person",
+  "e-Pehchan Card",
+  "List of Employees",
+  "Health Passbook",
+  "Notification",
+  "Employee Dispensary Approval",
+];
+
+const CONTRIBUTION_LINKS = [
+  "File Monthly Contributions",
+  "Generate Challan",
+  "Modify Challan",
+  "View Contribution History",
+  "Omitted Wages Challan",
+  "Contractor/Principal Employer Master",
+  "IP Mapping with Contractor/Principal Employer",
+  "Bulk IP Mapping with Contractor/Principal Employer",
+  "View Contribution History (Contractor/Principal Employer Wise)",
+  "Self Certification",
+  "View RC",
+  "Recovery/Defaulter Challan",
+  "Updation of Unrealized Challan Details",
+  "Online Challan Double Verification",
+  "Interest For Delay Payment",
+  "File Consolidated Monthly Contributions",
+  "Consolidated Monthly Contribution Challan",
+  "Consolidated View Contribution History",
+];
+
+// ─── Post-login employer dashboard: three-column portal menu ──────────────
+function DashboardMenu({ code }: { code: string }) {
+  const columns: { title: string; items: string[] }[] = [
+    { title: "EMPLOYER", items: EMPLOYER_LINKS },
+    { title: "EMPLOYEE", items: EMPLOYEE_LINKS },
+    { title: "MONTHLY CONTRIBUTION", items: CONTRIBUTION_LINKS },
+  ];
+  return (
+    <div className="mx-auto w-full max-w-[1300px] rounded-[8px] border border-[#e0ddc8] bg-[#fdfaf0]">
+      <div className="border-b border-[#e0ddc8] bg-[#d9d2ae] px-5 py-2 text-[12px] font-semibold text-[#4a4630]">
+        User Login: {code}
+      </div>
+      <div className="grid grid-cols-1 gap-6 p-6 md:grid-cols-3">
+        {columns.map((col) => (
+          <div key={col.title}>
+            <div className="mb-3 text-[12px] font-bold tracking-wide text-[#a08968]">
+              {col.title}
+            </div>
+            <ul className="space-y-2.5">
+              {col.items.map((item) => (
+                <li
+                  key={item}
+                  className="text-[13px] text-[#5b7fa6] underline decoration-[#c7d6e8] underline-offset-2"
+                >
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Footer ─────────────────────────────────────────────────────────────────
 function Footer() {
   return (
