@@ -8,10 +8,10 @@ import {
 } from "@/lib/useSimulationConfig";
 import { useSimGroupComplete } from "@/lib/useSimGroupComplete";
 
-// Firm Name / User ID / Password and the blue instructions banner all come
-// from the admin Simulation Manager (or the course editor's per-insert
-// "Add/Edit Creds") for slug "epf-reg-18" — nothing is hardcoded here. Only
-// the simulated captcha code is a fixed UI mechanic, not experiment content.
+// Firm Name / User ID / Password come from the admin Simulation Manager (or
+// the course editor's per-insert "Add/Edit Creds") for slug "epf-reg-18" —
+// nothing is hardcoded here. Only the simulated captcha code is a fixed UI
+// mechanic, not experiment content. No instructional banner is shown.
 const SIMULATION_SLUG = "epf-reg-18";
 const CAPTCHA_CODE = "P237M";
 
@@ -71,29 +71,46 @@ function TopStrip() {
   );
 }
 
-// ─── Header: ESIC branding ──────────────────────────────────────────────────
+// ─── Header: bilingual ESIC branding, ESIC crest + national emblem ────────
 function Header() {
   return (
-    <header className="border-b border-[#ddd] bg-[#0b2e57]">
-      <div className="mx-auto flex w-full max-w-[1300px] flex-wrap items-center gap-3 px-6 py-3">
-        <img
-          src="/images/simulations/satyamev-jayate.jpg"
-          alt="Government of India Emblem"
-          className="h-[46px] w-[46px] shrink-0 object-contain"
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
-        />
-        <div className="leading-[1.3]">
-          <div
-            className="text-[22px] font-black tracking-tight text-[#4ade80]"
-            style={{ fontFamily: "'Arial Black', 'Franklin Gothic Medium', sans-serif" }}
-          >
-            ESIC
+    <header className="border-b border-[#ddd] bg-white">
+      <div className="mx-auto flex w-full max-w-[1300px] flex-wrap items-center justify-between gap-4 px-6 py-4">
+        <div className="flex items-center gap-3">
+          <img
+            src="/images/simulations/esic-logo.png"
+            alt="ESIC Emblem"
+            className="h-[50px] w-[50px] shrink-0 object-contain"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+          <div className="leading-[1.35]">
+            <div className="text-[15px] font-bold text-[#333]">कर्मचारी राज्य बीमा निगम</div>
+            <div className="text-[19px] font-bold text-[#0b2e57]">
+              Employees&apos; State Insurance Corporation
+            </div>
+            <div className="text-[11.5px] italic text-[#888]">
+              (Ministry of Labour and Employment, Government of India)
+            </div>
           </div>
-          <div className="text-[11px] font-medium text-[#dbeafe]">
-            Employees&apos; State Insurance Corporation, Ministry of Labour &amp; Employment
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="text-right leading-[1.35]">
+            <div className="text-[13px] font-bold text-[#333]">श्रम एवं रोजगार मंत्रालय</div>
+            <div className="text-[13.5px] font-semibold text-[#333]">
+              Ministry of Labour &amp; Employment
+            </div>
           </div>
+          <img
+            src="/images/simulations/satyamev-jayate.jpg"
+            alt="Ministry of Labour and Employment Emblem"
+            className="h-[50px] w-[50px] shrink-0 object-contain"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
         </div>
       </div>
     </header>
@@ -262,28 +279,18 @@ function PortalInfoColumn() {
 
 // ─── Footer ─────────────────────────────────────────────────────────────────
 function Footer() {
-  const links = [
-    "Terms and Conditions",
-    "Privacy Policy",
-    "Website Policy",
-    "HyperLinking Policy",
-    "CopyRight Policy",
-    "Sitemap",
-    "ContactUs",
-    "Helpline",
-  ];
   return (
-    <footer className="mt-auto bg-[#5c2a3e] px-6 py-3 text-[12px] text-[#f0e0e6]">
-      <div className="mx-auto flex w-full max-w-[1300px] flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-x-2">
-          {links.map((label, i) => (
-            <React.Fragment key={label}>
-              <span className="cursor-pointer hover:underline">{label}</span>
-              {i < links.length - 1 && <span className="text-[#c9a3b3]">|</span>}
-            </React.Fragment>
-          ))}
+    <footer className="mt-auto">
+      <div className="border-t border-[#e0e0e0] bg-[#f5f5f5] px-6 py-1.5 text-right text-[11.5px] text-[#666]">
+        Last Updated : 28/10/2020
+      </div>
+      <div className="bg-[#4a2545] px-6 py-3 text-[12px] text-[#f0e0e6]">
+        <div className="mx-auto flex w-full max-w-[1300px] flex-wrap items-center justify-between gap-2">
+          <span>
+            <strong>© Copyright ESIC 2026.</strong> All Rights Reserved
+          </span>
+          <span>Site maintained by : ESIC. | Visitors Count: 373193805</span>
         </div>
-        <span>Last Updated : 28/10/2020</span>
       </div>
     </footer>
   );
@@ -341,7 +348,6 @@ export default function EpfReg18Page() {
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const loginUser = findFieldValue(simConfig, /user|lin/i);
   const loginPass = findFieldValue(simConfig, /pass/i);
-  const bannerText = simConfig?.bannerText || "";
   const validateCreds = simConfig?.requireCredentialValidation ?? true;
   const notifyGroupComplete = useSimGroupComplete();
 
@@ -359,12 +365,6 @@ export default function EpfReg18Page() {
       <SimBanner />
       {!launched && <LaunchOverlay onStart={() => setLaunched(true)} />}
       {loggedIn && <SuccessOverlay onRetry={handleRetry} />}
-
-      {bannerText && (
-        <div className="bg-[#0b3d3a] px-6 py-3 text-[13px] leading-relaxed text-[#eafff9]">
-          <div className="mx-auto w-full max-w-[1300px] whitespace-pre-line">{bannerText}</div>
-        </div>
-      )}
 
       <TopStrip />
       <Header />
