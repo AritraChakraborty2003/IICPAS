@@ -429,7 +429,12 @@ export default function EpfReg22Page() {
 
       <main className="mx-auto w-full max-w-[1300px] flex-1 px-6 py-8">
         {view === "menu" ? (
-          <DashboardMenu onOpenList={() => setView("form")} />
+          <DashboardMenu
+            onOpenList={() => {
+              setView("form");
+              handlePrint();
+            }}
+          />
         ) : (
           <DeclarationForm code={code} establishment={establishment} onPrint={handlePrint} />
         )}
