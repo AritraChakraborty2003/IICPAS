@@ -6,6 +6,8 @@ import {
   CalendarDays,
   Clock3,
   Edit3,
+  Eye,
+  EyeOff,
   PlayCircle,
   Plus,
   RefreshCw,
@@ -137,6 +139,7 @@ export default function ClassManagementAdmin() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [showPasscode, setShowPasscode] = useState(false);
 
   const authHeaders = useCallback(() => {
     const token =
@@ -784,15 +787,25 @@ export default function ClassManagementAdmin() {
                   <label className="mb-1 block text-sm font-medium text-gray-700">
                     Passcode
                   </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 123456"
-                    value={form.passcode}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, passcode: e.target.value }))
-                    }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPasscode ? "text" : "password"}
+                      placeholder="e.g. 123456"
+                      value={form.passcode}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, passcode: e.target.value }))
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPasscode((s) => !s)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      tabIndex={-1}
+                    >
+                      {showPasscode ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
