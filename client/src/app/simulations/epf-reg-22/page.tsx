@@ -432,7 +432,7 @@ export default function EpfReg22Page() {
           <DashboardMenu
             onOpenList={() => {
               setView("form");
-              handlePrint();
+              setTimeout(handlePrint, 2000);
             }}
           />
         ) : (
