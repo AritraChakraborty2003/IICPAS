@@ -844,7 +844,17 @@ export default function GSTR1A4Simulation({
                 <button
                   type="button"
                   onClick={handleFillDetail}
-                  className="inline-flex items-center gap-1.5 bg-[#0f3a9a] hover:bg-[#0a2558] text-white font-bold uppercase text-[10.5px] px-3.5 py-2 rounded cursor-pointer transition-colors"
+                  disabled={!isExerciseConfigured}
+                  title={
+                    isExerciseConfigured
+                      ? undefined
+                      : "This exercise's answer key hasn't been set in the Simulation Manager yet."
+                  }
+                  className={`inline-flex items-center gap-1.5 font-bold uppercase text-[10.5px] px-3.5 py-2 rounded transition-colors ${
+                    isExerciseConfigured
+                      ? "bg-[#0f3a9a] hover:bg-[#0a2558] text-white cursor-pointer"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  }`}
                 >
                   <Wand2 size={12} />
                   Fill Detail
