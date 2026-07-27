@@ -33,9 +33,17 @@ export default function StudentAuthForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const [loginMethod, setLoginMethod] = useState<"password" | "otp">("password");
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  const [loginOtpIdentifier, setLoginOtpIdentifier] = useState("");
+  const [loginOtpSent, setLoginOtpSent] = useState(false);
+  const [loginOtpChannel, setLoginOtpChannel] = useState<"email" | "whatsapp" | null>(null);
+  const [loginOtp, setLoginOtp] = useState("");
+  const [sendingLoginOtp, setSendingLoginOtp] = useState(false);
+  const [verifyingLoginOtp, setVerifyingLoginOtp] = useState(false);
 
   const [forgotStep, setForgotStep] = useState<"email" | "otp">("email");
   const [forgotEmail, setForgotEmail] = useState("");
@@ -149,36 +157,87 @@ export default function StudentAuthForm() {
     }
   };
 
+  const redirectAfterLogin = () => {
+    setTimeout(() => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectTo = urlParams.get("redirect");
+      const referrer = document.referrer;
+      const wasOnWishlist = referrer.includes("/wishlist");
+
+      if (redirectTo === "wishlist" || wasOnWishlist) {
+        localStorage.setItem("student_last_activity", Date.now().toString());
+        window.location.replace("/wishlist");
+      } else {
+        localStorage.setItem("student_last_activity", Date.now().toString());
+        window.location.href = "/student-dashboard";
+      }
+    }, 500);
+  };
+
   const handleLogin = async (e: any) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
-      return toast.error("Email and password required");
+      return toast.error("Email/phone and password required");
     }
 
     try {
       await axios.post(
         `${API}/api/v1/students/login`,
-        { email: loginEmail, password: loginPassword },
+        { identifier: loginEmail, password: loginPassword },
         { withCredentials: true }
       );
       toast.success("Login successful");
-
-      setTimeout(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectTo = urlParams.get("redirect");
-        const referrer = document.referrer;
-        const wasOnWishlist = referrer.includes("/wishlist");
-
-        if (redirectTo === "wishlist" || wasOnWishlist) {
-          localStorage.setItem("student_last_activity", Date.now().toString());
-          window.location.replace("/wishlist");
-        } else {
-          localStorage.setItem("student_last_activity", Date.now().toString());
-          window.location.href = "/student-dashboard";
-        }
-      }, 500);
+      redirectAfterLogin();
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Login failed");
+    }
+  };
+
+  const handleSendLoginOtp = async () => {
+    if (!loginOtpIdentifier) {
+      return toast.error("Enter your email or phone number");
+    }
+
+    setSendingLoginOtp(true);
+    try {
+      const { data } = await axios.post(
+        `${API}/api/v1/students/login/send-otp`,
+        { identifier: loginOtpIdentifier },
+        { withCredentials: true }
+      );
+      setLoginOtpSent(true);
+      setLoginOtpChannel(data?.channel === "whatsapp" ? "whatsapp" : "email");
+      toast.success(
+        data?.channel === "whatsapp"
+          ? "OTP sent on WhatsApp"
+          : "OTP sent to your email"
+      );
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setSendingLoginOtp(false);
+    }
+  };
+
+  const handleVerifyLoginOtp = async (e: any) => {
+    e.preventDefault();
+    if (!loginOtpIdentifier || !loginOtp) {
+      return toast.error("Enter the OTP sent to you");
+    }
+
+    setVerifyingLoginOtp(true);
+    try {
+      await axios.post(
+        `${API}/api/v1/students/login/verify-otp`,
+        { identifier: loginOtpIdentifier, otp: loginOtp },
+        { withCredentials: true }
+      );
+      toast.success("Login successful");
+      redirectAfterLogin();
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Invalid or expired OTP");
+    } finally {
+      setVerifyingLoginOtp(false);
     }
   };
 
@@ -408,37 +467,117 @@ export default function StudentAuthForm() {
             )}
 
             {mode === "login" && (
-              <form onSubmit={handleLogin} className="mx-auto flex w-full max-w-md flex-col gap-3">
-                <Input
-                  label="Email"
-                  name="loginEmail"
-                  type="email"
-                  value={loginEmail}
-                  onChange={(e: any) => setLoginEmail(e.target.value)}
-                />
-                <PasswordInput
-                  label="Password"
-                  name="loginPassword"
-                  value={loginPassword}
-                  onChange={(e: any) => setLoginPassword(e.target.value)}
-                  show={showLoginPassword}
-                  toggle={() => setShowLoginPassword(!showLoginPassword)}
-                />
+              <div className="mx-auto flex w-full max-w-md flex-col gap-3">
+                <div className="mx-auto inline-flex rounded-xl bg-slate-100 p-1 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => setLoginMethod("password")}
+                    className={`rounded-lg px-3 py-1.5 transition ${
+                      loginMethod === "password" ? "bg-white font-semibold text-emerald-700 shadow-sm" : "text-slate-600"
+                    }`}
+                  >
+                    Password
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setLoginMethod("otp")}
+                    className={`rounded-lg px-3 py-1.5 transition ${
+                      loginMethod === "otp" ? "bg-white font-semibold text-emerald-700 shadow-sm" : "text-slate-600"
+                    }`}
+                  >
+                    OTP
+                  </button>
+                </div>
 
-                <button
-                  type="submit"
-                  className="mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
-                >
-                  Login
-                </button>
+                {loginMethod === "password" && (
+                  <form onSubmit={handleLogin} className="flex w-full flex-col gap-3">
+                    <Input
+                      label="Email or Phone"
+                      name="loginEmail"
+                      value={loginEmail}
+                      onChange={(e: any) => setLoginEmail(e.target.value)}
+                    />
+                    <PasswordInput
+                      label="Password"
+                      name="loginPassword"
+                      value={loginPassword}
+                      onChange={(e: any) => setLoginPassword(e.target.value)}
+                      show={showLoginPassword}
+                      toggle={() => setShowLoginPassword(!showLoginPassword)}
+                    />
 
-                <button
-                  type="button"
-                  className="text-center text-sm text-emerald-700 hover:underline"
-                  onClick={() => setMode("forgot")}
-                >
-                  Forgot password?
-                </button>
+                    <button
+                      type="submit"
+                      className="mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                    >
+                      Login
+                    </button>
+
+                    <button
+                      type="button"
+                      className="text-center text-sm text-emerald-700 hover:underline"
+                      onClick={() => setMode("forgot")}
+                    >
+                      Forgot password?
+                    </button>
+                  </form>
+                )}
+
+                {loginMethod === "otp" && (
+                  <form onSubmit={handleVerifyLoginOtp} className="flex w-full flex-col gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-600">
+                        Email or Phone
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="text"
+                          value={loginOtpIdentifier}
+                          onChange={(e) => {
+                            setLoginOtpIdentifier(e.target.value);
+                            setLoginOtpSent(false);
+                            setLoginOtpChannel(null);
+                            setLoginOtp("");
+                          }}
+                          autoComplete="off"
+                          placeholder="Email or Phone"
+                          className="h-10 w-full rounded-xl border border-slate-300 px-3 text-sm text-slate-900 outline-none transition focus:border-emerald-400 focus:ring-2 focus:ring-emerald-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSendLoginOtp}
+                          disabled={sendingLoginOtp}
+                          className="h-11 w-full rounded-xl border border-emerald-600 px-4 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-70"
+                        >
+                          {sendingLoginOtp
+                            ? "Sending..."
+                            : loginOtpSent
+                            ? "Resend OTP"
+                            : "Send OTP"}
+                        </button>
+                      </div>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Email sends the OTP to your inbox, phone sends it on WhatsApp.
+                      </p>
+                    </div>
+
+                    {loginOtpSent && (
+                      <Input
+                        label={`OTP ${loginOtpChannel === "whatsapp" ? "(sent on WhatsApp)" : "(sent to email)"}`}
+                        value={loginOtp}
+                        onChange={(e: any) => setLoginOtp(e.target.value)}
+                      />
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={!loginOtpSent || verifyingLoginOtp}
+                      className="mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {verifyingLoginOtp ? "Verifying..." : "Login"}
+                    </button>
+                  </form>
+                )}
 
                 <div className="text-center text-sm text-slate-600">
                   Don&apos;t have an account?{" "}
@@ -446,7 +585,7 @@ export default function StudentAuthForm() {
                     Register
                   </button>
                 </div>
-              </form>
+              </div>
             )}
 
             {mode === "forgot" && (

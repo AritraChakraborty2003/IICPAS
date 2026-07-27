@@ -105,9 +105,13 @@ const HOMEPAGE_GATE_OTP_TTL_MS = 10 * 60 * 1000;
 const HOMEPAGE_GATE_RESEND_COOLDOWN_MS = 30 * 1000;
 const HOMEPAGE_GATE_WHATSAPP_TEMPLATE_NAME = "otp_template";
 const homepageGateOtpStore = new Map();
+const loginOtpStore = new Map();
+const LOGIN_OTP_TTL_MS = 10 * 60 * 1000;
+const LOGIN_WHATSAPP_TEMPLATE_NAME = "otp_template";
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
 const normalizePhone = (value) => normalizeWhatsAppRecipient(value);
+const isEmailIdentifier = (value) => String(value || "").includes("@");
 const normalizeBooleanInput = (value) => {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value === 1;
@@ -147,6 +151,19 @@ const getHomepageGateOtpEntry = (phone) => {
   }
   return entry;
 };
+
+const getLoginOtpEntry = (identifier) => {
+  const entry = loginOtpStore.get(identifier);
+  if (!entry) return null;
+  if (entry.expiresAt < Date.now()) {
+    loginOtpStore.delete(identifier);
+    return null;
+  }
+  return entry;
+};
+
+const findStudentByIdentifier = (identifier, isEmail) =>
+  Student.findOne(isEmail ? { email: identifier } : { phone: identifier });
 
 const sendHomepageGateOtp = async (phone) => {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -978,41 +995,159 @@ router.put(
   }
 );
 
-//Login
+const finalizeStudentLogin = async (student, req, res) => {
+  if (isBlockedStudentStatus(student.status)) {
+    return res.status(403).json({ message: "Account is suspended" });
+  }
+
+  const allowed = await isLoginAllowed("student", student._id);
+  if (!allowed) return res.status(403).json({ message: "Account is inactive" });
+
+  const token = createToken(student);
+
+  await recordLogin({
+    role: "student",
+    actorModel: "Student",
+    actorId: student._id,
+    displayName: student.name,
+    email: student.email,
+    req,
+    sessionExpiresAt: getTokenExpiry(token),
+  });
+
+  res
+    .cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // only HTTPS in production
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 'none' for cross-site, 'lax' for local dev
+    })
+    .json({ message: "Login success", student });
+};
+
+//Login (email or phone + password)
 router.post("/login", async (req, res) => {
-  const { email, password } = req.body;
+  const rawIdentifier = String(req.body.identifier ?? req.body.email ?? "").trim();
+  const { password } = req.body;
+
+  if (!rawIdentifier || !password) {
+    return res.status(400).json({ message: "Email/phone and password are required" });
+  }
+
+  const isEmail = isEmailIdentifier(rawIdentifier);
+  const normalizedIdentifier = isEmail
+    ? normalizeEmail(rawIdentifier)
+    : normalizePhone(rawIdentifier);
 
   try {
-    const student = await Student.findOne({ email });
+    const student = await findStudentByIdentifier(normalizedIdentifier, isEmail);
 
     if (!student) return res.status(404).json({ message: "Not found" });
+
+    const match = await bcrypt.compare(password, student.password);
+    if (!match) return res.status(401).json({ message: "Wrong password" });
+
+    await finalizeStudentLogin(student, req, res);
+  } catch (err) {
+    res.status(500).json({ error: "Login failed", details: err.message });
+  }
+});
+
+// Send login OTP (email OTP for email identifiers, WhatsApp OTP for phone identifiers)
+router.post("/login/send-otp", async (req, res) => {
+  const rawIdentifier = String(req.body.identifier || "").trim();
+
+  if (!rawIdentifier) {
+    return res.status(400).json({ message: "Email or phone is required" });
+  }
+
+  const isEmail = isEmailIdentifier(rawIdentifier);
+  const normalizedIdentifier = isEmail
+    ? normalizeEmail(rawIdentifier)
+    : normalizePhone(rawIdentifier);
+
+  if (!normalizedIdentifier) {
+    return res.status(400).json({ message: "Enter a valid email or phone number" });
+  }
+
+  try {
+    const student = await findStudentByIdentifier(normalizedIdentifier, isEmail);
+    if (!student) {
+      return res.status(404).json({ message: "No account found with this email or phone" });
+    }
     if (isBlockedStudentStatus(student.status)) {
       return res.status(403).json({ message: "Account is suspended" });
     }
 
-    const match = await bcrypt.compare(password, student.password);
-    if (!match) return res.status(401).json({ message: "Wrong password" });
-    const allowed = await isLoginAllowed("student", student._id);
-    if (!allowed) return res.status(403).json({ message: "Account is inactive" });
-    const token = createToken(student);
+    if (!isEmail && !isWhatsAppConfigured()) {
+      return res.status(503).json({ message: "WhatsApp OTP is not configured" });
+    }
 
-    await recordLogin({
-      role: "student",
-      actorModel: "Student",
-      actorId: student._id,
-      displayName: student.name,
-      email: student.email,
-      req,
-      sessionExpiresAt: getTokenExpiry(token),
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    loginOtpStore.set(normalizedIdentifier, {
+      otp,
+      expiresAt: Date.now() + LOGIN_OTP_TTL_MS,
     });
 
-    res
-      .cookie("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production", // only HTTPS in production
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", // 'none' for cross-site, 'lax' for local dev
-      })
-      .json({ message: "Login success", student });
+    if (isEmail) {
+      await transporter.sendMail({
+        from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
+        to: normalizedIdentifier,
+        subject: "IICPA Login OTP",
+        html: `<p>Hi ${student.name || "Student"},</p><p>Your OTP to login is: <strong style="font-size:1.2em">${otp}</strong></p><p>This OTP is valid for 10 minutes. Do not share it with anyone.</p><p>Thank you,<br/>IICPA Institute</p>`,
+      });
+    } else {
+      await sendWhatsAppTemplateMessage({
+        to: normalizedIdentifier,
+        templateName: LOGIN_WHATSAPP_TEMPLATE_NAME,
+        components: [
+          { type: "body", parameters: [{ type: "text", text: otp }] },
+          {
+            type: "button",
+            sub_type: "url",
+            index: "0",
+            parameters: [{ type: "text", text: otp }],
+          },
+        ],
+      });
+    }
+
+    res.json({
+      message: isEmail ? "OTP sent to your email" : "OTP sent on WhatsApp",
+      channel: isEmail ? "email" : "whatsapp",
+    });
+  } catch (err) {
+    loginOtpStore.delete(normalizedIdentifier);
+    console.error("Error sending login OTP:", err);
+    res.status(500).json({ message: "Failed to send OTP" });
+  }
+});
+
+// Verify login OTP and start session
+router.post("/login/verify-otp", async (req, res) => {
+  const rawIdentifier = String(req.body.identifier || "").trim();
+  const submittedOtp = String(req.body.otp || "").trim();
+
+  if (!rawIdentifier || !submittedOtp) {
+    return res.status(400).json({ message: "Email/phone and OTP are required" });
+  }
+
+  const isEmail = isEmailIdentifier(rawIdentifier);
+  const normalizedIdentifier = isEmail
+    ? normalizeEmail(rawIdentifier)
+    : normalizePhone(rawIdentifier);
+
+  const entry = getLoginOtpEntry(normalizedIdentifier);
+  if (!entry || entry.otp !== submittedOtp) {
+    return res.status(400).json({ message: "OTP invalid or expired" });
+  }
+
+  try {
+    const student = await findStudentByIdentifier(normalizedIdentifier, isEmail);
+    if (!student) return res.status(404).json({ message: "Not found" });
+
+    loginOtpStore.delete(normalizedIdentifier);
+
+    await finalizeStudentLogin(student, req, res);
   } catch (err) {
     res.status(500).json({ error: "Login failed", details: err.message });
   }
