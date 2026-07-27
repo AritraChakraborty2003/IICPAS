@@ -524,13 +524,18 @@ export default function StudentAuthForm() {
                   </button>
                 </div>
 
-                {loginMethod === "password" && (
+                {loginMethod === "password" && !passwordOtpSent && (
                   <form onSubmit={handleLogin} className="flex w-full flex-col gap-3">
                     <Input
                       label="Email or Phone"
                       name="loginEmail"
                       value={loginEmail}
-                      onChange={(e: any) => setLoginEmail(e.target.value)}
+                      onChange={(e: any) => {
+                        setLoginEmail(e.target.value);
+                        setPasswordOtpSent(false);
+                        setPasswordOtpChannel(null);
+                        setPasswordOtp("");
+                      }}
                     />
                     <PasswordInput
                       label="Password"
@@ -543,9 +548,10 @@ export default function StudentAuthForm() {
 
                     <button
                       type="submit"
-                      className="mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700"
+                      disabled={submittingPassword}
+                      className="mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
                     >
-                      Login
+                      {submittingPassword ? "Sending OTP..." : "Login"}
                     </button>
 
                     <button
@@ -554,6 +560,41 @@ export default function StudentAuthForm() {
                       onClick={() => setMode("forgot")}
                     >
                       Forgot password?
+                    </button>
+                  </form>
+                )}
+
+                {loginMethod === "password" && passwordOtpSent && (
+                  <form onSubmit={handleVerifyPasswordOtp} className="flex w-full flex-col gap-3">
+                    <p className="text-xs text-slate-500">
+                      Password verified. We sent an OTP{" "}
+                      {passwordOtpChannel === "whatsapp" ? "on WhatsApp" : "to your email"} for{" "}
+                      <span className="font-semibold text-slate-700">{loginEmail}</span>.
+                    </p>
+                    <Input
+                      label={`OTP ${passwordOtpChannel === "whatsapp" ? "(sent on WhatsApp)" : "(sent to email)"}`}
+                      value={passwordOtp}
+                      onChange={(e: any) => setPasswordOtp(e.target.value)}
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={verifyingPasswordOtp}
+                      className="mt-1 w-full rounded-xl bg-emerald-600 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      {verifyingPasswordOtp ? "Verifying..." : "Verify & Login"}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="text-center text-sm text-emerald-700 hover:underline"
+                      onClick={() => {
+                        setPasswordOtpSent(false);
+                        setPasswordOtpChannel(null);
+                        setPasswordOtp("");
+                      }}
+                    >
+                      Back
                     </button>
                   </form>
                 )}
