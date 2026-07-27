@@ -31,8 +31,6 @@ const SIMULATION_SLUG = "gst-gstr-1a-4";
 
 const DEFAULT_COMPANY_NAME = "HP Cements Private Limited";
 const DEFAULT_GSTIN = "07GDLCF7228G1YK";
-const DEFAULT_BANNER =
-  "Add the B2C (Large) invoice using the details configured for this exercise in the Simulation Manager.";
 
 const recordCards: { key: string; label: string }[] = [
   { key: "b2b", label: "4A, 4B, 6B, 6C - B2B Invoices" },
@@ -83,7 +81,6 @@ export default function GSTR1A4Simulation({
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const companyName = findFieldValue(simConfig, /compan/i) || DEFAULT_COMPANY_NAME;
   const gstin = findFieldValue(simConfig, /gstin/i) || DEFAULT_GSTIN;
-  const bannerText = simConfig?.bannerText || DEFAULT_BANNER;
 
   // Admin-configured (Simulation Manager / Course editor) expected invoice
   // values for the B2C (Large) - Add Invoice exercise. Never rendered in a
@@ -339,11 +336,6 @@ export default function GSTR1A4Simulation({
           </div>
         </div>
       )}
-
-      {/* Experiment Instruction Banner */}
-      <div className="bg-[#e0f2fe] border-b border-[#bae6fd] px-6 py-2.5 text-[11px] font-bold text-[#0369a1] select-none shrink-0">
-        {bannerText}
-      </div>
 
       {/* STEP 0: Return Dashboard (Welcome screen) */}
       {step === "dashboard" && (
