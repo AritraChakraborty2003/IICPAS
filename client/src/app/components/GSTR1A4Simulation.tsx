@@ -32,7 +32,7 @@ const SIMULATION_SLUG = "gst-gstr-1a-4";
 const DEFAULT_COMPANY_NAME = "HP Cements Private Limited";
 const DEFAULT_GSTIN = "07GDLCF7228G1YK";
 const DEFAULT_BANNER =
-  "Experiment 4: Add invoice for Goods sold to Mr. Rahul Chaturvedi from Bihar with Invoice Number UT24/10284 (Dated 14th June, 20XX) with total value of Rs.4,72,000/- including GST@18%. Taxable Value is Rs.4,00,000/-";
+  "Add the B2C (Large) invoice using the details configured for this exercise in the Simulation Manager.";
 
 const recordCards: { key: string; label: string }[] = [
   { key: "b2b", label: "4A, 4B, 6B, 6C - B2B Invoices" },
@@ -73,19 +73,7 @@ const POS_OPTIONS = [
 ];
 
 const RATE_ROWS = ["0%", "0.1%", "0.25%", "1%", "1.5%", "3%", "5%", "7.5%", "12%", "18%", "28%"];
-
-// Reference exercise data (Experiment 4): the values a student must transcribe
-// into the B2C (Large) - Add Invoice form. These are validation-only fallbacks
-// — they are never printed in a banner — and are overridden by the "POS" /
-// "Invoice Number" / "Invoice Date" / "Total Invoice Value" / "Taxable Value"
-// credential fields an admin sets for this slug in the Simulation Manager /
-// Course editor.
-const DEFAULT_POS = "10-Bihar";
-const DEFAULT_INVOICE_NO = "UT24/10284";
-const DEFAULT_INVOICE_DATE = "14/06/20XX";
-const DEFAULT_TOTAL_INVOICE_VALUE = "472000";
-const DEFAULT_TAXABLE_VALUE = "400000";
-const APPLICABLE_RATE_ROW = "18%";
+const DEFAULT_RATE_ROW = "18%";
 
 const returnsCalendarStatuses = ["Filed", "Filed", "Filed", "Filed", "To be Filed"];
 
@@ -100,15 +88,28 @@ export default function GSTR1A4Simulation({
   // Admin-configured (Simulation Manager / Course editor) expected invoice
   // values for the B2C (Large) - Add Invoice exercise. Never rendered in a
   // banner — only used to validate what the student types into the form.
-  const expectedPos = findFieldValue(simConfig, /pos|place.*supply|state/i) || DEFAULT_POS;
-  const expectedInvoiceNo = findFieldValue(simConfig, /invoice.?no/i) || DEFAULT_INVOICE_NO;
-  const expectedInvoiceDate = findFieldValue(simConfig, /date/i) || DEFAULT_INVOICE_DATE;
-  const expectedTotalValue =
-    findFieldValue(simConfig, /total.*value/i) || DEFAULT_TOTAL_INVOICE_VALUE;
-  const expectedTaxableValue = findFieldValue(simConfig, /taxable/i) || DEFAULT_TAXABLE_VALUE;
+  // There is no local fallback: this exercise's answer key comes entirely
+  // from the "POS" / "Invoice Number" / "Invoice Date" / "Total Invoice
+  // Value" / "Taxable Value" / "Rate" credential fields set for this slug in
+  // the Simulation Manager.
+  const expectedPos = findFieldValue(simConfig, /pos|place.*supply|state/i);
+  const expectedInvoiceNo = findFieldValue(simConfig, /invoice.?no/i);
+  const expectedInvoiceDate = findFieldValue(simConfig, /invoice.*date|date/i);
+  const expectedTotalValue = findFieldValue(simConfig, /total.*value/i);
+  const expectedTaxableValue = findFieldValue(simConfig, /taxable/i);
+  const expectedRateRow = (() => {
+    const configured = findFieldValue(simConfig, /rate/i).replace(/[%\s]/g, "");
+    return configured ? `${configured}%` : DEFAULT_RATE_ROW;
+  })();
+  const isExerciseConfigured = Boolean(
+    expectedPos && expectedInvoiceNo && expectedInvoiceDate && expectedTotalValue && expectedTaxableValue
+  );
 
   const [isExperimentStarted, setIsExperimentStarted] = useState(false);
-  const [step, setStep] = useState<Step>("dashboard");
+  // This exercise is only about the B2C (Large) add-invoice screen, so the
+  // simulation opens straight on the Returns grid (Dashboard > Returns)
+  // instead of the GST portal welcome/period-search screens.
+  const [step, setStep] = useState<Step>("view_returns");
   const [financialYear, setFinancialYear] = useState("20XX-XX");
   const [quarter, setQuarter] = useState("Quarter 1 (Apr - Jun)");
   const [period, setPeriod] = useState("Select");
@@ -143,7 +144,7 @@ export default function GSTR1A4Simulation({
   };
 
   const handleRetry = () => {
-    setStep("dashboard");
+    setStep("view_returns");
     setPeriod("Select");
     setAmendOpen(false);
     setEInvoiceHistoryOpen(false);
@@ -153,15 +154,16 @@ export default function GSTR1A4Simulation({
   };
 
   const handleFillDetail = () => {
+    if (!isExerciseConfigured) return;
     setSaveError("");
     setPos(expectedPos);
     setInvoiceNo(expectedInvoiceNo);
     setInvoiceDate(expectedInvoiceDate);
     setTotalInvoiceValue(expectedTotalValue);
-    setRowTaxableValues({ [APPLICABLE_RATE_ROW]: expectedTaxableValue });
+    setRowTaxableValues({ [expectedRateRow]: expectedTaxableValue });
   };
 
-  const taxableAtApplicableRate = rowTaxableValues[APPLICABLE_RATE_ROW] || "";
+  const taxableAtApplicableRate = rowTaxableValues[expectedRateRow] || "";
 
   const b2cFormComplete =
     pos !== "Select" &&
@@ -171,6 +173,12 @@ export default function GSTR1A4Simulation({
     taxableAtApplicableRate.trim();
 
   const handleSaveInvoice = () => {
+    if (!isExerciseConfigured) {
+      setSaveError(
+        "This exercise hasn't been configured yet. Ask your admin to set the POS, invoice number, invoice date, taxable value and total invoice value for this simulation in the Simulation Manager."
+      );
+      return;
+    }
     if (!b2cFormComplete) {
       setSaveError("Please fill all mandatory fields.");
       return;
