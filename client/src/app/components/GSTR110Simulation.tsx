@@ -32,9 +32,10 @@ export default function GSTR110Simulation({
 }: GSTR110SimulationProps = {}) {
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const otp = findFieldValue(simConfig, /otp/i) || DEFAULT_OTP;
-  const bannerText =
-    simConfig?.bannerText ||
-    `Experiment 10: File GSTR-1 Return using EVC. OTP to verify the return is ${otp}`;
+  // Only show a banner once an admin has actually configured one — no
+  // hardcoded fallback text, since that would print the OTP answer above
+  // the exercise for everyone regardless of admin setup.
+  const bannerText = simConfig?.bannerText || "";
 
   const [isExperimentStarted, setIsExperimentStarted] = useState(false);
   const [step, setStep] = useState<Step>("prepare");
@@ -124,10 +125,12 @@ export default function GSTR110Simulation({
         </div>
       )}
 
-      {/* Experiment Instruction Banner */}
-      <div className="bg-[#e0f2fe] border-b border-[#bae6fd] px-6 py-2.5 text-[11px] font-bold text-[#0369a1] select-none shrink-0">
-        {bannerText}
-      </div>
+      {/* Experiment Instruction Banner — only rendered once an admin has configured one */}
+      {bannerText && (
+        <div className="bg-[#e0f2fe] border-b border-[#bae6fd] px-6 py-2.5 text-[11px] font-bold text-[#0369a1] select-none shrink-0">
+          {bannerText}
+        </div>
+      )}
 
       {/* Blue GST Header */}
       <div className="bg-[#0a2558] text-white w-full select-none shrink-0">
