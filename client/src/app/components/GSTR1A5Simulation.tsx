@@ -18,17 +18,16 @@ type Step =
   | "select_period"
   | "view_returns"
   | "gstr1_view"
-  | "b2b_summary"
-  | "b2b_add";
+  | "exports_add";
 
-interface GSTR1A3SimulationProps {
+interface GSTR1A5SimulationProps {
   onComplete?: () => void;
 }
 
-// /simulations/gst/gstr-1a-3 -> gst-gstr-1a-3 (matches the slug derivation
+// /simulations/gst/gstr-1a-5 -> gst-gstr-1a-5 (matches the slug derivation
 // used by the admin Course editor's simulation-card quick insert and the
 // Simulation Manager, so credentials set there apply here automatically).
-const SIMULATION_SLUG = "gst-gstr-1a-3";
+const SIMULATION_SLUG = "gst-gstr-1a-5";
 
 const DEFAULT_COMPANY_NAME = "HP Cements Private Limited";
 const DEFAULT_GSTIN = "07GDLCF7228G1YK";
@@ -49,76 +48,57 @@ const recordCards: { key: string; label: string }[] = [
   { key: "sec9_5", label: "15 - Supplies U/s 9(5)" },
 ];
 
-const POS_OPTIONS = [
-  "01-Jammu & Kashmir",
-  "02-Himachal Pradesh",
-  "03-Punjab",
-  "06-Haryana",
-  "07-Delhi",
-  "08-Rajasthan",
-  "09-Uttar Pradesh",
-  "10-Bihar",
-  "19-West Bengal",
-  "21-Odisha",
-  "22-Chhattisgarh",
-  "23-Madhya Pradesh",
-  "24-Gujarat",
-  "27-Maharashtra",
-  "29-Karnataka",
-  "32-Kerala",
-  "33-Tamil Nadu",
-  "36-Telangana",
-  "37-Andhra Pradesh",
-];
+const GST_PAYMENT_OPTIONS = ["With Payment of Tax", "Without Payment of Tax"];
+const DEFAULT_GST_PAYMENT = "With Payment of Tax";
 
 const RATE_ROWS = ["0%", "0.1%", "0.25%", "1%", "1.5%", "3%", "5%", "7.5%", "12%", "18%", "28%"];
 const DEFAULT_RATE_ROW = "18%";
 
 const returnsCalendarStatuses = ["Filed", "Filed", "Filed", "Filed", "To be Filed"];
 
-export default function GSTR1A3Simulation({
+export default function GSTR1A5Simulation({
   onComplete,
-}: GSTR1A3SimulationProps = {}) {
+}: GSTR1A5SimulationProps = {}) {
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const companyName = findFieldValue(simConfig, /compan/i) || DEFAULT_COMPANY_NAME;
   const gstin = findFieldValue(simConfig, /gstin/i) || DEFAULT_GSTIN;
-  const bannerText = simConfig?.bannerText || "";
 
   // Admin-configured (Simulation Manager / Course editor) expected invoice
-  // values for the B2B - Add Invoice exercise. Never hardcoded and never
-  // rendered anywhere except this validation — the answer key comes entirely
-  // from the "Receiver GSTIN" / "Receiver Name" / "Invoice Number" /
-  // "Invoice Date" / "POS" / "Total Invoice Value" / "Taxable Value" / "Rate"
-  // credential fields set for this slug in the Simulation Manager.
-  const expectedReceiverGstin = findFieldValue(
-    simConfig,
-    /(customer|receiver|buyer).*gstin|(customer|receiver|buyer).*gst\b/i
-  );
-  const expectedReceiverName = findFieldValue(simConfig, /(customer|receiver|buyer).*name/i);
+  // values for the Exports (6A) - Add Invoice exercise. Never rendered in a
+  // banner — only used to validate what the student types into the form.
+  // The core answer key (Invoice Number / Invoice Date / Total Invoice
+  // Value / Taxable Value) comes entirely from the credential fields set
+  // for this slug in the Simulation Manager; there is no local fallback
+  // for those. Port Code / Shipping Bill No. / Shipping Bill Date are
+  // optional fields that are only checked when the admin has set them.
   const expectedInvoiceNo = findFieldValue(simConfig, /invoice.?no/i);
   const expectedInvoiceDate = findFieldValue(simConfig, /invoice.*date|date/i);
-  const expectedPos = findFieldValue(simConfig, /pos|place.*supply|state/i);
+  const expectedPortCode = findFieldValue(simConfig, /port/i);
+  const expectedShippingBillNo = findFieldValue(
+    simConfig,
+    /shipping.*bill.*no|bill.*export.*no/i
+  );
+  const expectedShippingBillDate = findFieldValue(
+    simConfig,
+    /shipping.*bill.*date|bill.*export.*date/i
+  );
   const expectedTotalValue = findFieldValue(simConfig, /total.*value/i);
   const expectedTaxableValue = findFieldValue(simConfig, /taxable/i);
+  const expectedGstPayment =
+    findFieldValue(simConfig, /gst.*payment|payment.*tax/i) || DEFAULT_GST_PAYMENT;
   const expectedRateRow = (() => {
     const configured = findFieldValue(simConfig, /rate/i).replace(/[%\s]/g, "");
     return configured ? `${configured}%` : DEFAULT_RATE_ROW;
   })();
   const isExerciseConfigured = Boolean(
-    expectedReceiverGstin &&
-      expectedReceiverName &&
-      expectedInvoiceNo &&
-      expectedInvoiceDate &&
-      expectedPos &&
-      expectedTotalValue &&
-      expectedTaxableValue
+    expectedInvoiceNo && expectedInvoiceDate && expectedTotalValue && expectedTaxableValue
   );
 
   const [isExperimentStarted, setIsExperimentStarted] = useState(false);
-  // This exercise is only about the B2B add-invoice screen, so the
-  // simulation opens straight on the Add Record Details grid instead of the
-  // GST portal welcome/period-search/returns-grid screens.
-  const [step, setStep] = useState<Step>("gstr1_view");
+  // This exercise is only about the Exports (6A) add-invoice screen, so the
+  // simulation opens straight on the Returns grid (Dashboard > Returns)
+  // instead of the GST portal welcome/period-search screens.
+  const [step, setStep] = useState<Step>("view_returns");
   const [financialYear, setFinancialYear] = useState("20XX-XX");
   const [quarter, setQuarter] = useState("Quarter 1 (Apr - Jun)");
   const [period, setPeriod] = useState("Select");
@@ -127,27 +107,19 @@ export default function GSTR1A3Simulation({
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
 
-  // B2B - Add Invoice form state
-  const [receiverGstin, setReceiverGstin] = useState("");
-  const [receiverName, setReceiverName] = useState("");
+  // Exports (6A) - Add Invoice form state
   const [invoiceNo, setInvoiceNo] = useState("");
   const [invoiceDate, setInvoiceDate] = useState("");
-  const [pos, setPos] = useState("Select");
+  const [portCode, setPortCode] = useState("");
+  const [shippingBillNo, setShippingBillNo] = useState("");
+  const [shippingBillDate, setShippingBillDate] = useState("");
   const [totalInvoiceValue, setTotalInvoiceValue] = useState("");
+  const [gstPayment, setGstPayment] = useState("Select");
   const [rowTaxableValues, setRowTaxableValues] = useState<Record<string, string>>({});
   const [saveError, setSaveError] = useState("");
-  const [savedInvoice, setSavedInvoice] = useState<{
-    invoiceNo: string;
-    invoiceDate: string;
-    totalValue: string;
-    taxableValue: string;
-    integratedTax: number;
-    centralTax: number;
-    stateTax: number;
-  } | null>(null);
 
   useEffect(() => {
-    if (step !== "b2b_add") setShowSuccessOverlay(false);
+    if (step !== "gstr1_view") setShowSuccessOverlay(false);
   }, [step]);
 
   const handleSearchClick = () => {
@@ -155,19 +127,19 @@ export default function GSTR1A3Simulation({
   };
 
   const resetInvoiceForm = () => {
-    setReceiverGstin("");
-    setReceiverName("");
     setInvoiceNo("");
     setInvoiceDate("");
-    setPos("Select");
+    setPortCode("");
+    setShippingBillNo("");
+    setShippingBillDate("");
     setTotalInvoiceValue("");
+    setGstPayment("Select");
     setRowTaxableValues({});
     setSaveError("");
-    setSavedInvoice(null);
   };
 
   const handleRetry = () => {
-    setStep("gstr1_view");
+    setStep("view_returns");
     setPeriod("Select");
     setAmendOpen(false);
     setEInvoiceHistoryOpen(false);
@@ -179,83 +151,59 @@ export default function GSTR1A3Simulation({
   const handleFillDetail = () => {
     if (!isExerciseConfigured) return;
     setSaveError("");
-    setReceiverGstin(expectedReceiverGstin);
-    setReceiverName(expectedReceiverName);
     setInvoiceNo(expectedInvoiceNo);
     setInvoiceDate(expectedInvoiceDate);
-    setPos(expectedPos);
+    setPortCode(expectedPortCode);
+    setShippingBillNo(expectedShippingBillNo);
+    setShippingBillDate(expectedShippingBillDate);
     setTotalInvoiceValue(expectedTotalValue);
+    setGstPayment(expectedGstPayment);
     setRowTaxableValues({ [expectedRateRow]: expectedTaxableValue });
   };
 
   const taxableAtApplicableRate = rowTaxableValues[expectedRateRow] || "";
 
-  // Supply Type auto-derives from the selected POS relative to the seller's
-  // own home state (first two digits of the company GSTIN) — matching how
-  // the real GST portal fills this field once POS is chosen.
-  const companyStateCode = gstin.slice(0, 2);
-  const posStateCode = pos !== "Select" ? pos.split("-")[0] : "";
-  const supplyType = posStateCode
-    ? posStateCode === companyStateCode
-      ? "Intra-State"
-      : "Inter-State"
-    : "";
-
-  const b2bFormComplete =
-    receiverGstin.trim() &&
-    receiverName.trim() &&
+  const exportsFormComplete =
     invoiceNo.trim() &&
     invoiceDate.trim() &&
-    pos !== "Select" &&
     totalInvoiceValue.trim() &&
+    gstPayment !== "Select" &&
     taxableAtApplicableRate.trim();
 
   const handleSaveInvoice = () => {
     if (!isExerciseConfigured) {
       setSaveError(
-        "This exercise hasn't been configured yet. Ask your admin to set the receiver GSTIN, receiver name, invoice number, invoice date, POS, taxable value and total invoice value for this simulation in the Simulation Manager."
+        "This exercise hasn't been configured yet. Ask your admin to set the invoice number, invoice date, taxable value and total invoice value for this simulation in the Simulation Manager."
       );
       return;
     }
-    if (!b2bFormComplete) {
+    if (!exportsFormComplete) {
       setSaveError("Please fill all mandatory fields.");
       return;
     }
     const normalize = (value: string) => value.trim().replace(/[,\s]/g, "");
+    const matchesIfExpected = (expected: string, actual: string) =>
+      !expected.trim() || expected.trim().toLowerCase() === actual.trim().toLowerCase();
+
     const isValid =
-      normalize(receiverGstin).toUpperCase() === normalize(expectedReceiverGstin).toUpperCase() &&
-      receiverName.trim().toLowerCase() === expectedReceiverName.trim().toLowerCase() &&
       invoiceNo.trim().toUpperCase() === expectedInvoiceNo.trim().toUpperCase() &&
       invoiceDate.trim().toLowerCase() === expectedInvoiceDate.trim().toLowerCase() &&
-      pos.trim().toLowerCase() === expectedPos.trim().toLowerCase() &&
       normalize(totalInvoiceValue) === normalize(expectedTotalValue) &&
-      normalize(taxableAtApplicableRate) === normalize(expectedTaxableValue);
+      normalize(taxableAtApplicableRate) === normalize(expectedTaxableValue) &&
+      gstPayment.trim().toLowerCase() === expectedGstPayment.trim().toLowerCase() &&
+      matchesIfExpected(expectedPortCode, portCode) &&
+      matchesIfExpected(expectedShippingBillNo, shippingBillNo) &&
+      matchesIfExpected(expectedShippingBillDate, shippingBillDate);
 
     if (!isValid) {
       setSaveError(
-        "The invoice details entered do not match this exercise. Please double-check the receiver GSTIN, receiver name, invoice number, invoice date, POS, taxable value, and total invoice value."
+        "The invoice details entered do not match this exercise. Please double-check the invoice number, invoice date, port code, shipping bill details, taxable value, and total invoice value."
       );
       return;
     }
 
-    const taxableNumber = parseFloat(normalize(taxableAtApplicableRate));
-    const ratePct = parseFloat(expectedRateRow);
-    const isIntraState = supplyType === "Intra-State";
-    const integratedTax = isIntraState ? 0 : Math.round(taxableNumber * (ratePct / 100));
-    const centralTax = isIntraState ? Math.round(taxableNumber * (ratePct / 200)) : 0;
-    const stateTax = isIntraState ? Math.round(taxableNumber * (ratePct / 200)) : 0;
-
     setSaveError("");
-    setSavedInvoice({
-      invoiceNo,
-      invoiceDate,
-      totalValue: totalInvoiceValue,
-      taxableValue: taxableAtApplicableRate,
-      integratedTax,
-      centralTax,
-      stateTax,
-    });
-    setRecordCounts((prev) => ({ ...prev, b2b: 1 }));
+    setRecordCounts((prev) => ({ ...prev, exports: 1 }));
     setShowSuccessOverlay(true);
     onComplete?.();
   };
@@ -336,7 +284,7 @@ export default function GSTR1A3Simulation({
                     if (label === "Dashboard") setStep("dashboard");
                     if (label === "Returns") setStep("select_period");
                     if (label === "GSTR-1" || label === "GSTR-1/IFF") setStep("gstr1_view");
-                    if (label === "B2B") setStep("b2b_summary");
+                    if (label === "EXP") setStep("exports_add");
                   }}
                 >
                   {label}
@@ -393,12 +341,6 @@ export default function GSTR1A3Simulation({
               Retry
             </button>
           </div>
-        </div>
-      )}
-
-      {bannerText && (
-        <div className="bg-[#e0f2fe] border-b border-[#bae6fd] px-6 py-2.5 text-[11px] font-bold text-[#0369a1] select-none shrink-0">
-          {bannerText}
         </div>
       )}
 
@@ -785,12 +727,12 @@ export default function GSTR1A3Simulation({
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {recordCards.map((card) => {
-                  const isClickable = card.key === "b2b";
+                  const isClickable = card.key === "exports";
                   const count = recordCounts[card.key] || 0;
                   return (
                     <div
                       key={card.key}
-                      onClick={isClickable ? () => setStep("b2b_summary") : undefined}
+                      onClick={isClickable ? () => setStep("exports_add") : undefined}
                       className={`border bg-white transition-all flex flex-col min-h-[110px] rounded overflow-hidden shadow-sm ${
                         isClickable
                           ? "cursor-pointer border-2 border-red-500 hover:shadow-md"
@@ -878,11 +820,11 @@ export default function GSTR1A3Simulation({
         </div>
       )}
 
-      {/* STEP 4: B2B Invoices - Summary (Processed Invoices list) */}
-      {step === "b2b_summary" && (
+      {/* STEP 4: Exports (6A) - Add Invoice form */}
+      {step === "exports_add" && (
         <div className="flex-1 w-full bg-[#f1f5f9] flex flex-col">
           {navHeader}
-          {breadcrumb(["Dashboard", "Returns", "GSTR-1", "B2B"])}
+          {breadcrumb(["Dashboard", "Returns", "GSTR-1/IFF", "EXP"])}
 
           <div className="flex-1 p-5 space-y-4 animate-fadeIn">
             <button
@@ -892,193 +834,39 @@ export default function GSTR1A3Simulation({
               <FaArrowLeft size={10} /> Back
             </button>
 
-            <div className="bg-white border border-[#cbd5e1] p-4 flex items-center justify-between">
-              <h2 className="text-[13px] font-extrabold text-[#0a2558]">B2B Invoices - Summary</h2>
-              <div className="flex items-center gap-2">
-                <button className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white text-[9.5px] font-bold uppercase px-3 py-1.5">
-                  Help
-                </button>
-                <button
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5"
-                  aria-label="Refresh"
-                >
-                  <RefreshCw size={12} />
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white border border-[#cbd5e1]">
-              <div className="flex border-b border-slate-200 text-[10.5px] font-bold">
-                <span className="px-4 py-2.5 border-b-2 border-[#0f3a9a] text-[#0f3a9a]">
-                  Uploaded by Taxpayer
-                </span>
-                <span className="px-4 py-2.5 text-slate-400 cursor-not-allowed">
-                  Uploaded by Receiver
-                </span>
-                <span className="px-4 py-2.5 text-slate-400 cursor-not-allowed">
-                  Modified by Receiver
-                </span>
-                <span className="px-4 py-2.5 text-slate-400 cursor-not-allowed">
-                  Rejected by Receiver
-                </span>
-              </div>
-
-              <div className="p-4">
-                <h3 className="text-[#0f3a9a] font-extrabold text-[11.5px] mb-3">
-                  Processed Invoices
-                </h3>
-                <div className="overflow-x-auto border border-slate-300">
-                  <table className="w-full text-[10.5px]">
-                    <thead>
-                      <tr className="bg-slate-100 text-slate-700 font-extrabold">
-                        <th className="border border-slate-300 px-3 py-2 text-left">Invoice No.</th>
-                        <th className="border border-slate-300 px-3 py-2 text-left">Invoice Date</th>
-                        <th className="border border-slate-300 px-3 py-2 text-left">Total Invoice Value (₹)</th>
-                        <th className="border border-slate-300 px-3 py-2 text-left">Total Taxable Value (₹)</th>
-                        <th className="border border-slate-300 px-3 py-2 text-left">Integrated Tax (₹)</th>
-                        <th className="border border-slate-300 px-3 py-2 text-left">Central tax (₹)</th>
-                        <th className="border border-slate-300 px-3 py-2 text-left">State/UT Tax (₹)</th>
-                        <th className="border border-slate-300 px-3 py-2 text-left">Cess (₹)</th>
-                        <th className="border border-slate-300 px-3 py-2 text-left">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {savedInvoice ? (
-                        <tr>
-                          <td className="border border-slate-300 px-3 py-1.5">{savedInvoice.invoiceNo}</td>
-                          <td className="border border-slate-300 px-3 py-1.5">{savedInvoice.invoiceDate}</td>
-                          <td className="border border-slate-300 px-3 py-1.5">{savedInvoice.totalValue}</td>
-                          <td className="border border-slate-300 px-3 py-1.5">{savedInvoice.taxableValue}</td>
-                          <td className="border border-slate-300 px-3 py-1.5">{savedInvoice.integratedTax}</td>
-                          <td className="border border-slate-300 px-3 py-1.5">{savedInvoice.centralTax}</td>
-                          <td className="border border-slate-300 px-3 py-1.5">{savedInvoice.stateTax}</td>
-                          <td className="border border-slate-300 px-3 py-1.5">0</td>
-                          <td className="border border-slate-300 px-3 py-1.5 text-emerald-600 font-bold">Saved</td>
-                        </tr>
-                      ) : (
-                        <tr>
-                          <td
-                            colSpan={9}
-                            className="border border-slate-300 px-3 py-4 text-center text-slate-400"
-                          >
-                            No invoices added yet.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setStep("gstr1_view")}
-                className="border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold uppercase text-[11px] px-5 py-2 rounded cursor-pointer"
-              >
-                Back
-              </button>
-              <button
-                onClick={() => setStep("b2b_add")}
-                className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white border-2 border-red-500 font-bold uppercase text-[11px] px-6 py-2 rounded cursor-pointer transition-colors"
-              >
-                Add Details
-              </button>
-            </div>
-          </div>
-          {footer}
-        </div>
-      )}
-
-      {/* STEP 5: B2B - Add Invoice form */}
-      {step === "b2b_add" && (
-        <div className="flex-1 w-full bg-[#f1f5f9] flex flex-col">
-          {navHeader}
-          {breadcrumb(["Dashboard", "Returns", "GSTR-1", "B2B"])}
-
-          <div className="flex-1 p-5 space-y-4 animate-fadeIn">
-            <button
-              onClick={() => setStep("b2b_summary")}
-              className="flex items-center gap-1.5 text-slate-600 hover:text-slate-900 font-bold uppercase text-[10px]"
-            >
-              <FaArrowLeft size={10} /> Back
-            </button>
-
             <div className="bg-[#0d9488] text-white px-4 py-2.5 font-extrabold text-[12px]">
-              B2B - Add Invoice
+              Exports - Add Details
             </div>
 
             <div className="bg-white border border-[#cbd5e1] p-5 text-[11px]">
-              <div className="flex justify-end mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <button
+                  type="button"
+                  onClick={handleFillDetail}
+                  disabled={!isExerciseConfigured}
+                  title={
+                    isExerciseConfigured
+                      ? undefined
+                      : "This exercise's answer key hasn't been set in the Simulation Manager yet."
+                  }
+                  className={`inline-flex items-center gap-1.5 font-bold uppercase text-[10.5px] px-3.5 py-2 rounded transition-colors ${
+                    isExerciseConfigured
+                      ? "bg-[#0f3a9a] hover:bg-[#0a2558] text-white cursor-pointer"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  }`}
+                >
+                  <Wand2 size={12} />
+                  Fill Detail
+                </button>
                 <span className="text-[10px] text-red-500 font-semibold">
                   <span className="text-red-500 font-bold">*</span> Indicates Mandatory Fields
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4 text-[10.5px] text-slate-600">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" disabled />
-                  Deemed Exports
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" disabled />
-                  SEZ Supplies with payment
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" disabled />
-                  SEZ Supplies without payment
-                </label>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 text-[10.5px] text-slate-600">
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" disabled />
-                  Supply attract Reverse Charge
-                </label>
-                <label className="flex items-center gap-2">
-                  <input type="checkbox" disabled />
-                  Intra-State Supplies attracting IGST
-                </label>
-              </div>
-              <div className="flex items-start gap-2 mb-5 text-[10.5px] text-slate-600">
-                <input type="checkbox" className="mt-0.5" disabled />
-                <span>
-                  Is the supply eligible to be taxed at a differential percentage (%) of
-                  the existing rate of tax, as notified by the Government?
                 </span>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
                 <div className="space-y-1.5">
                   <label className="text-slate-700 font-extrabold text-[10.5px]">
-                    Receiver GSTIN/UIN <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    value={receiverGstin}
-                    onChange={(e) => {
-                      setSaveError("");
-                      setReceiverGstin(e.target.value);
-                    }}
-                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white text-slate-800 text-[11px] outline-none font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-slate-700 font-extrabold text-[10.5px]">
-                    Receiver Name <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    value={receiverName}
-                    onChange={(e) => {
-                      setSaveError("");
-                      setReceiverName(e.target.value);
-                    }}
-                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white text-slate-800 text-[11px] outline-none font-semibold"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-slate-700 font-extrabold text-[10.5px]">
-                    Invoice No. <span className="text-red-500">*</span>
+                    Invoice no. <span className="text-red-500">*</span>
                   </label>
                   <input
                     value={invoiceNo}
@@ -1092,7 +880,7 @@ export default function GSTR1A3Simulation({
 
                 <div className="space-y-1.5">
                   <label className="text-slate-700 font-extrabold text-[10.5px]">
-                    Invoice Date <span className="text-red-500">*</span>
+                    Invoice date <span className="text-red-500">*</span>
                   </label>
                   <input
                     value={invoiceDate}
@@ -1106,30 +894,51 @@ export default function GSTR1A3Simulation({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-slate-700 font-extrabold text-[10.5px] flex items-center gap-1">
-                    POS <FaInfoCircle size={9} className="text-slate-400" />
-                    <span className="text-red-500">*</span>
+                  <label className="text-slate-700 font-extrabold text-[10.5px]">
+                    Port Code
                   </label>
-                  <select
-                    value={pos}
+                  <input
+                    value={portCode}
                     onChange={(e) => {
                       setSaveError("");
-                      setPos(e.target.value);
+                      setPortCode(e.target.value);
                     }}
                     className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white text-slate-800 text-[11px] outline-none font-semibold"
-                  >
-                    <option value="Select">Select</option>
-                    {POS_OPTIONS.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-slate-700 font-extrabold text-[10.5px]">
-                    Total Invoice Value (₹) <span className="text-red-500">*</span>
+                    Shipping Bill No./Bill of Export No.
+                  </label>
+                  <input
+                    value={shippingBillNo}
+                    onChange={(e) => {
+                      setSaveError("");
+                      setShippingBillNo(e.target.value);
+                    }}
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white text-slate-800 text-[11px] outline-none font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-700 font-extrabold text-[10.5px]">
+                    Shipping Bill Date./Bill of Export Date
+                  </label>
+                  <input
+                    value={shippingBillDate}
+                    onChange={(e) => {
+                      setSaveError("");
+                      setShippingBillDate(e.target.value);
+                    }}
+                    placeholder="dd/mm/yyyy"
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white text-slate-800 text-[11px] outline-none font-semibold placeholder:text-slate-400 placeholder:font-normal"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-700 font-extrabold text-[10.5px]">
+                    Total invoice value (₹) <span className="text-red-500">*</span>
                   </label>
                   <input
                     value={totalInvoiceValue}
@@ -1147,7 +956,61 @@ export default function GSTR1A3Simulation({
                   </label>
                   <input
                     disabled
-                    value={supplyType || "Select POS first"}
+                    value="Inter-State"
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-slate-100 text-slate-500 text-[11px] outline-none font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-700 font-extrabold text-[10.5px]">
+                    GST Payment <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={gstPayment}
+                    onChange={(e) => {
+                      setSaveError("");
+                      setGstPayment(e.target.value);
+                    }}
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white text-slate-800 text-[11px] outline-none font-semibold"
+                  >
+                    <option value="Select">Select</option>
+                    {GST_PAYMENT_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-700 font-extrabold text-[10.5px]">
+                    Source
+                  </label>
+                  <input
+                    disabled
+                    value=""
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-slate-100 text-slate-500 text-[11px] outline-none font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-700 font-extrabold text-[10.5px]">
+                    IRN
+                  </label>
+                  <input
+                    disabled
+                    value=""
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-slate-100 text-slate-500 text-[11px] outline-none font-semibold"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-slate-700 font-extrabold text-[10.5px]">
+                    IRN date
+                  </label>
+                  <input
+                    disabled
+                    value=""
                     className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-slate-100 text-slate-500 text-[11px] outline-none font-semibold"
                   />
                 </div>
@@ -1160,14 +1023,21 @@ export default function GSTR1A3Simulation({
                 <table className="w-full text-[10.5px]">
                   <thead>
                     <tr className="bg-slate-100 text-slate-700 font-extrabold">
-                      <th className="border border-slate-300 px-3 py-2 text-left">Rate (%)</th>
-                      <th className="border border-slate-300 px-3 py-2 text-left">
+                      <th className="border border-slate-300 px-3 py-2 text-left" rowSpan={2}>
+                        Rate (%)
+                      </th>
+                      <th className="border border-slate-300 px-3 py-2 text-left" rowSpan={2}>
                         Taxable value (₹) <span className="text-red-500">*</span>
                       </th>
-                      <th className="border border-slate-300 px-3 py-2 text-left">Integrated Tax (₹)</th>
-                      <th className="border border-slate-300 px-3 py-2 text-left">Central Tax (₹)</th>
-                      <th className="border border-slate-300 px-3 py-2 text-left">State/UT Tax (₹)</th>
-                      <th className="border border-slate-300 px-3 py-2 text-left">Cess (₹)</th>
+                      <th className="border border-slate-300 px-3 py-2 text-center" colSpan={2}>
+                        Amount of tax
+                      </th>
+                    </tr>
+                    <tr className="bg-slate-100 text-slate-700 font-extrabold">
+                      <th className="border border-slate-300 px-3 py-2 text-left">
+                        Integrated tax (₹) <span className="text-red-500">*</span>
+                      </th>
+                      <th className="border border-slate-300 px-3 py-2 text-left">CESS (₹)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1175,14 +1045,9 @@ export default function GSTR1A3Simulation({
                       const ratePct = parseFloat(rateLabel);
                       const taxableValue = rowTaxableValues[rateLabel] || "";
                       const taxableNumber = parseFloat(taxableValue.replace(/[,\s]/g, ""));
-                      const hasTaxable = Number.isFinite(taxableNumber);
-                      const isIntraState = supplyType === "Intra-State";
-                      const integratedTax =
-                        hasTaxable && !isIntraState ? Math.round(taxableNumber * (ratePct / 100)) : "";
-                      const centralTax =
-                        hasTaxable && isIntraState ? Math.round(taxableNumber * (ratePct / 200)) : "";
-                      const stateTax =
-                        hasTaxable && isIntraState ? Math.round(taxableNumber * (ratePct / 200)) : "";
+                      const integratedTax = Number.isFinite(taxableNumber)
+                        ? Math.round(taxableNumber * (ratePct / 100))
+                        : "";
                       return (
                         <tr key={rateLabel}>
                           <td className="border border-slate-300 px-3 py-1.5 font-bold text-slate-600">
@@ -1204,12 +1069,6 @@ export default function GSTR1A3Simulation({
                           <td className="border border-slate-300 px-3 py-1.5 bg-slate-100 text-slate-500">
                             {integratedTax}
                           </td>
-                          <td className="border border-slate-300 px-3 py-1.5 bg-slate-100 text-slate-500">
-                            {centralTax}
-                          </td>
-                          <td className="border border-slate-300 px-3 py-1.5 bg-slate-100 text-slate-500">
-                            {stateTax}
-                          </td>
                           <td className="border border-slate-300 px-3 py-1.5 bg-slate-100" />
                         </tr>
                       );
@@ -1224,39 +1083,19 @@ export default function GSTR1A3Simulation({
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-2">
                 <button
-                  type="button"
-                  onClick={handleFillDetail}
-                  disabled={!isExerciseConfigured}
-                  title={
-                    isExerciseConfigured
-                      ? undefined
-                      : "This exercise's answer key hasn't been set in the Simulation Manager yet."
-                  }
-                  className={`inline-flex items-center gap-1.5 font-bold uppercase text-[10.5px] px-3.5 py-2 rounded transition-colors ${
-                    isExerciseConfigured
-                      ? "bg-[#0f3a9a] hover:bg-[#0a2558] text-white cursor-pointer"
-                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
-                  }`}
+                  onClick={() => setStep("gstr1_view")}
+                  className="border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold uppercase text-[11px] px-5 py-2 rounded cursor-pointer"
                 >
-                  <Wand2 size={12} />
-                  Fill Detail
+                  Back
                 </button>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setStep("b2b_summary")}
-                    className="border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold uppercase text-[11px] px-5 py-2 rounded cursor-pointer"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={handleSaveInvoice}
-                    className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white font-bold uppercase text-[11px] px-6 py-2 rounded cursor-pointer transition-colors"
-                  >
-                    Save
-                  </button>
-                </div>
+                <button
+                  onClick={handleSaveInvoice}
+                  className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white font-bold uppercase text-[11px] px-6 py-2 rounded cursor-pointer transition-colors"
+                >
+                  Save
+                </button>
               </div>
             </div>
           </div>
