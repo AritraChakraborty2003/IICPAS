@@ -787,6 +787,336 @@ export default function GSTR1A2Simulation({
           {footer}
         </div>
       )}
+
+      {/* STEP 4: B2B Invoices - Summary */}
+      {step === "b2b_summary" && (
+        <div className="flex-1 w-full bg-[#f1f5f9] flex flex-col">
+          {navHeader}
+          {breadcrumb(["Dashboard", "Returns", "GSTR-1", "B2B"])}
+
+          <div className="flex-1 p-5 space-y-4 animate-fadeIn">
+            <div className="bg-white border border-[#cbd5e1] p-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-2 text-[11px]">
+                {[
+                  ["GSTIN", gstin],
+                  ["Legal Name", companyName],
+                  ["Trade Name", companyName],
+                  ["FY", "20XX-XX"],
+                  ["Return Period", "June"],
+                  ["Status", "Not Filed"],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <span className="font-bold text-slate-500">{label}</span>
+                    <span className="text-slate-400"> - </span>
+                    <span className="font-bold text-slate-800">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13px] font-extrabold text-[#0a2558]">
+                B2B Invoices - Summary
+              </h3>
+              <div className="flex items-center gap-2">
+                <button className="bg-[#1e3b6a] hover:bg-[#152a4e] text-white text-[9.5px] font-bold uppercase px-3 py-1.5">
+                  Help
+                </button>
+                <button
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-600 p-1.5"
+                  aria-label="Refresh"
+                >
+                  <RefreshCw size={12} />
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-white border border-[#cbd5e1]">
+              <div className="flex flex-wrap border-b border-[#cbd5e1] text-[10.5px] font-bold">
+                {["Uploaded by Taxpayer", "Uploaded by Receiver", "Modified by Receiver", "Rejected by Receiver"].map(
+                  (tab, idx) => (
+                    <button
+                      key={tab}
+                      className={`px-4 py-2.5 ${
+                        idx === 0
+                          ? "text-[#0f3a9a] border-b-2 border-[#0f3a9a]"
+                          : "text-slate-500 hover:text-slate-700"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  )
+                )}
+              </div>
+
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-[11px] font-extrabold text-[#0a2558]">
+                    Processed Invoices
+                  </h4>
+                  <div className="flex items-center gap-2 text-[10px] font-semibold text-slate-500">
+                    Display/Hide Columns:
+                    <select className="border border-slate-300 rounded px-2 py-1 bg-white">
+                      <option>All</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[10.5px] border border-slate-200">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-600 font-bold">
+                        {[
+                          "Invoice No.",
+                          "Invoice Date",
+                          "Total Invoice Value (₹)",
+                          "Total Taxable Value (₹)",
+                          "Integrated Tax (₹)",
+                          "Central tax (₹)",
+                          "State/UT Tax (₹)",
+                          "Cess (₹)",
+                          "Actions",
+                        ].map((col) => (
+                          <th key={col} className="px-3 py-2 text-left border-b border-slate-200">
+                            {col}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {savedInvoice ? (
+                        <tr>
+                          <td className="px-3 py-2">{savedInvoice.invoiceNo}</td>
+                          <td className="px-3 py-2">{savedInvoice.invoiceDate}</td>
+                          <td className="px-3 py-2">
+                            {Number(savedInvoice.totalValue).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-3 py-2">
+                            {DEFAULT_TAXABLE_VALUE.toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-3 py-2">0</td>
+                          <td className="px-3 py-2">
+                            {(DEFAULT_TAX_AMOUNT / 2).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-3 py-2">
+                            {(DEFAULT_TAX_AMOUNT / 2).toLocaleString("en-IN")}
+                          </td>
+                          <td className="px-3 py-2">0</td>
+                          <td className="px-3 py-2 text-[#0f3a9a] font-bold cursor-pointer">
+                            Edit
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <td colSpan={9} className="px-3 py-6 text-center text-slate-400">
+                            No invoices added yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setStep("gstr1_view")}
+                className="border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold uppercase text-[11px] px-5 py-2 rounded cursor-pointer"
+              >
+                Back
+              </button>
+              <button
+                onClick={() => setStep("b2b_add")}
+                className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white font-bold uppercase text-[11px] px-5 py-2 rounded cursor-pointer transition-colors"
+              >
+                Add Details
+              </button>
+            </div>
+          </div>
+          {footer}
+        </div>
+      )}
+
+      {/* STEP 5: B2B - Add Invoice form */}
+      {step === "b2b_add" && (
+        <div className="flex-1 w-full bg-[#f1f5f9] flex flex-col">
+          {navHeader}
+          {breadcrumb(["Dashboard", "Returns", "GSTR-1", "B2B"])}
+
+          <div className="flex-1 p-5 animate-fadeIn">
+            <div className="bg-[#0d9488] text-white px-4 py-2.5 font-extrabold text-[12px]">
+              B2B- Add Invoice
+            </div>
+
+            <div className="bg-white border border-t-0 border-[#cbd5e1] p-5 text-[11px]">
+              <div className="flex justify-end mb-4">
+                <span className="text-[10px] text-red-500 font-semibold">
+                  <span className="text-red-500 font-bold">*</span> Indicates Mandatory Fields
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5 text-slate-700 font-semibold">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="h-4 w-4" /> Deemed Exports
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="h-4 w-4" /> SEZ Supplies with payment
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="h-4 w-4" /> SEZ Supplies without payment
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="h-4 w-4" /> Supply attract Reverse Charge
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" className="h-4 w-4" /> Intra-State Supplies attracting
+                  IGST
+                </label>
+              </div>
+
+              <label className="flex items-start gap-2 cursor-pointer text-slate-700 font-semibold mb-6">
+                <input type="checkbox" className="mt-0.5 h-4 w-4" />
+                Is the supply eligible to be taxed at a differential percentage (%) of the
+                existing rate of tax, as notified by the Government?
+              </label>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="space-y-1.5">
+                  <label className="block font-extrabold text-slate-700">
+                    Receiver GSTIN/UIN <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={receiverGstin}
+                    onChange={(e) => {
+                      setReceiverGstin(e.target.value.toUpperCase());
+                      setSaveError("");
+                    }}
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-slate-800 outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-extrabold text-slate-700">
+                    Receiver Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={receiverName}
+                    onChange={(e) => {
+                      setReceiverName(e.target.value);
+                      setSaveError("");
+                    }}
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-slate-800 outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-extrabold text-slate-700">
+                    Invoice No. <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={invoiceNo}
+                    onChange={(e) => {
+                      setInvoiceNo(e.target.value);
+                      setSaveError("");
+                    }}
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-slate-800 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-extrabold text-slate-700">
+                    Invoice Date <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={invoiceDate}
+                    onChange={(e) => {
+                      setInvoiceDate(e.target.value);
+                      setSaveError("");
+                    }}
+                    placeholder="dd/mm/yyyy"
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-slate-800 outline-none focus:border-blue-500 placeholder:text-slate-400"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1 font-extrabold text-slate-700">
+                    POS <FaInfoCircle size={10} className="text-slate-400" />{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={pos}
+                    onChange={(e) => {
+                      setPos(e.target.value);
+                      setSaveError("");
+                    }}
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 bg-white text-slate-800 outline-none font-semibold"
+                  >
+                    <option value="Select">Select</option>
+                    <option value="07-Delhi">07-Delhi</option>
+                    <option value="27-Maharashtra">27-Maharashtra</option>
+                    <option value="33-Tamil Nadu">33-Tamil Nadu</option>
+                    <option value="09-Uttar Pradesh">09-Uttar Pradesh</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block font-extrabold text-slate-700">
+                    Total Invoice Value (₹) <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    value={totalInvoiceValue}
+                    onChange={(e) => {
+                      setTotalInvoiceValue(e.target.value);
+                      setSaveError("");
+                    }}
+                    className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-slate-800 outline-none focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block font-extrabold text-slate-700">Supply Type</label>
+                  <input
+                    disabled
+                    className="w-full border border-slate-200 rounded px-2.5 py-1.5 bg-slate-50 text-slate-400"
+                  />
+                </div>
+              </div>
+
+              {saveError && (
+                <div className="mt-5 rounded border border-red-300 bg-red-50 px-3 py-2.5 text-red-600">
+                  {saveError}
+                </div>
+              )}
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  onClick={() => setStep("b2b_summary")}
+                  className="border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold uppercase text-[11px] px-5 py-2 rounded cursor-pointer"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={handleSaveInvoice}
+                  disabled={!b2bFormComplete}
+                  className={`font-bold uppercase text-[11px] px-6 py-2 rounded transition-colors ${
+                    b2bFormComplete
+                      ? "bg-[#0f3a9a] hover:bg-[#0a2558] text-white cursor-pointer"
+                      : "bg-slate-200 text-slate-400 cursor-not-allowed"
+                  }`}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+          {footer}
+        </div>
+      )}
+
+      {/* SAVE TICK CONFIRMATION */}
+      {showSaveTick && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[1.5px]">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-[#47c65a] shadow-[0_15px_45px_rgba(71,198,90,0.4)] animate-scaleIn">
+            <CheckCircle2 className="text-white" size={56} strokeWidth={2.5} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
