@@ -16,6 +16,15 @@ const publicBackendUrl =
 
 const nextConfig = {
   productionBrowserSourceMaps: true,
+  async redirects() {
+    return [
+      {
+        source: "/login",
+        destination: "/student-login",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     return [
       {
