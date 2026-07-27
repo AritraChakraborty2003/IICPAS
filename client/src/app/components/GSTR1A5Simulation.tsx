@@ -96,9 +96,9 @@ export default function GSTR1A5Simulation({
 
   const [isExperimentStarted, setIsExperimentStarted] = useState(false);
   // This exercise is only about the Exports (6A) add-invoice screen, so the
-  // simulation opens straight on the Returns grid (Dashboard > Returns)
-  // instead of the GST portal welcome/period-search screens.
-  const [step, setStep] = useState<Step>("view_returns");
+  // simulation opens straight on the GSTR-1/IFF record-details screen
+  // instead of the GST portal welcome/period-search/returns-grid screens.
+  const [step, setStep] = useState<Step>("gstr1_view");
   const [financialYear, setFinancialYear] = useState("20XX-XX");
   const [quarter, setQuarter] = useState("Quarter 1 (Apr - Jun)");
   const [period, setPeriod] = useState("Select");
@@ -139,7 +139,7 @@ export default function GSTR1A5Simulation({
   };
 
   const handleRetry = () => {
-    setStep("view_returns");
+    setStep("gstr1_view");
     setPeriod("Select");
     setAmendOpen(false);
     setEInvoiceHistoryOpen(false);
