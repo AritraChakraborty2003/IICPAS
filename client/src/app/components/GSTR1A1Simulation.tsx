@@ -58,9 +58,6 @@ export default function GSTR1A1Simulation({
   const loginPassword = findFieldValue(simConfig, /pass/i) || DEFAULT_PASSWORD;
   const requireCredentialValidation =
     simConfig?.requireCredentialValidation !== false;
-  const bannerText =
-    simConfig?.bannerText ||
-    `Experiment 1: Login below for the simulation experiment with the following credentials. Company name: ${companyName} | GSTIN: ${gstin} | User Name: ${loginUsername} | Password: ${loginPassword}`;
 
   const [currentStep, setCurrentStep] = useState<Step>("home");
   const [financialYear, setFinancialYear] = useState("2024-25");
@@ -204,11 +201,6 @@ export default function GSTR1A1Simulation({
           </div>
         </div>
       )}
-
-      {/* Experiment Instruction Banner */}
-      <div className="bg-[#e0f2fe] border-b border-[#bae6fd] px-6 py-2.5 text-[11px] font-bold text-[#0369a1] select-none shrink-0">
-        {bannerText}
-      </div>
 
       {/* STEP 0: Public GST portal home page (not logged in) */}
       {currentStep === "home" && (
