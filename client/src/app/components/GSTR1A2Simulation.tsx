@@ -1,11 +1,25 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FaCheckCircle, FaArrowLeft, FaGlobe, FaChevronDown, FaChevronUp } from "react-icons/fa";
+import {
+  FaCheckCircle,
+  FaArrowLeft,
+  FaGlobe,
+  FaChevronDown,
+  FaChevronUp,
+  FaBell,
+  FaInfoCircle,
+} from "react-icons/fa";
 import { CheckCircle2, RotateCcw, RefreshCw } from "lucide-react";
 import { useSimulationConfig, findFieldValue } from "@/lib/useSimulationConfig";
 
-type Step = "dashboard" | "select_period" | "view_returns" | "gstr1_view";
+type Step =
+  | "dashboard"
+  | "select_period"
+  | "view_returns"
+  | "gstr1_view"
+  | "b2b_summary"
+  | "b2b_add";
 
 interface GSTR1A2SimulationProps {
   onComplete?: () => void;
@@ -21,21 +35,32 @@ const DEFAULT_GSTIN = "07GDLCF7228G1YK";
 const DEFAULT_BANNER =
   "Experiment 2: In Simulation experiment below, go to return dashboard and search for June month and click on search. Click on prepare online on GSTR 1 tile";
 
-const recordCards = [
-  "4A, 4B, 6B, 6C - B2B Invoices",
-  "5A - B2C (Large) Invoices",
-  "6A - Exports Invoices",
-  "7 - B2C (Others)",
-  "8A, 8B, 8C, 8D - Nil Rated Supplies",
-  "9B - Credit / Debit Notes (Registered)",
-  "9B - Credit / Debit Notes (Unregistered)",
-  "11A(1), 11A(2) - Tax Liability (Advances Received)",
-  "11B(1), 11B(2) - Adjustment of Advances",
-  "12 - HSN-wise summary of outward supplies",
-  "13 - Documents Issued",
-  "14 - Supplies made through ECO",
-  "15 - Supplies U/s 9(5)",
+const recordCards: { key: string; label: string }[] = [
+  { key: "b2b", label: "4A, 4B, 6B, 6C - B2B Invoices" },
+  { key: "b2c_large", label: "5A - B2C (Large) Invoices" },
+  { key: "exports", label: "6A - Exports Invoices" },
+  { key: "b2c_others", label: "7 - B2C (Others)" },
+  { key: "nil_rated", label: "8A, 8B, 8C, 8D - Nil Rated Supplies" },
+  { key: "cdnr", label: "9B - Credit / Debit Notes (Registered)" },
+  { key: "cdnur", label: "9B - Credit / Debit Notes (Unregistered)" },
+  { key: "advances_tax", label: "11A(1), 11A(2) - Tax Liability (Advances Received)" },
+  { key: "advances_adj", label: "11B(1), 11B(2) - Adjustment of Advances" },
+  { key: "hsn", label: "12 - HSN-wise summary of outward supplies" },
+  { key: "documents", label: "13 - Documents Issued" },
+  { key: "eco", label: "14 - Supplies made through ECO" },
+  { key: "sec9_5", label: "15 - Supplies U/s 9(5)" },
 ];
+
+// Reference exercise data (Experiment 3): the values a student must transcribe
+// into the B2B - Add Invoice form. These are validation-only fallbacks — they
+// are never printed in a banner — and are overridden by the "Invoice Number"
+// / "Customer GSTIN" / "Total Invoice Value" credential fields an admin sets
+// for this slug in the Simulation Manager / Course editor.
+const DEFAULT_INVOICE_NO = "UT24/10283";
+const DEFAULT_CUSTOMER_GSTIN = "07DSNPS7282B1Z9";
+const DEFAULT_TOTAL_INVOICE_VALUE = "1062000";
+const DEFAULT_TAXABLE_VALUE = 900000;
+const DEFAULT_TAX_AMOUNT = 162000;
 
 const returnsCalendarStatuses = ["Filed", "Filed", "Filed", "Filed", "To be Filed"];
 
@@ -47,6 +72,14 @@ export default function GSTR1A2Simulation({
   const gstin = findFieldValue(simConfig, /gstin/i) || DEFAULT_GSTIN;
   const bannerText = simConfig?.bannerText || DEFAULT_BANNER;
 
+  // Admin-configured (Simulation Manager / Course editor) expected invoice
+  // values for the B2B - Add Invoice exercise. Never rendered in a banner —
+  // only used to validate what the student types into the form.
+  const expectedInvoiceNo = findFieldValue(simConfig, /invoice.?no/i) || DEFAULT_INVOICE_NO;
+  const expectedCustomerGstin = findFieldValue(simConfig, /customer/i) || DEFAULT_CUSTOMER_GSTIN;
+  const expectedTotalValue =
+    findFieldValue(simConfig, /total.*value/i) || DEFAULT_TOTAL_INVOICE_VALUE;
+
   const [isExperimentStarted, setIsExperimentStarted] = useState(false);
   const [step, setStep] = useState<Step>("dashboard");
   const [financialYear, setFinancialYear] = useState("20XX-XX");
@@ -55,6 +88,22 @@ export default function GSTR1A2Simulation({
   const [amendOpen, setAmendOpen] = useState(false);
   const [eInvoiceHistoryOpen, setEInvoiceHistoryOpen] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [recordCounts, setRecordCounts] = useState<Record<string, number>>({});
+
+  // B2B - Add Invoice form state
+  const [receiverGstin, setReceiverGstin] = useState("");
+  const [receiverName, setReceiverName] = useState("");
+  const [invoiceNo, setInvoiceNo] = useState("");
+  const [invoiceDate, setInvoiceDate] = useState("");
+  const [pos, setPos] = useState("Select");
+  const [totalInvoiceValue, setTotalInvoiceValue] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [showSaveTick, setShowSaveTick] = useState(false);
+  const [savedInvoice, setSavedInvoice] = useState<{
+    invoiceNo: string;
+    invoiceDate: string;
+    totalValue: string;
+  } | null>(null);
 
   useEffect(() => {
     if (step !== "gstr1_view") setShowSuccessOverlay(false);
@@ -70,6 +119,53 @@ export default function GSTR1A2Simulation({
     setAmendOpen(false);
     setEInvoiceHistoryOpen(false);
     setShowSuccessOverlay(false);
+    setRecordCounts({});
+    setReceiverGstin("");
+    setReceiverName("");
+    setInvoiceNo("");
+    setInvoiceDate("");
+    setPos("Select");
+    setTotalInvoiceValue("");
+    setSaveError("");
+    setShowSaveTick(false);
+    setSavedInvoice(null);
+  };
+
+  const b2bFormComplete =
+    receiverGstin.trim() &&
+    receiverName.trim() &&
+    invoiceNo.trim() &&
+    invoiceDate.trim() &&
+    pos !== "Select" &&
+    totalInvoiceValue.trim();
+
+  const handleSaveInvoice = () => {
+    if (!b2bFormComplete) {
+      setSaveError("Please fill all mandatory fields.");
+      return;
+    }
+    const normalizedTotal = totalInvoiceValue.trim().replace(/[,\s]/g, "");
+    const expectedTotal = expectedTotalValue.trim().replace(/[,\s]/g, "");
+    const isValid =
+      receiverGstin.trim().toUpperCase() === expectedCustomerGstin.trim().toUpperCase() &&
+      invoiceNo.trim().toUpperCase() === expectedInvoiceNo.trim().toUpperCase() &&
+      normalizedTotal === expectedTotal;
+
+    if (!isValid) {
+      setSaveError(
+        "The invoice details entered do not match this exercise. Please double-check the receiver GSTIN, invoice number, and total invoice value."
+      );
+      return;
+    }
+
+    setSaveError("");
+    setSavedInvoice({ invoiceNo, invoiceDate, totalValue: totalInvoiceValue });
+    setRecordCounts((prev) => ({ ...prev, b2b: 1 }));
+    setShowSaveTick(true);
+    window.setTimeout(() => {
+      setShowSaveTick(false);
+      setStep("b2b_summary");
+    }, 900);
   };
 
   const infoRows: [string, string][] = [
@@ -100,27 +196,32 @@ export default function GSTR1A2Simulation({
             </p>
           </div>
         </div>
-        <div className="mt-1 flex items-center gap-1 text-[10px] font-extrabold text-white bg-white/10 px-2 py-0.5 rounded self-start md:self-auto">
-          <span>{companyName}</span>
-          <span className="text-slate-400 font-normal mx-1">/</span>
-          <span className="text-emerald-400">{gstin}</span>
+        <div className="flex items-center gap-3 self-start md:self-auto">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-white cursor-pointer hover:text-slate-200">
+            <span>{companyName}</span>
+            <FaChevronDown size={9} />
+          </div>
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 cursor-pointer">
+            <FaBell size={12} className="text-slate-200" />
+          </div>
         </div>
       </div>
       <div className="bg-[#1e3b6a] px-4 text-xs font-bold flex flex-wrap items-center shadow-md">
         {[
-          "Dashboard",
-          "Services",
-          "GST Law",
-          "Downloads",
-          "Search Taxpayer",
-          "Help and Taxpayer Facilities",
-        ].map((item, idx) => (
+          { label: "Dashboard", hasDropdown: false },
+          { label: "Services", hasDropdown: true },
+          { label: "GST Law", hasDropdown: false },
+          { label: "Downloads", hasDropdown: true },
+          { label: "Search Taxpayer", hasDropdown: true },
+          { label: "Help and Taxpayer Facilities", hasDropdown: false },
+          { label: "e-Invoice", hasDropdown: false },
+        ].map((item) => (
           <button
-            key={item}
+            key={item.label}
             className="px-4 py-3 hover:bg-[#152a4e] transition-colors border-r border-white/5 uppercase tracking-wide flex items-center gap-1"
           >
-            {item}
-            {idx === 1 && <FaChevronDown size={9} />}
+            {item.label}
+            {item.hasDropdown && <FaChevronDown size={9} />}
           </button>
         ))}
       </div>
@@ -142,6 +243,8 @@ export default function GSTR1A2Simulation({
                   onClick={() => {
                     if (label === "Dashboard") setStep("dashboard");
                     if (label === "Returns") setStep("select_period");
+                    if (label === "GSTR-1" || label === "GSTR-1/IFF") setStep("gstr1_view");
+                    if (label === "B2B") setStep("b2b_summary");
                   }}
                 >
                   {label}
@@ -252,18 +355,18 @@ export default function GSTR1A2Simulation({
                   ))}
                 </div>
 
-                <div className="border border-slate-300 px-4 py-3 text-[10.5px] italic text-slate-600 mb-4">
+                <div className="border border-slate-300 px-4 py-3 text-[10.5px] text-slate-600 mb-4">
                   You can navigate to your chosen page through navigation panel given below
                 </div>
 
-                <div className="border border-slate-300 px-4 py-3 text-[10.5px] italic text-slate-600 mb-6">
+                <div className="border border-slate-300 px-4 py-3 text-[10.5px] font-semibold text-slate-700 mb-6">
                   Your address of Principal Place of Business is not Geocoded in our
                   records. Kindly click on continue to update the Geocoded Address.
                   Please note that the existing address of the Principal Place of
                   Business appearing in the GST system/Registration Certificate will not
                   be impacted.{" "}
-                  <span className="text-[#0f3a9a] font-bold cursor-pointer hover:underline not-italic">
-                    Continue
+                  <span className="inline-flex items-center gap-1 text-[#0f3a9a] font-bold cursor-pointer hover:underline">
+                    Continue <FaInfoCircle size={10} />
                   </span>
                 </div>
 
@@ -588,22 +691,31 @@ export default function GSTR1A2Simulation({
                 Add Record Details
               </div>
               <div className="p-5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {recordCards.map((card) => (
-                  <div
-                    key={card}
-                    className="border border-[#cbd5e1] hover:border-slate-400 bg-white transition-all flex flex-col min-h-[110px] rounded overflow-hidden shadow-sm"
-                  >
-                    <div className="bg-[#1e3b6a] text-white p-3 flex justify-between items-start min-h-[56px]">
-                      <span className="font-extrabold text-[10px] leading-snug max-w-[85%]">
-                        {card}
-                      </span>
-                      <FaCheckCircle className="text-emerald-400 shrink-0 bg-white rounded-full p-[1px] mt-0.5" size={13} />
+                {recordCards.map((card) => {
+                  const isClickable = card.key === "b2b";
+                  const count = recordCounts[card.key] || 0;
+                  return (
+                    <div
+                      key={card.key}
+                      onClick={isClickable ? () => setStep("b2b_summary") : undefined}
+                      className={`border border-[#cbd5e1] bg-white transition-all flex flex-col min-h-[110px] rounded overflow-hidden shadow-sm ${
+                        isClickable
+                          ? "cursor-pointer hover:border-[#0f3a9a] hover:shadow-md"
+                          : "hover:border-slate-400"
+                      }`}
+                    >
+                      <div className="bg-[#1e3b6a] text-white p-3 flex justify-between items-start min-h-[56px]">
+                        <span className="font-extrabold text-[10px] leading-snug max-w-[85%]">
+                          {card.label}
+                        </span>
+                        <FaCheckCircle className="text-emerald-400 shrink-0 bg-white rounded-full p-[1px] mt-0.5" size={13} />
+                      </div>
+                      <div className="flex-1 p-3 flex items-center justify-center bg-slate-50/50">
+                        <div className="text-xl font-black text-[#0a2558]">{count}</div>
+                      </div>
                     </div>
-                    <div className="flex-1 p-3 flex items-center justify-center bg-slate-50/50">
-                      <div className="text-xl font-black text-[#0a2558]">0</div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
