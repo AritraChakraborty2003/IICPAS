@@ -37,6 +37,11 @@ export default function StudentAuthForm() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [passwordOtpSent, setPasswordOtpSent] = useState(false);
+  const [passwordOtpChannel, setPasswordOtpChannel] = useState<"email" | "whatsapp" | null>(null);
+  const [passwordOtp, setPasswordOtp] = useState("");
+  const [submittingPassword, setSubmittingPassword] = useState(false);
+  const [verifyingPasswordOtp, setVerifyingPasswordOtp] = useState(false);
 
   const [loginOtpIdentifier, setLoginOtpIdentifier] = useState("");
   const [loginOtpSent, setLoginOtpSent] = useState(false);
@@ -180,16 +185,46 @@ export default function StudentAuthForm() {
       return toast.error("Email/phone and password required");
     }
 
+    setSubmittingPassword(true);
     try {
-      await axios.post(
+      const { data } = await axios.post(
         `${API}/api/v1/students/login`,
         { identifier: loginEmail, password: loginPassword },
+        { withCredentials: true }
+      );
+      setPasswordOtpSent(true);
+      setPasswordOtpChannel(data?.channel === "whatsapp" ? "whatsapp" : "email");
+      toast.success(
+        data?.channel === "whatsapp"
+          ? "OTP sent on WhatsApp"
+          : "OTP sent to your email"
+      );
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || "Login failed");
+    } finally {
+      setSubmittingPassword(false);
+    }
+  };
+
+  const handleVerifyPasswordOtp = async (e: any) => {
+    e.preventDefault();
+    if (!passwordOtp) {
+      return toast.error("Enter the OTP sent to you");
+    }
+
+    setVerifyingPasswordOtp(true);
+    try {
+      await axios.post(
+        `${API}/api/v1/students/login/verify-otp`,
+        { identifier: loginEmail, otp: passwordOtp },
         { withCredentials: true }
       );
       toast.success("Login successful");
       redirectAfterLogin();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Login failed");
+      toast.error(err?.response?.data?.message || "Invalid or expired OTP");
+    } finally {
+      setVerifyingPasswordOtp(false);
     }
   };
 

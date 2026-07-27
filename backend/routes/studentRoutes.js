@@ -1024,7 +1024,39 @@ const finalizeStudentLogin = async (student, req, res) => {
     .json({ message: "Login success", student });
 };
 
-//Login (email or phone + password)
+// Generates + sends a login OTP to email or WhatsApp and stores it for verification
+const dispatchLoginOtp = async ({ identifier, isEmail, student }) => {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  loginOtpStore.set(identifier, {
+    otp,
+    expiresAt: Date.now() + LOGIN_OTP_TTL_MS,
+  });
+
+  if (isEmail) {
+    await transporter.sendMail({
+      from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
+      to: identifier,
+      subject: "IICPA Login OTP",
+      html: `<p>Hi ${student.name || "Student"},</p><p>Your OTP to login is: <strong style="font-size:1.2em">${otp}</strong></p><p>This OTP is valid for 10 minutes. Do not share it with anyone.</p><p>Thank you,<br/>IICPA Institute</p>`,
+    });
+  } else {
+    await sendWhatsAppTemplateMessage({
+      to: identifier,
+      templateName: LOGIN_WHATSAPP_TEMPLATE_NAME,
+      components: [
+        { type: "body", parameters: [{ type: "text", text: otp }] },
+        {
+          type: "button",
+          sub_type: "url",
+          index: "0",
+          parameters: [{ type: "text", text: otp }],
+        },
+      ],
+    });
+  }
+};
+
+//Login step 1: verify email/phone + password, then send an OTP (email or WhatsApp) to confirm
 router.post("/login", async (req, res) => {
   const rawIdentifier = String(req.body.identifier ?? req.body.email ?? "").trim();
   const { password } = req.body;
@@ -1042,12 +1074,26 @@ router.post("/login", async (req, res) => {
     const student = await findStudentByIdentifier(normalizedIdentifier, isEmail);
 
     if (!student) return res.status(404).json({ message: "Not found" });
+    if (isBlockedStudentStatus(student.status)) {
+      return res.status(403).json({ message: "Account is suspended" });
+    }
 
     const match = await bcrypt.compare(password, student.password);
     if (!match) return res.status(401).json({ message: "Wrong password" });
 
-    await finalizeStudentLogin(student, req, res);
+    if (!isEmail && !isWhatsAppConfigured()) {
+      return res.status(503).json({ message: "WhatsApp OTP is not configured" });
+    }
+
+    await dispatchLoginOtp({ identifier: normalizedIdentifier, isEmail, student });
+
+    res.json({
+      message: isEmail ? "OTP sent to your email" : "OTP sent on WhatsApp",
+      channel: isEmail ? "email" : "whatsapp",
+      otpRequired: true,
+    });
   } catch (err) {
+    loginOtpStore.delete(normalizedIdentifier);
     res.status(500).json({ error: "Login failed", details: err.message });
   }
 });
@@ -1082,34 +1128,7 @@ router.post("/login/send-otp", async (req, res) => {
       return res.status(503).json({ message: "WhatsApp OTP is not configured" });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    loginOtpStore.set(normalizedIdentifier, {
-      otp,
-      expiresAt: Date.now() + LOGIN_OTP_TTL_MS,
-    });
-
-    if (isEmail) {
-      await transporter.sendMail({
-        from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
-        to: normalizedIdentifier,
-        subject: "IICPA Login OTP",
-        html: `<p>Hi ${student.name || "Student"},</p><p>Your OTP to login is: <strong style="font-size:1.2em">${otp}</strong></p><p>This OTP is valid for 10 minutes. Do not share it with anyone.</p><p>Thank you,<br/>IICPA Institute</p>`,
-      });
-    } else {
-      await sendWhatsAppTemplateMessage({
-        to: normalizedIdentifier,
-        templateName: LOGIN_WHATSAPP_TEMPLATE_NAME,
-        components: [
-          { type: "body", parameters: [{ type: "text", text: otp }] },
-          {
-            type: "button",
-            sub_type: "url",
-            index: "0",
-            parameters: [{ type: "text", text: otp }],
-          },
-        ],
-      });
-    }
+    await dispatchLoginOtp({ identifier: normalizedIdentifier, isEmail, student });
 
     res.json({
       message: isEmail ? "OTP sent to your email" : "OTP sent on WhatsApp",
