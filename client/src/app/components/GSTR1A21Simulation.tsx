@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { FaGlobe, FaBell, FaChevronDown } from "react-icons/fa";
+import { FaGlobe, FaChevronDown } from "react-icons/fa";
 import { CheckCircle2, RotateCcw } from "lucide-react";
 import { useSimulationConfig, findFieldValue } from "@/lib/useSimulationConfig";
 
