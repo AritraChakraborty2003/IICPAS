@@ -6,8 +6,8 @@ import Course from "../models/Content/Course.js";
 
 dotenv.config();
 
-const TARGET_EMAIL = "superstudent@yopmail.com";
-const DEFAULT_PASSWORD = "superstudent@123";
+const TARGET_EMAIL = "superstudent111@yopmail.com";
+const DEFAULT_PASSWORD = "superstudent@1234";
 
 const seedSuperStudentAllCourses = async () => {
   try {
