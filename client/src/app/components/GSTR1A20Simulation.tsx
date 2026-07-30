@@ -9,8 +9,6 @@ import {
   findUsernameValue,
 } from "@/lib/useSimulationConfig";
 
-type Step = "home" | "login";
-
 interface GSTR1A20SimulationProps {
   onComplete?: () => void;
 }
@@ -55,7 +53,6 @@ export default function GSTR1A20Simulation({
   const bannerText = simConfig?.bannerText || "";
 
   const [isExperimentStarted, setIsExperimentStarted] = useState(false);
-  const [step, setStep] = useState<Step>("home");
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
 
   const [usernameInput, setUsernameInput] = useState("");
@@ -70,7 +67,6 @@ export default function GSTR1A20Simulation({
   };
 
   const handleRetry = () => {
-    setStep("home");
     setShowSuccessOverlay(false);
     setUsernameInput("");
     setPasswordInput("");
@@ -140,75 +136,8 @@ export default function GSTR1A20Simulation({
         </div>
       )}
 
-      {/* STEP 0: Public GST portal home page (not logged in) */}
-      {step === "home" && (
-        <div className="flex-1 w-full bg-white flex flex-col">
-          <div className="bg-[#0a2558] text-white w-full select-none shrink-0">
-            <div className="px-5 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <img
-                  src="/images/simulations/satyamev-jayate.jpg"
-                  alt="Satyamev Jayate emblem"
-                  className="h-10 w-10 object-contain bg-white rounded-full p-0.5"
-                />
-                <div>
-                  <h1 className="text-base font-black uppercase tracking-wider leading-tight">
-                    Goods and Services Tax
-                  </h1>
-                  <p className="text-[9px] text-slate-300 uppercase tracking-widest font-bold">
-                    Government of India
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button className="bg-white text-[#0a2558] text-[11px] font-extrabold uppercase px-4 py-2 rounded-sm hover:bg-slate-100 transition-colors">
-                  Register
-                </button>
-                <button
-                  onClick={() => setStep("login")}
-                  className="bg-white text-[#0a2558] border-2 border-red-500 text-[11px] font-extrabold uppercase px-4 py-2 rounded-sm hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  Login
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-[#1e3b6a] px-4 text-xs font-bold flex flex-wrap items-center shadow-md">
-              {navItems.map((item) => (
-                <button
-                  key={item}
-                  className="px-4 py-3 hover:bg-[#152a4e] transition-colors border-r border-white/5 uppercase tracking-wide"
-                >
-                  {item}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="w-full">
-            <img
-              src="/images/simulations/main-gst-banner-image.jpg"
-              alt="GST portal banner"
-              className="w-full h-[260px] md:h-[340px] object-cover"
-              loading="eager"
-            />
-          </div>
-
-          <div className="flex-1 flex items-center justify-center py-12">
-            <button
-              onClick={() => setStep("login")}
-              className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white font-bold uppercase text-[12px] px-6 py-2.5 rounded cursor-pointer transition-colors"
-            >
-              Proceed to Login
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 1: Login page (username / password / captcha) */}
-      {step === "login" && (
-        <div className="flex-1 w-full bg-white flex flex-col">
+      {/* Login page (username / password / captcha) */}
+      <div className="flex-1 w-full bg-white flex flex-col">
           <div className="bg-[#0a2558] text-white w-full select-none shrink-0">
             <div className="px-5 py-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
