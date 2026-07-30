@@ -278,8 +278,7 @@ export default function GSTR1A20Simulation({
               Firefox 45+ and Safari 6+
             </span>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
