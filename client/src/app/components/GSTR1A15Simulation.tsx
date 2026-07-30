@@ -65,17 +65,17 @@ export default function GSTR1A15Simulation({
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [outwardConfirmed, setOutwardConfirmed] = useState(false);
 
-  // 3.1 - Outward taxable supplies row (a)
-  const [totalTaxableValue, setTotalTaxableValue] = useState(baseTaxableValue);
-  const [integratedTax, setIntegratedTax] = useState(baseIntegratedTax);
+  // 3.1 - Outward taxable supplies row (a) - left blank for the student to fill in
+  const [totalTaxableValue, setTotalTaxableValue] = useState("");
+  const [integratedTax, setIntegratedTax] = useState("");
   const [editError, setEditError] = useState("");
 
   const handleRetry = () => {
     setStep("gstr3b_view");
     setShowSuccessOverlay(false);
     setOutwardConfirmed(false);
-    setTotalTaxableValue(baseTaxableValue);
-    setIntegratedTax(baseIntegratedTax);
+    setTotalTaxableValue("");
+    setIntegratedTax("");
     setEditError("");
   };
 
