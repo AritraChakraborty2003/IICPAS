@@ -87,6 +87,9 @@ const KNOWN_SIMULATIONS = {
       { label: "Email OTP", value: "654321" },
     ],
   },
+  "itr-reg-5": {
+    name: "ITR Reg 5 — Secure Your Account (Review & Register)",
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
