@@ -236,8 +236,8 @@ export default function ITRReg7Simulation({ onComplete }: ITRReg7SimulationProps
       <div className="flex-1 w-full flex flex-col">
         <div className="flex-1 w-full px-6 py-6">
           {step === "userId" && (
-            <div className="flex flex-col md:flex-row items-start gap-8">
-              <div className="w-full max-w-sm">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-start gap-12">
+              <div className="w-full md:max-w-sm md:shrink-0">
                 <h3 className="text-[26px] font-bold text-[#0a2558] mb-5">Login</h3>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
                   Enter your User ID <span className="text-red-500">*</span>
@@ -277,7 +277,7 @@ export default function ITRReg7Simulation({ onComplete }: ITRReg7SimulationProps
                 </div>
               </div>
 
-              <div className="w-full md:w-80 shrink-0 space-y-4 text-[11px] text-slate-600">
+              <div className="w-full flex-1 space-y-4 text-[11px] text-slate-600">
                 <p className="text-[15px] font-semibold text-slate-500">
                   Know about your <span className="font-bold text-slate-800">User ID</span>
                 </p>
@@ -317,8 +317,8 @@ export default function ITRReg7Simulation({ onComplete }: ITRReg7SimulationProps
           )}
 
           {step === "password" && (
-            <div className="flex flex-col md:flex-row items-start gap-8">
-              <div className="w-full max-w-sm">
+            <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center gap-16 justify-center">
+              <div className="w-full md:max-w-sm md:shrink-0">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="h-12 w-12 rounded-full bg-slate-200 shrink-0" />
                   <div>
