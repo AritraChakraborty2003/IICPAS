@@ -369,6 +369,7 @@ export default function ITRReg2Simulation({ onComplete }: ITRReg2SimulationProps
           </div>
         </div>
         </div>
+        </div>
 
         <div className="bg-[#0b1a30] px-5 py-3 border-t border-white/5 text-white/70 text-[10px] font-medium w-full flex flex-col md:flex-row md:items-center justify-between gap-4 mt-auto shrink-0">
           <span>© 2022 IICPA Simulation Software Designed &amp; Developed by IICPA</span>
