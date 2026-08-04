@@ -80,6 +80,13 @@ const KNOWN_SIMULATIONS = {
       { label: "Password", value: "Akhil@123" },
     ],
   },
+  "itr-reg-4": {
+    name: "ITR Reg 4 — Verify Details (OTP)",
+    credentialFields: [
+      { label: "Mobile OTP", value: "123456" },
+      { label: "Email OTP", value: "654321" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
