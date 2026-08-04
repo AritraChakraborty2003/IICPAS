@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { FaInfoCircle } from "react-icons/fa";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { useSimulationConfig, findFieldValue } from "@/lib/useSimulationConfig";
 
