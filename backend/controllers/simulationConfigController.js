@@ -58,8 +58,6 @@ const KNOWN_SIMULATIONS = {
   },
   "itr-reg-1": {
     name: "ITR Reg 1 — Individual Taxpayer Registration",
-    bannerText:
-      "Enter the PAN AKSPA3663B to be registered and validate by selecting as Individual taxpayer.",
     credentialFields: [{ label: "PAN", value: "AKSPA3663B" }],
   },
   "epf-reg-18": {

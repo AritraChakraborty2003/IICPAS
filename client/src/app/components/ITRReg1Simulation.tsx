@@ -188,17 +188,23 @@ export default function ITRReg1Simulation({ onComplete }: ITRReg1SimulationProps
     onComplete?.();
   };
 
+  // Return restarts this exercise from the beginning rather than navigating
+  // away, so a student can retry the same simulation as many times as needed.
   const handleReturn = () => {
-    if (typeof window === "undefined") return;
-    if (window.history.length > 1) router.back();
-    else window.close();
+    setShowSuccessOverlay(false);
+    setStep("home");
+    setPanInput("");
+    setPanValidated(false);
+    setPanError("");
+    setConfirmChoice(null);
+    setConfirmError("");
   };
 
   return (
     <div className="min-h-screen bg-white text-[#333333] font-sans antialiased flex flex-col select-none relative">
       {/* START EXPERIMENT OVERLAY */}
       {!isExperimentStarted && (
-        <div className="absolute inset-0 bg-white/30 backdrop-blur-[1.5px] z-40 flex items-center justify-center">
+        <div className="fixed inset-0 bg-white/30 backdrop-blur-[1.5px] z-40 flex items-center justify-center">
           <button
             onClick={() => setIsExperimentStarted(true)}
             className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white px-8 py-3.5 rounded font-bold uppercase tracking-wider text-sm shadow-md hover:scale-105 transition-all cursor-pointer z-50"
@@ -376,7 +382,7 @@ export default function ITRReg1Simulation({ onComplete }: ITRReg1SimulationProps
                     </div>
                   </div>
                   <img
-                    src="/images/simulations/home-user-image.png"
+                    src="/itr-hero-1.png"
                     alt="Taxpayer using e-Filing portal"
                     className="w-full max-w-[260px] justify-self-end object-contain"
                   />
