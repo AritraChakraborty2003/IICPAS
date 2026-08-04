@@ -71,6 +71,15 @@ const KNOWN_SIMULATIONS = {
       { label: "Residential Status", value: "Resident" },
     ],
   },
+  "itr-reg-3": {
+    name: "ITR Reg 3 — Individual Contact Details",
+    credentialFields: [
+      { label: "Mobile Number", value: "9876543210" },
+      { label: "Email ID", value: "akhil.sharma@example.com" },
+      { label: "Address", value: "123, MG Road, Bengaluru, Karnataka, 560001" },
+      { label: "Password", value: "Akhil@123" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
