@@ -114,6 +114,18 @@ const KNOWN_SIMULATIONS = {
       { label: "Minor Head", value: "Self Assessment Tax(300)" },
     ],
   },
+  "itr-reg-9": {
+    name: "ITR Reg 9 — New Payment (Self Assessment Tax, Full Wizard)",
+    credentialFields: [
+      { label: "PAN", value: "NGHPR1812B" },
+      { label: "Name", value: "Raghavan Patil" },
+      { label: "Assessment Year", value: "2024-25" },
+      { label: "Minor Head", value: "Self Assessment Tax(300)" },
+      { label: "Tax Amount", value: "156300" },
+      { label: "Interest Amount", value: "8960" },
+      { label: "Bank Name", value: "IICPA Bank" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
