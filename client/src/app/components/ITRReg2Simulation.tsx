@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { FaInfoCircle } from "react-icons/fa";
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { useSimulationConfig, findFieldValue } from "@/lib/useSimulationConfig";
 
@@ -220,7 +221,8 @@ export default function ITRReg2Simulation({ onComplete }: ITRReg2SimulationProps
           ))}
         </div>
 
-        <div className="max-w-xl border border-slate-200 rounded p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row items-start gap-5">
+        <div className="w-full max-w-xl border border-slate-200 rounded p-6 shadow-sm">
           <p className="text-[13px] font-bold text-[#0a2558] mb-4">Registering as - Individual</p>
           <h3 className="text-[14px] font-bold text-[#0a2558] mb-4">Basic Details</h3>
 
@@ -350,6 +352,20 @@ export default function ITRReg2Simulation({ onComplete }: ITRReg2SimulationProps
                 Continue ›
               </button>
             </div>
+          </div>
+        </div>
+
+        <div className="w-full md:w-72 shrink-0 flex items-start gap-2 bg-[#eff6ff] border border-[#bfdbfe] rounded p-4 text-[11px] text-slate-600">
+          <FaInfoCircle className="text-[#0f3a9a] shrink-0 mt-0.5" size={14} />
+          <div>
+            <p className="font-bold text-[#0a2558] mb-1">Please Note</p>
+            <p>
+              Please provide data as per PAN. On click of &quot;Continue&quot; details entered
+              will be validated with PAN.
+            </p>
+            <p className="mt-1.5">
+              If you have a single Name, then you can enter only &apos;Last Name&apos; field.
+            </p>
           </div>
         </div>
         </div>

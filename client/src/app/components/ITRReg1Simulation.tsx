@@ -558,7 +558,8 @@ export default function ITRReg1Simulation({ onComplete }: ITRReg1SimulationProps
               ))}
             </div>
 
-            <div className="max-w-xl border border-slate-200 rounded p-6 shadow-sm">
+            <div className="flex flex-col md:flex-row items-start gap-5">
+            <div className="w-full max-w-xl border border-slate-200 rounded p-6 shadow-sm">
               <h3 className="text-xl font-bold text-[#0a2558] mb-1">Let&apos;s get started</h3>
               <p className="text-[11px] font-bold text-slate-500 mb-4">Register as</p>
               <div className="flex gap-2 mb-5">
@@ -635,11 +636,6 @@ export default function ITRReg1Simulation({ onComplete }: ITRReg1SimulationProps
                     </label>
                   </div>
 
-                  <p className="text-[10.5px] text-slate-500 mb-4">
-                    Note: Please ensure your Status is correct as details in subsequent screens
-                    will be based on your Status.
-                  </p>
-
                   {confirmError && (
                     <div className="rounded border border-red-300 bg-red-50 px-3 py-2 text-[11px] text-red-600 mb-3">
                       {confirmError}
@@ -654,6 +650,18 @@ export default function ITRReg1Simulation({ onComplete }: ITRReg1SimulationProps
                   </button>
                 </>
               )}
+            </div>
+
+            <div className="w-full md:w-72 shrink-0 flex items-start gap-2 bg-[#eff6ff] border border-[#bfdbfe] rounded p-4 text-[11px] text-slate-600">
+              <FaInfoCircle className="text-[#0f3a9a] shrink-0 mt-0.5" size={14} />
+              <div>
+                <p className="font-bold text-[#0a2558] mb-1">Please Note</p>
+                <p>
+                  Please ensure your Status is correct as details in subsequent screens will be
+                  based on your Status.
+                </p>
+              </div>
+            </div>
             </div>
           </div>
         )}
