@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { CheckCircle2, ArrowLeft } from "lucide-react";
+import { ChevronDown, CheckCircle2, ArrowLeft } from "lucide-react";
 import { useSimulationConfig, findFieldValue } from "@/lib/useSimulationConfig";
 
 type Step = "dashboard" | "assessmentYear" | "startFiling" | "selectStatus";
