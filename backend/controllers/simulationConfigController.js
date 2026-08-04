@@ -135,6 +135,16 @@ const KNOWN_SIMULATIONS = {
       { label: "Email", value: "akhilsharma@gmail.com" },
     ],
   },
+  "itr-reg-11": {
+    name: "ITR Reg 11 — Initiating Akhil Sharma's Return",
+    credentialFields: [
+      { label: "PAN", value: "AKSPA3663B" },
+      { label: "Name", value: "Akhil Sharma" },
+      { label: "Email", value: "akhilsharma@gmail.com" },
+      { label: "Assessment Year", value: "2025-26" },
+      { label: "Status", value: "Individual" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
