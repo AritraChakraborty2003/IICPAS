@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { FaCalculator, FaCalendarAlt } from "react-icons/fa";
 import { ChevronDown, CheckCircle2, ArrowLeft } from "lucide-react";
 import { useSimulationConfig, findFieldValue } from "@/lib/useSimulationConfig";
 
@@ -254,7 +255,10 @@ export default function ITRReg11Simulation({ onComplete }: ITRReg11SimulationPro
                   <p className="text-[12px] font-semibold text-slate-600 mb-3">
                     File your return for the year ended on 31-Mar
                   </p>
-                  <button className="bg-[#0f3a9a] text-white font-bold text-[12px] px-4 py-2 rounded cursor-default mb-4">
+                  <button
+                    onClick={goToFileIncomeTaxReturn}
+                    className="bg-[#0f3a9a] hover:bg-[#0a2558] text-white font-bold text-[12px] px-4 py-2 rounded cursor-pointer transition-colors mb-4"
+                  >
                     File Now
                   </button>
                   <div className="space-y-2 text-[12px] font-bold text-slate-700">
@@ -279,11 +283,23 @@ export default function ITRReg11Simulation({ onComplete }: ITRReg11SimulationPro
                     </div>
                   </div>
                 </div>
+
+                <div className="border border-slate-200 rounded p-4 flex items-center justify-between cursor-default">
+                  <p className="text-[13px] font-bold text-[#0a2558]">Income &amp; Tax Estimator</p>
+                  <FaCalculator className="text-[#0f3a9a] shrink-0" size={22} />
+                </div>
+
+                <div className="border border-slate-200 rounded p-4 flex items-center justify-between cursor-default">
+                  <p className="text-[13px] font-bold text-[#0a2558]">
+                    › Tax Calendar
+                  </p>
+                  <FaCalendarAlt className="text-[#0f3a9a] shrink-0" size={22} />
+                </div>
               </div>
               <p className="mt-5 text-[11px] font-semibold text-slate-400">
-                Open the <span className="text-[#0f3a9a] font-bold">e-File</span> menu above and
-                select <span className="text-[#0f3a9a] font-bold">Income Tax Returns</span> to
-                continue.
+                Click <span className="text-[#0f3a9a] font-bold">File Now</span>, or open the{" "}
+                <span className="text-[#0f3a9a] font-bold">e-File</span> menu above and select{" "}
+                <span className="text-[#0f3a9a] font-bold">Income Tax Returns</span>, to continue.
               </p>
             </>
           )}
