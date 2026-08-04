@@ -221,7 +221,7 @@ export default function ITRReg11Simulation({ onComplete }: ITRReg11SimulationPro
           {step === "dashboard" && (
             <>
               <h2 className="text-[26px] font-bold text-[#0a2558] mb-5">Welcome Back, {name}</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 max-w-3xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 <div className="border border-slate-200 rounded p-4">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="h-14 w-14 rounded-full bg-slate-200 shrink-0" />
@@ -266,8 +266,21 @@ export default function ITRReg11Simulation({ onComplete }: ITRReg11SimulationPro
                     </div>
                   </div>
                 </div>
+
+                <div className="border border-slate-200 rounded p-4">
+                  <p className="text-[12px] font-bold text-[#0a2558] mb-3">Activity Log</p>
+                  <div className="space-y-2 text-[12px] font-bold text-slate-700">
+                    <div className="border border-slate-200 rounded p-3 cursor-default">
+                      › Recent Forms Filed
+                    </div>
+                    <div className="border border-slate-200 rounded p-3 text-[11.5px] font-normal text-slate-500 cursor-default">
+                      <p>Last log In 20XX</p>
+                      <p>Last Password Change 20XX</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <p className="mt-5 text-[11px] font-semibold text-slate-400 max-w-3xl">
+              <p className="mt-5 text-[11px] font-semibold text-slate-400">
                 Open the <span className="text-[#0f3a9a] font-bold">e-File</span> menu above and
                 select <span className="text-[#0f3a9a] font-bold">Income Tax Returns</span> to
                 continue.
