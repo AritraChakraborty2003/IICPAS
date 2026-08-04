@@ -90,6 +90,13 @@ const KNOWN_SIMULATIONS = {
   "itr-reg-5": {
     name: "ITR Reg 5 — Secure Your Account (Review & Register)",
   },
+  "itr-reg-6": {
+    name: "ITR Reg 6 — Secure Your Account (Set Password)",
+    credentialFields: [
+      { label: "Password", value: "Fin@123" },
+      { label: "Personalized Message", value: "Hi Akhil" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
