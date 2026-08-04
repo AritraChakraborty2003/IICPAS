@@ -106,6 +106,14 @@ const KNOWN_SIMULATIONS = {
       { label: "Secure Access Message", value: "Login" },
     ],
   },
+  "itr-reg-8": {
+    name: "ITR Reg 8 — New Payment (Self Assessment Tax)",
+    credentialFields: [
+      { label: "PAN", value: "NGHPR1812B" },
+      { label: "Assessment Year", value: "20XX-XX" },
+      { label: "Minor Head", value: "Self Assessment Tax(300)" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
