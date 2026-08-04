@@ -60,6 +60,17 @@ const KNOWN_SIMULATIONS = {
     name: "ITR Reg 1 — Individual Taxpayer Registration",
     credentialFields: [{ label: "PAN", value: "AKSPA3663B" }],
   },
+  "itr-reg-2": {
+    name: "ITR Reg 2 — Individual Basic Details",
+    credentialFields: [
+      { label: "PAN", value: "AKSPA3663B" },
+      { label: "Last Name", value: "Sharma" },
+      { label: "First Name", value: "Akhil" },
+      { label: "Date of Birth", value: "04/07/1996" },
+      { label: "Gender", value: "Male" },
+      { label: "Residential Status", value: "Resident" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
