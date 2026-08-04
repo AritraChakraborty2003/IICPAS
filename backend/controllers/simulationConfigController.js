@@ -126,6 +126,15 @@ const KNOWN_SIMULATIONS = {
       { label: "Bank Name", value: "IICPA Bank" },
     ],
   },
+  "itr-reg-10": {
+    name: "ITR Reg 10 — Login as Akhil Sharma",
+    credentialFields: [
+      { label: "Username", value: "AKSPA3663B" },
+      { label: "Password", value: "Fin@123" },
+      { label: "Name", value: "Akhil Sharma" },
+      { label: "Email", value: "akhilsharma@gmail.com" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
