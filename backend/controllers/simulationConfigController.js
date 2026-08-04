@@ -97,6 +97,15 @@ const KNOWN_SIMULATIONS = {
       { label: "Personalized Message", value: "Hi Akhil" },
     ],
   },
+  "itr-reg-7": {
+    name: "ITR Reg 7 — Login & e-Pay Tax (Self Assessment)",
+    credentialFields: [
+      { label: "User ID", value: "NGHPR1812B" },
+      { label: "Password", value: "Fin@123" },
+      { label: "Proprietor Name", value: "Raghavan Patil" },
+      { label: "Secure Access Message", value: "Login" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
