@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   FaSearch,
   FaPhoneAlt,
@@ -142,7 +141,6 @@ const footerColumns = [
 ];
 
 export default function ITRReg1Simulation({ onComplete }: ITRReg1SimulationProps = {}) {
-  const router = useRouter();
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const pan = findFieldValue(simConfig, /pan/i) || DEFAULT_PAN;
   const requireCredentialValidation = simConfig?.requireCredentialValidation !== false;
@@ -307,9 +305,30 @@ export default function ITRReg1Simulation({ onComplete }: ITRReg1SimulationProps
         {step === "home" && (
           <div className="flex-1 w-full">
             {/* News ticker */}
-            <div className="bg-[#fdf1e7] border-b border-[#f3d9be] px-5 py-2 text-[11px] font-semibold text-slate-700 truncate">
-              2. Excel utilities of ITR 1 and ITR 4 for AY 20XX-XX are live now!! 3. CSI file
-              download functionality has been enabled at e-filing portal.
+            <div className="bg-[#fdf1e7] border-b border-[#f3d9be] py-2 overflow-hidden whitespace-nowrap">
+              <div className="inline-block animate-marquee text-[11px] font-semibold text-slate-700">
+                <span className="mx-8">
+                  2. Excel utilities of ITR 1 and ITR 4 for AY 20XX-XX are live now!! 3. CSI file
+                  download functionality has been enabled at e-filing portal.
+                </span>
+                <span className="mx-8">
+                  2. Excel utilities of ITR 1 and ITR 4 for AY 20XX-XX are live now!! 3. CSI file
+                  download functionality has been enabled at e-filing portal.
+                </span>
+              </div>
+              <style jsx>{`
+                @keyframes marquee {
+                  0% {
+                    transform: translateX(0);
+                  }
+                  100% {
+                    transform: translateX(-50%);
+                  }
+                }
+                .animate-marquee {
+                  animation: marquee 20s linear infinite;
+                }
+              `}</style>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-5 p-5">
