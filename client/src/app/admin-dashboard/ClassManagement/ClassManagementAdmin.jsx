@@ -447,12 +447,14 @@ export default function ClassManagementAdmin() {
           >
             <RefreshCw className="h-4 w-4" /> Refresh
           </button>
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            <Plus className="h-4 w-4" /> Create Class
-          </button>
+          {hasPermission("class-management", "add") && (
+            <button
+              onClick={openCreate}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
+              <Plus className="h-4 w-4" /> Create Class
+            </button>
+          )}
         </div>
       </div>
 
@@ -557,7 +559,7 @@ export default function ClassManagementAdmin() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
-                      {cls.type === "live" && (
+                      {cls.type === "live" && hasPermission("class-management", "update") && (
                         <button
                           onClick={() => handleConvert(cls._id)}
                           title="Convert to recorded now"
@@ -566,20 +568,24 @@ export default function ClassManagementAdmin() {
                           <Video className="h-4 w-4" />
                         </button>
                       )}
-                      <button
-                        onClick={() => openEdit(cls)}
-                        title="Edit"
-                        className="rounded-md p-1.5 text-blue-600 hover:bg-blue-50"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(cls._id)}
-                        title="Delete"
-                        className="rounded-md p-1.5 text-red-600 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {hasPermission("class-management", "update") && (
+                        <button
+                          onClick={() => openEdit(cls)}
+                          title="Edit"
+                          className="rounded-md p-1.5 text-blue-600 hover:bg-blue-50"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </button>
+                      )}
+                      {hasPermission("class-management", "delete") && (
+                        <button
+                          onClick={() => handleDelete(cls._id)}
+                          title="Delete"
+                          className="rounded-md p-1.5 text-red-600 hover:bg-red-50"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
