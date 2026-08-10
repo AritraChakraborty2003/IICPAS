@@ -5,7 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
+  Check,
   Clock3,
+  Copy,
   Edit3,
   Eye,
   EyeOff,
@@ -126,7 +128,11 @@ const CheckboxGroup = ({ label, options, selected, onToggle, disabled, emptyText
 );
 
 export default function ClassManagementAdmin() {
-  const { hasPermission } = useAuth();
+  const { user, hasPermission, isPrivilegedAdmin } = useAuth();
+  const isAdmin = isPrivilegedAdmin
+    ? isPrivilegedAdmin(user)
+    : user?.role === "Admin" || user?.role === "superadmin";
+
   const [classes, setClasses] = useState([]);
   const [courses, setCourses] = useState([]);
   const [batches, setBatches] = useState([]);
@@ -142,6 +148,16 @@ export default function ClassManagementAdmin() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [showPasscode, setShowPasscode] = useState(false);
+  const [copiedPasscode, setCopiedPasscode] = useState(false);
+
+  const handleCopyPasscode = () => {
+    if (!form.passcode) return;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(form.passcode);
+      setCopiedPasscode(true);
+      setTimeout(() => setCopiedPasscode(false), 2000);
+    }
+  };
 
   const authHeaders = useCallback(() => {
     const token =
