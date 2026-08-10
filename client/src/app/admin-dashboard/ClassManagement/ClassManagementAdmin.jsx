@@ -1,6 +1,7 @@
 "use client";
 
 import { getApiOrigin } from "@/lib/apiBase";
+import { useAuth } from "@/contexts/AuthContext";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
@@ -125,6 +126,7 @@ const CheckboxGroup = ({ label, options, selected, onToggle, disabled, emptyText
 );
 
 export default function ClassManagementAdmin() {
+  const { hasPermission } = useAuth();
   const [classes, setClasses] = useState([]);
   const [courses, setCourses] = useState([]);
   const [batches, setBatches] = useState([]);
