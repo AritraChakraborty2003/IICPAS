@@ -146,8 +146,16 @@ const loginEmployee = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Check for employee email
-    const employee = await Employee.findOne({ email });
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Check for employee email (case-insensitive)
+    const employee = await Employee.findOne({
+      email: { $regex: new RegExp(`^${cleanEmail}$`, "i") },
+    });
     if (!employee) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
@@ -209,19 +217,20 @@ const logoutEmployee = async (req, res) => {
 
     return res.status(200).json({ message: "Logout successful" });
   } catch (error) {
-    console.error("Logout employee error:", error);
+    console.error("Logout error:", error);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
 // @desc    Get all employees
 // @route   GET /api/employees
-// @access  Private
+// @access  Private (Admin only)
 const getEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find({ role: { $ne: "Admin" } })
+    const employees = await Employee.find({})
       .select("-password")
-      .populate("createdBy", "name email");
+      .populate("createdBy", "name email")
+      .sort({ createdAt: -1 });
 
     res.json(employees);
   } catch (error) {
@@ -232,7 +241,7 @@ const getEmployees = async (req, res) => {
 
 // @desc    Get employee by ID
 // @route   GET /api/employees/:id
-// @access  Private
+// @access  Private (Admin only)
 const getEmployeeById = async (req, res) => {
   try {
     const employee = await Employee.findById(req.params.id)
@@ -255,7 +264,7 @@ const getEmployeeById = async (req, res) => {
 // @access  Private
 const updateEmployee = async (req, res) => {
   try {
-    const { name, email, role, status, permissions } = req.body;
+    const { name, email, password, role, status, permissions } = req.body;
 
     const employee = await Employee.findById(req.params.id);
     if (!employee) {
@@ -263,11 +272,12 @@ const updateEmployee = async (req, res) => {
     }
 
     // Update fields
-    employee.name = name || employee.name;
-    employee.email = email || employee.email;
-    employee.role = role || employee.role;
-    employee.status = status || employee.status;
-    employee.permissions = permissions || employee.permissions;
+    if (name) employee.name = name;
+    if (email) employee.email = email.trim().toLowerCase();
+    if (password && password.trim()) employee.password = password;
+    if (role) employee.role = role;
+    if (status) employee.status = status;
+    if (permissions) employee.permissions = permissions;
 
     const updatedEmployee = await employee.save();
 
