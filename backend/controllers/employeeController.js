@@ -82,6 +82,7 @@ const registerInitialAdmin = async (req, res) => {
       "course-category": { add: true, read: true, update: true, delete: true, active: true },
       course: { add: true, read: true, update: true, delete: true, active: true },
       "live-session": { add: true, read: true, update: true, delete: true, active: true },
+      "class-management": { add: true, read: true, update: true, delete: true, active: true },
       blogs: { add: true, read: true, update: true, delete: true, active: true },
       testimonials: { add: true, read: true, update: true, delete: true, active: true },
       about: { add: true, read: true, update: true, delete: true, active: true },

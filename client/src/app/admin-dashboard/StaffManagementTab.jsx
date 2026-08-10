@@ -18,6 +18,7 @@ const MODULES = [
   { id: "course-display", name: "Course Display", icon: "👁️" },
   { id: "chapter-schedule", name: "Chapter Schedule", icon: "⏰" },
   { id: "topic-schedule", name: "Topic Schedule", icon: "🕒" },
+  { id: "class-management", name: "Class Management", icon: "📅" },
   { id: "live-session", name: "Live Session", icon: "📺" },
   { id: "recorded-session", name: "Recorded Session", icon: "🎬" },
   { id: "live-bookings", name: "Live Bookings", icon: "🧾" },
@@ -56,7 +57,6 @@ const MODULES = [
   { id: "study-material", name: "Study Material", icon: "📚" },
   { id: "faq", name: "FAQ", icon: "❓" },
   { id: "booking-settings", name: "Booking Settings", icon: "⚙️" },
-  { id: "batch-manager", name: "Batch Manager", icon: "🗂️" },
   {
     id: "invoice-company-settings",
     name: "Invoice Company Settings",
