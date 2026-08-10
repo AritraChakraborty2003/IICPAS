@@ -813,7 +813,7 @@ export default function ClassManagementAdmin() {
                   </label>
                   <div className="relative">
                     <input
-                      type={showPasscode ? "text" : "password"}
+                      type={isAdmin && showPasscode ? "text" : "password"}
                       placeholder="e.g. 123456"
                       value={form.passcode}
                       onChange={(e) =>
@@ -821,14 +821,31 @@ export default function ClassManagementAdmin() {
                       }
                       className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm focus:border-blue-500 focus:outline-none"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPasscode((s) => !s)}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      tabIndex={-1}
-                    >
-                      {showPasscode ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
+                    {isAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowPasscode((s) => !s)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        title={showPasscode ? "Hide passcode" : "View passcode"}
+                        tabIndex={-1}
+                      >
+                        {showPasscode ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleCopyPasscode}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors p-1"
+                        title={copiedPasscode ? "Passcode copied!" : "Copy passcode"}
+                        tabIndex={-1}
+                      >
+                        {copiedPasscode ? (
+                          <Check size={16} className="text-green-600" />
+                        ) : (
+                          <Copy size={16} />
+                        )}
+                      </button>
+                    )}
                   </div>
                 </div>
                 <div>
