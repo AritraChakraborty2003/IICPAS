@@ -67,6 +67,7 @@ const CONTENT_SUBMODULES = [
 const COURSE_SUBMODULES = [
   { id: "course-category", label: "Categories", icon: <FaLayerGroup /> },
   { id: "course", label: "Courses", icon: <FaBook /> },
+  { id: "class-management", label: "Class Management", icon: <FaCalendarAlt /> },
   { id: "live-session", label: "Live Sessions", icon: <FaChalkboardTeacher /> },
   { id: "topics", label: "Training Topics", icon: <FaStarOfDavid /> },
 ];

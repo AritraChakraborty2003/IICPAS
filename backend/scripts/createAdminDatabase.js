@@ -32,6 +32,13 @@ const adminData = {
       delete: true,
       active: true,
     },
+    "class-management": {
+      add: true,
+      read: true,
+      update: true,
+      delete: true,
+      active: true,
+    },
     blogs: { add: true, read: true, update: true, delete: true, active: true },
     testimonials: {
       add: true,

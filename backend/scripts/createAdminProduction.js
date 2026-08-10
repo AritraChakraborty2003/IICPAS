@@ -33,6 +33,13 @@ const adminData = {
       delete: true,
       active: true,
     },
+    "class-management": {
+      add: true,
+      read: true,
+      update: true,
+      delete: true,
+      active: true,
+    },
     // Website Settings
     blogs: {
       add: true,
