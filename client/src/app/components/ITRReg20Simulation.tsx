@@ -305,7 +305,7 @@ export default function ITRReg20Simulation({ onComplete }: ITRReg20SimulationPro
     const rows = draft[key];
     const total = sumRows(rows);
     return (
-      <div className="max-w-3xl border-t border-slate-200 pt-5 mb-2">
+      <div className="w-full border-t border-slate-200 pt-5 mb-2">
         <p className="text-[14px] font-bold text-[#0a2558] mb-3">
           {letter}. {heading}
         </p>
@@ -765,7 +765,7 @@ export default function ITRReg20Simulation({ onComplete }: ITRReg20SimulationPro
                 <span className="text-red-500">*</span> Indicates mandatory fields
               </p>
 
-              <div className="max-w-3xl border border-slate-200 rounded p-6 mb-6">
+              <div className="w-full border border-slate-200 rounded p-6 mb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
                   <div>
                     <label className="block text-[11.5px] font-semibold text-slate-600 mb-1">

@@ -38,7 +38,7 @@ const DEFAULT_NAME = "Sanjay Sahu";
 const DEFAULT_PAN = "SNSPS4827K";
 const DEFAULT_ITR_FORM = "ITR-2";
 const DEFAULT_REQUIRED_INCOME_SCHEDULES =
-  "Schedule S,Schedule HP,Schedule CG,Schedule OS";
+  "Schedule HP,Schedule CG,Schedule 112A";
 
 const dashboardNavItems = [
   "Dashboard",
