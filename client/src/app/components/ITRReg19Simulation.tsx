@@ -174,6 +174,7 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
   });
   const [activeCategory, setActiveCategory] = useState<ScheduleCategory>("general");
   const [scheduleError, setScheduleError] = useState("");
+  const [mismatchHighlight, setMismatchHighlight] = useState(false);
   const [confirmedSchedules, setConfirmedSchedules] = useState<Record<string, boolean>>({});
 
   const resetAll = () => {
@@ -181,6 +182,7 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
     setSelectedSchedules({ partAGen: true });
     setActiveCategory("general");
     setScheduleError("");
+    setMismatchHighlight(false);
     setConfirmedSchedules({});
   };
 
@@ -188,6 +190,7 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
     if (item.mandatory) return;
     setSelectedSchedules((prev) => ({ ...prev, [item.id]: !prev[item.id] }));
     setScheduleError("");
+    setMismatchHighlight(false);
   };
 
   const selectedIncomeLabels = useMemo(
@@ -198,8 +201,33 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
     [selectedSchedules]
   );
 
+  // Income-category items whose selected state disagrees with the
+  // admin-configured brief - only populated once a mismatch is flagged, so
+  // students see exactly which checkboxes to fix instead of a generic error.
+  const requiredIncomeIdSet = useMemo(
+    () =>
+      new Set(
+        requiredIncomeSchedules.map((label) => label.trim().toLowerCase())
+      ),
+    [requiredIncomeSchedules]
+  );
+  const mismatchedIncomeIds = useMemo(() => {
+    if (!mismatchHighlight) return new Set<string>();
+    return new Set(
+      scheduleCatalog
+        .filter((item) => item.category === "income")
+        .filter((item) => {
+          const isRequired = requiredIncomeIdSet.has(`schedule ${item.label}`.toLowerCase());
+          const isSelected = !!selectedSchedules[item.id];
+          return isRequired !== isSelected;
+        })
+        .map((item) => item.id)
+    );
+  }, [mismatchHighlight, requiredIncomeIdSet, selectedSchedules]);
+
   const handleScheduleContinue = () => {
     if (selectedIncomeLabels.length === 0) {
+      setMismatchHighlight(false);
       setScheduleError(
         "Please select at-least one schedule from Income category in order to proceed further."
       );
@@ -209,10 +237,12 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
       const selectedSorted = [...selectedIncomeLabels].sort().join("|").toLowerCase();
       const requiredSorted = [...requiredIncomeSchedules].sort().join("|").toLowerCase();
       if (selectedSorted !== requiredSorted) {
+        setMismatchHighlight(true);
         setScheduleError("Selection does not match the experiment brief. Please re-check and try again.");
         return;
       }
     }
+    setMismatchHighlight(false);
     setScheduleError("");
     setStep("scheduleSummary");
   };
