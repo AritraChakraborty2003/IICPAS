@@ -395,20 +395,24 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
                 Total {totalSelectedCount} {totalSelectedCount === 1 ? "schedule is" : "schedules are"} selected
               </p>
 
-              <div className="max-w-4xl flex flex-col md:flex-row border border-slate-200 rounded overflow-hidden mb-4">
-                <div className="w-full md:w-56 border-b md:border-b-0 md:border-r border-slate-200 bg-slate-50">
+              <div className="max-w-6xl flex flex-col md:flex-row border border-slate-200 rounded overflow-hidden mb-4">
+                <div className="w-full md:w-64 border-b md:border-b-0 md:border-r border-slate-200 bg-slate-50">
                   {scheduleCategoryTabs.map((tab) => (
                     <button
                       key={tab.key}
                       onClick={() => setActiveCategory(tab.key)}
                       className={`w-full flex items-center justify-between px-4 py-3 text-[12.5px] font-semibold cursor-pointer border-l-4 ${
-                        activeCategory === tab.key
+                        tab.key === "income" && mismatchedIncomeIds.size > 0
+                          ? "border-l-red-500 bg-red-50 text-red-600"
+                          : activeCategory === tab.key
                           ? "border-l-[#0f3a9a] bg-white text-[#0f3a9a]"
                           : "border-l-transparent text-slate-600 hover:bg-slate-100"
                       }`}
                     >
                       {tab.label}
-                      <span className="text-slate-400">{categoryCount(tab.key)}</span>
+                      <span className={tab.key === "income" && mismatchedIncomeIds.size > 0 ? "text-red-400" : "text-slate-400"}>
+                        {categoryCount(tab.key)}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -428,32 +432,55 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
                       .map((item) => (
                         <label
                           key={item.id}
-                          className={`flex items-start gap-3 border rounded px-3 py-3 ${
+                          className={`flex items-start gap-3 border-2 rounded px-3 py-3 ${
                             item.mandatory ? "cursor-not-allowed bg-slate-50" : "cursor-pointer"
-                          } ${selectedSchedules[item.id] ? "border-[#0f3a9a]" : "border-slate-200"}`}
+                          } ${
+                            mismatchedIncomeIds.has(item.id)
+                              ? "border-red-500 bg-red-50"
+                              : selectedSchedules[item.id]
+                              ? "border-[#0f3a9a]"
+                              : "border-slate-200"
+                          }`}
                         >
                           <input
                             type="checkbox"
                             checked={!!selectedSchedules[item.id]}
                             disabled={item.mandatory}
                             onChange={() => toggleSchedule(item)}
-                            className="mt-1"
+                            className={`mt-1 ${mismatchedIncomeIds.has(item.id) ? "accent-red-500" : ""}`}
                           />
                           <span
                             className={`shrink-0 h-9 px-2 rounded flex items-center justify-center text-[10px] font-bold text-white text-center ${
-                              selectedSchedules[item.id] ? "bg-[#0f3a9a]" : "bg-slate-300"
+                              mismatchedIncomeIds.has(item.id)
+                                ? "bg-red-500"
+                                : selectedSchedules[item.id]
+                                ? "bg-[#0f3a9a]"
+                                : "bg-slate-300"
                             }`}
                           >
                             {item.label}
                           </span>
                           <span className="flex-1">
-                            <span className="block text-[12.5px] font-bold text-slate-800">
+                            <span
+                              className={`block text-[12.5px] font-bold ${
+                                mismatchedIncomeIds.has(item.id) ? "text-red-700" : "text-slate-800"
+                              }`}
+                            >
                               {item.title}
                               {item.mandatory && (
                                 <span className="text-slate-400 font-semibold"> (Mandatory)</span>
                               )}
                             </span>
-                            <span className="block text-[11px] text-slate-500">{item.desc}</span>
+                            <span className="block text-[11px] text-slate-500">
+                              {item.desc}
+                              {mismatchedIncomeIds.has(item.id) && (
+                                <span className="block text-red-600 font-semibold mt-0.5">
+                                  {selectedSchedules[item.id]
+                                    ? "Remove this selection to match the experiment brief."
+                                    : "This schedule should be selected per the experiment brief."}
+                                </span>
+                              )}
+                            </span>
                           </span>
                           <span className="text-[10.5px] text-[#0f3a9a] font-semibold shrink-0 cursor-default">
                             Learn More: Show
@@ -465,7 +492,7 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
               </div>
 
               {scheduleError && (
-                <div className="rounded border border-red-300 bg-red-50 px-2.5 py-2 text-[11px] text-red-600 mb-4 max-w-4xl">
+                <div className="rounded border border-red-300 bg-red-50 px-2.5 py-2 text-[11px] text-red-600 mb-4 max-w-6xl">
                   {scheduleError}
                 </div>
               )}
@@ -490,7 +517,7 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
 
           {step === "scheduleSummary" && (
             <>
-              <div className="flex items-center justify-between max-w-4xl mb-1">
+              <div className="flex items-center justify-between max-w-6xl mb-1">
                 <h2 className="text-[26px] font-bold text-[#0a2558]">Schedules Summary</h2>
                 <p className="text-[11px] font-bold text-[#16a34a]">You are almost there</p>
               </div>
@@ -499,7 +526,7 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
                 verification.
               </p>
 
-              <div className="max-w-4xl border border-slate-200 rounded divide-y divide-slate-100 mb-4">
+              <div className="max-w-6xl border border-slate-200 rounded divide-y divide-slate-100 mb-4">
                 {selectedScheduleSummary.map((item) => (
                   <div key={item.id} className="flex items-center gap-4 p-4">
                     <span className="shrink-0 h-9 px-2 rounded bg-[#0f3a9a] flex items-center justify-center text-[10px] font-bold text-white">
@@ -540,7 +567,7 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
                 Add more Schedules
               </button>
 
-              <div className="max-w-4xl flex flex-wrap items-center gap-3">
+              <div className="max-w-6xl flex flex-wrap items-center gap-3">
                 <button
                   onClick={() => setStep("selectSchedule")}
                   className="border border-slate-300 text-[#0f3a9a] font-bold text-[13px] px-6 py-2 rounded cursor-pointer hover:bg-slate-50 transition-colors"
