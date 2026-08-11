@@ -63,9 +63,6 @@ export default function ITRReg13Simulation({ onComplete }: ITRReg13SimulationPro
   const nature = findFieldValue(simConfig, /employ/i) || DEFAULT_NATURE_OF_EMPLOYMENT;
   const regime = findFieldValue(simConfig, /regime/i) || DEFAULT_TAX_REGIME;
   const requireCredentialValidation = simConfig?.requireCredentialValidation !== false;
-  // Admin-configured (Simulation Manager) experiment brief - not rendered at
-  // all if the admin hasn't set a banner for this slug.
-  const bannerText = simConfig?.bannerText || "";
 
   const [firstName, ...restName] = name.trim().split(/\s+/);
   const lastName = restName.join(" ");
@@ -183,14 +180,6 @@ export default function ITRReg13Simulation({ onComplete }: ITRReg13SimulationPro
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Admin-configured (Simulation Manager) experiment brief - not
-          rendered at all if the admin hasn't set a banner for this slug. */}
-      {bannerText && (
-        <div className="bg-[#e0f2fe] border-b border-[#bae6fd] px-6 py-2.5 text-[11px] font-bold text-[#0369a1] select-none shrink-0 whitespace-pre-line">
-          {bannerText}
         </div>
       )}
 
