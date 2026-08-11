@@ -879,7 +879,7 @@ export default function ITRReg20Simulation({ onComplete }: ITRReg20SimulationPro
                   NATURE_OF_PROFIT_OPTIONS
                 )}
 
-                <div className="max-w-3xl border-t border-slate-200 pt-5 mb-2">
+                <div className="w-full border-t border-slate-200 pt-5 mb-2">
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-[13px] font-bold text-slate-800 max-w-md">
                       d. Income from retirement benefit account maintained in a notified country u/s 89A
@@ -957,7 +957,7 @@ export default function ITRReg20Simulation({ onComplete }: ITRReg20SimulationPro
                   </button>
                 </div>
 
-                <div className="max-w-3xl border-t border-slate-200 pt-5 flex items-center justify-between gap-4 mb-2">
+                <div className="w-full border-t border-slate-200 pt-5 flex items-center justify-between gap-4 mb-2">
                   <p className="text-[13px] font-bold text-slate-800 max-w-md">
                     e. Income from retirement benefit account maintained in a country &ldquo;other than
                     notified country u/s 89A&rdquo;
@@ -975,7 +975,7 @@ export default function ITRReg20Simulation({ onComplete }: ITRReg20SimulationPro
                   </div>
                 </div>
 
-                <div className="max-w-3xl border-t border-slate-200 pt-5 flex items-center justify-between gap-4 mb-5">
+                <div className="w-full border-t border-slate-200 pt-5 flex items-center justify-between gap-4 mb-5">
                   <p className="text-[13px] font-bold text-slate-800 max-w-md flex items-center gap-1.5">
                     f. Income taxable during the previous year on which relief u/s 89A was claimed in any
                     earlier previous year.
@@ -1001,7 +1001,7 @@ export default function ITRReg20Simulation({ onComplete }: ITRReg20SimulationPro
               </div>
 
               {draftError && (
-                <div className="rounded border border-red-300 bg-red-50 px-2.5 py-2 text-[11px] text-red-600 mb-4 max-w-3xl">
+                <div className="rounded border border-red-300 bg-red-50 px-2.5 py-2 text-[11px] text-red-600 mb-4 w-full">
                   {draftError}
                 </div>
               )}
