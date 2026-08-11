@@ -157,6 +157,19 @@ const KNOWN_SIMULATIONS = {
       { label: "Reason for Filing", value: "Taxable income is more than basic exemption limit" },
     ],
   },
+  "itr-reg-14": {
+    name: "ITR Reg 14 — Entering Akhil Sharma's Income Details",
+    bannerText:
+      "Akhil Sharma has income from salary, a rented house, and fixed deposit interest. Click Gross Total Income. Enter Salary Income of 36,00,000. Enter Monthly Rent Received of 1,20,000 (the portal will apply the 30% standard deduction automatically). Enter Interest on Fixed Deposits of 6,00,000. Click Confirm, then Confirm & Proceed.",
+    credentialFields: [
+      { label: "PAN", value: "AKSPA3663B" },
+      { label: "Name", value: "Akhil Sharma" },
+      { label: "Employer Name", value: "PABLO" },
+      { label: "Salary Income", value: "3600000" },
+      { label: "Monthly Rent Received", value: "120000" },
+      { label: "Interest on Fixed Deposits", value: "600000" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
