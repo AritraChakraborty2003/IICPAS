@@ -145,6 +145,18 @@ const KNOWN_SIMULATIONS = {
       { label: "Status", value: "Individual" },
     ],
   },
+  "itr-reg-12": {
+    name: "ITR Reg 12 — Setting Up Akhil Sharma's ITR-1",
+    bannerText:
+      "Akhil Sharma is an individual and needs to file ITR-1 because his income exceeds the basic exemption limit. Select Status as Individual and click Continue. Select ITR 1 from the dropdown and click Proceed with ITR. Click Let's get started. Select the reason: Taxable income is more than basic exemption limit. Click Continue.",
+    credentialFields: [
+      { label: "PAN", value: "AKSPA3663B" },
+      { label: "Name", value: "Akhil Sharma" },
+      { label: "Status", value: "Individual" },
+      { label: "ITR Form", value: "ITR-1" },
+      { label: "Reason for Filing", value: "Taxable income is more than basic exemption limit" },
+    ],
+  },
   "epf-reg-18": {
     name: "EPF Reg 18 — ESIC Employer Login",
     bannerText:
