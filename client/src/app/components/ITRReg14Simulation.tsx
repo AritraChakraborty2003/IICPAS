@@ -255,14 +255,14 @@ export default function ITRReg14Simulation({ onComplete }: ITRReg14SimulationPro
               <h2 className="text-[26px] font-bold text-[#0a2558] mb-2">
                 Let&apos;s validate your pre-filled return
               </h2>
-              <p className="text-[12px] text-slate-600 mb-6 max-w-3xl">
+              <p className="text-[12px] text-slate-600 mb-6 max-w-6xl">
                 Income Tax return (ITR) is pre-filled based on the information available for
                 pre-fill on e-Filing. There may be situations where such information may not be
                 complete. Please verify each section against the AIS/TIS before finalising and
                 submitting the ITR.
               </p>
 
-              <div className="max-w-2xl border border-slate-200 rounded divide-y divide-slate-100 mb-6">
+              <div className="max-w-5xl border border-slate-200 rounded divide-y divide-slate-100 mb-6">
                 {returnSummarySections.map(({ key, icon: Icon, label, desc, confirmed, value, onClick }) => (
                   <div
                     key={key}
@@ -309,15 +309,15 @@ export default function ITRReg14Simulation({ onComplete }: ITRReg14SimulationPro
                 <span className="text-slate-400 font-normal">›</span> Gross Total Income
               </p>
               <h2 className="text-[24px] font-bold text-[#0a2558] mb-1">Gross Total Income</h2>
-              <p className="text-[12px] text-slate-500 mb-1 max-w-2xl">
+              <p className="text-[12px] text-slate-500 mb-1 max-w-5xl">
                 Verify each income source collected from various sources (AIS/TIS) and enter the
                 confirmed amounts below.
               </p>
-              <p className="text-[10.5px] text-red-500 font-semibold mb-4 text-right max-w-2xl">
+              <p className="text-[10.5px] text-red-500 font-semibold mb-4 text-right max-w-5xl">
                 * Indicates mandatory fields
               </p>
 
-              <div className="max-w-2xl space-y-4 mb-5">
+              <div className="max-w-5xl space-y-4 mb-5">
                 {/* Salary */}
                 <div className="border border-slate-200 rounded p-5">
                   <p className="text-[14px] font-bold text-[#0a2558] mb-4">Income from Salary</p>
@@ -450,12 +450,12 @@ export default function ITRReg14Simulation({ onComplete }: ITRReg14SimulationPro
               </div>
 
               {incomeError && (
-                <div className="rounded border border-red-300 bg-red-50 px-2.5 py-2 text-[11px] text-red-600 mb-4 max-w-2xl">
+                <div className="rounded border border-red-300 bg-red-50 px-2.5 py-2 text-[11px] text-red-600 mb-4 max-w-5xl">
                   {incomeError}
                 </div>
               )}
 
-              <div className="flex items-center gap-3 max-w-2xl">
+              <div className="flex items-center gap-3 max-w-5xl">
                 <button
                   onClick={() => setStep("summary")}
                   className="border border-slate-300 text-[#0f3a9a] font-bold text-[13px] px-6 py-2 rounded cursor-pointer hover:bg-slate-50 transition-colors"
