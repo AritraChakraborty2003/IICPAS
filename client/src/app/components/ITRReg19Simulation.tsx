@@ -577,6 +577,12 @@ export default function ITRReg19Simulation({ onComplete }: ITRReg19SimulationPro
                 <p className="text-[11px] text-slate-500 flex-1 min-w-[180px]">
                   Do you want to download a JSON copy of the schedules selected before proceeding?
                 </p>
+                {allConfirmed && (
+                  <span className="inline-flex items-center gap-1.5 text-[11.5px] font-bold text-[#16a34a] shrink-0">
+                    <CheckCircle2 size={16} />
+                    All schedules confirmed
+                  </span>
+                )}
                 <button
                   onClick={resetAll}
                   className="inline-flex items-center gap-1.5 bg-[#dc2626] hover:bg-[#b91c1c] text-white font-bold text-[13px] px-5 py-2 rounded cursor-pointer transition-colors"
