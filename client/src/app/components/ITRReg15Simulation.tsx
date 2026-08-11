@@ -10,7 +10,7 @@ import {
 import { CheckCircle2, ArrowLeft } from "lucide-react";
 import { useSimulationConfig, findFieldValue } from "@/lib/useSimulationConfig";
 
-type Step = "summary" | "deductions";
+type Step = "summary" | "personalInfo" | "deductions";
 
 interface ITRReg15SimulationProps {
   onComplete?: () => void;
@@ -23,6 +23,11 @@ const SIMULATION_SLUG = "itr-reg-15";
 
 const DEFAULT_NAME = "Akhil Sharma";
 const DEFAULT_PAN = "AKSPA3663B";
+const DEFAULT_DOB = "1996-07-04";
+const DEFAULT_AADHAAR = "219763637854";
+const DEFAULT_ADDRESS = "#36, Basavanagudi, Bengaluru - 560004";
+const DEFAULT_MOBILE = "9876543210";
+const DEFAULT_EMAIL = "akhilsharma@gmail.com";
 const DEFAULT_SPOUSE_NAME = "Ameya Sharma";
 const DEFAULT_GROSS_TOTAL_INCOME = "5208000";
 const DEFAULT_LIC_PREMIUM = "240000";
@@ -45,6 +50,11 @@ export default function ITRReg15Simulation({ onComplete }: ITRReg15SimulationPro
   const simConfig = useSimulationConfig(SIMULATION_SLUG);
   const name = findFieldValue(simConfig, /^name$/i) || DEFAULT_NAME;
   const pan = findFieldValue(simConfig, /pan/i) || DEFAULT_PAN;
+  const dob = findFieldValue(simConfig, /dob|birth/i) || DEFAULT_DOB;
+  const aadhaar = findFieldValue(simConfig, /aadhaar/i) || DEFAULT_AADHAAR;
+  const address = findFieldValue(simConfig, /address/i) || DEFAULT_ADDRESS;
+  const mobile = findFieldValue(simConfig, /mobile/i) || DEFAULT_MOBILE;
+  const email = findFieldValue(simConfig, /email/i) || DEFAULT_EMAIL;
   const spouseName = findFieldValue(simConfig, /spouse|wife/i) || DEFAULT_SPOUSE_NAME;
   const grossTotalIncomeDisplay =
     findFieldValue(simConfig, /gross.*income/i) || DEFAULT_GROSS_TOTAL_INCOME;
@@ -52,6 +62,9 @@ export default function ITRReg15Simulation({ onComplete }: ITRReg15SimulationPro
   const expectedMedicalPremium =
     findFieldValue(simConfig, /medical/i) || DEFAULT_MEDICAL_PREMIUM;
   const requireCredentialValidation = simConfig?.requireCredentialValidation !== false;
+
+  const [firstName, ...restName] = name.trim().split(/\s+/);
+  const lastName = restName.join(" ");
 
   const [isExperimentStarted, setIsExperimentStarted] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
@@ -124,7 +137,7 @@ export default function ITRReg15Simulation({ onComplete }: ITRReg15SimulationPro
       desc: "Details of personal information, contact details, and bank account details",
       confirmed: true,
       value: pan,
-      onClick: undefined,
+      onClick: () => setStep("personalInfo"),
     },
     {
       key: "income",
@@ -289,6 +302,106 @@ export default function ITRReg15Simulation({ onComplete }: ITRReg15SimulationPro
                   Confirm &amp; Proceed ›
                 </button>
               )}
+            </>
+          )}
+
+          {step === "personalInfo" && (
+            <>
+              <p className="text-[10.5px] font-bold text-[#0f3a9a] mb-2">
+                Dashboard <span className="text-slate-400 font-normal">›</span> Filing Returns{" "}
+                <span className="text-slate-400 font-normal">›</span> Personal Information
+              </p>
+              <h2 className="text-[24px] font-bold text-[#0a2558] mb-1">Personal Information</h2>
+              <p className="text-[12px] text-slate-500 mb-5 max-w-5xl">
+                Details of personal information, contact details, and bank account details.
+              </p>
+
+              <div className="max-w-5xl border border-slate-200 rounded p-5 mb-5">
+                <p className="text-[15px] font-bold text-[#0a2558] mb-4 flex items-center gap-2">
+                  Profile
+                  <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-[#16a34a]">
+                    <CheckCircle2 size={13} /> Confirmed
+                  </span>
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      First Name
+                    </label>
+                    <p className="text-[12.5px] font-semibold text-slate-800 border-b border-slate-200 pb-1.5">
+                      {firstName}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Middle Name
+                    </label>
+                    <p className="text-[12.5px] font-semibold text-slate-400 border-b border-slate-200 pb-1.5">
+                      &nbsp;
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Last Name
+                    </label>
+                    <p className="text-[12.5px] font-semibold text-slate-800 border-b border-slate-200 pb-1.5">
+                      {lastName}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">PAN</label>
+                    <p className="text-[12.5px] font-semibold text-slate-800 border-b border-slate-200 pb-1.5">
+                      {pan}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Date of Birth
+                    </label>
+                    <p className="text-[12.5px] font-semibold text-slate-800 border-b border-slate-200 pb-1.5">
+                      {dob}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Aadhaar Number
+                    </label>
+                    <p className="text-[12.5px] font-semibold text-slate-800 border-b border-slate-200 pb-1.5">
+                      {aadhaar}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Mobile Number
+                    </label>
+                    <p className="text-[12.5px] font-semibold text-slate-800 border-b border-slate-200 pb-1.5">
+                      {mobile}
+                    </p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                      Email ID
+                    </label>
+                    <p className="text-[12.5px] font-semibold text-slate-800 border-b border-slate-200 pb-1.5">
+                      {email}
+                    </p>
+                  </div>
+                </div>
+
+                <p className="text-[11px] font-bold text-slate-600 mb-1">Address</p>
+                <p className="text-[12.5px] font-semibold text-slate-800 border-b border-slate-200 pb-1.5">
+                  {address}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 max-w-5xl">
+                <button
+                  onClick={() => setStep("summary")}
+                  className="border border-slate-300 text-[#0f3a9a] font-bold text-[13px] px-6 py-2 rounded cursor-pointer hover:bg-slate-50 transition-colors"
+                >
+                  ‹ Back to Summary
+                </button>
+              </div>
             </>
           )}
 
