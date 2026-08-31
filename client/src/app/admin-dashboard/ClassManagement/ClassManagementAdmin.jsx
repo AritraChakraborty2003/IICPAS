@@ -39,15 +39,38 @@ const calculateDuration = (startTimeStr, endTimeStr) => {
 };
 
 
-// Auto-closes after 10s so it acts as a quick clip preview rather than a full player.
+// Caps playback at 10s itself (rather than just closing the modal on a timer) so the
+// native seek bar/duration never expose the full underlying recording.
+const CLIP_PREVIEW_SECONDS = 10;
+
 function ClipPreviewModal({ url, onClose }) {
   const videoRef = useRef(null);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const timer = setTimeout(onClose, 10000);
+    // Safety net in case autoplay is blocked or timeupdate never fires.
+    const timer = setTimeout(onClose, (CLIP_PREVIEW_SECONDS + 3) * 1000);
     videoRef.current?.play?.().catch(() => {});
     return () => clearTimeout(timer);
   }, [onClose]);
+
+  const handleTimeUpdate = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.currentTime >= CLIP_PREVIEW_SECONDS) {
+      video.pause();
+      onClose();
+      return;
+    }
+    setProgress((video.currentTime / CLIP_PREVIEW_SECONDS) * 100);
+  };
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) video.play().catch(() => {});
+    else video.pause();
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
@@ -63,17 +86,28 @@ function ClipPreviewModal({ url, onClose }) {
         <video
           ref={videoRef}
           src={url}
-          controls
           autoPlay
-          className="max-h-[70vh] w-full"
+          onClick={togglePlay}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={onClose}
+          className="max-h-[70vh] w-full cursor-pointer"
         />
-        <a
-          href={url}
-          download
-          className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-white"
-        >
-          Download
-        </a>
+        <div className="h-1 w-full bg-white/20">
+          <div
+            className="h-full bg-blue-500"
+            style={{ width: `${Math.min(progress, 100)}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between bg-black px-3 py-2">
+          <span className="text-xs text-white/70">10s preview</span>
+          <a
+            href={url}
+            download
+            className="inline-flex items-center gap-1 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-white"
+          >
+            Download
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -189,8 +223,7 @@ export default function ClassManagementAdmin() {
   const [saving, setSaving] = useState(false);
   const [showPasscode, setShowPasscode] = useState(false);
   const [copiedPasscode, setCopiedPasscode] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [previewError, setPreviewError] = useState("");
+  const [previewLoadingId, setPreviewLoadingId] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
 
   const handleCopyPasscode = () => {
@@ -202,29 +235,29 @@ export default function ClassManagementAdmin() {
     }
   };
 
-  const handlePreviewClip = async () => {
-    if (!form.meetingLink || previewLoading) return;
-    setPreviewError("");
-    setPreviewLoading(true);
+  const handlePreviewClip = async (cls) => {
+    const link = cls?.meetingLink;
+    if (!link || previewLoadingId) return;
+    setPreviewLoadingId(cls._id);
 
     const pollStatus = async () => {
       try {
         const res = await fetch(
-          `${API}/api/zoom-clips/dynamic-status?link=${encodeURIComponent(form.meetingLink)}`
+          `${API}/api/zoom-clips/dynamic-status?link=${encodeURIComponent(link)}`
         );
         const data = await res.json();
         if (data.status === "ready") {
-          setPreviewLoading(false);
+          setPreviewLoadingId(null);
           setPreviewUrl(data.url);
         } else if (data.status === "error") {
-          setPreviewLoading(false);
-          setPreviewError(data.error || "Failed to load clip");
+          setPreviewLoadingId(null);
+          window.alert(data.error || "Failed to load preview clip");
         } else {
           setTimeout(pollStatus, 1000);
         }
       } catch (err) {
-        setPreviewLoading(false);
-        setPreviewError("Error checking clip status");
+        setPreviewLoadingId(null);
+        window.alert("Error checking clip status");
       }
     };
 
@@ -232,13 +265,13 @@ export default function ClassManagementAdmin() {
       const res = await fetch(`${API}/api/zoom-clips/dynamic-download`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ link: form.meetingLink }),
+        body: JSON.stringify({ link }),
       });
       if (!res.ok && res.status !== 202) throw new Error("Failed to start clip download");
       pollStatus();
     } catch (err) {
-      setPreviewLoading(false);
-      setPreviewError(err?.message || "Error starting clip download");
+      setPreviewLoadingId(null);
+      window.alert(err?.message || "Error starting clip download");
     }
   };
 
@@ -658,6 +691,20 @@ export default function ClassManagementAdmin() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
+                      {cls.meetingLink && (
+                        <button
+                          onClick={() => handlePreviewClip(cls)}
+                          disabled={previewLoadingId === cls._id}
+                          title="Preview 10s clip"
+                          className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {previewLoadingId === cls._id ? (
+                            <RefreshCw className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <PlayCircle className="h-4 w-4" />
+                          )}
+                        </button>
+                      )}
                       {cls.type === "live" && hasPermission("class-management", "update") && (
                         <button
                           onClick={() => handleConvert(cls._id)}
@@ -877,24 +924,8 @@ export default function ClassManagementAdmin() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 <div>
-                  <label className="mb-1 flex items-center justify-between text-sm font-medium text-gray-700">
-                    <span>Live Meeting Link</span>
-                    {form.meetingLink && (
-                      <button
-                        type="button"
-                        onClick={handlePreviewClip}
-                        disabled={previewLoading}
-                        className="inline-flex items-center gap-1 text-xs font-normal text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                        title="Preview a 10s clip from this meeting"
-                      >
-                        {previewLoading ? (
-                          <RefreshCw size={14} className="animate-spin" />
-                        ) : (
-                          <PlayCircle size={14} />
-                        )}
-                        {previewLoading ? "Loading…" : "Preview clip"}
-                      </button>
-                    )}
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Live Meeting Link
                   </label>
                   <input
                     type="url"
@@ -905,9 +936,6 @@ export default function ClassManagementAdmin() {
                     }
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />
-                  {previewError && (
-                    <p className="mt-1 text-xs text-red-600">{previewError}</p>
-                  )}
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
