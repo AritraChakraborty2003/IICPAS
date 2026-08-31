@@ -39,9 +39,9 @@ const calculateDuration = (startTimeStr, endTimeStr) => {
 };
 
 
-// Caps playback at 10s itself (rather than just closing the modal on a timer) so the
-// native seek bar/duration never expose the full underlying recording.
-const CLIP_PREVIEW_SECONDS = 10;
+// Caps playback at CLIP_PREVIEW_SECONDS itself (rather than just closing the modal on a
+// timer) so the native seek bar/duration never expose the full underlying recording.
+const CLIP_PREVIEW_SECONDS = 25;
 
 function ClipPreviewModal({ url, onClose }) {
   const videoRef = useRef(null);
@@ -99,7 +99,7 @@ function ClipPreviewModal({ url, onClose }) {
           />
         </div>
         <div className="flex items-center justify-between bg-black px-3 py-2">
-          <span className="text-xs text-white/70">10s preview</span>
+          <span className="text-xs text-white/70">{CLIP_PREVIEW_SECONDS}s preview</span>
           <a
             href={url}
             download
@@ -695,7 +695,7 @@ export default function ClassManagementAdmin() {
                         <button
                           onClick={() => handlePreviewClip(cls)}
                           disabled={previewLoadingId === cls._id}
-                          title="Preview 10s clip"
+                          title={`Preview ${CLIP_PREVIEW_SECONDS}s clip`}
                           className="rounded-md p-1.5 text-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {previewLoadingId === cls._id ? (
