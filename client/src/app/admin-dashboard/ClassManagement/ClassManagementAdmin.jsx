@@ -1040,6 +1040,10 @@ export default function ClassManagementAdmin() {
           </div>
         </div>
       )}
+
+      {previewUrl && (
+        <ClipPreviewModal url={previewUrl} onClose={() => setPreviewUrl("")} />
+      )}
     </div>
   );
 }
