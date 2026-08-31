@@ -2,7 +2,7 @@
 
 import { getApiOrigin } from "@/lib/apiBase";
 import { useAuth } from "@/contexts/AuthContext";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   Check,
@@ -38,6 +38,46 @@ const calculateDuration = (startTimeStr, endTimeStr) => {
   return diff;
 };
 
+
+// Auto-closes after 10s so it acts as a quick clip preview rather than a full player.
+function ClipPreviewModal({ url, onClose }) {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const timer = setTimeout(onClose, 10000);
+    videoRef.current?.play?.().catch(() => {});
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
+      <div className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-black shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute right-3 top-3 z-10 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
+          title="Close"
+        >
+          <X size={18} />
+        </button>
+        <video
+          ref={videoRef}
+          src={url}
+          controls
+          autoPlay
+          className="max-h-[70vh] w-full"
+        />
+        <a
+          href={url}
+          download
+          className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-white"
+        >
+          Download
+        </a>
+      </div>
+    </div>
+  );
+}
 
 const EMPTY_FORM = {
   title: "",
@@ -149,6 +189,9 @@ export default function ClassManagementAdmin() {
   const [saving, setSaving] = useState(false);
   const [showPasscode, setShowPasscode] = useState(false);
   const [copiedPasscode, setCopiedPasscode] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
 
   const handleCopyPasscode = () => {
     if (!form.passcode) return;
@@ -156,6 +199,46 @@ export default function ClassManagementAdmin() {
       navigator.clipboard.writeText(form.passcode);
       setCopiedPasscode(true);
       setTimeout(() => setCopiedPasscode(false), 2000);
+    }
+  };
+
+  const handlePreviewClip = async () => {
+    if (!form.meetingLink || previewLoading) return;
+    setPreviewError("");
+    setPreviewLoading(true);
+
+    const pollStatus = async () => {
+      try {
+        const res = await fetch(
+          `${API}/api/zoom-clips/dynamic-status?link=${encodeURIComponent(form.meetingLink)}`
+        );
+        const data = await res.json();
+        if (data.status === "ready") {
+          setPreviewLoading(false);
+          setPreviewUrl(data.url);
+        } else if (data.status === "error") {
+          setPreviewLoading(false);
+          setPreviewError(data.error || "Failed to load clip");
+        } else {
+          setTimeout(pollStatus, 1000);
+        }
+      } catch (err) {
+        setPreviewLoading(false);
+        setPreviewError("Error checking clip status");
+      }
+    };
+
+    try {
+      const res = await fetch(`${API}/api/zoom-clips/dynamic-download`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ link: form.meetingLink }),
+      });
+      if (!res.ok && res.status !== 202) throw new Error("Failed to start clip download");
+      pollStatus();
+    } catch (err) {
+      setPreviewLoading(false);
+      setPreviewError(err?.message || "Error starting clip download");
     }
   };
 
@@ -794,8 +877,24 @@ export default function ClassManagementAdmin() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Live Meeting Link
+                  <label className="mb-1 flex items-center justify-between text-sm font-medium text-gray-700">
+                    <span>Live Meeting Link</span>
+                    {form.meetingLink && (
+                      <button
+                        type="button"
+                        onClick={handlePreviewClip}
+                        disabled={previewLoading}
+                        className="inline-flex items-center gap-1 text-xs font-normal text-blue-600 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        title="Preview a 10s clip from this meeting"
+                      >
+                        {previewLoading ? (
+                          <RefreshCw size={14} className="animate-spin" />
+                        ) : (
+                          <PlayCircle size={14} />
+                        )}
+                        {previewLoading ? "Loading…" : "Preview clip"}
+                      </button>
+                    )}
                   </label>
                   <input
                     type="url"
@@ -806,6 +905,9 @@ export default function ClassManagementAdmin() {
                     }
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />
+                  {previewError && (
+                    <p className="mt-1 text-xs text-red-600">{previewError}</p>
+                  )}
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
