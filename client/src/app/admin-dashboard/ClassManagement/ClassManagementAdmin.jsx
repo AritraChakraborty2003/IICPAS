@@ -100,13 +100,6 @@ function ClipPreviewModal({ url, onClose }) {
         </div>
         <div className="flex items-center justify-between bg-black px-3 py-2">
           <span className="text-xs text-white/70">{CLIP_PREVIEW_SECONDS}s preview</span>
-          <a
-            href={url}
-            download
-            className="inline-flex items-center gap-1 rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-gray-800 hover:bg-white"
-          >
-            Download
-          </a>
         </div>
       </div>
     </div>
