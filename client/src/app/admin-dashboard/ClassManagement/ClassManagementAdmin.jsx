@@ -73,7 +73,10 @@ function ClipPreviewModal({ url, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <div className="relative w-full max-w-2xl overflow-hidden rounded-xl bg-black shadow-2xl">
         <button
           type="button"
@@ -90,6 +93,10 @@ function ClipPreviewModal({ url, onClose }) {
           onClick={togglePlay}
           onTimeUpdate={handleTimeUpdate}
           onEnded={onClose}
+          onContextMenu={(e) => e.preventDefault()}
+          controlsList="nodownload noplaybackrate"
+          disablePictureInPicture
+          disableRemotePlayback
           className="max-h-[70vh] w-full cursor-pointer"
         />
         <div className="h-1 w-full bg-white/20">
