@@ -56,6 +56,32 @@ async function getZoomAccessToken() {
   return data.access_token;
 }
 
+// Zoom's clip download endpoint 302s to a CloudFront-signed URL and also sets
+// a `_zm_presig` cookie that CloudFront requires alongside the signed URL —
+// without it the CDN rejects the request with 403 CDN_MissingJWTInfo. Axios
+// (like plain curl -L) doesn't carry cookies across a redirect on its own, so
+// the hop has to be done manually.
+async function fetchClipDownloadStream(clipId, token) {
+  const redirectRes = await axios.get(
+    `https://api.zoom.us/v2/clips/${clipId}/download`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      maxRedirects: 0,
+      validateStatus: (status) => status === 302,
+    }
+  );
+
+  const redirectUrl = redirectRes.headers.location;
+  const cookieHeader = (redirectRes.headers["set-cookie"] || [])
+    .map((c) => c.split(";")[0])
+    .join("; ");
+
+  return axios.get(redirectUrl, {
+    headers: cookieHeader ? { Cookie: cookieHeader } : {},
+    responseType: "stream",
+  });
+}
+
 async function runDownload(req) {
   job = { status: "downloading", progress: 0, error: null };
   try {
@@ -73,10 +99,7 @@ async function runDownload(req) {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
     const tmpFile = `${OUTPUT_FILE}.part`;
 
-    const response = await axios.get(
-      `https://api.zoom.us/v2/clips/${clip.clip_id}/download`,
-      { headers: { Authorization: `Bearer ${token}` }, responseType: "stream" }
-    );
+    const response = await fetchClipDownloadStream(clip.clip_id, token);
 
     const totalBytes = clip.file_size || 0;
     let downloadedBytes = 0;
@@ -155,10 +178,7 @@ async function runDynamicDownload(req, fragment) {
     const outputFile = path.join(UPLOAD_DIR, `${fragment}.mp4`);
     const tmpFile = `${outputFile}.part`;
 
-    const response = await axios.get(
-      `https://api.zoom.us/v2/clips/${clip.clip_id}/download`,
-      { headers: { Authorization: `Bearer ${token}` }, responseType: "stream" }
-    );
+    const response = await fetchClipDownloadStream(clip.clip_id, token);
 
     const totalBytes = clip.file_size || 0;
     let downloadedBytes = 0;
