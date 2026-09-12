@@ -29,7 +29,6 @@ import {
   ArrowLeft,
   Calendar,
   LayoutGrid,
-  BookOpen,
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -2887,6 +2886,303 @@ function StudentProfileManagement() {
           </div>
         )}
 
+      </div>
+    </motion.div>
+  );
+}
+
+function StudentCoursesPreview({ studentId, onBack }) {
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [student, setStudent] = useState(null);
+  const [courses, setCourses] = useState([]);
+  const [overallCompletionPercent, setOverallCompletionPercent] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!studentId) return;
+      setLoading(true);
+      setErrorMessage("");
+      try {
+        const response = await axios.get(
+          `${API_BASE}/v1/students/admin/${studentId}/overview`
+        );
+        if (cancelled) return;
+        setStudent(response.data?.student || null);
+        setCourses(
+          Array.isArray(response.data?.courses) ? response.data.courses : []
+        );
+        setOverallCompletionPercent(
+          Number(response.data?.overallCompletionPercent || 0)
+        );
+      } catch (err) {
+        if (cancelled) return;
+        setErrorMessage(
+          getFetchErrorMessage(err, "Failed to load student courses")
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId]);
+
+  const formatDate = (value) => {
+    if (!value) return "N/A";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "N/A";
+    return date.toLocaleDateString("en-IN", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  const getCourseImageSrc = (course) => {
+    const imageToUse = course?.dashboardImage || course?.image;
+    if (!imageToUse) return "/images/a1.jpeg";
+    if (imageToUse.startsWith("http")) return imageToUse;
+    if (imageToUse.startsWith("/uploads/")) return `${API_ORIGIN}${imageToUse}`;
+    if (imageToUse.startsWith("/")) return imageToUse;
+    return `${API_ORIGIN}/${imageToUse}`;
+  };
+
+  const getCourseDescription = (course) => {
+    const raw = course?.description;
+    const cleaned = raw
+      ? String(raw).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+      : "";
+    return cleaned || "No description provided for this course yet.";
+  };
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="flex items-center justify-center h-64"
+      >
+        <Loader2 className="animate-spin text-indigo-500" size={36} />
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="w-full max-w-full rounded-[28px] bg-gradient-to-br from-gray-50 to-blue-50 p-6"
+    >
+      <button
+        onClick={onBack}
+        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+      >
+        <ArrowLeft size={16} />
+        Back to Students
+      </button>
+
+      {errorMessage ? (
+        <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+          {errorMessage}
+        </div>
+      ) : null}
+
+      <div className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+        <div>
+          <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-blue-700">
+            Digital Hub Preview
+          </span>
+          <h1 className="mt-3 text-3xl font-bold bg-gradient-to-r from-gray-900 to-blue-800 bg-clip-text text-transparent">
+            {student?.name ? `${student.name}'s Courses` : "Student Courses"}
+          </h1>
+          <p className="mt-2 text-base text-gray-600 sm:text-lg">
+            {student?.email
+              ? `${student.email} — `
+              : ""}
+            Read-only preview of exactly what this student sees on their own
+            dashboard.
+          </p>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[280px]">
+          <div className="rounded-2xl border border-blue-100 bg-white/90 px-4 py-3 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
+              Enrolled
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {courses.length}
+            </p>
+          </div>
+          <div className="rounded-2xl border border-blue-100 bg-white/90 px-4 py-3 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
+              Avg. Progress
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-900">
+              {overallCompletionPercent}%
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {courses.length === 0 ? (
+          <div className="rounded-[28px] border border-blue-100 bg-white px-6 py-12 text-center shadow-[0_18px_48px_-28px_rgba(15,23,42,0.25)]">
+            <h2 className="text-xl font-bold text-slate-900">
+              No courses purchased yet
+            </h2>
+            <p className="mt-2 text-sm text-slate-600">
+              This student hasn&apos;t enrolled in any course.
+            </p>
+          </div>
+        ) : (
+          courses.map((course) => {
+            const courseId = course.courseId || course._id;
+            const chaptersCount = Number(course.chaptersCount || 0);
+            const activitiesCount =
+              Number(course.assignmentsCount || 0) +
+              Number(course.caseStudiesCount || 0) +
+              Number(course.testsCount || 0);
+            const progressValue = Math.max(
+              0,
+              Math.min(Number(course.completionPercent || 0), 100)
+            );
+            const description = getCourseDescription(course);
+            const isExpired = Boolean(course.isExpired);
+            const isLocked = Boolean(course.isLocked || course.batchLockActive);
+
+            const overviewStats = [
+              { label: "Category", value: course.category || "General" },
+              { label: "Level", value: course.level || "Professional course" },
+              {
+                label: "Content",
+                value: `${chaptersCount} ${
+                  chaptersCount === 1 ? "chapter" : "chapters"
+                }`,
+              },
+              { label: "Activities", value: `${activitiesCount} items` },
+            ];
+
+            return (
+              <div
+                key={courseId}
+                className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_48px_-28px_rgba(15,23,42,0.35)]"
+              >
+                <div className="flex flex-col lg:flex-row">
+                  <div className="relative overflow-hidden shrink-0 w-full h-[220px] lg:w-[300px] lg:h-auto lg:self-stretch">
+                    <img
+                      src={getCourseImageSrc(course)}
+                      alt={course.title}
+                      className="absolute inset-0 h-full w-full object-cover object-center"
+                      onError={(e) => {
+                        e.target.src = "/images/a1.jpeg";
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-slate-900/10 to-transparent" />
+
+                    <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-white/92 px-3 py-1 text-xs font-semibold text-slate-800 shadow-sm">
+                        {course.category || "General"}
+                      </span>
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm ${
+                          isLocked
+                            ? "bg-rose-500/95 text-white"
+                            : isExpired
+                            ? "bg-slate-500/95 text-white"
+                            : "bg-emerald-500/95 text-white"
+                        }`}
+                      >
+                        {isLocked ? "Locked" : isExpired ? "Expired" : "Enrolled"}
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-4 left-4">
+                      <span className="rounded-full bg-slate-950/65 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                        {chaptersCount} {chaptersCount === 1 ? "chapter" : "chapters"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-1 flex-col gap-5 p-5 sm:p-6 xl:flex-row">
+                    <div className="min-w-0 flex flex-1 flex-col">
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                          {course.level || "Professional course"}
+                        </span>
+                      </div>
+
+                      <h2 className="max-w-4xl text-xl font-bold leading-snug text-slate-900 sm:text-[1.65rem]">
+                        {course.title}
+                      </h2>
+
+                      <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 line-clamp-2">
+                        {description}
+                      </p>
+
+                      <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        {overviewStats.map((stat) => (
+                          <div
+                            key={`${courseId}-${stat.label}`}
+                            className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 shadow-sm"
+                          >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                              {stat.label}
+                            </p>
+                            <p className="mt-2 text-sm font-semibold text-slate-900">
+                              {stat.value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <p className="mt-4 text-xs text-slate-400">
+                        Purchased {formatDate(course.purchasedAt)}
+                        {course.expiresAt
+                          ? ` · Expires ${formatDate(course.expiresAt)}`
+                          : ""}
+                      </p>
+                    </div>
+
+                    <div className="xl:w-[240px] xl:shrink-0">
+                      <div className="rounded-[24px] border border-blue-100 bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 px-5 py-4 text-white shadow-lg">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-blue-100">
+                          Course Progress
+                        </p>
+                        <p className="mt-3 text-3xl font-bold leading-none">
+                          {progressValue}%
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-blue-50">
+                          {progressValue > 0
+                            ? "Student is actively progressing through this course."
+                            : "Student is enrolled but hasn't started yet."}
+                        </p>
+
+                        <div className="mt-5">
+                          <div className="flex items-center justify-between text-xs font-medium text-blue-100">
+                            <span>Learning progress</span>
+                            <span>{progressValue}%</span>
+                          </div>
+                          <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-white/20">
+                            <div
+                              className="h-full rounded-full bg-white"
+                              style={{ width: `${progressValue}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
       </div>
     </motion.div>
   );
