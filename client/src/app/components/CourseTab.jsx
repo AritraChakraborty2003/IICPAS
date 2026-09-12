@@ -460,8 +460,20 @@ export default function CourseTab({
         studentId
           ? axios
               .get(
-                `${API}/api/v1/students/${studentId}/digital-hub-progress/${courseId}`,
-                { withCredentials: true }
+                previewStudentId
+                  ? `${API}/api/v1/students/admin/${studentId}/digital-hub-progress/${courseId}`
+                  : `${API}/api/v1/students/${studentId}/digital-hub-progress/${courseId}`,
+                previewStudentId
+                  ? {
+                      headers: {
+                        Authorization: `Bearer ${
+                          typeof window !== "undefined"
+                            ? localStorage.getItem("adminToken")
+                            : ""
+                        }`,
+                      },
+                    }
+                  : { withCredentials: true }
               )
               .catch(() => null)
           : Promise.resolve(null),
@@ -1443,7 +1455,8 @@ export default function CourseTab({
                             </div>
                           ) : null}
 
-                          {isPurchased &&
+                          {!readOnly &&
+                            isPurchased &&
                             isCourseCompleted(course) &&
                             !courseRatings[course._id] && (
                               <button
