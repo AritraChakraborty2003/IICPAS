@@ -28,6 +28,8 @@ import {
   Eye,
   ArrowLeft,
   Calendar,
+  LayoutGrid,
+  BookOpen,
 } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
@@ -722,6 +724,7 @@ function StudentsTable({
   students,
   onStudentUpdated,
   onViewStudent,
+  onPreviewCourses,
   onCourseAccessUpdated,
   onQueueCourseAccessUpdate,
   errorMessage = "",
@@ -1351,6 +1354,13 @@ function StudentsTable({
                         className="bg-cyan-500 hover:bg-cyan-600 text-white p-2 rounded transition-colors flex items-center justify-center"
                       >
                         <Eye size={14} />
+                      </button>
+                      <button
+                        onClick={() => onPreviewCourses(student)}
+                        title="Preview Courses (Student View)"
+                        className="bg-purple-500 hover:bg-purple-600 text-white p-2 rounded transition-colors flex items-center justify-center"
+                      >
+                        <LayoutGrid size={14} />
                       </button>
                       <button
                         onClick={() => handleEditStudent(student)}
@@ -2886,7 +2896,7 @@ export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [studentsError, setStudentsError] = useState("");
-  const [activeTab, setActiveTab] = useState("add"); // "add", "list", "details", "access", or "profile"
+  const [activeTab, setActiveTab] = useState("add"); // "add", "list", "details", "coursesPreview", "access", or "profile"
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const hasLoadedStudentsRef = useRef(false);
   const pendingCourseAccessOverridesRef = useRef(new Map());
@@ -2957,6 +2967,11 @@ export default function StudentsTab() {
   const handleViewStudent = (student) => {
     setSelectedStudentId(student?._id || null);
     setActiveTab("details");
+  };
+
+  const handlePreviewCourses = (student) => {
+    setSelectedStudentId(student?._id || null);
+    setActiveTab("coursesPreview");
   };
 
   const handleGoBack = () => {
@@ -3043,6 +3058,7 @@ export default function StudentsTab() {
                 students={students}
                 onStudentUpdated={handleStudentsUpdated}
                 onViewStudent={handleViewStudent}
+                onPreviewCourses={handlePreviewCourses}
                 onCourseAccessUpdated={applyCourseAccessUpdate}
                 onQueueCourseAccessUpdate={queueCourseAccessUpdate}
                 errorMessage={studentsError}
@@ -3056,6 +3072,13 @@ export default function StudentsTab() {
               onCourseAccessUpdated={applyCourseAccessUpdate}
               onQueueCourseAccessUpdate={queueCourseAccessUpdate}
               pendingCourseAccessOverridesRef={pendingCourseAccessOverridesRef}
+            />
+          )}
+          {activeTab === "coursesPreview" && selectedStudentId && (
+            <StudentCoursesPreview
+              key="studentcoursespreview"
+              studentId={selectedStudentId}
+              onBack={handleGoBack}
             />
           )}
           {activeTab === "access" &&

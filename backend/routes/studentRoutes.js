@@ -18,6 +18,9 @@ import CourseBooking from "../models/CourseBooking.js";
 import PDFDocument from "pdfkit";
 import Course from "../models/Content/Course.js";
 import Quiz from "../models/Content/Quiz.js";
+import Assignment from "../models/Assignment.js";
+import CaseStudy from "../models/CaseStudy.js";
+import RevisionTest from "../models/Content/RevisionTest.js";
 import fs from "fs-extra";
 import nodemailer from "nodemailer";
 import express from "express";
@@ -758,7 +761,10 @@ router.get(
       }
 
       const student = await Student.findById(id)
-        .populate("course", "title")
+        .populate(
+          "course",
+          "title description category level image dashboardImage slug chapters"
+        )
         .populate("batchId", "code mode size assignedCount courseLocks")
         .select(
           "name email phone mode location center status batchId batchCode batchMode batchAssignedAt course courseAccessOverrides receipts createdAt updatedAt"
@@ -789,22 +795,32 @@ router.get(
       });
       const coursesWithCompletion = await Promise.all(
         coursesWithAccess.map(async (course) => {
-          try {
-            const progress = await getDigitalHubCourseProgress(id, course._id);
-            return {
-              ...course,
-              _id: course._id,
-              title: course.title || "Untitled Course",
-              completionPercent: Number(progress?.overallProgress || 0),
-            };
-          } catch (error) {
-            return {
-              ...course,
-              _id: course._id,
-              title: course.title || "Untitled Course",
-              completionPercent: 0,
-            };
-          }
+          const chapterIds = Array.isArray(course.chapters)
+            ? course.chapters
+            : [];
+          const [progressResult, assignmentsCount, caseStudiesCount, testsCount] =
+            await Promise.allSettled([
+              getDigitalHubCourseProgress(id, course._id),
+              Assignment.countDocuments({ chapterId: { $in: chapterIds } }),
+              CaseStudy.countDocuments({ chapterId: { $in: chapterIds } }),
+              RevisionTest.countDocuments({ course: course._id }),
+            ]);
+
+          return {
+            ...course,
+            _id: course._id,
+            title: course.title || "Untitled Course",
+            completionPercent:
+              progressResult.status === "fulfilled"
+                ? Number(progressResult.value?.overallProgress || 0)
+                : 0,
+            chaptersCount: chapterIds.length,
+            assignmentsCount:
+              assignmentsCount.status === "fulfilled" ? assignmentsCount.value : 0,
+            caseStudiesCount:
+              caseStudiesCount.status === "fulfilled" ? caseStudiesCount.value : 0,
+            testsCount: testsCount.status === "fulfilled" ? testsCount.value : 0,
+          };
         })
       );
 
