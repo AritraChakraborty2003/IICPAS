@@ -3361,12 +3361,7 @@ function StudentDigitalHubPreview({ studentId, onBack }) {
 
       <main className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
         {activeSection === "digital-hub" && (
-          <StudentCoursesPreview
-            studentId={studentId}
-            onBack={onBack}
-            preloadedData={overview}
-            hideBackButton
-          />
+          <CourseTab previewStudentId={studentId} readOnly />
         )}
         {activeSection === "assessment" && (
           <RevisionTab readOnly completedTestIds={completedTestIds} />

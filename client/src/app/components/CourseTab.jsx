@@ -1398,16 +1398,22 @@ export default function CourseTab({
                             {description}
                           </p>
 
-                          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                          <div
+                            className="mt-5 grid gap-3"
+                            style={{
+                              gridTemplateColumns:
+                                "repeat(auto-fit, minmax(110px, 1fr))",
+                            }}
+                          >
                             {overviewStats.map((stat) => (
                               <div
                                 key={`${course._id}-${stat.label}`}
-                                className="rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 shadow-sm"
+                                className="min-w-0 rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 shadow-sm"
                               >
-                                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+                                <p className="truncate text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
                                   {stat.label}
                                 </p>
-                                <p className="mt-2 text-sm font-semibold text-slate-900">
+                                <p className="mt-2 break-words text-sm font-semibold text-slate-900">
                                   {stat.value}
                                 </p>
                               </div>
