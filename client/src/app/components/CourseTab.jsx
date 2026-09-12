@@ -655,6 +655,8 @@ export default function CourseTab({
         return <Science />;
       case "tests":
         return <QuestionAnswer />;
+      case "videos":
+        return <Play className="w-5 h-5" />;
       case "liveSchedule":
         return <Calendar className="w-5 h-5" />;
       default:
@@ -672,6 +674,8 @@ export default function CourseTab({
         return "Simulations";
       case "tests":
         return "Case Studies";
+      case "videos":
+        return "Videos";
       case "liveSchedule":
         return "Live Schedule";
       default:
@@ -1564,6 +1568,7 @@ export default function CourseTab({
                           "assignments",
                           "experiments",
                           "tests",
+                          "videos",
                           ...(course.sessionType !== "recorded" ? ["liveSchedule"] : []),
                         ].map((tab) => (
                           <div
@@ -1576,6 +1581,7 @@ export default function CourseTab({
                                 if (tab === "experiments") {
                                   fetchCaseStudiesForCourse(selectedCourse._id);
                                 }
+                                if (tab === "videos") fetchLiveDataForCourse(selectedCourse._id);
                               }
                             }}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg cursor-pointer transition-colors min-w-[110px] justify-center border text-sm font-medium ${
@@ -1796,7 +1802,110 @@ export default function CourseTab({
                             </div>
                           )}
                         </div>
-                      ) : activeTab === "liveSchedule" && course.sessionType !== "recorded" ? (() => {
+                      ) : activeTab === "videos" ? (() => {
+                        const liveData = courseLiveData[course._id];
+                        if (!liveData || liveData.loading) {
+                          return (
+                            <div className="flex items-center justify-center py-12 text-slate-500">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mr-3" />
+                              Loading videos...
+                            </div>
+                          );
+                        }
+                        const { sessions = [], classes = [] } = liveData;
+
+                        const isRecorded = (item) =>
+                          String(item?.status || "").toLowerCase() === "completed";
+
+                        const allVideos = [
+                          ...sessions.map((s) => ({
+                            id: s._id,
+                            title: s.title,
+                            date: s.date,
+                            recorded: isRecorded(s),
+                            kind: "Live Session",
+                          })),
+                          ...classes.map((c) => ({
+                            id: c._id,
+                            title: c.title,
+                            date: c.date || c.startAt,
+                            recorded: isRecorded(c),
+                            kind: "Live Class",
+                          })),
+                        ];
+
+                        const recordedCount = allVideos.filter((v) => v.recorded).length;
+                        const liveCount = allVideos.length - recordedCount;
+
+                        const formatDate = (d) => {
+                          const date = new Date(d);
+                          if (Number.isNaN(date.getTime())) return "Date TBD";
+                          return date.toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          });
+                        };
+
+                        return (
+                          <div className="space-y-5">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                                  Recorded Videos
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-emerald-800">
+                                  {recordedCount}
+                                </p>
+                              </div>
+                              <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-red-700">
+                                  Live Videos
+                                </p>
+                                <p className="mt-2 text-3xl font-bold text-red-700">
+                                  {liveCount}
+                                </p>
+                              </div>
+                            </div>
+
+                            {allVideos.length === 0 ? (
+                              <div className="text-center py-10 text-slate-500">
+                                <Play className="mx-auto mb-3 h-10 w-10 text-slate-300" />
+                                <p className="text-base font-medium">
+                                  No videos available for this course.
+                                </p>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {allVideos.map((video) => (
+                                  <div
+                                    key={`${video.kind}-${video.id}`}
+                                    className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate font-medium text-slate-800">
+                                        {video.title}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                        {video.kind} • {formatDate(video.date)}
+                                      </p>
+                                    </div>
+                                    <span
+                                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                        video.recorded
+                                          ? "bg-emerald-100 text-emerald-700"
+                                          : "bg-red-100 text-red-600"
+                                      }`}
+                                    >
+                                      {video.recorded ? "Recorded" : "Live"}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })() : activeTab === "liveSchedule" && course.sessionType !== "recorded" ? (() => {
                         const liveData = courseLiveData[course._id];
                         if (!liveData || liveData.loading) {
                           return (
