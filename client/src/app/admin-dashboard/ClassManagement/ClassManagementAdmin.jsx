@@ -120,7 +120,7 @@ const EMPTY_FORM = {
   courses: [],
   chapters: [],
   topics: [],
-  batch: "",
+  batch: [],
   date: "",
   time: "",
   durationMinutes: 60,
@@ -164,7 +164,7 @@ const TypeBadge = ({ type }) => {
 };
 
 // Reusable multi-select checkbox group
-const CheckboxGroup = ({ label, options, selected, onToggle, disabled, emptyText }) => (
+const CheckboxGroup = ({ label, options, selected, onToggle, disabled, emptyText, renderLabel }) => (
   <div>
     <label className="mb-1 block text-sm font-medium text-gray-700">
       {label}
@@ -192,7 +192,9 @@ const CheckboxGroup = ({ label, options, selected, onToggle, disabled, emptyText
                 onChange={() => onToggle(id)}
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-gray-700">{opt.title}</span>
+              <span className="text-gray-700">
+                {renderLabel ? renderLabel(opt) : opt.title}
+              </span>
             </label>
           );
         })
@@ -434,7 +436,7 @@ export default function ClassManagementAdmin() {
       courses: courseIds,
       chapters: chapterIds,
       topics: topicIds,
-      batch: idOf(cls.batch),
+      batch: (cls.batch || []).map(idOf),
       date: cls.date ? new Date(cls.date).toISOString().slice(0, 10) : "",
       time: cls.time || "",
       endTime: cls.endTime || calculateEndTime(cls.time || "00:00", cls.durationMinutes || 60),
@@ -487,6 +489,15 @@ export default function ClassManagementAdmin() {
     }));
   };
 
+  const toggleBatch = (bid) => {
+    setForm((f) => ({
+      ...f,
+      batch: f.batch.includes(bid)
+        ? f.batch.filter((x) => x !== bid)
+        : [...f.batch, bid],
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.title || form.courses.length === 0 || !form.date || !form.time) {
@@ -498,7 +509,6 @@ export default function ClassManagementAdmin() {
       setError("");
       const payload = {
         ...form,
-        batch: form.batch || null,
         durationMinutes: Number(form.durationMinutes) || 60,
         price: 0,
         maxParticipants: Number(form.maxParticipants) || 100,
@@ -660,10 +670,17 @@ export default function ClassManagementAdmin() {
                         {cls.instructor}
                       </div>
                     )}
-                    {cls.batch?.code && (
-                      <span className="mt-1 inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                        {cls.batch.code}
-                      </span>
+                    {(cls.batch || []).length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {cls.batch.map((b) => (
+                          <span
+                            key={idOf(b)}
+                            className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700"
+                          >
+                            {b.code}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
@@ -899,27 +916,18 @@ export default function ClassManagementAdmin() {
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                   />
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Batch
-                  </label>
-                  <select
-                    value={form.batch}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, batch: e.target.value }))
-                    }
-                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                  >
-                    <option value="">No batch</option>
-                    {batches.map((b) => (
-                      <option key={idOf(b)} value={idOf(b)}>
-                        {b.code || "Untitled batch"}
-                        {b.mode ? ` · ${b.mode}` : ""}
-                        {b.size ? ` (${b.assignedCount || 0}/${b.size})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <CheckboxGroup
+                  label="Batch"
+                  options={batches}
+                  selected={form.batch}
+                  onToggle={toggleBatch}
+                  emptyText="No batches available"
+                  renderLabel={(b) =>
+                    `${b.code || "Untitled batch"}${b.mode ? ` · ${b.mode}` : ""}${
+                      b.size ? ` (${b.assignedCount || 0}/${b.size})` : ""
+                    }`
+                  }
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">

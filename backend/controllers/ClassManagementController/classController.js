@@ -197,9 +197,12 @@ export const createClass = async (req, res) => {
       return res.status(400).json({ message: "One or more courses not found" });
     }
 
-    const batch = toIdArray(batchInput)[0] || null;
-    if (batch && !(await BatchManager.exists({ _id: batch }))) {
-      return res.status(400).json({ message: "Batch not found" });
+    const batch = toIdArray(batchInput);
+    if (batch.length) {
+      const batchCount = await BatchManager.countDocuments({ _id: { $in: batch } });
+      if (batchCount !== batch.length) {
+        return res.status(400).json({ message: "One or more batches not found" });
+      }
     }
 
     const { startAt, endAt } = computeClassWindow(
@@ -281,9 +284,12 @@ export const updateClass = async (req, res) => {
       cls.topics = toIdArray(req.body.topics);
     }
     if (req.body.batch !== undefined) {
-      const batch = toIdArray(req.body.batch)[0] || null;
-      if (batch && !(await BatchManager.exists({ _id: batch }))) {
-        return res.status(400).json({ message: "Batch not found" });
+      const batch = toIdArray(req.body.batch);
+      if (batch.length) {
+        const batchCount = await BatchManager.countDocuments({ _id: { $in: batch } });
+        if (batchCount !== batch.length) {
+          return res.status(400).json({ message: "One or more batches not found" });
+        }
       }
       cls.batch = batch;
     }
