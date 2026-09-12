@@ -632,6 +632,15 @@ export default function RecordedSessionAdmin() {
                               Missing
                             </span>
                           )}
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(session)}
+                            disabled={deletingId === session._id}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-red-200 bg-white px-4 py-2 text-sm font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {deletingId === session._id ? "Deleting..." : "Delete"}
+                          </button>
                         </div>
                       </td>
                     </tr>
