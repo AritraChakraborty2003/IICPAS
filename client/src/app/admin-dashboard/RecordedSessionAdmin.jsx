@@ -9,6 +9,7 @@ import {
   ExternalLink,
   PlayCircle,
   RefreshCw,
+  Trash2,
   X,
 } from "lucide-react";
 
@@ -127,6 +128,7 @@ export default function RecordedSessionAdmin() {
   const [editingSession, setEditingSession] = useState(null);
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState("");
   const [form, setForm] = useState({
     courseIds: [],
     chapterIds: [],
@@ -420,6 +422,41 @@ export default function RecordedSessionAdmin() {
       setError(err?.message || "Failed to update recorded session");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = async (session) => {
+    if (!session?._id) return;
+
+    const confirmed = window.confirm(
+      `Delete "${session.title || "this session"}"? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingId(session._id);
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        throw new Error("Admin session not found. Please log in again.");
+      }
+
+      const res = await fetch(`${API}/api/live-sessions/${session._id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Failed to delete recorded session");
+      }
+
+      setSessions((prev) => prev.filter((s) => s._id !== session._id));
+    } catch (err) {
+      setError(err?.message || "Failed to delete recorded session");
+    } finally {
+      setDeletingId("");
     }
   };
 
