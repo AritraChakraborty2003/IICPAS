@@ -949,13 +949,14 @@ export default function CourseTab({
                       <div className="mt-3 rounded-md border border-gray-200 bg-white p-3">
                         <button
                           type="button"
-                          disabled={chapterIsLocked}
+                          disabled={chapterIsLocked || readOnly}
                           onClick={() =>
                             !chapterIsLocked &&
+                            !readOnly &&
                             handleOpenChapter(selectedCourse, chapter, index)
                           }
                           className={`mb-3 rounded-md px-3 py-1.5 text-sm font-medium ${
-                            chapterIsLocked
+                            chapterIsLocked || readOnly
                               ? "cursor-not-allowed bg-slate-200 text-slate-500"
                               : "bg-blue-600 text-white hover:bg-blue-700"
                           }`}
@@ -965,6 +966,8 @@ export default function CourseTab({
                               <Lock className="h-3.5 w-3.5" />
                               <span>Locked</span>
                             </span>
+                          ) : readOnly ? (
+                            "Preview only"
                           ) : (
                             "Open in Digital Hub"
                           )}
