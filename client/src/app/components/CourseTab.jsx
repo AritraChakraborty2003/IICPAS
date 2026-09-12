@@ -108,7 +108,10 @@ const mergeChaptersWithProgress = (chapters, progressPayload, options = {}) => {
   });
 };
 
-export default function CourseTab() {
+export default function CourseTab({
+  previewStudentId = "",
+  readOnly = false,
+} = {}) {
   const [studentId, setStudentId] = useState(null);
   const [courses, setCourses] = useState([]);
   const [purchasedCourses, setPurchasedCourses] = useState([]); // Student's purchased courses
@@ -164,22 +167,21 @@ export default function CourseTab() {
   const fetchStudentCourses = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API}/api/v1/students/isstudent`, {
-        withCredentials: true,
-      });
+      const student = previewStudentId
+        ? { _id: previewStudentId, digitalHubAccessOverride: false }
+        : await axios
+            .get(`${API}/api/v1/students/isstudent`, { withCredentials: true })
+            .then((res) => res?.data?.student || null);
 
-      let studentIdVal = null;
       let purchasedCoursesData = [];
 
-      if (response.data && response.data.student) {
-        const student = response.data.student;
-        studentIdVal = student._id;
+      if (student) {
         setStudentId(student._id);
         const isSuper = Boolean(student.digitalHubAccessOverride);
         setIsSuperStudent(isSuper);
 
         // Fetch purchased courses
-        if (student.course && student.course.length > 0) {
+        if (previewStudentId || (student.course && student.course.length > 0)) {
           try {
             const purchasedCoursesResponse = await axios.get(
               `${API}/api/courses/student-courses/${student._id}`,
@@ -201,7 +203,7 @@ export default function CourseTab() {
         }
 
         // Fetch group packages for super student
-        if (isSuper) {
+        if (isSuper && !previewStudentId) {
           try {
             const gpRes = await axios.get(`${API}/api/group-pricing`, { withCredentials: true });
             const gpData = Array.isArray(gpRes.data) ? gpRes.data : [];
@@ -225,6 +227,8 @@ export default function CourseTab() {
       }
 
       setLoading(false); // UI is now extremely responsive and interactive!
+
+      if (previewStudentId) return;
 
       // Now, fetch all available courses in the background without blocking the UI
       try {
@@ -253,7 +257,7 @@ export default function CourseTab() {
 
   useEffect(() => {
     fetchStudentCourses();
-  }, []);
+  }, [previewStudentId]);
 
   useEffect(() => {
     const requestedTab = searchParams.get("tab");

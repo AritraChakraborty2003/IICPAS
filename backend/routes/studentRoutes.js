@@ -1604,6 +1604,44 @@ router.post("/digital-hub-quizzes/:id/complete", isStudent, async (req, res) => 
   }
 });
 
+// Admin-preview variant of digital-hub-progress: same data, permission-gated instead of self-only
+router.get(
+  "/admin/:id/digital-hub-progress/:courseId",
+  requireAuth,
+  requirePermission("students", "read"),
+  async (req, res) => {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return res.status(400).json({ message: "Invalid student ID format" });
+      }
+
+      if (!mongoose.Types.ObjectId.isValid(req.params.courseId)) {
+        return res.status(400).json({ message: "Invalid course ID format" });
+      }
+
+      const progress = await getDigitalHubCourseProgress(
+        req.params.id,
+        req.params.courseId
+      );
+
+      if (!progress) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+
+      return res.json({
+        success: true,
+        ...progress,
+      });
+    } catch (error) {
+      console.error("Error fetching admin digital hub progress:", error);
+      return res.status(500).json({
+        message: "Failed to fetch digital hub progress",
+        error: error.message,
+      });
+    }
+  }
+);
+
 router.get("/:id/digital-hub-progress/:courseId", isStudent, async (req, res) => {
   try {
     if (!ensureAuthorizedStudent(req, res)) return;
