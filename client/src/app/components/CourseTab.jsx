@@ -1618,6 +1618,19 @@ export default function CourseTab({
                                   : Boolean(chapter?.isLocked));
                               const chapterIsLocked = chapterIsHardLocked;
                               const chapterKey = `${course._id}-${chapter._id || index}`;
+                              const chapterTitleKey = chapter.title || chapter.name;
+                              const chapterCaseStudies = (
+                                courseCaseStudies[course._id] || []
+                              ).filter((cs) => cs.chapterTitle === chapterTitleKey);
+                              const chapterMcqCount = Number(chapter.totalQuestionSetCount || 0);
+                              const chapterAssignmentCount = Number(
+                                chapter.totalAssignmentCount || 0
+                              );
+                              const chapterSimulationCount = chapterCaseStudies.reduce(
+                                (sum, cs) => sum + (cs.simulations?.length || 0),
+                                0
+                              );
+                              const chapterCaseStudyCount = chapterCaseStudies.length;
 
                               return (
                               <div
@@ -1661,6 +1674,20 @@ export default function CourseTab({
                                           {chapter.description}
                                         </p>
                                       )}
+                                      <div className="mt-2 flex flex-wrap gap-1.5">
+                                        <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-medium text-blue-700">
+                                          MCQs: {chapterMcqCount}
+                                        </span>
+                                        <span className="rounded-full bg-pink-50 px-2 py-0.5 text-[11px] font-medium text-pink-700">
+                                          Assignments: {chapterAssignmentCount}
+                                        </span>
+                                        <span className="rounded-full bg-purple-50 px-2 py-0.5 text-[11px] font-medium text-purple-700">
+                                          Simulations: {chapterSimulationCount}
+                                        </span>
+                                        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                                          Case Studies: {chapterCaseStudyCount}
+                                        </span>
+                                      </div>
                                     </button>
                                   </div>
                                   <div className="flex items-center gap-2 shrink-0">
