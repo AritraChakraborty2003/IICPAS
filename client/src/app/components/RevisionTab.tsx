@@ -64,7 +64,15 @@ interface CourseWithTests {
   tests: RevisionTest[];
 }
 
-const RevisionTab: React.FC = () => {
+interface RevisionTabProps {
+  readOnly?: boolean;
+  completedTestIds?: string[];
+}
+
+const RevisionTab: React.FC<RevisionTabProps> = ({
+  readOnly = false,
+  completedTestIds = [],
+}) => {
   const [courses, setCourses] = useState<CourseWithTests[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -242,6 +250,7 @@ const RevisionTab: React.FC = () => {
 
       const reportQuizCompletion = async () => {
       try {
+        if (readOnly) return;
         if (!currentTest?._id) return;
 
         const studentRes = await axios.get(`${API}/v1/students/isstudent`, {
@@ -501,14 +510,19 @@ const RevisionTab: React.FC = () => {
               <div className="border-t border-slate-200 pt-6">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {sortTestsByLevel(course.tests).map((test) => (
-                    <div key={test._id} className="text-center">
+                    <div key={test._id} className="text-center relative">
                       <button
                         onClick={() => startQuiz(test)}
-                        className={`w-20 h-20 rounded-full ${getLevelColor(
+                        className={`relative w-20 h-20 rounded-full ${getLevelColor(
                           test.level
                         )} text-white font-bold text-xl flex items-center justify-center hover:scale-105 transition-all duration-200 mb-2 mx-auto shadow-md`}
                       >
                         {getLevelNumber(test.level)}
+                        {completedTestIds.includes(test._id) ? (
+                          <span className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-xs text-white shadow ring-2 ring-white">
+                            ✓
+                          </span>
+                        ) : null}
                       </button>
                       <Typography
                         variant="body2"

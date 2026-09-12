@@ -855,6 +855,43 @@ router.get(
   }
 );
 
+// Get which revision tests a student has completed (for admin preview)
+router.get(
+  "/admin/:id/revision-tests-completed",
+  requireAuth,
+  requirePermission("students", "read"),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(400).json({ message: "Invalid student ID format" });
+      }
+
+      const completions = await CoinTransaction.find({
+        studentId: id,
+        eventType: "QUIZ_COMPLETE",
+      }).lean();
+
+      const completedTestIds = [
+        ...new Set(
+          completions
+            .map((entry) => entry?.metadata?.testId)
+            .filter(Boolean)
+            .map(String)
+        ),
+      ];
+
+      return res.json({ success: true, completedTestIds });
+    } catch (error) {
+      console.error("Error fetching completed revision tests:", error);
+      return res.status(500).json({
+        message: "Failed to fetch completed revision tests",
+        error: error.message,
+      });
+    }
+  }
+);
+
 router.put(
   "/admin/course-access/:studentId/:courseId",
   requireAuth,

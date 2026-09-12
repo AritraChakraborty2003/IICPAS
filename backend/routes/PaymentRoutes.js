@@ -3,12 +3,13 @@ import {
   createPayment,
   getAllPayments,
   getStudentPayments,
+  getStudentPaymentsAsAdmin,
   updatePaymentStatus,
   sendInvoiceEmail,
   uploadPaymentScreenshot,
 } from "../controllers/paymentController.js";
 import { isAdmin } from "../middleware/isAdmin.js";
-import { requireAuth } from "../middleware/requireAuth.js";
+import { requireAuth, requirePermission } from "../middleware/requireAuth.js";
 import isStudent from "../middleware/isStudent.js";
 import upload from "../middleware/upload1.js";
 
@@ -22,6 +23,14 @@ router.get("/all", requireAuth, isAdmin, getAllPayments);
 
 // Get student payments
 router.get("/student/:studentId", isStudent, getStudentPayments);
+
+// Get student payments (admin preview)
+router.get(
+  "/admin/student/:studentId",
+  requireAuth,
+  requirePermission("students", "read"),
+  getStudentPaymentsAsAdmin
+);
 
 // Update payment status (admin only)
 router.put("/update/:paymentId", requireAuth, isAdmin, updatePaymentStatus);

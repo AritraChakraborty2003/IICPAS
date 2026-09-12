@@ -14,9 +14,9 @@ import {
 } from "react-icons/fa";
 import StarRating from "./StarRating";
 
-export default function TestimonialTab({ student }) {
+export default function TestimonialTab({ student, adminStudentId = "", readOnly = false }) {
   const [testimonials, setTestimonials] = useState([]);
-  const [showForm, setShowForm] = useState(true);
+  const [showForm, setShowForm] = useState(!readOnly);
   const [formData, setFormData] = useState({
     name: student?.name || "",
     designation: "",
@@ -33,7 +33,7 @@ export default function TestimonialTab({ student }) {
 
   useEffect(() => {
     fetchTestimonials();
-  }, []);
+  }, [adminStudentId]);
 
   useEffect(() => {
     if (student?.name) {
@@ -46,14 +46,25 @@ export default function TestimonialTab({ student }) {
 
   const fetchTestimonials = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/testimonials/student`, {
-        withCredentials: true,
-      });
+      const response = adminStudentId
+        ? await axios.get(`${API_BASE}/testimonials`, {
+            params: { studentId: adminStudentId },
+            headers: {
+              Authorization: `Bearer ${
+                typeof window !== "undefined"
+                  ? localStorage.getItem("adminToken")
+                  : ""
+              }`,
+            },
+          })
+        : await axios.get(`${API_BASE}/testimonials/student`, {
+            withCredentials: true,
+          });
       const studentTestimonials = Array.isArray(response.data)
         ? response.data
         : [];
       setTestimonials(studentTestimonials);
-      if (!studentTestimonials.length) {
+      if (!studentTestimonials.length && !adminStudentId) {
         setShowForm(true);
       }
     } catch (error) {
@@ -207,17 +218,19 @@ export default function TestimonialTab({ student }) {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setShowForm(!showForm)}
-              className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-            >
-              {showForm ? "Cancel" : "Write Testimonial"}
-            </button>
+            {!readOnly && (
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+              >
+                {showForm ? "Cancel" : "Write Testimonial"}
+              </button>
+            )}
           </div>
         </div>
 
         {/* Testimonial Form */}
-        {showForm && (
+        {showForm && !readOnly && (
           <div className="p-6 border-b">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

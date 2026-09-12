@@ -46,7 +46,10 @@ const isSessionOver = (session) => {
   return now > sessionEnd;
 };
 
-export default function RecordedSessionTab() {
+export default function RecordedSessionTab({
+  previewStudentId = "",
+  readOnly = false,
+} = {}) {
   const [recordedSessions, setRecordedSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -59,14 +62,17 @@ export default function RecordedSessionTab() {
       try {
         setLoading(true);
 
-        const studentResponse = await axios.get(
-          `${API_BASE}/api/v1/students/isstudent`,
-          { withCredentials: true }
-        );
+        const resolvedStudent = previewStudentId
+          ? { _id: previewStudentId }
+          : await axios
+              .get(`${API_BASE}/api/v1/students/isstudent`, {
+                withCredentials: true,
+              })
+              .then((res) => res.data.student || null);
 
-        if (studentResponse.data.student) {
-          setStudent(studentResponse.data.student);
-          const studentId = studentResponse.data.student._id;
+        if (resolvedStudent) {
+          setStudent(resolvedStudent);
+          const studentId = resolvedStudent._id;
 
           const response = await axios.get(
             `${API_BASE}/api/live-sessions/for-student/${studentId}`,
@@ -104,7 +110,7 @@ export default function RecordedSessionTab() {
     };
 
     fetchData();
-  }, [API_BASE]);
+  }, [API_BASE, previewStudentId]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -213,7 +219,12 @@ export default function RecordedSessionTab() {
                     <div className="text-xs text-gray-500">Paid</div>
                   </div>
 
-                  {session.link && session.link.trim() !== "" ? (
+                  {readOnly ? (
+                    <div className="flex items-center gap-2 bg-gray-100 text-gray-500 px-4 py-2 rounded-lg text-sm font-medium">
+                      <PlayCircleIcon className="w-4 h-4" />
+                      Preview only
+                    </div>
+                  ) : session.link && session.link.trim() !== "" ? (
                     <button
                       onClick={() => handleWatchSession(session.link)}
                       className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"

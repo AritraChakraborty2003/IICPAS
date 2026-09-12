@@ -87,7 +87,9 @@ export const getStudentTestimonials = async (req, res) => {
 // Get all testimonials (admin only)
 export const getAllTestimonials = async (req, res) => {
   try {
-    const testimonials = await Testimonial.find().sort({ createdAt: -1 });
+    const { studentId } = req.query;
+    const filter = studentId ? { studentId } : {};
+    const testimonials = await Testimonial.find(filter).sort({ createdAt: -1 });
     res.json(testimonials);
   } catch (error) {
     console.error("Error fetching all testimonials:", error);

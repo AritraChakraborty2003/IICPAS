@@ -106,6 +106,8 @@ const sortByDateThenTitle = (a, b) => {
 export default function LiveClassTab({
   selectedLiveSessionId = "",
   onClearSelectedLiveSession = () => {},
+  previewStudentId = "",
+  readOnly = false,
 }) {
   const [liveClasses, setLiveClasses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -129,13 +131,15 @@ export default function LiveClassTab({
         setLoading(true);
         setError(null);
 
-        const studentResponse = await axios
-          .get(`${API}/api/v1/students/isstudent`, {
-            withCredentials: true,
-          })
-          .catch(() => ({ data: null }));
+        const currentStudent = previewStudentId
+          ? { _id: previewStudentId }
+          : await axios
+              .get(`${API}/api/v1/students/isstudent`, {
+                withCredentials: true,
+              })
+              .then((res) => res?.data?.student || null)
+              .catch(() => null);
 
-        const currentStudent = studentResponse?.data?.student || null;
         setStudent(currentStudent);
 
         const bookingsResponse = currentStudent?._id
@@ -193,7 +197,7 @@ export default function LiveClassTab({
     };
 
     fetchData();
-  }, [API]);
+  }, [API, previewStudentId]);
 
   const courseOptions = useMemo(() => {
     const courseMap = new Map();
@@ -366,12 +370,14 @@ export default function LiveClassTab({
     <div className="min-h-[calc(100vh-80px)] px-6 py-8 bg-white text-black overflow-y-auto">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-2xl font-semibold">Live Sessions</h1>
-        <button
-          onClick={handleEnrollNewSessions}
-          className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-        >
-          Enroll New Live Sessions
-        </button>
+        {!readOnly && (
+          <button
+            onClick={handleEnrollNewSessions}
+            className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-3 rounded-lg font-medium transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Enroll New Live Sessions
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-6">
@@ -588,51 +594,53 @@ export default function LiveClassTab({
                       ) : null}
                     </div>
 
-                    <div className="flex flex-wrap gap-3 pt-1">
-                      {isEnrolled ? (
-                        <>
-                          {status === "live" && session.link ? (
-                            <a
-                              href={session.link}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-medium"
-                            >
-                              Join Now
-                            </a>
-                          ) : null}
+                    {!readOnly && (
+                      <div className="flex flex-wrap gap-3 pt-1">
+                        {isEnrolled ? (
+                          <>
+                            {status === "live" && session.link ? (
+                              <a
+                                href={session.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-sm font-medium"
+                              >
+                                Join Now
+                              </a>
+                            ) : null}
 
-                          {status === "upcoming" ? (
-                            <button
-                              disabled
-                              className="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-sm font-medium cursor-not-allowed"
-                            >
-                              Not Started
-                            </button>
-                          ) : null}
+                            {status === "upcoming" ? (
+                              <button
+                                disabled
+                                className="bg-gray-200 text-gray-600 px-4 py-2 rounded-full text-sm font-medium cursor-not-allowed"
+                              >
+                                Not Started
+                              </button>
+                            ) : null}
 
-                          {status === "completed" && session.link ? (
-                            <button
-                              onClick={() => handleOpenSession(session)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium"
-                            >
-                              View Session
-                            </button>
-                          ) : null}
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => handleEnrollClick(session)}
-                          className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md transition-all hover:scale-105 text-white ${
-                            session.price > 0
-                              ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                              : "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700"
-                          }`}
-                        >
-                          {session.price > 0 ? `Pay Now • ₹${session.price}` : "Register Free"}
-                        </button>
-                      )}
-                    </div>
+                            {status === "completed" && session.link ? (
+                              <button
+                                onClick={() => handleOpenSession(session)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium"
+                              >
+                                View Session
+                              </button>
+                            ) : null}
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => handleEnrollClick(session)}
+                            className={`px-5 py-2 rounded-full text-sm font-semibold shadow-md transition-all hover:scale-105 text-white ${
+                              session.price > 0
+                                ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
+                                : "bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700"
+                            }`}
+                          >
+                            {session.price > 0 ? `Pay Now • ₹${session.price}` : "Register Free"}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}

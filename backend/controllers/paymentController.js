@@ -69,6 +69,24 @@ export const getStudentPayments = async (req, res) => {
   }
 };
 
+// Get payments by student (admin preview — no ownership check, permission-gated instead)
+export const getStudentPaymentsAsAdmin = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+
+    const payments = await Payment.find({ student: studentId })
+      .populate("course", "title price")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ payments });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error fetching student payments",
+      error: error.message,
+    });
+  }
+};
+
 // Update payment status (admin verification)
 export const updatePaymentStatus = async (req, res) => {
   try {

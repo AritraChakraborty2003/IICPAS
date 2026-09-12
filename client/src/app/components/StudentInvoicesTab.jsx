@@ -398,6 +398,8 @@ export default function StudentInvoicesTab({
   description = "Your payment records and invoice status.",
   loadingMessage = "Loading invoices...",
   emptyMessage = "No results found",
+  adminStudentId = "",
+  readOnly = false,
 }) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -412,6 +414,32 @@ export default function StudentInvoicesTab({
       setError("");
 
       try {
+        if (adminStudentId) {
+          const response = await axios.get(
+            `${API_BASE}/api/v1/payments/admin/student/${adminStudentId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${
+                  typeof window !== "undefined"
+                    ? localStorage.getItem("adminToken")
+                    : ""
+                }`,
+              },
+            }
+          );
+          const records = getArrayFromResponse(response.data).map(
+            (item, index) => normalizePaymentRecord(item, index)
+          );
+          if (!cancelled) {
+            setInvoices(
+              records.sort(
+                (left, right) => toTimestamp(right.date) - toTimestamp(left.date)
+              )
+            );
+          }
+          return;
+        }
+
         const studentRes = await axios.get(
           `${API_BASE}/api/v1/students/isstudent`,
           {
@@ -492,7 +520,7 @@ export default function StudentInvoicesTab({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [adminStudentId]);
 
   const summary = useMemo(() => {
     const completedRecords = invoices.filter((record) =>
@@ -683,18 +711,22 @@ export default function StudentInvoicesTab({
                           type="button"
                           onClick={() => handleDownloadInvoice(invoice)}
                           disabled={
+                            readOnly ||
                             !downloadConfig?.url ||
                             downloadingInvoiceId === invoice.id
                           }
                           aria-label={`Download invoice for ${invoice.invoiceLabel}`}
                           className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                            !readOnly &&
                             downloadConfig?.url &&
                             downloadingInvoiceId !== invoice.id
                               ? "bg-blue-600 text-white hover:bg-blue-700"
                               : "cursor-not-allowed bg-gray-100 text-gray-400"
                           }`}
                         >
-                          {downloadingInvoiceId === invoice.id
+                          {readOnly
+                            ? "Preview only"
+                            : downloadingInvoiceId === invoice.id
                             ? "Downloading..."
                             : "Download invoice"}
                         </button>

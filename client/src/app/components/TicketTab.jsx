@@ -33,7 +33,12 @@ const extractTicket = (payload) => {
   return payload;
 };
 
-export default function TicketTab({ viewerType = "student", authToken }) {
+export default function TicketTab({
+  viewerType = "student",
+  authToken,
+  filterEmail = "",
+  readOnly = false,
+}) {
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [resolveText, setResolveText] = useState("");
@@ -88,7 +93,10 @@ export default function TicketTab({ viewerType = "student", authToken }) {
     const fetchTickets = async () => {
       setErrorMessage("");
       try {
-        const res = await fetch(`${BASE_URL}/tickets`, getRequestOptions());
+        const url = filterEmail
+          ? `${BASE_URL}/tickets?email=${encodeURIComponent(filterEmail)}`
+          : `${BASE_URL}/tickets`;
+        const res = await fetch(url, getRequestOptions());
         if (!res.ok) {
           handleApiError(res.status, "Failed to load tickets.");
           return;
@@ -101,7 +109,7 @@ export default function TicketTab({ viewerType = "student", authToken }) {
     };
 
     fetchTickets();
-  }, [viewerType, token]);
+  }, [viewerType, token, filterEmail]);
 
   useEffect(() => {
     setResolveText(selectedTicket?.resolve || "");
@@ -251,7 +259,7 @@ export default function TicketTab({ viewerType = "student", authToken }) {
               )}
             </div>
 
-            {isAdminViewer && (
+            {isAdminViewer && !readOnly && (
               <form
                 onSubmit={handleReply}
                 className="flex gap-4 p-8 border-t border-gray-300 bg-gray-200"

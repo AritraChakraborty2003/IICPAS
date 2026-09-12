@@ -44,9 +44,12 @@ const loadRazorpayScript = () =>
     document.body.appendChild(script);
   });
 
-export default function StudentBookingsTab() {
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function StudentBookingsTab({
+  presetBookings = null,
+  readOnly = false,
+} = {}) {
+  const [bookings, setBookings] = useState(presetBookings || []);
+  const [loading, setLoading] = useState(!presetBookings);
   const [payingBookingId, setPayingBookingId] = useState("");
 
   const fetchBookings = async () => {
@@ -65,8 +68,13 @@ export default function StudentBookingsTab() {
   };
 
   useEffect(() => {
+    if (presetBookings) {
+      setBookings(presetBookings);
+      setLoading(false);
+      return;
+    }
     fetchBookings();
-  }, []);
+  }, [presetBookings]);
 
   const totalRemaining = useMemo(
     () => bookings.reduce((sum, entry) => sum + Number(entry.remainingAmount || 0), 0),
@@ -234,25 +242,27 @@ export default function StudentBookingsTab() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {Number(booking.remainingAmount || 0) > 0 && (
+              {!readOnly && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {Number(booking.remainingAmount || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => startBalancePayment(booking)}
+                      disabled={payingBookingId === booking._id}
+                      className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                    >
+                      {payingBookingId === booking._id ? "Processing..." : "Pay Balance"}
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => startBalancePayment(booking)}
-                    disabled={payingBookingId === booking._id}
-                    className="rounded-md bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                    onClick={() => downloadInvoice(booking._id)}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
                   >
-                    {payingBookingId === booking._id ? "Processing..." : "Pay Balance"}
+                    Download Invoice
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => downloadInvoice(booking._id)}
-                  className="rounded-md border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-50"
-                >
-                  Download Invoice
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

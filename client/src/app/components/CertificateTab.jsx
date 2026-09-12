@@ -34,7 +34,10 @@ const extractCourseRecord = (payload) => {
 
 const getCertificateImage = () => "/single-certificate.jpg";
 
-export default function CertificateTab() {
+export default function CertificateTab({
+  previewCourses = null,
+  readOnly = false,
+} = {}) {
   const [student, setStudent] = useState(null);
   const [courses, setCourses] = useState([]);
   const [groupPackages, setGroupPackages] = useState([]);
@@ -46,6 +49,18 @@ export default function CertificateTab() {
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
   const fetchStudentAndCourses = useCallback(async () => {
+    if (previewCourses) {
+      setLoading(true);
+      setCourses(previewCourses);
+      const newProgressMap = {};
+      previewCourses.forEach((course) => {
+        newProgressMap[course._id] = Number(course.completionPercent || 0);
+      });
+      setProgressMap(newProgressMap);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       const studentRes = await axios.get(`${API}/api/v1/students/isstudent`, {
@@ -110,7 +125,7 @@ export default function CertificateTab() {
     } finally {
       setLoading(false);
     }
-  }, [API]);
+  }, [API, previewCourses]);
 
   useEffect(() => {
     fetchStudentAndCourses();
@@ -248,15 +263,15 @@ export default function CertificateTab() {
                           <button
                              onClick={(e) => {
                                e.stopPropagation();
-                               if (isCompleted) handleDownload(course._id, course.title);
+                               if (isCompleted && !readOnly) handleDownload(course._id, course.title);
                              }}
-                             disabled={!isCompleted}
+                             disabled={!isCompleted || readOnly}
                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                               isCompleted 
-                               ? "bg-white/5 text-gray-400 hover:bg-emerald-600 hover:text-white border border-white/10 hover:border-transparent" 
+                               isCompleted && !readOnly
+                               ? "bg-white/5 text-gray-400 hover:bg-emerald-600 hover:text-white border border-white/10 hover:border-transparent"
                                : "bg-gray-800/30 text-gray-600 cursor-not-allowed opacity-30"
                              }`}
-                             title={isCompleted ? "Download Certificate" : "Complete course to download"}
+                             title={readOnly ? "Preview only" : isCompleted ? "Download Certificate" : "Complete course to download"}
                           >
                             <FaDownload className="text-xs" />
                           </button>
@@ -404,7 +419,7 @@ export default function CertificateTab() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
-                    if (!selectedCertificate.isCompleted) return;
+                    if (!selectedCertificate.isCompleted || readOnly) return;
                     const imgSrc = selectedCertificate.certImage || getCertificateImage();
                     const link = document.createElement("a");
                     link.href = imgSrc;
@@ -414,9 +429,9 @@ export default function CertificateTab() {
                     document.body.removeChild(link);
                     toast.success("Certificate download started!");
                   }}
-                  disabled={!selectedCertificate.isCompleted}
+                  disabled={!selectedCertificate.isCompleted || readOnly}
                   className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 border ${
-                    selectedCertificate.isCompleted
+                    selectedCertificate.isCompleted && !readOnly
                       ? "bg-blue-600 text-white hover:bg-blue-500 shadow-blue-900/40"
                       : "bg-gray-800/50 text-gray-500 border-white/5 cursor-not-allowed opacity-50"
                   }`}

@@ -29,7 +29,28 @@ import {
   ArrowLeft,
   Calendar,
   LayoutGrid,
+  BookOpen,
+  ClipboardCheck,
+  Video,
+  PlayCircle,
+  Film,
+  Newspaper,
+  Quote,
+  Wallet,
+  FileText,
+  Headphones,
+  Award,
 } from "lucide-react";
+import RevisionTab from "../components/RevisionTab.tsx";
+import LiveClassTab from "../components/LiveClassTab";
+import LiveClassListTab from "../components/LiveClassListTab";
+import RecordedSessionTab from "../components/RecordedSessionTab";
+import NewsTab from "../components/NewsTab";
+import TestimonialTab from "../components/TestimonialTab";
+import StudentInvoicesTab from "../components/StudentInvoicesTab";
+import StudentBookingsTab from "../components/StudentBookingsTab";
+import TicketTab from "../components/TicketTab";
+import CertificateTab from "../components/CertificateTab";
 import { FaWhatsapp } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import * as XLSX from 'xlsx';
@@ -2891,14 +2912,19 @@ function StudentProfileManagement() {
   );
 }
 
-function StudentCoursesPreview({ studentId, onBack }) {
-  const [loading, setLoading] = useState(true);
+function StudentCoursesPreview({ studentId, onBack, preloadedData, hideBackButton = false }) {
+  const [loading, setLoading] = useState(!preloadedData);
   const [errorMessage, setErrorMessage] = useState("");
-  const [student, setStudent] = useState(null);
-  const [courses, setCourses] = useState([]);
-  const [overallCompletionPercent, setOverallCompletionPercent] = useState(0);
+  const [student, setStudent] = useState(preloadedData?.student || null);
+  const [courses, setCourses] = useState(
+    Array.isArray(preloadedData?.courses) ? preloadedData.courses : []
+  );
+  const [overallCompletionPercent, setOverallCompletionPercent] = useState(
+    Number(preloadedData?.overallCompletionPercent || 0)
+  );
 
   useEffect(() => {
+    if (preloadedData) return;
     let cancelled = false;
     const load = async () => {
       if (!studentId) return;
@@ -2929,7 +2955,7 @@ function StudentCoursesPreview({ studentId, onBack }) {
     return () => {
       cancelled = true;
     };
-  }, [studentId]);
+  }, [studentId, preloadedData]);
 
   const formatDate = (value) => {
     if (!value) return "N/A";
@@ -2979,13 +3005,15 @@ function StudentCoursesPreview({ studentId, onBack }) {
       exit={{ opacity: 0 }}
       className="w-full max-w-full rounded-[28px] bg-gradient-to-br from-gray-50 to-blue-50 p-6"
     >
-      <button
-        onClick={onBack}
-        className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
-      >
-        <ArrowLeft size={16} />
-        Back to Students
-      </button>
+      {!hideBackButton && (
+        <button
+          onClick={onBack}
+          className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+        >
+          <ArrowLeft size={16} />
+          Back to Students
+        </button>
+      )}
 
       {errorMessage ? (
         <div className="mb-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
@@ -3188,6 +3216,190 @@ function StudentCoursesPreview({ studentId, onBack }) {
   );
 }
 
+function StudentDigitalHubPreview({ studentId, onBack }) {
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [overview, setOverview] = useState(null);
+  const [completedTestIds, setCompletedTestIds] = useState([]);
+  const [activeSection, setActiveSection] = useState("digital-hub");
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!studentId) return;
+      setLoading(true);
+      setErrorMessage("");
+      try {
+        const [overviewResult, revisionResult] = await Promise.allSettled([
+          axios.get(`${API_BASE}/v1/students/admin/${studentId}/overview`),
+          axios.get(
+            `${API_BASE}/v1/students/admin/${studentId}/revision-tests-completed`
+          ),
+        ]);
+        if (cancelled) return;
+
+        if (overviewResult.status === "fulfilled") {
+          setOverview(overviewResult.value.data);
+        } else {
+          setErrorMessage(
+            getFetchErrorMessage(overviewResult.reason, "Failed to load student data")
+          );
+        }
+
+        if (revisionResult.status === "fulfilled") {
+          setCompletedTestIds(
+            Array.isArray(revisionResult.value.data?.completedTestIds)
+              ? revisionResult.value.data.completedTestIds
+              : []
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId]);
+
+  const sections = [
+    { id: "digital-hub", label: "Digital Hub", icon: <BookOpen size={18} /> },
+    { id: "assessment", label: "Assessment", icon: <ClipboardCheck size={18} /> },
+    { id: "live-session", label: "Live Session", icon: <Video size={18} /> },
+    { id: "live-class", label: "Live Class", icon: <PlayCircle size={18} /> },
+    { id: "recorded", label: "Recorded Sessions", icon: <Film size={18} /> },
+    { id: "news", label: "News", icon: <Newspaper size={18} /> },
+    { id: "testimonial", label: "Testimonial", icon: <Quote size={18} /> },
+    { id: "payments", label: "My Payments", icon: <Wallet size={18} /> },
+    { id: "bookings", label: "Bookings", icon: <FileText size={18} /> },
+    { id: "support", label: "Support", icon: <Headphones size={18} /> },
+    { id: "certificates", label: "Certificates", icon: <Award size={18} /> },
+  ];
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="flex items-center justify-center h-64"
+      >
+        <Loader2 className="animate-spin text-indigo-500" size={36} />
+      </motion.div>
+    );
+  }
+
+  if (errorMessage && !overview) {
+    return (
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        <button
+          onClick={onBack}
+          className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+        >
+          <ArrowLeft size={16} />
+          Back to Students
+        </button>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+          {errorMessage}
+        </div>
+      </motion.div>
+    );
+  }
+
+  const student = overview?.student || null;
+  const courses = Array.isArray(overview?.courses) ? overview.courses : [];
+  const bookings = Array.isArray(overview?.bookings) ? overview.bookings : [];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col gap-4 lg:flex-row"
+    >
+      <aside className="shrink-0 rounded-2xl border border-blue-100 bg-gradient-to-b from-blue-50 to-white p-3 shadow-sm lg:w-64">
+        <button
+          onClick={onBack}
+          className="mb-4 flex w-full items-center gap-2 rounded-xl border border-indigo-200 bg-white px-3 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+        >
+          <ArrowLeft size={16} />
+          Back to Students
+        </button>
+        <div className="mb-3 px-2">
+          <p className="text-sm font-bold text-slate-900">{student?.name || "Student"}</p>
+          <p className="truncate text-xs text-slate-500">{student?.email}</p>
+          <span className="mt-2 inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-700">
+            Read-only preview
+          </span>
+        </div>
+        <nav className="space-y-1">
+          {sections.map((section) => (
+            <button
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium transition-colors ${
+                activeSection === section.id
+                  ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md"
+                  : "text-slate-700 hover:bg-blue-50"
+              }`}
+            >
+              <span className={activeSection === section.id ? "text-white" : "text-blue-500"}>
+                {section.icon}
+              </span>
+              {section.label}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <main className="min-w-0 flex-1 rounded-2xl border border-gray-200 bg-white p-2 shadow-sm">
+        {activeSection === "digital-hub" && (
+          <StudentCoursesPreview
+            studentId={studentId}
+            onBack={onBack}
+            preloadedData={overview}
+            hideBackButton
+          />
+        )}
+        {activeSection === "assessment" && (
+          <RevisionTab readOnly completedTestIds={completedTestIds} />
+        )}
+        {activeSection === "live-session" && (
+          <LiveClassTab previewStudentId={studentId} readOnly />
+        )}
+        {activeSection === "live-class" && (
+          <LiveClassListTab previewStudentId={studentId} readOnly />
+        )}
+        {activeSection === "recorded" && (
+          <RecordedSessionTab previewStudentId={studentId} readOnly />
+        )}
+        {activeSection === "news" && <NewsTab />}
+        {activeSection === "testimonial" && (
+          <TestimonialTab adminStudentId={studentId} readOnly />
+        )}
+        {activeSection === "payments" && (
+          <StudentInvoicesTab
+            adminStudentId={studentId}
+            readOnly
+            title="My Payments"
+            description="All payment records, invoices, and transaction references for this student."
+          />
+        )}
+        {activeSection === "bookings" && (
+          <StudentBookingsTab presetBookings={bookings} readOnly />
+        )}
+        {activeSection === "support" && (
+          <TicketTab viewerType="admin" filterEmail={student?.email || ""} readOnly />
+        )}
+        {activeSection === "certificates" && (
+          <CertificateTab previewCourses={courses} readOnly />
+        )}
+      </main>
+    </motion.div>
+  );
+}
+
 export default function StudentsTab() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -3371,8 +3583,8 @@ export default function StudentsTab() {
             />
           )}
           {activeTab === "coursesPreview" && selectedStudentId && (
-            <StudentCoursesPreview
-              key="studentcoursespreview"
+            <StudentDigitalHubPreview
+              key="studentdigitalhubpreview"
               studentId={selectedStudentId}
               onBack={handleGoBack}
             />

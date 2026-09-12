@@ -40,7 +40,10 @@ const joinTitles = (arr) =>
     .filter(Boolean)
     .join(", ");
 
-export default function LiveClassListTab() {
+export default function LiveClassListTab({
+  previewStudentId = "",
+  readOnly = false,
+} = {}) {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -98,12 +101,14 @@ export default function LiveClassListTab() {
         setLoading(true);
         setError("");
 
-        // Identify logged-in student
-        const studentResponse = await axios
-          .get(`${API}/api/v1/students/isstudent`, { withCredentials: true })
-          .catch(() => ({ data: null }));
+        // Identify logged-in student (or use the admin-supplied preview target)
+        const student = previewStudentId
+          ? { _id: previewStudentId }
+          : await axios
+              .get(`${API}/api/v1/students/isstudent`, { withCredentials: true })
+              .then((res) => res?.data?.student || null)
+              .catch(() => null);
 
-        const student = studentResponse?.data?.student || null;
         if (!student?._id) {
           setClasses([]);
           return;
@@ -130,7 +135,7 @@ export default function LiveClassListTab() {
     };
 
     loadClasses();
-  }, []);
+  }, [previewStudentId]);
 
   // Group by the first course of each class (a class can target multiple courses)
   const groupedCourses = useMemo(() => {
@@ -267,7 +272,11 @@ export default function LiveClassListTab() {
                       ) : null}
                     </div>
 
-                    {cls.meetingLink ? (
+                    {readOnly ? (
+                      <p className="mt-4 text-xs text-gray-400">
+                        Preview only — playback disabled
+                      </p>
+                    ) : cls.meetingLink ? (
                       downloadingClassId === cls._id ? (
                         <button
                           disabled
