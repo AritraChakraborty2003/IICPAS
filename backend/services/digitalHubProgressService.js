@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Course from "../models/Content/Course.js";
 import Assignment from "../models/Assignment.js";
+import "../models/Content/Quiz.js";
 import DigitalHubChapterProgress from "../models/DigitalHubChapterProgress.js";
 import Student from "../models/Students.js";
 import { getStudentCourseBatchAccessState } from "../utils/courseAccess.js";
@@ -101,6 +102,11 @@ const loadCourseStructure = async (courseId) => {
       populate: {
         path: "topics",
         model: "Topic",
+        populate: {
+          path: "quiz",
+          model: "Quiz",
+          select: "questions",
+        },
       },
     })
     .lean();
@@ -149,9 +155,12 @@ const buildChapterSummary = ({
   progressRecord,
   unlocked,
 }) => {
-  const topicIds = Array.isArray(chapter.topics)
-    ? chapter.topics.map((topic) => topic?._id).filter(Boolean)
-    : [];
+  const rawTopics = Array.isArray(chapter.topics) ? chapter.topics : [];
+  const topicIds = rawTopics.map((topic) => topic?._id).filter(Boolean);
+  const totalMcqCount = rawTopics.reduce(
+    (sum, topic) => sum + (Array.isArray(topic?.quiz?.questions) ? topic.quiz.questions.length : 0),
+    0
+  );
   const assignmentIds = assignments.map((assignment) => assignment._id).filter(Boolean);
   const questionSetIds = assignments.flatMap((assignment) =>
     Array.isArray(assignment.questionSets)
@@ -192,6 +201,7 @@ const buildChapterSummary = ({
     chapterCompleted,
     totalTopicCount,
     completedTopicCount,
+    totalMcqCount,
     totalAssignmentCount,
     completedAssignmentCount,
     totalQuestionSetCount,

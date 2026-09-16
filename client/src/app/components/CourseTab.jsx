@@ -100,6 +100,7 @@ const mergeChaptersWithProgress = (chapters, progressPayload, options = {}) => {
         progressEntry.completedQuestionSetCount || 0
       ),
       totalQuestionSetCount: Number(progressEntry.totalQuestionSetCount || 0),
+      totalMcqCount: Number(progressEntry.totalMcqCount || 0),
       completion:
         typeof progressEntry.completionPercent === "number"
           ? progressEntry.completionPercent
@@ -1622,7 +1623,7 @@ export default function CourseTab({
                               const chapterCaseStudies = (
                                 courseCaseStudies[course._id] || []
                               ).filter((cs) => cs.chapterTitle === chapterTitleKey);
-                              const chapterMcqCount = Number(chapter.totalQuestionSetCount || 0);
+                              const chapterMcqCount = Number(chapter.totalMcqCount || 0);
                               const chapterAssignmentCount = Number(
                                 chapter.totalAssignmentCount || 0
                               );
