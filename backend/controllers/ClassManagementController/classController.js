@@ -116,7 +116,7 @@ export const getClassesForStudent = async (req, res) => {
     }
 
     const student = await Student.findById(studentId)
-      .select("course")
+      .select("course batchId")
       .lean();
 
     if (!student) {
@@ -143,6 +143,15 @@ export const getClassesForStudent = async (req, res) => {
       .populate(POPULATE)
       .sort({ startAt: -1 })
       .lean();
+
+    // A class with no batch restriction is visible to every purchaser of the
+    // course; a class scheduled for specific batch(es) is only visible to
+    // students assigned to one of those batches.
+    const studentBatchId = student.batchId ? String(student.batchId) : null;
+    classes = classes.filter((c) => {
+      if (!Array.isArray(c.batch) || c.batch.length === 0) return true;
+      return c.batch.some((b) => String(b?._id || b) === studentBatchId);
+    });
 
     classes = classes.map(withResolvedType);
 
