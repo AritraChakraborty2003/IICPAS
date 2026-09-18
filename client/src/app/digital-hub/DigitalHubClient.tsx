@@ -1142,10 +1142,6 @@ export default function DigitalHubClient({
     null,
   );
 
-  const [zoomSessionStatus, setZoomSessionStatus] = useState<
-    "idle" | "downloading" | "ready" | "error"
-  >("idle");
-  const [zoomSessionProgress, setZoomSessionProgress] = useState(0);
   const [isLiveSessionsModalOpen, setIsLiveSessionsModalOpen] = useState(false);
   const [classModalKind, setClassModalKind] = useState<"live" | "recorded">(
     "live",
@@ -2051,70 +2047,6 @@ export default function DigitalHubClient({
     },
     [API_BASE],
   );
-
-  const pollZoomSessionStatus = useCallback(async () => {
-    try {
-      const { data } = await axios.get(
-        `${API_BASE}/zoom-clips/accounting-overview/status`,
-      );
-      setZoomSessionProgress(data.progress || 0);
-      if (data.status === "ready") {
-        setZoomSessionStatus("ready");
-        setManualIntroVideoUrl(data.url);
-
-        const existingTime = localStorage.getItem("mockLiveSessionStartTime");
-        if (!existingTime) {
-          localStorage.setItem(
-            "mockLiveSessionStartTime",
-            Date.now().toString(),
-          );
-        }
-        setIsMockLiveSession(false);
-        setIsIntroVideoModalOpen(true);
-        return;
-      }
-      if (data.status === "error") {
-        setZoomSessionStatus("error");
-        return;
-      }
-      setZoomSessionStatus("downloading");
-      setTimeout(pollZoomSessionStatus, 2000);
-    } catch (error) {
-      console.error("Error checking Zoom session status:", error);
-      setZoomSessionStatus("error");
-    }
-  }, [API_BASE]);
-
-  const handleWatchZoomSession = useCallback(async () => {
-    if (zoomSessionStatus === "downloading") return;
-    try {
-      const { data } = await axios.get(
-        `${API_BASE}/zoom-clips/accounting-overview/status`,
-      );
-      if (data.status === "ready") {
-        setManualIntroVideoUrl(data.url);
-        setZoomSessionStatus("ready");
-
-        const existingTime = localStorage.getItem("mockLiveSessionStartTime");
-        if (!existingTime) {
-          localStorage.setItem(
-            "mockLiveSessionStartTime",
-            Date.now().toString(),
-          );
-        }
-        setIsMockLiveSession(false);
-        setIsIntroVideoModalOpen(true);
-        return;
-      }
-      setZoomSessionStatus("downloading");
-      setZoomSessionProgress(0);
-      await axios.post(`${API_BASE}/zoom-clips/accounting-overview/download`);
-      pollZoomSessionStatus();
-    } catch (error) {
-      console.error("Error starting Zoom session download:", error);
-      setZoomSessionStatus("error");
-    }
-  }, [API_BASE, zoomSessionStatus, pollZoomSessionStatus]);
 
   // "Watch Recorded" / "Join Live Class" in the classes modal: pull the Zoom
   // video through the zoom-clips service and play it in the in-app player
@@ -4861,12 +4793,7 @@ export default function DigitalHubClient({
                       </span>
                       {/* Watch Live Class — classes scheduled in Class Management
                           for this course/chapter/topic */}
-                      {topicClassSessions.live.length > 0 &&
-                      !(
-                        String(selectedChapter?._id) ===
-                          "6883d69cdac73382a0aa2b15" &&
-                        selectedTopic?.title === "Overview"
-                      ) ? (
+                      {topicClassSessions.live.length > 0 ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -4881,12 +4808,7 @@ export default function DigitalHubClient({
                       ) : null}
                       {/* Watch Recorded — classes scheduled in Class Management
                           that have finished and converted to recorded */}
-                      {topicClassSessions.recorded.length > 0 &&
-                      !(
-                        String(selectedChapter?._id) ===
-                          "6883d69cdac73382a0aa2b15" &&
-                        selectedTopic?.title === "Overview"
-                      ) ? (
+                      {topicClassSessions.recorded.length > 0 ? (
                         <button
                           type="button"
                           onClick={() => {
@@ -4911,21 +4833,6 @@ export default function DigitalHubClient({
                           <Video className="h-4 w-4" />
                           {recordedClassDownloadId
                             ? `Preparing… ${recordedClassProgress}%`
-                            : "Watch Live Class"}
-                        </button>
-                      ) : null}
-                      {String(selectedChapter?._id) ===
-                        "6883d69cdac73382a0aa2b15" &&
-                      selectedTopic?.title === "Overview" ? (
-                        <button
-                          type="button"
-                          onClick={handleWatchZoomSession}
-                          disabled={zoomSessionStatus === "downloading"}
-                          className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-80"
-                        >
-                          <Target className="h-4 w-4" />
-                          {zoomSessionStatus === "downloading"
-                            ? `Preparing video… ${zoomSessionProgress}%`
                             : "Watch Live Class"}
                         </button>
                       ) : null}
