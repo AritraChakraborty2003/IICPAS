@@ -48,7 +48,42 @@ export default function CertificateTab({
   const [progressMap, setProgressMap] = useState({});
   const [selectedCertificate, setSelectedCertificate] = useState(null);
 
+  const [signatures, setSignatures] = useState({
+    lokeshSign: "",
+    lokeshTitle: "LOKESH GUPTA",
+    lokeshSubTitle: "FOUNDER & DIRECTOR",
+    poonamSign: "",
+    poonamTitle: "POONAM GUPTA",
+    poonamSubTitle: "CO-FOUNDER & ACADEMIC HEAD",
+  });
+
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+
+  const fetchSignatures = useCallback(async () => {
+    try {
+      const res = await axios.get(`${API}/api/certificate-signatures`, {
+        withCredentials: true,
+      });
+      if (res.data?.success && res.data?.settings) {
+        setSignatures(res.data.settings);
+      }
+    } catch (err) {
+      console.error("Error fetching signature settings:", err);
+    }
+  }, [API]);
+
+  useEffect(() => {
+    fetchSignatures();
+  }, [fetchSignatures]);
+
+  const getFullImageUrl = (pathUrl) => {
+    if (!pathUrl) return "";
+    if (pathUrl.startsWith("http") || pathUrl.startsWith("data:")) return pathUrl;
+    return `${API}${pathUrl.startsWith("/") ? "" : "/"}${pathUrl}`;
+  };
+
+  const lokeshSignUrl = getFullImageUrl(signatures.lokeshSign);
+  const poonamSignUrl = getFullImageUrl(signatures.poonamSign);
 
   useEffect(() => {
     if (previewStudent) {
@@ -144,63 +179,85 @@ export default function CertificateTab({
     fetchStudentAndCourses();
   }, [fetchStudentAndCourses]);
 
-  const generateCertificateCanvas = (studentName, courseTitle, bgImageUrl) => {
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 1755;
-      canvas.height = 1241;
-      const ctx = canvas.getContext("2d");
-
+  const loadImage = (src) => {
+    return new Promise((resolve) => {
+      if (!src) return resolve(null);
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, 1755, 1241);
-
-        const cx = 1755 / 2;
-
-        // Label: 'This is to certify that'
-        ctx.fillStyle = "#475569";
-        ctx.font = "italic 22px Georgia, serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "alphabetic";
-        ctx.fillText("This is to certify that", cx, 495);
-
-        // Student Name - resting directly on top of the name underline line
-        const formattedName = (studentName || "STUDENT NAME").toUpperCase();
-        ctx.fillStyle = "#0f172a";
-        ctx.font = "bold 36px Georgia, serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "alphabetic";
-        ctx.fillText(formattedName, cx, 582);
-
-        // Course Name left-aligned starting at x=850 right after 'course of '
-        const formattedCourse = courseTitle || "Certified Course";
-        ctx.fillStyle = "#1e3a8a";
-
-        let fontSize = 16;
-        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-        let textWidth = ctx.measureText(formattedCourse).width;
-
-        while (textWidth > 255 && fontSize > 10) {
-          fontSize -= 1;
-          ctx.font = `bold ${fontSize}px Arial, sans-serif`;
-          textWidth = ctx.measureText(formattedCourse).width;
-        }
-
-        ctx.textAlign = "left";
-        ctx.textBaseline = "alphabetic";
-        ctx.fillText(formattedCourse, 850, 638);
-
-        resolve(canvas);
-      };
-      img.onerror = (err) => reject(err);
-      const targetUrl = bgImageUrl || getCertificateImage();
-      const resolvedUrl =
-        targetUrl.startsWith("http") || targetUrl.startsWith("data:")
-          ? targetUrl
-          : `${window.location.origin}${targetUrl.startsWith("/") ? "" : "/"}${targetUrl}`;
-      img.src = resolvedUrl;
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
     });
+  };
+
+  const generateCertificateCanvas = async (studentName, courseTitle, bgImageUrl) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1755;
+    canvas.height = 1241;
+    const ctx = canvas.getContext("2d");
+
+    const targetUrl = bgImageUrl || getCertificateImage();
+    const resolvedUrl =
+      targetUrl.startsWith("http") || targetUrl.startsWith("data:")
+        ? targetUrl
+        : `${window.location.origin}${targetUrl.startsWith("/") ? "" : "/"}${targetUrl}`;
+
+    const [bgImg, lokeshImg, poonamImg] = await Promise.all([
+      loadImage(resolvedUrl),
+      lokeshSignUrl ? loadImage(lokeshSignUrl) : null,
+      poonamSignUrl ? loadImage(poonamSignUrl) : null,
+    ]);
+
+    if (bgImg) {
+      ctx.drawImage(bgImg, 0, 0, 1755, 1241);
+    }
+
+    const cx = 1755 / 2;
+
+    // Label: 'This is to certify that'
+    ctx.fillStyle = "#475569";
+    ctx.font = "italic 22px Georgia, serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText("This is to certify that", cx, 495);
+
+    // Student Name - resting directly on top of the name underline line
+    const formattedName = (studentName || "STUDENT NAME").toUpperCase();
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "bold 36px Georgia, serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(formattedName, cx, 582);
+
+    // Course Name left-aligned starting at x=850 right after 'course of '
+    const formattedCourse = courseTitle || "Certified Course";
+    ctx.fillStyle = "#1e3a8a";
+
+    let fontSize = 16;
+    ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+    let textWidth = ctx.measureText(formattedCourse).width;
+
+    while (textWidth > 255 && fontSize > 10) {
+      fontSize -= 1;
+      ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+      textWidth = ctx.measureText(formattedCourse).width;
+    }
+
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(formattedCourse, 850, 638);
+
+    // Draw Lokesh Sir Signature Image above LOKESH GUPTA (x=420, y=865)
+    if (lokeshImg) {
+      ctx.drawImage(lokeshImg, 420 - 90, 865, 180, 75);
+    }
+
+    // Draw Poonam Mam Signature Image above POONAM GUPTA (x=1335, y=865)
+    if (poonamImg) {
+      ctx.drawImage(poonamImg, 1335 - 90, 865, 180, 75);
+    }
+
+    return canvas;
   };
 
   const handleDownloadPDF = async (courseTitle, customCertImage = null) => {
@@ -316,6 +373,34 @@ export default function CertificateTab({
                           >
                             {course.title}
                           </div>
+
+                          {/* Lokesh Sir Signature Image */}
+                          {lokeshSignUrl && (
+                            <div 
+                              className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
+                              style={{ top: "76.0%", left: "23.9%", width: "11%", height: "7%" }}
+                            >
+                              <img
+                                src={lokeshSignUrl}
+                                alt="Signature"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          )}
+
+                          {/* Poonam Mam Signature Image */}
+                          {poonamSignUrl && (
+                            <div 
+                              className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
+                              style={{ top: "76.0%", left: "76.1%", width: "11%", height: "7%" }}
+                            >
+                              <img
+                                src={poonamSignUrl}
+                                alt="Signature"
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                          )}
                         </div>
 
                         <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent opacity-80" />
@@ -593,6 +678,34 @@ export default function CertificateTab({
                         {selectedCertificate.course.title}
                       </span>
                     </div>
+
+                    {/* Lokesh Sir Signature Image */}
+                    {lokeshSignUrl && (
+                      <div 
+                        className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
+                        style={{ top: "76.0%", left: "23.9%", width: "11%", height: "7%" }}
+                      >
+                        <img
+                          src={lokeshSignUrl}
+                          alt="Lokesh Sir Signature"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
+
+                    {/* Poonam Mam Signature Image */}
+                    {poonamSignUrl && (
+                      <div 
+                        className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
+                        style={{ top: "76.0%", left: "76.1%", width: "11%", height: "7%" }}
+                      >
+                        <img
+                          src={poonamSignUrl}
+                          alt="Poonam Mam Signature"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   {!selectedCertificate.isCompleted && (
