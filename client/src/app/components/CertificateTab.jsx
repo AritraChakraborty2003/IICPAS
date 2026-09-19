@@ -179,6 +179,19 @@ export default function CertificateTab({
     fetchStudentAndCourses();
   }, [fetchStudentAndCourses]);
 
+  // Cross-origin uploads (e.g. api.iicpa.in/uploads/...) are served straight off
+  // disk by nginx in production and never get the app's CORS headers, so a
+  // direct fetch()/crossOrigin Image() load fails and the canvas draw is
+  // silently skipped. Routing through our own same-origin API route sidesteps
+  // that: the browser only ever talks to its own origin, and the cross-origin
+  // fetch happens server-side where CORS doesn't apply.
+  const toCanvasSafeUrl = (src) => {
+    if (!src || src.startsWith("data:")) return src;
+    if (src.startsWith(window.location.origin)) return src;
+    if (src.startsWith("/")) return src;
+    return `/api/proxy-image?url=${encodeURIComponent(src)}`;
+  };
+
   const loadImage = async (src) => {
     if (!src) return null;
     try {
@@ -190,7 +203,7 @@ export default function CertificateTab({
           img.src = src;
         });
       }
-      const response = await fetch(src, { mode: "cors" });
+      const response = await fetch(toCanvasSafeUrl(src));
       const blob = await response.blob();
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -204,13 +217,7 @@ export default function CertificateTab({
       });
     } catch (err) {
       console.error("Error loading image for canvas:", src, err);
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
-        img.src = src;
-      });
+      return null;
     }
   };
 
@@ -271,14 +278,14 @@ export default function CertificateTab({
     ctx.textBaseline = "alphabetic";
     ctx.fillText(formattedCourse, 850, 638);
 
-    // Draw Lokesh Sir Signature Image above LOKESH GUPTA (x=420, y=855)
+    // Draw Lokesh Sir Signature Image above LOKESH GUPTA (x=420, y=830)
     if (lokeshImg) {
-      ctx.drawImage(lokeshImg, 420 - 90, 855, 180, 70);
+      ctx.drawImage(lokeshImg, 420 - 90, 830, 180, 70);
     }
 
-    // Draw Poonam Mam Signature Image above POONAM GUPTA (x=1335, y=855)
+    // Draw Poonam Mam Signature Image above POONAM GUPTA (x=1335, y=830)
     if (poonamImg) {
-      ctx.drawImage(poonamImg, 1335 - 90, 855, 180, 70);
+      ctx.drawImage(poonamImg, 1335 - 90, 830, 180, 70);
     }
 
     return canvas;
@@ -400,9 +407,9 @@ export default function CertificateTab({
 
                           {/* Lokesh Sir Signature Image */}
                           {lokeshSignUrl && (
-                            <div 
+                            <div
                               className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
-                              style={{ top: "73.5%", left: "23.9%", width: "11%", height: "7%" }}
+                              style={{ top: "71.5%", left: "23.9%", width: "11%", height: "7%" }}
                             >
                               <img
                                 src={lokeshSignUrl}
@@ -414,9 +421,9 @@ export default function CertificateTab({
 
                           {/* Poonam Mam Signature Image */}
                           {poonamSignUrl && (
-                            <div 
+                            <div
                               className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
-                              style={{ top: "73.5%", left: "76.1%", width: "11%", height: "7%" }}
+                              style={{ top: "71.5%", left: "76.1%", width: "11%", height: "7%" }}
                             >
                               <img
                                 src={poonamSignUrl}
@@ -705,9 +712,9 @@ export default function CertificateTab({
 
                     {/* Lokesh Sir Signature Image */}
                     {lokeshSignUrl && (
-                      <div 
+                      <div
                         className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
-                        style={{ top: "73.5%", left: "23.9%", width: "11%", height: "7%" }}
+                        style={{ top: "71.5%", left: "23.9%", width: "11%", height: "7%" }}
                       >
                         <img
                           src={lokeshSignUrl}
@@ -719,9 +726,9 @@ export default function CertificateTab({
 
                     {/* Poonam Mam Signature Image */}
                     {poonamSignUrl && (
-                      <div 
+                      <div
                         className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
-                        style={{ top: "73.5%", left: "76.1%", width: "11%", height: "7%" }}
+                        style={{ top: "71.5%", left: "76.1%", width: "11%", height: "7%" }}
                       >
                         <img
                           src={poonamSignUrl}
