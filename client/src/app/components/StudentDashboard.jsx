@@ -345,7 +345,7 @@ function StudentDashboardContent() {
       case "support":
         return <TicketTab viewerType="student" />;
       case "certificates":
-        return <CertificatesTab />;
+        return <CertificatesTab student={student} />;
       default:
         return <CoursesTab />;
     }
