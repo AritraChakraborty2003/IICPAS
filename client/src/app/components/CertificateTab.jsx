@@ -179,15 +179,39 @@ export default function CertificateTab({
     fetchStudentAndCourses();
   }, [fetchStudentAndCourses]);
 
-  const loadImage = (src) => {
-    return new Promise((resolve) => {
-      if (!src) return resolve(null);
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = src;
-    });
+  const loadImage = async (src) => {
+    if (!src) return null;
+    try {
+      if (src.startsWith("data:")) {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = src;
+        });
+      }
+      const response = await fetch(src, { mode: "cors" });
+      const blob = await response.blob();
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (err) {
+      console.error("Error loading image for canvas:", src, err);
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
+    }
   };
 
   const generateCertificateCanvas = async (studentName, courseTitle, bgImageUrl) => {
@@ -247,14 +271,14 @@ export default function CertificateTab({
     ctx.textBaseline = "alphabetic";
     ctx.fillText(formattedCourse, 850, 638);
 
-    // Draw Lokesh Sir Signature Image above LOKESH GUPTA (x=420, y=865)
+    // Draw Lokesh Sir Signature Image above LOKESH GUPTA (x=420, y=855)
     if (lokeshImg) {
-      ctx.drawImage(lokeshImg, 420 - 90, 865, 180, 75);
+      ctx.drawImage(lokeshImg, 420 - 90, 855, 180, 70);
     }
 
-    // Draw Poonam Mam Signature Image above POONAM GUPTA (x=1335, y=865)
+    // Draw Poonam Mam Signature Image above POONAM GUPTA (x=1335, y=855)
     if (poonamImg) {
-      ctx.drawImage(poonamImg, 1335 - 90, 865, 180, 75);
+      ctx.drawImage(poonamImg, 1335 - 90, 855, 180, 70);
     }
 
     return canvas;
@@ -378,7 +402,7 @@ export default function CertificateTab({
                           {lokeshSignUrl && (
                             <div 
                               className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
-                              style={{ top: "76.0%", left: "23.9%", width: "11%", height: "7%" }}
+                              style={{ top: "73.5%", left: "23.9%", width: "11%", height: "7%" }}
                             >
                               <img
                                 src={lokeshSignUrl}
@@ -392,7 +416,7 @@ export default function CertificateTab({
                           {poonamSignUrl && (
                             <div 
                               className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
-                              style={{ top: "76.0%", left: "76.1%", width: "11%", height: "7%" }}
+                              style={{ top: "73.5%", left: "76.1%", width: "11%", height: "7%" }}
                             >
                               <img
                                 src={poonamSignUrl}
@@ -683,7 +707,7 @@ export default function CertificateTab({
                     {lokeshSignUrl && (
                       <div 
                         className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
-                        style={{ top: "76.0%", left: "23.9%", width: "11%", height: "7%" }}
+                        style={{ top: "73.5%", left: "23.9%", width: "11%", height: "7%" }}
                       >
                         <img
                           src={lokeshSignUrl}
@@ -697,7 +721,7 @@ export default function CertificateTab({
                     {poonamSignUrl && (
                       <div 
                         className="absolute -translate-x-1/2 -translate-y-full pointer-events-none select-none"
-                        style={{ top: "76.0%", left: "76.1%", width: "11%", height: "7%" }}
+                        style={{ top: "73.5%", left: "76.1%", width: "11%", height: "7%" }}
                       >
                         <img
                           src={poonamSignUrl}
