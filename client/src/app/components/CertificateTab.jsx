@@ -173,23 +173,23 @@ export default function CertificateTab({
         ctx.textBaseline = "bottom";
         ctx.fillText(formattedName, cx, 426);
 
-        // Course Name over underline at x=990, y=645
+        // Course Name over underline at x=1010, y=642
         const formattedCourse = courseTitle || "Certified Course";
         ctx.fillStyle = "#1e3a8a";
 
-        let fontSize = 28;
+        let fontSize = 20;
         ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         let textWidth = ctx.measureText(formattedCourse).width;
 
-        while (textWidth > 380 && fontSize > 16) {
-          fontSize -= 2;
+        while (textWidth > 260 && fontSize > 11) {
+          fontSize -= 1;
           ctx.font = `bold ${fontSize}px Arial, sans-serif`;
           textWidth = ctx.measureText(formattedCourse).width;
         }
 
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
-        ctx.fillText(formattedCourse, 990, 641);
+        ctx.fillText(formattedCourse, 1010, 641);
 
         resolve(canvas);
       };
