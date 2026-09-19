@@ -162,18 +162,18 @@ export default function CertificateTab({
         ctx.fillStyle = "#475569";
         ctx.font = "italic 26px Georgia, serif";
         ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText("This is to certify that", cx, 362);
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText("This is to certify that", cx, 505);
 
-        // Student Name - sitting directly on top of underline at y=430
+        // Student Name - resting directly on top of the name underline line
         const formattedName = (studentName || "STUDENT NAME").toUpperCase();
         ctx.fillStyle = "#0f172a";
-        ctx.font = "bold 46px Georgia, serif";
+        ctx.font = "bold 44px Georgia, serif";
         ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText(formattedName, cx, 426);
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(formattedName, cx, 590);
 
-        // Course Name over underline at x=1010, y=642
+        // Course Name over underline at x=1010, y=638
         const formattedCourse = courseTitle || "Certified Course";
         ctx.fillStyle = "#1e3a8a";
 
@@ -188,8 +188,8 @@ export default function CertificateTab({
         }
 
         ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText(formattedCourse, 1010, 641);
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText(formattedCourse, 1010, 638);
 
         resolve(canvas);
       };
