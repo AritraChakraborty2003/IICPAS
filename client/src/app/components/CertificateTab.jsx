@@ -173,23 +173,23 @@ export default function CertificateTab({
         ctx.textBaseline = "alphabetic";
         ctx.fillText(formattedName, cx, 590);
 
-        // Course Name over underline at x=1010, y=638
+        // Course Name left-aligned starting at x=850 right after 'course of '
         const formattedCourse = courseTitle || "Certified Course";
         ctx.fillStyle = "#1e3a8a";
 
-        let fontSize = 20;
+        let fontSize = 17;
         ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         let textWidth = ctx.measureText(formattedCourse).width;
 
-        while (textWidth > 260 && fontSize > 11) {
+        while (textWidth > 255 && fontSize > 11) {
           fontSize -= 1;
           ctx.font = `bold ${fontSize}px Arial, sans-serif`;
           textWidth = ctx.measureText(formattedCourse).width;
         }
 
-        ctx.textAlign = "center";
+        ctx.textAlign = "left";
         ctx.textBaseline = "alphabetic";
-        ctx.fillText(formattedCourse, 1010, 638);
+        ctx.fillText(formattedCourse, 850, 638);
 
         resolve(canvas);
       };
@@ -311,8 +311,8 @@ export default function CertificateTab({
                             {currentStudentName || "Student Name"}
                           </div>
                           <div 
-                            className="absolute text-center font-sans font-bold text-blue-900 text-[7px] leading-none -translate-x-1/2 -translate-y-full max-w-[16%] truncate"
-                            style={{ top: "51.8%", left: "57.55%" }}
+                            className="absolute text-left font-sans font-bold text-blue-900 text-[6.5px] leading-none -translate-y-full max-w-[15%] truncate"
+                            style={{ top: "51.6%", left: "48.5%" }}
                           >
                             {course.title}
                           </div>
@@ -584,10 +584,10 @@ export default function CertificateTab({
                       {currentStudentName || "Student Name"}
                     </div>
 
-                    {/* Course Name - Rested cleanly on the course line */}
+                    {/* Course Name - Left-aligned right after 'course of ' */}
                     <div 
-                      className="absolute text-center font-sans font-bold text-blue-900 text-[1.6%] leading-none tracking-tight -translate-x-1/2 -translate-y-full"
-                      style={{ top: "51.8%", left: "57.55%", maxWidth: "15.5%" }}
+                      className="absolute text-left font-sans font-bold text-blue-900 text-[1.3%] leading-none tracking-tight -translate-y-full"
+                      style={{ top: "51.6%", left: "48.5%", maxWidth: "15%" }}
                     >
                       <span className="truncate block">
                         {selectedCertificate.course.title}
