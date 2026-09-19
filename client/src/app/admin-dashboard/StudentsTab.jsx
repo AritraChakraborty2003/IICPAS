@@ -3085,7 +3085,7 @@ function StudentDigitalHubPreview({ studentId, onBack }) {
           <TicketTab viewerType="admin" filterEmail={student?.email || ""} readOnly />
         )}
         {activeSection === "certificates" && (
-          <CertificateTab previewCourses={courses} readOnly />
+          <CertificateTab previewCourses={courses} previewStudent={student} readOnly />
         )}
       </main>
     </motion.div>

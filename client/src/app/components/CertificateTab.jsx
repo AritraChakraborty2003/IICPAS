@@ -36,9 +36,11 @@ const getCertificateImage = () => "/single-certificate.jpg";
 
 export default function CertificateTab({
   previewCourses = null,
+  previewStudent = null,
+  student: passedStudent = null,
   readOnly = false,
 } = {}) {
-  const [student, setStudent] = useState(null);
+  const [student, setStudent] = useState(passedStudent || previewStudent || null);
   const [courses, setCourses] = useState([]);
   const [groupPackages, setGroupPackages] = useState([]);
   const [isSuperStudent, setIsSuperStudent] = useState(false);
@@ -48,10 +50,21 @@ export default function CertificateTab({
 
   const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
+  useEffect(() => {
+    if (previewStudent) {
+      setStudent(previewStudent);
+    } else if (passedStudent) {
+      setStudent(passedStudent);
+    }
+  }, [previewStudent, passedStudent]);
+
   const fetchStudentAndCourses = useCallback(async () => {
     if (previewCourses) {
       setLoading(true);
       setCourses(previewCourses);
+      if (previewStudent) {
+        setStudent(previewStudent);
+      }
       const newProgressMap = {};
       previewCourses.forEach((course) => {
         newProgressMap[course._id] = Number(course.completionPercent || 0);
@@ -69,7 +82,7 @@ export default function CertificateTab({
 
       if (studentRes.data && studentRes.data.student) {
         const studentInfo = studentRes.data.student;
-        setStudent(studentInfo);
+        setStudent((prev) => prev || studentInfo);
         const isSuper = Boolean(studentInfo.digitalHubAccessOverride);
         setIsSuperStudent(isSuper);
 
@@ -125,20 +138,95 @@ export default function CertificateTab({
     } finally {
       setLoading(false);
     }
-  }, [API, previewCourses]);
+  }, [API, previewCourses, previewStudent]);
 
   useEffect(() => {
     fetchStudentAndCourses();
   }, [fetchStudentAndCourses]);
 
-  const handleDownload = (courseId, courseTitle) => {
-    const link = document.createElement("a");
-    link.href = getCertificateImage();
-    link.download = `Certificate_${courseTitle.replace(/\s+/g, "_")}.jpg`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("Certificate download started!");
+  const generateCertificateCanvas = (studentName, courseTitle, bgImageUrl) => {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 1755;
+      canvas.height = 1241;
+      const ctx = canvas.getContext("2d");
+
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, 1755, 1241);
+
+        const cx = 1755 / 2;
+
+        // Label: 'This is to certify that'
+        ctx.fillStyle = "#475569";
+        ctx.font = "italic 28px Georgia, serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("This is to certify that", cx, 470);
+
+        // Student Name
+        const formattedName = (studentName || "STUDENT NAME").toUpperCase();
+        ctx.fillStyle = "#0f172a";
+        ctx.font = "bold 52px Georgia, serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(formattedName, cx, 520);
+
+        // Course Name over underline at x=990, y=630
+        const formattedCourse = courseTitle || "Certified Course";
+        ctx.fillStyle = "#1e3a8a";
+
+        let fontSize = 30;
+        ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+        let textWidth = ctx.measureText(formattedCourse).width;
+
+        while (textWidth > 380 && fontSize > 16) {
+          fontSize -= 2;
+          ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+          textWidth = ctx.measureText(formattedCourse).width;
+        }
+
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(formattedCourse, 990, 630);
+
+        resolve(canvas);
+      };
+      img.onerror = (err) => reject(err);
+      const targetUrl = bgImageUrl || getCertificateImage();
+      const resolvedUrl =
+        targetUrl.startsWith("http") || targetUrl.startsWith("data:")
+          ? targetUrl
+          : `${window.location.origin}${targetUrl.startsWith("/") ? "" : "/"}${targetUrl}`;
+      img.src = resolvedUrl;
+    });
+  };
+
+  const handleDownloadPDF = async (courseTitle, customCertImage = null) => {
+    const toastId = toast.loading("Generating certificate PDF...");
+    try {
+      const studentName = student?.name || previewStudent?.name || passedStudent?.name || "Student";
+      const bgUrl = customCertImage || getCertificateImage();
+      const canvas = await generateCertificateCanvas(studentName, courseTitle, bgUrl);
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const { jsPDF } = await import("jspdf");
+      const pdf = new jsPDF({
+        orientation: "landscape",
+        unit: "mm",
+        format: "a4",
+      });
+
+      pdf.addImage(imgData, "JPEG", 0, 0, 297, 210);
+      const safeStudent = studentName.replace(/[^a-zA-Z0-9]/g, "_");
+      const safeCourse = courseTitle.replace(/[^a-zA-Z0-9]/g, "_");
+      pdf.save(`Certificate_${safeStudent}_${safeCourse}.pdf`);
+      toast.success("Certificate PDF downloaded!", { id: toastId });
+    } catch (err) {
+      console.error("Error generating certificate PDF:", err);
+      toast.error("Failed to generate PDF certificate", { id: toastId });
+    }
   };
 
   if (loading) {
@@ -149,6 +237,8 @@ export default function CertificateTab({
       </div>
     );
   }
+
+  const currentStudentName = student?.name || previewStudent?.name || passedStudent?.name || "";
 
   return (
     <div className="min-h-[calc(100vh-80px)] px-6 py-8 bg-[#0f172a] text-white">
@@ -182,8 +272,8 @@ export default function CertificateTab({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {courses.map((cur) => {
                   const course = extractCourseRecord(cur);
-                  const progress = progressMap[course._id] || 0;
-                  const isCompleted = progress >= 100;
+                  const progress = progressMap[course._id] || Number(course.completionPercent || 0);
+                  const isCompleted = progress >= 100 || readOnly;
 
                   return (
                     <motion.div
@@ -205,6 +295,29 @@ export default function CertificateTab({
                             !isCompleted ? "blur-[2px] grayscale opacity-40 shrink-0" : "shrink-0"
                           }`}
                         />
+
+                        {/* Name and Course Overlay on Card Thumbnail */}
+                        <div className="absolute inset-0 pointer-events-none select-none">
+                          <div 
+                            className="absolute w-full text-center text-slate-600 font-serif italic text-[8px] leading-none"
+                            style={{ top: "37.5%" }}
+                          >
+                            This is to certify that
+                          </div>
+                          <div 
+                            className="absolute w-full text-center font-serif font-extrabold text-slate-900 uppercase text-[11px] leading-none px-2 truncate"
+                            style={{ top: "42%" }}
+                          >
+                            {currentStudentName || "Student Name"}
+                          </div>
+                          <div 
+                            className="absolute text-center font-sans font-bold text-blue-900 text-[9px] leading-none -translate-x-1/2 max-w-[24%] truncate"
+                            style={{ top: "51%", left: "56.4%" }}
+                          >
+                            {course.title}
+                          </div>
+                        </div>
+
                         <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent opacity-80" />
                         
                         {!isCompleted && (
@@ -263,15 +376,15 @@ export default function CertificateTab({
                           <button
                              onClick={(e) => {
                                e.stopPropagation();
-                               if (isCompleted && !readOnly) handleDownload(course._id, course.title);
+                               if (isCompleted) handleDownloadPDF(course.title);
                              }}
-                             disabled={!isCompleted || readOnly}
+                             disabled={!isCompleted}
                              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                               isCompleted && !readOnly
+                               isCompleted
                                ? "bg-white/5 text-gray-400 hover:bg-emerald-600 hover:text-white border border-white/10 hover:border-transparent"
                                : "bg-gray-800/30 text-gray-600 cursor-not-allowed opacity-30"
                              }`}
-                             title={readOnly ? "Preview only" : isCompleted ? "Download Certificate" : "Complete course to download"}
+                             title={isCompleted ? "Download Certificate PDF" : "Complete course to download"}
                           >
                             <FaDownload className="text-xs" />
                           </button>
@@ -419,25 +532,17 @@ export default function CertificateTab({
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => {
-                    if (!selectedCertificate.isCompleted || readOnly) return;
-                    const imgSrc = selectedCertificate.certImage || getCertificateImage();
-                    const link = document.createElement("a");
-                    link.href = imgSrc;
-                    link.download = `Certificate_${selectedCertificate.course.title.replace(/\s+/g, "_")}.jpg`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    toast.success("Certificate download started!");
+                    handleDownloadPDF(selectedCertificate.course.title, selectedCertificate.certImage);
                   }}
-                  disabled={!selectedCertificate.isCompleted || readOnly}
+                  disabled={!selectedCertificate.isCompleted && !readOnly}
                   className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg active:scale-95 border ${
-                    selectedCertificate.isCompleted && !readOnly
+                    selectedCertificate.isCompleted || readOnly
                       ? "bg-blue-600 text-white hover:bg-blue-500 shadow-blue-900/40"
                       : "bg-gray-800/50 text-gray-500 border-white/5 cursor-not-allowed opacity-50"
                   }`}
                 >
                   <FaDownload />
-                  Download
+                  Download PDF
                 </button>
 
                 <button 
@@ -460,6 +565,35 @@ export default function CertificateTab({
                       !selectedCertificate.isCompleted ? "blur-[3px] grayscale opacity-60 scale-105" : ""
                     }`}
                   />
+
+                  {/* Certificate Text Overlay */}
+                  <div className="absolute inset-0 pointer-events-none select-none">
+                    {/* 'This is to certify that' */}
+                    <div 
+                      className="absolute w-full text-center text-slate-600 font-serif italic text-[2.2%] leading-none"
+                      style={{ top: "37.8%" }}
+                    >
+                      This is to certify that
+                    </div>
+
+                    {/* Student Name */}
+                    <div 
+                      className="absolute w-full text-center font-serif font-extrabold text-slate-900 tracking-wider uppercase text-[4.1%] leading-none drop-shadow-sm px-4"
+                      style={{ top: "41.8%" }}
+                    >
+                      {currentStudentName || "Student Name"}
+                    </div>
+
+                    {/* Course Name */}
+                    <div 
+                      className="absolute text-center font-sans font-bold text-blue-900 text-[2.3%] leading-none tracking-tight -translate-x-1/2"
+                      style={{ top: "50.8%", left: "56.4%", maxWidth: "24%" }}
+                    >
+                      <span className="truncate block">
+                        {selectedCertificate.course.title}
+                      </span>
+                    </div>
+                  </div>
                   
                   {!selectedCertificate.isCompleted && (
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white">
