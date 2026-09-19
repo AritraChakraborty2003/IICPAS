@@ -81,6 +81,7 @@ import {
   FaCoins,
   FaFileInvoiceDollar,
   FaGift,
+  FaPenNib,
 } from "react-icons/fa";
 import CompanyTab from "./CompanyTab";
 import CourseArea from "./CourseBuilder";
@@ -130,6 +131,7 @@ import CoinsTab from "./CoinsTab";
 import BookingSettingsTab from "./BookingSettingsTab";
 import AdminBookingsTab from "./AdminBookingsTab";
 import InvoiceCompanySettingsTab from "./InvoiceCompanySettingsTab";
+import CertificateSignaturesTab from "./CertificateSignaturesTab";
 import QuotationTab from "./QuotationTab";
 import LoginAccessControlTab from "./LoginAccessControlTab";
 import JobSidebarMarqueeTab from "./JobSidebarMarqueeTab";
@@ -436,6 +438,11 @@ const NAVIGATION_GROUPS = [
         id: "invoice-company-settings",
         label: "Invoice Company Settings",
         icon: <FaFileAlt />,
+      },
+      {
+        id: "certificate-signatures",
+        label: "Certificate Signatures",
+        icon: <FaPenNib />,
       },
       {
         id: "quotation",
@@ -886,6 +893,8 @@ function AdminDashboardContent() {
           <CoinsTab />
         ) : activeTab === "invoice-company-settings" ? (
           <InvoiceCompanySettingsTab />
+        ) : activeTab === "certificate-signatures" ? (
+          <CertificateSignaturesTab />
         ) : activeTab === "quotation" ? (
           <QuotationTab />
         ) : activeTab === "job-sidebar-marquee" ? (
