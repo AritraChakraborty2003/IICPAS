@@ -160,28 +160,28 @@ export default function CertificateTab({
 
         // Label: 'This is to certify that'
         ctx.fillStyle = "#475569";
-        ctx.font = "italic 26px Georgia, serif";
+        ctx.font = "italic 22px Georgia, serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "alphabetic";
-        ctx.fillText("This is to certify that", cx, 505);
+        ctx.fillText("This is to certify that", cx, 495);
 
         // Student Name - resting directly on top of the name underline line
         const formattedName = (studentName || "STUDENT NAME").toUpperCase();
         ctx.fillStyle = "#0f172a";
-        ctx.font = "bold 44px Georgia, serif";
+        ctx.font = "bold 36px Georgia, serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "alphabetic";
-        ctx.fillText(formattedName, cx, 590);
+        ctx.fillText(formattedName, cx, 582);
 
         // Course Name left-aligned starting at x=850 right after 'course of '
         const formattedCourse = courseTitle || "Certified Course";
         ctx.fillStyle = "#1e3a8a";
 
-        let fontSize = 17;
+        let fontSize = 16;
         ctx.font = `bold ${fontSize}px Arial, sans-serif`;
         let textWidth = ctx.measureText(formattedCourse).width;
 
-        while (textWidth > 255 && fontSize > 11) {
+        while (textWidth > 255 && fontSize > 10) {
           fontSize -= 1;
           ctx.font = `bold ${fontSize}px Arial, sans-serif`;
           textWidth = ctx.measureText(formattedCourse).width;
@@ -299,19 +299,19 @@ export default function CertificateTab({
                         {/* Name and Course Overlay on Card Thumbnail */}
                         <div className="absolute inset-0 pointer-events-none select-none">
                           <div 
-                            className="absolute w-full text-center text-slate-600 font-serif italic text-[7px] leading-none -translate-y-full"
-                            style={{ top: "40.5%" }}
+                            className="absolute w-full text-center text-slate-600 font-serif italic text-[4.5px] leading-none -translate-y-full"
+                            style={{ top: "39.5%" }}
                           >
                             This is to certify that
                           </div>
                           <div 
-                            className="absolute w-full text-center font-serif font-extrabold text-slate-900 uppercase text-[12px] leading-none px-2 truncate -translate-y-full"
-                            style={{ top: "47.5%" }}
+                            className="absolute w-full text-center font-serif font-bold text-slate-900 uppercase text-[6.5px] leading-none px-2 truncate -translate-y-full"
+                            style={{ top: "46.5%" }}
                           >
                             {currentStudentName || "Student Name"}
                           </div>
                           <div 
-                            className="absolute text-left font-sans font-bold text-blue-900 text-[6.5px] leading-none -translate-y-full max-w-[15%] truncate"
+                            className="absolute text-left font-sans font-bold text-blue-900 text-[4.5px] leading-none -translate-y-full max-w-[15%] truncate"
                             style={{ top: "51.6%", left: "48.5%" }}
                           >
                             {course.title}
@@ -570,23 +570,23 @@ export default function CertificateTab({
                   <div className="absolute inset-0 pointer-events-none select-none">
                     {/* 'This is to certify that' */}
                     <div 
-                      className="absolute w-full text-center text-slate-600 font-serif italic text-[2.0%] leading-none -translate-y-full"
-                      style={{ top: "40.5%" }}
+                      className="absolute w-full text-center text-slate-600 font-serif italic text-[1.6%] leading-none -translate-y-full"
+                      style={{ top: "39.5%" }}
                     >
                       This is to certify that
                     </div>
 
                     {/* Student Name - Rested directly on top of the name underline line */}
                     <div 
-                      className="absolute w-full text-center font-serif font-extrabold text-slate-900 tracking-wider uppercase text-[3.6%] leading-none drop-shadow-sm px-4 -translate-y-full"
-                      style={{ top: "47.5%" }}
+                      className="absolute w-full text-center font-serif font-bold text-slate-900 tracking-wide uppercase text-[2.5%] leading-none drop-shadow-sm px-4 -translate-y-full"
+                      style={{ top: "46.5%" }}
                     >
                       {currentStudentName || "Student Name"}
                     </div>
 
                     {/* Course Name - Left-aligned right after 'course of ' */}
                     <div 
-                      className="absolute text-left font-sans font-bold text-blue-900 text-[1.3%] leading-none tracking-tight -translate-y-full"
+                      className="absolute text-left font-sans font-bold text-blue-900 text-[1.2%] leading-none tracking-tight -translate-y-full"
                       style={{ top: "51.6%", left: "48.5%", maxWidth: "15%" }}
                     >
                       <span className="truncate block">
