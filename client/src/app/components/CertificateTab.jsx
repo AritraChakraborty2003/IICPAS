@@ -300,13 +300,13 @@ export default function CertificateTab({
                         <div className="absolute inset-0 pointer-events-none select-none">
                           <div 
                             className="absolute w-full text-center text-slate-600 font-serif italic text-[7px] leading-none -translate-y-full"
-                            style={{ top: "29.2%" }}
+                            style={{ top: "40.5%" }}
                           >
                             This is to certify that
                           </div>
                           <div 
                             className="absolute w-full text-center font-serif font-extrabold text-slate-900 uppercase text-[12px] leading-none px-2 truncate -translate-y-full"
-                            style={{ top: "34.2%" }}
+                            style={{ top: "47.5%" }}
                           >
                             {currentStudentName || "Student Name"}
                           </div>
@@ -571,15 +571,15 @@ export default function CertificateTab({
                     {/* 'This is to certify that' */}
                     <div 
                       className="absolute w-full text-center text-slate-600 font-serif italic text-[2.0%] leading-none -translate-y-full"
-                      style={{ top: "29.2%" }}
+                      style={{ top: "40.5%" }}
                     >
                       This is to certify that
                     </div>
 
-                    {/* Student Name - Rested directly on top of the underline line */}
+                    {/* Student Name - Rested directly on top of the name underline line */}
                     <div 
                       className="absolute w-full text-center font-serif font-extrabold text-slate-900 tracking-wider uppercase text-[3.6%] leading-none drop-shadow-sm px-4 -translate-y-full"
-                      style={{ top: "34.2%" }}
+                      style={{ top: "47.5%" }}
                     >
                       {currentStudentName || "Student Name"}
                     </div>
