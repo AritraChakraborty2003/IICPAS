@@ -311,8 +311,8 @@ export default function CertificateTab({
                             {currentStudentName || "Student Name"}
                           </div>
                           <div 
-                            className="absolute text-center font-sans font-bold text-blue-900 text-[8.5px] leading-none -translate-x-1/2 -translate-y-full max-w-[24%] truncate"
-                            style={{ top: "51.8%", left: "56.4%" }}
+                            className="absolute text-center font-sans font-bold text-blue-900 text-[7px] leading-none -translate-x-1/2 -translate-y-full max-w-[16%] truncate"
+                            style={{ top: "51.8%", left: "57.55%" }}
                           >
                             {course.title}
                           </div>
@@ -584,10 +584,10 @@ export default function CertificateTab({
                       {currentStudentName || "Student Name"}
                     </div>
 
-                    {/* Course Name - Rested on the course line */}
+                    {/* Course Name - Rested cleanly on the course line */}
                     <div 
-                      className="absolute text-center font-sans font-bold text-blue-900 text-[2.2%] leading-none tracking-tight -translate-x-1/2 -translate-y-full"
-                      style={{ top: "51.8%", left: "56.4%", maxWidth: "24%" }}
+                      className="absolute text-center font-sans font-bold text-blue-900 text-[1.6%] leading-none tracking-tight -translate-x-1/2 -translate-y-full"
+                      style={{ top: "51.8%", left: "57.55%", maxWidth: "15.5%" }}
                     >
                       <span className="truncate block">
                         {selectedCertificate.course.title}
