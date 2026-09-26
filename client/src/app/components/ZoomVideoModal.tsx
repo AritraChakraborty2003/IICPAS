@@ -45,11 +45,19 @@ function ZoomVideoModal({
   const [introVideoCurrentTime, setIntroVideoCurrentTime] = React.useState(0);
   const [introVideoDuration, setIntroVideoDuration] = React.useState(0);
   const [volume, setVolume] = React.useState(1);
+  // Fullscreen the whole modal, not the <video>: a fullscreen <video> gets the
+  // browser's native controls, whose seek bar bypasses the live-class lock.
+  const containerRef = useRef<HTMLDivElement>(null);
+  // Live classes can't be scrubbed. Remember the last position reached by
+  // normal playback so any user seek (native controls, keyboard, etc.) can be
+  // snapped back; the one programmatic jump to the live offset is allowed.
+  const lastLiveTimeRef = useRef(0);
+  const allowNextSeekRef = useRef(false);
 
   if (!isOpen || !videoUrl) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div ref={containerRef} className="fixed inset-0 z-50 bg-black">
       <style>{`
         #chatbot-floating-button, .chatbot-container {
           display: none !important;
@@ -117,16 +125,33 @@ function ZoomVideoModal({
               if (elapsedSeconds > 0 && duration > 0) {
                 // Late joiners land at the live position; if the class has
                 // outrun the file, keep a few seconds before the end.
-                event.currentTarget.currentTime = Math.min(
+                const livePosition = Math.min(
                   elapsedSeconds,
                   Math.max(duration - 5, 0),
                 );
+                allowNextSeekRef.current = true;
+                lastLiveTimeRef.current = livePosition;
+                event.currentTarget.currentTime = livePosition;
               }
             }
           }}
-          onTimeUpdate={(event) =>
-            setIntroVideoCurrentTime(event.currentTarget.currentTime)
-          }
+          onSeeking={(event) => {
+            if (!isLive) return;
+            if (allowNextSeekRef.current) {
+              allowNextSeekRef.current = false;
+              return;
+            }
+            const video = event.currentTarget;
+            if (Math.abs(video.currentTime - lastLiveTimeRef.current) > 0.5) {
+              video.currentTime = lastLiveTimeRef.current;
+              onShowToast("Cannot seek during a live session");
+            }
+          }}
+          onTimeUpdate={(event) => {
+            const video = event.currentTarget;
+            if (!video.seeking) lastLiveTimeRef.current = video.currentTime;
+            setIntroVideoCurrentTime(video.currentTime);
+          }}
           className="h-full max-h-full w-full max-w-full object-contain bg-black"
         >
           <source src={videoUrl} />
@@ -314,12 +339,12 @@ function ZoomVideoModal({
             <button
               type="button"
               onClick={() => {
-                const video = introVideoRef.current;
-                if (!video) return;
+                const container = containerRef.current;
+                if (!container) return;
                 if (document.fullscreenElement) {
                   document.exitFullscreen();
                 } else {
-                  video.requestFullscreen();
+                  container.requestFullscreen();
                 }
               }}
               className="hidden flex-col items-center gap-1 rounded-lg px-2 py-1.5 text-slate-200 transition-colors hover:bg-white/10 sm:flex sm:px-3"

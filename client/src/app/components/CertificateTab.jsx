@@ -82,8 +82,12 @@ export default function CertificateTab({
     return `${API}${pathUrl.startsWith("/") ? "" : "/"}${pathUrl}`;
   };
 
-  const lokeshSignUrl = getFullImageUrl(signatures.lokeshSign);
-  const poonamSignUrl = getFullImageUrl(signatures.poonamSign);
+  const lokeshSignUrl = signatures.lokeshSign
+    ? getFullImageUrl(signatures.lokeshSign)
+    : "/lokesh-sign-default.png";
+  const poonamSignUrl = signatures.poonamSign
+    ? getFullImageUrl(signatures.poonamSign)
+    : "/poonam-sign-default.png";
 
   useEffect(() => {
     if (previewStudent) {
@@ -203,8 +207,36 @@ export default function CertificateTab({
           img.src = src;
         });
       }
-      const response = await fetch(toCanvasSafeUrl(src));
+
+      const safeUrl = toCanvasSafeUrl(src);
+      let response = await fetch(safeUrl);
+      if (!response.ok && safeUrl !== src) {
+        response = await fetch(src, { mode: "cors" });
+      }
+
+      if (!response.ok) {
+        console.warn("loadImage response not ok for:", src, response.status);
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = src;
+        });
+      }
+
       const blob = await response.blob();
+      if (!blob.type.startsWith("image/") && blob.type !== "") {
+        console.warn("loadImage blob is not an image:", blob.type, "for:", src);
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = () => resolve(img);
+          img.onerror = () => resolve(null);
+          img.src = src;
+        });
+      }
+
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -217,7 +249,13 @@ export default function CertificateTab({
       });
     } catch (err) {
       console.error("Error loading image for canvas:", src, err);
-      return null;
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
     }
   };
 
@@ -278,14 +316,14 @@ export default function CertificateTab({
     ctx.textBaseline = "alphabetic";
     ctx.fillText(formattedCourse, 850, 638);
 
-    // Draw Lokesh Sir Signature Image above LOKESH GUPTA (x=420, y=830)
+    // Draw Lokesh Sir Signature Image above LOKESH GUPTA line (x=420, y=810)
     if (lokeshImg) {
-      ctx.drawImage(lokeshImg, 420 - 90, 830, 180, 70);
+      ctx.drawImage(lokeshImg, 420 - 100, 810, 200, 90);
     }
 
-    // Draw Poonam Mam Signature Image above POONAM GUPTA (x=1335, y=830)
+    // Draw Poonam Mam Signature Image above POONAM GUPTA line (x=1335, y=810)
     if (poonamImg) {
-      ctx.drawImage(poonamImg, 1335 - 90, 830, 180, 70);
+      ctx.drawImage(poonamImg, 1335 - 100, 810, 200, 90);
     }
 
     return canvas;
