@@ -66,14 +66,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Login function
-  const login = async (email, password) => {
+  // Admin accounts need a second call with the emailed code (otp).
+  const login = async (email, password, otp) => {
     try {
       const response = await axios.post(`${API_BASE}/employees/login`, {
         email,
         password,
+        ...(otp ? { otp } : {}),
       });
 
       const userData = response.data;
+
+      if (userData.otpRequired) {
+        return {
+          success: false,
+          otpRequired: true,
+          message: userData.message,
+          maskedEmail: userData.email,
+          retryAfter: userData.retryAfter,
+        };
+      }
       setUser(userData);
       setPermissions(userData.permissions);
 
@@ -88,9 +100,13 @@ export const AuthProvider = ({ children }) => {
       return { success: true, redirectUrl };
     } catch (error) {
       console.error("Login error:", error);
+      const data = error.response?.data || {};
       return {
         success: false,
-        message: error.response?.data?.message || "Login failed",
+        otpRequired: Boolean(data.otpRequired),
+        maskedEmail: data.email,
+        retryAfter: data.retryAfter,
+        message: data.message || "Login failed",
       };
     }
   };

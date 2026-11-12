@@ -266,6 +266,11 @@ const employeeSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
     },
+    // Email OTP for the second step of admin login. Hidden from normal queries.
+    loginOtpHash: { type: String, select: false },
+    loginOtpExpiresAt: { type: Date, select: false },
+    loginOtpSentAt: { type: Date, select: false },
+    loginOtpAttempts: { type: Number, default: 0, select: false },
   },
   {
     timestamps: true,

@@ -1,7 +1,159 @@
 import Employee from "../models/Employee.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import nodemailer from "nodemailer";
 import { recordLogin, recordLogout } from "../services/authAuditService.js";
 import { isLoginAllowed } from "../services/loginAccessService.js";
+
+// ---- Admin login email OTP -------------------------------------------------
+const LOGIN_OTP_TTL_MS = 10 * 60 * 1000; // code valid for 10 minutes
+const LOGIN_OTP_RESEND_MS = 30 * 1000; // min gap between emails
+const LOGIN_OTP_MAX_ATTEMPTS = 5; // wrong guesses before the code is burned
+
+// Set ADMIN_LOGIN_OTP=off in backend/.env to turn the email step off
+// (emergency escape hatch if outgoing email breaks).
+const requiresLoginOtp = (employee) =>
+  employee.role === "Admin" && process.env.ADMIN_LOGIN_OTP !== "off";
+
+const hashLoginOtp = (employeeId, code) =>
+  crypto
+    .createHmac("sha256", process.env.JWT_SECRET || "login-otp")
+    .update(`${employeeId}:${code}`)
+    .digest("hex");
+
+const maskEmail = (email) => {
+  const [user, domain] = email.split("@");
+  const visible = user.slice(0, Math.min(2, user.length));
+  return `${visible}${"*".repeat(Math.max(user.length - visible.length, 3))}@${domain}`;
+};
+
+const sendLoginOtpEmail = async (to, name, code) => {
+  // Built per call so it always sees the env loaded at startup.
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
+  });
+  await transporter.sendMail({
+    from: `"IICPA Institute" <${process.env.EMAIL_USER}>`,
+    to,
+    subject: `IICPA admin login code: ${code}`,
+    text: `Hello ${name},\n\nYour IICPA admin login code is ${code}. It expires in 10 minutes.\n\nIf you did not try to sign in, change your password immediately.`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:480px">
+      <p>Hello ${name},</p>
+      <p>Your IICPA admin login code is:</p>
+      <p style="font-size:28px;font-weight:bold;letter-spacing:6px;margin:16px 0">${code}</p>
+      <p>It expires in 10 minutes.</p>
+      <p style="color:#888;font-size:12px">If you did not try to sign in, change your password immediately.</p>
+    </div>`,
+  });
+};
+
+// Emails a fresh code. Responds with otpRequired so the client shows the code step.
+const issueLoginOtp = async (employee, res) => {
+  const now = Date.now();
+  const current = await Employee.findById(employee._id).select(
+    "+loginOtpSentAt +loginOtpExpiresAt"
+  );
+  const sentAt = current?.loginOtpSentAt?.getTime() || 0;
+  const stillValid = current?.loginOtpExpiresAt?.getTime() > now;
+  if (stillValid && now - sentAt < LOGIN_OTP_RESEND_MS) {
+    const wait = Math.ceil((LOGIN_OTP_RESEND_MS - (now - sentAt)) / 1000);
+    return res.status(429).json({
+      otpRequired: true,
+      email: maskEmail(employee.email),
+      retryAfter: wait,
+      message: `A code was just sent. Please wait ${wait}s before requesting another.`,
+    });
+  }
+
+  const code = crypto.randomInt(100000, 1000000).toString();
+  await Employee.updateOne(
+    { _id: employee._id },
+    {
+      $set: {
+        loginOtpHash: hashLoginOtp(employee._id, code),
+        loginOtpExpiresAt: new Date(now + LOGIN_OTP_TTL_MS),
+        loginOtpSentAt: new Date(now),
+        loginOtpAttempts: 0,
+      },
+    }
+  );
+
+  try {
+    await sendLoginOtpEmail(employee.email, employee.name, code);
+  } catch (err) {
+    console.error("Admin login OTP email failed:", err.message);
+    await Employee.updateOne(
+      { _id: employee._id },
+      { $unset: { loginOtpHash: 1, loginOtpExpiresAt: 1, loginOtpSentAt: 1 } }
+    );
+    return res
+      .status(500)
+      .json({ message: "Could not send the login code email. Please try again later." });
+  }
+
+  return res.json({
+    otpRequired: true,
+    email: maskEmail(employee.email),
+    retryAfter: LOGIN_OTP_RESEND_MS / 1000,
+    message: `We sent a 6-digit code to ${maskEmail(employee.email)}.`,
+  });
+};
+
+// Returns null when the code is accepted (and consumes it), else an error payload.
+const checkLoginOtp = async (employeeId, rawCode) => {
+  const code = String(rawCode).trim();
+  if (!/^\d{6}$/.test(code)) {
+    return { status: 400, message: "Enter the 6-digit code from your email." };
+  }
+
+  // Count the attempt atomically before comparing, so parallel guesses can't skip the limit.
+  const record = await Employee.findOneAndUpdate(
+    {
+      _id: employeeId,
+      loginOtpHash: { $exists: true },
+      loginOtpAttempts: { $lt: LOGIN_OTP_MAX_ATTEMPTS },
+    },
+    { $inc: { loginOtpAttempts: 1 } },
+    { new: true }
+  ).select("+loginOtpHash +loginOtpExpiresAt +loginOtpAttempts");
+
+  if (!record) {
+    await Employee.updateOne(
+      { _id: employeeId },
+      { $unset: { loginOtpHash: 1, loginOtpExpiresAt: 1, loginOtpSentAt: 1 } }
+    );
+    return { status: 400, message: "This code is no longer valid. Request a new code." };
+  }
+  if (record.loginOtpExpiresAt.getTime() < Date.now()) {
+    return { status: 400, message: "This code has expired. Request a new code." };
+  }
+
+  const expected = Buffer.from(record.loginOtpHash, "hex");
+  const given = Buffer.from(hashLoginOtp(employeeId, code), "hex");
+  if (expected.length !== given.length || !crypto.timingSafeEqual(expected, given)) {
+    const left = LOGIN_OTP_MAX_ATTEMPTS - record.loginOtpAttempts;
+    return {
+      status: 400,
+      message: left > 0
+        ? `Incorrect code. ${left} attempt${left === 1 ? "" : "s"} left.`
+        : "Too many incorrect attempts. Request a new code.",
+    };
+  }
+
+  // Consume: only one request can unset this exact hash.
+  const consumed = await Employee.updateOne(
+    { _id: employeeId, loginOtpHash: record.loginOtpHash },
+    {
+      $unset: { loginOtpHash: 1, loginOtpExpiresAt: 1, loginOtpSentAt: 1 },
+      $set: { loginOtpAttempts: 0 },
+    }
+  );
+  if (consumed.modifiedCount !== 1) {
+    return { status: 400, message: "This code has already been used. Request a new code." };
+  }
+  return null;
+};
 
 // Create JWT token
 const generateToken = (id) => {
@@ -144,7 +296,7 @@ const registerInitialAdmin = async (req, res) => {
 // @access  Public
 const loginEmployee = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, otp } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
@@ -173,6 +325,17 @@ const loginEmployee = async (req, res) => {
     const allowed = await isLoginAllowed("employee", employee._id);
     if (!allowed) {
       return res.status(403).json({ message: "Account is inactive" });
+    }
+
+    // Second factor: password alone sends a code; password + code signs in.
+    if (requiresLoginOtp(employee)) {
+      if (!otp) return issueLoginOtp(employee, res);
+      const otpError = await checkLoginOtp(employee._id, otp);
+      if (otpError) {
+        return res
+          .status(otpError.status)
+          .json({ otpRequired: true, message: otpError.message });
+      }
     }
 
     const token = generateToken(employee._id);
