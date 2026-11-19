@@ -301,11 +301,9 @@ const formatBatchLabel = (batch) => {
 
   const code = batch.code || batch.batchCode || "N/A";
   const mode = String(batch.mode || "").trim().toUpperCase();
-  const size = Number(batch.size || 0);
-  const assignedCount = Number(batch.assignedCount || 0);
-  const capacity = size > 0 ? `${assignedCount}/${size}` : "N/A";
 
-  return [code, mode, capacity].filter(Boolean).join(" | ");
+  // Seat count / capacity is internal info and must not be shown to students.
+  return [code, mode].filter(Boolean).join(" | ");
 };
 
 const sendBatchAssignmentEmail = async ({ student, batch }) => {
