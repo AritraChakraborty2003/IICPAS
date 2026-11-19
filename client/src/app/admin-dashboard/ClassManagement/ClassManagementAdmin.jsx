@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CalendarDays,
   Clock3,
+  CopyPlus,
   Edit3,
   Eye,
   EyeOff,
@@ -219,6 +220,8 @@ export default function ClassManagementAdmin() {
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  // Set when the modal is creating a new live class copied from a recorded one
+  const [copySourceTitle, setCopySourceTitle] = useState("");
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [showPasscode, setShowPasscode] = useState(false);
@@ -403,6 +406,7 @@ export default function ClassManagementAdmin() {
   const resetForm = () => {
     setForm(EMPTY_FORM);
     setEditingId(null);
+    setCopySourceTitle("");
     setChapters([]);
     setTopics([]);
   };
@@ -412,33 +416,57 @@ export default function ClassManagementAdmin() {
     setShowModal(true);
   };
 
-  const openEdit = async (cls) => {
-    const courseIds = (cls.courses || []).map(idOf);
-    const chapterIds = (cls.chapters || []).map(idOf);
-    const topicIds = (cls.topics || []).map(idOf);
+  const formFromClass = (cls) => ({
+    title: cls.title || "",
+    description: cls.description || "",
+    instructor: cls.instructor || "",
+    courses: (cls.courses || []).map(idOf),
+    chapters: (cls.chapters || []).map(idOf),
+    topics: (cls.topics || []).map(idOf),
+    batch: (cls.batch || []).map(idOf),
+    date: cls.date ? new Date(cls.date).toISOString().slice(0, 10) : "",
+    time: cls.time || "",
+    endTime: cls.endTime || calculateEndTime(cls.time || "00:00", cls.durationMinutes || 60),
+    durationMinutes: cls.durationMinutes || 60,
+    meetingLink: cls.meetingLink || "",
+    passcode: cls.passcode || "",
+    recordingUrl: cls.recordingUrl || "",
+    price: cls.price || 0,
+    maxParticipants: cls.maxParticipants || 100,
+  });
 
-    setForm({
-      title: cls.title || "",
-      description: cls.description || "",
-      instructor: cls.instructor || "",
-      courses: courseIds,
-      chapters: chapterIds,
-      topics: topicIds,
-      batch: (cls.batch || []).map(idOf),
-      date: cls.date ? new Date(cls.date).toISOString().slice(0, 10) : "",
-      time: cls.time || "",
-      endTime: cls.endTime || calculateEndTime(cls.time || "00:00", cls.durationMinutes || 60),
-      durationMinutes: cls.durationMinutes || 60,
-      meetingLink: cls.meetingLink || "",
-      passcode: cls.passcode || "",
-      recordingUrl: cls.recordingUrl || "",
-      price: cls.price || 0,
-      maxParticipants: cls.maxParticipants || 100,
-    });
+  const loadChapterTopicPools = async (nextForm) => {
+    const chs = await fetchChaptersFor(nextForm.courses);
+    await fetchTopicsFor(
+      nextForm.chapters.length ? nextForm.chapters : chs.map(idOf)
+    );
+  };
+
+  const openEdit = async (cls) => {
+    const nextForm = formFromClass(cls);
+    setForm(nextForm);
     setEditingId(cls._id);
+    setCopySourceTitle("");
     setShowModal(true);
-    const chs = await fetchChaptersFor(courseIds);
-    await fetchTopicsFor(chapterIds.length ? chapterIds : chs.map(idOf));
+    await loadChapterTopicPools(nextForm);
+  };
+
+  // Open the create form pre-filled from a recorded class so it can be
+  // re-scheduled as a NEW live class. The recorded class is left untouched
+  // (this POSTs a new class; editingId stays null).
+  const openCopyAsLive = async (cls) => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextForm = {
+      ...formFromClass(cls),
+      date: tomorrow.toLocaleDateString("en-CA"), // YYYY-MM-DD, local time
+      recordingUrl: "", // the new live session has no recording yet
+    };
+    setForm(nextForm);
+    setEditingId(null);
+    setCopySourceTitle(cls.title || "recorded class");
+    setShowModal(true);
+    await loadChapterTopicPools(nextForm);
   };
 
   // Toggle a course; re-derive chapter pool and prune now-invalid selections
@@ -491,6 +519,13 @@ export default function ClassManagementAdmin() {
     if (!form.title || form.courses.length === 0 || !form.date || !form.time) {
       setError("Title, at least one course, date and time are required");
       return;
+    }
+    if (copySourceTitle) {
+      const start = new Date(`${form.date}T${form.time}`);
+      if (Number.isNaN(start.getTime()) || start <= new Date()) {
+        setError("Choose a future date and time for the new live class");
+        return;
+      }
     }
     try {
       setSaving(true);
