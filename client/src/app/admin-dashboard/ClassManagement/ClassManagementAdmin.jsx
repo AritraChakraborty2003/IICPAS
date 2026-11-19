@@ -754,6 +754,15 @@ export default function ClassManagementAdmin() {
                           <Video className="h-4 w-4" />
                         </button>
                       )}
+                      {cls.type === "recorded" && hasPermission("class-management", "create") && (
+                        <button
+                          onClick={() => openCopyAsLive(cls)}
+                          title="Copy as new live class (keeps this recorded class)"
+                          className="rounded-md p-1.5 text-amber-600 hover:bg-amber-50"
+                        >
+                          <CopyPlus className="h-4 w-4" />
+                        </button>
+                      )}
                       {hasPermission("class-management", "update") && (
                         <button
                           onClick={() => openEdit(cls)}
@@ -785,9 +794,21 @@ export default function ClassManagementAdmin() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-blue-900">
-                {editingId ? "Edit Class" : "Create Class"}
-              </h2>
+              <div>
+                <h2 className="text-xl font-bold text-blue-900">
+                  {editingId
+                    ? "Edit Class"
+                    : copySourceTitle
+                      ? "Copy as Live Class"
+                      : "Create Class"}
+                </h2>
+                {copySourceTitle && (
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    Copied from &ldquo;{copySourceTitle}&rdquo;. Pick a future date
+                    &amp; time; the recorded class stays as it is.
+                  </p>
+                )}
+              </div>
               <button
                 onClick={() => {
                   setShowModal(false);
@@ -1082,7 +1103,9 @@ export default function ClassManagementAdmin() {
                     ? "Saving…"
                     : editingId
                       ? "Update Class"
-                      : "Create Class"}
+                      : copySourceTitle
+                        ? "Create Live Copy"
+                        : "Create Class"}
                 </button>
               </div>
             </form>
