@@ -754,7 +754,10 @@ export default function ClassManagementAdmin() {
                           <Video className="h-4 w-4" />
                         </button>
                       )}
-                      {cls.type === "recorded" && hasPermission("class-management", "create") && (
+                      {/* Superadmin/Admin always; employees with create OR update access */}
+                      {cls.type === "recorded" &&
+                        (hasPermission("class-management", "create") ||
+                          hasPermission("class-management", "update")) && (
                         <button
                           onClick={() => openCopyAsLive(cls)}
                           title="Copy as new live class (keeps this recorded class)"
