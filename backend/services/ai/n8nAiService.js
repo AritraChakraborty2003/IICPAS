@@ -47,7 +47,10 @@ export const callbackToken = (jobId) =>
     .digest("hex")
     .slice(0, 40);
 
-const JSON_TYPES = new Set(["structure", "chapter", "outline-topic", "topics", "lesson", "course-details", "review", "assist-json"]);
+const JSON_TYPES = new Set(["structure", "chapter", "outline-topic", "topics", "lesson", "course-details", "review", "assist-json", "chapter-assignment", "chapter-quiz", "assessment-validate"]);
+
+// Validated later by chapterAssessmentService (needs DB context), so only parsed here
+const ASSESSMENT_TYPES = new Set(["chapter-assignment", "chapter-quiz", "assessment-validate"]);
 
 const OUTLINE_TYPES = new Set(["structure", "chapter", "outline-topic", "topics"]);
 
@@ -99,6 +102,10 @@ const processOutput = (type, raw, input = {}) => {
   }
   const parsed = parseJsonLoose(raw);
   if (!parsed) throw new Error("The AI response was not valid JSON. Please try again.");
+  if (ASSESSMENT_TYPES.has(type)) {
+    if (typeof parsed !== "object") throw new Error("The AI response was not a JSON object.");
+    return { data: parsed };
+  }
   if (type === "lesson") {
     const lesson = buildLessonFromJson(parsed);
     if (!lesson) throw new Error("The AI response did not contain a usable lesson. Please try again.");

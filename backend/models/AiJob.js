@@ -19,6 +19,9 @@ const AiJobSchema = new Schema(
         "review", // editor Review tab (spelling, grammar, readability)
         "topics", // AI Topic Generator (topics for one chapter)
         "lesson", // AI content generator: structured lesson JSON -> HTML
+        "chapter-assignment", // practical assignment for a chapter (JSON)
+        "chapter-quiz", // chapter assessment quiz questions (JSON)
+        "assessment-validate", // AI quality review of a generated draft (JSON)
         // legacy values kept so older job records stay valid
         "document",
         "topic-content",

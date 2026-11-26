@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon --legacy-watch index.js",
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/",
     "create-admin": "node scripts/createAdmin.js",
     "create-admin-production": "node scripts/createAdminProduction.js",
     "create-admin-direct": "node scripts/createAdminDirect.js",

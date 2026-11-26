@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import fs from "fs";
 import * as assignmentController from "../controllers/assignmentController.js";
+import { optionalStaff } from "../middleware/optionalStaff.js";
 
 const router = express.Router();
 
@@ -53,10 +54,13 @@ router.get("/status/:status", assignmentController.getAssignmentsByStatus);
 router.get("/filter", assignmentController.getAssignmentsWithFilter);
 
 // Get all assignments for a chapter
-router.get("/chapter/:chapterId", assignmentController.getAssignmentsByChapter);
+router.get("/chapter/:chapterId", optionalStaff, assignmentController.getAssignmentsByChapter);
 
 // Get single assignment
-router.get("/:id", assignmentController.getAssignment);
+router.get("/:id", optionalStaff, assignmentController.getAssignment);
+
+// Grade a server-graded question set (AI chapter quiz) after the student submits
+router.post("/:id/question-sets/:questionSetId/check", assignmentController.checkQuestionSet);
 
 // Update assignment
 router.put("/:id", assignmentController.updateAssignment);

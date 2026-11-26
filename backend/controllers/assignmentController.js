@@ -1,4 +1,48 @@
 import Assignment from "../models/Assignment.js";
+import { gradeQuestionSet } from "../services/chapterAssessmentService.js";
+
+// AI chapter quizzes are graded on the server: students never receive the
+// answer key or explanations before they submit. Staff (admin dashboard) get
+// the full record so the regular Assignment editor keeps working.
+const forViewer = (assignment, req) => {
+  const obj = typeof assignment?.toObject === "function" ? assignment.toObject() : assignment;
+  if (!obj?.ai) return obj;
+  if (req.isContentStaff) return obj;
+  const { ai, ...rest } = obj;
+  const serverGraded = ai.kind === "quiz";
+  return {
+    ...rest,
+    aiGenerated: true,
+    questionSets: (rest.questionSets || []).map((qs) =>
+      serverGraded
+        ? {
+            ...qs,
+            serverGraded: true,
+            questions: (qs.questions || []).map(({ correctAnswer, explanation, ...q }) => q), // eslint-disable-line no-unused-vars
+          }
+        : qs
+    ),
+  };
+};
+
+// Student submits answers of a server-graded question set; returns score,
+// correct answers and explanations
+export const checkQuestionSet = async (req, res) => {
+  try {
+    const assignment = await Assignment.findOne({ _id: req.params.id, isActive: true });
+    if (!assignment) return res.status(404).json({ success: false, error: "Assignment not found" });
+    const answers = req.body?.answers && typeof req.body.answers === "object" ? req.body.answers : {};
+    const result = gradeQuestionSet(assignment, req.params.questionSetId, answers);
+    if (!result) return res.status(404).json({ success: false, error: "Question set not found" });
+    const answered = result.results.filter((r) => r.selected != null && r.selected !== "").length;
+    if (answered < result.total) {
+      return res.status(400).json({ success: false, error: `Please answer all ${result.total} questions before submitting.` });
+    }
+    res.json({ success: true, ...result });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
 
 // Create new assignment
 export const createAssignment = async (req, res) => {
@@ -170,7 +214,7 @@ export const getAssignmentsByChapter = async (req, res) => {
       chapterId,
       isActive: true,
     }).sort({ order: 1 });
-    res.status(200).json({ success: true, data: assignments });
+    res.status(200).json({ success: true, data: assignments.map((a) => forViewer(a, req)) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -185,7 +229,7 @@ export const getAssignment = async (req, res) => {
         .status(404)
         .json({ success: false, error: "Assignment not found" });
     }
-    res.status(200).json({ success: true, data: assignment });
+    res.status(200).json({ success: true, data: forViewer(assignment, req) });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -232,6 +276,10 @@ export const updateAssignment = async (req, res) => {
         };
       });
     }
+
+    // AI assessments edited in the regular editor: remember it so a later
+    // "publish" of a new AI draft can warn before replacing these edits
+    if (assignment.ai?.kind) assignment.ai.liveEditedAt = new Date();
 
     await assignment.save();
     res.status(200).json({ success: true, data: assignment });

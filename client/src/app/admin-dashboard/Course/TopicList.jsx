@@ -29,6 +29,7 @@ import AssignmentsList from "../../components/AssignmentsList";
 import CaseStudiesList from "../../components/CaseStudiesList";
 import TopicLessonsPanel from "./TopicLessonsPanel";
 import AiTopicGeneratorModal from "./AiTopicGeneratorModal";
+import ChapterAiAssessmentsPanel from "./ChapterAiAssessmentsPanel";
 
 const MySwal = withReactContent(Swal);
 const API_BASE = getApiBase();
@@ -48,6 +49,9 @@ export default function TopicList({
   const [aiTopicsOpen, setAiTopicsOpen] = useState(false);
   const [viewMode, setViewMode] = useState("topics"); // 'topics', 'caseStudy', 'assignment'
   const [editingItem, setEditingItem] = useState(null); // Track what we're editing
+  // Bumped after AI topics are saved (assessments auto-generate) or published
+  const [aiAssessmentsKey, setAiAssessmentsKey] = useState(0);
+  const [assignmentsKey, setAssignmentsKey] = useState(0);
   const { hasPermission } = useAuth();
 
   // Handle case study button click
@@ -216,7 +220,10 @@ export default function TopicList({
           chapterId={chapterId}
           chapterName={chapterName}
           existingTopicTitles={topics.map((t) => t.title)}
-          onSaved={fetchTopics}
+          onSaved={() => {
+            fetchTopics();
+            setAiAssessmentsKey((k) => k + 1);
+          }}
         />
         <Stack direction="row" spacing={2}>
           <Button variant="outlined" onClick={onViewChapters}>
@@ -383,6 +390,13 @@ export default function TopicList({
         )}
       </Box>
 
+      <ChapterAiAssessmentsPanel
+        chapterId={chapterId}
+        canEdit={hasPermission("course", "add") || hasPermission("course", "update")}
+        refreshKey={aiAssessmentsKey}
+        onPublished={() => setAssignmentsKey((k) => k + 1)}
+      />
+
       {/* Enhanced Assignments List */}
       <TopicLessonsPanel
         chapterId={chapterId}
@@ -416,6 +430,7 @@ export default function TopicList({
           📚 Assignments
         </Typography>
         <AssignmentsList
+          key={assignmentsKey}
           chapterId={chapterId}
           onEdit={handleEditAssignment}
           onAdd={handleAddAssignment}

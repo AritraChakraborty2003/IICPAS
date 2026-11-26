@@ -87,6 +87,14 @@ interface QuestionSet {
   totalQuestions: number;
   timeLimit: number;
   order: number;
+  // AI chapter quiz: answers and explanations come from the server after submit
+  serverGraded?: boolean;
+}
+
+interface ServerGradedResult {
+  correctAnswer: string;
+  explanation: string;
+  isCorrect: boolean;
 }
 
 interface CaseStudy {
@@ -1444,6 +1452,11 @@ export default function DigitalHubClient({
   const [assignmentResults, setAssignmentResults] = useState<
     Record<string, { correct: number; total: number }>
   >({});
+  // Server-graded question sets: { [questionSetId]: results per question }
+  const [serverGradedKeys, setServerGradedKeys] = useState<
+    Record<string, ServerGradedResult[]>
+  >({});
+  const [serverGrading, setServerGrading] = useState<string | null>(null);
   const hasRenderedContent = Boolean(
     selectedTopic || selectedAssignment || selectedCaseStudy || topicContent,
   );
@@ -2894,6 +2907,66 @@ export default function DigitalHubClient({
     studentId,
     markProgressItemComplete,
   ]);
+
+  // AI chapter quiz: the answer key is not sent to the browser. Answers are
+  // checked by the server after submission, which returns the correct
+  // options and explanations used to show the result.
+  const withServerKeys = useCallback(
+    (sets: QuestionSet[] = []) =>
+      sets.map((qs) =>
+        qs.serverGraded
+          ? {
+              ...qs,
+              questions: qs.questions.map((q, i) => ({
+                ...q,
+                correctAnswer: serverGradedKeys[qs._id]?.[i]?.correctAnswer ?? "",
+                explanation: serverGradedKeys[qs._id]?.[i]?.explanation ?? "",
+              })),
+            }
+          : qs,
+      ),
+    [serverGradedKeys],
+  );
+
+  const submitServerGraded = useCallback(
+    async (assignmentId: string, questionSet: QuestionSet) => {
+      const qsId = questionSet._id;
+      if (serverGrading === qsId) return;
+      const answers = assignmentAnswers[qsId] || {};
+      const total = questionSet.questions.length;
+      if (Object.keys(answers).length < total) {
+        setToastMessage(`Please answer all ${total} questions before submitting.`);
+        return;
+      }
+      setServerGrading(qsId);
+      try {
+        const response = await axios.post(
+          `${API_BASE}/assignments/${assignmentId}/question-sets/${qsId}/check`,
+          { answers },
+        );
+        const data = response.data || {};
+        setServerGradedKeys((prev) => ({ ...prev, [qsId]: data.results || [] }));
+        if (data.total && data.correct === data.total) {
+          playCelebrationSound();
+        } else {
+          playAnswerFeedbackSound(false);
+        }
+        setAssignmentSubmitted((prev) => ({ ...prev, [qsId]: true }));
+        setAssignmentResults((prev) => ({
+          ...prev,
+          [qsId]: { correct: data.correct || 0, total: data.total || total },
+        }));
+      } catch (error: unknown) {
+        const message =
+          (error as { response?: { data?: { error?: string } } })?.response
+            ?.data?.error || "Could not submit the quiz. Please try again.";
+        setToastMessage(message);
+      } finally {
+        setServerGrading(null);
+      }
+    },
+    [API_BASE, assignmentAnswers, playAnswerFeedbackSound, playCelebrationSound, serverGrading],
+  );
 
   // Handle language selection
   const handleLanguageSelect = (language: { code: string; name: string }) => {
@@ -5995,7 +6068,7 @@ export default function DigitalHubClient({
                     {selectedAssignment.questionSets &&
                     selectedAssignment.questionSets.length > 0 ? (
                       <div className="space-y-6">
-                        {selectedAssignment.questionSets.map(
+                        {withServerKeys(selectedAssignment.questionSets).map(
                           (questionSet: QuestionSet) => (
                             <div
                               key={questionSet._id}
@@ -6135,10 +6208,12 @@ export default function DigitalHubClient({
                                                           checked={isSelected}
                                                           disabled={submitted}
                                                           onChange={() => {
-                                                            playAnswerFeedbackSound(
+                                                            if (!questionSet.serverGraded) {
+                                                              playAnswerFeedbackSound(
                                                               option ===
                                                                 question.correctAnswer,
                                                             );
+                                                            }
                                                             setAssignmentAnswers(
                                                               (prev) => ({
                                                                 ...prev,
@@ -6192,7 +6267,14 @@ export default function DigitalHubClient({
                                     {/* Submit / Result row */}
                                     {!assignmentSubmitted[questionSet._id] ? (
                                       <button
-                                        onClick={() => {
+                                        onClick={async () => {
+                                          if (questionSet.serverGraded) {
+                                            await submitServerGraded(
+                                              selectedAssignment._id,
+                                              questionSet,
+                                            );
+                                            return;
+                                          }
                                           const qsId = questionSet._id;
                                           const answers =
                                             assignmentAnswers[qsId] || {};
@@ -6243,6 +6325,11 @@ export default function DigitalHubClient({
                                               [qsId]: {},
                                             }));
                                             setAssignmentResults((prev) => {
+                                              const n = { ...prev };
+                                              delete n[qsId];
+                                              return n;
+                                            });
+                                            setServerGradedKeys((prev) => {
                                               const n = { ...prev };
                                               delete n[qsId];
                                               return n;
