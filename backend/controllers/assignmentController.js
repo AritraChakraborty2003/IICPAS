@@ -25,6 +25,36 @@ const forViewer = (assignment, req) => {
   };
 };
 
+// Lightweight list of published assignments for several chapters (Digital Hub
+// course overview): titles, kind and question counts only - no content/answers
+export const getAssignmentSummaryByChapters = async (req, res) => {
+  try {
+    const ids = String(req.query.ids || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => /^[0-9a-fA-F]{24}$/.test(s))
+      .slice(0, 100);
+    if (!ids.length) return res.json({ success: true, data: [] });
+    const rows = await Assignment.find({ chapterId: { $in: ids }, isActive: true })
+      .select("title chapterId order ai.kind questionSets.questions._id")
+      .sort({ order: 1 })
+      .lean();
+    res.json({
+      success: true,
+      data: rows.map((a) => ({
+        _id: a._id,
+        chapterId: a.chapterId,
+        title: a.title,
+        order: a.order,
+        kind: a.ai?.kind === "quiz" ? "quiz" : "assignment",
+        questionCount: (a.questionSets || []).reduce((n, qs) => n + (qs.questions || []).length, 0),
+      })),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 // Student submits answers of a server-graded question set; returns score,
 // correct answers and explanations
 export const checkQuestionSet = async (req, res) => {

@@ -41,6 +41,8 @@ router.get("/course/:courseId", async (req, res) => {
     res.json({
       success: true,
       chapters: course.chapters,
+      // Basic course info for the Digital Hub course overview
+      course: { _id: course._id, title: course.title, slug: course.slug, level: course.level },
     });
   } catch (error) {
     console.error("Error fetching chapters:", error);

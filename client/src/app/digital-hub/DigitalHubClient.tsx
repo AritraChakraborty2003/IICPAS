@@ -25,6 +25,7 @@ import {
   parseDateOrNull,
 } from "../utils/batchWindowState";
 import { formatTopicLessonDateTime } from "@/lib/topicLessons";
+import CourseOverview, { type ChapterItemSummary } from "./CourseOverview";
 
 // Type definitions
 interface Task {
@@ -1144,6 +1145,37 @@ export default function DigitalHubClient({
     }
   }, [isDemo]);
   const limitDemo = isDemo && !adminPreview;
+
+  // Course overview (chapter cards with progress) is the landing view when the
+  // URL has no chapter; a chapter link or a sidebar/topic choice opens content.
+  const [showCourseOverview, setShowCourseOverview] = useState(
+    () => !effectiveChapterId,
+  );
+  const [courseTitle, setCourseTitle] = useState("");
+  const [overviewItems, setOverviewItems] = useState<ChapterItemSummary[]>([]);
+  // Item to open once its chapter has loaded (Chapter Assessment button)
+  const [pendingChapterItem, setPendingChapterItem] = useState<{
+    chapterId: string;
+    itemId: string;
+  } | null>(null);
+  useEffect(() => {
+    if (adminPreview) setShowCourseOverview(false);
+  }, [adminPreview]);
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const itemId = params.get("item");
+      if (itemId && effectiveChapterId) {
+        setPendingChapterItem({ chapterId: String(effectiveChapterId), itemId });
+        setShowCourseOverview(false);
+      } else if (params.get("view") === "overview") {
+        setShowCourseOverview(true);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const readAdminPreviewHtml = (topicId?: string): string | null => {
     if (!adminPreview || !topicId) return null;
     try {
@@ -2441,7 +2473,9 @@ export default function DigitalHubClient({
     setHamburgerOpenState(!hamburgerOpen);
   }, [hamburgerOpen, setHamburgerOpenState]);
 
+  // Called by every sidebar item click: also leaves the course overview
   const closeSidebarIfMobile = useCallback(() => {
+    setShowCourseOverview(false);
     if (!isDesktopViewport) {
       setHamburgerOpenState(false);
     }
@@ -2627,10 +2661,64 @@ export default function DigitalHubClient({
 
   const handleChapterSelect = useCallback(
     (chapter: ChapterData) => {
+      setShowCourseOverview(false);
       selectChapterContent(chapter, "push");
     },
     [selectChapterContent],
   );
+
+  // Course overview "Chapter Assessment": open the chapter, then the item once
+  // the chapter's assignments have loaded
+  const openChapterItem = useCallback(
+    (chapter: ChapterData, itemId: string) => {
+      if (String(selectedChapter?._id) === String(chapter._id)) {
+        setPendingChapterItem({ chapterId: String(chapter._id), itemId });
+        setShowCourseOverview(false);
+      } else if (!isDemo) {
+        // Another chapter URL remounts the page: pass the item along
+        router.push(
+          `${buildChapterPath(chapter._id)}?item=${encodeURIComponent(itemId)}`,
+        );
+      } else {
+        setPendingChapterItem({ chapterId: String(chapter._id), itemId });
+        handleChapterSelect(chapter);
+      }
+    },
+    [buildChapterPath, handleChapterSelect, isDemo, router, selectedChapter?._id],
+  );
+
+  useEffect(() => {
+    if (!pendingChapterItem || loading) return;
+    if (String(selectedChapter?._id) !== pendingChapterItem.chapterId) return;
+    const found = assignments.find(
+      (a) => String(a._id) === pendingChapterItem.itemId,
+    );
+    if (!found) return;
+    setPendingChapterItem(null);
+    setShowCourseOverview(false);
+    handleAssignmentSelect(found);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingChapterItem, assignments, loading, selectedChapter?._id]);
+
+  // Lessons / assignments / chapter quiz per chapter for the course overview
+  const overviewChapterIds = visibleChapters.map((c) => c._id).join(",");
+  useEffect(() => {
+    if (!showCourseOverview || !overviewChapterIds) return;
+    let cancelled = false;
+    axios
+      .get(`${API_BASE}/assignments/summary/by-chapters`, {
+        params: { ids: overviewChapterIds },
+      })
+      .then((res) => {
+        if (!cancelled) setOverviewItems(res.data?.data || []);
+      })
+      .catch(() => {
+        if (!cancelled) setOverviewItems([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showCourseOverview, overviewChapterIds, API_BASE]);
 
   useEffect(() => {
     selectChapterContentRef.current = selectChapterContent;
@@ -3106,6 +3194,7 @@ export default function DigitalHubClient({
           return;
         }
 
+        setCourseTitle(String(chaptersResponse.data.course?.title || ""));
         const rawChapters = limitDemo
           ? chaptersResponse.data.chapters.slice(0, 1)
           : chaptersResponse.data.chapters;
@@ -3147,11 +3236,19 @@ export default function DigitalHubClient({
             ? storedSelection.topicId
             : undefined;
 
+        // Landing on the course URL: the chapter URL replace remounts this
+        // page, so carry "?view=overview" to keep showing the course overview
+        const keepOverview = needsRouteReplace && !effectiveChapterId;
         selectChapterContentRef.current(
           chapterToOpen,
-          needsRouteReplace ? "replace" : "none",
+          needsRouteReplace && !keepOverview ? "replace" : "none",
           preferredTopicId,
         );
+        if (keepOverview) {
+          router.replace(
+            `${buildChapterPath(chapterToOpen._id)}?view=overview`,
+          );
+        }
       } catch (error) {
         console.error("Error fetching course data:", error);
       } finally {
@@ -4377,6 +4474,21 @@ export default function DigitalHubClient({
 
             <button
               type="button"
+              onClick={() => setShowCourseOverview(true)}
+              aria-pressed={showCourseOverview}
+              className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
+                showCourseOverview
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : isDarkMode
+                    ? "border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800"
+                    : "border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
+              }`}
+            >
+              Course Overview
+            </button>
+
+            <button
+              type="button"
               onClick={openTour}
               className={`rounded-xl border px-3 py-2 text-sm font-semibold transition-colors ${
                 isDarkMode
@@ -4839,22 +4951,70 @@ export default function DigitalHubClient({
         >
           <div ref={studyAreaRef} className="relative w-full">
             {/* Content Display */}
-            {loading && !hasRenderedContent ? (
+            {loading &&
+            !hasRenderedContent &&
+            !(showCourseOverview && visibleChapters.length > 0) ? (
               <div className="flex min-h-[40rem] items-center justify-center">
                 <div className="rounded-full border border-stone-200 bg-white px-5 py-3 text-sm font-semibold text-slate-600 shadow-sm">
                   Loading content...
                 </div>
               </div>
             ) : null}
-            {loading && hasRenderedContent ? (
+            {loading && hasRenderedContent && !showCourseOverview ? (
               <div className="pointer-events-none absolute right-4 top-4 z-10 rounded-full border border-stone-200 bg-white/90 px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm backdrop-blur">
                 Loading new content...
               </div>
             ) : null}
 
+            {showCourseOverview &&
+            (visibleChapters.length > 0 || !loading) ? (
+              <CourseOverview
+                courseTitle={courseTitle}
+                chapters={visibleChapters}
+                isDarkMode={isDarkMode}
+                courseProgress={progress}
+                accessGivenOn={(() => {
+                  const record = activePurchasedCourseRecord as
+                    | (CourseAccessRecord & {
+                        createdAt?: string;
+                        accessGrantedAt?: string;
+                      })
+                    | null;
+                  const raw = record?.accessGrantedAt || record?.createdAt;
+                  const date = raw ? new Date(raw) : null;
+                  return date && !Number.isNaN(date.getTime()) ? date : null;
+                })()}
+                daysRemaining={
+                  courseBatchWindowState.batchLockEndsAt
+                    ? Math.ceil(
+                        (courseBatchWindowState.batchLockEndsAt.getTime() -
+                          Date.now()) /
+                          86400000,
+                      )
+                    : null
+                }
+                items={overviewItems}
+                currentChapterId={selectedChapter?._id || null}
+                getChapterPercent={getChapterCompletionPercent}
+                isChapterLocked={getChapterHardLockState}
+                onStartChapter={handleChapterSelect}
+                onOpenItem={openChapterItem}
+                onTakeAssessment={
+                  isDemo
+                    ? undefined
+                    : () => router.push("/student-dashboard?tab=revision")
+                }
+                onBack={isDemo ? undefined : handleBackNavigation}
+              />
+            ) : null}
+
             <div
               className={`prose max-w-none ${
-                isInitialContentLoading ? "invisible" : "visible"
+                showCourseOverview
+                  ? "hidden"
+                  : isInitialContentLoading
+                    ? "invisible"
+                    : "visible"
               }`}
             >
               {selectedTopic ? (

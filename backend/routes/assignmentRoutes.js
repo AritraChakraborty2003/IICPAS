@@ -53,6 +53,9 @@ router.get("/status/:status", assignmentController.getAssignmentsByStatus);
 // Get assignments with advanced filtering
 router.get("/filter", assignmentController.getAssignmentsWithFilter);
 
+// Published assignment titles / quiz question counts for several chapters
+router.get("/summary/by-chapters", assignmentController.getAssignmentSummaryByChapters);
+
 // Get all assignments for a chapter
 router.get("/chapter/:chapterId", optionalStaff, assignmentController.getAssignmentsByChapter);
 
