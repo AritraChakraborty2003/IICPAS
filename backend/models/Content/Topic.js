@@ -53,6 +53,24 @@ const TopicSchema = new Schema({
   quiz: { type: Schema.Types.ObjectId, ref: "Quiz" }, // Reference to quiz
   aiContent: { type: String, default: "" }, // Humanized content posted back by n8n
   aiContentUpdatedAt: { type: Date }, // When n8n last delivered AI content
+  // Draft / publish workflow of the course editor. Students always read
+  // `content`; unpublished edits live in `draftContent` until "Publish".
+  // Existing topics default to "published" so nothing changes for them.
+  publishStatus: { type: String, enum: ["published", "draft"], default: "published" },
+  draftContent: { type: String, default: "" },
+  draftUpdatedAt: { type: Date },
+  lastPublishedAt: { type: Date },
+  // SEO for the lesson page (filled by the AI content generator, editable)
+  seoTitle: { type: String, default: "" },
+  metaDescription: { type: String, default: "" },
+  seoSlug: { type: String, default: "" },
+  focusKeyword: { type: String, default: "" },
+  secondaryKeywords: { type: [String], default: [] },
+  // Facts the AI asked the admin to double-check before publishing
+  aiVerifyItems: {
+    type: [{ item: String, source: String, _id: false }],
+    default: [],
+  },
   publishAt: { type: Date, default: Date.now },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

@@ -9,6 +9,7 @@ import DeferredGlobalWidgets from "@/components/DeferredGlobalWidgets";
 import ScrollToTopOnNavigation from "@/components/ScrollToTopOnNavigation";
 import AuthRouteMarker from "@/components/AuthRouteMarker";
 import HomepageWhatsAppGate from "@/components/HomepageWhatsAppGate";
+import InteractiveRuntime from "./components/CourseEditor/InteractiveRuntime";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -42,6 +43,7 @@ export default function RootLayout({
           <HomepageWhatsAppGate />
           {children}
           <DeferredGlobalWidgets />
+          <InteractiveRuntime />
         </AuthProvider>
         <Toaster
           position="top-right"

@@ -7,7 +7,11 @@ const ChapterSchema = new Schema({
   subchapters: [{ type: Schema.Types.ObjectId, ref: "SubChapter" }], // Add sub-chapters
   order: { type: Number, default: 0 }, // For ordering chapters
   status: { type: String, default: "Active", enum: ["Active", "Inactive"] },
-  
+
+  // Optional, filled by the AI course structure generator
+  description: { type: String, default: "" },
+  learningObjectives: { type: [String], default: [] },
+
   // SEO fields (like courses)
   seoTitle: { type: String },
   seoKeywords: { type: String },

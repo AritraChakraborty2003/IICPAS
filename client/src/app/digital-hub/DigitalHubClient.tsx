@@ -1119,6 +1119,34 @@ export default function DigitalHubClient({
   const effectiveChapterId = chapterId || routeChapterId;
   const API_BASE = getApiBase();
   const API_ORIGIN = API_BASE.replace(/\/api\/?$/i, "");
+  // Admin "real website" preview: /digital-hub/demo/<course>?adminPreview=1
+  // opened from the course editor. Only for a browser with an admin session:
+  // shows every chapter/topic (no demo limits) and the editor's unsaved
+  // content for the topic being edited. Students are unaffected.
+  const [adminPreview, setAdminPreview] = useState(false);
+  useEffect(() => {
+    try {
+      setAdminPreview(
+        isDemo &&
+          new URLSearchParams(window.location.search).get("adminPreview") === "1" &&
+          !!localStorage.getItem("adminToken"),
+      );
+    } catch {
+      setAdminPreview(false);
+    }
+  }, [isDemo]);
+  const limitDemo = isDemo && !adminPreview;
+  const readAdminPreviewHtml = (topicId?: string): string | null => {
+    if (!adminPreview || !topicId) return null;
+    try {
+      const raw = localStorage.getItem(`iicpa-admin-preview:${topicId}`);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      return typeof data?.html === "string" ? data.html : null;
+    } catch {
+      return null;
+    }
+  };
   const [resolvedCourseId, setResolvedCourseId] = useState<string | null>(null);
   const [resolvedCourseIdLoaded, setResolvedCourseIdLoaded] = useState(false);
   const blockedCourseRedirectedRef = useRef(false);
@@ -1757,8 +1785,8 @@ export default function DigitalHubClient({
       "inactive",
   );
   const hasStudentCourseAccess = Boolean(activePurchasedCourseRecord);
-  const visibleChapters = isDemo ? courseChapters.slice(0, 1) : courseChapters;
-  const visibleTopics = isDemo ? topics.slice(0, 1) : topics;
+  const visibleChapters = limitDemo ? courseChapters.slice(0, 1) : courseChapters;
+  const visibleTopics = limitDemo ? topics.slice(0, 1) : topics;
   const getChapterHardLockState = useCallback(
     (chapter: ChapterData | null | undefined, chapterIndex: number) => {
       if (isDemo) return false;
@@ -2168,11 +2196,19 @@ export default function DigitalHubClient({
       setSelectedTopic(activeTopic);
 
       // Decode and set topic content
-      if (activeTopic.content) {
+      const adminDraftHtml = readAdminPreviewHtml(activeTopic._id);
+      if (adminDraftHtml !== null) {
+        setTopicContent(
+          normalizeDigitalHubContentHtml(adminDraftHtml, DIGITAL_HUB_FONT_STACK),
+        );
+        setTotalPages(1);
+        setCurrentPage(1);
+        setShowDemoLimit(false);
+      } else if (activeTopic.content) {
         try {
           const decodedContent = atob(activeTopic.content);
 
-          if (isDemo) {
+          if (limitDemo) {
             // For demo mode, split content into pages and limit to 1 page
             const { pages, totalPages } = splitContentIntoPages(
               decodedContent,
@@ -2226,6 +2262,8 @@ export default function DigitalHubClient({
       topics,
       isTopicLocked,
       isDemo,
+      limitDemo,
+      adminPreview,
       loadQuizForTopic,
       scrollContentToTop,
       selectedChapter?._id,
@@ -2995,7 +3033,7 @@ export default function DigitalHubClient({
           return;
         }
 
-        const rawChapters = isDemo
+        const rawChapters = limitDemo
           ? chaptersResponse.data.chapters.slice(0, 1)
           : chaptersResponse.data.chapters;
         const mergedChapters =
@@ -3055,6 +3093,7 @@ export default function DigitalHubClient({
     authResolved,
     effectiveChapterId,
     isDemo,
+    limitDemo,
     API_BASE,
     studentId,
     studentCourseBookingsLoaded,
@@ -4754,11 +4793,15 @@ export default function DigitalHubClient({
                     style={!isDarkMode ? { color: "#1255cc" } : {}}
                   >
                     {selectedTopic.title}
-                    {isDemo && (
+                    {adminPreview ? (
+                      <span className="ml-4 text-sm bg-violet-100 text-violet-800 px-3 py-1 rounded-full border border-violet-200">
+                        ADMIN PREVIEW
+                      </span>
+                    ) : isDemo ? (
                       <span className="ml-4 text-sm bg-amber-100 text-amber-800 px-3 py-1 rounded-full border border-amber-200">
                         DEMO MODE
                       </span>
-                    )}
+                    ) : null}
                   </h1>
 
                   {isCourseBatchPreviewOnly && !isDemo ? (
@@ -4894,7 +4937,7 @@ export default function DigitalHubClient({
                     />
 
                     {/* Demo Mode Controls */}
-                    {isDemo && (
+                    {limitDemo && (
                       <div className="mt-8">
                         {/* Pagination Controls for Multi-page Content */}
                         {totalPages > 1 && (
@@ -5114,7 +5157,7 @@ export default function DigitalHubClient({
                       </div>
                     ) : null}
 
-                    {isDemo && (
+                    {limitDemo && (
                       <div className="mt-6 flex justify-center">
                         <button
                           onClick={() => {

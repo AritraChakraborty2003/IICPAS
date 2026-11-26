@@ -14,13 +14,17 @@
     "admin-setup": "node scripts/adminSetup.js",
     "test-admin-endpoint": "node scripts/testAdminEndpoint.js",
     "seed-university-courses": "node scripts/seed-university-courses.js",
-    "seed-super-student": "node scripts/seedSuperStudentAllCourses.js"
+    "seed-super-student": "node scripts/seedSuperStudentAllCourses.js",
+    "seed-super-admin": "node scripts/seedSuperAdmin.js",
+    "seed-course-categories": "node scripts/seedCourseCategories.js",
+    "seed-courses": "node scripts/seedCourses.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.14.0",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
     "cookie-parser": "^1.4.7",

@@ -21,7 +21,7 @@ router.get("/course/:courseId", async (req, res) => {
         path: "chapters",
         populate: {
           path: "topics",
-          select: "_id title"
+          select: "_id title publishStatus draftUpdatedAt"
         },
       });
     } else {
@@ -29,7 +29,7 @@ router.get("/course/:courseId", async (req, res) => {
         path: "chapters",
         populate: {
           path: "topics",
-          select: "_id title"
+          select: "_id title publishStatus draftUpdatedAt"
         },
       });
     }

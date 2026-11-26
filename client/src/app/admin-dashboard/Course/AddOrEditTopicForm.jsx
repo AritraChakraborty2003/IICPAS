@@ -25,6 +25,14 @@ import {
 import dynamic from "next/dynamic";
 import WordImportControls from "./WordImportControls";
 import WordDocumentPreview from "./WordDocumentPreview";
+import AdvancedCourseEditor from "../../components/CourseEditor/AdvancedCourseEditor";
+
+// Live content of a brand-new topic that has only been saved as a draft.
+// Students read `content`; the real work stays in `draftContent` until Publish.
+const DRAFT_PLACEHOLDER_HTML =
+  "<p><em>This lesson is being prepared and will be available soon.</em></p>";
+const plainText = (html = "") =>
+  String(html).replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim();
 import {
   importWordDocument,
   mergeImportedWordContent,
@@ -196,10 +204,50 @@ export default function AddOrEditTopicForm({
   topic,
   onCancel,
   onSaved,
+  courseId,
+  courseName,
+  onDirtyChange,
 }) {
   const editor = useRef(null);
+  const advEditorRef = useRef(null);
+  const baselineRef = useRef({
+    title: topic?.title || "",
+    text: plainText(topic?.draftContent || topic?.content || ""),
+  });
+  const [hasDraft, setHasDraft] = useState(!!topic?.draftContent);
+  const seoFromTopic = (t) => ({
+    seoTitle: t?.seoTitle || "",
+    metaDescription: t?.metaDescription || "",
+    seoSlug: t?.seoSlug || "",
+    focusKeyword: t?.focusKeyword || "",
+    secondaryKeywords: (t?.secondaryKeywords || []).join(", "),
+  });
+  const [seo, setSeo] = useState(() => seoFromTopic(topic));
+  const [verifyItems, setVerifyItems] = useState(topic?.aiVerifyItems || []);
+  const setSeoField = (k) => (e) => setSeo((s) => ({ ...s, [k]: e.target.value }));
+  const seoPayload = () => ({
+    seoTitle: seo.seoTitle.trim(),
+    metaDescription: seo.metaDescription.trim(),
+    seoSlug: seo.seoSlug.trim(),
+    focusKeyword: seo.focusKeyword.trim(),
+    secondaryKeywords: seo.secondaryKeywords.split(",").map((k) => k.trim()).filter(Boolean),
+    aiVerifyItems: verifyItems,
+  });
+  // SEO + items to verify from the AI content generator
+  const handleAiResult = (r) => {
+    if (r?.seo) {
+      setSeo((s) => ({
+        seoTitle: r.seo.seoTitle || s.seoTitle,
+        metaDescription: r.seo.metaDescription || s.metaDescription,
+        seoSlug: r.seo.slug || s.seoSlug,
+        focusKeyword: r.seo.focusKeyword || s.focusKeyword,
+        secondaryKeywords: (r.seo.secondaryKeywords || []).join(", ") || s.secondaryKeywords,
+      }));
+    }
+    if (Array.isArray(r?.verifyItems)) setVerifyItems(r.verifyItems);
+  };
   const [title, setTitle] = useState(topic?.title || "");
-  const [content, setContent] = useState(topic?.content || "");
+  const [content, setContent] = useState(topic?.draftContent || topic?.content || "");
   const [introVideo, setIntroVideo] = useState(topic?.introVideo || "");
   const [sourceDocument, setSourceDocument] = useState(
     topic?.sourceDocument || null
@@ -274,6 +322,89 @@ export default function AddOrEditTopicForm({
       debouncedSetContent.cancel?.();
     };
   }, [debouncedSetContent]);
+
+  useEffect(() => {
+    if (!onDirtyChange) return;
+    const b = baselineRef.current;
+    onDirtyChange(title !== b.title || plainText(content) !== b.text);
+  }, [title, content, onDirtyChange]);
+
+  const currentEditorHtml = () => editor.current?.value ?? content;
+
+  const markClean = (html) => {
+    baselineRef.current = { title, text: plainText(html) };
+    onDirtyChange?.(false);
+  };
+
+  // Save Draft: students keep seeing the published content
+  const handleSaveDraft = async () => {
+    if (!title.trim()) {
+      Swal.fire("Validation", "Topic title is required.", "warning");
+      return;
+    }
+    const html = normalizeDigitalHubContentHtml(currentEditorHtml());
+    setSaving(true);
+    try {
+      const now = new Date().toISOString();
+      let topicId = topic?._id;
+      if (topicId) {
+        await axios.put(`${API_BASE}/topics/${topicId}`, {
+          title: title.trim(),
+          draftContent: html,
+          draftUpdatedAt: now,
+          publishStatus: "draft",
+          ...seoPayload(),
+        });
+      } else {
+        const res = await axios.post(`${API_BASE}/topics/by-chapter/${chapterId}`, {
+          ...buildTopicPayload(),
+          content: DRAFT_PLACEHOLDER_HTML,
+          draftContent: html,
+          draftUpdatedAt: now,
+          publishStatus: "draft",
+        });
+        topicId = res.data._id;
+      }
+      setHasDraft(true);
+      markClean(html);
+      advEditorRef.current?.snapshot?.("Saved draft");
+      Swal.fire({
+        toast: true,
+        position: "top-end",
+        timer: 3000,
+        showConfirmButton: false,
+        icon: "success",
+        title: "Draft saved - not visible to students until you publish",
+      });
+      if (!topic) onSaved && onSaved({ topicId, chapterId, draft: true });
+    } catch (err) {
+      console.error("Error saving draft:", err);
+      Swal.fire("Error", err?.response?.data?.error || "Failed to save draft.", "error");
+    }
+    setSaving(false);
+  };
+
+  const handleDiscardDraft = async () => {
+    if (!topic?._id) return;
+    const ok = await Swal.fire({
+      title: "Discard draft?",
+      text: "Unpublished changes will be removed and the published version will be loaded.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Discard draft",
+    });
+    if (!ok.isConfirmed) return;
+    try {
+      await axios.put(`${API_BASE}/topics/${topic._id}`, { draftContent: "", publishStatus: "published" });
+      const published = normalizeDigitalHubContentHtml(topic.content || "");
+      setContent(published);
+      if (editor.current) editor.current.value = published;
+      setHasDraft(false);
+      markClean(published);
+    } catch (err) {
+      Swal.fire("Error", "Failed to discard the draft.", "error");
+    }
+  };
 
   const stopAiPolling = () => {
     if (aiPollRef.current) {
@@ -558,7 +689,14 @@ export default function AddOrEditTopicForm({
     if (topic) {
       console.log("Topic data received:", topic);
       setTitle(topic.title || "");
-      setContent(normalizeDigitalHubContentHtml(topic.content || ""));
+      setContent(normalizeDigitalHubContentHtml(topic.draftContent || topic.content || ""));
+      setHasDraft(!!topic.draftContent);
+      setSeo(seoFromTopic(topic));
+      setVerifyItems(topic.aiVerifyItems || []);
+      baselineRef.current = {
+        title: topic.title || "",
+        text: plainText(topic.draftContent || topic.content || ""),
+      };
       setIntroVideo(topic.introVideo || "");
       setSourceDocument(topic.sourceDocument || null);
       setWordImportSummary(
@@ -1227,10 +1365,11 @@ export default function AddOrEditTopicForm({
 
     return {
       title: title.trim(),
-      content: normalizeDigitalHubContentHtml(content),
+      content: normalizeDigitalHubContentHtml(currentEditorHtml()),
       introVideo: introVideoValue.trim() || "",
       publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
       sourceDocument: sourceDocument || undefined,
+      ...seoPayload(),
     };
   };
 
@@ -2131,14 +2270,27 @@ export default function AddOrEditTopicForm({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) {
+    if (!title.trim() || !plainText(currentEditorHtml()) && !/<(img|iframe|video|table)/i.test(currentEditorHtml())) {
       Swal.fire("Validation", "Title and content required!", "warning");
       return;
     }
+    const confirmPublish = await Swal.fire({
+      title: topic ? "Publish changes?" : "Publish topic?",
+      text: "The content will be visible to students in the Student Portal.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Publish",
+    });
+    if (!confirmPublish.isConfirmed) return;
     setSaving(true);
     try {
       let topicId;
-      const payload = buildTopicPayload();
+      const payload = {
+        ...buildTopicPayload(),
+        publishStatus: "published",
+        draftContent: "",
+        lastPublishedAt: new Date().toISOString(),
+      };
       if (topic) {
         // Update existing topic
         await axios.put(`${API_BASE}/topics/${topic._id}`, payload);
@@ -2179,7 +2331,10 @@ export default function AddOrEditTopicForm({
       setIntroVideoPreviewOpen(false);
       setVideoLinks([]);
       setWordImportSummary(null);
-      onSaved && onSaved();
+      setHasDraft(false);
+      markClean(payload.content);
+      advEditorRef.current?.snapshot?.("Published");
+      onSaved && onSaved({ topicId, chapterId, published: true });
       const quizMessage =
         quizData?.length > 0 ? ` with ${quizData.length} quiz questions` : "";
       Swal.fire(
@@ -2263,6 +2418,62 @@ export default function AddOrEditTopicForm({
             fullWidth
             required
           />
+
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1.5,
+              p: 1.5,
+              borderRadius: 2,
+              border: "1px solid #ddd6fe",
+              background: "linear-gradient(90deg, #f5f3ff, #eff6ff)",
+            }}
+          >
+            <Typography variant="body2" sx={{ color: "#475569" }}>
+              {title.trim()
+                ? <>AI can write the complete lesson for <strong>{title.trim()}</strong> using the course and chapter context. You review it before it is added.</>
+                : "Enter the topic title, then let AI write the lesson content."}
+            </Typography>
+            <Button
+              variant="contained"
+              disabled={!title.trim()}
+              onClick={() => advEditorRef.current?.generateWithAi?.()}
+              sx={{
+                background: "linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)",
+                fontWeight: 700,
+                textTransform: "none",
+              }}
+            >
+              ✨ {plainText(content) ? "Regenerate with AI" : "Generate with AI"}
+            </Button>
+          </Box>
+
+          {hasDraft && topic && (
+            <Box
+              sx={{
+                p: 1.5,
+                borderRadius: 2,
+                bgcolor: "#fff7ed",
+                border: "1px solid #fdba74",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 1.5,
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Typography variant="body2" sx={{ color: "#9a3412" }}>
+                <strong>Draft</strong> - you are editing unpublished changes
+                {topic.draftUpdatedAt ? ` saved ${new Date(topic.draftUpdatedAt).toLocaleString("en-IN")}` : ""}. Students still see the published version.
+              </Typography>
+              <Button size="small" color="warning" variant="outlined" onClick={handleDiscardDraft}>
+                Discard draft
+              </Button>
+            </Box>
+          )}
 
           <TextField
             label="Date & Time"
@@ -3533,52 +3744,92 @@ export default function AddOrEditTopicForm({
             >
               Content
             </Typography>
-            <JoditEditor
-              ref={editor}
+            <AdvancedCourseEditor
+              ref={advEditorRef}
               value={content}
-              config={joditConfig}
-              tabIndex={1}
               onChange={(newContent) => debouncedSetContent(newContent)}
               onBlur={(newContent) => setContent(newContent)}
-              onLoad={handleEditorReady}
+              onReady={handleEditorReady}
+              onAiResult={handleAiResult}
+              minHeight={520}
+              docKey={`topic-${topic?._id || `new-${chapterId}`}`}
+              aiContext={{
+                kind: "topic",
+                title,
+                chapterId,
+                chapterTitle: chapterName,
+                courseId,
+                courseTitle: courseName,
+              }}
+              previewTitle={title}
+              previewMeta={{ breadcrumb: [courseName, chapterName].filter(Boolean).join(" › ") }}
+              livePreview={{ courseId, chapterId, topicId: topic?._id }}
             />
           </Box>
 
-          {/* AI Action Buttons */}
-          <Box sx={{ display: "flex", justifyContent: "center", gap: 2, flexWrap: "wrap", mt: 2, mb: 2 }}>
-            {/* Content Create AI — uses the existing n8n webhook workflow */}
-            <Button
-              variant="contained"
-              color="secondary"
-              onClick={() => handleOpenAiDummyModal("create")}
-              disabled={isHumanizing}
-              sx={{
-                background: "linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%)",
-                boxShadow: "0 3px 5px 2px rgba(255, 105, 135, .3)",
-                color: "white",
-                fontWeight: "bold",
-                ...(isHumanizing && { opacity: 0.7 })
-              }}
-            >
-              {isHumanizing ? "✨ Creating..." : "✨ Content Create AI"}
-            </Button>
-
-            {/* Humanize with AI — dummy/placeholder for now */}
-            <Button
-              variant="contained"
-              onClick={() => handleOpenAiDummyModal("humanize")}
-              disabled={isHumanizingDummy}
-              sx={{
-                background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
-                boxShadow: "0 3px 5px 2px rgba(102, 126, 234, .3)",
-                color: "white",
-                fontWeight: "bold",
-                ...(isHumanizingDummy && { opacity: 0.7 })
-              }}
-            >
-              {isHumanizingDummy ? "✨ Humanizing..." : "✨ Humanized"}
-            </Button>
+          {/* SEO for this lesson (filled by the AI content generator, editable) */}
+          <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 2, p: 2.5, bgcolor: "#fafafa" }}>
+            <Typography fontWeight={700} fontSize={15} sx={{ mb: 0.5 }}>
+              🔎 SEO for this lesson
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Filled automatically when you generate the lesson with AI. Edit as needed - saved with the topic.
+            </Typography>
+            <Stack spacing={2}>
+              <TextField
+                label="SEO title"
+                size="small"
+                fullWidth
+                value={seo.seoTitle}
+                onChange={setSeoField("seoTitle")}
+                helperText={`${seo.seoTitle.length}/60 characters`}
+                error={seo.seoTitle.length > 60}
+              />
+              <TextField
+                label="Meta description"
+                size="small"
+                fullWidth
+                multiline
+                minRows={2}
+                value={seo.metaDescription}
+                onChange={setSeoField("metaDescription")}
+                helperText={`${seo.metaDescription.length}/155 characters (aim for 140-155)`}
+                error={seo.metaDescription.length > 160}
+              />
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                <TextField label="Slug" size="small" fullWidth value={seo.seoSlug} onChange={setSeoField("seoSlug")} />
+                <TextField label="Focus keyword" size="small" fullWidth value={seo.focusKeyword} onChange={setSeoField("focusKeyword")} />
+              </Stack>
+              <TextField
+                label="Secondary keywords (comma separated)"
+                size="small"
+                fullWidth
+                value={seo.secondaryKeywords}
+                onChange={setSeoField("secondaryKeywords")}
+              />
+            </Stack>
+            {verifyItems.length > 0 && (
+              <Box sx={{ mt: 2, p: 2, borderRadius: 2, bgcolor: "#fffbeb", border: "1px solid #fcd34d" }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography fontWeight={700} fontSize={14} sx={{ color: "#92400e" }}>
+                    ⚠️ Verify before publishing ({verifyItems.length})
+                  </Typography>
+                  <Button size="small" color="warning" onClick={() => setVerifyItems([])}>
+                    Mark all checked
+                  </Button>
+                </Stack>
+                <ul style={{ margin: "8px 0 0", paddingLeft: 20, fontSize: 13, color: "#78350f" }}>
+                  {verifyItems.map((v, i) => (
+                    <li key={i}>
+                      {v.item}
+                      {v.source ? ` - check ${v.source}` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </Box>
+            )}
           </Box>
+
 
           {showAiEditor && (
             <Box sx={{ mt: 3, mb: 3 }}>
@@ -3793,6 +4044,12 @@ export default function AddOrEditTopicForm({
             <Button variant="outlined" onClick={onCancel} disabled={saving}>
               Back
             </Button>
+            <Button variant="outlined" color="warning" onClick={handleSaveDraft} disabled={saving}>
+              {saving ? "Saving..." : "Save Draft"}
+            </Button>
+            <Button variant="outlined" startIcon={<Visibility />} onClick={() => advEditorRef.current?.openPreview?.()} disabled={saving}>
+              Preview
+            </Button>
             <Button
               variant="contained"
               type="submit"
@@ -3805,12 +4062,10 @@ export default function AddOrEditTopicForm({
               }}
             >
               {saving
-                ? topic
-                  ? "Updating..."
-                  : "Adding..."
-                : topic
-                ? "Update Topic"
-                : "Add Topic"}
+                ? "Publishing..."
+                : topic && topic.publishStatus !== "draft" && !hasDraft
+                ? "Update Published Topic"
+                : "Publish"}
             </Button>
           </Stack>
             </Stack>

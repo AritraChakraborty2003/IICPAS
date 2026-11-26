@@ -104,4 +104,59 @@ router.post("/image", requireAuth, isAdmin, uploadImage.single("image"), (req, r
   }
 });
 
+// ---------------------------------------------------------------------------
+// Attachments and audio for the course content editor (downloadable resources,
+// audio clips). Images and videos keep using the routes above / the CDN.
+// ---------------------------------------------------------------------------
+const attachmentDir = "uploads/attachments";
+if (!fs.existsSync(attachmentDir)) {
+  fs.mkdirSync(attachmentDir, { recursive: true });
+}
+
+const ATTACHMENT_EXTENSIONS = new Set([
+  ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".csv", ".ppt", ".pptx", ".txt", ".zip",
+  ".mp3", ".wav", ".m4a", ".ogg", ".aac",
+]);
+
+const safeFileName = (name = "file") => {
+  const ext = path.extname(name).toLowerCase();
+  const base = path
+    .basename(name, path.extname(name))
+    .replace(/[^a-zA-Z0-9-_]+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 80) || "file";
+  return `${Date.now()}-${base}${ext}`;
+};
+
+export const uploadAttachment = multer({
+  storage: multer.diskStorage({
+    destination: (_, __, cb) => cb(null, attachmentDir),
+    filename: (_, file, cb) => cb(null, safeFileName(file.originalname)),
+  }),
+  fileFilter: (req, file, cb) => {
+    const ext = path.extname(file.originalname || "").toLowerCase();
+    if (ATTACHMENT_EXTENSIONS.has(ext)) cb(null, true);
+    else cb(new Error(`File type not allowed. Allowed: ${[...ATTACHMENT_EXTENSIONS].join(", ")}`), false);
+  },
+  limits: { fileSize: 25 * 1024 * 1024 }, // 25MB
+});
+
+router.post("/attachment", requireAuth, isAdmin, (req, res) => {
+  uploadAttachment.single("file")(req, res, (err) => {
+    if (err) {
+      const message = err.code === "LIMIT_FILE_SIZE" ? "File is larger than 25 MB." : err.message;
+      return res.status(400).json({ error: message });
+    }
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    const baseUrl = (process.env.API_URL || process.env.API_BASE_URL || `${req.protocol}://${req.get("host")}`).replace(/\/api\/?$/, "");
+    res.json({
+      url: `${baseUrl}/uploads/attachments/${req.file.filename}`,
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      mimeType: req.file.mimetype,
+    });
+  });
+});
+
 export default router;

@@ -116,37 +116,6 @@ const getDisplayPrice = (course: ApiCourse) => {
   );
 };
 
-// Fallback data - Updated to match real API data
-const sampleCourses: Course[] = [
-  {
-    _id: "1",
-    title: "Basic Accounting and Tally Certification Course",
-    image: "https://api.iicpa.in/uploads/1758708914697-217664041.png",
-    price: 15000,
-    slug: "basic-accounting-and-tally-certification-course",
-    category: "Accounting",
-    status: "Active",
-  },
-  {
-    _id: "2",
-    title: "Payroll and HR Certification Course",
-    image: "https://api.iicpa.in/uploads/1758720155374-15746882.jpg",
-    price: 3500,
-    slug: "payroll-and-hr-certification-course",
-    category: "HR",
-    status: "Active",
-  },
-  {
-    _id: "3",
-    title: "Excel Certification Course",
-    image: "https://api.iicpa.in/uploads/1758720990274-883667247.jpg",
-    price: 2000,
-    slug: "excel-certification-course",
-    category: "Accounting",
-    status: "Active",
-  },
-];
-
 const CourseSection = memo(function CourseSection() {
   const router = useRouter();
 
@@ -198,14 +167,14 @@ const CourseSection = memo(function CourseSection() {
               );
             setCourses(activeCourses);
           } else {
-            setCourses(sampleCourses);
+            setCourses([]);
           }
         } else {
-          setCourses(sampleCourses);
+          setCourses([]);
         }
       } catch (error) {
         console.error("🔍 CourseSection - Error fetching courses:", error);
-        setCourses(sampleCourses);
+        setCourses([]);
       } finally {
         setLoading(false);
       }
@@ -294,6 +263,22 @@ const CourseSection = memo(function CourseSection() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (courses.length === 0) {
+    return (
+      <section className="py-16 px-4 md:px-20 bg-[#f9fbfa]">
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-6 text-gray-800">
+            Our Courses Designed For{" "}
+            <span className="text-[#3cd664] bg-[#3cd664]/10 px-2 py-1 rounded-lg">
+              Your Success
+            </span>
+          </h2>
+          <p className="text-gray-500">No courses available yet. Please check back soon.</p>
         </div>
       </section>
     );
