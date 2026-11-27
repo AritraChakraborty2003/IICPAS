@@ -17,6 +17,8 @@ interface Assignment {
   tasks: Task[];
   content: Content[];
   simulations: Simulation[];
+  topicSimulations?: { url: string }[];
+  simulationGroups?: { slots?: { url: string }[] }[];
   questionSets: QuestionSet[];
   createdAt: string;
   updatedAt: string;
@@ -132,11 +134,24 @@ export default function AssignmentsList({
     }
   };
 
+  const getTopicSimCount = (assignment: Assignment) =>
+    assignment.topicSimulations?.length || 0;
+  const getGroupCount = (assignment: Assignment) =>
+    assignment.simulationGroups?.length || 0;
+  // Every simulation inside the groups counts as one component
+  const getGroupSimCount = (assignment: Assignment) =>
+    (assignment.simulationGroups || []).reduce(
+      (sum, group) => sum + (group.slots?.length || 0),
+      0
+    );
+
   const getTotalComponents = (assignment: Assignment) => {
     return (
       assignment.tasks.length +
       assignment.content.length +
       assignment.simulations.length +
+      getTopicSimCount(assignment) +
+      getGroupSimCount(assignment) +
       assignment.questionSets.length
     );
   };
@@ -265,6 +280,18 @@ export default function AssignmentsList({
                         {assignment.simulations.length > 0 && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-800">
                             {assignment.simulations.length} sims
+                          </span>
+                        )}
+                        {getTopicSimCount(assignment) > 0 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-sky-100 text-sky-800">
+                            {getTopicSimCount(assignment)} topic sims
+                          </span>
+                        )}
+                        {getGroupCount(assignment) > 0 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-teal-100 text-teal-800">
+                            {getGroupCount(assignment)} group
+                            {getGroupCount(assignment) > 1 ? "s" : ""} (
+                            {getGroupSimCount(assignment)} sims)
                           </span>
                         )}
                         {assignment.questionSets.length > 0 && (

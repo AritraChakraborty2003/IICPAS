@@ -17,6 +17,8 @@ interface CaseStudy {
   tasks: Task[];
   content: Content[];
   simulations: Simulation[];
+  topicSimulations?: { url: string }[];
+  simulationGroups?: { slots?: { url: string }[] }[];
   questionSets: QuestionSet[];
   createdAt: string;
   updatedAt: string;
@@ -129,11 +131,24 @@ export default function CaseStudiesList({
     }
   };
 
+  const getTopicSimCount = (caseStudy: CaseStudy) =>
+    caseStudy.topicSimulations?.length || 0;
+  const getGroupCount = (caseStudy: CaseStudy) =>
+    caseStudy.simulationGroups?.length || 0;
+  // Every simulation inside the groups counts as one component
+  const getGroupSimCount = (caseStudy: CaseStudy) =>
+    (caseStudy.simulationGroups || []).reduce(
+      (sum, group) => sum + (group.slots?.length || 0),
+      0
+    );
+
   const getTotalComponents = (caseStudy: CaseStudy) => {
     return (
       caseStudy.tasks.length +
       caseStudy.content.length +
       caseStudy.simulations.length +
+      getTopicSimCount(caseStudy) +
+      getGroupSimCount(caseStudy) +
       caseStudy.questionSets.length
     );
   };
@@ -262,6 +277,18 @@ export default function CaseStudiesList({
                         {caseStudy.simulations.length > 0 && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-800">
                             {caseStudy.simulations.length} sims
+                          </span>
+                        )}
+                        {getTopicSimCount(caseStudy) > 0 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-sky-100 text-sky-800">
+                            {getTopicSimCount(caseStudy)} topic sims
+                          </span>
+                        )}
+                        {getGroupCount(caseStudy) > 0 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-teal-100 text-teal-800">
+                            {getGroupCount(caseStudy)} group
+                            {getGroupCount(caseStudy) > 1 ? "s" : ""} (
+                            {getGroupSimCount(caseStudy)} sims)
                           </span>
                         )}
                         {caseStudy.questionSets.length > 0 && (
