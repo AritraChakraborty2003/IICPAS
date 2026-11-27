@@ -11,6 +11,8 @@ import withReactContent from "sweetalert2-react-content";
 import { FaArrowLeft, FaSave } from "react-icons/fa";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
+import AdvancedCourseEditor from "../../components/CourseEditor/AdvancedCourseEditor";
+import useCourseAiAssist from "./useCourseAiAssist";
 const MySwal = withReactContent(Swal);
 const API_BASE = getApiBase();
 const ALLOWED_IMAGE_ACCEPT =
@@ -46,6 +48,7 @@ export default function EditCourse({ courseId, onBack }) {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [categoryOptions, setCategoryOptions] = useState([]);
   const [levelOptions, setLevelOptions] = useState([]);
+  const courseAi = useCourseAiAssist({ form: form || {}, setForm, categoryOptions, levelOptions });
 
   const joditConfig = useMemo(
     () => ({
@@ -465,14 +468,14 @@ export default function EditCourse({ courseId, onBack }) {
         {/* Basic Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
-            <label>Category</label>
+            <label>Category {courseAi.fieldButton("category")}</label>
             <Select
               options={resolvedCategoryOptions}
               value={form.category}
               onChange={handleCategoryChange}
               placeholder="Select category"
             />
-            <label>Level</label>
+            <label>Level {courseAi.fieldButton("level")}</label>
             <select
               name="level"
               value={form.level}
@@ -494,14 +497,15 @@ export default function EditCourse({ courseId, onBack }) {
               className="w-full border p-2 rounded"
               required
             />
-            <label>Slug</label>
+            {courseAi.panel}
+            <label>Slug {courseAi.fieldButton("slug")}</label>
             <input
               name="slug"
               value={form.slug}
               onChange={handleInputChange}
               className="w-full border p-2 rounded"
             />
-            <label>Duration</label>
+            <label>Duration {courseAi.fieldButton("duration")}</label>
             <input
               name="duration"
               value={form.duration}
@@ -823,42 +827,53 @@ export default function EditCourse({ courseId, onBack }) {
 
         {/* Rich Text Sections */}
         <div>
-          <label className="block font-semibold mb-1">Course Description</label>
-          <JoditEditor
+          <label className="block font-semibold mb-1">Course Description {courseAi.fieldButton("description")}</label>
+          <AdvancedCourseEditor
             value={form.description}
-            config={joditConfig}
             onChange={richTextHandlers.description}
             onBlur={richTextHandlers.description}
+            aiContext={{ kind: "course-description", title: form.title, courseId, courseTitle: form.title, category: form.category?.value }}
+            docKey={`course-description-${courseId}`}
+            previewTitle={form.title}
           />
         </div>
         <div>
           <label className="block font-semibold mb-1">
-            Exam & Certification
+            Exam & Certification {courseAi.fieldButton("examCert")}
           </label>
-          <JoditEditor
+          <AdvancedCourseEditor
             value={form.examCert}
-            config={joditConfig}
             onChange={richTextHandlers.examCert}
             onBlur={richTextHandlers.examCert}
+            aiContext={{ kind: "exam-cert", title: form.title, courseId, courseTitle: form.title, category: form.category?.value }}
+            docKey={`course-examCert-${courseId}`}
+            previewTitle={form.title}
+            minHeight={220}
           />
         </div>
         <div>
-          <label className="block font-semibold mb-1">Case Study</label>
-          <JoditEditor
+          <label className="block font-semibold mb-1">Case Study {courseAi.fieldButton("caseStudy")}</label>
+          <AdvancedCourseEditor
             value={form.caseStudy}
-            config={joditConfig}
             onChange={richTextHandlers.caseStudy}
             onBlur={richTextHandlers.caseStudy}
+            aiContext={{ title: form.title, courseId, courseTitle: form.title, category: form.category?.value }}
+            docKey={`course-caseStudy-${courseId}`}
+            previewTitle={form.title}
+            minHeight={220}
           />
         </div>
 
         <div>
           <label className="block font-semibold mb-1">Assignment</label>
-          <JoditEditor
+          <AdvancedCourseEditor
             value={form.assignment}
-            config={joditConfig}
             onChange={richTextHandlers.assignment}
             onBlur={richTextHandlers.assignment}
+            aiContext={{ title: form.title, courseId, courseTitle: form.title, category: form.category?.value }}
+            docKey={`course-assignment-${courseId}`}
+            previewTitle={form.title}
+            minHeight={220}
           />
         </div>
 
@@ -931,21 +946,23 @@ export default function EditCourse({ courseId, onBack }) {
         {/* SEO Section */}
         <div className="pt-8 border-t mt-8">
           <h2 className="text-xl font-semibold mb-3">SEO Section</h2>
-          <label>SEO Title</label>
+          <label>SEO Title {courseAi.fieldButton("seoTitle")}</label>
           <input
             name="seoTitle"
             value={form.seoTitle}
             onChange={handleInputChange}
             className="w-full border p-2 rounded"
           />
-          <label>SEO Description</label>
-          <JoditEditor
+          <label>SEO Description {courseAi.fieldButton("seoDescription")}</label>
+          <AdvancedCourseEditor
             value={form.seoDescription}
-            config={joditConfig}
             onChange={richTextHandlers.seoDescription}
             onBlur={richTextHandlers.seoDescription}
+            tabs={["home", "ai", "review"]}
+            minHeight={120}
+            aiContext={{ title: form.title, courseId, courseTitle: form.title }}
           />
-          <label>SEO Keywords</label>
+          <label>SEO Keywords {courseAi.fieldButton("seoKeywords")}</label>
           <textarea
             name="seoKeywords"
             value={form.seoKeywords}
@@ -957,7 +974,7 @@ export default function EditCourse({ courseId, onBack }) {
         {/* Meta Tags Section */}
         <div className="pt-8 border-t mt-8">
           <h2 className="text-xl font-semibold mb-3">Meta Tags</h2>
-          <label>Meta Title</label>
+          <label>Meta Title {courseAi.fieldButton("metaTitle")}</label>
           <input
             name="metaTitle"
             value={form.metaTitle}
@@ -965,7 +982,7 @@ export default function EditCourse({ courseId, onBack }) {
             className="w-full border p-2 rounded"
             placeholder="Enter meta title for additional SEO"
           />
-          <label>Meta Description</label>
+          <label>Meta Description {courseAi.fieldButton("metaDescription")}</label>
           <div className="jodit-style-editor">
             <div className="jodit-toolbar">
               <div className="jodit-toolbar-editor-collection">
@@ -1212,7 +1229,7 @@ export default function EditCourse({ courseId, onBack }) {
               </div>
             </div>
           </div>
-          <label>Meta Keywords</label>
+          <label>Meta Keywords {courseAi.fieldButton("metaKeywords")}</label>
           <textarea
             name="metaKeywords"
             value={form.metaKeywords}

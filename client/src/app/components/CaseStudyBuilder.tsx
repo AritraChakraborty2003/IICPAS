@@ -2,7 +2,11 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import OptimizedJoditEditor, { OptimizedJoditEditorHandle } from "./OptimizedJoditEditor";
+import { OptimizedJoditEditorHandle } from "./OptimizedJoditEditor";
+import AdvancedCourseEditorJs from "./CourseEditor/AdvancedCourseEditor";
+// JS component - props are documented in AdvancedCourseEditor.jsx
+const AdvancedCourseEditor = AdvancedCourseEditorJs as any;
+import { runAi, errorMessage } from "./CourseEditor/aiClient";
 import TopicSimulationsManager, {
   TopicSimEntry,
   topicSimEntriesFromSaved,
@@ -260,6 +264,63 @@ export default function CaseStudyBuilder({
         item.id === id ? { ...item, [field]: value } : item
       )
     );
+  };
+
+  // ---- AI: generate the complete case study from its title ----
+  const [aiDescBusy, setAiDescBusy] = useState(false);
+
+  const generateWithAi = () => {
+    if (!title.trim()) {
+      alert("Enter the case study title first - AI writes the content from it.");
+      return;
+    }
+    // Use the first rich-text block (never touches other blocks); create one if needed
+    let target = content.find((c) => c.type === "rich");
+    if (!target) {
+      target = { id: Date.now().toString() + Math.random(), type: "rich", richTextContent: "" } as Content;
+      const created = target;
+      setContent((prev) => [...prev, created]);
+    }
+    setActiveTab("content" as any);
+    const id = target.id;
+    const started = Date.now();
+    const tick = () => {
+      const ed: any = editorRefs.current[id];
+      if (ed?.generateWithAi) ed.generateWithAi();
+      else if (Date.now() - started < 6000) setTimeout(tick, 150);
+    };
+    setTimeout(tick, 150);
+  };
+
+  const generateDescriptionWithAi = async () => {
+    const source = content
+      .map((c) => (c.type === "rich" ? c.richTextContent : c.textContent) || "")
+      .join(" ")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    if (!source) {
+      alert("Generate or write the case study content first - the description is summarised from it.");
+      return;
+    }
+    if (description.trim() && !window.confirm("Replace the current description with an AI summary?")) return;
+    setAiDescBusy(true);
+    try {
+      const { result } = await runAi("/ai-course/assist", {
+        action: "summarize",
+        text: source.slice(0, 10000),
+        documentTitle: title,
+        chapterId,
+        chapterTitle: chapterName,
+        instructions: "Return only 2-3 plain sentences suitable as a short description. No headings or bullet points.",
+      });
+      const text = String(result?.html || "").replace(/<li>/g, " ").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+      if (text) setDescription(text.slice(0, 600));
+    } catch (err) {
+      alert(`AI could not write the description: ${errorMessage(err)}`);
+    } finally {
+      setAiDescBusy(false);
+    }
   };
 
   const removeContent = (id: string) => {
@@ -634,10 +695,29 @@ export default function CaseStudyBuilder({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="Enter case study title"
             />
+            <button
+              type="button"
+              onClick={generateWithAi}
+              disabled={!title.trim()}
+              className="mt-2 inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-violet-600 to-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:from-violet-700 hover:to-blue-700 disabled:opacity-50"
+            >
+              ✨ Generate Case Study with AI
+            </button>
+            <p className="mt-1 text-xs text-gray-500">
+              AI writes the complete case study from the title and the course / chapter context. You review it before it is added.
+            </p>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Description
+              <button
+                type="button"
+                onClick={generateDescriptionWithAi}
+                disabled={aiDescBusy}
+                className="ml-2 rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700 hover:bg-violet-100 disabled:opacity-50"
+              >
+                {aiDescBusy ? "Writing…" : "✨ AI summary"}
+              </button>
             </label>
             <textarea
               value={description}
@@ -884,27 +964,23 @@ export default function CaseStudyBuilder({
                       {item.type === "rich" && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Rich Text Content (Jodit Editor)
+                            Rich Text Content
                           </label>
                           <div
                             className="border border-gray-300 rounded-md overflow-hidden"
                             style={{ minHeight: "400px" }}
                           >
-                            <OptimizedJoditEditor
-                              ref={(el) => { editorRefs.current[item.id] = el; }}
+                            <AdvancedCourseEditor
+                              ref={(el: any) => { editorRefs.current[item.id] = el; }}
                               value={item.richTextContent || ""}
                               onChange={(newContent: string) =>
-                                updateContent(
-                                  item.id,
-                                  "richTextContent",
-                                  newContent
-                                )
+                                updateContent(item.id, "richTextContent", newContent)
                               }
-                              placeholder="Start writing your case study content..."
-                              height={400}
-                              enableVideo={true}
-                              className="border border-gray-300 rounded-md"
-                              uploadApi={`${getApiBase()}/case-studies/upload-image`}
+                              minHeight={460}
+                              docKey={`case-study-${editingItem?._id || "new"}-${item.id}`}
+                              aiContext={{ kind: "case-study", title, chapterId, chapterTitle: chapterName }}
+                              previewTitle={title}
+                              previewMeta={{ breadcrumb: chapterName, contentType: "Case Study" }}
                             />
                           </div>
                           <div className="flex justify-between items-center mt-2">

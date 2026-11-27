@@ -8,6 +8,8 @@ import { normalizeDefaultContentFont } from "../../utils/contentFontFamily";
 import { joditFontControl } from "../../utils/joditFontConfig";
 
 const JoditEditor = dynamic(() => import("jodit-react"), { ssr: false });
+import AdvancedCourseEditor from "../../components/CourseEditor/AdvancedCourseEditor";
+import useCourseAiAssist from "./useCourseAiAssist";
 
 const API_BASE = getApiBase();
 const ALLOWED_IMAGE_ACCEPT =
@@ -95,6 +97,7 @@ export default function CourseAddTab({ onBack }) {
   const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const courseAi = useCourseAiAssist({ form, setForm, categoryOptions });
 
   const joditConfig = useMemo(
     () => ({
@@ -403,7 +406,7 @@ export default function CourseAddTab({ onBack }) {
           <div className="space-y-5">
             <div>
               <label className="block mb-1 font-semibold">
-                Select Category
+                Select Category {courseAi.fieldButton("category")}
               </label>
               <Select
                 options={categoryOptions}
@@ -425,6 +428,7 @@ export default function CourseAddTab({ onBack }) {
                 required
                 autoComplete="off"
               />
+              <div className="mt-3">{courseAi.panel}</div>
             </div>
             <div>
               <label className="block mb-1 font-semibold">Course Image</label>
@@ -496,7 +500,7 @@ export default function CourseAddTab({ onBack }) {
           </div>
           <div className="space-y-5">
             <div>
-              <label className="block mb-1 font-semibold">Course Slug</label>
+              <label className="block mb-1 font-semibold">Course Slug {courseAi.fieldButton("slug")}</label>
               <input
                 name="slug"
                 placeholder="Enter course slug"
@@ -507,7 +511,7 @@ export default function CourseAddTab({ onBack }) {
               />
             </div>
             <div>
-              <label className="block mb-1 font-semibold">Duration</label>
+              <label className="block mb-1 font-semibold">Duration {courseAi.fieldButton("duration")}</label>
               <input
                 name="duration"
                 placeholder="e.g., 3 months, 6 weeks, 40 hours"
@@ -753,39 +757,44 @@ export default function CourseAddTab({ onBack }) {
         {/* Jodit Editors */}
         <div>
           <label className="block mb-1 font-semibold text-lg">
-            Course Description
+            Course Description {courseAi.fieldButton("description")}
           </label>
-          <JoditEditor
+          <AdvancedCourseEditor
             value={form.description}
-            config={joditConfig}
             onChange={richTextHandlers.description.onChange}
             onBlur={richTextHandlers.description.onBlur}
+            aiContext={{ kind: "course-description", title: form.title, courseTitle: form.title, category: form.category?.value }}
+            previewTitle={form.title}
           />
         </div>
 
         <div>
           <h2 className="text-xl font-semibold border-b mb-3 pb-1">
-            Exam and Certification
+            Exam and Certification {courseAi.fieldButton("examCert")}
           </h2>
           <label className="block mb-1 font-semibold">Description</label>
-          <JoditEditor
+          <AdvancedCourseEditor
             value={form.examCert}
-            config={joditConfig}
             onChange={richTextHandlers.examCert.onChange}
             onBlur={richTextHandlers.examCert.onBlur}
+            aiContext={{ kind: "exam-cert", title: form.title, courseTitle: form.title, category: form.category?.value }}
+            previewTitle={form.title}
+            minHeight={220}
           />
         </div>
 
         <div>
           <h2 className="text-xl font-semibold border-b mb-3 pb-1">
-            Case Study
+            Case Study {courseAi.fieldButton("caseStudy")}
           </h2>
           <label className="block mb-1 font-semibold">Description</label>
-          <JoditEditor
+          <AdvancedCourseEditor
             value={form.caseStudy}
-            config={joditConfig}
             onChange={richTextHandlers.caseStudy.onChange}
             onBlur={richTextHandlers.caseStudy.onBlur}
+            aiContext={{ title: form.title, courseTitle: form.title, category: form.category?.value }}
+            previewTitle={form.title}
+            minHeight={220}
           />
         </div>
 
@@ -1143,7 +1152,7 @@ export default function CourseAddTab({ onBack }) {
           <h2 className="text-xl font-semibold mb-3">SEO Section</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <div>
-              <label className="block mb-1 font-semibold">Title</label>
+              <label className="block mb-1 font-semibold">Title {courseAi.fieldButton("seoTitle")}</label>
               <input
                 name="seoTitle"
                 placeholder="Enter title"
@@ -1153,17 +1162,19 @@ export default function CourseAddTab({ onBack }) {
               />
             </div>
             <div>
-              <label className="block mb-1 font-semibold">Description</label>
-              <JoditEditor
+              <label className="block mb-1 font-semibold">Description {courseAi.fieldButton("seoDescription")}</label>
+              <AdvancedCourseEditor
                 value={form.seoDescription}
-                config={{ ...joditConfig, height: 120 }}
                 onChange={richTextHandlers.seoDescription.onChange}
                 onBlur={richTextHandlers.seoDescription.onBlur}
+                tabs={["home", "ai", "review"]}
+                minHeight={120}
+                aiContext={{ title: form.title, courseTitle: form.title }}
               />
             </div>
           </div>
           <div className="mt-5">
-            <label className="block mb-1 font-semibold">Keywords</label>
+            <label className="block mb-1 font-semibold">Keywords {courseAi.fieldButton("seoKeywords")}</label>
             <textarea
               name="seoKeywords"
               placeholder="Enter keywords"
@@ -1179,7 +1190,7 @@ export default function CourseAddTab({ onBack }) {
           <h2 className="text-xl font-semibold mb-3">Meta Tags</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
             <div>
-              <label className="block mb-1 font-semibold">Meta Title</label>
+              <label className="block mb-1 font-semibold">Meta Title {courseAi.fieldButton("metaTitle")}</label>
               <input
                 name="metaTitle"
                 placeholder="Enter meta title for additional SEO"
@@ -1190,18 +1201,20 @@ export default function CourseAddTab({ onBack }) {
             </div>
             <div>
               <label className="block mb-1 font-semibold">
-                Meta Description
+                Meta Description {courseAi.fieldButton("metaDescription")}
               </label>
-              <JoditEditor
+              <AdvancedCourseEditor
                 value={form.metaDescription}
-                config={{ ...joditConfig, height: 120 }}
                 onChange={richTextHandlers.metaDescription.onChange}
                 onBlur={richTextHandlers.metaDescription.onBlur}
+                tabs={["home", "ai", "review"]}
+                minHeight={120}
+                aiContext={{ title: form.title, courseTitle: form.title }}
               />
             </div>
           </div>
           <div className="mt-5">
-            <label className="block mb-1 font-semibold">Meta Keywords</label>
+            <label className="block mb-1 font-semibold">Meta Keywords {courseAi.fieldButton("metaKeywords")}</label>
             <textarea
               name="metaKeywords"
               placeholder="Enter meta keywords separated by commas"

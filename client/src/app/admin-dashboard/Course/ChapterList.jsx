@@ -24,6 +24,8 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { useAuth } from "@/contexts/AuthContext";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+import AiCourseStructureModal from "./AiCourseStructureModal";
 
 import {
   DndContext,
@@ -116,6 +118,7 @@ const ChapterList = forwardRef(
     const [addingChapter, setAddingChapter] = useState(false);
     const [newTitle, setNewTitle] = useState("");
     const [saving, setSaving] = useState(false);
+    const [aiOpen, setAiOpen] = useState(false);
     const { hasPermission } = useAuth();
 
     const sensors = useSensors(
@@ -241,6 +244,34 @@ const ChapterList = forwardRef(
                 Add Chapter
               </Button>
             )}
+            {hasPermission("course", "add") && (
+              <Button
+                variant="contained"
+                startIcon={<AutoAwesomeIcon />}
+                sx={{
+                  background: "linear-gradient(90deg, #7c3aed, #2563eb)",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  px: 3,
+                  py: 1.2,
+                  borderRadius: 1.5,
+                }}
+                onClick={() => setAiOpen(true)}
+              >
+                AI Chapter Generator
+              </Button>
+            )}
+            {chapters.length > 0 && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => window.open(`/digital-hub/demo/${courseId}?adminPreview=1`, "_blank")}
+                title="Open this course on the real Student Portal (admin preview, all chapters)"
+              >
+                PREVIEW ON WEBSITE
+              </Button>
+            )}
             <Button variant="outlined" onClick={onViewCourse}>
               VIEW COURSE
             </Button>
@@ -301,7 +332,19 @@ const ChapterList = forwardRef(
                     {filteredChapters.length === 0 ? (
                       <tr>
                         <td colSpan={6} style={{ padding: 32, textAlign: "center", color: "#888" }}>
-                          No chapters found.
+                          {chapters.length === 0 && !search && hasPermission("course", "add") ? (
+                            <Stack spacing={1.5} alignItems="center">
+                              <Typography fontWeight={700} color="#0f172a">
+                                This course has no chapters yet
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520 }}>
+                                Click “AI Chapter Generator” above - AI reads the course details and divides the course
+                                into chapters (usually 6-9, max 10) and topics. You review and edit everything before it is saved.
+                              </Typography>
+                            </Stack>
+                          ) : (
+                            "No chapters found."
+                          )}
                         </td>
                       </tr>
                     ) : (
@@ -328,6 +371,15 @@ const ChapterList = forwardRef(
         <Typography variant="caption" sx={{ mt: 1.5, display: "block", color: "#888" }}>
           Drag the ⠿ handle to reorder chapters. Order is saved automatically.
         </Typography>
+
+        <AiCourseStructureModal
+          open={aiOpen}
+          onClose={() => setAiOpen(false)}
+          courseId={courseId}
+          courseName={courseName}
+          existingChapterTitles={chapters.map((c) => c.title)}
+          onSaved={fetchChapters}
+        />
       </Box>
     );
   }

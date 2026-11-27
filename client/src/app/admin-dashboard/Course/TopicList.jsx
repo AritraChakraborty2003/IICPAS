@@ -28,6 +28,7 @@ import AssignmentBuilder from "../../components/AssignmentBuilder";
 import AssignmentsList from "../../components/AssignmentsList";
 import CaseStudiesList from "../../components/CaseStudiesList";
 import TopicLessonsPanel from "./TopicLessonsPanel";
+import AiTopicGeneratorModal from "./AiTopicGeneratorModal";
 
 const MySwal = withReactContent(Swal);
 const API_BASE = getApiBase();
@@ -44,6 +45,7 @@ export default function TopicList({
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [aiTopicsOpen, setAiTopicsOpen] = useState(false);
   const [viewMode, setViewMode] = useState("topics"); // 'topics', 'caseStudy', 'assignment'
   const [editingItem, setEditingItem] = useState(null); // Track what we're editing
   const { hasPermission } = useAuth();
@@ -208,6 +210,14 @@ export default function TopicList({
         <Typography variant="h5" fontWeight={700}>
           Topics for "{chapterName}"
         </Typography>
+        <AiTopicGeneratorModal
+          open={aiTopicsOpen}
+          onClose={() => setAiTopicsOpen(false)}
+          chapterId={chapterId}
+          chapterName={chapterName}
+          existingTopicTitles={topics.map((t) => t.title)}
+          onSaved={fetchTopics}
+        />
         <Stack direction="row" spacing={2}>
           <Button variant="outlined" onClick={onViewChapters}>
             View Chapters
@@ -215,6 +225,15 @@ export default function TopicList({
           {hasPermission("course", "add") && (
             <Button variant="contained" onClick={onAddTopic}>
               Add Topic
+            </Button>
+          )}
+          {hasPermission("course", "add") && (
+            <Button
+              variant="contained"
+              onClick={() => setAiTopicsOpen(true)}
+              sx={{ background: "linear-gradient(90deg, #7c3aed, #2563eb)" }}
+            >
+              ✨ AI Topic Generator
             </Button>
           )}
           {/* NEW BUTTONS */}

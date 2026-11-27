@@ -8,6 +8,7 @@ import TopicList from "./Course/TopicList";
 import EditCourse from "./Course/EditCourse";
 import EditChapter from "./Course/EditChapter";
 import AddOrEditTopicForm from "./Course/AddOrEditTopicForm";
+import TopicWorkspace from "./Course/TopicWorkspace";
 import CourseAddTab from "./Course/CourseAdd";
 import CourseLevelManager from "./Course/CourseLevelManager";
 import GroupPricingTab from "./Course/GroupPricingTab";
@@ -284,7 +285,18 @@ export default function CourseArea() {
         />
       )}
 
-      {(view === "add-topic" || view === "edit-topic") && selectedChapter && (
+      {(view === "add-topic" || view === "edit-topic") && selectedChapter && selectedCourse && (
+        <TopicWorkspace
+          key={`${selectedChapter._id}-${editingTopic?._id || "new"}`}
+          courseId={selectedCourse._id}
+          courseName={selectedCourse.title}
+          chapter={selectedChapter}
+          topic={editingTopic}
+          onExit={() => handleViewBack("topics")}
+        />
+      )}
+
+      {(view === "add-topic" || view === "edit-topic") && selectedChapter && !selectedCourse && (
         <AddOrEditTopicForm
           chapterId={selectedChapter._id}
           chapterName={selectedChapter.title}
