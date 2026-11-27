@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { getApiBase } from "@/lib/apiBase";
 import SimulationCredFieldsEditor from "./SimulationCredFieldsEditor";
@@ -96,9 +96,18 @@ export const simGroupsFromSaved = (
 // group list to persist on the case study. Call from the builder's save.
 export const syncSimulationGroups = async (
   groups: SimGroupEntry[]
-): Promise<SavedSimulationGroup[]> => {
+): Promise<SavedSimulationGroup[]> =>
+  (await syncSimulationGroupsDetailed(groups)).saved;
+
+// Same as syncSimulationGroups, but also reports the override id each slot
+// ended up with (keyed by slot id) so the editor state can be updated and a
+// later save edits those overrides instead of creating duplicates.
+const syncSimulationGroupsDetailed = async (
+  groups: SimGroupEntry[]
+): Promise<{ saved: SavedSimulationGroup[]; slotOverrides: Map<string, string> }> => {
   const API_BASE = getApiBase();
   const result: SavedSimulationGroup[] = [];
+  const slotOverrides = new Map<string, string>();
 
   for (const group of groups) {
     const slots: SavedSimulationGroupSlot[] = [];
@@ -153,6 +162,7 @@ export const syncSimulationGroups = async (
         overrideId = "";
       }
 
+      slotOverrides.set(slot.id, overrideId);
       slots.push({
         url: overrideId
           ? `${baseUrl}${baseUrl.includes("?") ? "&" : "?"}simCfg=${overrideId}`
@@ -169,7 +179,7 @@ export const syncSimulationGroups = async (
     });
   }
 
-  return result;
+  return { saved: result, slotOverrides };
 };
 
 export default function SimulationGroupsManager({
@@ -177,19 +187,105 @@ export default function SimulationGroupsManager({
   onChange,
   chapterId,
   parentId,
+  parentType,
 }: {
   groups: SimGroupEntry[];
   onChange: (groups: SimGroupEntry[]) => void;
   // Chapter whose topics' inserted simulations "Add Group" offers
   chapterId?: string;
-  // Saved case study / assignment id, for the preview links
+  // Saved case study / assignment — groups are then saved to it instantly
+  // (no need to press the builder's Save) and get their links right away
   parentId?: string;
+  parentType?: "assignment" | "case-study";
 }) {
   const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(
     null
   );
   const [pickerOpen, setPickerOpen] = useState(false);
   const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
+  const [saveState, setSaveState] = useState<
+    { kind: "idle" | "saving" | "saved" } | { kind: "error"; message: string }
+  >({ kind: "idle" });
+  const [dirty, setDirty] = useState(false);
+
+  const canPersist = Boolean(parentId && parentType);
+  const latestGroupsRef = useRef(groups);
+  latestGroupsRef.current = groups;
+  // Override ids created by earlier instant saves, so a save queued before
+  // the state caught up doesn't create the same override twice.
+  const knownOverridesRef = useRef(new Map<string, string>());
+  const persistChainRef = useRef<Promise<void>>(Promise.resolve());
+
+  const persistGroups = (next: SimGroupEntry[]) => {
+    if (!canPersist) return;
+    persistChainRef.current = persistChainRef.current.then(async () => {
+      setSaveState({ kind: "saving" });
+      try {
+        const withKnownOverrides = next.map((group) => ({
+          ...group,
+          slots: group.slots.map((slot) =>
+            !slot.overrideId && knownOverridesRef.current.get(slot.id)
+              ? { ...slot, overrideId: knownOverridesRef.current.get(slot.id) || "" }
+              : slot
+          ),
+        }));
+        const { saved, slotOverrides } =
+          await syncSimulationGroupsDetailed(withKnownOverrides);
+        const endpoint = parentType === "assignment" ? "assignments" : "case-studies";
+        await axios.put(`${getApiBase()}/${endpoint}/${parentId}`, {
+          simulationGroups: saved,
+        });
+        slotOverrides.forEach((id, slotId) => knownOverridesRef.current.set(slotId, id));
+
+        // Merge into whatever the editor holds now (the admin may have kept
+        // typing while this was saving).
+        const savedPositions = new Map<string, number>(
+          next.map((g, i): [string, number] => [g.id, i])
+        );
+        onChange(
+          latestGroupsRef.current.map((group) => ({
+            ...group,
+            savedIndex: savedPositions.has(group.id)
+              ? savedPositions.get(group.id)
+              : group.savedIndex,
+            slots: group.slots.map((slot) =>
+              slotOverrides.has(slot.id)
+                ? { ...slot, overrideId: slotOverrides.get(slot.id) || "" }
+                : slot
+            ),
+          }))
+        );
+        setDirty(false);
+        setSaveState({ kind: "saved" });
+      } catch (err: unknown) {
+        const error = err as {
+          response?: { data?: { error?: string; message?: string } };
+          message?: string;
+        };
+        setSaveState({
+          kind: "error",
+          message:
+            error?.response?.data?.error ||
+            error?.response?.data?.message ||
+            error?.message ||
+            "Could not save the groups",
+        });
+      }
+    });
+  };
+
+  // Field edits: keep them local and offer "Save groups" (saving on every
+  // keystroke would hammer the API).
+  const edit = (next: SimGroupEntry[]) => {
+    onChange(next);
+    if (canPersist) setDirty(true);
+  };
+
+  // Structural changes (add / duplicate / remove) are saved immediately.
+  const commit = (next: SimGroupEntry[]) => {
+    onChange(next);
+    persistGroups(next);
+  };
 
   const previewUrlFor = (group: SimGroupEntry, groupIndex: number) =>
     parentId && group.savedIndex === groupIndex
@@ -299,7 +395,7 @@ export default function SimulationGroupsManager({
       setPickerOpen(true);
       return;
     }
-    onChange([
+    commit([
       ...groups,
       {
         id: newGroupId(),
@@ -312,7 +408,7 @@ export default function SimulationGroupsManager({
 
   const addPickedGroups = (picked: PickedGroup[]) => {
     setPickerOpen(false);
-    onChange([
+    commit([
       ...groups,
       ...picked.map((group) => ({
         id: newGroupId(),
@@ -326,7 +422,7 @@ export default function SimulationGroupsManager({
   // Copy of a group with fresh (unsaved) overrides, for quickly making
   // variants of the same sequence with different values.
   const duplicateGroup = (group: SimGroupEntry) =>
-    onChange([
+    commit([
       ...groups,
       {
         id: newGroupId(),
@@ -354,11 +450,11 @@ export default function SimulationGroupsManager({
           .catch(() => {});
       }
     });
-    onChange(groups.filter((g) => g.id !== group.id));
+    commit(groups.filter((g) => g.id !== group.id));
   };
 
   const updateGroup = (groupId: string, patch: Partial<SimGroupEntry>) =>
-    onChange(groups.map((g) => (g.id === groupId ? { ...g, ...patch } : g)));
+    edit(groups.map((g) => (g.id === groupId ? { ...g, ...patch } : g)));
 
   const addSlot = (groupId: string) =>
     updateGroup(groupId, {
@@ -376,7 +472,15 @@ export default function SimulationGroupsManager({
     }
     const group = groups.find((g) => g.id === groupId);
     if (!group) return;
-    updateGroup(groupId, { slots: group.slots.filter((s) => s.id !== slot.id) });
+    // Its override was just deleted, so save right away rather than leave
+    // the saved group pointing at it.
+    commit(
+      groups.map((g) =>
+        g.id === groupId
+          ? { ...g, slots: g.slots.filter((s) => s.id !== slot.id) }
+          : g
+      )
+    );
   };
 
   const updateSlot = (groupId: string, slotId: string, patch: Partial<TopicSimEntry>) => {
@@ -428,6 +532,48 @@ export default function SimulationGroupsManager({
         </button>
       </div>
 
+      {canPersist ? (
+        <div
+          className={`flex flex-wrap items-center gap-3 rounded-lg border px-3 py-2 text-sm ${
+            saveState.kind === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : dirty
+                ? "border-amber-200 bg-amber-50 text-amber-800"
+                : "border-green-200 bg-green-50 text-green-800"
+          }`}
+        >
+          <span className="flex-1">
+            {saveState.kind === "saving"
+              ? "Saving groups…"
+              : saveState.kind === "error"
+                ? `Groups not saved: ${saveState.message}`
+                : dirty
+                  ? "You have unsaved changes to the groups."
+                  : saveState.kind === "saved"
+                    ? "Groups saved. Each group's continuous link below is live."
+                    : "Groups are saved to this item as you add, duplicate or remove them."}
+          </span>
+          {(dirty || saveState.kind === "error") && (
+            <button
+              type="button"
+              onClick={() => persistGroups(groups)}
+              disabled={saveState.kind === "saving"}
+              className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              Save groups now
+            </button>
+          )}
+        </div>
+      ) : (
+        groups.length > 0 && (
+          <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            Save this {parentType === "assignment" ? "assignment" : "case study"}{" "}
+            once to store the groups. After that, groups save instantly and each
+            gets a continuous link.
+          </p>
+        )
+      )}
+
       {groups.length === 0 ? (
         <p className="py-10 text-center text-gray-500">
           No simulation groups added yet. Click &quot;Add Group&quot; to get started.
@@ -474,7 +620,8 @@ export default function SimulationGroupsManager({
               return (
                 <div className="flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm">
                   <span className="font-medium text-indigo-800">
-                    Slide preview link:
+                    Continuous link (all {group.slots.length} simulations, one
+                    after another):
                   </span>
                   {previewUrl ? (
                     <>
@@ -485,6 +632,14 @@ export default function SimulationGroupsManager({
                         className="min-w-0 flex-1 truncate font-mono text-xs text-indigo-700 underline"
                       >
                         {previewUrl}
+                      </a>
+                      <a
+                        href={previewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded border border-indigo-500 bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700"
+                      >
+                        Open
                       </a>
                       <button
                         type="button"
@@ -501,8 +656,11 @@ export default function SimulationGroupsManager({
                     </>
                   ) : (
                     <span className="text-xs text-indigo-600/80">
-                      Save the {parentId ? "changes" : "case study / assignment"}{" "}
-                      to get a preview link for this group.
+                      {canPersist
+                        ? saveState.kind === "saving"
+                          ? "Saving — the link appears in a moment."
+                          : "Click \"Save groups now\" above to get this group's link."
+                        : `Save the ${parentType === "assignment" ? "assignment" : "case study"} to get this group's link.`}
                     </span>
                   )}
                 </div>

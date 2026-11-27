@@ -11,6 +11,7 @@ export const createAssignment = async (req, res) => {
       content,
       simulations,
       topicSimulations,
+      simulationGroups,
       questionSets,
     } = req.body;
 
@@ -22,6 +23,7 @@ export const createAssignment = async (req, res) => {
       content: content || [],
       simulations: simulations || [],
       topicSimulations: topicSimulations || [],
+      simulationGroups: simulationGroups || [],
       questionSets: (questionSets || []).map((qs) => {
         const rawQuestions = typeof qs.questions === "string" ? JSON.parse(qs.questions) : (qs.questions || []);
         return {

@@ -1440,6 +1440,7 @@ export default function CaseStudyBuilder({
               onChange={setSimulationGroups}
               chapterId={chapterId}
               parentId={editingItem?._id}
+              parentType="case-study"
             />
           )}
 
