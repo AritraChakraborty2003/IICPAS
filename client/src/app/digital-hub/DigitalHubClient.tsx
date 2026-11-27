@@ -945,11 +945,14 @@ function TopicSimulationCard({ url, title, imageUrl }: TopicSimulationLink) {
 // since it navigates to the in-app Group Player route.
 function GroupSimulationCard({
   href,
+  previewHref,
   slots,
   bgImageUrl,
   onOpen,
 }: {
   href: string;
+  // Slide-style preview of the same group (access checked server-side)
+  previewHref?: string;
   slots: TopicSimulationLink[];
   bgImageUrl?: string;
   onOpen: (href: string) => void;
@@ -1092,6 +1095,18 @@ function GroupSimulationCard({
           </div>
         </button>
       </div>
+      {previewHref && (
+        <div className="mt-2 text-center">
+          <a
+            href={previewHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-white px-4 py-1.5 text-[13px] font-semibold text-emerald-700 hover:bg-emerald-50"
+          >
+            ▤ View as slides (one simulation per slide)
+          </a>
+        </div>
+      )}
     </div>
   );
 }
@@ -5446,6 +5461,7 @@ export default function DigitalHubClient({
                                 <GroupSimulationCard
                                   key={`${group.name}-${groupIndex}`}
                                   href={`/simulations/group/${selectedCaseStudy._id}/${groupIndex}`}
+                                  previewHref={`/simulations/group-preview/${selectedCaseStudy._id}/${groupIndex}`}
                                   slots={group.slots}
                                   bgImageUrl={group.bgImageUrl}
                                   onOpen={(href) => router.push(href)}
@@ -5981,6 +5997,7 @@ export default function DigitalHubClient({
                                 <GroupSimulationCard
                                   key={`${group.name}-${groupIndex}`}
                                   href={`/simulations/group/${selectedAssignment._id}/${groupIndex}`}
+                                  previewHref={`/simulations/group-preview/${selectedAssignment._id}/${groupIndex}`}
                                   slots={group.slots}
                                   bgImageUrl={group.bgImageUrl}
                                   onOpen={(href) => router.push(href)}
