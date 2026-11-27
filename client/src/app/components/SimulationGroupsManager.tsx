@@ -5,6 +5,15 @@ import { getApiBase } from "@/lib/apiBase";
 import SimulationCredFieldsEditor from "./SimulationCredFieldsEditor";
 import { simulationSlugFromUrl } from "./TopicSimulationsManager";
 import type { TopicSimEntry } from "./TopicSimulationsManager";
+import ChapterSimulationPicker, {
+  credSnapshot,
+  PickedGroup,
+} from "./ChapterSimulationPicker";
+
+// Slide-style preview of a saved group, restricted server-side to admins,
+// permitted employees and students who purchased the course.
+export const simulationGroupPreviewPath = (parentId: string, groupIndex: number) =>
+  `/simulations/group-preview/${parentId}/${groupIndex}`;
 
 const STATIC_CDN_BASE =
   process.env.NEXT_PUBLIC_STATIC_CDN_BASE || "https://cdn.iicpa.in";
@@ -19,6 +28,9 @@ export interface SimGroupEntry {
   name: string;
   bgImageUrl: string;
   slots: TopicSimEntry[];
+  // Position of this group in the saved case study / assignment; undefined
+  // for groups added since the last save (they have no preview link yet).
+  savedIndex?: number;
 }
 
 export interface SavedSimulationGroupSlot {
@@ -66,6 +78,7 @@ export const simGroupsFromSaved = (
     id: `sgroup-${Date.now()}-${groupIndex}`,
     name: group.name || "",
     bgImageUrl: group.bgImageUrl || "",
+    savedIndex: groupIndex,
     slots: (group.slots || []).map((slot, slotIndex) => ({
       id: `gsim-slot-${Date.now()}-${groupIndex}-${slotIndex}`,
       title: slot.title || "",
@@ -99,8 +112,16 @@ export const syncSimulationGroups = async (
       const bannerText = slot.bannerText.trim();
       const slug = simulationSlugFromUrl(baseUrl);
       let overrideId = slot.overrideId;
+      // Prefilled from the Simulation Manager and left unchanged: keep using
+      // the slug config instead of freezing a copy in an override.
+      const matchesDefaults =
+        !overrideId &&
+        Boolean(slot.defaultSnapshot) &&
+        slot.defaultSnapshot === credSnapshot(slot);
 
-      if ((credFields.length || bannerText) && slug) {
+      if (matchesDefaults) {
+        // nothing to persist
+      } else if ((credFields.length || bannerText) && slug) {
         const payload = {
           slug,
           name: slug,
@@ -154,13 +175,36 @@ export const syncSimulationGroups = async (
 export default function SimulationGroupsManager({
   groups,
   onChange,
+  chapterId,
+  parentId,
 }: {
   groups: SimGroupEntry[];
   onChange: (groups: SimGroupEntry[]) => void;
+  // Chapter whose topics' inserted simulations "Add Group" offers
+  chapterId?: string;
+  // Saved case study / assignment id, for the preview links
+  parentId?: string;
 }) {
   const [uploadingImageFor, setUploadingImageFor] = useState<string | null>(
     null
   );
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
+
+  const previewUrlFor = (group: SimGroupEntry, groupIndex: number) =>
+    parentId && group.savedIndex === groupIndex
+      ? `${window.location.origin}${simulationGroupPreviewPath(parentId, groupIndex)}`
+      : "";
+
+  const copyPreviewLink = async (groupId: string, url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedGroupId(groupId);
+      setTimeout(() => setCopiedGroupId(null), 2000);
+    } catch {
+      window.prompt("Copy the preview link:", url);
+    }
+  };
 
   const handleGroupImageUpload = async (groupId: string, file?: File | null) => {
     if (!file || uploadingImageFor) return;
@@ -247,14 +291,55 @@ export default function SimulationGroupsManager({
       .join("|"),
   ]);
 
-  const addGroup = () =>
+  const newGroupId = () =>
+    `sgroup-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+  const addGroup = () => {
+    if (chapterId) {
+      setPickerOpen(true);
+      return;
+    }
     onChange([
       ...groups,
       {
-        id: `sgroup-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        id: newGroupId(),
         name: `Group ${groups.length + 1}`,
         bgImageUrl: "",
         slots: [newSlot()],
+      },
+    ]);
+  };
+
+  const addPickedGroups = (picked: PickedGroup[]) => {
+    setPickerOpen(false);
+    onChange([
+      ...groups,
+      ...picked.map((group) => ({
+        id: newGroupId(),
+        name: group.name,
+        bgImageUrl: "",
+        slots: group.slots.length ? group.slots : [newSlot()],
+      })),
+    ]);
+  };
+
+  // Copy of a group with fresh (unsaved) overrides, for quickly making
+  // variants of the same sequence with different values.
+  const duplicateGroup = (group: SimGroupEntry) =>
+    onChange([
+      ...groups,
+      {
+        id: newGroupId(),
+        name: `${group.name || "Group"} (copy)`,
+        bgImageUrl: group.bgImageUrl,
+        slots: group.slots.map((slot) => ({
+          ...slot,
+          id: `gsim-slot-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          url: stripSimCfg(slot.url),
+          credFields: slot.credFields.map((field) => ({ ...field })),
+          overrideId: "",
+          credsLoaded: true,
+        })),
       },
     ]);
 
@@ -314,6 +399,14 @@ export default function SimulationGroupsManager({
 
   return (
     <div className="space-y-6">
+      {pickerOpen && chapterId && (
+        <ChapterSimulationPicker
+          chapterId={chapterId}
+          existingGroupCount={groups.length}
+          onCancel={() => setPickerOpen(false)}
+          onCreate={addPickedGroups}
+        />
+      )}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-800">
@@ -322,6 +415,8 @@ export default function SimulationGroupsManager({
           <p className="text-sm text-gray-500">
             Chain multiple simulations into one ordered sequence — each with its
             own credentials — that auto-advances for the student once started.
+            {chapterId &&
+              " \"Add Group\" lists the simulations inserted in this chapter's topics."}
           </p>
         </div>
         <button
@@ -355,14 +450,64 @@ export default function SimulationGroupsManager({
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
-              <button
-                type="button"
-                onClick={() => removeGroup(group)}
-                className="text-sm font-medium text-red-500 hover:text-red-700"
-              >
-                Remove Group
-              </button>
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={() => duplicateGroup(group)}
+                  disabled={group.slots.some((s) => s.overrideId && !s.credsLoaded)}
+                  className="text-sm font-medium text-blue-600 hover:text-blue-800 disabled:opacity-40"
+                >
+                  Duplicate
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeGroup(group)}
+                  className="text-sm font-medium text-red-500 hover:text-red-700"
+                >
+                  Remove Group
+                </button>
+              </div>
             </div>
+
+            {(() => {
+              const previewUrl = previewUrlFor(group, groupIndex);
+              return (
+                <div className="flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm">
+                  <span className="font-medium text-indigo-800">
+                    Slide preview link:
+                  </span>
+                  {previewUrl ? (
+                    <>
+                      <a
+                        href={previewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-w-0 flex-1 truncate font-mono text-xs text-indigo-700 underline"
+                      >
+                        {previewUrl}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => copyPreviewLink(group.id, previewUrl)}
+                        className="rounded border border-indigo-300 bg-white px-2 py-1 text-xs font-medium text-indigo-700 hover:bg-indigo-100"
+                      >
+                        {copiedGroupId === group.id ? "Copied!" : "Copy"}
+                      </button>
+                      <span className="w-full text-xs text-indigo-600/80">
+                        Opens for admins, employees with course/topic access and
+                        students who purchased this course. Shows the last saved
+                        version.
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-indigo-600/80">
+                      Save the {parentId ? "changes" : "case study / assignment"}{" "}
+                      to get a preview link for this group.
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
 
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-600">

@@ -22,6 +22,9 @@ export interface TopicSimEntry {
   validate: boolean;
   overrideId: string;
   credsLoaded: boolean;
+  // Set when the credentials were prefilled from the Simulation Manager
+  // defaults; while they still match, saving skips creating an override.
+  defaultSnapshot?: string;
 }
 
 export interface SavedTopicSimulation {
