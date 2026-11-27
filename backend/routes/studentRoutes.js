@@ -799,7 +799,8 @@ router.get(
           const [progressResult, assignmentsCount, caseStudiesCount, testsCount] =
             await Promise.allSettled([
               getDigitalHubCourseProgress(id, course._id),
-              Assignment.countDocuments({ chapterId: { $in: chapterIds } }),
+              // Unpublished AI drafts are not real assignments yet
+              Assignment.countDocuments({ chapterId: { $in: chapterIds }, $nor: [{ "ai.kind": { $exists: true }, isActive: false }] }),
               CaseStudy.countDocuments({ chapterId: { $in: chapterIds } }),
               RevisionTest.countDocuments({ course: course._id }),
             ]);

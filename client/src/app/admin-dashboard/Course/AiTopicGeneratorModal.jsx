@@ -93,7 +93,9 @@ export default function AiTopicGeneratorModal({ open, onClose, chapterId, chapte
         timer: 3500,
         showConfirmButton: false,
         icon: "success",
-        title: `${s.topicsCreated} topic(s) created${s.topicsSkipped ? `, ${s.topicsSkipped} skipped` : ""}`,
+        title: `${s.topicsCreated} topic(s) created${s.topicsSkipped ? `, ${s.topicsSkipped} skipped` : ""}${
+          data.assessmentsQueued ? ". AI assignment and quiz drafts are being generated." : ""
+        }`,
       });
       onSaved?.();
       onClose();

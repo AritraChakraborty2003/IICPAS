@@ -1,6 +1,7 @@
 // Prompt builders for every AI task in Course Management. Each prompt asks for
 // a predictable output format (clean HTML or strict JSON) so results can be
 // validated before they reach the editor.
+import { EDUCATIONAL_TITLE_STYLE } from "./educationalStyle.js";
 
 const HTML_RULES = `Output rules:
 - Return ONLY the body content as clean HTML (no <html>, <head>, <body>, no Markdown, no code fences, no commentary before or after).
@@ -28,7 +29,9 @@ const TITLE_RULES = `Title rules (apply to every chapter and lesson title):
 - Professional tone suitable for an education institute. Use Title Case.
 - No numbering ("Chapter 1", "Lesson 2", "Module"), no emojis, no exclamation marks, no hype or clickbait, no colons.
 - Every title must be unique within the course and must not simply repeat the course name.
-- Good examples: "Introduction to Power BI", "Getting Data into Power BI", "Transforming Data with Power Query", "Data Modelling", "DAX Fundamentals", "Building Interactive Reports", "Publishing and Sharing Dashboards", "GST Return Filing Step by Step".`;
+- Good examples: "Introduction to Power BI", "Getting Data into Power BI", "Transforming Data with Power Query", "Data Modelling", "DAX Fundamentals", "Building Interactive Reports", "Publishing and Sharing Dashboards", "GST Return Filing Step by Step".
+
+${EDUCATIONAL_TITLE_STYLE}`;
 
 // Practical-first teaching approach used for outlines and lessons
 const PRACTICAL_APPROACH = `Teaching approach: practical first. Keep theory short and only as much as needed to do the task; most of the learning should come from hands-on steps, real examples, practice exercises and mini projects using realistic Indian business data. Progress from basics to job-ready skills, ending with real-world application.`;

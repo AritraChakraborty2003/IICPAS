@@ -31,6 +31,7 @@ import {
 } from "../services/ai/aiPrompts.js";
 import { runAiJob, publicJob } from "../services/ai/n8nAiService.js";
 import { normalizeOutlineChapter, normalizeOutlineTopic } from "../utils/aiText.js";
+import { autoGenerateForChapters } from "../services/chapterAssessmentService.js";
 
 const router = Router();
 router.use(requireAuth, requireContentAccess);
@@ -239,7 +240,9 @@ router.post("/:courseId/save-structure", async (req, res) => {
       );
     }
 
-    res.json({ success: true, summary });
+    // Chapters that received topics: queue their AI assignment + quiz drafts
+    autoGenerateForChapters([...createdChapterIds, ...touchedChapters.map((t) => t.id)], req.user?._id);
+    res.json({ success: true, summary, assessmentsQueued: summary.topicsCreated > 0 });
   } catch (err) {
     console.error("AI save structure error:", err);
     // Roll back anything this request created
@@ -418,7 +421,9 @@ router.post("/chapter/:chapterId/save-topics", async (req, res) => {
     if (createdIds.length) {
       await Chapter.updateOne({ _id: chapter._id }, { $push: { topics: { $each: createdIds } }, $set: { updatedAt: now } });
     }
-    res.json({ success: true, summary: { topicsCreated: createdIds.length, topicsSkipped: skipped } });
+    // Queue the chapter AI assignment + quiz drafts (never overwrites published / edited ones)
+    if (createdIds.length) autoGenerateForChapters([chapter._id], req.user?._id);
+    res.json({ success: true, summary: { topicsCreated: createdIds.length, topicsSkipped: skipped }, assessmentsQueued: createdIds.length > 0 });
   } catch (err) {
     console.error("AI save topics error:", err);
     if (createdIds.length) await Topic.deleteMany({ _id: { $in: createdIds } }).catch(() => {});

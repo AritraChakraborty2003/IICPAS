@@ -171,6 +171,51 @@ const assignmentSchema = new mongoose.Schema({
   // override, same ?simCfg= mechanism as topicSimulations).
   simulationGroups: [simulationGroupSchema],
   questionSets: [questionSetSchema],
+
+  // --- AI chapter assessments (absent on manually created assignments) ---
+  // kind "assignment" = AI practical assignment, "quiz" = AI chapter
+  // assessment quiz (rendered through questionSets). One of each per chapter.
+  // The generated content waits in ai.draft until an admin publishes it, so
+  // regeneration never touches what students currently see.
+  ai: {
+    type: new mongoose.Schema(
+      {
+        kind: { type: String, enum: ["assignment", "quiz"], required: true },
+        status: {
+          type: String,
+          enum: ["pending", "generating", "generated", "review", "published", "failed"],
+          default: "pending",
+        },
+        trigger: { type: String, enum: ["auto", "manual"], default: "manual" },
+        jobIds: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+        attempts: { type: Number, default: 0 },
+        error: { type: String, default: "" },
+        // Normalised, validated AI output (select:false - never sent to students)
+        draft: { type: mongoose.Schema.Types.Mixed, default: null, select: false },
+        validation: { type: mongoose.Schema.Types.Mixed, default: null },
+        // Topics used as generation context (detects topic changes)
+        topicIds: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+        topicsHash: { type: String, default: "" },
+        difficulty: { type: String, default: "" },
+        instructions: { type: String, default: "" },
+        startedAt: Date,
+        generatedAt: Date,
+        draftEditedAt: Date,
+        liveEditedAt: Date, // published copy changed in the regular Assignment editor
+        publishedAt: Date,
+        createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "Employee", default: null },
+      },
+      { _id: false }
+    ),
+    default: undefined,
+  },
+  // Reference solution / evaluation guidelines for instructors only
+  instructorGuide: { type: mongoose.Schema.Types.Mixed, default: undefined, select: false },
+  seo: {
+    seoTitle: { type: String },
+    metaDescription: { type: String },
+    slug: { type: String },
+  },
   createdAt: {
     type: Date,
     default: Date.now,
@@ -185,5 +230,11 @@ assignmentSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
 });
+
+// At most one AI assignment and one AI quiz per chapter (idempotent generation)
+assignmentSchema.index(
+  { chapterId: 1, "ai.kind": 1 },
+  { unique: true, partialFilterExpression: { "ai.kind": { $exists: true } } }
+);
 
 export default mongoose.model("Assignment", assignmentSchema);
