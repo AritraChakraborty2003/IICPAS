@@ -214,12 +214,14 @@ import gstSimulationRoutes from "./routes/gstSimulationRoutes.js";
 import tdsSimulationRoutes from "./routes/tdsSimulationRoutes.js";
 import gstReturnRoutes from "./routes/gstReturnRoutes.js";
 import simulationConfigRoutes from "./routes/simulationConfigRoutes.js";
+import simulationGroupPreviewRoutes from "./routes/simulationGroupPreviewRoutes.js";
 app.use("/api/assignments", assignmentRoutes);
 app.use("/api/case-studies", caseStudyRoutes);
 app.use("/api/gst-simulations", gstSimulationRoutes);
 app.use("/api/tds-simulations", tdsSimulationRoutes);
 app.use("/api/gst-returns", gstReturnRoutes);
 app.use("/api/simulation-configs", simulationConfigRoutes);
+app.use("/api/simulation-groups", simulationGroupPreviewRoutes);
 
 app.use("/metatags", metaTagRoutes);
 app.use("/api/tickets", ticketRoutes);
