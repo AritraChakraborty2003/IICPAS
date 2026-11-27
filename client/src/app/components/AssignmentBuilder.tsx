@@ -1462,6 +1462,8 @@ export default function AssignmentBuilder({
             <SimulationGroupsManager
               groups={simulationGroups}
               onChange={setSimulationGroups}
+              chapterId={chapterId}
+              parentId={editingItem?._id}
             />
           )}
 
