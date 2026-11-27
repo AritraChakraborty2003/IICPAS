@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import { CheckCircle, ChevronRight } from "lucide-react";
 import { getApiBase } from "@/lib/apiBase";
 import { SIM_GROUP_COMPLETE_MESSAGE } from "@/lib/useSimGroupComplete";
-import { simulationSlugFromUrl } from "@/app/components/TopicSimulationsManager";
 
 interface GroupSlot {
   url: string;
@@ -36,6 +35,7 @@ export default function SimulationGroupPlayerPage() {
   const [showStepTick, setShowStepTick] = useState(false);
   const [groupComplete, setGroupComplete] = useState(false);
 
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const currentIndexRef = useRef(currentIndex);
   currentIndexRef.current = currentIndex;
 
@@ -90,10 +90,12 @@ export default function SimulationGroupPlayerPage() {
     const handler = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
       if (event.data?.type !== SIM_GROUP_COMPLETE_MESSAGE) return;
-      const currentSlot = group.slots[currentIndexRef.current];
-      if (!currentSlot) return;
-      const expectedSlug = simulationSlugFromUrl(currentSlot.url);
-      if (event.data.slug !== expectedSlug) return;
+      // Match on the sending window rather than the slug: the completion
+      // hook reports "gst/e-way-bill-1" (slash form) while saved slots use
+      // "gst-e-way-bill-1", and some simulations finish on a follow-up page
+      // (e.g. e-way-bill-1 on the e-way bill login page).
+      if (!iframeRef.current || event.source !== iframeRef.current.contentWindow) return;
+      if (!group.slots[currentIndexRef.current]) return;
       advance();
     };
     window.addEventListener("message", handler);
@@ -158,6 +160,7 @@ export default function SimulationGroupPlayerPage() {
           </div>
         ) : (
           <iframe
+            ref={iframeRef}
             key={currentIndex}
             src={currentSlot.url}
             className="h-full min-h-[calc(100vh-64px)] w-full border-0"
